@@ -5,11 +5,10 @@ return {
     cmd = { "ToggleTerm" },
     keys = {
       {
-        "<c-/>",
+        "<c-`>",
         function()
           local count = vim.v.count1
-          local current_dir = vim.fn.expand("%:p:h")
-          require("toggleterm").toggle(count, 0, current_dir, "float")
+          require("toggleterm").toggle(count, 0, LazyVim.root.get(), "float")
         end,
         desc = "ToggleTerm (float root_dir)",
       },
