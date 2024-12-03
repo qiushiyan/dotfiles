@@ -1,0 +1,47 @@
+{
+    "initial_working_directory": "~",
+    "posix_terminal_shell": "bash",
+    "editor_theme": "Tomorrow Night Bright",
+    "panes": {
+        "quadrants": [
+            "Source",
+            "TabSet1",
+            "Console",
+            "TabSet2"
+        ],
+        "tabSet1": [
+            "Environment",
+            "History",
+            "Connections",
+            "Build",
+            "VCS",
+            "Tutorial",
+            "Presentation"
+        ],
+        "tabSet2": [
+            "Files",
+            "Plots",
+            "Packages",
+            "Help",
+            "Viewer",
+            "Presentations"
+        ],
+        "hiddenTabSet": [],
+        "console_left_on_top": false,
+        "console_right_on_top": true,
+        "additional_source_columns": 0
+    },
+    "rmd_preferred_template_path": "/Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/library/rticles/rmarkdown/templates/acm",
+    "jobs_tab_visibility": "shown",
+    "default_project_location": "/Users/qiushi/workspace/tmp",
+    "save_workspace": "never",
+    "always_save_history": false,
+    "graphics_backend": "ragg",
+    "source_with_echo": true,
+    "python_type": "system",
+    "python_version": "3.9.18",
+    "python_path": "/opt/homebrew/bin/python3.9",
+    "restore_source_documents": false,
+    "load_workspace": false,
+    "restore_last_project": false
+}
