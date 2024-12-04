@@ -3,16 +3,22 @@
 -- * add extra plugins
 -- * disable/enabled LazyVim plugins
 -- * override the configuration of LazyVim plugins
+--
+
 return {
   -- add gruvbox
-  -- { "ellisonleao/gruvbox.nvim" },
+  -- { "ellisonleao/gruvbox.nvim", transparent_mode = true },
   { "akinsho/toggleterm.nvim", version = "*", config = true },
   { "jghauser/mkdir.nvim" },
-
   {
-    "LazyVim/LazyVim",
+    "hedyhli/outline.nvim",
+    lazy = true,
+    cmd = { "Outline", "OutlineOpen" },
+    keys = { -- Example mapping to toggle outline
+      { "<leader>o", "<cmd>Outline<CR>", desc = "Toggle outline" },
+    },
     opts = {
-      colorscheme = "tokyonight",
+      -- Your setup opts here
     },
   },
 
@@ -36,6 +42,21 @@ return {
     end,
   },
 
+  {
+    "cbochs/grapple.nvim",
+    opts = {
+      scope = "git", -- also try out "git_branch"
+    },
+    event = { "BufReadPost", "BufNewFile" },
+    cmd = "Grapple",
+    keys = {
+      { "<leader>m", "<cmd>Grapple toggle<cr>", desc = "Grapple toggle tag" },
+      { "<leader>M", "<cmd>Grapple toggle_tags<cr>", desc = "Grapple open tags window" },
+      { "M", "<cmd>Grapple toggle_tags<cr>", desc = "Grapple open tags window" },
+      { "<leader>n", "<cmd>Grapple cycle_tags next<cr>", desc = "Grapple cycle next tag" },
+      { "<leader>p", "<cmd>Grapple cycle_tags prev<cr>", desc = "Grapple cycle previous tag" },
+    },
+  },
   -- change some telescope options and a keymap to browse plugin files
   {
     "nvim-telescope/telescope.nvim",
@@ -59,18 +80,40 @@ return {
     },
   },
 
-  -- add pyright to lspconfig
+  -- disable LazyVim's built in session management because I can't figure out how to let it auto-restore
+  -- tried https://github.com/madmaxieee/nvim-config/blob/main/lua/plugins/persistence.lua
+  {
+    "folke/persistence.nvim",
+    enabled = false,
+  },
+  {
+    "rmagatti/auto-session",
+    lazy = false,
+    ---@module "auto-session"
+    ---@type AutoSession.Config
+    opts = {
+      suppressed_dirs = { "~/", "~/workspace", "~/Downloads", "/" },
+      -- log_level = 'debug',
+    },
+  },
+
   {
     "neovim/nvim-lspconfig",
-    ---@class PluginLspOpts
-    opts = {
-      ---@type lspconfig.options
-      inlay_hints = { enabled = false },
-      servers = {
-        -- pyright will be automatically installed with mason and loaded with lspconfig
-        pyright = {},
-      },
-    },
+    opts = function(_, opts)
+      opts.inlay_hints = { enabled = false }
+      opts.servers.pyright = {}
+      local on_publish_diagnostics = vim.lsp.diagnostic.on_publish_diagnostics
+      opts.servers.bashls = vim.tbl_deep_extend("force", opts.servers.bashls or {}, {
+        handlers = {
+          ["textDocument/publishDiagnostics"] = function(err, res, ...)
+            local file_name = vim.fn.fnamemodify(vim.uri_to_fname(res.uri), ":t")
+            if string.match(file_name, "^%.env") == nil then
+              return on_publish_diagnostics(err, res, ...)
+            end
+          end,
+        },
+      })
+    end,
   },
 
   -- add tsserver and setup with typescript.nvim instead of lspconfig

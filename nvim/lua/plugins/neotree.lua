@@ -16,4 +16,13 @@ return {
       },
     },
   },
+
+  keys = {
+    {
+      "<C-n>",
+      mode = "n",
+      "<cmd> Neotree toggle <CR>",
+      desc = "open NeoTree",
+    },
+  },
 }
