@@ -1,4 +1,6 @@
 return {
+  -- add gruvbox
+  -- { "ellisonleao/gruvbox.nvim", transparent_mode = true },
   {
     "folke/tokyonight.nvim",
     enabled = true,

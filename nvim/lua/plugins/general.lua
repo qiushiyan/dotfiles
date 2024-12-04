@@ -6,8 +6,6 @@
 --
 
 return {
-  -- add gruvbox
-  -- { "ellisonleao/gruvbox.nvim", transparent_mode = true },
   { "akinsho/toggleterm.nvim", version = "*", config = true },
   { "jghauser/mkdir.nvim" },
   {
