@@ -1,1 +1,1 @@
-- flash.nvim does not respect `.gitignore` and search through node_modules
+- snippets for blog and Quarto

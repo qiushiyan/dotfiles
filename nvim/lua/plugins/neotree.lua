@@ -20,6 +20,8 @@ return {
       window = {
         mappings = {
           ["o"] = "system_open",
+          -- can use both a and n to create files
+          ["n"] = "add",
         },
       },
       commands = {

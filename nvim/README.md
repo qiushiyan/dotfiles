@@ -1,28 +1,36 @@
+## General
+
+- quit `<leader>qq` or `:qa`
+
+- move lines
+
+  - center `zz` or `zt`
+
+  - move up or down `option + arrow`
+
+- whitelist word for spell check `zg`
+
 ## Navigations
 
 - jump back and fort between last cursor position `ctrl + o` and `ctrl + i`
 
 - switch windows `ctrl + w + w`
 
-## Session
-
-- Restore session `<leader>qs`
-
 ## Terminal
 
-toggle current terminal `ctrl + /`
+Toggle current terminal `ctrl + /`
 
 - floating window `ctrl + backtick`
 
-- on the right `<leader>Tv`
-
 - on the bottom `<leader>th`
+
+- on the right `<leader>Tv`
 
 ## File Operations
 
 - with neo-tree
 
-  - `a`: create file or directory
+  - `a` or `n`: create file or directory
 
     - alternatively use a `mkdir.nvim` command `:save path/to/file.txt`
 
@@ -30,7 +38,7 @@ toggle current terminal `ctrl + /`
   - `d`: delete file or directory
   - `r`: rename file or directory
   - `/` search file
-  - `shitf + p` toggle preview
+  - `shift + p` toggle preview
 
 - delete current file with command `:!rm %`
 
@@ -42,6 +50,10 @@ toggle current terminal `ctrl + /`
 ## Code Actions and Refactoring
 
 - hover `shift + k` and scroll in the popup window `ctrl +f`, `ctrl + b`
+
+- see troubles pane `<leader>xx`
+
+- code actions `ctrl + shift + f` or `<leader>ca`
 
 - toggle comments `gcc`
 
