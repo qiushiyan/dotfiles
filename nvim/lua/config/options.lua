@@ -8,3 +8,6 @@ vim.opt.splitkeep = "screen"
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
 vim.opt.sessionoptions = { "buffers", "curdir", "tabpages", "winsize", "help", "globals", "skiprtp", "folds" }
+
+-- always show markdown symbols (backticks, stars, etc)
+vim.opt.conceallevel = 0

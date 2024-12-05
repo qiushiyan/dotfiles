@@ -2,6 +2,19 @@
 
 - quit `<leader>qq` or `:qa`
 
+```shell
+#!/bin/bash
+echo "hello world"
+```
+
+```r
+plot(1:10)
+```
+
+```python
+print("hello world")
+```
+
 - move lines
 
   - center `zz` or `zt`
