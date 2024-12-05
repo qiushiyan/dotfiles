@@ -20,6 +20,17 @@ vim.keymap.set("n", "<C-v>", '"+p', { desc = "Paste from system clipboard" })
 vim.keymap.set("v", "<C-v>", '"+p', { desc = "Paste from system clipboard" })
 vim.keymap.set("i", "<C-v>", '<ESC>"+pa', { desc = "Paste from system clipboard" })
 -- Undo (Ctrl+Z)
-vim.keymap.set("n", "<C-z>", "u", { desc = "Undo last change" })
 vim.keymap.set("i", "<C-z>", "<ESC>ui", { desc = "Undo last change" })
+vim.keymap.set("n", "<C-z>", "u", { desc = "Undo last change" })
 vim.keymap.set("v", "<C-z>", "<ESC>u", { desc = "Undo last change" })
+
+-- Move lines up and down
+vim.keymap.set("n", "<A-Up>", ":m .-2<CR>==", { desc = "Move line up" })
+vim.keymap.set("n", "<A-Down>", ":m .+1<CR>==", { desc = "Move line down" })
+vim.keymap.set("v", "<A-Up>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+vim.keymap.set("v", "<A-Down>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+vim.keymap.set("i", "<A-Up>", "<Esc>:m .-2<CR>==gi", { desc = "Move line up" })
+vim.keymap.set("i", "<A-Down>", "<Esc>:m .+1<CR>==gi", { desc = "Move line down" })
+
+-- Code Actions
+vim.keymap.set({ "n", "v" }, "<C-S-f>", vim.lsp.buf.code_action, { desc = "Code actions" })

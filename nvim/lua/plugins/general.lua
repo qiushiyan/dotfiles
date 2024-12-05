@@ -27,9 +27,6 @@ return {
     opts = { use_diagnostic_signs = true },
   },
 
-  -- disable trouble
-  { "folke/trouble.nvim", enabled = false },
-
   -- override nvim-cmp and add cmp-emoji
   {
     "hrsh7th/nvim-cmp",
@@ -60,10 +57,11 @@ return {
     "nvim-telescope/telescope.nvim",
     keys = {
       -- add a keymap to browse plugin files
-      -- stylua: ignore
       {
         "<leader>fp",
-        function() require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root }) end,
+        function()
+          require("telescope.builtin").find_files({ cwd = require("lazy.core.config").options.root })
+        end,
         desc = "Find Plugin File",
       },
     },
@@ -75,23 +73,6 @@ return {
         sorting_strategy = "ascending",
         winblend = 0,
       },
-    },
-  },
-
-  -- disable LazyVim's built in session management because I can't figure out how to let it auto-restore
-  -- tried https://github.com/madmaxieee/nvim-config/blob/main/lua/plugins/persistence.lua
-  {
-    "folke/persistence.nvim",
-    enabled = false,
-  },
-  {
-    "rmagatti/auto-session",
-    lazy = false,
-    ---@module "auto-session"
-    ---@type AutoSession.Config
-    opts = {
-      suppressed_dirs = { "~/", "~/workspace", "~/Downloads", "/" },
-      -- log_level = 'debug',
     },
   },
 

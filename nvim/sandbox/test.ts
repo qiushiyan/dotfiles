@@ -4,18 +4,9 @@ function add(a: number, b: number): number {
 
 const a = 1;
 
-namespace Test {
-  export const b = 2;
-}
-
-function main() {
-  console.log(add(a, Test.b));
-}
-
+const b = 2
 // test error symbols
-varNotExist
-
-
+varNotExists
 
 
 

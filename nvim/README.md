@@ -4,6 +4,10 @@
 
 - switch windows `ctrl + w + w`
 
+## Session
+
+- Restore session `<leader>qs`
+
 ## Terminal
 
 toggle current terminal `ctrl + /`
@@ -26,10 +30,14 @@ toggle current terminal `ctrl + /`
   - `d`: delete file or directory
   - `r`: rename file or directory
   - `/` search file
+  - `shitf + p` toggle preview
 
 - delete current file with command `:!rm %`
 
 - delete current buffer `<leader>bd`
+
+- mark important files `<leader>m` (the `grapple` plugin)
+  - navigate to marked files `M` or `<leader>M`
 
 ## Code Actions and Refactoring
 

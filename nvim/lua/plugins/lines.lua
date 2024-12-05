@@ -1,27 +1,30 @@
+-- Manages tabline and statusline
+-- clear lualine's statusline and configure tabline
+-- disable buffline
+-- hide stastusline
 local fg = LazyVim.ui.fg
 
 return {
   {
+    "akinsho/bufferline.nvim",
+    enabled = false,
+    opts = {
+      -- options = {
+      --   mode = "tabs",
+      --   tab_size = 1,
+      --   always_show_bufferline = true,
+      -- },
+    },
+  },
+  {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
-    init = function()
-      vim.g.lualine_laststatus = vim.o.laststatus
-      if vim.fn.argc(-1) > 0 then
-        -- set an empty statusline till lualine loads
-        vim.o.statusline = " "
-      else
-        -- hide the statusline on the starter page
-        vim.o.laststatus = 0
-      end
-    end,
     opts = function()
       -- PERF: we don't need this lualine require madness 🤷
       local lualine_require = require("lualine_require")
       lualine_require.require = require
 
       local icons = LazyVim.config.icons
-
-      vim.o.laststatus = vim.g.lualine_laststatus
 
       local opts = {
         options = {
@@ -32,17 +35,16 @@ return {
           section_separators = "", -- { left = "", right = "" },
         },
         sections = {
+          -- lualine_a = {},
+          -- lualine_b = {},
+          -- lualine_c = {},
+          -- lualine_x = {},
+          -- lualine_y = {},
+          -- lualine_z = {},
+        },
+        tabline = {
           lualine_a = {
-            {
-              "mode",
-              fmt = function(str)
-                return str:sub(1, 1)
-              end,
-              color = { gui = "bold" },
-            },
-          },
-          lualine_b = { "branch" },
-          lualine_c = {
+            { LazyVim.lualine.pretty_path() },
             {
               "diagnostics",
               symbols = {
@@ -52,8 +54,17 @@ return {
                 hint = icons.diagnostics.Hint,
               },
             },
-            { LazyVim.lualine.pretty_path() },
           },
+          lualine_b = {
+            {
+              "mode",
+              fmt = function(str)
+                return str:sub(1, 1)
+              end,
+              color = { gui = "bold" },
+            },
+          },
+          lualine_c = { "branch" },
           lualine_x = {
             { "filetype", icon_only = false, padding = { left = 1, right = 1 } },
           },
@@ -74,26 +85,6 @@ return {
         },
         extensions = { "neo-tree", "lazy" },
       }
-
-      -- do not add trouble symbols if aerial is enabled
-      -- And allow it to be overriden for some buffer types (see autocmds)
-      if vim.g.trouble_lualine and LazyVim.has("trouble.nvim") then
-        local trouble = require("trouble")
-        local symbols = trouble.statusline({
-          mode = "symbols",
-          groups = {},
-          title = false,
-          filter = { range = true },
-          format = "{kind_icon}{symbol.name:Normal}",
-          hl_group = "lualine_c_normal",
-        })
-        table.insert(opts.sections.lualine_c, {
-          symbols and symbols.get,
-          cond = function()
-            return vim.b.trouble_lualine ~= false and symbols.has()
-          end,
-        })
-      end
 
       return opts
     end,
