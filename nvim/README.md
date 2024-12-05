@@ -12,6 +12,12 @@
 
 ## Navigations
 
+- `<leader>space` search files
+
+- `<leader>ss` search symbols, for markdown this can be used as outlines
+
+- `<leader>sr` search and replace
+
 - jump back and fort between last cursor position `ctrl + o` and `ctrl + i`
 
 - switch windows `ctrl + w + w`
@@ -52,6 +58,8 @@ Toggle current terminal `ctrl + /`
 - hover `shift + k` and scroll in the popup window `ctrl +f`, `ctrl + b`
 
 - see troubles pane `<leader>xx`
+
+- show diagnostics for line `ctrl + shift + d`
 
 - code actions `ctrl + shift + f` or `<leader>ca`
 

@@ -36,3 +36,4 @@ vim.keymap.set("i", "<A-Down>", "<Esc>:m .+1<CR>==gi", { desc = "Move line down"
 -- Code Actions
 -- NOTE: ctrl + shift keymaps does not work in kitty, see https://github.com/kovidgoyal/kitty/issues/1629
 vim.keymap.set({ "n", "v" }, "<C-S-f>", vim.lsp.buf.code_action, { desc = "Code actions" })
+vim.keymap.set("n", "<C-S-d>", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
