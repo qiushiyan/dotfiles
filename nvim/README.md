@@ -1,19 +1,18 @@
 ## General
 
-- quit `<leader>qq` or `:qa`
+- quit `<leader>qq` or `:qa`, save and quit `:x` or `ZZ`
 
-```shell
-#!/bin/bash
-echo "hello world"
-```
+- scroll
 
-```r
-plot(1:10)
-```
+  - small scroll `ctrl + u` and `ctrl + d`
 
-```python
-print("hello world")
-```
+  - further scroll `ctrl + f` and `ctrl + b`
+
+  - by a single line without cursor moving `ctrl + e` and `ctrl + y`
+
+- hover `gh` or `shift + k`
+
+- move to start `0` and end of line `$`
 
 - move lines
 
@@ -23,6 +22,15 @@ print("hello world")
 
 - whitelist word for spell check `zg`
 
+- open link `gx`
+
+- go to last insert and enter insert mode `gi`
+
+- `tab` for command mode completion and `shift + tab` to navigate (or left or
+  right arrow keys)
+
+- show historical notifications: `<leader>snh`
+
 ## Navigations
 
 - `<leader>space` search files
@@ -30,6 +38,8 @@ print("hello world")
 - `<leader>ss` search symbols, for markdown this can be used as outlines
 
 - `<leader>sr` search and replace
+
+- jump diagnostics `]d` and `[d`
 
 - jump back and fort between last cursor position `ctrl + o` and `ctrl + i`
 
@@ -66,6 +76,20 @@ Toggle current terminal `ctrl + /`
 - mark important files `<leader>m` (the `grapple` plugin)
   - navigate to marked files `M` or `<leader>M`
 
+## Managing Buffers
+
+- close all other buffers `ctrl + b + o`
+
+## Windows
+
+- close all other windows `ctrl + w + o`
+
+## Text operations
+
+- search `/` and find next occur `n` and previous `N`
+
+- search and replace `<leader>sr`
+
 ## Code Actions and Refactoring
 
 - hover `shift + k` and scroll in the popup window `ctrl +f`, `ctrl + b`
@@ -84,20 +108,12 @@ Toggle current terminal `ctrl + /`
 
 - rename symbol `<leader>cr`
 
-## Windows
+## Lsp
 
-- close all other windows `ctrl + w + o`
-
-## Managing Buffers
-
-- close all other buffers `ctrl + b + o`
-
-## Text operations
-
-- search `/` and find next occur `n` and previous `N`
-
-- search and replace `<leader>sr`
+- check command `LspInfo` and `ConformInfo`
 
 ## Copilot
 
 - Accept suggestion `option + enter`
+
+![](../night.webp)

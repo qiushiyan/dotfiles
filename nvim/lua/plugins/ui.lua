@@ -2,7 +2,6 @@
 -- clear lualine's statusline and configure tabline
 -- disable buffline
 -- hide stastusline
-local fg = LazyVim.ui.fg
 
 return {
   {
@@ -45,15 +44,6 @@ return {
         tabline = {
           lualine_a = {
             { LazyVim.lualine.pretty_path() },
-            {
-              "diagnostics",
-              symbols = {
-                error = icons.diagnostics.Error,
-                warn = icons.diagnostics.Warn,
-                info = icons.diagnostics.Info,
-                hint = icons.diagnostics.Hint,
-              },
-            },
           },
           lualine_b = {
             {
@@ -64,7 +54,18 @@ return {
               color = { gui = "bold" },
             },
           },
-          lualine_c = { "branch" },
+          lualine_c = {
+            "branch",
+            {
+              "diagnostics",
+              symbols = {
+                error = icons.diagnostics.Error,
+                warn = icons.diagnostics.Warn,
+                info = icons.diagnostics.Info,
+                hint = icons.diagnostics.Hint,
+              },
+            },
+          },
           lualine_x = {
             { "filetype", icon_only = false, padding = { left = 1, right = 1 } },
           },
@@ -77,7 +78,6 @@ return {
               cond = function()
                 return vim.bo.filetype == "python"
               end,
-              color = { fg = fg("Operator").fg, gui = "italic" },
             },
             -- { "location", padding = { left = 0, right = 1 } },
           },

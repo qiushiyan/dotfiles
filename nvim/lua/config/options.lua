@@ -11,3 +11,12 @@ vim.opt.sessionoptions = { "buffers", "curdir", "tabpages", "winsize", "help", "
 
 -- always show markdown symbols (backticks, stars, etc)
 vim.opt.conceallevel = 0
+
+-- handle github pattern when opning links
+local open = vim.ui.open
+vim.ui.open = function(uri) ---@diagnostic disable-line: duplicate-set-field
+  if not string.match(uri, "[a-z]*://[^ >,;]*") and string.match(uri, "[%w%p\\-]*/[%w%p\\-]*") then
+    uri = string.format("https://github.com/%s", uri)
+  end
+  open(uri)
+end

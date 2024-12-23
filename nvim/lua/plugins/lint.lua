@@ -6,7 +6,7 @@ return {
   opts = {
     linters = {
       ["markdownlint-cli2"] = {
-        args = { "--config", HOME .. "/.markdownlint-cli2.yaml", "--" },
+        args = { "--config", HOME .. ".config/.markdownlint-cli2.yaml", "--" },
       },
     },
   },

@@ -6,10 +6,13 @@
 #: individual font faces and even specify special fonts for particular
 #: characters.
 
-# font_family      monospace
+font_family DankMono Nerd Font Mono
 # bold_font        auto
 # italic_font      auto
 # bold_italic_font auto
+
+mouse_map left click ungrabbed mouse_handle_click prompt
+mouse_map super+left click ungrabbed mouse_handle_click link
 
 #: You can specify different fonts for the bold/italic/bold-italic
 #: variants. The easiest way to select fonts is to run the `kitten
@@ -20,7 +23,7 @@
 #: <https://sw.kovidgoyal.net/kitty/kittens/choose-fonts/#font-spec-
 #: syntax>.
 
-# font_size 11.0
+font_size 24
 
 #: Font size (in pts).
 
@@ -42,10 +45,7 @@
 #: to get BIDI support, because it will force kitty to always treat
 #: the text as LTR, which FriBidi expects for terminals.
 
-# symbol_map
-
-#: E.g. symbol_map U+E0A0-U+E0A3,U+E0C0-U+E0C7 PowerlineSymbols
-
+symbol_map U+23FB-U+23FE,U+2665,U+26A1,U+2B58,U+E000-U+E00A,U+E0A0-U+E0A3,U+E0B0-U+E0C8,U+E0CA,U+E0CC-U+E0D2,U+E0D4,U+E200-U+E2A9,U+E300-U+E3E3,U+E5FA-U+E634,U+E700-U+E7C5,U+EA60-U+EBEB,U+F000-U+F2E0,U+F300-U+F32F,U+F400-U+F4A9,U+F500-U+F8FF Symbols Nerd Font Mono
 #: Map the specified Unicode codepoints to a particular font. Useful
 #: if you need special rendering for some symbols, such as for
 #: Powerline. Avoids the need for patched fonts. Each Unicode code
@@ -156,9 +156,9 @@
 #: font glyph is rendered and the baseline at which the glyph is
 #: placed in the cell. For example::
 
-#:     modify_font cell_width 80%
-#:     modify_font cell_height -2px
-#:     modify_font baseline 3
+modify_font cell_width 95%
+modify_font cell_height 1.4
+tex_composition_strategy legacy
 
 #: Note that modifying the baseline will automatically adjust the
 #: underline and strikethrough positions by the same amount.
@@ -906,7 +906,7 @@
 #: set the vertical and horizontal sides. Three values set top,
 #: horizontal and bottom. Four values set top, right, bottom and left.
 
-# window_padding_width 0
+window_padding_width 0
 
 #: The window padding (in pts) (blank area between the text and the
 #: window border). A single value sets all four sides. Two values set
@@ -1217,7 +1217,7 @@
 
 #: The foreground and background colors.
 
-# background_opacity 1.0
+background_opacity 1
 
 #: The opacity of the background. A number between zero and one, where
 #: one is opaque and zero is fully transparent. This will only work if
@@ -1254,7 +1254,7 @@
 #: platform implements it, so use with care. Currently supported on
 #: macOS and KDE.
 
-# background_image none
+# background_image ~/.config/night.webp
 
 #: Path to a background image. Must be in PNG/JPEG/WEBP/TIFF/GIF/BMP
 #: format.
@@ -2291,7 +2291,6 @@
 # map kitty_mod+alt+t set_tab_title
 # map shift+cmd+i     set_tab_title
 
-
 #: You can also create shortcuts to go to specific tabs, with 1 being
 #: the first tab, 2 the second tab and -1 being the previously active
 #: tab, -2 being the tab active before the previously active tab and
@@ -2316,7 +2315,6 @@
 
 # map kitty_mod+l next_layout
 
-
 #: You can also create shortcuts to switch to specific layouts::
 
 #:     map ctrl+alt+t goto_layout tall
@@ -2330,6 +2328,8 @@
 #: layout or back to the previous layout if in the named layout.
 #: Useful to temporarily "zoom" the active window by switching to the
 #: stack layout::
+
+map ctrl+` toggle_layout stack
 
 #:     map ctrl+alt+z toggle_layout stack
 #: }}}
@@ -2359,7 +2359,6 @@
 
 # map kitty_mod+backspace change_font_size all 0
 # map cmd+0               change_font_size all 0
-
 
 #: To setup shortcuts for specific font sizes::
 
@@ -2432,7 +2431,6 @@
 
 #::  Select a hyperlink (i.e. a URL that has been marked as such by
 #::  the terminal program, for example, by `ls --hyperlink=auto`).
-
 
 #: The hints kitten has many more modes of operation that you can map
 #: to different shortcuts. For a full description see hints kitten
@@ -2638,11 +2636,3 @@
 #: }}}
 
 #: }}}
-
-
-# BEGIN_KITTY_FONTS
-font_family      family="SpaceMono Nerd Font"
-bold_font        auto
-italic_font      auto
-bold_italic_font auto
-# END_KITTY_FONTS

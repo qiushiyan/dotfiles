@@ -22,6 +22,7 @@ return {
   },
   {
     "rmagatti/auto-session",
+    enabled = false,
     lazy = false,
     ---@module "auto-session"
     ---@type AutoSession.Config

@@ -2,6 +2,7 @@ return {
   {
     "zbirenbaum/copilot.lua",
     suggestion = {
+      enabled = not vim.g.ai_cmp,
       keymap = {
         accept = "<M-l>",
         prev = "<M-[>",
@@ -9,5 +10,10 @@ return {
         dismiss = "<C-]>",
       },
     },
+    panel = { enabled = false },
+  },
+  {
+    "nvim-cmp",
+    enabled = true,
   },
 }

@@ -2,14 +2,11 @@
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
 -- Add any additional keymaps here
 
-local utils = require("utils")
+-- local utils = require("utils")
 vim.keymap.set("i", "jj", "<Esc>", { desc = "Exit insert mode" })
-
 -- exit terminal mode
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
-
 -- Copy (Ctrl+C)
---
 vim.keymap.set("n", "<C-c>", '"+yy', { desc = "Copy line to system clipboard" })
 vim.keymap.set("v", "<C-c>", '"+y', { desc = "Copy selection to system clipboard" })
 vim.keymap.set("i", "<C-c>", '<ESC>"+yi', { desc = "Copy line to system clipboard" })
@@ -39,4 +36,6 @@ vim.keymap.set("i", "<A-Down>", "<Esc>:m .+1<CR>==gi", { desc = "Move line down"
 -- NOTE: ctrl + shift keymaps does not work in kitty, see https://github.com/kovidgoyal/kitty/issues/1629
 vim.keymap.set({ "n", "v" }, "<C-S-f>", vim.lsp.buf.code_action, { desc = "Code actions" })
 vim.keymap.set("n", "<C-S-d>", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
-vim.keymap.set("n", "<leader>cy", "yVaB", { desc = "Copy function definition" })
+
+-- Hover
+vim.keymap.set("n", "gh", vim.lsp.buf.hover, { desc = "Show hover information" })
