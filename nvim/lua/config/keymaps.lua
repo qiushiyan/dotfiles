@@ -7,7 +7,7 @@ vim.keymap.set("i", "jj", "<Esc>", { desc = "Exit insert mode" })
 -- exit terminal mode
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 -- Copy (Ctrl+C)
-vim.keymap.set("n", "<C-c>", '"+yy', { desc = "Copy line to system clipboard" })
+vim.keymap.set("n", "<C-c>", '"+yy', { desc = "Copy line to system clipboard", silent = true, noremap = true })
 vim.keymap.set("v", "<C-c>", '"+y', { desc = "Copy selection to system clipboard" })
 vim.keymap.set("i", "<C-c>", '<ESC>"+yi', { desc = "Copy line to system clipboard" })
 -- Cut (Ctrl+X)
@@ -39,3 +39,7 @@ vim.keymap.set("n", "<C-S-d>", vim.diagnostic.open_float, { desc = "Show line di
 
 -- Hover
 vim.keymap.set("n", "gh", vim.lsp.buf.hover, { desc = "Show hover information" })
+
+-- better scroll
+vim.keymap.set("n", "<C-u>", "<C-u>zz", { noremap = true })
+vim.keymap.set("n", "<C-d>", "<C-d>zz", { noremap = true })

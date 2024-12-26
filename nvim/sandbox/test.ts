@@ -1,22 +1,20 @@
-function add(a: number, b: number): number {
-  return a + b;
-}
+import { add } from "./test2";
 
+add(1, 2);
 const obj = { test: "hello" };
 // write a function that divies two numbers
 
-const a = 1;
-const b = 2;
-
 function unusedFunction(req2: string) {
+  var a = 1;
+
   return true ? true : false;
 }
+
+Number.parseInt();
 
 function unused(req: string) {
   return 1;
 }
 
-// Hover
-Number.parseInt("1");
 // test error symbols
 varNotExists;

@@ -4,13 +4,15 @@
 
 - scroll
 
-  - small scroll `ctrl + u` and `ctrl + d`
+  - small scroll `ctrl + u` and `ctrl + d` (this is remapped to `ctrl + u/d zz`)
 
   - further scroll `ctrl + f` and `ctrl + b`
 
   - by a single line without cursor moving `ctrl + e` and `ctrl + y`
 
 - hover `gh` or `shift + k`
+
+- preview definition `gD`, go to preview window `<leader>l`
 
 - move to start `0` and end of line `$`
 
@@ -19,6 +21,8 @@
   - center `zz` or `zt`
 
   - move up or down `option + arrow`
+
+- copy line `yy`
 
 - whitelist word for spell check `zg`
 
@@ -96,7 +100,8 @@ Toggle current terminal `ctrl + /`
 
 - see troubles pane `<leader>xx`
 
-- show diagnostics for line `ctrl + shift + d`
+- show diagnostics for line `ctrl + shift + d`. next and prev diagnostics `]d`
+  and `[d`
 
 - code actions `ctrl + shift + f` or `<leader>ca`
 
