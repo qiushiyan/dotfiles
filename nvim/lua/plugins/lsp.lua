@@ -38,6 +38,11 @@ return {
               "<CMD>Glance definitions<CR>",
               desc = "Preview type definition",
             },
+            {
+              "<leader>cu",
+              LazyVim.lsp.action["source.removeUnused.ts"],
+              desc = "Remove unused imports",
+            },
           },
         },
       },

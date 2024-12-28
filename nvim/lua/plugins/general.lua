@@ -86,6 +86,20 @@ return {
     },
   },
 
+  -- delete buffer
+  {
+    "famiu/bufdelete.nvim",
+    event = "VeryLazy",
+    config = function()
+      vim.keymap.set(
+        "n",
+        "Q",
+        ":lua require('bufdelete').bufdelete(0, false)<cr>",
+        { noremap = true, silent = true, desc = "Delete buffer" }
+      )
+    end,
+  },
+
   -- add tsserver and setup with typescript.nvim instead of lspconfig
 
   -- for typescript, LazyVim also includes extra specs to properly setup lspconfig,

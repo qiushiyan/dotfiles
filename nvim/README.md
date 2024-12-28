@@ -1,6 +1,6 @@
 ## General
 
-- quit `<leader>qq` or `:qa`, save and quit `:x` or `ZZ`
+- quit `<leader>qq` or `:qa`, save and quit `:x` or `ZZ`, quit buffer `Q`
 
 - scroll
 

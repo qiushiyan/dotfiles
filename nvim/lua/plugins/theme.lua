@@ -1,6 +1,8 @@
 return {
   -- add gruvbox
-  -- { "ellisonleao/gruvbox.nvim", transparent_mode = true },
+  { "ellisonleao/gruvbox.nvim", transparent_mode = true },
+  -- { "nyoom-engineering/oxocarbon.nvim" },
+  -- { "shaunsingh/nord.nvim" },
   {
     "folke/tokyonight.nvim",
     enabled = true,
@@ -16,7 +18,7 @@ return {
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "tokyonight",
+      colorscheme = "gruvbox",
     },
   },
 }

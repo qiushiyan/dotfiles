@@ -28,3 +28,6 @@ itell
 pnpm
 monorepos
 VSCode
+postgres
+pgAdmin
+url

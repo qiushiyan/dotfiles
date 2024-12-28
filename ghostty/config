@@ -1,0 +1,18 @@
+font-size = 18
+
+
+theme = GruvboxDark
+cursor-style = block 
+adjust-cell-height = 35%
+
+mouse-hide-while-typing = true 
+mouse-scroll-multiplier = 2
+macos-titlebar-style = hidden
+
+window-width = 130
+window-height = 27
+window-padding-x = 4
+window-padding-balance = true 
+window-save-state = always
+window-colorspace = "display-p3"
+
