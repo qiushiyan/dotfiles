@@ -35,6 +35,10 @@
 
 - show historical notifications: `<leader>snh`
 
+## LazyGit
+
+- `<leader>gg` open, `ac` add all and commit, `P` push
+
 ## Navigations
 
 - `<leader>space` search files
