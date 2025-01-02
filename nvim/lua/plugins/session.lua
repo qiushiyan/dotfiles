@@ -13,7 +13,6 @@ end
 return {
   {
     "folke/persistence.nvim",
-    enabled = false,
     ---@module "persistence.nvim"
     ---@type Persistence.Config
     opts = {
