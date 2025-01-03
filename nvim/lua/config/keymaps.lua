@@ -23,6 +23,8 @@ vim.keymap.set("i", "<C-z>", "<ESC>ui", { desc = "Undo last change" })
 vim.keymap.set("n", "<C-z>", "u", { desc = "Undo last change" })
 vim.keymap.set("v", "<C-z>", "<ESC>u", { desc = "Undo last change" })
 
+-- Pasting
+
 -- Move lines up and down
 -- NOTE: for the option key to work in iterm2, see https://www.redait.com/r/zellij/comments/13twru4/if_you_have_problems_with_alt_option_key_on_macos/
 vim.keymap.set("n", "<A-Up>", ":m .-2<CR>==", { desc = "Move line up" })

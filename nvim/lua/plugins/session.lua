@@ -11,31 +11,12 @@ end
 
 -- disabled now because it overwrites neo-tree window settings
 return {
-  {
-    "folke/persistence.nvim",
-    ---@module "persistence.nvim"
-    ---@type Persistence.Config
-    opts = {
-      pre_save = pre_save,
-    },
-  },
-  {
-    "rmagatti/auto-session",
-    enabled = false,
-    lazy = false,
-    ---@module "auto-session"
-    ---@type AutoSession.Config
-    opts = {
-      suppressed_dirs = { "~/", "~/workspace", "~/Downloads", "/" },
-      -- log_level = 'debug',
-      no_restore_cmds = {
-        "Neotree show",
-      },
-
-      -- called after a session is restored
-      post_restore_cmds = {
-        "Neotree show",
-      },
-    },
-  },
+  -- {
+  --   "folke/persistence.nvim",
+  --   ---@module "persistence.nvim"
+  --   ---@type Persistence.Config
+  --   opts = {
+  --     pre_save = pre_save,
+  --   },
+  -- },
 }
