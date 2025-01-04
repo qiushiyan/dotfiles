@@ -12,8 +12,4 @@ return {
     },
     panel = { enabled = false },
   },
-  {
-    "nvim-cmp",
-    enabled = true,
-  },
 }

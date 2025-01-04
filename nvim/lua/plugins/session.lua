@@ -11,12 +11,13 @@ end
 
 -- disabled now because it overwrites neo-tree window settings
 return {
-  -- {
-  --   "folke/persistence.nvim",
-  --   ---@module "persistence.nvim"
-  --   ---@type Persistence.Config
-  --   opts = {
-  --     pre_save = pre_save,
-  --   },
-  -- },
+  {
+    "folke/persistence.nvim",
+    enabled = true,
+    ---@module "persistence.nvim"
+    ---@type Persistence.Config
+    opts = {
+      pre_save = pre_save,
+    },
+  },
 }

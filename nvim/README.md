@@ -1,3 +1,17 @@
+## Window Tiling
+
+- raycast
+
+  - `capslock + b` browser
+  - `capslock + t` terminal
+  - `option + hjkl` tile windows, `option + m`
+
+- ghostty
+
+  - `ctrl + shift + hjkl` to create windows
+  - `ctrl + shift + arrow` to move focus
+  - `ctrl + d` to delete window
+
 ## General
 
 - quit `<leader>qq` or `:qa`, save and quit `:x` or `ZZ`, quit buffer `Q`
