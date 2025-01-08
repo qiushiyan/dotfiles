@@ -61,6 +61,9 @@
 
 - `<leader>sr` search and replace
 
+- jump function `]f` and `[f` (useful for jumping to component definition when
+  in the middle of a react component)
+
 - jump diagnostics `]d` and `[d`
 
 - jump back and fort between last cursor position `ctrl + o` and `ctrl + i`

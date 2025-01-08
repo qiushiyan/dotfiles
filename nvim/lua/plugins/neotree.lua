@@ -66,12 +66,4 @@ return {
     opts.nesting_rules = require("neotree-file-nesting-config").nesting_rules
     require("neo-tree").setup(opts)
   end,
-  keys = {
-    {
-      "<C-n>",
-      mode = "n",
-      "<cmd> Neotree toggle <CR>",
-      desc = "open NeoTree",
-    },
-  },
 }
