@@ -53,5 +53,14 @@ return {
       },
     },
   },
-  -- lsp config in lsp.lua
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      DIAGNOSTICS = {
+        float = {
+          border = "rounded",
+        },
+      },
+    },
+  },
 }
