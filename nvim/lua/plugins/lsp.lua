@@ -1,3 +1,14 @@
+local border = {
+  { "🭽", "FloatBorder" },
+  { "▔", "FloatBorder" },
+  { "🭾", "FloatBorder" },
+  { "▕", "FloatBorder" },
+  { "🭿", "FloatBorder" },
+  { "▁", "FloatBorder" },
+  { "🭼", "FloatBorder" },
+  { "▏", "FloatBorder" },
+}
+
 return {
   {
     "R-nvim/R.nvim",
@@ -20,6 +31,15 @@ return {
         },
       })
     end,
+    keys = {
+      {
+        "gh",
+        function()
+          return vim.lsp.buf.hover()
+        end,
+        desc = "Hover",
+      },
+    },
   },
   {
     "dnlhc/glance.nvim",
@@ -45,6 +65,10 @@ return {
             },
           },
         },
+      },
+      handlers = {
+        ["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = border }),
+        ["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = border }),
       },
     },
   },
