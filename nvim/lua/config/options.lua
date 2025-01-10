@@ -12,7 +12,7 @@ vim.opt.sessionoptions = { "buffers", "curdir", "tabpages", "winsize", "help", "
 -- always show markdown symbols (backticks, stars, etc)
 vim.opt.conceallevel = 0
 
--- handle github pattern when opning links
+-- handle github pattern when opening links
 local open = vim.ui.open
 vim.ui.open = function(uri) ---@diagnostic disable-line: duplicate-set-field
   if not string.match(uri, "[a-z]*://[^ >,;]*") and string.match(uri, "[%w%p\\-]*/[%w%p\\-]*") then
@@ -20,3 +20,8 @@ vim.ui.open = function(uri) ---@diagnostic disable-line: duplicate-set-field
   end
   open(uri)
 end
+
+-- wrapping
+vim.opt.textwidth = 100
+vim.opt.colorcolumn = "80"
+vim.cmd([[highlight ColorColumn ctermbg=lightgrey guibg=lightgrey]])
