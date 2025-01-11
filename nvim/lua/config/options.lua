@@ -25,3 +25,6 @@ end
 vim.opt.textwidth = 100
 vim.opt.colorcolumn = "80"
 vim.cmd([[highlight ColorColumn ctermbg=lightgrey guibg=lightgrey]])
+
+-- cursor line
+-- vim.api.nvim_set_hl(0, "CursorLineNr", { fg = "yellow", bg = "#292e42" })

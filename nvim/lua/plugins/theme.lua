@@ -1,15 +1,24 @@
 return {
-  -- add gruvbox
   -- { "ellisonleao/gruvbox.nvim", transparent_mode = true },
   -- { "shaunsingh/nord.nvim" },
   {
     "folke/tokyonight.nvim",
+    ---@class tokyonight.Config
     opts = {
+      style = "storm",
       transparent = true,
       styles = {
         sidebars = "transparent",
         floats = "transparent",
       },
+      on_highlights = function(hl, colors)
+        hl.CursorLine = {
+          bg = "#363b52",
+        }
+        hl.CursorLineNr = {
+          fg = "yellow",
+        }
+      end,
     },
   },
 
