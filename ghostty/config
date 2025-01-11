@@ -1,7 +1,7 @@
 # vim: ft=conf
 
 font-size = 21
-font-family = IBM Plex Mono
+font-family = JetBrains Mono 
 adjust-cell-height = 40%
 adjust-cell-width = -10%
 
