@@ -8,3 +8,4 @@ node_modules
 dist
 target
 sketchybar
+raycast/extensions
