@@ -43,3 +43,12 @@ vim.keymap.set("n", "<C-S-d>", vim.diagnostic.open_float, { desc = "Show line di
 -- better scroll
 vim.keymap.set("n", "<C-u>", "<C-u>zz", { noremap = true })
 vim.keymap.set("n", "<C-d>", "<C-d>zz", { noremap = true })
+
+vim.keymap.set("n", "gb", function()
+  local buffers = vim.api.nvim_list_bufs()
+  for _, buf in ipairs(buffers) do
+    if vim.api.nvim_buf_is_valid(buf) then
+      vim.api.nvim_buf_delete(buf, { force = true })
+    end
+  end
+end, { desc = "Close all buffers" })

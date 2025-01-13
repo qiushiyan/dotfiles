@@ -23,7 +23,7 @@ end
 
 -- wrapping
 vim.opt.textwidth = 100
-vim.opt.colorcolumn = "80"
+vim.opt.colorcolumn = "85"
 vim.cmd([[highlight ColorColumn ctermbg=lightgrey guibg=lightgrey]])
 
 -- cursor line

@@ -19,6 +19,11 @@ return {
     opts = function(_, opts)
       opts.inlay_hints = { enabled = false }
       opts.servers.pyright = {}
+      opts.filetype_opts = {
+        typescriptreact = {
+          spell = true,
+        },
+      }
       local on_publish_diagnostics = vim.lsp.diagnostic.on_publish_diagnostics
       opts.servers.bashls = vim.tbl_deep_extend("force", opts.servers.bashls or {}, {
         handlers = {

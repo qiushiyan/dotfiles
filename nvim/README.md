@@ -5,6 +5,8 @@
   - `capslock + b` browser
   - `capslock + t` terminal
   - `option + hjkl` tile windows, `option + m`
+  - `cmd + p` open dropdown
+  - `cmd + enter` quick actions
 
 - ghostty
 
@@ -25,6 +27,8 @@
   - by a single line without cursor moving `ctrl + e` and `ctrl + y`
 
 - hover `gh` or `shift + k`
+
+- close all buffers `gb`
 
 - preview definition `gD`, go to preview window `<leader>l`
 
