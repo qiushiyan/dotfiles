@@ -1,8 +1,8 @@
 # vim: ft=conf
 
-font-size = 21
+font-size = 20
 font-family = JetBrains Mono 
-adjust-cell-height = 40%
+adjust-cell-height = 35%
 adjust-cell-width = -10%
 
 theme = tokyonight-storm

@@ -18,6 +18,8 @@ return {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
       local keys = require("lazyvim.plugins.lsp.keymaps").get()
+
+      -- save keys for yanky
       keys[#keys + 1] = { "gy", false }
 
       opts.inlay_hints = { enabled = false }
@@ -53,7 +55,6 @@ return {
     "dnlhc/glance.nvim",
     cmd = "Glance",
   },
-
   {
     "neovim/nvim-lspconfig",
     dependencies = { "dnlhc/glance.nvim" },
