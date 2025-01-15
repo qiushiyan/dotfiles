@@ -4,6 +4,7 @@
 
   - `capslock + b` browser
   - `capslock + t` terminal
+  - `capslock + p` color picker
   - `option + hjkl` tile windows, `option + m`
   - `cmd + p` open dropdown
   - `cmd + enter` quick actions
@@ -22,13 +23,13 @@
 
   - small scroll `ctrl + u` and `ctrl + d` (this is remapped to `ctrl + u/d zz`)
 
-  - further scroll `ctrl + f` and `ctrl + b`
+- close all buffers `gb`, close current buffer `<leader>bd`
 
-  - by a single line without cursor moving `ctrl + e` and `ctrl + y`
+- further scroll `ctrl + f` and `ctrl + b`
+
+- by a single line without cursor moving `ctrl + e` and `ctrl + y`
 
 - hover `gh` or `shift + k`
-
-- close all buffers `gb`
 
 - preview definition `gD`, go to preview window `<leader>l`
 
@@ -40,7 +41,7 @@
 
   - move up or down `option + arrow`
 
-- copy line `yy`
+- copy line `yy`, open yank history `gy`
 
 - whitelist word for spell check `zg`
 

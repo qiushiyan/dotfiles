@@ -5,7 +5,7 @@ return {
     "folke/tokyonight.nvim",
     ---@class tokyonight.Config
     opts = {
-      style = "storm",
+      style = "night",
       transparent = true,
       styles = {
         sidebars = "transparent",
