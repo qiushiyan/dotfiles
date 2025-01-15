@@ -8,6 +8,8 @@ return {
             files = {
               excludeDirs = {
                 "srcts/node_modules",
+                "srcts/.next",
+                ".next",
               },
             },
           },
