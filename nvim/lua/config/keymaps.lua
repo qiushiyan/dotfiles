@@ -52,3 +52,10 @@ vim.keymap.set("n", "gb", function()
     end
   end
 end, { desc = "Close all buffers" })
+
+-- search for current word under cursor
+vim.keymap.set("n", "g/", function()
+  local word = vim.fn.expand("<cWORD>")
+  vim.fn.setreg("/", word)
+  vim.cmd("normal! n")
+end)
