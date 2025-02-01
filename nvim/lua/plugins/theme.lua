@@ -2,6 +2,18 @@ return {
   -- { "ellisonleao/gruvbox.nvim", transparent_mode = true },
   -- { "shaunsingh/nord.nvim" },
   {
+    "scottmckendry/cyberdream.nvim",
+    lazy = false,
+    priority = 1000,
+    enabled = false,
+    opts = {
+      transparent = true,
+      italic_comments = true,
+      hide_fillchars = true,
+      terminal_colors = true,
+    },
+  },
+  {
     "folke/tokyonight.nvim",
     ---@class tokyonight.Config
     opts = {

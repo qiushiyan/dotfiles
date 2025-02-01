@@ -1,12 +1,15 @@
 return {
   {
     "MeanderingProgrammer/render-markdown.nvim",
-    enabled = false,
+    ---@module 'render-markdown'
+    ---@type render.md.UserConfigopts
     opts = {
       code = {
         sign = true,
         width = "block",
-        right_pad = 1,
+        min_width = 45,
+        left_pad = 2,
+        language_pad = 2,
       },
       heading = {
         sign = true,

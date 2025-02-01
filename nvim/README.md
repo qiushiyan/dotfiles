@@ -43,6 +43,8 @@
 
 - copy line `yy`, open yank history `gy`
 
+- command history `<leader>:`
+
 - whitelist word for spell check `zg`
 
 - open link `gx`

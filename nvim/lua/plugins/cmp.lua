@@ -33,8 +33,11 @@ return {
           vim.schedule(function()
             vim.snippet.jump(-1)
           end)
+        -- elseif #cmp.get_entries() > 0 then
+        --   cmp.complete()
         else
-          fallback()
+          cmp.complete()
+          -- fallback()
         end
       end, { "i", "s" }),
     })

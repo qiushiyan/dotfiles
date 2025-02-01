@@ -49,6 +49,15 @@ return {
         end,
         desc = "Hover",
       },
+      {
+        "gR",
+        function()
+          local word = vim.fn.expand("<cword>")
+          require("fzf-lua").lsp_document_symbols({ query = word })
+        end,
+        desc = "References (current buffer)",
+        nowait = true,
+      },
     },
   },
   {
