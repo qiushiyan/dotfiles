@@ -9,11 +9,7 @@
   - `cmd + p` open dropdown
   - `cmd + enter` quick actions
 
-- ghostty
-
-  - `ctrl + shift + hjkl` to create windows
-  - `ctrl + shift + arrow` to move focus
-  - `ctrl + d` to delete window
+- tmux
 
 ## General
 

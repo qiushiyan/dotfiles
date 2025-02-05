@@ -2,27 +2,16 @@ return {
   -- { "ellisonleao/gruvbox.nvim", transparent_mode = true },
   -- { "shaunsingh/nord.nvim" },
   {
-    "scottmckendry/cyberdream.nvim",
-    lazy = false,
-    priority = 1000,
+    "folke/tokyonight.nvim",
     enabled = false,
     opts = {
-      transparent = true,
-      italic_comments = true,
-      hide_fillchars = true,
-      terminal_colors = true,
-    },
-  },
-  {
-    "folke/tokyonight.nvim",
-    ---@class tokyonight.Config
-    opts = {
-      style = "night",
-      transparent = true,
-      styles = {
-        sidebars = "transparent",
-        floats = "transparent",
-      },
+      style = "storm",
+      ---@class tokyonight.Config
+      -- transparent = true,
+      -- styles = {
+      --   sidebars = "transparent",
+      --   floats = "transparent",
+      -- },
       on_highlights = function(hl, colors)
         hl.CursorLine = {
           bg = "#363b52",
@@ -33,11 +22,29 @@ return {
       end,
     },
   },
-
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    priority = 1000,
+    lazy = false,
+    opts = {
+      flavour = "mocha",
+      highlight_overrides = {
+        mocha = function(mocha)
+          return {
+            CursorLine = { bg = mocha.surface0 },
+            CursorLineNr = {
+              fg = "yellow",
+            },
+          }
+        end,
+      },
+    },
+  },
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "tokyonight",
+      colorscheme = "catppuccin",
     },
   },
   -- border highlight when background is transparent

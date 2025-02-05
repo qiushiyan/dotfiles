@@ -23,6 +23,8 @@ return {
       local lualine_require = require("lualine_require")
       lualine_require.require = require
       local icons = LazyVim.config.icons
+      -- https://github.com/catppuccin/nvim/blob/main/lua/catppuccin/palettes/mocha.lua
+      local mocha = require("catppuccin.palettes").get_palette("mocha")
 
       local opts = {
         options = {
@@ -33,10 +35,16 @@ return {
           section_separators = "",
         },
         sections = {
-          -- lualine_a = {},
-          lualine_b = {
-            "branch",
+          lualine_a = {
+            {
+              "mode",
+              fmt = function(str)
+                return str:sub(1, 1)
+              end,
+              color = { gui = "bold", bg = mocha.base, fg = mocha.text },
+            },
           },
+          lualine_b = {},
           lualine_c = {
             { "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } },
             { LazyVim.lualine.pretty_path() },
@@ -53,7 +61,9 @@ return {
             },
           },
           lualine_y = {},
-          -- lualine_z = {},
+          lualine_z = {
+            { "branch" },
+          },
         },
         -- tabline = {
         --   lualine_a = {
