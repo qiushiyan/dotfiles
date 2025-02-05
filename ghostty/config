@@ -1,10 +1,11 @@
 # vim: ft=conf
-theme = tokyonight-storm
+theme = catppuccin-mocha
 font-size = 20
-font-family = JetBrains Mono
+font-family = JetBrainsMono Nerd Font
 adjust-cell-height = 35%
 adjust-cell-width = -10%
-
+font-codepoint-map = U+23FB-U+23FE,U+2665,U+26A1,U+2B58,U+E000-U+E00A,U+E0A0-U+E0A3,U+E0B0-U+E0D4,U+E200-U+E2A9,U+E300-U+E3E3,U+E5FA-U+E6AA,U+E700-U+E7C5,U+EA60-U+EBEB,U+F000-U+F2E0,U+F300-U+F32F,U+F400-U+F4A9,U+F500-U+F8FF,U+F0001-U+F1AF0=Symbols Nerd Font Mono
+font-codepoint-map = U+4E00-U+9FFF,U+3400-U+4DBF=Maple Mono NF CN
 
 cursor-style = block
 cursor-style-blink = false
@@ -20,9 +21,12 @@ window-padding-balance = true
 window-save-state = always
 window-colorspace = "display-p3"
 
-background-opacity = 0.9
+# background-opacity = 0.9
 
 keybind = shift+ctrl+r=reload_config
 
 
-command = "~/.config/ghostty/launch.sh"
+# initial-command = "~/.config/dev-itell.sh"
+wait-after-command = true
+quit-after-last-window-closed=false
+
