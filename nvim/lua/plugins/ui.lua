@@ -38,17 +38,14 @@ return {
           lualine_a = {
             {
               "mode",
-              fmt = function(str)
-                return str:sub(1, 1)
-              end,
+              -- fmt = function(str)
+              --   return str:sub(1, 1)
+              -- end,
               color = { gui = "bold", bg = mocha.base, fg = mocha.text },
             },
           },
           lualine_b = {},
-          lualine_c = {
-            { "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } },
-            { LazyVim.lualine.pretty_path() },
-          },
+          lualine_c = {},
           lualine_x = {
             {
               "diagnostics",
@@ -63,6 +60,18 @@ return {
           lualine_y = {},
           lualine_z = {
             { "branch" },
+          },
+        },
+        tabline = {
+          lualine_a = {
+            {
+              "filetype",
+              icon_only = true,
+              separator = "",
+              -- padding = { left = 1, right = 0 },
+              color = { gui = "bold", bg = mocha.base, fg = mocha.text },
+            },
+            { LazyVim.lualine.pretty_path(), color = { gui = "bold", bg = mocha.base, fg = mocha.text } },
           },
         },
         -- tabline = {
@@ -141,6 +150,7 @@ return {
   {
     "utilyre/barbecue.nvim",
     name = "barbecue",
+    enabled = false,
     version = "*",
     dependencies = {
       "SmiteshP/nvim-navic",
