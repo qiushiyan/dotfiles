@@ -11,6 +11,8 @@
 
 - tmux
 
+  - copy mod `prefix + [`
+
 ## General
 
 - quit `<leader>qq` or `:qa`, save and quit `:x` or `ZZ`, quit buffer `Q`
