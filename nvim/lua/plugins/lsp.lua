@@ -61,10 +61,6 @@ return {
     },
   },
   {
-    "dnlhc/glance.nvim",
-    cmd = "Glance",
-  },
-  {
     "neovim/nvim-lspconfig",
     dependencies = { "dnlhc/glance.nvim" },
     opts = {

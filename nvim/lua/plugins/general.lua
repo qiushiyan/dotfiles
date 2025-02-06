@@ -85,7 +85,10 @@ return {
       },
     },
   },
-
+  {
+    "dnlhc/glance.nvim",
+    cmd = "Glance",
+  },
   -- delete buffer
   {
     "famiu/bufdelete.nvim",

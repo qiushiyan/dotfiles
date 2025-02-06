@@ -10,7 +10,6 @@
   - `cmd + enter` quick actions
 
 - tmux
-
   - copy mod `prefix + [`
 
 ## General
@@ -32,6 +31,8 @@
 - preview definition `gD`, go to preview window `<leader>l`
 
 - move to start `0` and end of line `$`
+
+- `V3j` select next 3 lines
 
 - move lines
 

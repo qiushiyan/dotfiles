@@ -68,7 +68,7 @@ return {
               "filetype",
               icon_only = true,
               separator = "",
-              -- padding = { left = 1, right = 0 },
+              padding = { left = 1, right = 0 },
               color = { gui = "bold", bg = mocha.base, fg = mocha.text },
             },
             { LazyVim.lualine.pretty_path(), color = { gui = "bold", bg = mocha.base, fg = mocha.text } },

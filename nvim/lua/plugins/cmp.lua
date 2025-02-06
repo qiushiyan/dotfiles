@@ -1,45 +1,107 @@
 return {
-  "hrsh7th/nvim-cmp",
-  dependencies = { "hrsh7th/cmp-emoji" },
-  ---@param opts cmp.ConfigSchema
-  opts = function(_, opts)
-    table.insert(opts.sources, { name = "emoji" })
-    local has_words_before = function()
-      unpack = unpack or table.unpack
-      local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-      return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
-    end
+  {
+    "saghen/blink.cmp",
+    dependencies = "rafamadriz/friendly-snippets",
+    version = "*",
+    ---@module 'blink.cmp'
+    ---@type blink.cmp.Config
+    opts = {
+      snippets = {
+        preset = "luasnip",
+      },
+      sources = {
+        default = { "lsp", "path", "snippets", "copilot" },
+        providers = {
+          copilot = {
+            name = "copilot",
+            module = "blink-cmp-copilot",
+            kind = "Copilot",
+            score_offset = -100,
+            async = true,
+          },
+        },
+      },
+      signature = { window = { border = "single" } },
+      completion = {
+        menu = {
+          auto_show = function(ctx)
+            return ctx.mode ~= "cmdline" or not vim.tbl_contains({ "/", "?" }, vim.fn.getcmdtype())
+          end,
+        },
+      },
+      enabled = function()
+        return not vim.tbl_contains({ "markdown" }, vim.bo.filetype)
+          and vim.bo.buftype ~= "prompt"
+          and vim.b.completion ~= false
+      end,
+      keymap = {
+        preset = "enter",
+        ["<Tab>"] = { "select_and_accept" },
+        ["<S-Tab>"] = {
+          function(cmp)
+            cmp.show({ providers = { "lsp" } })
+          end,
+        },
+      },
+    },
+  },
 
-    local cmp = require("cmp")
+  -- legacy nvim-cmp based completion
+  {
+    "hrsh7th/nvim-cmp",
+    enabled = false,
+    dependencies = { "hrsh7th/cmp-emoji" },
+    ---@param opts cmp.ConfigSchema
+    opts = function(_, opts)
+      opts.window = {
+        completion = {
+          border = "rounded",
+          winhighlight = "Normal:MyHighlight",
+          winblend = 0,
+        },
+        documentation = {
+          border = "rounded",
+          winhighlight = "Normal:MyHighlight",
+          winblend = 0,
+        },
+      }
 
-    opts.mapping = vim.tbl_extend("force", opts.mapping, {
-      ["<Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then
-          cmp.confirm({ select = true })
-        elseif vim.snippet.active({ direction = 1 }) then
-          vim.schedule(function()
-            vim.snippet.jump(1)
-          end)
-        elseif has_words_before() then
-          cmp.complete()
-        else
-          fallback()
-        end
-      end, { "i", "s" }),
-      ["<S-Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then
-          cmp.select_prev_item()
-        elseif vim.snippet.active({ direction = -1 }) then
-          vim.schedule(function()
-            vim.snippet.jump(-1)
-          end)
-        -- elseif #cmp.get_entries() > 0 then
-        --   cmp.complete()
-        else
-          cmp.complete()
-          -- fallback()
-        end
-      end, { "i", "s" }),
-    })
-  end,
+      table.insert(opts.sources, { name = "emoji" })
+      local has_words_before = function()
+        unpack = unpack or table.unpack
+        local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+        return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+      end
+
+      opts.mapping = vim.tbl_extend("force", opts.mapping, {
+        ["<Tab>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.confirm({ select = true })
+          elseif vim.snippet.active({ direction = 1 }) then
+            vim.schedule(function()
+              vim.snippet.jump(1)
+            end)
+          elseif has_words_before() then
+            cmp.complete()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+        ["<S-Tab>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.select_prev_item()
+          elseif vim.snippet.active({ direction = -1 }) then
+            vim.schedule(function()
+              vim.snippet.jump(-1)
+            end)
+          -- elseif #cmp.get_entries() > 0 then
+          --   cmp.complete()
+          else
+            cmp.complete()
+            -- fallback()
+          end
+        end, { "i", "s" }),
+      })
+    end,
+  },
 }
