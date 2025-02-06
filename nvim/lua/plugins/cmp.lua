@@ -145,7 +145,7 @@ return {
       opts.completion = {
         menu = {
           draw = {
-            columns = { { "item_idx" }, { "kind_icon" }, { "label", "label_description", gap = 1 } },
+            columns = { { "item_idx", "kind_icon", gap = 1 }, { "label", "label_description", gap = 1 } },
             components = {
               item_idx = {
                 text = function(ctx)
@@ -189,7 +189,7 @@ return {
 
       opts.keymap = {
         preset = "enter",
-        ["<Tab>"] = { "select_and_accept" },
+        ["<Tab>"] = { "select_and_accept", "fallback" },
         ["<S-Tab>"] = {
           function(cmp)
             cmp.show({ providers = { "lsp" } })

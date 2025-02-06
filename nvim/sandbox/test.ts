@@ -16,5 +16,6 @@ function unused(req: string) {
 type Status = {
   test: "pending" | "in-progress" | "done";
 };
+
 const s: Status = { test: "pending" };
 varNotExists;
