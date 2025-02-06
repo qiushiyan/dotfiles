@@ -12,4 +12,9 @@ function unused(req: string) {
   return 1;
 }
 // test error symbols
+
+type Status = {
+  test: "pending" | "in-progress" | "done";
+};
+const s: Status = { test: "pending" };
 varNotExists;
