@@ -107,19 +107,20 @@ Toggle current terminal `ctrl + /`
 - mark important files `<leader>m` (the `grapple` plugin)
   - navigate to marked files `M` or `<leader>M`
 
-## Managing Buffers
-
-- close all other buffers `ctrl + b + o`
-
 ## Windows
 
 - close all other windows `ctrl + w + o`
 
-## Text operations
+- close all other buffers `ctrl + b + o`
+
+## Quickfix
 
 - search `/` and find next occur `n` and previous `N`
 
 - search and replace `<leader>sr`
+
+- grep search `<leader>/` and add to quickfix list `ctrl + g`, use `[q`, `]q` or
+  `cnext` and `cprevious` to navigate between them
 
 ## Code Actions and Refactoring
 

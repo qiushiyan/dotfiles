@@ -33,7 +33,7 @@ return {
       end
 
       opts.sources = vim.tbl_deep_extend("force", opts.sources or {}, {
-        default = { "lsp", "buffer", "path", "snippets", "dictionary", "copilot" },
+        default = { "lsp", "path", "snippets", "emoji", "copilot" },
         cmdline = {},
         providers = {
           lsp = {
@@ -41,7 +41,7 @@ return {
             enabled = true,
             module = "blink.cmp.sources.lsp",
             kind = "LSP",
-            min_keyword_length = 0,
+            min_keyword_length = 1,
             score_offset = 90,
           },
           path = {
@@ -194,6 +194,7 @@ return {
           function(cmp)
             cmp.show({ providers = { "lsp" } })
           end,
+          "fallback",
         },
         ["<C-e>"] = { "hide", "fallback" },
         ["<A-1>"] = {
