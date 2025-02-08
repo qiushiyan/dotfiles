@@ -27,3 +27,17 @@ vim.api.nvim_create_autocmd("UILeave", {
     io.write("\027]111\027\\")
   end,
 })
+
+vim.api.nvim_create_autocmd("BufEnter", {
+  callback = function()
+    -- Check if this is the last buffer
+    local bufs = vim.fn.getbufinfo({ buflisted = true })
+    if #bufs == 1 then
+      -- Check if it's an unnamed buffer with no changes
+      local curr_buf = bufs[1]
+      if curr_buf.name == "" and not curr_buf.changed then
+        vim.cmd("quit")
+      end
+    end
+  end,
+})

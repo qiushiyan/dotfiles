@@ -1,0 +1,28 @@
+<!-- vim: set autoclose_html=0: -->
+
+Wrap the following lines in tags with multi-line editing
+
+- start with first letter, `ctrl + q` to enter block visual mode
+
+- keep `j` to select all lines
+
+- `I` to insert the tag, and `esc` to add the tag before all lines
+
+- `gv` to get last visual selection, `$` to go to the end
+
+- `A` to insert the ending tag, and `esc` to apply to all lines
+
+
+```
+apple 
+hello
+goodbye
+```
+
+```
+<a>apple </b>
+<a>hello</b>
+<a>goodbye</b>
+```
+
+
