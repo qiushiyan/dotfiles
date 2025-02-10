@@ -88,6 +88,16 @@ Toggle current terminal `ctrl + /`
 
 ## File Operations
 
+### File Explorer
+
+- with `mini.files`
+
+  - edit file systems like a buffer, add a new line, delete a new, etc.
+
+  - `=` save
+
+  - `,` reset
+
 - with neo-tree
 
   - `a` or `n`: create file or directory

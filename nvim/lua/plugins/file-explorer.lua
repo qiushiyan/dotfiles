@@ -7,12 +7,12 @@ return {
       windows = {
         preview = true,
         width_focus = 30,
-        width_preview = 60,
+        width_preview = 55,
       },
       options = {
-        -- Whether to use for editing directories
-        -- Disabled by default in LazyVim because neo-tree is used for that
         use_as_default_explorer = true,
+        -- To get this dir run :echo stdpath('data')
+        permanent_delete = false,
       },
       mappings = {
         close = "q",
@@ -25,13 +25,11 @@ return {
         -- go_out: shows you all the items to the right
         go_out = "H",
         go_out_plus = "h",
-        -- Default <BS>
-        reset = "<BS>",
-        -- Default @
+        reset = ",",
         reveal_cwd = ".",
         show_help = "g?",
         -- Default =
-        synchronize = "s",
+        synchronize = "=",
         trim_left = "<",
         trim_right = ">",
       },
@@ -55,8 +53,17 @@ return {
       {
         "<leader>E",
         function()
-          if not MiniFiles.close() then
-            MiniFiles.open(vim.api.nvim_buf_get_name(0), true)
+          local buf_name = vim.api.nvim_buf_get_name(0)
+          local dir_name = vim.fn.fnamemodify(buf_name, ":p:h")
+          if vim.fn.filereadable(buf_name) == 1 then
+            -- Pass the full file path to highlight the file
+            require("mini.files").open(buf_name, true)
+          elseif vim.fn.isdirectory(dir_name) == 1 then
+            -- If the directory exists but the file doesn't, open the directory
+            require("mini.files").open(dir_name, true)
+          else
+            -- If neither exists, fallback to the current working directory
+            require("mini.files").open(vim.uv.cwd(), true)
           end
         end,
         desc = "Open mini.files (Directory of Current File)",
