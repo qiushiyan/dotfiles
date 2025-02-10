@@ -3,6 +3,7 @@ local MiniFiles = require("mini.files")
 return {
   {
     "echasnovski/mini.files",
+    lazy = false,
     opts = {
       windows = {
         preview = true,

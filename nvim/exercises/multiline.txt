@@ -1,4 +1,3 @@
-<!-- vim: set autoclose_html=0: -->
 
 Wrap the following lines in tags with multi-line editing
 
@@ -23,6 +22,15 @@ goodbye
 <a>apple </b>
 <a>hello</b>
 <a>goodbye</b>
+```
+
+
+Increment / decrement numbers
+
+```
+1newfile.txt
+1newfile.txt
+1newfile.txt
 ```
 
 
