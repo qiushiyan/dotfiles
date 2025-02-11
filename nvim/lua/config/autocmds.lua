@@ -12,13 +12,13 @@ vim.api.nvim_create_autocmd({ "UIEnter", "ColorScheme" }, {
     io.write(string.format("\027]11;#%06x\027\\", normal.bg))
   end,
 })
-
 vim.api.nvim_create_autocmd("UILeave", {
   callback = function()
     io.write("\027]111\027\\")
   end,
 })
 
+-- close neovim if all named buffers are closed
 vim.api.nvim_create_autocmd("BufEnter", {
   callback = function()
     -- Check if this is the last buffer
