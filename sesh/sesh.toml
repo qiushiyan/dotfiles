@@ -1,0 +1,10 @@
+# open the file manager
+[[session]]
+name = "Downloads 📥"
+path = "~/Downloads"
+startup_command = "yazi"
+
+[[session]]
+name = "itell"
+path = "~/workspace"
+startup_command = "devitell"

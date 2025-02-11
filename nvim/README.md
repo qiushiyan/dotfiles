@@ -155,8 +155,17 @@ Toggle current terminal `ctrl + /`
 
 - check command `LspInfo` and `ConformInfo`
 
-## Copilot
+## AI
 
 - Accept suggestion `option + enter`
 
-![](../night.webp)
+## Image test
+
+Reference:
+https://levelup.gitconnected.com/render-images-inside-neovim-and-tmux-bd59381d0746
+
+```bash
+nvim --clean -c ":luafile test-imge.lua"
+```
+
+![](../wall.jpg)

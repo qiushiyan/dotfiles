@@ -9,6 +9,8 @@ if $TMUX has-session -t $SESSION 2>/dev/null; then
 else
   # Create new session with neovim in specified directory
   $TMUX new-session -s $SESSION -c "$PROJECT" -d
+  $TMUX rename-window -t $SESSION:1 'editor'
+
   # Other windows
   $TMUX new-window -t $SESSION:2 -n 'servers' -c "$PROJECT" -d
   $TMUX send-keys -t $SESSION:2 'pnpm dev' C-m

@@ -1,10 +1,61 @@
 local MiniFiles = require("mini.files")
 
+local mf_ignore_dirs = {
+  ["node_modules"] = true,
+  [".next"] = true,
+  [".vercel"] = true,
+  [".target"] = true,
+  [".velite"] = true,
+  ["__pycache__"] = true,
+  [".idea"] = true,
+  [".git"] = true,
+  [".turbo"] = true,
+  [".Rproj.user"] = true,
+}
+
+local mf_ignore_files = {
+  [".Rhistory"] = true,
+  [".RData"] = true,
+  [".DS_Store"] = true,
+}
+
+local mf_filter = function(entry)
+  if entry.fs_type == "directory" and mf_ignore_dirs[entry.name] then
+    return false
+  elseif entry.fs_type == "file" and mf_ignore_files[entry.name] then
+    return false
+  else
+    return true
+  end
+end
+
+local mf_no_filter = function(entry)
+  return true
+end
+
+local show_hidden = true
+local mf_toggle_filter = function()
+  show_hidden = not show_hidden
+  local new_filter = show_hidden and mf_no_filter or mf_filter
+  MiniFiles.refresh({ content = { filter = new_filter } })
+end
+
 return {
   {
     "echasnovski/mini.files",
     lazy = false,
     opts = {
+      content = {
+        filter = function(entry)
+          if entry.fs_type == "directory" and mf_ignore_dirs[entry.name] then
+            return false
+          elseif entry.fs_type == "file" and mf_ignore_files[entry.name] then
+            return false
+          else
+            return true
+          end
+        end,
+      },
       windows = {
         preview = true,
         width_focus = 30,
@@ -34,6 +85,15 @@ return {
         trim_left = "<",
         trim_right = ">",
       },
+      config = function()
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "MiniFilesBufferCreate",
+          callback = function(args)
+            local buf_id = args.data.buf_id
+            vim.keymap.set("n", "g.", mf_toggle_filter, { buffer = buf_id })
+          end,
+        })
+      end,
     },
     keys = {
       {
