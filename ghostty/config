@@ -9,6 +9,7 @@ font-codepoint-map = U+4E00-U+9FFF,U+3400-U+4DBF=Maple Mono NF CN
 
 cursor-style = block
 cursor-style-blink = false
+shell-integration-features = no-cursor
 
 mouse-hide-while-typing = true
 mouse-scroll-multiplier = 2

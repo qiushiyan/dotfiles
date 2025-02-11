@@ -40,26 +40,27 @@ vim.keymap.set("i", "<A-Down>", "<Esc>:m .+1<CR>==gi", { desc = "Move line down"
 vim.keymap.set({ "n", "v" }, "<C-S-f>", vim.lsp.buf.code_action, { desc = "Code actions" })
 vim.keymap.set("n", "<C-S-d>", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
 
--- better scroll
-vim.keymap.set("n", "<C-u>", "<C-u>zz", { noremap = true })
-vim.keymap.set("n", "<C-d>", "<C-d>zz", { noremap = true })
+-- By default, CTRL-U and CTRL-D scroll by half a screen (50% of the window height)
+-- Scroll by 35% of the window height and keep the cursor centered
+local scroll_percentage = 0.4
+-- Scroll by a percentage of the window height and keep the cursor centered
+vim.keymap.set("n", "<C-d>", function()
+  local lines = math.floor(vim.api.nvim_win_get_height(0) * scroll_percentage)
+  vim.cmd("normal! " .. lines .. "jzz")
+end, { noremap = true, silent = true })
+vim.keymap.set("n", "<C-u>", function()
+  local lines = math.floor(vim.api.nvim_win_get_height(0) * scroll_percentage)
+  vim.cmd("normal! " .. lines .. "kzz")
+end, { noremap = true, silent = true })
 
--- search for current word under cursor
-vim.keymap.set("n", "g/", function()
-  local word = vim.fn.expand("<cWORD>")
-  vim.fn.setreg("/", word)
-  vim.cmd("normal! n")
-end, { desc = "Search current word" })
-
--- execute buffer
+-- run current buffer, supported
+-- bash, go
 vim.keymap.set("n", "<leader>cg", function()
   local file = vim.fn.expand("%") -- Get the current file name
+  local first_line = vim.fn.getline(1) -- Get the first line of the file
+  local file_dir = vim.fn.expand("%:p:h") -- Get the directory of the current file
   if string.match(file, "%.go$") then -- Check if the file is a .go file
-    local file_dir = vim.fn.expand("%:p:h") -- Get the directory of the current file
-    -- local escaped_file = vim.fn.shellescape(file) -- Properly escape the file name for shell commands
-    -- local command_to_run = "go run " .. escaped_file
     local command_to_run = "go run *.go"
-    -- `-l 60` specifies the size of the tmux pane, in this case 60 columns
     local cmd = "silent !tmux split-window -h -l 60 'cd "
       .. file_dir
       .. ' && echo "'
@@ -68,23 +69,23 @@ vim.keymap.set("n", "<leader>cg", function()
       .. command_to_run
       .. "; echo; echo Press enter to exit...; read _\"'"
     vim.cmd(cmd)
-  else
-    vim.cmd("echo 'Not a Go file.'") -- Notify the user if the file is not a Go file
-  end
-end, { desc = "[P]GOLANG, execute file" })
-
--- -- If this is a bash script, make it executable, and execute it in a split pane on the right
--- -- Had to include quotes around "%" because there are some apple dirs that contain spaces, like iCloud
-vim.keymap.set("n", "<leader>cb", function()
-  local file = vim.fn.expand("%") -- Get the current file name
-  local first_line = vim.fn.getline(1) -- Get the first line of the file
-  if string.match(first_line, "^#!/") then -- If first line contains shebang
+  elseif string.match(file, "%.py$") then -- Check if the file is a .py file
+    local command_to_run = "python3 " .. file -- Use absolute path
+    local cmd = "silent !tmux split-window -h -l 60 'cd "
+      .. file_dir
+      .. ' && echo "'
+      .. command_to_run
+      .. '\\n" && bash -c "'
+      .. command_to_run
+      .. "; echo; echo Press enter to exit...; read _\"'"
+    vim.cmd(cmd)
+  elseif string.match(first_line, "^#!/") then -- If first line contains shebang
     local escaped_file = vim.fn.shellescape(file) -- Properly escape the file name for shell commands
     vim.cmd("!chmod +x " .. escaped_file) -- Make the file executable
     vim.cmd("vsplit") -- Split the window vertically
     vim.cmd("terminal " .. escaped_file) -- Open terminal and execute the file
     vim.cmd("startinsert") -- Enter insert mode, recommended by echasnovski on Reddit
   else
-    vim.cmd("echo 'Not a script. Shebang line not found.'")
+    vim.cmd("echo 'Not a recognized buffer (Go, Bash, Python)'")
   end
-end, { desc = "[P]Execute bash script in pane on the right" })
+end, { desc = "Execute current buffer in a right tmux pane" })

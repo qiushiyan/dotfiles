@@ -1,5 +1,3 @@
-local MiniFiles = require("mini.files")
-
 local mf_ignore_dirs = {
   ["node_modules"] = true,
   [".next"] = true,
@@ -37,7 +35,7 @@ local show_hidden = true
 local mf_toggle_filter = function()
   show_hidden = not show_hidden
   local new_filter = show_hidden and mf_no_filter or mf_filter
-  MiniFiles.refresh({ content = { filter = new_filter } })
+  require("mini.files").refresh({ content = { filter = new_filter } })
 end
 
 return {
@@ -99,14 +97,14 @@ return {
       {
         "<esc>",
         function()
-          MiniFiles.close()
+          require("mini.files").close()
         end,
       },
       {
         "<leader>e",
         function()
-          if not MiniFiles.close() then
-            MiniFiles.open(vim.uv.cwd(), true)
+          if not require("mini.files").close() then
+            require("mini.files").open(vim.uv.cwd(), true)
           end
         end,
         desc = "Open mini.files (cwd)",

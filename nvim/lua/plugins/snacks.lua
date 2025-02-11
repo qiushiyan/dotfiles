@@ -2,8 +2,65 @@ return {
   "folke/snacks.nvim",
   keys = {
     -- overwrite default, which is from the root dir
-    { "<leader><space>", LazyVim.pick("files", { root = false }), desc = "Find Files (cwd)" },
+    {
+      "<leader><space>",
+      -- LazyVim.pick("files", { root = false })
+      function()
+        Snacks.picker.files({
+          finder = "files",
+          format = "file",
+          show_empty = true,
+          supports_live = true,
+          dirs = { vim.fn.getcwd() },
+        })
+      end,
+      desc = "Find Files (cwd)",
+    },
     { "<leader>/", LazyVim.pick("grep", { root = false }), desc = "Grep (cwd)" },
+    {
+      "g/", -- search for current word under cursor
+      function()
+        local word = vim.fn.expand("<cWORD>")
+        Snacks.picker.grep_word({
+          search = word,
+          buffers = true,
+          regex = false,
+          live = false,
+          dirs = { vim.fn.getcwd() },
+          on_show = function()
+            vim.cmd.stopinsert()
+          end,
+          supports_live = false,
+        })
+      end,
+      desc = "Search current word",
+    },
+    {
+      "<leader>,",
+      function()
+        Snacks.picker.buffers({
+          on_show = function()
+            vim.cmd.stopinsert()
+          end,
+          finder = "buffers",
+          format = "buffer",
+          hidden = false,
+          unloaded = true,
+          current = false,
+          filter = { cwd = true },
+          sort_lastused = true,
+          win = {
+            input = {
+              keys = {
+                ["d"] = "bufdelete",
+              },
+            },
+            list = { keys = { ["d"] = "bufdelete" } },
+          },
+        })
+      end,
+      desc = "[P]Snacks picker buffers",
+    },
     {
       "<leader>gl",
       function()
@@ -16,6 +73,15 @@ return {
         })
       end,
       desc = "Git Log",
+    },
+    {
+      "<M-k>",
+      function()
+        Snacks.picker.keymaps({
+          layout = "vertical",
+        })
+      end,
+      desc = "Keymaps",
     },
   },
   ---@module "snacks"

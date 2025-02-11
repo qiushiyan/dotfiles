@@ -16,6 +16,8 @@
 
 - quit `<leader>qq` or `:qa`, save and quit `:x` or `ZZ`, quit buffer `Q`
 
+- execute current buffer `<leader>cg`
+
 - scroll
 
   - small scroll `ctrl + u` and `ctrl + d` (this is remapped to `ctrl + u/d zz`)
