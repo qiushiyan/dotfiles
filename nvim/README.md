@@ -55,6 +55,10 @@
 
 - show historical notifications: `<leader>snh`
 
+## Session
+
+- `<leader>qs` to restore session
+
 ## LazyGit
 
 - `<leader>gg` open, `ac` add all and commit, `P` push
