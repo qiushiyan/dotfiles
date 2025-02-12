@@ -1,11 +1,9 @@
--- Autocommand for printing the autosaved message
 local group = vim.api.nvim_create_augroup("autosave", {})
 vim.api.nvim_create_autocmd("User", {
   pattern = "AutoSaveWritePost",
   group = group,
   callback = function(opts)
     if opts.data.saved_buffer ~= nil then
-      -- print("AutoSaved at " .. vim.fn.strftime("%H:%M:%S"))
       print("AutoSaved")
     end
   end,
@@ -18,7 +16,6 @@ vim.api.nvim_create_autocmd("ModeChanged", {
   pattern = { "*:[vV\x16]*" },
   callback = function()
     vim.api.nvim_exec_autocmds("User", { pattern = "VisualEnter" })
-    -- print("VisualEnter")
   end,
 })
 
@@ -27,7 +24,6 @@ vim.api.nvim_create_autocmd("ModeChanged", {
   pattern = { "[vV\x16]*:*" },
   callback = function()
     vim.api.nvim_exec_autocmds("User", { pattern = "VisualLeave" })
-    -- print("VisualLeave")
   end,
 })
 
@@ -37,18 +33,14 @@ local original_jump = flash.jump
 
 flash.jump = function(opts)
   vim.api.nvim_exec_autocmds("User", { pattern = "FlashJumpStart" })
-  -- print("flash.nvim enter")
-
   original_jump(opts)
-
   vim.api.nvim_exec_autocmds("User", { pattern = "FlashJumpEnd" })
-  -- print("flash.nvim leave")
 end
 
 return {
   {
     "okuuva/auto-save.nvim",
-    enabled = true,
+    enabled = false,
     cmd = "ASToggle", -- optional for lazy loading on command
     event = { "InsertLeave", "TextChanged" }, -- optional for lazy loading on trigger events
     opts = {
