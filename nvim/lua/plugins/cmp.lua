@@ -3,19 +3,20 @@
 -- alt + number to select nth item
 -- copilot at the bottom
 
-local trigger_text = ";"
+local snippet_trigger_text = ";"
 
 return {
   {
     "saghen/blink.cmp",
+    enabled = true,
     dependencies = {
       "moyiz/blink-emoji.nvim",
       "Kaiser-Yang/blink-cmp-dictionary",
     },
     version = "*",
     ---@module 'blink.cmp'
-    ---@param opts blink.cmp.Config
     opts = function(_, opts)
+      ---@param opts blink.cmp.Config
       -- https://github1s.com/linkarzu/dotfiles-latest/blob/main/neovim/neobean/lua/plugins/blink-cmp.lua
       opts.enabled = function()
         -- Get the current buffer's filetype
@@ -71,14 +72,14 @@ return {
             should_show_items = function()
               local col = vim.api.nvim_win_get_cursor(0)[2]
               local before_cursor = vim.api.nvim_get_current_line():sub(1, col)
-              return before_cursor:match(trigger_text .. "%w*$") ~= nil
+              return before_cursor:match(snippet_trigger_text .. "%w*$") ~= nil
             end,
             -- After accepting the completion, delete the trigger_text characters
             -- from the final inserted text
             transform_items = function(_, items)
               local col = vim.api.nvim_win_get_cursor(0)[2]
               local before_cursor = vim.api.nvim_get_current_line():sub(1, col)
-              local trigger_pos = before_cursor:find(trigger_text .. "[^" .. trigger_text .. "]*$")
+              local trigger_pos = before_cursor:find(snippet_trigger_text .. "[^" .. snippet_trigger_text .. "]*$")
               if trigger_pos then
                 for _, item in ipairs(items) do
                   item.textEdit = {

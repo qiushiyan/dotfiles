@@ -56,8 +56,8 @@ return {
       },
       windows = {
         preview = true,
-        width_focus = 30,
-        width_preview = 55,
+        width_focus = 35,
+        width_preview = 45,
       },
       options = {
         use_as_default_explorer = true,
