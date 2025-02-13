@@ -1,6 +1,6 @@
+-- Theme settings
+
 return {
-  -- { "ellisonleao/gruvbox.nvim", transparent_mode = true },
-  -- { "shaunsingh/nord.nvim" },
   {
     "folke/tokyonight.nvim",
     enabled = false,
@@ -52,33 +52,6 @@ return {
     "LazyVim/LazyVim",
     opts = {
       colorscheme = "catppuccin",
-    },
-  },
-  -- border highlight when background is transparent
-  {
-    "williamboman/mason.nvim",
-    opts = {
-      ui = {
-        border = "rounded",
-      },
-    },
-  },
-  {
-    "folke/noice.nvim",
-    opts = {
-      presets = {
-        lsp_doc_border = true,
-      },
-    },
-  },
-  {
-    "neovim/nvim-lspconfig",
-    opts = {
-      DIAGNOSTICS = {
-        float = {
-          border = "rounded",
-        },
-      },
     },
   },
 }

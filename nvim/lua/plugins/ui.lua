@@ -1,7 +1,7 @@
--- Manages tabline and statusline
--- clear lualine's statusline and configure tabline
--- disable buffline
--- hide stastusline
+-- Change default LazyVim UI
+-- disable file tabs on the top (bufferline)
+-- resture lulaine items, filename on top and less items on the bottom
+-- tweak lsp and notification window
 
 return {
   {
@@ -59,7 +59,8 @@ return {
           },
           lualine_y = {},
           lualine_z = {
-            { "branch" },
+            { "progress", pading = { right = 0 } },
+            { "branch", padding = { left = 1, right = 1 } },
           },
         },
         tabline = {
@@ -171,5 +172,32 @@ return {
         end,
       })
     end,
+  },
+  -- border highlight when background is transparent
+  {
+    "williamboman/mason.nvim",
+    opts = {
+      ui = {
+        border = "rounded",
+      },
+    },
+  },
+  {
+    "folke/noice.nvim",
+    opts = {
+      presets = {
+        lsp_doc_border = true,
+      },
+    },
+  },
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      DIAGNOSTICS = {
+        float = {
+          border = "rounded",
+        },
+      },
+    },
   },
 }
