@@ -563,7 +563,7 @@ function App() {
 function App() {
   return (
     <div>
-<h1>This is the new content</h1>
+
     </div>
   );
 }
@@ -619,9 +619,6 @@ function Component({ foo: 'bar' }) {
 function App() {
   return (
     <div>
-      <p>Line 1</p>
-      <p>Line 2</p>
-      <p>Line 3</p>
       <p>Line 4</p>
       <p>Line 5</p>
     </div>

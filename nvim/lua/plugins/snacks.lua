@@ -9,7 +9,9 @@ return {
         Snacks.picker.files({
           finder = "files",
           format = "file",
+          hidden = true,
           show_empty = true,
+          ignored = false,
           supports_live = true,
           dirs = { vim.fn.getcwd() },
         })
@@ -17,24 +19,8 @@ return {
       desc = "Find Files (cwd)",
     },
     { "<leader>/", LazyVim.pick("grep", { root = false }), desc = "Grep (cwd)" },
-    {
-      "g/", -- search for current word under cursor
-      function()
-        local word = vim.fn.expand("<cWORD>")
-        Snacks.picker.grep_word({
-          search = word,
-          buffers = true,
-          regex = false,
-          live = false,
-          dirs = { vim.fn.getcwd() },
-          on_show = function()
-            vim.cmd.stopinsert()
-          end,
-          supports_live = false,
-        })
-      end,
-      desc = "Search current word",
-    },
+    -- disable scratch buffer
+    { "<leader>.", function() end },
     {
       "<leader>,",
       function()
@@ -44,8 +30,9 @@ return {
           end,
           finder = "buffers",
           format = "buffer",
-          hidden = false,
+          hidden = true,
           unloaded = true,
+          -- dont list current buffer so previous buffer is at top
           current = false,
           filter = { cwd = true },
           sort_lastused = true,
@@ -57,9 +44,10 @@ return {
             },
             list = { keys = { ["d"] = "bufdelete" } },
           },
+          layout = "buffers",
         })
       end,
-      desc = "[P]Snacks picker buffers",
+      desc = "Pick buffers",
     },
     {
       "<leader>gl",
@@ -87,13 +75,19 @@ return {
   ---@module "snacks"
   ---@type snacks.Config
   opts = {
+    dashboard = {
+      preset = {
+        keys = {
+          { icon = " ", key = "s", desc = "Restore Session", section = "session" },
+          { icon = " ", key = "<esc>", desc = "Quit", action = ":qa" },
+        },
+      },
+    },
     scroll = { enabled = true },
     -- borrowed from https://github1s.com/linkarzu/dotfiles-latest/blob/main/neovim/quarto-nvim-kickstarter/lua/config/wip/r-targets-refactor.lua
     picker = {
       layout = {
         preset = "ivy",
-        -- When reaching the bottom of the results in the picker, I don't want
-        -- it to cycle and go back to the top
         cycle = false,
       },
       layouts = {
@@ -129,6 +123,25 @@ return {
             { win = "input", height = 1, border = "bottom" },
             { win = "list", border = "none" },
             { win = "preview", title = "{preview}", height = 0.4, border = "top" },
+          },
+        },
+        buffers = {
+          layout = {
+            backdrop = false,
+            row = 1,
+            width = 0.4,
+            min_width = 40,
+            height = 0.8,
+            border = "none",
+            box = "vertical",
+            {
+              box = "vertical",
+              border = "rounded",
+              title = "{title}",
+              title_pos = "center",
+              { win = "input", height = 1, border = "bottom" },
+              { win = "list", border = "none" },
+            },
           },
         },
       },

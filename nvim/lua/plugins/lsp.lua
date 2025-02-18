@@ -62,16 +62,10 @@ return {
   },
   {
     "neovim/nvim-lspconfig",
-    dependencies = { "dnlhc/glance.nvim" },
     opts = {
       servers = {
         vtsls = {
           keys = {
-            {
-              "gD",
-              "<CMD>Glance definitions<CR>",
-              desc = "Preview type definition",
-            },
             {
               "<leader>cu",
               LazyVim.lsp.action["source.removeUnused.ts"],

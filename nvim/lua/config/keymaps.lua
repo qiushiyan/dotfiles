@@ -89,3 +89,20 @@ vim.keymap.set("n", "<leader>cg", function()
     vim.cmd("echo 'Not a recognized buffer (Go, Bash, Python)'")
   end
 end, { desc = "Execute current buffer in a right tmux pane" })
+
+-- Function to open current file in Finder or ForkLift
+local function open_in_file_manager()
+  local file_path = vim.fn.expand("%:p")
+  if file_path ~= "" then
+    -- -- Open in Finder or in ForkLift
+    local command = "open -R " .. vim.fn.shellescape(file_path)
+    -- local command = "open -a ForkLift " .. vim.fn.shellescape(file_path)
+    vim.fn.system(command)
+    print("Opened file in ForkLift: " .. file_path)
+  else
+    print("No file is currently open")
+  end
+end
+
+vim.keymap.set({ "n", "v", "i" }, "<M-f>", open_in_file_manager, { desc = "Open with file explorer" })
+vim.keymap.set("n", "<leader>fO", open_in_file_manager, { desc = "Open with file explorer" })

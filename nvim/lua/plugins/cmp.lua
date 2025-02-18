@@ -35,7 +35,6 @@ return {
 
       opts.sources = vim.tbl_deep_extend("force", opts.sources or {}, {
         default = { "lsp", "path", "snippets", "emoji", "copilot" },
-        cmdline = {},
         providers = {
           lsp = {
             name = "lsp",
