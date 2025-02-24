@@ -10,7 +10,7 @@
   - `cmd + enter` quick actions
 
 - tmux
-  - copy mod `prefix + [`
+  - copy mode `prefix + [`
 
 ## General
 
@@ -138,6 +138,14 @@ Toggle current terminal `ctrl + /`
 - grep search `<leader>/` and add to quickfix list `ctrl + g`, use `[q`, `]q` or
   `cnext` and `cprevious` to navigate between them
 
+## Marks
+
+- `m<letter>` to create a mark
+
+- backtick to list and go to marks
+
+- delete all marks `:delm! | delm A-Z0-9`
+
 ## Code Actions and Refactoring
 
 - hover `shift + k` and scroll in the popup window `ctrl +f`, `ctrl + b`
@@ -161,11 +169,17 @@ Toggle current terminal `ctrl + /`
 
 - check command `LspInfo` and `ConformInfo`
 
-## AI
+## Markdown
 
-- Accept suggestion `option + enter`
+### Folds
+
+- `zj` fold all level 1 headings, `zk` level 2 headings, `zl` level 3 headings
+
+- `zR` unfold all
 
 ## Image test
+
+![](../wall.jpg)
 
 Reference:
 https://levelup.gitconnected.com/render-images-inside-neovim-and-tmux-bd59381d0746
@@ -174,4 +188,6 @@ https://levelup.gitconnected.com/render-images-inside-neovim-and-tmux-bd59381d07
 nvim --clean -c ":luafile test-imge.lua"
 ```
 
-![](../wall.jpg)
+## AI
+
+- Accept suggestion `option + enter`

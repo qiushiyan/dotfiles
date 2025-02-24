@@ -60,7 +60,7 @@ vim.keymap.set("n", "<leader>cg", function()
   local first_line = vim.fn.getline(1) -- Get the first line of the file
   local file_dir = vim.fn.expand("%:p:h") -- Get the directory of the current file
   if string.match(file, "%.go$") then -- Check if the file is a .go file
-    local command_to_run = "go run *.go"
+    local command_to_run = "go run ."
     local cmd = "silent !tmux split-window -h -l 60 'cd "
       .. file_dir
       .. ' && echo "'
@@ -104,5 +104,8 @@ local function open_in_file_manager()
   end
 end
 
+-- open current file using finder
 vim.keymap.set({ "n", "v", "i" }, "<M-f>", open_in_file_manager, { desc = "Open with file explorer" })
 vim.keymap.set("n", "<leader>fO", open_in_file_manager, { desc = "Open with file explorer" })
+
+-- folding

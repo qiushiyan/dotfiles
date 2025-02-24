@@ -19,8 +19,11 @@ return {
       desc = "Find Files (cwd)",
     },
     { "<leader>/", LazyVim.pick("grep", { root = false }), desc = "Grep (cwd)" },
+
     -- disable scratch buffer
     { "<leader>.", function() end },
+    { "<leader>S", function() end },
+
     {
       "<leader>,",
       function()
@@ -75,6 +78,22 @@ return {
   ---@module "snacks"
   ---@type snacks.Config
   opts = {
+    image = {
+      enabled = true,
+      doc = {
+        inline = false,
+        float = true,
+        max_height = 30,
+        max_width = 60,
+      },
+    },
+    styles = {
+      snacks_image = {
+        relative = "editor",
+        col = -1,
+      },
+    },
+    -- configure welcome screen
     dashboard = {
       preset = {
         keys = {
@@ -83,6 +102,7 @@ return {
         },
       },
     },
+    -- smooth scroll
     scroll = { enabled = true },
     -- borrowed from https://github1s.com/linkarzu/dotfiles-latest/blob/main/neovim/quarto-nvim-kickstarter/lua/config/wip/r-targets-refactor.lua
     picker = {
@@ -129,8 +149,8 @@ return {
           layout = {
             backdrop = false,
             row = 1,
-            width = 0.4,
-            min_width = 40,
+            width = 0.7,
+            min_width = 70,
             height = 0.8,
             border = "none",
             box = "vertical",

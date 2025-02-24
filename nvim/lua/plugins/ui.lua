@@ -38,10 +38,7 @@ return {
           lualine_a = {
             {
               "mode",
-              -- fmt = function(str)
-              --   return str:sub(1, 1)
-              -- end,
-              color = { gui = "bold", bg = mocha.base, fg = mocha.text },
+              color = { gui = "bold", bg = mocha.mantle, fg = mocha.text },
             },
           },
           lualine_b = {},
@@ -72,52 +69,22 @@ return {
               padding = { left = 1, right = 0 },
               color = { gui = "bold", bg = mocha.base, fg = mocha.text },
             },
-            { LazyVim.lualine.pretty_path(), color = { gui = "bold", bg = mocha.base, fg = mocha.text } },
+            { LazyVim.lualine.pretty_path(), color = { gui = "bold", bg = mocha.mantle, fg = mocha.text } },
+          },
+          lualine_x = {
+            {
+              function()
+                local venv = os.getenv("CONDA_DEFAULT_ENV") or os.getenv("VIRTUAL_ENV") or "No Env"
+                return "  " .. venv
+              end,
+              cond = function()
+                return vim.bo.filetype == "python"
+              end,
+              color = { fg = mocha.subtext1, bg = mocha.mantle, gui = "italic" },
+            },
           },
         },
-        -- tabline = {
-        --   lualine_a = {
-        --     { LazyVim.lualine.pretty_path() },
-        --   },
-        --   lualine_b = {
-        --     {
-        --       "mode",
-        --       fmt = function(str)
-        --         return str:sub(1, 1)
-        --       end,
-        --       color = { gui = "bold" },
-        --     },
-        --   },
-        --   lualine_c = {
-        --     "branch",
-        --     {
-        --       "diagnostics",
-        --       symbols = {
-        --         error = icons.diagnostics.Error,
-        --         warn = icons.diagnostics.Warn,
-        --         info = icons.diagnostics.Info,
-        --         hint = icons.diagnostics.Hint,
-        --       },
-        --     },
-        --   },
-        --   lualine_x = {
-        --     { "filetype", icon_only = false, padding = { left = 1, right = 1 } },
-        --   },
-        --   lualine_y = {
-        --     {
-        --       function()
-        --         local venv = os.getenv("CONDA_DEFAULT_ENV") or os.getenv("VIRTUAL_ENV") or "No Env"
-        --         return " " .. venv
-        --       end,
-        --       cond = function()
-        --         return vim.bo.filetype == "python"
-        --       end,
-        --     },
-        --     -- { "location", padding = { left = 0, right = 1 } },
-        --   },
-        --   lualine_z = {},
-        -- },
-        extensions = { "neo-tree", "lazy" },
+        extensions = { "lazy" },
       }
 
       return opts

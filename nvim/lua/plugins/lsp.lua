@@ -21,9 +21,6 @@ return {
 
       -- save keys for yanky
       keys[#keys + 1] = { "gy", false }
-
-      opts.inlay_hints = { enabled = false }
-      opts.servers.pyright = {}
       opts.filetype_opts = {
         typescriptreact = {
           spell = true,

@@ -1,6 +1,9 @@
+-- disabled in favour of snacks image module, see the image section in snacks.lua
+
 return {
   {
     "vhyrro/luarocks.nvim",
+    enabled = false,
     priority = 1001, -- this plugin needs to run before anything else
     opts = {
       rocks = { "magick" },
@@ -8,7 +11,7 @@ return {
   },
   {
     "3rd/image.nvim",
-    enabled = true,
+    enabled = false,
     -- cond = false,
     event = "VeryLazy",
     opts = {

@@ -1,5 +1,6 @@
 local mf_ignore_dirs = {
   ["node_modules"] = true,
+  ["venv"] = true,
   [".next"] = true,
   [".vercel"] = true,
   [".target"] = true,
