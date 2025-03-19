@@ -77,6 +77,13 @@ return {
         desc = "References (current buffer)",
         nowait = true,
       },
+      {
+        "gt",
+        function()
+          Snacks.picker.lsp_type_definitions()
+        end,
+        desc = "Goto Type Definition",
+      },
     },
   },
   {

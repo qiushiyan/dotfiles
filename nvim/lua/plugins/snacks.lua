@@ -23,7 +23,6 @@ return {
     -- disable scratch buffer
     { "<leader>.", function() end },
     { "<leader>S", function() end },
-
     {
       "<leader>,",
       function()
@@ -66,6 +65,7 @@ return {
       desc = "Git Log",
     },
     {
+
       "<M-k>",
       function()
         Snacks.picker.keymaps({
