@@ -8,7 +8,8 @@ if $TMUX has-session -t $SESSION 2>/dev/null; then
 else
   $TMUX new-session -s $SESSION -c "$PROJECT/preprocessing-engine" -n 'engine' -d
 
-  $TMUX new-window -t $SESSION:2 -n 'deepsearch' -c "$PROJECT/preprocessing-engine/deepsearch" "n ."
+  $TMUX new-window -t $SESSION:2 -n 'deepsearch' -c "$PROJECT/preprocessing-engine/deepsearch"
+  $TMUX send-keys -t $SESSION:2 "n ." C-m
 
   # Create the third window 'misc'
   $TMUX new-window -t $SESSION:3 -n 'misc' -c "$PROJECT"

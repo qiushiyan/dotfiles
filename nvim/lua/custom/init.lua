@@ -3,3 +3,4 @@ require("custom.floating-todo").setup({
 })
 
 require("custom.fold-markdown-headings").setup()
+require("custom.inline-math").setup()
