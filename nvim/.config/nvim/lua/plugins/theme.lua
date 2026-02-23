@@ -39,11 +39,11 @@ return {
   {
     "catppuccin/nvim",
     name = "catppuccin",
-    enabled = false,
+    enabled = true,
     priority = 1000,
     lazy = false,
     opts = {
-      flavour = "latte",
+      flavour = "mocha",
       -- highlight_overrides = {
       --   all = function(colors)
       --     return {
@@ -64,7 +64,7 @@ return {
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "tailwind-dark-contrast",
+      colorscheme = "catppuccin",
     },
   },
 }
