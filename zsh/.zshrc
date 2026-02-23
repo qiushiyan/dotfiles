@@ -19,13 +19,13 @@ bindkey -M vicmd 'v' edit-command-line
 # --------------------------------------------------------------------
 # 2. PATHS & ENV VARS
 # --------------------------------------------------------------------
-export PATH="$PATH:/Contents/Resources/app/bin:$HOME/bin:$HOME/bin/elixir-ls:/usr/local/bin:$HOME/Library/Python/3.9/bin:/Users/qiushi/Library/Python/3.10/bin:/opt/homebrew/opt/openjdk@11/bin:/Users/qiushi/Library/Android/sdk/platform-tools:$HOME/.mix/escripts:/opt/homebrew/opt/node@16/bin/:/Users/qiushi/.local/bin:"
+export PATH="$PATH:/Contents/Resources/app/bin:$HOME/bin:$HOME/bin/elixir-ls:/usr/local/bin:/opt/homebrew/opt/openjdk@11/bin:/Users/qiushi/Library/Android/sdk/platform-tools:$HOME/.mix/escripts:/opt/homebrew/opt/node@16/bin/:/Users/qiushi/.local/bin:"
 
 export ZSH="/Users/qiushi/.oh-my-zsh"
 export VISUAL="nvim"
 export EDITOR='nvim'
 export AWS_PROFILE=marswave
-export CLOUDSDK_PYTHON="/opt/homebrew/bin/python3.10"
+export CLOUDSDK_PYTHON="/opt/homebrew/bin/python3.14"
 export CONDA_AUTO_ACTIVATE_BASE=false
 
 # Theme
@@ -77,8 +77,8 @@ alias gitconfig="git config --global --edit"
 alias nvimconfig="cd ~/.config/nvim && nvim ."
 alias ghosttyconfig="nvim ~/.config/ghostty/config"
 alias ohmyzsh="code ~/.oh-my-zsh"
-alias python="/opt/homebrew/bin/python3.10"
-alias python3="/opt/homebrew/bin/python3.10"
+alias python="/opt/homebrew/bin/python3.14"
+alias python3="/opt/homebrew/bin/python3.14"
 alias scripts="cat package.json | jq --color-output '.scripts'"
 alias devitell="~/.config/scripts/dev-itell.sh"
 alias devmanager="~/.config/scripts/dev-marswave-manager.sh"
@@ -93,9 +93,9 @@ export PATH="$(gem environment gemdir)/bin:$PATH"
 
 DISABLE_AUTO_TITLE=true
 
-export PYSPARK_PYTHON="/opt/homebrew/bin/python3.10"
-export PYSPARK_DRIVER_PYTHON="/opt/homebrew/bin/python3.10"
-export PIPX_DEFAULT_PYTHON="python3.10"
+export PYSPARK_PYTHON="/opt/homebrew/bin/python3.14"
+export PYSPARK_DRIVER_PYTHON="/opt/homebrew/bin/python3.14"
+export PIPX_DEFAULT_PYTHON="python3.14"
 
 alias lg="lazygit"
 
@@ -142,7 +142,7 @@ source /opt/homebrew/etc/profile.d/z.sh
 
 
 # quarto
-export QUARTO_PYTHON=/opt/homebrew/bin/python3.10
+export QUARTO_PYTHON=/opt/homebrew/bin/python3.14
 
 # android sdk
 export ANDROID_SDK=/Users/qiushi/Library/Android/sdk
