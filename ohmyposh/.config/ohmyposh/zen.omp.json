@@ -6,7 +6,9 @@
         "pink": "#F5C2E7",
         "lavender": "#B4BEFE",
         "blue":  "#89B4FA",
-        "green": "#A6E3A1"
+        "green": "#A6E3A1",
+        "peach": "#FAB387",
+        "red": "#F38BA8"
   },
   "blocks": [
     {
@@ -63,6 +65,13 @@
       "newline": true
     }
   ],
+  "transient_prompt": {
+    "foreground": "p:green",
+    "foreground_templates": [
+      "{{ if gt .Code 0 }}p:red{{ end }}"
+    ],
+    "template": "❯ "
+  },
   "final_space": true,
   "version": 4
 }
