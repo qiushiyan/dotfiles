@@ -1,214 +1,136 @@
 # --------------------------------------------------------------------
-# 1. SHELL BEHAVIOR & HISTORY (Added new settings here)
+# 1. SHELL BEHAVIOR & HISTORY
 # --------------------------------------------------------------------
 set -o vi
 HISTSIZE=100000
 SAVEHIST=100000
-# Allows you to use 'v' in vi-mode to open the current command in Neovim
+HISTFILE=~/.zsh_history
+setopt HIST_IGNORE_ALL_DUPS    # deduplicate older entries
+setopt HIST_REDUCE_BLANKS      # strip extra whitespace
+setopt SHARE_HISTORY           # share history across terminals
+setopt INC_APPEND_HISTORY      # write immediately, not on exit
+
+# 'v' in vi-mode opens current command in $EDITOR
 autoload -Uz edit-command-line
 zle -N edit-command-line
 bindkey -M vicmd 'v' edit-command-line
 
 # --------------------------------------------------------------------
-# 2. PATHS & ENV VARS
+# 2. PATH (all additions in one place)
 # --------------------------------------------------------------------
-export PATH="$PATH:/Contents/Resources/app/bin:$HOME/bin:$HOME/bin/elixir-ls:/usr/local/bin:/opt/homebrew/opt/openjdk@11/bin:/Users/qiushi/Library/Android/sdk/platform-tools:$HOME/.mix/escripts:/opt/homebrew/opt/node@16/bin/:/Users/qiushi/.local/bin:"
+export PATH="\
+$HOME/.config/tmux/plugins/tmuxifier/bin:\
+$HOME/.wasmtime/bin:\
+$HOME/.bun/bin:\
+$HOME/bin:\
+$HOME/bin/elixir-ls:\
+$HOME/.local/bin:\
+$HOME/.mix/escripts:\
+/opt/homebrew/opt/postgresql@16/bin:\
+/opt/homebrew/opt/openjdk@11/bin:\
+/opt/homebrew/opt/node@16/bin:\
+/usr/local/bin:\
+$HOME/Library/Android/sdk/platform-tools:\
+$PATH"
 
-export ZSH="/Users/qiushi/.oh-my-zsh"
+# --------------------------------------------------------------------
+# 3. ENVIRONMENT VARIABLES
+# --------------------------------------------------------------------
+export ZSH="$HOME/.oh-my-zsh"
 export VISUAL="nvim"
-export EDITOR='nvim'
+export EDITOR="nvim"
+
+# AWS / GCP
 export AWS_PROFILE=marswave
 export CLOUDSDK_PYTHON="/opt/homebrew/bin/python3.14"
-export CONDA_AUTO_ACTIVATE_BASE=false
+export GOOGLE_GENAI_USE_VERTEXAI=true
+export GOOGLE_CLOUD_PROJECT="marswave"
+export GOOGLE_CLOUD_LOCATION="us-west1"
+export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 
-# Theme (using Oh My Posh instead)
-ZSH_THEME=""
-
-# Plugins
-plugins=(history zsh-autosuggestions git) # Added 'git' plugin for better completions
-
-# --------------------------------------------------------------------
-# 3. OH-MY-ZSH INIT
-# --------------------------------------------------------------------
-source $ZSH/oh-my-zsh.sh
-source /Users/qiushi/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# Java / Android
 export JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.8
-export SPARK_HOME=/Users/qiushi/spark/spark-3.1.2-bin-hadoop3.2
-export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+export ANDROID_SDK="$HOME/Library/Android/sdk"
 
-
-# --------------------------------------------------------------------
-# 4. CUSTOM FUNCTIONS (moved to ~/.zshenv for non-interactive availability)
-# Re-source git.zsh to register completions (compdef requires compinit from oh-my-zsh above)
-# --------------------------------------------------------------------
-source ~/.config/zsh/git.zsh
-
-# --------------------------------------------------------------------
-# 5. ALIASES
-# --------------------------------------------------------------------
-alias k=kubectl
-alias kb=kubectl
-alias kk=k9s
-alias kk-production='k9s --context listenhub-production'
-alias kk-staging='k9s --context listenhub-staging'
-
-# NEW: Git interactive stash
-alias gsp='git stash -p'
-
-alias -s ts='bun'
-alias -s git="git clone"
-alias gg="git add . && git commit -m 'update' && git push"
-alias zshconfig="nvim ~/.zshrc"
-alias ttconfig="nvim ~/.config/tabtype/config.json"
-alias zedconfig="zed ~/.config/zed"
-alias sshconfig="nvim ~/.ssh/config"
-alias c="cursor"
-alias tmuxconfig="nvim ~/.config/tmux/tmux.conf"
-alias zshreload="source ~/.zshenv && source ~/.zshrc"
-alias gitconfig="git config --global --edit"
-alias nvimconfig="cd ~/.config/nvim && nvim ."
-alias ghosttyconfig="nvim ~/.config/ghostty/config"
-alias ohmyzsh="code ~/.oh-my-zsh"
-alias python="/opt/homebrew/bin/python3.14"
-alias python3="/opt/homebrew/bin/python3.14"
-alias scripts="cat package.json | jq --color-output '.scripts'"
-alias devitell="~/.config/scripts/dev-itell.sh"
-alias devmanager="~/.config/scripts/dev-marswave-manager.sh"
-alias devengine="~/.config/scripts/dev-marswave-engine.sh"
-alias sshstaging="ssh marswave.staging"
-alias sshprod="ssh marswave.production"
-
-export PATH="$HOME/.config/tmux/plugins/tmuxifier/bin:$PATH"
-eval "$(tmuxifier init -)"
-export PATH="$(gem environment gemdir)/bin:$PATH"
-
-
-DISABLE_AUTO_TITLE=true
-
+# Python
+export CONDA_AUTO_ACTIVATE_BASE=false
 export PYSPARK_PYTHON="/opt/homebrew/bin/python3.14"
 export PYSPARK_DRIVER_PYTHON="/opt/homebrew/bin/python3.14"
 export PIPX_DEFAULT_PYTHON="python3.14"
+export QUARTO_PYTHON="/opt/homebrew/bin/python3.14"
 
-alias lg="lazygit"
+# Spark
+export SPARK_HOME="$HOME/spark/spark-3.1.2-bin-hadoop3.2"
 
-alias rstudio="open -na Rstudio"
-alias workspace='cd ~/workspace'
-alias R="$(which R) --no-save --no-restore"
-alias r="$(which radian) --no-save --no-restore"
-alias rlib=/Library/Frameworks/R.framework/Versions/4.1-arm64/Resources/library
-alias l='gls --color -lhF --group-directories-first'
-alias bat="bat --tabs 4 --paging=never"
-# use this version of make https://github.com/tj/mmake
-alias make="mmake"
-# docker aliases
-alias dk="docker"
-alias dkb="docker build"
-alias dkc="docker-compose"
+# Bun
+export BUN_INSTALL="$HOME/.bun"
 
+# Wasmtime
+export WASMTIME_HOME="$HOME/.wasmtime"
 
-
-
-# cspell
-alias cspellconfig="code ~/.cspell/custom-dictionary-user.txt"
-
-# pandoc
+# Misc
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export RSTUDIO_PANDOC="/Applications/RStudio.app/Contents/MacOS/quarto/bin/tools"
+export ALLOW_PLAINTEXT_LISTENER=yes
+export K9S_CONFIG_DIR="$HOME/.config/k9s"
+export COREPACK_ENABLE_AUTO_PIN=0
+export DISABLE_AUTO_TITLE=true
+export nvm_default_version=22
 
+# Claude Code
 export CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=1
+export ENABLE_LSP_TOOLS=1
+
+# AI suggestions
 export SMART_SUGGESTION_AI_PROVIDER=gemini
 export GEMINI_MODEL="gemini-2.5-flash"
 
-export GOOGLE_GENAI_USE_VERTEXAI=true
-export GOOGLE_CLOUD_PROJECT='marswave'
-export GOOGLE_CLOUD_LOCATION='us-west1'
-# claude code
-export ENABLE_LSP_TOOLS=1
-# Secrets (API keys, tokens, etc.) - loaded from ~/.secrets
+# Secrets
 [ -f ~/.secrets ] && source ~/.secrets
 
-# kafka
-export ALLOW_PLAINTEXT_LISTENER=yes
+# --------------------------------------------------------------------
+# 4. OH-MY-ZSH
+# --------------------------------------------------------------------
+ZSH_THEME=""
+plugins=(history zsh-autosuggestions git)
+source "$ZSH/oh-my-zsh.sh"
 
-# include z command for quick navigation
-source /opt/homebrew/etc/profile.d/z.sh
+# --------------------------------------------------------------------
+# 5. TOOL INIT (order matters — oh-my-posh must be last)
+# --------------------------------------------------------------------
+source "$HOME/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
+# Re-source git.zsh to register completions (compdef needs compinit from oh-my-zsh)
+source ~/.config/zsh/git.zsh
 
-# quarto
-export QUARTO_PYTHON=/opt/homebrew/bin/python3.14
-
-# android sdk
-export ANDROID_SDK=/Users/qiushi/Library/Android/sdk
-
-# hdf5
-export HDF5_DIR="$(brew --prefix hdf5)"
-
-
-# mcfly
-# eval "$(mcfly init zsh)"
-# export MCFLY_FUZZY=2
-# export MCFLY_RESULTS=20
-# export MCFLY_INTERFACE_VIEW=BOTTOM
-# export MCFLY_RESULTS_SORT=LAST_RUN
-
-
-export LLVM_CONFIG="/opt/homebrew/opt/llvm@11/bin/llvm-config"
+# tmuxifier
+eval "$(tmuxifier init -)"
 
 # nvm
-# export NVM_DIR="$HOME/.nvm"
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"                                       # This loads nvm
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" # This loads nvm bash_completion
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && . "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
 
-
-export WASMTIME_HOME="$HOME/.wasmtime"
-
-export PATH="$WASMTIME_HOME/bin:$PATH"
-
-
-alias tsx=tsx --no-warnings
-
-export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
-
+# fzf
+source <(fzf --zsh)
 
 # bun completions
-[ -s "/Users/qiushi/.bun/_bun" ] && source "/Users/qiushi/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-
-# proxy settings
-# export http_proxy=http://127.0.0.1:7899
-# export https_proxy=http://127.0.0.1:7899
-# export NO_PROXY="/var/run/docker.sock"
-export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-export K9S_CONFIG_DIR="$HOME/.config/k9s"
-
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-
-export nvm_default_version=22
-
-
-source <(fzf --zsh)
-# export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git --no-ignore-vcs "\.env$|^[^.]"'
-
-# Smart Suggestion # smart-suggestion
-source /Users/qiushi/.config/smart-suggestion/smart-suggestion.plugin.zsh # smart-suggestion
+# z (directory jumping)
+source /opt/homebrew/etc/profile.d/z.sh
 
 # Google Cloud SDK
-# (We hardcode the path to avoid lag and point to the new location)
-if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then
-    source "$HOME/google-cloud-sdk/path.zsh.inc"
-fi
+[ -f "$HOME/google-cloud-sdk/path.zsh.inc" ] && source "$HOME/google-cloud-sdk/path.zsh.inc"
+[ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ] && source "$HOME/google-cloud-sdk/completion.zsh.inc"
 
-if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then
-    source "$HOME/google-cloud-sdk/completion.zsh.inc"
-fi
+# smart-suggestion
+source "$HOME/.config/smart-suggestion/smart-suggestion.plugin.zsh"
 
-# Use corepack for pnpm (respects packageManager field in package.json)
-export COREPACK_ENABLE_AUTO_PIN=0
+# oh-my-posh (must be last — other tools can override shell integration)
+eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
 
-
-eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/catppuccin_mocha.omp.json)"
-
+# --------------------------------------------------------------------
+# 6. ALIASES
+# Aliases live in ~/.config/zsh/aliases.zsh (auto-sourced by .zshenv).
+# Add new aliases there, not here.
+# --------------------------------------------------------------------
