@@ -1,0 +1,77 @@
+{
+  "providers" : [
+    "recent",
+    "files",
+    "app",
+    "manual",
+    "skills",
+    "git",
+    "docs",
+    "scripts"
+  ],
+  "trigger" : ";;",
+  "snippets" : [
+    {
+      "expand" : "Best regards,\nTabType User",
+      "key" : "sig"
+    },
+    {
+      "expand" : "user@example.com",
+      "key" : "email"
+    },
+    {
+      "expand" : "Review the following plan with a critical mind. For points you support, provide some technical suggestions or caveats when applicable. For points you disagree with, reason about why. Your decisions should be focused on both technical merit and end-user impact. Don't be afraid to challenge assumptions or suggest alternatives if you think they would lead to a better outcome.",
+      "key" : "review-plan"
+    },
+    {
+      "expand" : "Thanks for the feedback, plan is updated accordingly. I did an initial implementation per your suggestion. Code review the current uncommitted changes. Evaluate: correctness\/bugs, UX impact, performance, over-engineering, consistency with existing patterns, and edge cases. For each issue found, rate severity (critical\/moderate\/minor) and suggest a concrete fix with details. Think about whether the implementation actually solves the intended problem. ",
+      "key" : "review-uncommitted"
+    },
+    {
+      "expand" : "Per your suggestion, I have updated the relevant files (the current uncommited changes should only contain the targeted changes now), can you recheck them again.",
+      "key" : "review-updates"
+    },
+    {
+      "expand" : "A senior engineer reviewed your changes and provided critical feedback below. For each point: (1) assess whether it's valid, (2) if valid, analyze a fix, (3) if wrong, explain why with reasons either in code quality or UX \n\n---\n\n$0",
+      "key" : "review-reflect"
+    },
+    {
+      "expand" : "The engineering team reviewed your plan and provided critical feedback below. For each point: (1) assess whether it's valid, (2) if valid, update the plan accordingly, (3) if wrong, explain why with reasons either in code quality or UX.\n\n---\n\n$0",
+      "key" : "update-plan"
+    },
+    {
+      "expand" : "Review the following plan with a critical mind. For points you support, provide some technical suggestions or caveats when applicable. For points you disagree with, reason about why. Your decisions should be focused on both technical merit and end-user impact. Don't be afraid to challenge assumptions or suggest alternatives if you think they would lead to a better outcome.\n\n$0",
+      "key" : "review-plan"
+    },
+    {
+      "expand" : "These references are general best practices, not prescriptions. Critically evaluate each suggestion against our specific codebase, architecture, and constraints before applying. Discard what doesn't fit; adapt what does.",
+      "key" : "smart-adapt-skills"
+    },
+    {
+      "expand" : "Don't measure technical difficulty by the amount of code changed. Instead, consider the complexity of the problem being solved, the number of components affected, the potential for unintended consequences, and the level of uncertainty involved. More importantly does this solves the core UX problem and still maintain a clean technical design.",
+      "key" : "technical-difficulty"
+    },
+    {
+      "expand" : "DO NOT CHANGE ANY CODE YET. Step back and evaluate the module\/feature holistically. Don't patch a flawed design — identify the real problem and UX goal, then consider redesigning from first principles if needed. Present multiple approaches with their tradeoffs, elaborate your rationale, and don't shy away from large-scale changes when justified. ",
+      "key" : "think-holistic"
+    },
+    {
+      "expand" : "## Focus Areas\n\n### 1. Code Organization & Modularity\n- Extract cohesive modules: Identify logical groupings of functionality that can be separated into focused modules\n- Split large files: Break down files with multiple responsibilities into single-responsibility modules\n- Reduce coupling: Identify and minimize tight dependencies between components\n- Improve cohesion: Ensure related functionality stays together\n\n### 2. API Design & Interface Clarity\n- Simplify public interfaces: Reduce API surface area where appropriate\n- Consolidate related endpoints: Group similar functionality under coherent modules\n- Improve naming: Ensure functions, classes, and modules have clear, intention-revealing names\n- Establish clear boundaries: Define explicit interfaces between subsystems\n\n### 3. Code Reuse & Shared Utilities\n- Extract common patterns: Identify repeated code blocks and extract shared utilities\n- Create helper functions: Abstract repetitive operations into reusable helpers\n- Avoid duplication: Apply DRY (Don't Repeat Yourself) principle judiciously\n- Consider creating common libraries: For widely-used functionality across the codebase\n\n### 4. Code Hygiene\n- Remove dead code: Delete unused functions, classes, and variables\n- Eliminate obsolete tests: Remove tests for deleted functionality\n- Clean up commented code: Remove commented-out code blocks that are no longer relevant\n- Update stale documentation: Align comments and docs with current implementation\n\n## Design Patterns to Consider\nWhen refactoring, consider applying these patterns where appropriate:\n- Factory Pattern: For complex object creation logic\n- Strategy Pattern: For interchangeable algorithms or behaviors\n- Facade Pattern: To simplify complex subsystem interfaces\n- Repository Pattern: For data access abstraction\n- Dependency Injection: To reduce coupling and improve testability\n- Builder Pattern: For constructing complex objects step-by-step\n- Adapter Pattern: To integrate incompatible interfaces\n\n## Anti-Patterns to Avoid\nBe mindful of over-engineering by avoiding:\n- Premature abstraction: Don't create protocols\/interfaces used in only one place without clear future need\n- Speculative generality: Don't add flexibility \"just in case\" without concrete requirements\n- Excessive layering: Don't create layers of indirection that obscure rather than clarify\n- Over-modularization: Don't split code so finely that it becomes hard to follow the flow\n- Abstract base classes for single implementations: Wait until you have 2-3 implementations before abstracting\n- Configuration over convention: Prefer sensible defaults over requiring configuration\n- Framework creation: Resist building internal frameworks unless you have multiple consumers\n\n## Success Criteria\nQuality is not measured by lines of code, but by:\n- Readability: Can a new developer understand the code flow quickly?\n- Maintainability: Can changes be made safely without cascading effects?\n- Testability: Can components be tested in isolation?\n- Clear responsibility: Does each module have a well-defined, focused purpose?\n- Appropriate abstraction levels: Are abstractions justified by actual reuse or flexibility needs?\n- Minimal cognitive load: Does the architecture reduce mental overhead for understanding the system?\n\n## Approach\n- Analyze before acting: Understand the current structure and dependencies first\n- Identify pain points: Look for actual problems, not theoretical ones\n- Prioritize high-impact changes: Focus on areas that will yield the most benefit\n- Refactor incrementally: Make changes in small, testable steps\n- Preserve behavior: Ensure functionality remains unchanged unless explicitly intended\n- Validate with tests: Confirm existing tests pass after refactoring\n\n## Guiding Principles\n- YAGNI (You Aren't Gonna Need It): Only add what's needed now\n- KISS (Keep It Simple, Stupid): Prefer simple solutions over clever ones\n- Rule of Three: Consider abstracting after the third duplication, not the first\n- Single Responsibility: Each module should have one reason to change\n- Open\/Closed Principle: Open for extension, closed for modification (where it makes sense)",
+      "key" : "refactor-guidelines"
+    }
+  ],
+  "settings" : {
+    "material" : "glass",
+    "appearance" : "light",
+    "max_branch_age_days" : 90,
+    "scan_depth" : 5,
+    "badge_palette" : "minimal",
+    "ignore_patterns" : [
+      "node_modules",
+      ".git",
+      "dist",
+      "build"
+    ],
+    "case_sensitive" : false
+  }
+}

@@ -1,0 +1,126 @@
+[
+  {
+    "context": "TabSwitcher",
+    "bindings": {
+      "cmd-p": null,
+    },
+  },
+  // alternative to vim-surround ys trigger
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "s a": "vim::PushAddSurrounds",
+      // Multi-cursor (very useful)
+      "g l": "editor::SelectNext",
+      "g L": "editor::SelectPrevious",
+      "g a": "editor::SelectAllMatches",
+
+      // Git hunks
+      "] c": "editor::GoToHunk",
+      "[ c": "editor::GoToPreviousHunk",
+      "space g d": "editor::ToggleSelectedDiffHunks",
+      "space g r": "git::Restore",
+    },
+  },
+  {
+    "context": "vim_operator == a || vim_operator == i || vim_operator == cs || vim_operator == ds",
+    "bindings": {
+      "q": "vim::MiniQuotes",
+      "b": "vim::MiniBrackets",
+    },
+  },
+  // Surround in visual mode
+  {
+    "context": "vim_mode == visual",
+    "bindings": {
+      "shift-s": "vim::PushAddSurrounds",
+      "s a": "vim::PushAddSurrounds",
+    },
+  },
+  {
+    "bindings": {
+      "cmd-p": "tab_switcher::ToggleAll",
+    },
+  },
+  {
+    "bindings": {
+      "ctrl-k": null,
+      "ctrl-p": "file_finder::Toggle",
+      "ctrl-shift-p": "command_palette::Toggle",
+      "ctrl-`": "terminal_panel::ToggleFocus",
+      "ctrl-/": "workspace::ToggleBottomDock",
+      "ctrl-k ctrl-x": "zed::Extensions",
+      "ctrl-k ctrl-e": "workspace::ToggleRightDock",
+    },
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-s": "workspace::Save",
+      "ctrl-c": "editor::Copy",
+      "ctrl-v": "editor::Paste",
+      "ctrl-z": "vim::Undo",
+      "ctrl-[": "editor::Outdent",
+      "ctrl-]": "editor::Indent",
+      "cmd-left": "pane::ActivateNextItem",
+      "cmd-right": "pane::ActivatePreviousItem",
+      "shift-tab": "editor::ShowCompletions",
+      "alt-down": "editor::MoveLineDown",
+      "ctrl-shift-f": "pane::DeploySearch",
+      "ctrl-l": "project_panel::ToggleFocus",
+      "ctrl-shift-o": "outline::Toggle",
+      "ctrl-k ctrl-o": "outline::Toggle",
+      "ctrl-k y": "workspace::CopyRelativePath",
+    },
+  },
+
+  {
+    "context": "Terminal",
+
+    "bindings": {
+      "ctrl-`": "workspace::ToggleBottomDock",
+    },
+  },
+
+  // put space related keymaps here when vim mode is normal
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "gt": "editor::GoToTypeDefinition",
+      "shift-k": "editor::Hover",
+      "space c a": "editor::ToggleCodeActions",
+      "space c r": "editor::Rename",
+      "space e": "workspace::ToggleRightDock",
+      "space space": "file_finder::Toggle",
+      "space ,": "tab_switcher::ToggleAll",
+      "g r": "editor::FindAllReferences",
+      "] e": [
+        "editor::GoToDiagnostic",
+        { "severity": { "min": "error", "max": "error" } },
+      ],
+      "[ e": [
+        "editor::GoToPreviousDiagnostic",
+        { "severity": { "min": "error", "max": "error" } },
+      ],
+    },
+  },
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      "ctrl-x": "editor::Cut",
+    },
+  },
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "space e": "workspace::ToggleRightDock",
+      "r": "project_panel::Rename",
+      "m": "project_panel::Rename",
+      "n": "project_panel::NewFile",
+      "ctrl-a": "project_panel::NewDirectory",
+      "a": "project_panel::NewFile",
+      "d": "project_panel::Delete",
+      "ctrl-h": "editor::ToggleFocus",
+    },
+  },
+]

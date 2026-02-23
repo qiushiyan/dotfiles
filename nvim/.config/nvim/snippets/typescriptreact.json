@@ -1,0 +1,69 @@
+{
+  "layout component": {
+    "prefix": "layout",
+    "body": [
+      "import React from 'react'",
+      "\n",
+      "export default function Layout({children}: {children: React.ReactNode}) {",
+      "\t$1",
+      "}"
+    ],
+    "description": "Insert a layout component"
+  },
+  "async layout component": {
+    "prefix": "alayout",
+    "body": [
+      "import React from 'react'",
+      "\n",
+      "export default async function Layout({children}: {children: React.ReactNode}) {",
+      "\t$1",
+      "}"
+    ],
+    "description": "Insert an async layout component"
+  },
+  "page component": {
+    "prefix": "page",
+    "body": [
+      "import React from 'react'",
+      "\n",
+      "export default function Page($1) {",
+      "\t$2",
+      "}"
+    ],
+    "description": "Insert a page component"
+  },
+  "async page component": {
+    "prefix": "apage",
+    "body": [
+      "import React from 'react'",
+      "\n",
+      "export default async function Page($1) {",
+      "\t$2",
+      "}"
+    ],
+    "description": "Insert a async page component"
+  },
+  "props with children": {
+    "prefix": "pchildren",
+    "body": ["{ children }: { children: React.ReactNode }"],
+    "description": "Insert props with children"
+  },
+  "props with searchParams": {
+    "prefix": "psearch",
+    "body": ["{ searchParams }: { searchParams: Promise<unknown> } "],
+    "description": "Insert props with searchParams"
+  },
+  "props with children and searchParams": {
+    "prefix": "pcs",
+    "body": [
+      "{ children, searchParams }: { children: React.ReactNode, searchParams: Promise<unknown> } "
+    ],
+    "description": "Insert props with children and searchParams"
+  },
+
+  "props with className": {
+    "prefix": "pclassname",
+    "body": ["{ className }: { className?: string }"],
+    "description": "Insert props with className"
+  }
+}

@@ -1,0 +1,268 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run the `open default settings` command
+// from the command palette or from `Zed` application menu.
+{
+  "edit_predictions": {
+    "provider": "copilot",
+  },
+  "icon_theme": "Symbols Icon Theme",
+  "agent_buffer_font_size": 23.0,
+  "buffer_font_weight": 400.0,
+  "context_servers": {
+    "mcp-server-context7": {
+      "enabled": true,
+      "settings": {
+        "context7_api_key": "",
+      },
+    },
+  },
+  "git": {
+    "inline_blame": {
+      "enabled": false,
+    },
+  },
+  "language_models": {
+    "openai_compatible": {
+      "qwen": {
+        "api_url": "https://portal.qwen.ai/v1",
+        "available_models": [
+          {
+            "name": "qwen3-coder-plus",
+            "display_name": null,
+            "max_tokens": 200000,
+            "max_output_tokens": 65536,
+            "max_completion_tokens": 1000000,
+            "capabilities": {
+              "tools": true,
+              "images": true,
+              "parallel_tool_calls": false,
+              "prompt_cache_key": false,
+            },
+          },
+        ],
+      },
+    },
+  },
+  "git_panel": {
+    "dock": "left",
+  },
+  "buffer_line_height": "comfortable",
+  "soft_wrap": "editor_width",
+  "bottom_dock_layout": "full",
+  "autosave": "on_focus_change",
+  "ssh_connections": [
+    {
+      "host": "marswave.staging",
+      "projects": [
+        {
+          "paths": ["/home/ec2-user"],
+        },
+      ],
+    },
+  ],
+  "agent": {
+    "default_profile": "write",
+    "dock": "right",
+    "always_allow_tool_actions": true,
+    "default_model": {
+      "provider": "copilot_chat",
+      "model": "gpt-4.1",
+    },
+  },
+  "base_keymap": "VSCode",
+  "theme": {
+    "mode": "dark",
+    "light": "Tailwind CSS Light (Enhanced)",
+    "dark": "Tailwind CSS Dark (Enhanced)",
+  },
+  "vim_mode": true,
+  "relative_line_numbers": "enabled",
+  "current_line_highlight": "line",
+  "ui_font_size": 19.0,
+  "buffer_font_size": 21.0,
+  "agent_ui_font_size": 21.0,
+  "cursor_blink": false,
+  "vertical_scroll_margin": 5,
+  "sticky_scroll": {
+    "enabled": false,
+  },
+  "ui_font_family": "Monaco",
+  "scroll_sensitivity": 0.1,
+  "buffer_font_family": "DankMono Nerd Font",
+  "languages": {
+    "TypeScript": {
+      "formatter": {
+        "external": {
+          "command": "pnpm",
+          "arguments": [
+            "exec",
+            "prettier",
+            "--stdin-filepath",
+            "{buffer_path}",
+          ],
+        },
+      },
+      "format_on_save": "on",
+    },
+    "TSX": {
+      "formatter": {
+        "external": {
+          "command": "pnpm",
+          "arguments": [
+            "exec",
+            "prettier",
+            "--stdin-filepath",
+            "{buffer_path}",
+          ],
+        },
+      },
+      "format_on_save": "on",
+    },
+  },
+  "terminal": {
+    "dock": "bottom",
+    "font_size": 20,
+    "font_family": "Iosevka Term",
+    "copy_on_select": true,
+    "button": true,
+    "line_height": "comfortable",
+    "toolbar": {
+      "breadcrumbs": false,
+    },
+  },
+  "project_panel": {
+    "dock": "right",
+    "hide_root": true,
+    "indent_size": 25,
+    "default_width": 400,
+    "entry_spacing": "comfortable",
+    "file_icons": true,
+    "folder_icons": true,
+    "auto_fold_dirs": false,
+    "auto_reveal_entries": true,
+    "button": true,
+    "git_status": true,
+    "indent_guides": {
+      "show": "never",
+    },
+  },
+  "status_bar": {
+    "experimental.show": true,
+  },
+  "tab_bar": {
+    "show_tab_bar_buttons": false,
+    "show": false,
+    "show_nav_history_buttons": false,
+  },
+  "scrollbar": {
+    "git_diff": false,
+    "search_results": false,
+    "selected_symbol": false,
+    "diagnostics": "error",
+    "show": "auto",
+  },
+  "title_bar": {
+    "show_project_items": true,
+    "show_user_picture": false,
+  },
+  "toolbar": {
+    "breadcrumbs": true,
+    "quick_actions": false,
+    "code_actions": false,
+  },
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false,
+  },
+  "diagnostics": {
+    "inline": {
+      "enabled": true,
+      "update_debounce_ms": 150,
+      "padding": 4,
+      "min_column": 0,
+      "max_severity": null,
+    },
+    "include_warnings": false,
+  },
+  "gutter": {
+    "line_numbers": true,
+    "runnables": false,
+    "folds": true,
+    "breakpoints": false,
+    "min_line_number_digits": 2,
+  },
+  "theme_overrides": {
+    "Catppuccin Latte (Blur)": {
+      "syntax": {
+        "title": {
+          "color": "#fe640b",
+        },
+      },
+    },
+    "Tailwind CSS Dark (Enhanced)": {
+      "background.appearance": "blurred",
+      "background": "#101828d7",
+      "surface.background": "#101828d0",
+      "elevated_surface.background": "#1e2939",
+      "panel.background": "#00000000",
+      "panel.overlay_background": "#101828",
+      "editor.background": "#00000000",
+      "editor.gutter.background": "#00000000",
+      "editor.active_line.background": "#00000000",
+      "tab.active_background": "#101828b0",
+      "tab.inactive_background": "#00000000",
+      "tab_bar.background": "#00000000",
+      "title_bar.background": "#101828d7",
+      "status_bar.background": "#101828d7",
+      "toolbar.background": "#00000000",
+      "terminal.background": "#00000000",
+      "scrollbar.track.background": "#00000000",
+      "scrollbar.track.border": "#00000000",
+      "border": "#1e293915",
+      "border.variant": "#00000000",
+      "pane.focused_border": "#1e293910",
+      "pane_group.border": "#1e293915",
+    },
+  },
+  "experimental.theme_overrides": {
+    "syntax": {
+      "attribute": {
+        "font_style": "italic",
+      },
+      "comment": {
+        "font_style": "italic",
+      },
+      "comment.doc": {
+        "font_style": "italic",
+      },
+      "function": {
+        "font_style": "italic",
+      },
+      "keyword": {
+        "font_style": "italic",
+        "font_weight": 700,
+      },
+      "punctuation.bracket": {
+        "font_style": "italic",
+      },
+      "punctuation.delimiter": {
+        "font_style": "italic",
+      },
+      "punctuation.list_marker": {
+        "font_style": "italic",
+        "font_weight": 700,
+      },
+      "punctuation": {
+        "font_style": "italic",
+      },
+      "emphasis": {
+        "font_style": "italic",
+      },
+    },
+  },
+}
