@@ -1,10 +1,3 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
 # --------------------------------------------------------------------
 # 1. SHELL BEHAVIOR & HISTORY (Added new settings here)
 # --------------------------------------------------------------------
@@ -28,9 +21,8 @@ export AWS_PROFILE=marswave
 export CLOUDSDK_PYTHON="/opt/homebrew/bin/python3.14"
 export CONDA_AUTO_ACTIVATE_BASE=false
 
-# Theme
-# ZSH_THEME="spaceship"
-ZSH_THEME="powerlevel10k/powerlevel10k"
+# Theme (using Oh My Posh instead)
+ZSH_THEME=""
 
 # Plugins
 plugins=(history zsh-autosuggestions git) # Added 'git' plugin for better completions
@@ -150,8 +142,6 @@ export ANDROID_SDK=/Users/qiushi/Library/Android/sdk
 # hdf5
 export HDF5_DIR="$(brew --prefix hdf5)"
 
-# starship
-eval "$(starship init zsh)"
 
 # mcfly
 # eval "$(mcfly init zsh)"
@@ -173,8 +163,6 @@ export WASMTIME_HOME="$HOME/.wasmtime"
 
 export PATH="$WASMTIME_HOME/bin:$PATH"
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 alias tsx=tsx --no-warnings
 
@@ -220,4 +208,7 @@ fi
 
 # Use corepack for pnpm (respects packageManager field in package.json)
 export COREPACK_ENABLE_AUTO_PIN=0
+
+
+eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/catppuccin_mocha.omp.json)"
 

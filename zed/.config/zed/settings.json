@@ -127,7 +127,7 @@
   "terminal": {
     "dock": "bottom",
     "font_size": 20,
-    "font_family": "Iosevka Term",
+    "font_family": "IosevkaTerm Nerd Font",
     "copy_on_select": true,
     "button": true,
     "line_height": "comfortable",
