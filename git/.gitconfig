@@ -1,0 +1,47 @@
+[init]
+  defaultBranch = main
+
+[user]
+# Please adapt and uncomment the following lines:
+	name = yanqiushi-mw
+useConfigOnly = true
+	email = y@marswave.ai
+
+[include]
+  path = ~/.gitconfig.personal
+
+[includeIf "gitdir:~/workspace/"]
+  path = ~/.gitconfig.personal
+
+[includeIf "gitdir:~/workspace/marswave/"]
+  path = ~/.gitconfig.marswave
+
+[core]
+editor = nvim
+excludesfile = /Users/qiushi/.gitignore_global
+[submodule]
+recurse = true
+[filter "lfs"]
+clean = git-lfs clean -- %f
+smudge = git-lfs smudge -- %f
+process = git-lfs filter-process
+required = true
+[init]
+defaultBranch = main
+[commit]
+# https://help.github.com/articles/signing-commits-using-gpg/
+gpgsign = false
+[http]
+postBuffer = 524288000
+[push]
+default = current
+[https]
+
+[alias]
+undo = reset --soft
+[credential "https://github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
