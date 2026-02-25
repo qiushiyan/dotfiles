@@ -248,6 +248,69 @@ ccproxy() {
 }
 
 # --------------------------------------------------------------------
+# codexproxy - Toggle API proxy settings for OpenAI Codex CLI
+# Uses the same proxy credentials as ccproxy (CCPROXY_BASE_URL / CCPROXY_AUTH_TOKEN)
+# Usage: codexproxy on | off | (no args to check status)
+# --------------------------------------------------------------------
+codexproxy() {
+  local config="$HOME/.codex/config.toml"
+  # Resolve symlink so we edit the actual file, not replace the link
+  [[ -L "$config" ]] && config="$(realpath "$config")"
+
+  case "$1" in
+    on)
+      export OPENAI_API_KEY="$CCPROXY_AUTH_TOKEN"
+      export OPENAI_BASE_URL="$CCPROXY_BASE_URL"
+
+      if grep -q "codexproxy BEGIN" "$config" 2>/dev/null; then
+        echo "Codex proxy ON (config already set)"
+        return
+      fi
+
+      # Prepend routing keys + append provider section, wrapped in markers
+      local tmp="${config}.tmp.$$"
+      {
+        echo '# --- codexproxy BEGIN ---'
+        echo 'model_provider = "aicodewith"'
+        echo 'preferred_auth_method = "apikey"'
+        echo 'requires_openai_auth = true'
+        echo 'enableRouteSelection = true'
+        echo '# --- codexproxy END ---'
+        echo ''
+        cat "$config"
+        echo ''
+        echo '# --- codexproxy BEGIN ---'
+        echo '[model_providers.aicodewith]'
+        echo 'name = "aicodewith"'
+        echo "base_url = \"${CCPROXY_BASE_URL}\""
+        echo 'wire_api = "responses"'
+        echo '# --- codexproxy END ---'
+      } > "$tmp" && mv "$tmp" "$config"
+
+      echo "Codex proxy ON"
+      ;;
+    off)
+      unset OPENAI_API_KEY
+      unset OPENAI_BASE_URL
+
+      if [[ -f "$config" ]] && grep -q "codexproxy BEGIN" "$config"; then
+        sed '/# --- codexproxy BEGIN ---/,/# --- codexproxy END ---/d' "$config" \
+          > "${config}.tmp.$$" && mv "${config}.tmp.$$" "$config"
+      fi
+
+      echo "Codex proxy OFF"
+      ;;
+    *)
+      if grep -q "codexproxy BEGIN" "$config" 2>/dev/null; then
+        echo "Codex proxy is ON"
+      else
+        echo "Codex proxy is OFF"
+      fi
+      ;;
+  esac
+}
+
+# --------------------------------------------------------------------
 # loc - Count lines of code per file with visual bar chart
 # Respects .gitignore. Uses git ls-files in repos, falls back to find.
 # Usage: loc [dir] [-s size|name|ext] [-e ext1,ext2] [-n limit]

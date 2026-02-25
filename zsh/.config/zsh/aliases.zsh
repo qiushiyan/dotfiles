@@ -24,7 +24,7 @@ alias lg="lazygit"
 alias gsp='git stash -p'
 
 # Quick commit and push (pass message as arg, defaults to 'update')
-gg() { git add . && git commit -m "${1:-update}" && git push; }
+function gg { git add . && git commit -m "${1:-update}" && git push; }
 
 # --------------------------------------------------------------------
 # Kubernetes & Docker
@@ -73,6 +73,7 @@ alias sshprod="ssh marswave.production"
 # Misc Tools
 # --------------------------------------------------------------------
 alias c="cursor"
+alias o="openclaw"
 alias make="mmake"                   # https://github.com/tj/mmake
 alias tsx='tsx --no-warnings'
 alias -s ts='bun'                    # suffix: *.ts files run with bun

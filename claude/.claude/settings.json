@@ -1,6 +1,8 @@
 {
   "permissions": {
-    "allow": ["mcp__pencil"]
+    "allow": [
+      "mcp__pencil"
+    ]
   },
   "hooks": {
     "PreToolUse": [
@@ -38,5 +40,6 @@
     "superpowers@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "model": "opus"
 }

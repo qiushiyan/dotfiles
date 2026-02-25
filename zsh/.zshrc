@@ -41,7 +41,7 @@ export VISUAL="nvim"
 export EDITOR="nvim"
 
 # AWS / GCP
-export AWS_PROFILE=marswave
+# export AWS_PROFILE=marswave
 export CLOUDSDK_PYTHON="/opt/homebrew/bin/python3.14"
 export GOOGLE_GENAI_USE_VERTEXAI=true
 export GOOGLE_CLOUD_PROJECT="marswave"
@@ -94,6 +94,7 @@ export GEMINI_MODEL="gemini-2.5-flash"
 ZSH_THEME=""
 plugins=(history zsh-autosuggestions git)
 source "$ZSH/oh-my-zsh.sh"
+unalias gg 2>/dev/null   # git plugin sets gg='git gui citool'; we define our own in aliases.zsh
 
 # --------------------------------------------------------------------
 # 5. TOOL INIT (order matters — oh-my-posh must be last)
@@ -134,3 +135,6 @@ eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
 # Aliases live in ~/.config/zsh/aliases.zsh (auto-sourced by .zshenv).
 # Add new aliases there, not here.
 # --------------------------------------------------------------------
+
+# OpenClaw Completion
+source "/Users/qiushi/.openclaw/completions/openclaw.zsh"
