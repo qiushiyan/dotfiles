@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""Estimate token count of files/directories (English text, no deps).
+
+Splits on non-alphanumeric boundaries + counts punctuation marks.
+In git repos, automatically respects .gitignore.
+"""
+
+import os
+import re
+import subprocess
+import sys
+
+PUNCT = re.compile(r"[^\w\s]")
+WORDS = re.compile(r"[A-Za-z0-9]+")
+
+
+def count_tokens(path: str) -> int:
+    try:
+        text = open(path, encoding="utf-8", errors="ignore").read()
+    except (OSError, IsADirectoryError):
+        return 0
+    return len(WORDS.findall(text)) + len(PUNCT.findall(text))
+
+
+def is_binary(path: str) -> bool:
+    try:
+        with open(path, "rb") as f:
+            chunk = f.read(8192)
+        return b"\x00" in chunk
+    except OSError:
+        return True
+
+
+def git_ls_files(directory: str) -> list[str] | None:
+    """Return git-tracked files relative to directory, or None if not a git repo."""
+    try:
+        root = subprocess.check_output(
+            ["git", "-C", directory, "rev-parse", "--show-toplevel"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+    result = subprocess.check_output(
+        ["git", "-C", root, "ls-files", "--cached", "--others", "--exclude-standard"],
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+
+    abs_dir = os.path.realpath(directory)
+    abs_root = os.path.realpath(root)
+    rel_prefix = os.path.relpath(abs_dir, abs_root)
+
+    files = []
+    for line in result.splitlines():
+        if not line:
+            continue
+        if rel_prefix != "." and not line.startswith(rel_prefix + "/"):
+            continue
+        # Make path relative to the target directory
+        if rel_prefix == ".":
+            rel = line
+        else:
+            rel = line[len(rel_prefix) + 1 :]
+        full = os.path.join(directory, rel)
+        if os.path.isfile(full):
+            files.append(rel)
+    return files
+
+
+def collect_files(directory: str, excludes: list[str]) -> list[str]:
+    """Collect files from directory, respecting .gitignore and excludes."""
+    git_files = git_ls_files(directory)
+
+    if git_files is not None:
+        result = []
+        for rel in git_files:
+            parts = rel.split("/")
+            if any(p in excludes for p in parts):
+                continue
+            result.append(rel)
+        return result
+
+    # Fallback: walk the directory
+    result = []
+    for root, dirs, filenames in os.walk(directory):
+        # Prune excluded and hidden dirs in-place
+        dirs[:] = [d for d in dirs if d not in excludes and not d.startswith(".")]
+        for name in filenames:
+            if name.startswith("."):
+                continue
+            full = os.path.join(root, name)
+            rel = os.path.relpath(full, directory)
+            result.append(rel)
+    return result
+
+
+def parse_args(argv: list[str]):
+    """Custom parser: -x consumes all args until the next flag or known option."""
+    excludes = []
+    paths = []
+    top = 0
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg in ("-h", "--help"):
+            print("Usage: count-token [-x <dir>...] [-n <N>] <file|dir> [file2|dir2 ...]")
+            print("Estimates token count (English text). ~10-15% of BPE tokenizers.")
+            print()
+            print("Options:")
+            print("  -n, --top <n>        Show only top N files (total still reflects all)")
+            print("  -x, --exclude <dir>  Exclude directories (comma-separated, repeatable)")
+            print()
+            print("Examples:")
+            print("  count-token src/")
+            print("  count-token . -x docs,.claude -n 5")
+            print("  count-token -x node_modules -x dist .")
+            sys.exit(0)
+        elif arg in ("-x", "--exclude"):
+            i += 1
+            # Accept comma or space separated: -x docs,.claude or -x docs -x .claude
+            for val in argv[i].split(","):
+                val = val.strip().rstrip("/")
+                if val:
+                    excludes.append(val)
+            i += 1
+        elif arg in ("-n", "--top"):
+            i += 1
+            top = int(argv[i])
+            i += 1
+        elif arg == "--":
+            paths.extend(argv[i + 1 :])
+            break
+        elif arg.startswith("-"):
+            print(f"count-token: unknown option '{arg}'", file=sys.stderr)
+            sys.exit(1)
+        else:
+            paths.append(arg)
+            i += 1
+    return paths, set(excludes), top
+
+
+def main():
+    paths, excludes, top = parse_args(sys.argv[1:])
+
+    if not paths:
+        print("Usage: count-token [-x <dir>...] [-n <N>] <file|dir> [file2|dir2 ...]", file=sys.stderr)
+        sys.exit(1)
+
+    entries: list[tuple[int, str]] = []
+    total = 0
+
+    for path in paths:
+        if os.path.isfile(path):
+            if not is_binary(path):
+                c = count_tokens(path)
+                if c > 0:
+                    entries.append((c, path))
+                    total += c
+        elif os.path.isdir(path):
+            files = collect_files(path, excludes)
+            for rel in files:
+                full = os.path.join(path, rel)
+                if is_binary(full):
+                    continue
+                c = count_tokens(full)
+                if c > 0:
+                    entries.append((c, os.path.join(path, rel)))
+                    total += c
+        else:
+            print(f"count-token: {path}: not a file or directory", file=sys.stderr)
+
+    if not entries:
+        print("0")
+        return
+
+    # Single file, just print the number
+    if len(entries) == 1 and len(paths) == 1 and os.path.isfile(paths[0]):
+        print(total)
+        return
+
+    # Sort descending
+    entries.sort(key=lambda x: x[0], reverse=True)
+
+    # Display
+    shown = 0
+    for count, name in entries:
+        if top > 0 and shown >= top:
+            break
+        pct = count * 100 // total
+        print(f"{count:>8}  {pct:>3}%  {name}")
+        shown += 1
+    print(f"{total:>8}  100%  total ({len(entries)} files)")
+
+
+if __name__ == "__main__":
+    main()

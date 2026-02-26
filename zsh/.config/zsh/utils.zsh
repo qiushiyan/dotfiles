@@ -512,6 +512,14 @@ EOF
   echo "done: $app stowed"
 }
 
+# --------------------------------------------------------------------
+# count-token - Estimate token count of files/directories (English text, no deps)
+# Implemented in ~/.config/scripts/count-token (Python)
+# --------------------------------------------------------------------
+count-token() {
+  /opt/homebrew/bin/python3.14 ~/.config/scripts/count-token "$@"
+}
+
 _loc_help() {
   cat <<'EOF'
 Usage: loc [dir] [options]
