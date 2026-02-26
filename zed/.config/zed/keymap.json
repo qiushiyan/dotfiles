@@ -120,6 +120,7 @@
       "ctrl-a": "project_panel::NewDirectory",
       "a": "project_panel::NewFile",
       "d": "project_panel::Delete",
+      "ctrl-d": "project_panel::Duplicate",
       "ctrl-h": "editor::ToggleFocus",
     },
   },
