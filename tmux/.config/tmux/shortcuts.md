@@ -58,6 +58,21 @@ tmux kill-session -a           # kill all except current
 | `C-d` | kill selected tmux session |
 | `Tab / Shift-Tab` | navigate list |
 
+## Copy mode (scrolling & selection)
+
+Enter with `prefix [`, exit with `q` or `Escape`.
+
+| Key | Action |
+|-----|--------|
+| `C-u / C-d` | scroll up / down 10 lines |
+| `k / j` | scroll up / down 1 line |
+| `v` | begin selection |
+| `C-v` | rectangle selection |
+| `y` | copy selection |
+| `H / L` | start / end of line |
+| `/` | search forward |
+| `gg / G` | top / bottom of scrollback |
+
 ## Resurrect (save/restore across reboots)
 
 | Key | Action |
