@@ -117,8 +117,8 @@ source <(fzf --zsh)
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
-# z (directory jumping)
-source /opt/homebrew/etc/profile.d/z.sh
+# zoxide (directory jumping)
+eval "$(zoxide init zsh)"
 
 # Google Cloud SDK
 [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ] && source "$HOME/google-cloud-sdk/path.zsh.inc"

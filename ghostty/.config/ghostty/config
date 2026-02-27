@@ -40,8 +40,9 @@ window-colorspace = "display-p3"
 keybind = shift+ctrl+r=reload_config
 keybind = performable:ctrl+c=copy_to_clipboard
 keybind = ctrl+v=unbind
-keybind = ctrl+shift+p=toggle_command_palette
-keybind = ctrl+shift+/=toggle_quick_terminal
+# sesh session picker (sends prefix T to tmux)
+keybind = ctrl+shift+p=text:\x01T
+keybind = ctrl+`=toggle_quick_terminal
 
 
 # initial-command = "~/.config/dev-itell.sh"
