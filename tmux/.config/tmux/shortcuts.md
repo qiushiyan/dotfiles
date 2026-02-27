@@ -6,7 +6,7 @@ Prefix: `C-a` (or `C-b`)
 
 | Key | Action |
 |-----|--------|
-| `prefix T` | sesh fuzzy session picker |
+| `Ctrl+Shift+P` or `prefix T` | sesh fuzzy session picker |
 | `prefix C-c` | new session |
 | `prefix $` | rename current session |
 | `prefix d` | detach |
@@ -43,6 +43,20 @@ tmux kill-session -a           # kill all except current
 | `prefix x` | kill pane |
 | `prefix !` | break pane to hidden |
 | `prefix @` | join hidden pane back |
+
+## Sesh (fuzzy session picker)
+
+`prefix T` opens the picker. Inside the picker:
+
+| Key | Action |
+|-----|--------|
+| `C-a` | list all |
+| `C-t` | tmux sessions only |
+| `C-g` | config sessions |
+| `C-x` | zoxide directories |
+| `C-f` | find directories under ~ |
+| `C-d` | kill selected tmux session |
+| `Tab / Shift-Tab` | navigate list |
 
 ## Resurrect (save/restore across reboots)
 
