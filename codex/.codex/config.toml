@@ -53,10 +53,6 @@ trust_level = "trusted"
 [projects."/Users/qiushi/workspace/TabType"]
 trust_level = "trusted"
 
-[mcp_servers.chrome-devtools]
-command = "npx"
-args = [ "chrome-devtools-mcp@latest" ]
-
 [mcp_servers.context7]
 command = "npx"
 args = [ "-y", "@upstash/context7-mcp", "--api-key", "ctx7sk-fc0f95a3-ef46-4023-ba6e-9c1f3eda4dbe" ]
@@ -72,4 +68,3 @@ collaboration_modes = true
 [notice]
 hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
-

@@ -229,12 +229,14 @@ ccproxy() {
       # export DISABLE_PROMPT_CACHING=1
       export ANTHROPIC_BASE_URL="$CCPROXY_BASE_URL"
       export ANTHROPIC_AUTH_TOKEN="$CCPROXY_AUTH_TOKEN"
+      export ANTHROPIC_API_KEY="$CCPROXY_AUTH_TOKEN"
       echo "AI proxy ON"
       ;;
     off)
       unset DISABLE_PROMPT_CACHING
       unset ANTHROPIC_BASE_URL
       unset ANTHROPIC_AUTH_TOKEN
+      unset ANTHROPIC_API_KEY
       echo "AI proxy OFF"
       ;;
     *)

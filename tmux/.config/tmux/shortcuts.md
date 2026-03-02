@@ -86,3 +86,4 @@ Enter with `prefix [`, exit with `q` or `Escape`.
 |-----|--------|
 | `prefix r` | reload config |
 | `prefix C-k` | clear screen + scrollback |
+| `Shift+Ctrl+click` | open URL in browser (bypasses tmux mouse) |
