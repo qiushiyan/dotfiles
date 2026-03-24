@@ -10,7 +10,7 @@
   "edit_predictions": {
     "provider": "copilot",
   },
-  "icon_theme": "Symbols Icon Theme",
+  "icon_theme": "Catppuccin Mocha",
   "agent_buffer_font_size": 23.0,
   "buffer_font_weight": 400.0,
   "context_servers": {
@@ -66,9 +66,11 @@
     },
   ],
   "agent": {
+    "tool_permissions": {
+      "default": "allow"
+    },
     "default_profile": "write",
     "dock": "right",
-    "always_allow_tool_actions": true,
     "default_model": {
       "provider": "copilot_chat",
       "model": "gpt-4.1",

@@ -85,7 +85,7 @@ ccclean() {
       continue
     fi
 
-    for session_file in "$project_dir"/*.jsonl; do
+    for session_file in "$project_dir"/*.jsonl(N); do
       [[ ! -f "$session_file" ]] && continue
       [[ "${session_file:t}" == "sessions-index.json" ]] && continue
 
@@ -216,8 +216,76 @@ zed() {
   command zed "$@"
 }
 
+# --------------------------------------------------------------------
+# rm - Safe wrapper to block recursive deletion of critical directories
+# Bypass with: command rm -rf <path>
+# --------------------------------------------------------------------
+rm() {
+  # Only intervene when -r or -R (recursive) is present
+  local has_recursive=false
+  local args=()
+  for arg in "$@"; do
+    case "$arg" in
+      --)           args+=("$arg"); break ;;
+      -r|-R|--recursive) has_recursive=true; args+=("$arg") ;;
+      -*)
+        # Check combined short flags: -rf, -Rf, etc.
+        if [[ "$arg" =~ ^-[^-]*[rR] ]]; then
+          has_recursive=true
+        fi
+        args+=("$arg")
+        ;;
+      *)  args+=("$arg") ;;
+    esac
+  done
+
+  if $has_recursive; then
+    local protected=(
+      "$HOME"
+      "/"
+      "/System"
+      "/Applications"
+      "/Users"
+      "/etc"
+      "/var"
+      "/usr"
+      "/opt"
+      "$HOME/Documents"
+      "$HOME/Desktop"
+      "$HOME/Downloads"
+      "$HOME/dotfiles"
+      "$HOME/workspace"
+    )
+
+    for arg in "$@"; do
+      [[ "$arg" == -* ]] && continue
+      # Resolve to absolute path, strip trailing slashes
+      local resolved="${arg/#\~/$HOME}"
+      [[ "$resolved" != /* ]] && resolved="$PWD/$resolved"
+      resolved="${resolved%/}"
+      # Resolve .. and symlinks
+      resolved="$(cd "$resolved" 2>/dev/null && pwd -P \
+        || python3 -c 'import os,sys; print(os.path.normpath(sys.argv[1]))' "$resolved" 2>/dev/null \
+        || echo "$resolved")"
+
+      for p in "${protected[@]}"; do
+        if [[ "$resolved" == "${p%/}" ]]; then
+          print -P "%F{red}Blocked:%f rm -r on protected path: $resolved" >&2
+          echo "Use 'command rm' to override if you really mean it." >&2
+          return 1
+        fi
+      done
+    done
+  fi
+
+  command rm "$@"
+}
 
 
+# --------------------------------------------------------------------
+# cpwd - Copy current directory path to clipboard
+# --------------------------------------------------------------------
+cpwd() { local p="${PWD/#$HOME/~}"; echo "$p" | pbcopy; echo "$p" }
 
 # --------------------------------------------------------------------
 # ccproxy - Toggle AI proxy settings for Claude Code / Codex etc.

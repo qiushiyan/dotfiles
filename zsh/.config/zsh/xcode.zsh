@@ -1,13 +1,23 @@
 xbuild() {
   emulate -L zsh
 
+  local scheme="${XCODE_SCHEME:-}"
+  if [[ "$1" == "-s" ]]; then
+    scheme="$2"
+    shift 2
+  fi
+  if [[ -z "${scheme}" ]]; then
+    echo "error: set XCODE_SCHEME or pass -s <scheme>" >&2
+    return 1
+  fi
+
   local run_id="${$}_${RANDOM}"
   local derived="/tmp/xcode_derived_${run_id}"
   local log_path="/tmp/xbuild_output_${run_id}.log"
   local cmd_status=0
   local diagnostics=""
   local -a args=(
-    -scheme TabType
+    -scheme "${scheme}"
     -configuration Debug
     build
     -destination 'platform=macOS,arch=arm64'
@@ -50,6 +60,16 @@ xtest() {
   emulate -L zsh
   setopt pipe_fail
 
+  local scheme="${XCODE_SCHEME:-}"
+  if [[ "$1" == "-s" ]]; then
+    scheme="$2"
+    shift 2
+  fi
+  if [[ -z "${scheme}" ]]; then
+    echo "error: set XCODE_SCHEME or pass -s <scheme>" >&2
+    return 1
+  fi
+
   local run_id="${$}_${RANDOM}"
   local derived="/tmp/xcode_derived_${run_id}"
   local result_bundle="/tmp/testresults_${run_id}.xcresult"
@@ -57,7 +77,7 @@ xtest() {
   local build_status=0
   local parser_status=0
   local -a args=(
-    -scheme TabType
+    -scheme "${scheme}"
     -configuration Debug
     test
     -destination 'platform=macOS,arch=arm64'
@@ -150,12 +170,22 @@ print(f"✅ All {passed} tests passed")
 xtests-list() {
   emulate -L zsh
 
+  local scheme="${XCODE_SCHEME:-}"
+  if [[ "$1" == "-s" ]]; then
+    scheme="$2"
+    shift 2
+  fi
+  if [[ -z "${scheme}" ]]; then
+    echo "error: set XCODE_SCHEME or pass -s <scheme>" >&2
+    return 1
+  fi
+
   local root
   root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  local test_dir="${root}/TabTypeTests"
+  local test_dir="${root}/${scheme}Tests"
 
   if [[ ! -d "${test_dir}" ]]; then
-    echo "TabTypeTests directory not found: ${test_dir}" >&2
+    echo "${scheme}Tests directory not found: ${test_dir}" >&2
     return 1
   fi
 
