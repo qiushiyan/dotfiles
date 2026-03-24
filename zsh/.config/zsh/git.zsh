@@ -326,3 +326,73 @@ _stage() {
   return ret
 }
 compdef _stage stage
+
+# --------------------------------------------------------------------
+# gitswitch - Switch between git profiles (personal, marswave, cola)
+# --------------------------------------------------------------------
+gitswitch() {
+  local profile="$1"
+
+  case "$profile" in
+    personal)  local config="$HOME/.gitconfig.personal" ;;
+    marswave)  local config="$HOME/.gitconfig.marswave" ;;
+    cola)      local config="$HOME/.gitconfig.cola" ;;
+    -h|--help) _gitswitch_help; return 0 ;;
+    "")
+      # Show current profile
+      local name email
+      name=$(git config user.name)
+      email=$(git config user.email)
+      echo "Current: $name <$email>"
+      return 0
+      ;;
+    *)
+      echo "gitswitch: unknown profile '$profile'" >&2
+      _gitswitch_help
+      return 1
+      ;;
+  esac
+
+  if [[ ! -f "$config" ]]; then
+    echo "gitswitch: config not found: $config" >&2
+    return 1
+  fi
+
+  if git rev-parse --git-dir &>/dev/null; then
+    git config --local include.path "$config"
+    echo "Switched to '$profile' (local repo only)"
+  else
+    echo "gitswitch: not in a git repo — use inside a repository" >&2
+    return 1
+  fi
+
+  git config user.name
+  git config user.email
+}
+
+_gitswitch_help() {
+  cat <<'EOF'
+Usage: gitswitch <profile>
+       gitswitch          (show current profile)
+
+Switch git identity for the current repository.
+
+Profiles:
+  personal    qiushiyan <qiushi.yann@gmail.com>
+  marswave    yanqiushi-mw <y@marswave.ai>
+  cola        cola <cola@marswave.ai>
+
+Options:
+  -h, --help  Show this help message
+
+Examples:
+  gitswitch              Show current git identity
+  gitswitch cola         Switch current repo to cola profile
+  gitswitch personal     Switch current repo to personal profile
+EOF
+}
+
+_gitswitch() {
+  _arguments '1:profile:(personal marswave cola)'
+}
+compdef _gitswitch gitswitch

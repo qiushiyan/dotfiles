@@ -39,7 +39,21 @@
     "swift-lsp@claude-plugins-official": false,
     "superpowers@claude-plugins-official": true
   },
+  "extraKnownMarketplaces": {
+    "impeccable": {
+      "source": {
+        "source": "github",
+        "repo": "pbakaus/impeccable"
+      }
+    },
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    }
+  },
   "alwaysThinkingEnabled": true,
-  "skipDangerousModePermissionPrompt": true,
-  "model": "opus"
+  "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true
 }
