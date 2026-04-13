@@ -2,6 +2,20 @@
 # Miscellaneous utility functions
 
 # --------------------------------------------------------------------
+# Reset Kitty Keyboard Protocol (KKP) state before each prompt.
+# Workaround for Claude Code sometimes leaving KKP enabled on exit,
+# which causes Ctrl+C/Ctrl+D to send CSI u sequences (^[[99;5u)
+# instead of raw control characters. See anthropics/claude-code#38761.
+# Safe to remove once Claude Code fixes this upstream.
+# --------------------------------------------------------------------
+_reset_kkp_precmd() {
+  # Write directly to /dev/tty to bypass any stdout redirection from plugins
+  printf '\e[<u\e[>0m' > /dev/tty 2>/dev/null
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _reset_kkp_precmd
+
+# --------------------------------------------------------------------
 # ccclean - Clean old Claude Code sessions
 # --------------------------------------------------------------------
 ccclean() {
@@ -294,16 +308,12 @@ cpwd() { local p="${PWD/#$HOME/~}"; echo "$p" | pbcopy; echo "$p" }
 ccproxy() {
   case "$1" in
     on)
-      # export DISABLE_PROMPT_CACHING=1
       export ANTHROPIC_BASE_URL="$CCPROXY_BASE_URL"
-      export ANTHROPIC_AUTH_TOKEN="$CCPROXY_AUTH_TOKEN"
-      export ANTHROPIC_API_KEY="$CCPROXY_AUTH_TOKEN"
+      export ANTHROPIC_API_KEY="$CCPROXY_API_KEY"
       echo "AI proxy ON"
       ;;
     off)
-      unset DISABLE_PROMPT_CACHING
       unset ANTHROPIC_BASE_URL
-      unset ANTHROPIC_AUTH_TOKEN
       unset ANTHROPIC_API_KEY
       echo "AI proxy OFF"
       ;;
@@ -588,6 +598,66 @@ EOF
 # --------------------------------------------------------------------
 count-token() {
   /opt/homebrew/bin/python3.14 ~/.config/scripts/count-token "$@"
+}
+
+# --------------------------------------------------------------------
+# agents - Attach to (or create) the long-lived "agents" tmux session
+# used for remote access from the phone via mosh + Tailscale.
+#
+# The session always contains a "caffeinate" window running
+#   caffeinate -dimsu
+# (no child command — caffeinate without a child or -t blocks forever
+# until killed). This keeps the Mac awake exactly as long as the
+# window exists. Killing the session (or the window) lets the Mac
+# sleep again on its idle timer.
+#
+# Usage: agents
+# --------------------------------------------------------------------
+agents() {
+  if ! tmux has-session -t agents 2>/dev/null; then
+    tmux new-session -d -s agents -n caffeinate 'exec caffeinate -dimsu'
+    tmux new-window -t agents: -n shell
+    tmux select-window -t agents:shell
+  else
+    # Self-heal: if the caffeinate window was closed by hand (or died),
+    # recreate it. Otherwise the Mac would silently sleep on its idle
+    # timer the next time you walked away.
+    if ! tmux list-windows -t agents -F '#W' 2>/dev/null | grep -qx caffeinate; then
+      tmux new-window -d -t agents: -n caffeinate 'exec caffeinate -dimsu'
+    fi
+  fi
+  if [[ -n "$TMUX" ]]; then
+    tmux switch-client -t agents
+  else
+    tmux attach -t agents
+  fi
+}
+
+# --------------------------------------------------------------------
+# agents-status - Show what's running inside the agents session
+# --------------------------------------------------------------------
+agents-status() {
+  if ! tmux has-session -t agents 2>/dev/null; then
+    echo "agents session: not running"
+    echo "Mac is free to sleep on its idle timer."
+    return 0
+  fi
+
+  echo "agents session: running"
+  echo
+  echo "Windows:"
+  tmux list-windows -t agents -F '  #I  #W  (#{pane_current_command})'
+  echo
+
+  # Check the agents session specifically — not any caffeinate process
+  # system-wide. The window must be named "caffeinate" AND its pane must
+  # actually be running caffeinate (i.e., it didn't die and leave a shell).
+  if tmux list-windows -t agents -F '#W #{pane_current_command}' 2>/dev/null \
+       | grep -qx 'caffeinate caffeinate'; then
+    echo "caffeinate: active (Mac will not sleep)"
+  else
+    echo "caffeinate: NOT active — run 'agents' to self-heal the window"
+  fi
 }
 
 _loc_help() {

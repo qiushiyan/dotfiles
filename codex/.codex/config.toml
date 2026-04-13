@@ -59,6 +59,12 @@ trust_level = "trusted"
 [projects."/Users/qiushi/workspace/pi-research/pi-mono"]
 trust_level = "trusted"
 
+[projects."/Users/qiushi/workspace/marswave/cola"]
+trust_level = "trusted"
+
+[projects."/Users/qiushi/workspace/aloe/itell/apps/platform"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = [ "-y", "@upstash/context7-mcp", "--api-key", "ctx7sk-fc0f95a3-ef46-4023-ba6e-9c1f3eda4dbe" ]

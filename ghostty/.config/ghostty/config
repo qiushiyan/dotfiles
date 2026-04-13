@@ -7,6 +7,7 @@ background-blur-radius = 25
 # font-family = JetBrainsMono Nerd Font
 # font-family = DankMono Nerd Font Mono
 font-family = IosevkaTerm Nerd Font
+# font-thicken =true
 adjust-cell-height = 20%
 adjust-cell-width = -2%
 font-size = 26
@@ -39,7 +40,6 @@ window-colorspace = "display-p3"
 
 keybind = shift+ctrl+r=reload_config
 keybind = performable:ctrl+c=copy_to_clipboard
-keybind = ctrl+v=unbind
 # sesh session picker (sends prefix T to tmux)
 keybind = ctrl+shift+p=text:\x01T
 keybind = ctrl+`=toggle_quick_terminal
@@ -58,7 +58,6 @@ keybind = shift+down=scroll_page_lines:10
 keybind = ctrl+shift+v=new_split:right
 
 keybind = ctrl+shift+h=new_split:down
-keybind = ctrl+p=text:fcd\n
 
 # Navigate between panes (vim-style)
 keybind = ctrl+shift+h=goto_split:left

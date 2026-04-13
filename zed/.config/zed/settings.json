@@ -7,6 +7,23 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
+  "lsp": {
+    "vtsls": {
+      "settings": {
+        "typescript": {
+          "updateImportsOnFileMove": {
+            "enabled": "always"
+          }
+        },
+        "javascript": {
+          "updateImportsOnFileMove": {
+            "enabled": "always"
+          }
+        }
+      },
+      "enable_lsp_tasks": true
+    }
+  },
   "edit_predictions": {
     "provider": "copilot",
   },
