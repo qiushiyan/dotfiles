@@ -15,6 +15,24 @@ autoload -Uz edit-command-line
 zle -N edit-command-line
 bindkey -M vicmd 'v' edit-command-line
 
+# Restore common Ctrl bindings in vi-insert mode (not bound by default)
+bindkey -M viins '^L' clear-screen
+bindkey -M vicmd '^L' clear-screen
+
+# Handle CSI u (Kitty Keyboard Protocol) encoded Ctrl keys.
+# When a TUI exits without popping KKP, Ghostty sends CSI u sequences
+# instead of raw C0 bytes. Zsh 5.9 can't decode these natively,
+# so we bind the CSI u forms explicitly. Format: \e[<codepoint>;<modifier>u
+# Modifier 5 = Ctrl. Ctrl+L/Ctrl+D are also forced via Ghostty text: keybinds.
+bindkey -M viins '\e[99;5u'  send-break     # Ctrl+C (CSI u)
+bindkey -M vicmd '\e[99;5u'  send-break     # Ctrl+C (CSI u)
+bindkey -M viins '\e[108;5u' clear-screen   # Ctrl+L (CSI u)
+bindkey -M vicmd '\e[108;5u' clear-screen   # Ctrl+L (CSI u)
+bindkey -M viins '\e[100;5u' delete-char-or-list  # Ctrl+D (CSI u)
+
+# Reduce vi mode key timeout (default 400ms eats characters after Esc/Ctrl sequences)
+KEYTIMEOUT=10
+
 # --------------------------------------------------------------------
 # 2. PATH (all additions in one place)
 # --------------------------------------------------------------------
