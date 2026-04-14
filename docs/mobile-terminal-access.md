@@ -137,6 +137,52 @@ tmux kill-session -t agents
 2. In the Tailscale admin console (login.tailscale.com), remove the phone device.
 3. The key in iOS Keychain becomes orphaned and harmless.
 
+## Accessing dev servers from the phone
+
+`pnpm dev` and similar commands start a web server bound to `127.0.0.1` by default. `http://localhost:3000` on the phone is **always** the phone itself — `localhost` means "this device," regardless of what's running in your SSH session. To reach the laptop's dev server from the phone's browser, you need to make the server reachable over the network and then visit it at the laptop's Tailscale hostname.
+
+Two approaches, both fine, pick based on whether your app needs HTTPS.
+
+### Option A — bind the dev server to all interfaces (simplest, HTTP only)
+
+Most tools take a flag to bind to `0.0.0.0` instead of `127.0.0.1`:
+
+| Tool | Command |
+|---|---|
+| Vite | `pnpm dev --host` |
+| Next.js | `pnpm dev --hostname 0.0.0.0` or `HOSTNAME=0.0.0.0 pnpm dev` |
+| Remix / Astro | `pnpm dev --host` |
+| Create React App | `HOST=0.0.0.0 pnpm start` |
+
+Then on the phone's browser: `http://qiushi-mac:3000`. Tailscale MagicDNS resolves `qiushi-mac` to the tailnet IP, the dev server accepts the connection because it's now listening on all interfaces, HMR works normally.
+
+**Caveat:** this also exposes the dev server to anything on your home LAN (not just the tailnet). Usually fine at home; if that matters, use Option B.
+
+### Option B — Tailscale Serve (adds real HTTPS)
+
+If the app needs HTTPS for service workers, WebAuthn, camera/mic APIs, or `SharedArrayBuffer`:
+
+```sh
+# Laptop, while pnpm dev runs on localhost:3000
+tailscale serve --bg https / http://localhost:3000
+# Phone browser:
+# https://qiushi-mac.<your-tailnet>.ts.net
+```
+
+Tailscale runs an HTTPS proxy on the laptop's tailnet interface, terminates TLS with a real ACME-issued certificate for the `*.ts.net` subdomain, and forwards to `localhost:3000`. The dev server can still bind to `127.0.0.1` — only Tailscale talks to it directly. Strictly tailnet-only, never LAN.
+
+Tear down with `tailscale serve --bg off` (or `tailscale serve reset` for everything).
+
+**One-time prerequisite:** HTTPS certs must be enabled for your tailnet in the Tailscale admin console → DNS → HTTPS Certificates. Single toggle, free.
+
+### Which to use
+
+Start with Option A — it's one flag on a command you already run. Switch to Option B only when a specific browser API rejects insecure origins. You'll know because the console will tell you.
+
+### This is orthogonal to Moshi
+
+Moshi gives you a terminal. For the browser-to-dev-server path, your phone's **browser** talks directly to the laptop via Tailscale — Moshi is not involved. Terminal traffic and web traffic are two independent channels over the same tailnet.
+
 ## Why the Mac stays awake (defense in depth)
 
 There are **three independent layers** preventing sleep, in order of strength:
