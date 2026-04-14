@@ -205,6 +205,40 @@ There are **three independent layers** preventing sleep, in order of strength:
 | **Termius (free tier)** | Doesn't support mosh, which is the whole point of using mosh. |
 | **Auto-starting agents at login** | Would always run tmux + caffeinate even when not needed. The user prefers an empty laptop unless they explicitly want the session. |
 
+## Troubleshooting a broken connection from the phone
+
+The most common failure mode is an **iOS VPN split-brain**: Tailscale's control plane looks healthy (the Tailscale iOS app shows "Connected" with both peers green, `tailscale ping` from the laptop to the phone succeeds) but iOS has silently broken the data plane, so no actual tunneled traffic flows. Symptoms progress through three stages depending on what you try:
+
+1. **Stage 1 — MagicDNS fails.** Moshi reports `DNS resolution failed: nodename nor servname provided`. Tailscale's DNS resolver got torn down along with the tunnel.
+2. **Stage 2 — Raw IP hangs at "checking server".** You bypass DNS by changing the Moshi host to the laptop's Tailscale IP (`100.98.242.103`). The TCP handshake to port 22 is silently dropped by iOS, so Moshi waits for a reply that never comes.
+3. **Stage 3 — Raw IP times out entirely.** Same cause, Moshi's retry budget just exhausted.
+
+From the laptop side during all three stages, sshd is healthy, listening on port 22, and `tailscale ping iphone-13` still succeeds — that's what makes this confusing. Tailscale's own DISCO protocol uses a different path than general IP traffic, so "I can ping the phone" doesn't prove "the phone can send normal packets through Tailscale."
+
+### The fix — stop trying cheap things and go straight to this
+
+**iOS Settings → General → VPN & Device Management → VPN → Tailscale → toggle Status off → wait 5 seconds → toggle on.** This rebuilds the VPN profile at the operating-system level, restoring both the data plane and the MagicDNS resolver.
+
+### What doesn't reliably work (in ascending order of hope)
+
+- **Force-quitting Moshi.** Moshi is not the problem. This only clears cached DNS failures — but if the VPN data plane is broken, a fresh DNS lookup will just fail again.
+- **Toggling Tailscale inside the Tailscale iOS app.** Resets the app's internal view of its connection, but not always the iOS-level VPN profile. Sometimes it works, often it doesn't.
+- **The iOS Settings VPN toggle** (above). Reliable, fixes ~95% of cases in seconds.
+- **Rebooting the phone.** Reliable fallback if the Settings toggle somehow fails. Reserve for when nothing else works.
+
+### Diagnostic: is it really this failure mode?
+
+From the laptop, stream sshd logs while the phone tries to connect:
+
+```sh
+/usr/bin/log stream --predicate 'process == "sshd"' --style compact
+```
+
+(The `/usr/bin/` prefix is important — `log` is shadowed by other tools in common dev environments.)
+
+- **Lines appear when you tap Connect** → SSH packets are reaching the laptop. The problem is somewhere in authentication or the mosh-server handshake, not Tailscale. Debug sshd side.
+- **No lines at all, even after "checking server" hangs for 10+ seconds** → no packets are crossing Tailscale to the laptop. This is the iOS VPN split-brain. Use the iOS Settings VPN toggle.
+
 ## Common failure modes and fixes
 
 | Symptom | Cause | Fix |
@@ -216,6 +250,8 @@ There are **three independent layers** preventing sleep, in order of strength:
 | caffeinate window vanished from a running session | Manually killed, or the underlying process crashed | Re-run `agents` — the function self-heals the missing window. |
 | Mac asleep with lid closed, can't wake from phone | Wake-on-Network on battery is disabled (current setting is "Only on Power Adapter") | Plug in the laptop before leaving, or keep the lid open. |
 | Connection hangs at "Connecting..." in Moshi | Tailscale not connected on phone, or the Mac is fully powered off | Check Tailscale iOS toggle. If the Mac is off, no remedy short of physical access. |
+| Moshi: "DNS resolution failed: nodename nor servname provided" for `qiushi-mac` | iOS VPN split-brain: Tailscale data plane + MagicDNS torn down while the app still looks "Connected" | See **Troubleshooting a broken connection from the phone** above. Short version: iOS Settings → VPN → Tailscale → toggle Status off/on. Force-quitting Moshi and toggling inside the Tailscale app both unreliable. |
+| Moshi hangs at "checking server" or times out with raw Tailscale IP as host, even though `tailscale ping` from laptop succeeds | Same cause as above: control plane OK, data plane broken | Same fix as above: iOS Settings VPN toggle. Diagnostic: `log stream --predicate 'process == "sshd"'` on the laptop — if no sshd lines appear while the phone tries to connect, packets aren't crossing Tailscale. |
 
 ## File map
 
