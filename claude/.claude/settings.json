@@ -38,7 +38,8 @@
     "rust-analyzer-lsp@claude-plugins-official": false,
     "swift-lsp@claude-plugins-official": false,
     "superpowers@claude-plugins-official": true,
-    "codex@openai-codex": true
+    "codex@openai-codex": true,
+    "impeccable@impeccable": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
@@ -62,5 +63,8 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "editorMode": "vim",
+  "verbose": true,
+  "autoCompactEnabled": false
 }

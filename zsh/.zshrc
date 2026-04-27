@@ -46,7 +46,6 @@ $HOME/.local/bin:\
 $HOME/.mix/escripts:\
 /opt/homebrew/opt/postgresql@16/bin:\
 /opt/homebrew/opt/openjdk@11/bin:\
-/opt/homebrew/opt/node@16/bin:\
 /usr/local/bin:\
 $HOME/Library/Android/sdk/platform-tools:\
 $PATH"
@@ -93,7 +92,6 @@ export ALLOW_PLAINTEXT_LISTENER=yes
 export K9S_CONFIG_DIR="$HOME/.config/k9s"
 export COREPACK_ENABLE_AUTO_PIN=0
 export DISABLE_AUTO_TITLE=true
-export nvm_default_version=22
 
 # Claude Code
 export CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=1

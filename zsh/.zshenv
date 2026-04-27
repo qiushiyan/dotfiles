@@ -9,6 +9,12 @@ if [[ -x /opt/homebrew/bin/brew && ":$PATH:" != *":/opt/homebrew/bin:"* ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+# Codex Desktop can inject NVM_BIN while still launching command shells with a
+# minimal PATH. Make that injected toolchain usable in non-interactive zsh.
+if [[ -n "$NVM_BIN" && -d "$NVM_BIN" && ":$PATH:" != *":$NVM_BIN:"* ]]; then
+  export PATH="$NVM_BIN:$PATH"
+fi
+
 # Default locale for non-interactive shells (e.g., SSH command execution).
 # mosh-server refuses to start without a UTF-8 locale, and macOS doesn't set
 # one in non-login non-interactive shells.
