@@ -2,12 +2,157 @@
 # Git utility functions
 
 # --------------------------------------------------------------------
-# gitclean - Delete branches inactive for more than N days
+# gitclean - Delete local branches whose upstream has been deleted
+# --------------------------------------------------------------------
+# Use after merging a PR on GitHub and deleting the remote branch:
+# the local branch is now orphaned ([gone] upstream) and gitclean
+# will remove it. Branches you never pushed are naturally protected
+# (they have no upstream, so the [gone] marker doesn't apply).
 # --------------------------------------------------------------------
 gitclean() {
+  local force=false skip_fetch=false skip_confirm=false
+  local protected="main|master|develop|release|staging|production"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -f|--force) force=true; shift ;;
+      -y|--yes) skip_confirm=true; shift ;;
+      --no-fetch) skip_fetch=true; shift ;;
+      -h|--help) _gitclean_help; return 0 ;;
+      -*) echo "gitclean: unknown option '$1'" >&2; _gitclean_help; return 1 ;;
+      *) echo "gitclean: unexpected argument '$1'" >&2; _gitclean_help; return 1 ;;
+    esac
+  done
+
+  if ! git rev-parse --git-dir &>/dev/null; then
+    echo "gitclean: not a git repository" >&2
+    return 1
+  fi
+
+  if ! $skip_fetch; then
+    echo "Fetching and pruning remotes..."
+    git fetch --all --prune --quiet 2>/dev/null
+  fi
+
+  # Empty in detached HEAD
+  local current_branch
+  current_branch=$(git symbolic-ref --short -q HEAD 2>/dev/null)
+
+  # Branches checked out in other worktrees (git won't let us delete them anyway)
+  local -a worktree_branches
+  local line
+  while IFS= read -r line; do
+    [[ "$line" == "branch refs/heads/"* ]] && worktree_branches+=("${line#branch refs/heads/}")
+  done < <(git worktree list --porcelain 2>/dev/null)
+
+  local -a candidates
+  local branch track w is_worktree
+  while IFS=$'\t' read -r branch track; do
+    [[ "$track" == "[gone]" ]] || continue
+    [[ "$branch" =~ ^($protected)$ ]] && continue
+    [[ -n "$current_branch" && "$branch" == "$current_branch" ]] && continue
+
+    is_worktree=false
+    for w in "${worktree_branches[@]}"; do
+      [[ "$w" == "$branch" ]] && { is_worktree=true; break; }
+    done
+    $is_worktree && continue
+
+    candidates+=("$branch")
+  done < <(git for-each-ref --format='%(refname:short)%09%(upstream:track)' refs/heads/)
+
+  if [[ ${#candidates[@]} -eq 0 ]]; then
+    echo "No branches to clean — no local branches with [gone] upstream."
+    return 0
+  fi
+
+  echo "Branches with deleted upstream ([gone]):"
+  echo "----------------------------------------"
+  local sha cdate subject
+  for branch in "${candidates[@]}"; do
+    sha=$(git rev-parse --short "$branch" 2>/dev/null)
+    cdate=$(git log -1 --format=%cs "$branch" 2>/dev/null)
+    subject=$(git log -1 --format=%s "$branch" 2>/dev/null)
+    printf "  %-40s %s  %s  %s\n" "$branch" "$sha" "$cdate" "$subject"
+  done
+  echo "----------------------------------------"
+
+  if ! $force; then
+    echo "Total: ${#candidates[@]} branch(es) (dry run — pass -f to delete)"
+    return 0
+  fi
+
+  if ! $skip_confirm; then
+    echo -n "Delete ${#candidates[@]} branch(es)? [y/N] "
+    local answer
+    read -r answer
+    [[ "$answer" == "y" || "$answer" == "Y" ]] || { echo "Aborted."; return 1; }
+  fi
+
+  local deleted=0
+  for branch in "${candidates[@]}"; do
+    if git branch -D "$branch" 2>/dev/null; then
+      echo "Deleted: $branch"
+      ((deleted++))
+    else
+      echo "Failed: $branch" >&2
+    fi
+  done
+  echo "----------------------------------------"
+  echo "Deleted: $deleted branch(es)"
+}
+
+_gitclean_help() {
+  cat <<'EOF'
+Usage: gitclean [options]
+
+Delete local branches whose upstream has been deleted on the remote.
+Typical post-PR cleanup: merge PR on GitHub → delete remote branch →
+run `gitclean` to remove the now-orphaned local branch.
+
+Detection:
+  Runs `git fetch --prune` to update remote refs, then finds branches
+  where upstream tracking is marked [gone]. Branches that have never
+  been pushed (no upstream at all) are skipped — they may be WIP.
+
+Protected:
+  main, master, develop, release, staging, production
+  Current branch, branches checked out in other worktrees.
+
+Options:
+  -f, --force       Actually delete (default is dry-run preview)
+  -y, --yes         Skip confirmation prompt when used with -f
+      --no-fetch    Skip automatic `git fetch --prune`
+  -h, --help        Show this help message
+
+Examples:
+  gitclean              Preview branches whose upstream is gone
+  gitclean -f           Delete after confirmation prompt
+  gitclean -f -y        Delete without prompting
+  gitclean --no-fetch   Preview without touching the network
+
+See also: gitstale — delete branches by inactivity (age-based)
+EOF
+}
+
+_gitclean() {
+  _arguments -s \
+    '(-f --force)'{-f,--force}'[Actually delete (default is dry-run)]' \
+    '(-y --yes)'{-y,--yes}'[Skip confirmation prompt]' \
+    '--no-fetch[Skip automatic git fetch --prune]' \
+    '(-h --help)'{-h,--help}'[Show help]'
+}
+compdef _gitclean gitclean
+
+# --------------------------------------------------------------------
+# gitstale - Delete branches inactive for more than N days
+# --------------------------------------------------------------------
+gitstale() {
   local days=30
   local dry_run=false
   local include_remote=false
+  local force_unmerged=false
+  local skip_confirm=false
   local protected="main|master|develop|release|staging|production"
 
   while [[ $# -gt 0 ]]; do
@@ -15,14 +160,16 @@ gitclean() {
       -n|--dry-run) dry_run=true; shift ;;
       -r|--remote) include_remote=true; shift ;;
       -d|--days) days="$2"; shift 2 ;;
-      -h|--help) _gitclean_help; return 0 ;;
-      -*) echo "gitclean: unknown option '$1'" >&2; _gitclean_help; return 1 ;;
+      -f|--force) force_unmerged=true; shift ;;
+      -y|--yes) skip_confirm=true; shift ;;
+      -h|--help) _gitstale_help; return 0 ;;
+      -*) echo "gitstale: unknown option '$1'" >&2; _gitstale_help; return 1 ;;
       *) days="$1"; shift ;;
     esac
   done
 
   if ! git rev-parse --git-dir &>/dev/null; then
-    echo "gitclean: not a git repository" >&2
+    echo "gitstale: not a git repository" >&2
     return 1
   fi
 
@@ -32,17 +179,31 @@ gitclean() {
   cutoff_display=$(date -r "$cutoff_date" +%Y-%m-%d 2>/dev/null || date -d "@$cutoff_date" +%Y-%m-%d)
 
   echo "Branches inactive for more than $days days (before $cutoff_display)"
-  echo "Dry run: $dry_run | Remote: $include_remote"
+  echo "Dry run: $dry_run | Remote: $include_remote | Force unmerged: $force_unmerged"
   echo "----------------------------------------"
 
-  local deleted=0
-  local current_branch
-  current_branch=$(git rev-parse --abbrev-ref HEAD)
+  # Branches checked out in other worktrees (git blocks deletion; we skip cleanly)
+  local -a worktree_branches
+  local line
+  while IFS= read -r line; do
+    [[ "$line" == "branch refs/heads/"* ]] && worktree_branches+=("${line#branch refs/heads/}")
+  done < <(git worktree list --porcelain 2>/dev/null)
 
-  local branch last_commit last_date
+  # Empty in detached HEAD
+  local current_branch
+  current_branch=$(git symbolic-ref --short -q HEAD 2>/dev/null)
+
+  local deleted=0
+  local branch last_commit last_date del_flag w is_worktree
   for branch in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
     [[ "$branch" =~ ^($protected)$ ]] && continue
-    [[ "$branch" == "$current_branch" ]] && continue
+    [[ -n "$current_branch" && "$branch" == "$current_branch" ]] && continue
+
+    is_worktree=false
+    for w in "${worktree_branches[@]}"; do
+      [[ "$w" == "$branch" ]] && { is_worktree=true; break; }
+    done
+    $is_worktree && continue
 
     last_commit=$(git log -1 --format=%ct "$branch" 2>/dev/null)
     [[ -z "$last_commit" ]] && continue
@@ -51,15 +212,37 @@ gitclean() {
       last_date=$(date -r "$last_commit" +%Y-%m-%d 2>/dev/null || date -d "@$last_commit" +%Y-%m-%d)
       if $dry_run; then
         echo "[dry run] local: $branch ($last_date)"
+        ((deleted++))
       else
-        echo "Deleting local: $branch ($last_date)"
-        git branch -D "$branch"
+        # Try safe delete; -D only when user opts in with --force
+        del_flag="-d"
+        $force_unmerged && del_flag="-D"
+        if git branch "$del_flag" "$branch" 2>/dev/null; then
+          echo "Deleted local: $branch ($last_date)"
+          ((deleted++))
+        else
+          echo "Skipped local: $branch ($last_date) — unmerged (use -f to force)" >&2
+        fi
       fi
-      ((deleted++))
     fi
   done
 
   if $include_remote; then
+    if ! $dry_run && ! $skip_confirm; then
+      echo
+      echo "WARNING: --remote will delete branches from origin."
+      echo "This affects coworkers and CI if they reference these branches."
+      echo -n "Continue? [y/N] "
+      local answer
+      read -r answer
+      if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
+        echo "Aborted remote cleanup."
+        echo "----------------------------------------"
+        echo "Total: $deleted branch(es)"
+        return 1
+      fi
+    fi
+
     git fetch --prune origin 2>/dev/null
 
     for branch in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's|^origin/||'); do
@@ -86,37 +269,48 @@ gitclean() {
   echo "Total: $deleted branch(es)"
 }
 
-_gitclean_help() {
+_gitstale_help() {
   cat <<'EOF'
-Usage: gitclean [options] [days]
+Usage: gitstale [options] [days]
 
 Delete git branches inactive for more than N days (default: 30).
-Protected branches: main, master, develop, release, staging, production
+Protected: main, master, develop, release, staging, production.
+Current branch and branches checked out in other worktrees are skipped.
+
+By default, local deletes use `git branch -d` (refuses unmerged branches).
+Pass -f/--force to use `-D` and force-delete unmerged work.
 
 Options:
   -d, --days <n>   Days of inactivity (default: 30)
   -n, --dry-run    Show what would be deleted without deleting
-  -r, --remote     Include remote branches (careful!)
+  -r, --remote     Also delete matching remote branches (prompts for confirmation)
+  -f, --force      Force-delete unmerged local branches (use -D instead of -d)
+  -y, --yes        Skip confirmation prompt for --remote
   -h, --help       Show this help message
 
 Examples:
-  gitclean              Delete local branches inactive >30 days
-  gitclean -n           Dry run (preview only)
-  gitclean 60           Delete branches inactive >60 days
-  gitclean -r -n        Preview local + remote cleanup
-  gitclean -d 14 -r     Delete all branches inactive >14 days
+  gitstale              Delete local branches inactive >30 days (skips unmerged)
+  gitstale -n           Dry run (preview only)
+  gitstale 60           Delete branches inactive >60 days
+  gitstale -f           Also delete unmerged local branches
+  gitstale -r -n        Preview local + remote cleanup
+  gitstale -r -y        Delete local+remote without remote confirmation
+
+See also: gitclean — delete branches whose upstream is gone (post-PR cleanup)
 EOF
 }
 
-_gitclean() {
+_gitstale() {
   _arguments -s \
     '(-n --dry-run)'{-n,--dry-run}'[Show what would be deleted]' \
     '(-r --remote)'{-r,--remote}'[Include remote branches]' \
     '(-d --days)'{-d,--days}'[Days of inactivity]:days:' \
+    '(-f --force)'{-f,--force}'[Force-delete unmerged branches]' \
+    '(-y --yes)'{-y,--yes}'[Skip confirmation for --remote]' \
     '(-h --help)'{-h,--help}'[Show help]' \
     '1:days:'
 }
-compdef _gitclean gitclean
+compdef _gitstale gitstale
 
 # --------------------------------------------------------------------
 # gitgc - Aggressive git garbage collection and cleanup

@@ -1,9 +1,24 @@
 
 disable_response_storage = true
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 personality = "pragmatic"
 sandbox_mode = "danger-full-access"
+
+notify = ["/Users/qiushi/.codex/plugins/cache/openai-bundled/computer-use/1.0.755/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+
+[shell_environment_policy]
+
+[shell_environment_policy.set]
+# Match the interactive zsh toolchain so Codex Desktop finds pnpm, npm, and
+# project CLIs installed under the nvm-managed Node version.
+PATH = "/Users/qiushi/google-cloud-sdk/bin:/Users/qiushi/.nvm/versions/node/v22.20.0/bin:/Users/qiushi/.config/tmux/plugins/tmuxifier/bin:/Users/qiushi/.wasmtime/bin:/Users/qiushi/.bun/bin:/Users/qiushi/bin:/Users/qiushi/bin/elixir-ls:/Users/qiushi/.local/bin:/Users/qiushi/.mix/escripts:/opt/homebrew/opt/postgresql@16/bin:/opt/homebrew/opt/openjdk@11/bin:/opt/homebrew/opt/node@16/bin:/usr/local/bin:/Users/qiushi/Library/Android/sdk/platform-tools:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/qiushi/.cargo/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Codex.app/Contents/Resources"
+
+# Codex currently propagates these nvm variables even when it rebuilds PATH;
+# .zshenv uses NVM_BIN as a fallback bridge for non-interactive zsh commands.
+NVM_DIR = "/Users/qiushi/.nvm"
+NVM_BIN = "/Users/qiushi/.nvm/versions/node/v22.20.0/bin"
+NVM_INC = "/Users/qiushi/.nvm/versions/node/v22.20.0/include/node"
 
 [projects."/Users/qiushi"]
 trust_level = "trusted"
@@ -65,6 +80,12 @@ trust_level = "trusted"
 [projects."/Users/qiushi/workspace/aloe/itell/apps/platform"]
 trust_level = "trusted"
 
+[projects."/Users/qiushi/workspace/260408-qiushi-yan"]
+trust_level = "trusted"
+
+[projects."/Users/qiushi/.agents"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = [ "-y", "@upstash/context7-mcp", "--api-key", "ctx7sk-fc0f95a3-ef46-4023-ba6e-9c1f3eda4dbe" ]
@@ -80,3 +101,31 @@ collaboration_modes = true
 [notice]
 hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
+
+[marketplaces.openai-bundled]
+last_updated = "2026-04-27T01:06:18Z"
+source_type = "local"
+source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-04-23T20:41:29Z"
+source_type = "local"
+source = "/Users/qiushi/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."browser-use@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[tui.model_availability_nux]
+"gpt-5.5" = 2
