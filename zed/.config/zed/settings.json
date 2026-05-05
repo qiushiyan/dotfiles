@@ -34,7 +34,11 @@
   "edit_predictions": {
     "provider": "copilot",
   },
-  "icon_theme": "Catppuccin Mocha",
+  "icon_theme": {
+    "mode": "dark",
+    "light": "Catppuccin Mocha",
+    "dark": "Catppuccin Mocha"
+  },
   "agent_buffer_font_size": 23.0,
   "buffer_font_weight": 400.0,
   "context_servers": {
@@ -102,8 +106,8 @@
   },
   "base_keymap": "VSCode",
   "theme": {
-    "mode": "dark",
-    "light": "Tailwind CSS Light (Enhanced)",
+    "mode": "light",
+    "light": "Tailwind CSS Light",
     "dark": "Tailwind CSS Dark (Enhanced)",
   },
   "vim_mode": true,
