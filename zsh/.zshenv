@@ -9,11 +9,7 @@ if [[ -x /opt/homebrew/bin/brew && ":$PATH:" != *":/opt/homebrew/bin:"* ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-# Codex Desktop can inject NVM_BIN while still launching command shells with a
-# minimal PATH. Make that injected toolchain usable in non-interactive zsh.
-if [[ -n "$NVM_BIN" && -d "$NVM_BIN" && ":$PATH:" != *":$NVM_BIN:"* ]]; then
-  export PATH="$NVM_BIN:$PATH"
-fi
+[ -f "$HOME/.config/zsh/toolchain.zsh" ] && source "$HOME/.config/zsh/toolchain.zsh"
 
 # Default locale for non-interactive shells (e.g., SSH command execution).
 # mosh-server refuses to start without a UTF-8 locale, and macOS doesn't set
@@ -26,6 +22,7 @@ export LANG LC_ALL
 # Stub compdef to suppress errors; remove it after so compinit can define the real one
 (( $+functions[compdef] )) || { compdef() { : }; _compdef_stub=1 }
 for f in ~/.config/zsh/*.zsh(N); do
+  [[ "$f:t" == "toolchain.zsh" ]] && continue
   source "$f"
 done
 (( _compdef_stub )) && unfunction compdef && unset _compdef_stub

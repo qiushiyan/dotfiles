@@ -154,3 +154,11 @@ eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
 
 # OpenClaw Completion
 source "/Users/qiushi/.openclaw/completions/openclaw.zsh"
+
+# pnpm
+export PNPM_HOME="/Users/qiushi/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
