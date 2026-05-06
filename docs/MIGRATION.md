@@ -6,7 +6,7 @@ This is the manual playbook that complements `scripts/bootstrap.sh` and
 ## Before you wipe the old Mac
 
 - [ ] Push all local repo work, including any in-progress branches.
-      `cd ~/projects && for d in */; do (cd "$d" && git status -sb); done`
+      `cd ~/Workspace && for d in */; do (cd "$d" && git status -sb); done`
       reveals dirty repos at a glance.
 - [ ] Run the secrets audit:
       ```
@@ -74,6 +74,51 @@ If a step fails, re-run just that step:
 
 The first run will pause at `xcode_clt` if Xcode CLT isn't installed —
 follow the GUI prompt, then re-run the script.
+
+## Workspace directory
+
+Convention on the new machine: `~/dev/` (was `~/Workspace/` on the old
+machine — the dotfiles don't reference either name).
+
+```
+mkdir -p ~/dev
+```
+
+Re-clone projects you actively want to work with into `~/dev/`. Treat
+this as a fresh start — don't mass-rsync the entire old `~/Workspace`.
+
+## Python setup
+
+Why this section exists: macOS dev environments accumulate Python
+installs from multiple sources (Homebrew, python.org `.pkg`, Apple's
+stub, pyenv, conda) and editors get confused about which is "the"
+Python. We dodge that by routing user-level Python through `uv`.
+
+Brew installs `python@3.14` as a transitive dependency of other
+formulae (apache-arrow, awscli, gdal, etc.) — that's fine; we just
+don't use it directly.
+
+```
+# Install user-managed CPython (independent of Homebrew's transitive copy)
+uv python install 3.14
+
+# Pin 3.14 as the default for `uv venv` / `uv run`
+uv python pin 3.14
+
+# (Optional) install global CLI tools via `uv tool` instead of pipx
+uv tool install ipython
+uv tool install black
+```
+
+In Zed (or any IDE), set the Python interpreter to the uv-managed one:
+```
+$(uv python find 3.14)
+```
+
+Do NOT install python.org's `.pkg` — it sprays files into
+`/Library/Frameworks/Python.framework` and `/usr/local/bin/`, both of
+which are exactly what we just spent effort cleaning up on the old
+machine.
 
 ## Re-auth (rather than copying state)
 

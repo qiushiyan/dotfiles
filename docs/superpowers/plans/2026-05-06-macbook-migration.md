@@ -736,7 +736,7 @@ This is the manual playbook that complements `scripts/bootstrap.sh` and
 ## Before you wipe the old Mac
 
 - [ ] Push all local repo work, including any in-progress branches.
-      `cd ~/projects && for d in */; do (cd "$d" && git status -sb); done`
+      `cd ~/Workspace && for d in */; do (cd "$d" && git status -sb); done`
       reveals dirty repos at a glance.
 - [ ] Run the secrets audit:
       ```
