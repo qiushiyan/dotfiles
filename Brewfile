@@ -100,7 +100,6 @@ brew "xcode-build-server"
 
 # === Cloud, infra, dev services ===
 brew "act"
-brew "aws-sam-cli"
 brew "awscli"
 brew "docker"
 brew "flyctl"
