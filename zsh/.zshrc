@@ -152,9 +152,6 @@ eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
 # Add new aliases there, not here.
 # --------------------------------------------------------------------
 
-# OpenClaw Completion
-source "/Users/qiushi/.openclaw/completions/openclaw.zsh"
-
 # pnpm
 export PNPM_HOME="/Users/qiushi/Library/pnpm"
 case ":$PATH:" in
