@@ -1,0 +1,53 @@
+# Stow-package runtime state — written by the apps themselves, not
+# config worth versioning. Each entry is intentionally specific so we
+# don't accidentally hide real config files in the same directory.
+
+# === Claude Code (claude/.claude/ — config like settings.json, skills/,
+# hooks/, agents/, commands/, memory/, CLAUDE.md, keybindings.json
+# stays tracked) ===
+claude/.claude/.last-cleanup
+claude/.claude/backups/
+claude/.claude/cache/
+claude/.claude/downloads/
+claude/.claude/file-history/
+claude/.claude/history.jsonl
+claude/.claude/image-cache/
+claude/.claude/mcp-needs-auth-cache.json
+claude/.claude/paste-cache/
+claude/.claude/plans/
+claude/.claude/plugins/
+claude/.claude/projects/
+claude/.claude/session-env/
+claude/.claude/sessions/
+claude/.claude/shell-snapshots/
+
+# === Codex CLI (codex/.codex/ — config.toml, skills/, prompts/,
+# AGENTS.md, profiles/ stay tracked) ===
+codex/.codex/.codex-global-state.json
+codex/.codex/.codex-global-state.json.bak
+codex/.codex/.personality_migration
+codex/.codex/.tmp/
+codex/.codex/auth.json
+codex/.codex/cache/
+codex/.codex/logs_*.sqlite*
+codex/.codex/memories/
+codex/.codex/models_cache.json
+codex/.codex/plugins/
+codex/.codex/skills/.system/
+codex/.codex/sqlite/
+codex/.codex/state_*.sqlite*
+codex/.codex/tmp/
+codex/.codex/vendor_imports/
+
+# === Karabiner auto-rotated backups ===
+karabiner/.config/karabiner/automatic_backups/
+
+# === Tmux plugins (managed by tpm; bootstrap re-clones them) ===
+tmux/.config/tmux/plugins/
+
+# === Zed prompt library (binary LMDB; rsync from old Mac if needed) ===
+zed/.config/zed/prompts/
+
+# === Misc tool droppings ===
+.python-version
+.DS_Store
