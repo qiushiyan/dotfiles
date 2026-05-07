@@ -64,5 +64,8 @@ done
 
 printf "\nWrote %s with %d entries.\n" "$MANIFEST" "$(wc -l < "$MANIFEST" | tr -d ' ')"
 printf "\nTransfer (LAN, requires SSH access from old to new):\n"
-printf "  rsync -av --files-from=%s ~ user@new-mbp:/Users/qiushi/\n" "$MANIFEST"
+printf "  rsync -avr --files-from=%s ~ user@new-mbp:/Users/qiushi/\n" "$MANIFEST"
+printf "\n(The -r is required: --files-from cancels the default recursion that\n"
+printf "-a normally provides, so directory entries like .ssh/ would be created\n"
+printf "empty without it.)\n"
 printf "\nOr via USB/AirDrop: tar the listed paths from \$HOME and copy.\n"
