@@ -34,6 +34,11 @@ codex/.codex/memories/
 codex/.codex/models_cache.json
 codex/.codex/plugins/
 codex/.codex/skills/.system/
+codex/.codex/archived_sessions/
+codex/.codex/installation_id
+codex/.codex/session_index.jsonl
+codex/.codex/sessions/
+codex/.codex/shell_snapshots/
 codex/.codex/sqlite/
 codex/.codex/state_*.sqlite*
 codex/.codex/tmp/
