@@ -40,8 +40,10 @@ which needs `~/.ssh/id_*` already in place.
 
 1. Transfer the files listed in `secrets-manifest.txt`. Example over LAN:
    ```
-   # On the old Mac:
-   rsync -av --files-from=secrets-manifest.txt ~ qiushi@new-mbp.local:/Users/qiushi/
+   # On the old Mac. -r is required: --files-from cancels the default
+   # recursion that -a normally provides, so directory entries like .ssh/
+   # would be created empty without it.
+   rsync -avr --files-from=secrets-manifest.txt ~ qiushi@new-mbp.local:/Users/qiushi/
    ```
 2. Fix permissions (rsync sometimes drops them):
    ```
