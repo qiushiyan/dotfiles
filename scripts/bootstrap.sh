@@ -84,6 +84,52 @@ step_brewfile() {
     make brew
 }
 
+step_thirdparty() {
+    say "Third-party shell + tmux plugins (git-cloned, not in Brewfile)"
+    local clones=(
+        "https://github.com/zsh-users/zsh-syntax-highlighting.git|$HOME/zsh-syntax-highlighting"
+        "https://github.com/zsh-users/zsh-autosuggestions|$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+        "https://github.com/tmux-plugins/tpm|$HOME/.config/tmux/plugins/tpm"
+        "https://github.com/jimeh/tmuxifier|$HOME/.config/tmux/plugins/tmuxifier"
+        "https://github.com/yetone/smart-suggestion|$HOME/.config/smart-suggestion"
+    )
+
+    if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
+        ok "oh-my-zsh installed"
+    else
+        ok "oh-my-zsh already installed"
+    fi
+
+    for entry in "${clones[@]}"; do
+        local url="${entry%%|*}"
+        local dest="${entry##*|}"
+        if [[ -d "$dest/.git" ]]; then
+            ok "$(basename "$dest") already cloned"
+        else
+            mkdir -p "$(dirname "$dest")"
+            git clone --depth 1 "$url" "$dest"
+            ok "cloned $(basename "$dest")"
+        fi
+    done
+
+    # smart-suggestion ships Go source, not a binary — build it once.
+    local ss_dir="$HOME/.config/smart-suggestion"
+    if [[ -d "$ss_dir" && ! -x "$ss_dir/smart-suggestion" ]]; then
+        (cd "$ss_dir" && bash build.sh)
+        ok "smart-suggestion binary built"
+    fi
+
+    # Trigger tpm to fetch the rest of the tmux plugins declared in tmux.conf
+    # (tmux-sensible, tmux-resurrect, vim-tmux-navigator, catppuccin/tmux).
+    # tpm only auto-installs from inside tmux on `prefix + I`; running its
+    # install_plugins script here makes the bootstrap fully non-interactive.
+    if [[ -x "$HOME/.config/tmux/plugins/tpm/bin/install_plugins" ]]; then
+        "$HOME/.config/tmux/plugins/tpm/bin/install_plugins" >/dev/null
+        ok "tpm plugins installed"
+    fi
+}
+
 step_node() {
     say "Node toolchain (nvm + LTS)"
     export NVM_DIR="$HOME/.nvm"
@@ -99,6 +145,16 @@ step_node() {
     nvm install --lts
     nvm alias default 'lts/*'
     ok "node $(node --version)"
+}
+
+step_macos_defaults() {
+    say "macOS defaults"
+    # Natural scrolling off (Windows/Linux-style: wheel down scrolls page down).
+    # Single global pref controls BOTH mouse and trackpad; the GUI's two
+    # toggles in System Settings are aliases for this same key.
+    # Takes effect after logout/reboot.
+    defaults write -g com.apple.swipescrolldirection -bool false
+    ok "natural scrolling: off (logout/reboot to apply)"
 }
 
 step_default_shell() {
@@ -125,7 +181,9 @@ ALL_STEPS=(
     stow
     pre_toolchain
     brewfile
+    thirdparty
     node
+    macos_defaults
     default_shell
     finish
 )

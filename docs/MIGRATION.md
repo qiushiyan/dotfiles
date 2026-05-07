@@ -1,51 +1,53 @@
 # Migrating to a new MacBook Pro
 
-This is the manual playbook that complements `scripts/bootstrap.sh` and
+The manual playbook that complements `scripts/bootstrap.sh` and
 `scripts/list-secrets.sh`. Walk through the sections in order.
 
-## Before you wipe the old Mac
+## 1. Before you wipe the old Mac
 
-- [ ] Push all local repo work, including any in-progress branches.
+- [ ] Push all local repo work, including in-progress branches.
       `cd ~/Workspace && for d in */; do (cd "$d" && git status -sb); done`
       reveals dirty repos at a glance.
 - [ ] Run the secrets audit:
       ```
-      cd ~/dotfiles
-      ./scripts/list-secrets.sh
+      cd ~/dotfiles && ./scripts/list-secrets.sh
       ```
-      Inspect the printed table; confirm the `secrets-manifest.txt` file
-      lists what you expect.
+      Confirm `secrets-manifest.txt` lists what you expect.
+- [ ] **Enable Remote Login** on the old Mac:
+      System Settings → General → Sharing → toggle **Remote Login** on.
+      You'll need this for the rsync transfers below *and* for any
+      app-state sync later (Zed, Raycast, etc.). Note the `ssh` string
+      shown in the same pane — that's your transfer target.
 - [ ] Choose a transfer mechanism:
-      - **rsync over LAN (recommended):** both Macs on same network,
-        SSH from old to new (one-time `ssh-copy-id` to authorize).
+      - **rsync over LAN (recommended):** both Macs on same network.
       - **USB:** tar the listed paths, copy via external drive.
-      - **AirDrop:** works for small files like `~/.secrets`, less ideal
-        for `~/.ssh` directory permissions.
+      - **AirDrop:** OK for `~/.secrets`, less ideal for `~/.ssh`
+        directory permissions.
 - [ ] Optional: kick off a Time Machine backup as a safety net.
-- [ ] Do **not** sign out of iCloud on the old Mac until the new one is set up.
+- [ ] Do **not** sign out of iCloud on the old Mac until the new one is
+      set up.
 
-## Setting up the new Mac (macOS-level)
+## 2. Set up the new Mac (macOS-level)
 
 1. Setup Assistant → "Set up with iPhone" — handles Apple ID, Wi-Fi,
    and iCloud Keychain in one step.
-2. Sign in to iCloud — the macOS Passwords app entries restore
-   automatically.
+2. Sign in to iCloud — macOS Passwords entries restore automatically.
 3. **Enable FileVault** (System Settings → Privacy & Security → FileVault).
 4. Optional: Time Machine to a new external drive.
 
-## Restore secrets (BEFORE running bootstrap)
+## 3. Restore secrets (BEFORE running bootstrap)
 
-The bootstrap script clones the dotfiles repo via SSH (step 4),
-which needs `~/.ssh/id_*` already in place.
+The bootstrap script clones the dotfiles repo via SSH, which needs
+`~/.ssh/id_*` already in place.
 
-1. Transfer the files listed in `secrets-manifest.txt`. Example over LAN:
+1. Transfer the files listed in `secrets-manifest.txt`. From the **old**
+   Mac:
    ```
-   # On the old Mac. -r is required: --files-from cancels the default
-   # recursion that -a normally provides, so directory entries like .ssh/
-   # would be created empty without it.
-   rsync -avr --files-from=secrets-manifest.txt ~ qiushi@new-mbp.local:/Users/qiushi/
+   # -r is required: --files-from cancels the default recursion that
+   # -a normally provides.
+   rsync -avr --files-from=secrets-manifest.txt ~ qiushi@<new-mac>.local:/Users/qiushi/
    ```
-2. Fix permissions (rsync sometimes drops them):
+2. Fix permissions on the **new** Mac (rsync sometimes drops them):
    ```
    chmod 700 ~/.ssh
    chmod 600 ~/.ssh/id_* ~/.ssh/config* 2>/dev/null
@@ -55,12 +57,12 @@ which needs `~/.ssh/id_*` already in place.
    ```
 3. Verify:
    ```
-   ssh -T git@github.com           # should print "Hi qiushiyan!"
-   gpg --list-secret-keys           # should list your key(s)
-   aws sts get-caller-identity      # should print your account/user
+   ssh -T git@github.com           # "Hi qiushiyan!"
+   gpg --list-secret-keys           # lists your key(s)
+   aws sts get-caller-identity      # prints your account/user
    ```
 
-## Run bootstrap
+## 4. Run bootstrap
 
 ```
 git clone git@github.com:qiushiyan/dotfiles.git ~/dotfiles
@@ -68,112 +70,192 @@ cd ~/dotfiles
 ./scripts/bootstrap.sh
 ```
 
-If a step fails, re-run just that step:
+Every step is **idempotent** — re-running the whole script (or a single
+step like `./scripts/bootstrap.sh brewfile`) is safe.
+
+### Things that will interrupt you
+
+| Prompt | Why | What to do |
+|---|---|---|
+| GUI install dialog (Xcode CLT) | First-time only | Click through, then re-run `bootstrap.sh` |
+| **sudo password** during `brew bundle` | `xquartz`, `font-sf-mono`, `font-sf-pro` install system-wide | Stay near the keyboard; if you fat-finger it 3×, the formula errors and `brew bundle` aborts. Re-run after. |
+| `mongodb-community` failure | Mongo's brew formula breaks on each new macOS major | Currently commented out in `Brewfile`. If you actually need a local Mongo server, run it via Docker. |
+| The `homebrew/cask` / `homebrew/core` "tap failed" lines | Deprecated taps; brew prints scary text but it's noise | Ignore (they're already removed from `Brewfile`). |
+
+### What `step_thirdparty` installs
+
+A few shell/tmux dependencies live outside Homebrew (the upstreams ship
+as git repos, not formulae). The step git-clones them and, where
+needed, runs the build:
+
+| Repo | Destination | Used by |
+|---|---|---|
+| ohmyzsh/ohmyzsh | `~/.oh-my-zsh` | `.zshrc` (provides `compinit`/`compdef`) |
+| zsh-users/zsh-syntax-highlighting | `~/zsh-syntax-highlighting` | `.zshrc` |
+| zsh-users/zsh-autosuggestions | `~/.oh-my-zsh/custom/plugins/zsh-autosuggestions` | `.zshrc` plugins list |
+| tmux-plugins/tpm | `~/.config/tmux/plugins/tpm` | `tmux.conf` plugin loader |
+| jimeh/tmuxifier | `~/.config/tmux/plugins/tmuxifier` | `.zshrc` (`tmuxifier init`) |
+| yetone/smart-suggestion | `~/.config/smart-suggestion` | `.zshrc` (Go binary built in-place) |
+
+The step also runs tpm's `install_plugins` directly so the plugins
+declared in `tmux.conf` (tmux-sensible, tmux-resurrect,
+vim-tmux-navigator, catppuccin/tmux) are fetched without opening tmux
+and hitting `prefix + I`.
+
+### What `step_macos_defaults` sets
+
+Currently just one tweak: natural scrolling off
+(`com.apple.swipescrolldirection = false`). The single key controls
+**both** mouse and trackpad — the GUI's two toggles are aliases for it.
+Takes effect after logout/reboot. Add more `defaults write` lines to
+this step over time.
+
+## 5. Post-bootstrap manual setup
+
+### 5a. Workspace + Python + re-auths
+
 ```
-./scripts/bootstrap.sh brewfile
-./scripts/bootstrap.sh node
-```
+mkdir -p ~/dev          # convention on this machine (was ~/Workspace before)
 
-The first run will pause at `xcode_clt` if Xcode CLT isn't installed —
-follow the GUI prompt, then re-run the script.
-
-## Workspace directory
-
-Convention on the new machine: `~/dev/` (was `~/Workspace/` on the old
-machine — the dotfiles don't reference either name).
-
-```
-mkdir -p ~/dev
-```
-
-Re-clone projects you actively want to work with into `~/dev/`. Treat
-this as a fresh start — don't mass-rsync the entire old `~/Workspace`.
-
-## Python setup
-
-Why this section exists: macOS dev environments accumulate Python
-installs from multiple sources (Homebrew, python.org `.pkg`, Apple's
-stub, pyenv, conda) and editors get confused about which is "the"
-Python. We dodge that by routing user-level Python through `uv`.
-
-Brew installs `python@3.14` as a transitive dependency of other
-formulae (apache-arrow, awscli, gdal, etc.) — that's fine; we just
-don't use it directly.
-
-```
-# Install user-managed CPython (independent of Homebrew's transitive copy)
+# Python — route user-level CPython through uv to dodge the multi-Python mess.
+# Brew installs python@3.14 transitively (apache-arrow, awscli, gdal, …);
+# we don't use it directly. Do NOT install python.org's .pkg.
 uv python install 3.14
-
-# Pin 3.14 as the default for `uv venv` / `uv run`
 uv python pin 3.14
+# Optional CLI tools:
+# uv tool install ipython black
 
-# (Optional) install global CLI tools via `uv tool` instead of pipx
-uv tool install ipython
-uv tool install black
-```
-
-In Zed (or any IDE), set the Python interpreter to the uv-managed one:
-```
-$(uv python find 3.14)
-```
-
-Do NOT install python.org's `.pkg` — it sprays files into
-`/Library/Frameworks/Python.framework` and `/usr/local/bin/`, both of
-which are exactly what we just spent effort cleaning up on the old
-machine.
-
-## Re-auth (rather than copying state)
-
-```
+# Cloud auths (cheaper to redo than to copy state)
 gh auth login
 gcloud auth login && gcloud auth application-default login
 ```
 
-## Manual installs (NOT in Brewfile)
+In Zed (or any IDE), point the Python interpreter at `$(uv python find 3.14)`.
 
-Apps installed outside Homebrew. Add to this list as you encounter
-others.
+### 5b. Apps NOT in the Brewfile
 
-- **Ghostty** — download from <https://ghostty.org/>. (Used to be a
-  Homebrew cask, removed from Brewfile because the existing install on
-  the source machine wasn't brew-managed; using the official build is
-  simpler.)
-- **Logitech G Hub** — download from <https://www.logitech.com/en-us/software/g-hub.html>.
+Manual downloads, by intent:
 
-## App login pass
+- **Ghostty** — <https://ghostty.org/>. Cask was removed because the
+  source machine's install wasn't brew-managed.
+- **Logitech G Hub** — <https://www.logitech.com/en-us/software/g-hub.html>.
+- **Karabiner-Elements** — currently commented out in `Brewfile`
+  (`# cask "karabiner-elements"`). Install the cask manually if you
+  use it — the brew install + driver kext approval flow is finicky
+  enough that a manual download from <https://karabiner-elements.pqrs.org/>
+  is usually less painful.
 
-Walk through Dock / Launchpad and sign in:
+### 5c. App permissions, sign-ins, defaults to undo
 
-- Slack
-- Linear
-- Raycast (it'll prompt for an account)
-- Discord
-- Postman
-- MongoDB Compass
-- Codex CLI
-- Any IDE-like app: Zed, Ghostty (no login but verify settings).
+Most apps have first-launch onboarding — don't try to enumerate every
+checkbox. Just be aware of the categories:
 
-iCloud Keychain pre-fills most of these.
+- **Apps that need Accessibility / Input Monitoring**: Karabiner-Elements,
+  Logitech G Hub, Raycast, Rectangle. First launch pops a system dialog
+  that links straight to the right pane in System Settings → Privacy &
+  Security. Approve, then quit & relaunch the app.
+- **Apps that just need a sign-in** (iCloud Keychain pre-fills most):
+  Slack, Linear, Discord, Postman, MongoDB Compass, Codex, Raycast,
+  Zed (for Zed AI). Walk the Dock/Launchpad and log in.
+- **Default macOS shortcut conflicts** to disable so they stop hijacking
+  your Raycast/Zed/etc. binds:
+  - System Settings → Keyboard → **Keyboard Shortcuts…** button →
+    Services → Text → uncheck **Convert Text to Simplified Chinese**
+    (`⌃⌥⇧⌘C`) and **Convert Text to Traditional Chinese** (`⌃⌥⇧⌘T`).
+  - Same panel, **Mission Control** → review the workspace shortcuts
+    if you've remapped them via Karabiner.
 
-## Verification checklist
+### 5d. Sync app state from the old Mac (lessons learned)
+
+> **Trap**: just because a config dir lives under `~/.config/<app>/`
+> doesn't mean it's part of this dotfiles repo. On the old Mac, several
+> dirs (e.g. `~/.config/zed`) were **real directories**, not symlinks
+> to the dotfiles repo — meaning the committed copy was stale relative
+> to the live config. Always `ls -la ~/.config/` on the old Mac and
+> diff the live file against the dotfiles version before assuming
+> stow gave you the right state.
+
+#### Pattern for app-state rsync
+
+1. Enable Remote Login on the old Mac (§1).
+2. Authorize the new Mac for password-less SSH:
+   ```
+   ssh-copy-id qiushi@<old-mac>.local   # type old Mac's account password once
+   ```
+   Even if `~/.ssh/` was rsynced over (so both Macs share the same
+   *private* key), the old Mac still needs the new Mac's *public* key
+   in its `authorized_keys`.
+3. Quit the app on the new Mac before copying its sqlite-backed state,
+   or you'll corrupt the DB.
+4. Use rsync with **`-s` (protect-args)** and **absolute paths**:
+   ```
+   # -s preserves spaces in remote paths (Application Support has one),
+   # but it ALSO disables ~ expansion — so spell out /Users/qiushi/...
+   rsync -avs qiushi@<old-mac>.local:"/Users/qiushi/Library/Application Support/<App>/" \
+              "$HOME/Library/Application Support/<App>/"
+   ```
+5. Skip the bloat: language-server runtimes, downloaded Node, crash
+   dumps, prettier caches. Most apps re-download them.
+
+#### Worked example: Zed
+
+Source: `~/Library/Application Support/Zed/` on the old Mac (~12GB,
+mostly bloat).
+
+| Subdir | Copy? | Why |
+|---|---|---|
+| `db/` | yes | Recent projects + window state (sqlite) |
+| `threads/` | yes | Zed AI conversation history |
+| `extensions/` | yes (~574MB) | 47 extensions; faster than re-installing |
+| `external_agents/` | optional | State for in-Zed Claude Code/Codex — only if you used them |
+| `node/`, `languages/`, `debug_adapters/`, `prettier/`, `copilot/`, `hang_traces/` | no | Re-downloaded automatically; copilot just re-auth |
+
+Also copy local theme JSONs (these aren't extensions):
+```
+rsync -avs qiushi@<old-mac>.local:"/Users/qiushi/.config/zed/themes/" \
+           "$HOME/.config/zed/themes/"
+```
+
+If your dotfiles' `settings.json` is older than the live one on the old
+Mac, diff first then overwrite:
+```
+ssh qiushi@<old-mac>.local 'cat ~/.config/zed/settings.json' > /tmp/old.json
+diff -u ~/dotfiles/zed/.config/zed/settings.json /tmp/old.json
+cp /tmp/old.json ~/dotfiles/zed/.config/zed/settings.json
+```
+
+#### Other apps where the same pattern likely applies
+
+Worth checking on the old Mac before declaring migration done:
+
+- **Raycast** — Settings → Account → Cloud Sync handles most state. If
+  Cloud Sync was off, rsync `~/Library/Application Support/com.raycast.macos/`
+  and `~/Library/Preferences/com.raycast.macos.plist` (with Raycast quit).
+- **Karabiner-Elements** — `~/.config/karabiner/` *is* in the dotfiles
+  repo, but verify the live file matches before trusting it.
+- **Ghostty** — `~/.config/ghostty/` is in the dotfiles repo.
+- **Tmux/sesh sessions** — not migrated; just recreate as needed.
+
+## 6. Verification checklist
 
 Run from a fresh terminal after bootstrap completes.
 
 - [ ] `cd ~/dotfiles && make install` reports clean (no Stow conflicts).
 - [ ] `brew bundle check --file=~/dotfiles/Brewfile --no-upgrade` reports
       `dependencies are satisfied`.
-- [ ] New zsh terminal opens with no errors loading modules.
+- [ ] New zsh terminal opens with **no** missing-source errors.
 - [ ] `git commit -S` succeeds (if you sign commits with GPG).
-- [ ] `nvim` opens, plugins load (LazyVim shows lazy.nvim splash).
+- [ ] `nvim` opens, plugins load (LazyVim splash).
 - [ ] `tmux` starts, status bar renders Catppuccin theme.
 - [ ] `ghostty` launches with expected fonts (Iosevka, etc.).
-- [ ] `node --version` prints LTS.
-- [ ] `cargo --version` and `rustc --version` work.
+- [ ] `node --version` prints LTS, `cargo --version` and `rustc --version` work.
+- [ ] `z <some old project>` jumps (zoxide is initialized).
+- [ ] Natural scrolling matches your preference (logout/reboot first if not).
 
-## Files outside the repo (reference)
+## Reference: files outside the repo
 
-These are intentionally not committed and need manual transfer or
-re-auth. `scripts/list-secrets.sh` enumerates them.
+Not committed; need manual transfer or re-auth. `scripts/list-secrets.sh`
+enumerates the secret ones.
 
 | Path | Sensitive | Mechanism |
 |---|---|---|
@@ -189,12 +271,13 @@ re-auth. `scripts/list-secrets.sh` enumerates them.
 | `~/.config/gcloud/` | medium | re-auth via `gcloud auth login` |
 | iCloud Keychain | high | "Set up with iPhone" + iCloud sign-in |
 | App logins (Slack/Linear/etc.) | medium | manual; Keychain pre-fills most |
+| `~/Library/Application Support/<App>/` | varies | per §5d (Zed worked example) |
 
-## Old-machine cleanup leftover (do at your leisure)
+## Reference: old-machine cleanup
 
 The R version manager (`rim`) installed a binary into `/usr/local/bin/`
-which requires `sudo` to remove. The Brewfile cleanup left it in place.
-To purge fully on the old Mac:
+which requires `sudo` to remove. Brewfile cleanup left it in place. To
+purge fully on the old Mac:
 
 ```
 sudo rm /usr/local/bin/rim
@@ -202,5 +285,4 @@ brew uninstall --cask --force rim
 brew untap gaborcsardi/rim
 ```
 
-This is purely cosmetic — the rim cask is no longer in `Brewfile`, so
-it won't be installed on the new Mac.
+Cosmetic only — the rim cask is no longer in `Brewfile`.
