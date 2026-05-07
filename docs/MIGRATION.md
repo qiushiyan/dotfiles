@@ -57,10 +57,20 @@ The bootstrap script clones the dotfiles repo via SSH, which needs
    ```
 3. Verify:
    ```
-   ssh -T git@github.com           # "Hi qiushiyan!"
-   gpg --list-secret-keys           # lists your key(s)
-   aws sts get-caller-identity      # prints your account/user
+   ssh -T git@github.com               # "Hi qiushiyan!"
+   ssh -T git@github.com-marswave      # "Hi yanqiushi-mw!"  (per-account alias)
+   gpg --list-secret-keys              # lists your key(s)
+   aws sts get-caller-identity         # prints your account/user
+   ls ~/.gitconfig.{personal,marswave,cola}   # all three present
    ```
+
+   The `.gitconfig.{personal,marswave,cola}` files are the per-identity
+   includes referenced by `git/.gitconfig`'s `[includeIf "gitdir:~/dev/..."]`
+   blocks. They live in `$HOME` (not the dotfiles repo, because it's
+   public) and are pulled by the rsync above via `secrets-manifest.txt`.
+   If a repo under `~/dev/marswave/` ever shows the wrong git identity
+   (`git config user.email` returns the personal email), one of those
+   files is missing or the `gitdir:` path doesn't match — see §5e.
 
 ## 4. Run bootstrap
 
@@ -236,6 +246,37 @@ Worth checking on the old Mac before declaring migration done:
 - **Ghostty** — `~/.config/ghostty/` is in the dotfiles repo.
 - **Tmux/sesh sessions** — not migrated; just recreate as needed.
 
+### 5e. Per-account git identities
+
+`git/.gitconfig` ships with conditional includes that swap identity by
+directory:
+
+```
+[includeIf "gitdir:~/dev/"]          path = ~/.gitconfig.personal
+[includeIf "gitdir:~/dev/marswave/"] path = ~/.gitconfig.marswave
+```
+
+Inside `~/dev/marswave/...` the marswave block wins (it loads later).
+The included files (`~/.gitconfig.personal`, `~/.gitconfig.marswave`,
+`~/.gitconfig.cola`) are **not** in the dotfiles repo because the repo
+is public and we don't want service-account names indexed. They live
+in `$HOME` and migrate via the `secrets-manifest.txt` rsync (§3).
+
+When adding a new identity:
+1. Drop a new `~/.gitconfig.<name>` file with `[user]` + URL-rewrite block.
+2. Add an `[includeIf]` to `git/.gitconfig` for the directory that
+   should pick it up.
+3. Add `.gitconfig.<name>` to `scripts/list-secrets.sh` `COPY_PATHS`
+   (this regenerates `secrets-manifest.txt` next time it's run).
+4. Make sure `~/.ssh/config` has a matching `Host github.com-<name>`
+   alias pointing at the right `IdentityFile`.
+
+To debug "wrong identity in this repo":
+```
+git config --show-origin user.email   # tells you which file set it
+git config --get-all include.path     # lists which includes resolved
+```
+
 ## 6. Verification checklist
 
 Run from a fresh terminal after bootstrap completes.
@@ -267,6 +308,7 @@ enumerates the secret ones.
 | `~/.npmrc` | yes | rsync / scp |
 | `~/.kube/config` | medium | rsync / scp |
 | `~/.docker/config.json` | medium | rsync / scp |
+| `~/.gitconfig.{personal,marswave,cola}` | low (public keys + emails) | rsync / scp; see §5e |
 | `~/.config/gh/` | medium | re-auth via `gh auth login` |
 | `~/.config/gcloud/` | medium | re-auth via `gcloud auth login` |
 | iCloud Keychain | high | "Set up with iPhone" + iCloud sign-in |
