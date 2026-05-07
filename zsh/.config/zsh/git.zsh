@@ -522,6 +522,14 @@ _stage() {
 compdef _stage stage
 
 # --------------------------------------------------------------------
+# gremote - git remote -v with SSH-shorthand URLs rewritten to HTTPS
+# --------------------------------------------------------------------
+# Display only — repo's stored URLs and SSH-key routing are untouched.
+gremote() {
+  git remote -v "$@" | sed -E 's|git@github\.com(-[a-z]+)?:|https://github.com/|g'
+}
+
+# --------------------------------------------------------------------
 # gitswitch - Switch between git profiles (personal, marswave, cola)
 # --------------------------------------------------------------------
 gitswitch() {

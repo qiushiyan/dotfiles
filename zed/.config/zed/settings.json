@@ -9,27 +9,27 @@
 {
   "cli_default_open_behavior": "existing_window",
   "outline_panel": {
-    "dock": "left"
+    "dock": "left",
   },
   "collaboration_panel": {
-    "dock": "left"
+    "dock": "left",
   },
   "lsp": {
     "vtsls": {
       "settings": {
         "typescript": {
           "updateImportsOnFileMove": {
-            "enabled": "always"
-          }
+            "enabled": "always",
+          },
         },
         "javascript": {
           "updateImportsOnFileMove": {
-            "enabled": "always"
-          }
-        }
+            "enabled": "always",
+          },
+        },
       },
-      "enable_lsp_tasks": true
-    }
+      "enable_lsp_tasks": true,
+    },
   },
   "edit_predictions": {
     "provider": "copilot",
@@ -37,7 +37,7 @@
   "icon_theme": {
     "mode": "dark",
     "light": "Catppuccin Mocha",
-    "dark": "Catppuccin Mocha"
+    "dark": "Catppuccin Mocha",
   },
   "agent_buffer_font_size": 23.0,
   "buffer_font_weight": 400.0,
@@ -95,7 +95,7 @@
   ],
   "agent": {
     "tool_permissions": {
-      "default": "allow"
+      "default": "allow",
     },
     "default_profile": "write",
     "dock": "right",
@@ -156,7 +156,7 @@
   },
   "terminal": {
     "dock": "bottom",
-    "font_size": 20,
+    "font_size": 18.0,
     "font_family": "IosevkaTerm Nerd Font",
     "copy_on_select": true,
     "button": true,

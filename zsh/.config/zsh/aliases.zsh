@@ -73,7 +73,6 @@ alias sshprod="ssh marswave.production"
 # Misc Tools
 # --------------------------------------------------------------------
 alias c="cursor"
-alias o="openclaw"
 alias ct="count-token"
 alias make="mmake"                   # https://github.com/tj/mmake
 alias tsx='tsx --no-warnings'
