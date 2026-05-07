@@ -145,6 +145,17 @@ step_node() {
     nvm install --lts
     nvm alias default 'lts/*'
     ok "node $(node --version)"
+
+    # pnpm via the standalone installer — keeps the binary at
+    # ~/Library/pnpm/ (the path .zshrc's PNPM_HOME already expects)
+    # so it survives nvm version switches. Don't use `npm install -g`:
+    # the block-npm.sh hook in claude/ rejects it on principle.
+    if [[ -x "$HOME/Library/pnpm/pnpm" ]]; then
+        ok "pnpm $("$HOME/Library/pnpm/pnpm" --version) already installed"
+    else
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
+        ok "pnpm installed at ~/Library/pnpm/"
+    fi
 }
 
 step_macos_defaults() {
