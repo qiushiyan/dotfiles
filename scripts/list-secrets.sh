@@ -21,6 +21,13 @@ COPY_PATHS=(
     ".npmrc"
     ".kube/config"
     ".docker/config.json"
+    # Per-account git configs (sourced via `[includeIf gitdir:...]` from
+    # ~/.gitconfig). They contain emails + PUBLIC signing keys (not
+    # cryptographically secret) but are kept out of the public dotfiles
+    # repo to avoid leaking the service-account names.
+    ".gitconfig.personal"
+    ".gitconfig.marswave"
+    ".gitconfig.cola"
 )
 
 # Paths intentionally skipped (re-auth on new machine instead).

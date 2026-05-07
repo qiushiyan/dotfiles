@@ -10,10 +10,10 @@ useConfigOnly = true
 [include]
   path = ~/.gitconfig.personal
 
-[includeIf "gitdir:~/workspace/"]
+[includeIf "gitdir:~/dev/"]
   path = ~/.gitconfig.personal
 
-[includeIf "gitdir:~/workspace/marswave/"]
+[includeIf "gitdir:~/dev/marswave/"]
   path = ~/.gitconfig.marswave
 
 [core]
