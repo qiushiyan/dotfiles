@@ -131,6 +131,7 @@ brew "jandedobbeleer/oh-my-posh/oh-my-posh"
 # === GUI apps (casks) ===
 cask "codex"
 cask "discord"
+cask "karabiner-elements"
 cask "linear"
 cask "mongodb-compass"
 cask "postman"
