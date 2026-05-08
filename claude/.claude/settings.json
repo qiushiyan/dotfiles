@@ -64,7 +64,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark-ansi",
+  "theme": "auto",
   "editorMode": "vim",
   "verbose": true,
   "autoCompactEnabled": false
