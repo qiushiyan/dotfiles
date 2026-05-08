@@ -1,6 +1,19 @@
 {
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-  "palette": {
+  "palettes": {
+    "template": "{{ if .Env.TERMINAL_THEME }}{{ .Env.TERMINAL_THEME }}{{ else }}flexoki_light{{ end }}",
+    "list": {
+      "flexoki_light": {
+        "os": "#878580",
+        "closer": "p:os",
+        "pink": "#a02f6f",
+        "lavender": "#a02f6f",
+        "blue":  "#205ea6",
+        "green": "#66800b",
+        "peach": "#ad8301",
+        "red": "#af3029"
+      },
+      "catppuccin_mocha": {
         "os": "#ACB0BE",
         "closer": "p:os",
         "pink": "#F5C2E7",
@@ -9,6 +22,8 @@
         "green": "#A6E3A1",
         "peach": "#FAB387",
         "red": "#F38BA8"
+      }
+    }
   },
   "blocks": [
     {
