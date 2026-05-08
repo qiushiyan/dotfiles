@@ -1,6 +1,6 @@
 # vim: ft=conf
-# theme = rose-pine
-theme=Catppuccin Mocha
+theme = Flexoki Light
+# theme=Catppuccin Mocha
 background-opacity = 0.85
 background-blur-radius = 25
 # theme = TokyoNight

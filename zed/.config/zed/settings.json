@@ -108,7 +108,7 @@
   "theme": {
     "mode": "light",
     "light": "Tailwind CSS Light",
-    "dark": "Tailwind CSS Dark (Enhanced)",
+    "dark": "Flexoki Dark",
   },
   "vim_mode": true,
   "relative_line_numbers": "enabled",
@@ -156,7 +156,7 @@
   },
   "terminal": {
     "dock": "bottom",
-    "font_size": 18.0,
+    "font_size": 19.0,
     "font_family": "IosevkaTerm Nerd Font",
     "copy_on_select": true,
     "button": true,
