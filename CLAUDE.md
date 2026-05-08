@@ -44,13 +44,14 @@ Shell config is split across `zsh/.config/zsh/`:
 - `git.zsh` — Git helper functions (`gitclean`, `gitgc`, `stage`)
 - `nav.zsh` — Navigation (`n`, `take`, `drop`, `y` for yazi, `fcd`)
 - `utils.zsh` — Utilities (`ccclean`, `loc`, `dotadd`, proxy toggles)
+- `theme.zsh` — Terminal theme switch (`$TERMINAL_THEME`); sets `LSCOLORS`/`LS_COLORS`, opts out of oh-my-zsh's defaults
 - `xcode.zsh` — Xcode build/test helpers for TabType
 
 These are all sourced by `.zshenv` via a glob: `source ~/.config/zsh/*.zsh`.
 
 ## Key Conventions
 
-- **Theme**: Catppuccin Mocha across all tools (ghostty, tmux, nvim, k9s)
+- **Theme**: `$TERMINAL_THEME` (read from `~/.config/terminal-theme`, default `flexoki_light`) drives the Claude Code statusline, Oh My Posh prompt, and zsh `ls`/completion colors. Supported values: `flexoki_light`, `catppuccin_mocha`. Ghostty/tmux/nvim/k9s themes are still set per-tool.
 - **Editor**: Neovim is the default (`core.editor = nvim` in gitconfig), vim keybindings everywhere
 - **Package manager**: pnpm preferred over npm (enforced via Claude Code hook in `claude/.claude/hooks/block-npm.sh`)
 - **Python**: 3.14 (`/opt/homebrew/bin/python3.14`), aliased as both `python` and `python3`

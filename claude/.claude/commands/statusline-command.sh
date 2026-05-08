@@ -1,15 +1,59 @@
 #!/bin/bash
-input=$(cat)
+#
+# Claude Code statusline renderer.
+#
+# Theming
+# -------
+# Colors track the shared $TERMINAL_THEME (also drives Oh My Posh prompt and
+# zsh ls/completion colors — see zsh/.config/zsh/theme.zsh). Resolution order:
+#   1. $TERMINAL_THEME env var
+#   2. ~/.config/terminal-theme  (single line, e.g. `flexoki_light`)
+#   3. built-in default (flexoki_light)
+#
+# Supported themes are the `case` arms below: catppuccin_mocha, flexoki_light.
+# Each theme defines the same six color slots (CYAN, GREEN, YELLOW, RED, PINK,
+# LAVENDER) as 24-bit truecolor escapes, so the rendering code stays
+# theme-agnostic. To add a theme, add a new arm; to switch, write the theme
+# name into ~/.config/terminal-theme or export the env var.
+#
+# Light vs dark backgrounds: pick palette entries with enough contrast against
+# the terminal bg. Flexoki Light uses the dark palette (0-7) on its cream bg;
+# Catppuccin Mocha uses the light/bright palette on its dark bg.
 
-# Catppuccin Mocha colors (ANSI 256-color escape codes)
-CYAN=$'\033[38;5;111m'      # Blue #89B4FA
-GREEN=$'\033[38;5;151m'     # Green #A6E3A1
-YELLOW=$'\033[38;5;216m'    # Peach #FAB387
-RED=$'\033[38;5;211m'       # Red #F38BA8
-PINK=$'\033[38;5;218m'      # Pink #F5C2E7
-LAVENDER=$'\033[38;5;147m'  # Lavender #B4BEFE
+THEME="${TERMINAL_THEME:-}"
+if [ -z "$THEME" ] && [ -r "$HOME/.config/terminal-theme" ]; then
+    THEME=$(tr -d '[:space:]' < "$HOME/.config/terminal-theme")
+fi
+THEME="${THEME:-flexoki_light}"
+
+# 24-bit truecolor escape: $'\033[38;2;R;G;Bm'
+case "$THEME" in
+    catppuccin_mocha)
+        CYAN=$'\033[38;2;137;180;250m'      # Blue #89B4FA
+        GREEN=$'\033[38;2;166;227;161m'     # Green #A6E3A1
+        YELLOW=$'\033[38;2;250;179;135m'    # Peach #FAB387
+        RED=$'\033[38;2;243;139;168m'       # Red #F38BA8
+        PINK=$'\033[38;2;245;194;231m'      # Pink #F5C2E7
+        LAVENDER=$'\033[38;2;180;190;254m'  # Lavender #B4BEFE
+        ;;
+    flexoki_light)
+        # Light cream bg (#fffcf0) needs the darker palette entries (0-7) for contrast
+        CYAN=$'\033[38;2;36;131;123m'       # Cyan #24837b
+        GREEN=$'\033[38;2;102;128;11m'      # Green #66800b
+        YELLOW=$'\033[38;2;173;131;1m'      # Yellow #ad8301
+        RED=$'\033[38;2;175;48;41m'         # Red #af3029
+        PINK=$'\033[38;2;160;47;111m'       # Magenta #a02f6f
+        LAVENDER=$'\033[38;2;32;94;166m'    # Blue #205ea6
+        ;;
+    *)
+        echo "statusline: unknown theme '$THEME'" >&2
+        exit 1
+        ;;
+esac
 DIM=$'\033[2m'
 RESET=$'\033[0m'
+
+input=$(cat)
 
 # Single jq call to extract all values
 read -r CURRENT_DIR CONTEXT_SIZE CURRENT_TOKENS <<< "$(echo "$input" | jq -r '
