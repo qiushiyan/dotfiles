@@ -1,15 +1,50 @@
+# Walk up from $PWD looking for .xcode-tools.zsh.
+# Stops at the git root (or filesystem root if no git).
+# Echoes the found path on success; returns 1 if not found.
+#
+# Callers `source` the returned file in their own scope so config
+# assignments (SCHEME=..., DESTINATION=...) become locals of the
+# calling function (which pre-declares them with `local`). No env
+# pollution of the parent shell.
+_xcode_tools_find_config() {
+  emulate -L zsh
+  local dir="${PWD}"
+  local git_root
+  git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+  while true; do
+    if [[ -f "${dir}/.xcode-tools.zsh" ]]; then
+      echo "${dir}/.xcode-tools.zsh"
+      return 0
+    fi
+    if [[ "${dir}" == "${git_root}" ]] || [[ "${dir}" == "/" ]] || [[ -z "${dir}" ]]; then
+      return 1
+    fi
+    dir="${dir:h}"
+  done
+}
+
 xbuild() {
   emulate -L zsh
 
-  local scheme="${XCODE_SCHEME:-}"
+  # Project-local config (sourced into this function's scope).
+  local SCHEME DESTINATION
+  local config_path
+  config_path=$(_xcode_tools_find_config) && source "${config_path}"
+
+  # Precedence: -s flag > XCODE_SCHEME env > SCHEME from config.
+  local scheme="${XCODE_SCHEME:-${SCHEME:-}}"
   if [[ "$1" == "-s" ]]; then
     scheme="$2"
     shift 2
   fi
   if [[ -z "${scheme}" ]]; then
-    echo "error: set XCODE_SCHEME or pass -s <scheme>" >&2
+    echo "error: set XCODE_SCHEME, .xcode-tools.zsh SCHEME=, or pass -s <scheme>" >&2
     return 1
   fi
+
+  # Precedence: XCODE_DESTINATION env > DESTINATION from config > macOS default.
+  local destination="${XCODE_DESTINATION:-${DESTINATION:-platform=macOS,arch=arm64}}"
 
   local run_id="${$}_${RANDOM}"
   local derived="/tmp/xcode_derived_${run_id}"
@@ -20,7 +55,7 @@ xbuild() {
     -scheme "${scheme}"
     -configuration Debug
     build
-    -destination 'platform=macOS,arch=arm64'
+    -destination "${destination}"
     -derivedDataPath "${derived}"
   )
 
@@ -60,15 +95,21 @@ xtest() {
   emulate -L zsh
   setopt pipe_fail
 
-  local scheme="${XCODE_SCHEME:-}"
+  local SCHEME DESTINATION
+  local config_path
+  config_path=$(_xcode_tools_find_config) && source "${config_path}"
+
+  local scheme="${XCODE_SCHEME:-${SCHEME:-}}"
   if [[ "$1" == "-s" ]]; then
     scheme="$2"
     shift 2
   fi
   if [[ -z "${scheme}" ]]; then
-    echo "error: set XCODE_SCHEME or pass -s <scheme>" >&2
+    echo "error: set XCODE_SCHEME, .xcode-tools.zsh SCHEME=, or pass -s <scheme>" >&2
     return 1
   fi
+
+  local destination="${XCODE_DESTINATION:-${DESTINATION:-platform=macOS,arch=arm64}}"
 
   local run_id="${$}_${RANDOM}"
   local derived="/tmp/xcode_derived_${run_id}"
@@ -80,7 +121,7 @@ xtest() {
     -scheme "${scheme}"
     -configuration Debug
     test
-    -destination 'platform=macOS,arch=arm64'
+    -destination "${destination}"
     -derivedDataPath "${derived}"
   )
 
@@ -170,13 +211,17 @@ print(f"✅ All {passed} tests passed")
 xtests-list() {
   emulate -L zsh
 
-  local scheme="${XCODE_SCHEME:-}"
+  local SCHEME DESTINATION
+  local config_path
+  config_path=$(_xcode_tools_find_config) && source "${config_path}"
+
+  local scheme="${XCODE_SCHEME:-${SCHEME:-}}"
   if [[ "$1" == "-s" ]]; then
     scheme="$2"
     shift 2
   fi
   if [[ -z "${scheme}" ]]; then
-    echo "error: set XCODE_SCHEME or pass -s <scheme>" >&2
+    echo "error: set XCODE_SCHEME, .xcode-tools.zsh SCHEME=, or pass -s <scheme>" >&2
     return 1
   fi
 
@@ -185,13 +230,18 @@ xtests-list() {
   local test_dir="${root}/${scheme}Tests"
 
   if [[ ! -d "${test_dir}" ]]; then
-    echo "${scheme}Tests directory not found: ${test_dir}" >&2
+    test_dir="${root}/${scheme}/${scheme}Tests"
+  fi
+
+  if [[ ! -d "${test_dir}" ]]; then
+    echo "${scheme}Tests directory not found under ${root}" >&2
     return 1
   fi
 
   find "${test_dir}" -name "*.swift" -print0 \
     | while IFS= read -r -d '' file; do
-        if grep -q "func test" "${file}"; then
+        # match XCTest (`func test*`) or Swift Testing (`@Test`, `@Suite`)
+        if grep -qE "func test|@Test|@Suite" "${file}"; then
           basename "${file}" .swift
         fi
       done \
