@@ -79,6 +79,11 @@ else
     PERCENT_USED=0
 fi
 
+# Display path: workspace projects show as bare repo name; other paths
+# under $HOME abbreviate to ~/...; everything else stays as-is.
+DISPLAY_DIR="${CURRENT_DIR/#$HOME\/workspace\//}"
+[[ "$DISPLAY_DIR" == "$HOME"* ]] && DISPLAY_DIR="~${DISPLAY_DIR#$HOME}"
+
 # Context sparkline - shows usage trajectory
 HISTORY_FILE="/tmp/claude_statusline_ctx_history"
 BLOCKS="▂▃▄▅▅▆▇█"  # Start at ▂ for better vertical alignment
@@ -138,8 +143,6 @@ fi
 # Git information - single call for all data
 GIT_OUTPUT=$(git -C "$CURRENT_DIR" --no-optional-locks status -b --porcelain 2>/dev/null)
 if [ $? -eq 0 ] && [ -n "$GIT_OUTPUT" ]; then
-    REPO_NAME="${CURRENT_DIR/#$HOME\/workspace\//}"
-
     # First line has branch: ## branch...tracking
     BRANCH=$(echo "$GIT_OUTPUT" | head -1 | sed 's/^## \([^.]*\).*/\1/')
 
@@ -161,11 +164,11 @@ if [ $? -eq 0 ] && [ -n "$GIT_OUTPUT" ]; then
 
     if [ -n "$GIT_STATUS" ]; then
         printf "${LAVENDER}%s${RESET} | ${PINK}%s${RESET} | %s | %s%s" \
-            "$REPO_NAME" "$BRANCH" "$GIT_STATUS" "$CTX_DISPLAY" "$API_INDICATOR"
+            "$DISPLAY_DIR" "$BRANCH" "$GIT_STATUS" "$CTX_DISPLAY" "$API_INDICATOR"
     else
         printf "${LAVENDER}%s${RESET} | ${PINK}%s${RESET} | %s%s" \
-            "$REPO_NAME" "$BRANCH" "$CTX_DISPLAY" "$API_INDICATOR"
+            "$DISPLAY_DIR" "$BRANCH" "$CTX_DISPLAY" "$API_INDICATOR"
     fi
 else
-    printf "${LAVENDER}%s${RESET} | %s%s" "$CURRENT_DIR" "$CTX_DISPLAY" "$API_INDICATOR"
+    printf "${LAVENDER}%s${RESET} | %s%s" "$DISPLAY_DIR" "$CTX_DISPLAY" "$API_INDICATOR"
 fi
