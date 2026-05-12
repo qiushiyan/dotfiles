@@ -1,5 +1,57 @@
 local M = {}
 
+-- Flexoki exports a flat palette via require("flexoki.palette").palette();
+-- we remap its keys onto the catppuccin-shaped table that ui.lua expects.
+local function flexoki_palette()
+  local ok, fp = pcall(require, "flexoki.palette")
+  if ok and fp.palette then
+    local p = fp.palette()
+    return {
+      base     = p["bg"],
+      mantle   = p["ui"],
+      crust    = p["bg-2"],
+      surface0 = p["ui-2"],
+      surface1 = p["ui-3"],
+      surface2 = p["tx-3"],
+      text     = p["tx"],
+      subtext0 = p["tx-2"],
+      subtext1 = p["tx-2"],
+      overlay0 = p["tx-3"],
+      overlay1 = p["tx-3"],
+      blue     = p["bl"],
+      green    = p["gr"],
+      red      = p["re"],
+      yellow   = p["ye"],
+      mauve    = p["pu"],
+      teal     = p["cy"],
+      pink     = p["ma"],
+      sky      = p["bl-2"],
+    }
+  end
+  -- hardcoded fallback (flexoki light)
+  return {
+    base     = "#FFFCF0",
+    mantle   = "#E6E4D9",
+    crust    = "#F2F0E5",
+    surface0 = "#DAD8CE",
+    surface1 = "#CECDC3",
+    surface2 = "#B7B5AC",
+    text     = "#100F0F",
+    subtext0 = "#6F6E69",
+    subtext1 = "#6F6E69",
+    overlay0 = "#B7B5AC",
+    overlay1 = "#B7B5AC",
+    blue     = "#205EA6",
+    green    = "#66800B",
+    red      = "#AF3029",
+    yellow   = "#AD8301",
+    mauve    = "#5E409D",
+    teal     = "#24837B",
+    pink     = "#A02F6F",
+    sky      = "#4385BE",
+  }
+end
+
 function M.get_palette()
   local scheme = vim.g.colors_name or ""
 
@@ -47,6 +99,8 @@ function M.get_palette()
       pink = "#fb64b6",
       sky = "#51a2ff",
     }
+  elseif scheme:match("^flexoki") then
+    return flexoki_palette()
   else
     -- catppuccin or any other theme with catppuccin palettes
     local ok, palettes = pcall(require, "catppuccin.palettes")
