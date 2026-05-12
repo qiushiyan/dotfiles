@@ -51,7 +51,7 @@ These are all sourced by `.zshenv` via a glob: `source ~/.config/zsh/*.zsh`.
 
 ## Key Conventions
 
-- **Theme**: `$TERMINAL_THEME` (read from `~/.config/terminal-theme`, default `flexoki_light`) drives the Claude Code statusline, Oh My Posh prompt, and zsh `ls`/completion colors. Supported values: `flexoki_light`, `catppuccin_mocha`. Ghostty/tmux/nvim/k9s themes are still set per-tool.
+- **Theme**: `$TERMINAL_THEME` (read from `~/.config/terminal-theme`, default `flexoki_light`) drives the Claude Code statusline, Oh My Posh prompt, zsh `ls`/completion colors, and Neovim colorscheme (via `nvim/.config/nvim/lua/config/theme.lua`). Supported values: `flexoki_light`, `catppuccin_mocha`. Ghostty/tmux/k9s themes are still set per-tool.
 - **Editor**: Neovim is the default (`core.editor = nvim` in gitconfig), vim keybindings everywhere
 - **Package manager**: pnpm preferred over npm (enforced via Claude Code hook in `claude/.claude/hooks/block-npm.sh`)
 - **Python**: 3.14 (`/opt/homebrew/bin/python3.14`), aliased as both `python` and `python3`

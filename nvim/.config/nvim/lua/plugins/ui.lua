@@ -26,6 +26,13 @@ return {
       -- Auto-select palette based on current colorscheme
       local colors = require("config.palette").get_palette()
 
+      -- Bar bg: use `crust` (e.g. flexoki-50 #F2F0E5 on light) so the strip
+      -- reads as a recessed header rather than a colored band. Mode segment
+      -- intentionally has no bg override — lualine's "auto" theme pulls from
+      -- StatusLine highlights so mode (NORMAL/INSERT/...) and the right-side
+      -- progress/branch share the same accent.
+      local bar_bg = colors.crust
+
       local opts = {
         options = {
           theme = "auto",
@@ -36,14 +43,7 @@ return {
         },
         sections = {
           lualine_a = {
-            {
-              "mode",
-              color = {
-                gui = "bold",
-                bg = colors.mantle,
-                fg = colors.text,
-              },
-            },
+            { "mode", color = { gui = "bold" } },
           },
           lualine_b = {},
           lualine_c = {},
@@ -73,7 +73,7 @@ return {
               padding = { left = 1, right = 0 },
               color = {
                 gui = "bold",
-                bg = colors.base,
+                bg = bar_bg,
                 fg = colors.text,
               },
             },
@@ -81,7 +81,7 @@ return {
               LazyVim.lualine.pretty_path(),
               color = {
                 gui = "bold",
-                bg = colors.mantle,
+                bg = bar_bg,
                 fg = colors.text,
               },
             },
@@ -97,7 +97,7 @@ return {
               end,
               color = {
                 fg = colors.subtext1,
-                bg = colors.mantle,
+                bg = bar_bg,
                 gui = "italic",
               },
             },
