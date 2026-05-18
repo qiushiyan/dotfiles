@@ -1,24 +1,8 @@
 return {
   "folke/snacks.nvim",
   keys = {
-    -- overwrite default, which is from the root dir
-    {
-      "<leader><space>",
-      -- LazyVim.pick("files", { root = false })
-      function()
-        Snacks.picker.files({
-          finder = "files",
-          format = "file",
-          hidden = true,
-          show_empty = true,
-          ignored = false,
-          supports_live = true,
-          dirs = { vim.fn.getcwd() },
-        })
-      end,
-      desc = "Find Files (cwd)",
-    },
-    { "<leader>/", LazyVim.pick("grep", { root = false }), desc = "Grep (cwd)" },
+    -- <leader><space> (find files) and <leader>/ (grep) are owned by fff.nvim;
+    -- see plugins/fff.lua.
 
     -- disable scratch buffer
     { "<leader>.", function() end },

@@ -1,3 +1,24 @@
+# Personal/machine-specific files that should never be tracked in any repo.
+# Stowed to ~/.config/git/ignore — git's default global excludes location
+# (no `core.excludesfile` override in .gitconfig, so this file is what git reads).
+
+# Project-local config that varies per machine
 **/.claude/settings.local.json
 .secrets
 secrets-manifest.txt
+
+# fff.nvim picker workaround (see docs/neovim-file-picker.md)
+.ignore
+
+# macOS metadata
+.DS_Store
+._*
+
+# Vim/Neovim transient files
+*.swp
+*.swo
+.netrwhist
+
+# Universally-gitignored dependency/cache dirs
+node_modules/
+__pycache__/

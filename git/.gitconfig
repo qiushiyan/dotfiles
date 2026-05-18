@@ -3,9 +3,9 @@
 
 [user]
 # Please adapt and uncomment the following lines:
-	name = yanqiushi-mw
+	name = Qiushi Yan
 useConfigOnly = true
-	email = y@marswave.ai
+	email = qiushi.yann@gmail.com
 
 [include]
   path = ~/.gitconfig.personal
@@ -18,7 +18,8 @@ useConfigOnly = true
 
 [core]
 editor = nvim
-excludesfile = /Users/qiushi/.gitignore_global
+# Global excludes live at the default location ~/.config/git/ignore
+# (stowed from git/.config/git/ignore in this repo).
 [submodule]
 recurse = true
 [init]

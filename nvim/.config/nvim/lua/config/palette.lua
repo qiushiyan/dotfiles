@@ -100,7 +100,12 @@ function M.get_palette()
       sky = "#51a2ff",
     }
   elseif scheme:match("^flexoki") then
-    return flexoki_palette()
+    local p = flexoki_palette()
+    -- flexoki-cyan-50: subtle mint-cream tint, the only off-paper accent in
+    -- flexoki's base table. Different hue from neutral grays so UI bars read
+    -- as intentional accents rather than washed-out cream.
+    p.bar_bg = "#EBF2E7"
+    return p
   else
     -- catppuccin or any other theme with catppuccin palettes
     local ok, palettes = pcall(require, "catppuccin.palettes")
