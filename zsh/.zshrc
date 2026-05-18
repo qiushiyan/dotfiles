@@ -159,3 +159,18 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
 # pnpm end
+
+# Planlab Bedrock creds for the agent eval. Exports AWS_ACCESS_KEY_ID /
+# AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN from the pl-bedrock profile
+# so the @ai-sdk/amazon-bedrock provider (which doesn't read profiles)
+# can authenticate. Refresh by re-pasting temp creds from the SSO
+# portal's Access keys panel for planlab-ci → BedrockTokenGenerator.
+pl-bedrock() {
+  if ! aws configure export-credentials --profile pl-bedrock --format env >/dev/null 2>&1; then
+    echo "pl-bedrock: profile not found or temp creds expired" >&2
+    echo "  refresh from SSO portal → planlab-ci → BedrockTokenGenerator → Access keys" >&2
+    return 1
+  fi
+  eval "$(aws configure export-credentials --profile pl-bedrock --format env)"
+  echo "pl-bedrock: Bedrock creds loaded into shell"
+}

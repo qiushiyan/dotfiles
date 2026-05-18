@@ -26,25 +26,41 @@ return {
       -- Auto-select palette based on current colorscheme
       local colors = require("config.palette").get_palette()
 
-      -- Bar bg: use `crust` (e.g. flexoki-50 #F2F0E5 on light) so the strip
-      -- reads as a recessed header rather than a colored band. Mode segment
-      -- intentionally has no bg override — lualine's "auto" theme pulls from
-      -- StatusLine highlights so mode (NORMAL/INSERT/...) and the right-side
-      -- progress/branch share the same accent.
-      local bar_bg = colors.crust
+      -- Bar bg: each palette can expose a `bar_bg` accent (flexoki uses
+      -- cyan-50 #EBF2E7 — a soft mint tint, different hue from neutral gray).
+      -- Falls back to `mantle` for themes that don't define one.
+      local bar_bg = colors.bar_bg or colors.mantle
+
+      -- Uniform lualine theme: every section in every mode gets bar_bg so
+      -- both the top tabline (incl. its filler region right of the filename)
+      -- and the bottom statusline (incl. its empty middle) read as a single
+      -- quiet band. Mode + progress/branch use bold to anchor the eye since
+      -- we've dropped the per-mode accent color. Replaces theme = "auto".
+      local section = { bg = bar_bg, fg = colors.text }
+      local bold_section = vim.tbl_extend("force", section, { gui = "bold" })
+      local mode_def = {
+        a = bold_section, b = section, c = section,
+        x = section,      y = section, z = bold_section,
+      }
+      local lualine_theme = {
+        normal   = mode_def,
+        insert   = mode_def,
+        visual   = mode_def,
+        replace  = mode_def,
+        command  = mode_def,
+        inactive = mode_def,
+      }
 
       local opts = {
         options = {
-          theme = "auto",
+          theme = lualine_theme,
           globalstatus = vim.o.laststatus == 3,
           disabled_filetypes = { statusline = { "dashboard", "alpha", "ministarter", "snacks_dashboard" } },
           component_separators = "",
           section_separators = "",
         },
         sections = {
-          lualine_a = {
-            { "mode", color = { gui = "bold" } },
-          },
+          lualine_a = { "mode" },
           lualine_b = {},
           lualine_c = {},
           lualine_x = {
@@ -66,25 +82,8 @@ return {
         },
         tabline = {
           lualine_a = {
-            {
-              "filetype",
-              icon_only = true,
-              separator = "",
-              padding = { left = 1, right = 0 },
-              color = {
-                gui = "bold",
-                bg = bar_bg,
-                fg = colors.text,
-              },
-            },
-            {
-              LazyVim.lualine.pretty_path(),
-              color = {
-                gui = "bold",
-                bg = bar_bg,
-                fg = colors.text,
-              },
-            },
+            { "filetype", icon_only = true, separator = "", padding = { left = 1, right = 0 } },
+            { LazyVim.lualine.pretty_path() },
           },
           lualine_x = {
             {

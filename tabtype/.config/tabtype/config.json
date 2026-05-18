@@ -36,7 +36,11 @@
     },
     {
       "key": "review-reflect",
-      "expand": "A senior engineer reviewed your changes and provided critical feedback below.\n\nFor each point:\n1. Assess whether it's valid — be honest, don't agree just to agree.\n2. If valid: propose a fix (which may be better than what the engineer suggested) and explain why.\n3. If you disagree: explain from first principles why the original is correct.\n\nDo not change any code yet — focus on analysis.\n\n---\n\n$0"
+      "expand": "A senior engineer reviewed your changes and provided critical feedback below.\n\nFor each point:\n1. Assess whether it's valid — be honest, don't agree just to agree.\n2. If valid: propose a fix (which may be better than what the engineer suggested) and explain why.\n3. If you disagree: explain from first principles why the original is correct. If a fix is simple and improves system design, I suggest you work on it rather than defer because it is “minor.”\n\nDo not change any code yet — focus on analysis.\n\n---\n\n$0"
+    },
+    {
+      "key": "update-plan",
+      "expand": "The engineering team reviewed your plan and provided critical feedback below.\n\nFor each point:\n1. Assess whether it's valid — be honest, don't agree just to agree.\n2. If valid: update the plan accordingly. You may propose a better solution than the team suggested — explain why.\n3. If you disagree: explain from first principles why the spec is correct as-is.\n\n---\n\n$0"
     },
     {
       "key": "update-spec",
