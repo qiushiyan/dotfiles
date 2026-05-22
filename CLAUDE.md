@@ -4,60 +4,75 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A **GNU Stow-managed dotfiles repository**. Each top-level directory is a Stow package that gets symlinked into `$HOME`. For example, `zsh/.zshrc` symlinks to `~/.zshrc`, and `nvim/.config/nvim/` symlinks to `~/.config/nvim/`. Editing files here directly modifies the user's live global config.
+A **GNU Stow-managed dotfiles repository**. Each top-level directory is a Stow package whose contents mirror a path under `$HOME` — e.g. `zsh/.zshrc` → `~/.zshrc`, `nvim/.config/nvim/` → `~/.config/nvim/`. Files are **symlinked, not copied: editing anything here changes the user's live system immediately.** The `claude/` directory *is* `~/.claude/` — its `settings.json`, skills, and hooks are the user's global Claude Code config.
 
-## Stow Commands
+This repo is **public** — never commit credentials (see Secrets below).
+
+## Commands
 
 ```bash
 make install    # stow all packages (create symlinks)
+make restow     # re-stow after adding/removing files
 make uninstall  # remove all symlinks
-make restow     # re-stow after adding new files
+make list       # list stow packages
 make brew       # install Homebrew packages from Brewfile
-make brew-dump  # export current Homebrew packages to Brewfile
+make brew-dump  # update Brewfile from current Homebrew state
 ```
 
-## Structure
+There is no build or test suite — this is configuration. To bring an existing config file under management, use the `dotadd` zsh function (it moves the file into the correct package and stows it).
 
-Each directory follows the Stow convention — its contents mirror the target path relative to `$HOME`:
+## Stow Package Layout
+
+Each directory's contents mirror the target path relative to `$HOME`:
 
 | Package | Symlinks to | Purpose |
 |---------|------------|---------|
-| `zsh/` | `~/.zshrc`, `~/.zshenv`, `~/.config/zsh/` | Shell config, aliases, utilities |
+| `zsh/` | `~/.zshrc`, `~/.zshenv`, `~/.config/zsh/` | Shell config, aliases, functions |
 | `git/` | `~/.gitconfig`, `~/.config/git/ignore` | Git config with conditional includes |
 | `nvim/` | `~/.config/nvim/` | Neovim (LazyVim-based) |
-| `ghostty/` | `~/.config/ghostty/` | Terminal emulator |
-| `tmux/` | `~/.config/tmux/` | Tmux with catppuccin theme |
-| `claude/` | `~/.claude/` | Claude Code global settings, skills, hooks |
+| `ghostty/`, `tmux/` | `~/.config/{ghostty,tmux}/` | Terminal + multiplexer |
+| `claude/` | `~/.claude/` | Claude Code settings, skills, hooks |
 | `codex/` | `~/.codex/` | Codex CLI config |
-| `zed/` | `~/.config/zed/` | Zed editor settings |
-| `karabiner/` | `~/.config/karabiner/` | Keyboard remapping |
-| `k9s/` | `~/.config/k9s/` | Kubernetes TUI |
-| `ssh/` | `~/.ssh/config` | SSH hosts and keys |
-| `raycast/` | Raycast scripts | macOS automation |
 | `ohmyposh/` | `~/.config/ohmyposh/` | Prompt theme |
+| `zed/`, `k9s/`, `karabiner/`, `ssh/`, `raycast/` | resp. paths | Editor, k8s TUI, key remap, SSH, automation |
 
-## Zsh Module Layout
+`make list` shows the full set.
 
-Shell config is split across `zsh/.config/zsh/`:
+## Zsh Architecture
 
-- `aliases.zsh` — All shell aliases (editors, git, k8s, dev servers)
-- `git.zsh` — Git helper functions (`gitclean`, `gitgc`, `stage`)
-- `nav.zsh` — Navigation (`n`, `take`, `drop`, `y` for yazi, `fcd`)
-- `utils.zsh` — Utilities (`ccclean`, `loc`, `dotadd`, proxy toggles)
-- `theme.zsh` — Terminal theme switch (`$TERMINAL_THEME`); sets `LSCOLORS`/`LS_COLORS`, opts out of oh-my-zsh's defaults
-- `xcode.zsh` — Xcode build/test helpers for TabType
+Three startup files, each for a different shell type — know which one a change belongs in:
 
-These are all sourced by `.zshenv` via a glob: `source ~/.config/zsh/*.zsh`.
+- **`.zshenv`** — *every* zsh invocation (incl. scripts, `ssh host cmd`). Sets `typeset -U path`, sources `toolchain.zsh`, then sources every `~/.config/zsh/*.zsh` so functions/aliases exist everywhere.
+- **`.zprofile`** — login shells only. Homebrew + OrbStack `shellenv`.
+- **`.zshrc`** — interactive shells only. oh-my-zsh, syntax highlighting, completions, Oh My Posh prompt, fzf/zoxide, the lazy `nvm` stub.
+
+They load in the order `.zshenv` → `.zprofile` → `.zshrc`. The order matters: `.zprofile`'s Homebrew `shellenv` runs *after* `toolchain.zsh`, so `.zshrc` re-asserts `$NVM_BIN` to keep nvm's Node ahead of any Homebrew `node`.
+
+Modules in `zsh/.config/zsh/`:
+
+- `toolchain.zsh` — cheap PATH setup (default Node via nvm, no subprocess) for non-interactive shells; sourced first by `.zshenv`.
+- `aliases.zsh`, `git.zsh`, `nav.zsh`, `utils.zsh` — aliases and helper functions (`gitclean`, `loc`, `ccclean`, `n`, `take`, `dotadd`, …).
+- `theme.zsh` — the `$TERMINAL_THEME` switch.
+- `xcode.zsh`, `tmux-utils.zsh`, `proxy.zsh`, `gws.zsh` — domain-specific helpers.
 
 ## Key Conventions
 
-- **Theme**: `$TERMINAL_THEME` (read from `~/.config/terminal-theme`, default `flexoki_light`) drives the Claude Code statusline, Oh My Posh prompt, zsh `ls`/completion colors, and Neovim colorscheme (via `nvim/.config/nvim/lua/config/theme.lua`). Supported values: `flexoki_light`, `catppuccin_mocha`. Ghostty/tmux/k9s themes are still set per-tool.
-- **Editor**: Neovim is the default (`core.editor = nvim` in gitconfig), vim keybindings everywhere
-- **Package manager**: pnpm preferred over npm (enforced via Claude Code hook in `claude/.claude/hooks/block-npm.sh`)
-- **Python**: 3.14 (`/opt/homebrew/bin/python3.14`), aliased as both `python` and `python3`
-- **Node**: Managed via nvm, default v22
-- **Adding new dotfiles**: Use the `dotadd` shell function to copy a config file into the correct Stow package path
+- **Theme**: `$TERMINAL_THEME` (from `~/.config/terminal-theme`, default `flexoki_light`; also `catppuccin_mocha`) drives the Claude Code statusline, Oh My Posh prompt, `ls`/completion colors, and the Neovim colorscheme. Ghostty/tmux/k9s themes are set per-tool.
+- **Editor**: Neovim (LazyVim-based); vim keybindings everywhere, `set -o vi` in zsh.
+- **Package manager**: pnpm preferred over npm.
+- **Python**: `python` is a *function* → `command python3` (Homebrew's), so virtualenvs still win — not an alias (see lessons).
+- **Node**: nvm, default `lts/*`, **lazy-loaded** (see lessons).
+- **Secrets**: live in `~/.secrets` (untracked, mode `600`, sourced by `.zshrc`). Tracked config reads them from the environment instead of hardcoding.
+- **`block-dangerous-git.sh`** (Claude Code hook in `claude/.claude/hooks/`) blocks `push` / `reset --hard` / etc. on `main` — pushes to `main` must be run by the user manually, not by Claude.
 
-## Important: Stow Awareness
+## Zsh Setup: Lessons Learned
 
-When editing files in this repo, remember that changes take effect immediately on the live system (files are symlinked, not copied). The `claude/` directory here **is** `~/.claude/` — settings edited here are the user's global Claude Code config.
+Hard-won during a startup-perf + robustness pass — read before editing the zsh config:
+
+- **Reload with `exec zsh`, never `source ~/.zshrc`.** Re-sourcing only *adds* state; it can't drop deleted aliases/functions/exports or fix stale in-memory state. `zshreload` is aliased to `exec zsh -l`.
+- **`.zshenv` must exit 0.** A non-zero last statement silently breaks `source ~/.zshenv && …` chains. Keep the final line a clean `if`, not a short-circuiting `&&`.
+- **nvm is lazy-loaded.** Eagerly sourcing `nvm.sh` costs ~230 ms/shell. `toolchain.zsh` already puts the default Node on PATH cheaply; an `nvm()` stub in `.zshrc` loads the real nvm on first call. Don't reinstate eager `source nvm.sh`.
+- **`typeset -U path`** (in `.zshenv`) keeps `$PATH` duplicate-free no matter how often config is sourced.
+- **Functions, not aliases, for real command names.** Aliases resolve before `$PATH`, so `alias python=…` shadows virtualenvs; `python` and `make` are functions for this reason. Start non-trivial functions with `emulate -L zsh` so ambient options can't change their behavior.
+- **Completions register late.** `compdef` exists only after oh-my-zsh runs `compinit`. `git.zsh` is sourced once (by `.zshenv`); `.zshrc` calls `_git_zsh_register_completions` afterward — don't re-source whole files just to register completions.
+- **Measure, don't guess.** Profile with `zmodload zsh/zprof`; verify a perf change with an *interleaved* A/B benchmark (`git stash` the change, time both back-to-back, repeat) — not before/after numbers taken minutes apart. This pass took startup ~530 ms → ~160 ms.
