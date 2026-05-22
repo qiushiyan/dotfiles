@@ -142,7 +142,6 @@ _gitclean() {
     '--no-fetch[Skip automatic git fetch --prune]' \
     '(-h --help)'{-h,--help}'[Show help]'
 }
-compdef _gitclean gitclean
 
 # --------------------------------------------------------------------
 # gitstale - Delete branches inactive for more than N days
@@ -310,7 +309,6 @@ _gitstale() {
     '(-h --help)'{-h,--help}'[Show help]' \
     '1:days:'
 }
-compdef _gitstale gitstale
 
 # --------------------------------------------------------------------
 # gitgc - Aggressive git garbage collection and cleanup
@@ -411,7 +409,6 @@ _gitgc() {
     '(-l --light)'{-l,--light}'[Use standard gc instead of aggressive]' \
     '(-h --help)'{-h,--help}'[Show help]'
 }
-compdef _gitgc gitgc
 
 # --------------------------------------------------------------------
 # stage - Stage feature branch to a staging branch
@@ -519,7 +516,6 @@ _stage() {
 
   return ret
 }
-compdef _stage stage
 
 # --------------------------------------------------------------------
 # gremote - git remote -v with SSH-shorthand URLs rewritten to HTTPS
@@ -597,4 +593,16 @@ EOF
 _gitswitch() {
   _arguments '1:profile:(personal marswave cola)'
 }
-compdef _gitswitch gitswitch
+
+# --------------------------------------------------------------------
+# Completion registration — called from .zshrc after compinit. compdef is
+# unavailable when this file is first sourced from .zshenv (pre-compinit),
+# so registration is deferred here instead of re-sourcing the whole file.
+# --------------------------------------------------------------------
+_git_zsh_register_completions() {
+  compdef _gitclean  gitclean
+  compdef _gitstale  gitstale
+  compdef _gitgc     gitgc
+  compdef _stage     stage
+  compdef _gitswitch gitswitch
+}

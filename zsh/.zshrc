@@ -117,15 +117,25 @@ unalias gg 2>/dev/null   # git plugin sets gg='git gui citool'; we define our ow
 # --------------------------------------------------------------------
 source "$HOME/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
-# Re-source git.zsh to register completions (compdef needs compinit from oh-my-zsh)
-source ~/.config/zsh/git.zsh
+# Register git.zsh completions (compdef needs compinit, set up by oh-my-zsh
+# above). git.zsh itself is already sourced once by .zshenv's *.zsh glob.
+_git_zsh_register_completions
 
 # tmuxifier
 eval "$(tmuxifier init -)"
 
-# nvm
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && . "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+# nvm — lazy-loaded. toolchain.zsh resolved the default Node into $NVM_BIN;
+# re-assert it at the front of PATH here, since Homebrew's shellenv (run from
+# .zprofile, after toolchain.zsh) would otherwise let an unrelated Homebrew
+# `node` shadow it. Only the `nvm` command itself is deferred (~200ms saved).
+[[ -n "$NVM_BIN" ]] && path=("$NVM_BIN" $path)
+nvm() {
+  unfunction nvm
+  . /opt/homebrew/opt/nvm/nvm.sh
+  [ -s /opt/homebrew/opt/nvm/etc/bash_completion.d/nvm ] \
+    && . /opt/homebrew/opt/nvm/etc/bash_completion.d/nvm
+  nvm "$@"
+}
 
 # fzf
 source <(fzf --zsh)
@@ -155,8 +165,8 @@ eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
 # pnpm
 export PNPM_HOME="/Users/qiushi/Library/pnpm"
 case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
 esac
 # pnpm end
 

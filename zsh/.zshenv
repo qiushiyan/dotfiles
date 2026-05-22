@@ -1,4 +1,7 @@
 
+# Keep $PATH free of duplicates regardless of how config is (re)loaded.
+typeset -U path PATH
+
 . "$HOME/.cargo/env"
 
 # Homebrew (Apple Silicon) — make /opt/homebrew/bin available to ALL zsh
@@ -25,4 +28,7 @@ for f in ~/.config/zsh/*.zsh(N); do
   [[ "$f:t" == "toolchain.zsh" ]] && continue
   source "$f"
 done
-(( _compdef_stub )) && unfunction compdef && unset _compdef_stub
+if (( _compdef_stub )); then
+  unfunction compdef
+  unset _compdef_stub
+fi

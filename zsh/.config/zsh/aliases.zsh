@@ -15,7 +15,7 @@ alias ttconfig="nvim ~/.config/tabtype/config.json"
 alias gitconfig="git config --global --edit"
 alias ohmyzsh="code ~/.oh-my-zsh"
 alias cspellconfig="code ~/.cspell/custom-dictionary-user.txt"
-alias zshreload="source ~/.zshenv && source ~/.zshrc"
+alias zshreload="exec zsh -l"
 
 # --------------------------------------------------------------------
 # Git
@@ -41,8 +41,9 @@ alias dkc="docker-compose"
 # --------------------------------------------------------------------
 # Python
 # --------------------------------------------------------------------
-alias python="/opt/homebrew/bin/python3.14"
-alias python3="/opt/homebrew/bin/python3.14"
+# A function (not an alias) so it resolves via PATH — an active virtualenv
+# still wins. Modern macOS ships no bare `python`; `python3` needs no alias.
+python() { command python3 "$@"; }
 
 # --------------------------------------------------------------------
 # R (uncomment if needed)
@@ -74,7 +75,12 @@ alias sshprod="ssh marswave.production"
 # --------------------------------------------------------------------
 alias c="cursor"
 alias ct="count-token"
-alias make="mmake"                   # https://github.com/tj/mmake
+# make → mmake (https://github.com/tj/mmake), with a fallback so `make`
+# never breaks outright if mmake isn't installed.
+make() {
+  if command -v mmake >/dev/null 2>&1; then command mmake "$@"
+  else command make "$@"; fi
+}
 alias tsx='tsx --no-warnings'
 alias -s ts='bun'                    # suffix: *.ts files run with bun
 alias -s git="git clone"             # suffix: *.git URLs auto-clone
