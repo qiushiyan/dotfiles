@@ -21,6 +21,7 @@ claude/.claude/session-env/
 claude/.claude/sessions/
 claude/.claude/shell-snapshots/
 claude/.claude/tasks/
+claude/.claude/telemetry/
 
 # === Codex CLI (codex/.codex/ — config.toml, skills/, prompts/,
 # AGENTS.md, profiles/ stay tracked) ===
@@ -33,12 +34,14 @@ codex/.codex/cache/
 codex/.codex/computer-use/
 codex/.codex/log/
 codex/.codex/logs_*.sqlite*
+codex/.codex/goals_*.sqlite*
 codex/.codex/memories/
 codex/.codex/models_cache.json
 codex/.codex/plugins/
 codex/.codex/skills/.system/
 codex/.codex/archived_sessions/
 codex/.codex/installation_id
+codex/.codex/history.jsonl
 codex/.codex/session_index.jsonl
 codex/.codex/sessions/
 codex/.codex/shell_snapshots/
