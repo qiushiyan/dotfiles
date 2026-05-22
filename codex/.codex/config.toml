@@ -105,7 +105,7 @@ trust_level = "trusted"
 
 [mcp_servers.context7]
 command = "npx"
-args = ["-y", "@upstash/context7-mcp", "--api-key", "***REMOVED-CONTEXT7-KEY***"]
+args = ["-y", "@upstash/context7-mcp"]
 startup_timeout_sec = 40
 
 [tools]
