@@ -39,7 +39,8 @@
     "swift-lsp@claude-plugins-official": false,
     "superpowers@claude-plugins-official": true,
     "codex@openai-codex": true,
-    "impeccable@impeccable": true
+    "impeccable@impeccable": true,
+    "vercel@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {

@@ -28,7 +28,7 @@
     },
     {
       "key": "review-updates",
-      "expand": "Per your suggestion, I've updated the relevant files. The current uncommitted changes should now contain only the targeted updates. Please recheck."
+      "expand": "Per your suggestion, I've updated the relevant files.  Please recheck the files (summarized below for targeted updates. If you observe anything off track or unintended regressions, elaborate your disagreements. \n\n---\n\n"
     },
     {
       "key": "commits-summary",
@@ -68,7 +68,7 @@
     },
     {
       "key": "tdd-implementation",
-      "expand": "Let's plan the implementation. Follow the TDD paradigm in ~/.claude/skills/tdd/skill.md.\n\nTreat the skill as general best practices, not strict rules — adapt them to our specific use case and the conclusions from our discussion.\n\nConstraints:\n- Skip doc updates for now — we'll update docs after the technical implementation.\n- Break the work into a few focused commits.\n- Create commits as you progress, not all at the end."
+      "expand": "Let's plan the implementation. Follow the TDD paradigm in ~/.claude/skills/tdd/skill.md.\n\nTreat the skill as general best practices, not strict rules — adapt them to our specific use case and the conclusions from our discussion.\n\nConstraints:\n-Follow our implementation guidelines established during the conversation, you may tweak small plan details without asking if you exploration found otherwise, but do pause for approvoal if you want to challenge a major direction\n- Skip doc updates for now — we'll update docs after the technical implementation.\n- Break the work into a few focused commits.\n- Create commits as you progress, not all at the end."
     },
     {
       "key": "compare-notes",

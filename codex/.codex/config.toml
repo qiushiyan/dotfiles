@@ -1,12 +1,13 @@
 
 disable_response_storage = true
 model = "gpt-5.5"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "high"
 personality = "pragmatic"
 sandbox_mode = "danger-full-access"
 
 
-notify = ["/Users/qiushi/dotfiles/codex/.codex/plugins/cache/openai-bundled/computer-use/1.0.770/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+
+notify = ["/Users/qiushi/dotfiles/codex/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 
 [shell_environment_policy]
 
@@ -99,6 +100,9 @@ trust_level = "trusted"
 [projects."/Users/qiushi/dev/planlab/main"]
 trust_level = "trusted"
 
+[projects."/Users/qiushi/Documents/Codex/2026-05-22/hello"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp", "--api-key", "***REMOVED-CONTEXT7-KEY***"]
@@ -122,7 +126,7 @@ source_type = "local"
 source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-05-16T06:13:51Z"
+last_updated = "2026-05-22T01:21:10Z"
 source_type = "local"
 source = "/Users/qiushi/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -151,4 +155,10 @@ enabled = true
 enabled = true
 
 [tui.model_availability_nux]
-"gpt-5.5" = 3
+"gpt-5.5" = 4
+
+[desktop]
+ambient-suggestions-enabled = false
+sansFontSize = 15
+codeFontSize = 13
+conversationDetailMode = "STEPS_COMMANDS"
