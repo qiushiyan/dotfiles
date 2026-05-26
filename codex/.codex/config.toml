@@ -103,6 +103,9 @@ trust_level = "trusted"
 [projects."/Users/qiushi/Documents/Codex/2026-05-22/hello"]
 trust_level = "trusted"
 
+[projects."/Users/qiushi/dev/planlab"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
@@ -162,3 +165,4 @@ ambient-suggestions-enabled = false
 sansFontSize = 15
 codeFontSize = 13
 conversationDetailMode = "STEPS_COMMANDS"
+preventSleepWhileRunning = true

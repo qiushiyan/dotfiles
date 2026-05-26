@@ -9,35 +9,35 @@
 {
   "cli_default_open_behavior": "existing_window",
   "outline_panel": {
-    "dock": "left",
+    "dock": "left"
   },
   "collaboration_panel": {
-    "dock": "left",
+    "dock": "left"
   },
   "lsp": {
     "vtsls": {
       "settings": {
         "typescript": {
           "updateImportsOnFileMove": {
-            "enabled": "always",
-          },
+            "enabled": "always"
+          }
         },
         "javascript": {
           "updateImportsOnFileMove": {
-            "enabled": "always",
-          },
-        },
+            "enabled": "always"
+          }
+        }
       },
-      "enable_lsp_tasks": true,
-    },
+      "enable_lsp_tasks": true
+    }
   },
   "edit_predictions": {
-    "provider": "copilot",
+    "provider": "copilot"
   },
   "icon_theme": {
     "mode": "dark",
     "light": "Catppuccin Mocha",
-    "dark": "Catppuccin Mocha",
+    "dark": "Catppuccin Mocha"
   },
   "agent_buffer_font_size": 23.0,
   "buffer_font_weight": 400.0,
@@ -45,14 +45,14 @@
     "mcp-server-context7": {
       "enabled": true,
       "settings": {
-        "context7_api_key": "",
-      },
-    },
+        "context7_api_key": ""
+      }
+    }
   },
   "git": {
     "inline_blame": {
-      "enabled": false,
-    },
+      "enabled": false
+    }
   },
   "language_models": {
     "openai_compatible": {
@@ -69,15 +69,15 @@
               "tools": true,
               "images": true,
               "parallel_tool_calls": false,
-              "prompt_cache_key": false,
-            },
-          },
-        ],
-      },
-    },
+              "prompt_cache_key": false
+            }
+          }
+        ]
+      }
+    }
   },
   "git_panel": {
-    "dock": "left",
+    "dock": "left"
   },
   "buffer_line_height": "comfortable",
   "soft_wrap": "editor_width",
@@ -88,27 +88,23 @@
       "host": "marswave.staging",
       "projects": [
         {
-          "paths": ["/home/ec2-user"],
-        },
-      ],
-    },
+          "paths": ["/home/ec2-user"]
+        }
+      ]
+    }
   ],
   "agent": {
     "tool_permissions": {
-      "default": "allow",
+      "default": "allow"
     },
     "default_profile": "write",
-    "dock": "right",
-    "default_model": {
-      "provider": "copilot_chat",
-      "model": "gpt-4.1",
-    },
+    "dock": "right"
   },
   "base_keymap": "VSCode",
   "theme": {
     "mode": "light",
     "light": "Tailwind CSS Light",
-    "dark": "Flexoki Dark",
+    "dark": "Flexoki Dark"
   },
   "vim_mode": true,
   "relative_line_numbers": "enabled",
@@ -119,40 +115,92 @@
   "cursor_blink": false,
   "vertical_scroll_margin": 5,
   "sticky_scroll": {
-    "enabled": false,
+    "enabled": false
   },
   "ui_font_family": "Monaco",
   "scroll_sensitivity": 0.1,
   "buffer_font_family": "DankMono Nerd Font",
   "languages": {
-    "TypeScript": {
-      "formatter": {
-        "external": {
-          "command": "pnpm",
-          "arguments": [
-            "exec",
-            "prettier",
-            "--stdin-filepath",
-            "{buffer_path}",
-          ],
-        },
-      },
+    "CSS": {
       "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "GraphQL": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "Handlebars": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "HTML": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "JavaScript": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "JSON": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "JSON5": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "JSONC": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "Less": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "Markdown": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "MDX": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "SCSS": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "TypeScript": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
     },
     "TSX": {
-      "formatter": {
-        "external": {
-          "command": "pnpm",
-          "arguments": [
-            "exec",
-            "prettier",
-            "--stdin-filepath",
-            "{buffer_path}",
-          ],
-        },
-      },
       "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
     },
+    "Vue.js": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    },
+    "YAML": {
+      "format_on_save": "on",
+      "prettier": { "allowed": false },
+      "formatter": [{ "language_server": { "name": "oxfmt" } }]
+    }
   },
   "terminal": {
     "dock": "bottom",
@@ -162,8 +210,8 @@
     "button": true,
     "line_height": "comfortable",
     "toolbar": {
-      "breadcrumbs": false,
-    },
+      "breadcrumbs": false
+    }
   },
   "project_panel": {
     "dock": "right",
@@ -178,36 +226,36 @@
     "button": true,
     "git_status": true,
     "indent_guides": {
-      "show": "never",
-    },
+      "show": "never"
+    }
   },
   "status_bar": {
-    "experimental.show": true,
+    "experimental.show": true
   },
   "tab_bar": {
     "show_tab_bar_buttons": false,
     "show": false,
-    "show_nav_history_buttons": false,
+    "show_nav_history_buttons": false
   },
   "scrollbar": {
     "git_diff": false,
     "search_results": false,
     "selected_symbol": false,
     "diagnostics": "error",
-    "show": "auto",
+    "show": "auto"
   },
   "title_bar": {
     "show_project_items": true,
-    "show_user_picture": false,
+    "show_user_picture": false
   },
   "toolbar": {
     "breadcrumbs": true,
     "quick_actions": false,
-    "code_actions": false,
+    "code_actions": false
   },
   "telemetry": {
     "diagnostics": false,
-    "metrics": false,
+    "metrics": false
   },
   "diagnostics": {
     "inline": {
@@ -215,24 +263,24 @@
       "update_debounce_ms": 150,
       "padding": 4,
       "min_column": 0,
-      "max_severity": null,
+      "max_severity": null
     },
-    "include_warnings": false,
+    "include_warnings": false
   },
   "gutter": {
     "line_numbers": true,
     "runnables": false,
     "folds": true,
     "breakpoints": false,
-    "min_line_number_digits": 2,
+    "min_line_number_digits": 2
   },
   "theme_overrides": {
     "Catppuccin Latte (Blur)": {
       "syntax": {
         "title": {
-          "color": "#fe640b",
-        },
-      },
+          "color": "#fe640b"
+        }
+      }
     },
     "Tailwind CSS Dark (Enhanced)": {
       "background.appearance": "blurred",
@@ -256,43 +304,43 @@
       "border": "#1e293915",
       "border.variant": "#00000000",
       "pane.focused_border": "#1e293910",
-      "pane_group.border": "#1e293915",
-    },
+      "pane_group.border": "#1e293915"
+    }
   },
   "experimental.theme_overrides": {
     "syntax": {
       "attribute": {
-        "font_style": "italic",
+        "font_style": "italic"
       },
       "comment": {
-        "font_style": "italic",
+        "font_style": "italic"
       },
       "comment.doc": {
-        "font_style": "italic",
+        "font_style": "italic"
       },
       "function": {
-        "font_style": "italic",
+        "font_style": "italic"
       },
       "keyword": {
         "font_style": "italic",
-        "font_weight": 700,
+        "font_weight": 700
       },
       "punctuation.bracket": {
-        "font_style": "italic",
+        "font_style": "italic"
       },
       "punctuation.delimiter": {
-        "font_style": "italic",
+        "font_style": "italic"
       },
       "punctuation.list_marker": {
         "font_style": "italic",
-        "font_weight": 700,
+        "font_weight": 700
       },
       "punctuation": {
-        "font_style": "italic",
+        "font_style": "italic"
       },
       "emphasis": {
-        "font_style": "italic",
-      },
-    },
-  },
+        "font_style": "italic"
+      }
+    }
+  }
 }
