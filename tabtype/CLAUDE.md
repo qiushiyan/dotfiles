@@ -4,22 +4,11 @@ The `snippets` array holds the prompt templates the user pastes into AI coding t
 
 ## The workflow encoded by the snippets
 
-The user runs two coding agents in parallel: one **implementer** (drafts specs, plans, code) and one **reviewer** (critiques each artifact). Snippets get pasted between them. The three stages are **spec → plan → implementation**, each with its own draft / review / update cycle:
+The user runs two coding agents in parallel: one **implementer** (drafts specs, plans, code) and one **reviewer** (critiques each artifact). Snippets get pasted between them across a **spec → plan → implementation** arc, with draft / review / update cycles at each stage and an optional round-2 for follow-on revisions.
 
-| Stage          | Sent to implementer                                               | Sent to reviewer                          |
-| -------------- | ----------------------------------------------------------------- | ----------------------------------------- |
-| Spec           | `draft-spec`, `update-spec`                                       | `review-spec`                             |
-| Plan           | `tdd-plan` / `tdd-plan-strict` / `start-plan`, `update-plan`      | `review-plan`, `review-plan-updates`      |
-| Implementation | `review-reflect` (analyze reviewer feedback before changing code) | `review-implementation`, `review-updates` |
+Prefix convention: `review-*` is always sent to the reviewer; `update-*` and `respond-*` are sent to the implementer. The `-again` suffix marks a round-2 variant (re-doing the same operation on the updated artifact).
 
-`tdd-plan` is the default planning snippet; `tdd-plan-strict` uses literal red-green-refactor per behavior; `start-plan` is the non-TDD fallback.
-
-Standalone snippets that don't belong to a single stage:
-
-- **Pre-stage analysis**: `think-holistic`, `list-assumptions`, `trace-execution`
-- **Cross-agent coordination**: `compare-notes` (synthesize two agents' analyses), `commits-summary` (handoff context block)
-- **Wrap-up**: `pr-description`, `find-similar-bugs`
-- **Reference / meta**: `refactor-guidelines` (delegates to `~/.claude/skills/refactoring/`), `smart-adapt-skills`, `technical-difficulty`
+For the full daily flow — every snippet in the typical order it gets used, plus the standalone helpers and when they fit — see [WORKFLOW.md](WORKFLOW.md).
 
 ## Design patterns to preserve
 
@@ -36,11 +25,11 @@ What counts as "intentional" differs by stage:
 - **Spec** defers line-level edits, specific test cases, doc plans, and commit order.
 - **Plan** defers _only_ full code bodies. Test cases, helper internals, fixture shape, and line-level references for existing code _are_ in the plan and are reviewable.
 
-**"What not to include" guardrails** (in `draft-spec`, `tdd-plan`). Each draft snippet explicitly names what gets designed at a _later_ stage, to stop the agent from prematurely committing to details (e.g., the spec doesn't include doc-update plans because those happen post-implementation).
+**"What not to include" guardrails** (in `write-spec`, `tdd-plan`). Each draft snippet explicitly names what gets designed at a _later_ stage, to stop the agent from prematurely committing to details (e.g., the spec doesn't include doc-update plans because those happen post-implementation).
 
-**Round-2 review** (`review-updates`, `review-plan-updates`). Re-check after the drafter applies feedback — focus is "was the concern actually addressed, or hand-waved?" Apply the same altitude lens; don't relitigate settled points.
+**Round-2 review** (`review-implementation-again`, `review-plan-again`). Re-check after the drafter applies feedback — focus is "was the concern actually addressed, or hand-waved?" Apply the same altitude lens; don't relitigate settled points.
 
-**Reflect-before-change for code feedback** (`review-reflect`). The drafter analyzes critique _before_ touching code. Spec/plan use direct `update-*` snippets since text is cheap to revise; code uses the reflect pattern because code changes are more expensive.
+**Reflect-before-change for code feedback** (`respond-review`). The drafter analyzes critique _before_ touching code. Spec/plan use direct `update-*` snippets since text is cheap to revise; code uses the reflect pattern because code changes are more expensive. Round-2 (`respond-review-again`) drops the analysis gate and applies inline, since the work is narrower and the goal is converging.
 
 ## Snippet schema
 
@@ -50,10 +39,10 @@ What counts as "intentional" differs by stage:
 
 - `key` triggers via `;;key`; the `;;` trigger is set under `settings.trigger`.
 - `expand` is a JSON string — newlines as `\n`, slashes can be `\/` or `/`, quotes escaped.
-- `$0` marks where the cursor lands after expansion (used wherever the user is about to paste reviewer feedback: `update-*`, `review-reflect`, `review-plan-updates`).
+- `$0` marks where the cursor lands after expansion (used wherever the user is about to paste reviewer feedback: `update-*`, `respond-*`, `review-*-again`).
 - `---\n\n$0` is the convention for snippets that need a visual separator before the pasted content.
 
-Naming convention: stage artifacts follow `draft-X` / `review-X` / `update-X` / `review-X-updates`. Standalone snippets use descriptive names (`think-holistic`, `find-similar-bugs`).
+Naming convention: stage artifacts follow `write-X` (implementer creates), `review-X` (reviewer critiques), `update-X` / `respond-X` (implementer revises based on critique), and `review-X-again` / `update-X-again` / `respond-X-again` for the round-2 variant. Standalone snippets use descriptive names (`think-holistic`, `find-similar-bugs`).
 
 ## Editing
 

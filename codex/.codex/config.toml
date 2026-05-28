@@ -1,7 +1,7 @@
 
 disable_response_storage = true
 model = "gpt-5.5"
-model_reasoning_effort = "high"
+model_reasoning_effort = "medium"
 personality = "pragmatic"
 sandbox_mode = "danger-full-access"
 
@@ -107,6 +107,9 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/private/tmp"]
+trust_level = "trusted"
+
+[projects."/Users/qiushi/dev/tabtype"]
 trust_level = "trusted"
 
 [mcp_servers.context7]
