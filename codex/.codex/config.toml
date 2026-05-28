@@ -106,6 +106,9 @@ trust_level = "trusted"
 [projects."/Users/qiushi/dev/planlab"]
 trust_level = "trusted"
 
+[projects."/private/tmp"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
