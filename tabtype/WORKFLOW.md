@@ -1,6 +1,6 @@
 # Daily Workflow
 
-This is the list of prompts I use daily when developing with two AI coding agents — one acting as **implementer** (drafts specs, plans, code) and one as **reviewer** (critiques each artifact). I paste responses between them using snippets defined in `.config/tabtype/config.json`.
+This is the list of prompts I use daily when developing with two AI coding agents — one acting as **implementer** (drafts specs, plans, code) and one as **reviewer** (critiques each artifact). I paste responses between them using snippets defined in `.config/tabtype/config.toml`.
 
 The full arc covers a single feature from problem framing through PR. Most steps can be skipped or repeated depending on the task; the helpers at the end fit anywhere.
 

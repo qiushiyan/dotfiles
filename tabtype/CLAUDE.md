@@ -1,4 +1,4 @@
-This folder is a Stow package for **TabType**, a text-expansion tool. `.config/tabtype/config.json` is the live config — it's symlinked to `~/.config/tabtype/config.json` by the parent dotfiles Stow setup, so edits here change the running app immediately.
+This folder is a Stow package for **TabType**, a text-expansion tool. `.config/tabtype/config.toml` is the live config — it's symlinked to `~/.config/tabtype/config.toml` by the parent dotfiles Stow setup, so edits here change the running app immediately.
 
 The `snippets` array holds the prompt templates the user pastes into AI coding tools (Claude Code, Codex, etc.) via the `;;` trigger. These snippets — not TabType itself — are the substance of the file, and most work future agents do here will be revising or adding them. They encode a deliberate two-agent, three-stage development workflow.
 
@@ -33,21 +33,25 @@ What counts as "intentional" differs by stage:
 
 ## Snippet schema
 
-```json
-{ "key": "snippet-name", "expand": "text with \\n newlines and $0 cursor" }
+```toml
+[[snippets]]
+key = "snippet-name"
+expand = '''
+text with literal newlines
+and $0 cursor'''
 ```
 
-- `key` triggers via `;;key`; the `;;` trigger is set under `settings.trigger`.
-- `expand` is a JSON string — newlines as `\n`, slashes can be `\/` or `/`, quotes escaped.
+- `key` triggers via `;;key`; the `;;` trigger is set at the top of the file.
+- `expand` uses TOML literal multi-line strings (`'''…'''`) — content is verbatim, no escape processing. Place the closing `'''` on the last content line to avoid an extra trailing newline. For short single-line snippets, a basic string (`expand = "…"`) is fine.
 - `$0` marks where the cursor lands after expansion (used wherever the user is about to paste reviewer feedback: `update-*`, `respond-*`, `review-*-again`).
-- `---\n\n$0` is the convention for snippets that need a visual separator before the pasted content.
+- A `---` separator with a blank line before `$0` is the convention for snippets that need a visual separator before the pasted content.
 
 Naming convention: stage artifacts follow `write-X` (implementer creates), `review-X` (reviewer critiques), `update-X` / `respond-X` (implementer revises based on critique), and `review-X-again` / `update-X-again` / `respond-X-again` for the round-2 variant. Standalone snippets use descriptive names (`think-holistic`, `find-similar-bugs`).
 
 ## Editing
 
-Edits to `.config/tabtype/config.json` are live in TabType immediately via the Stow symlink — no reload needed. After editing, validate JSON:
+Edits to `.config/tabtype/config.toml` are live in TabType immediately via the Stow symlink — no reload needed. After editing, validate TOML:
 
 ```bash
-python3 -c "import json; json.load(open('.config/tabtype/config.json'))"
+python3 -c "import tomllib; tomllib.load(open('.config/tabtype/config.toml', 'rb'))"
 ```
