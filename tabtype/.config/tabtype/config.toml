@@ -1,13 +1,4 @@
 
-[settings]
-scan_depth = 5
-material = "glass"
-appearance = "light"
-case_sensitive = false
-max_branch_age_days = 90
-badge_palette = "minimal"
-ignore_patterns = ["node_modules", ".git", "dist", "build"]
-
 # ── Reasoning helpers ─────────────────────────────────
 
 [[snippets]]
@@ -401,6 +392,16 @@ expand = '''
 - level of uncertainty involved
 
 **Most importantly:** does this solve the core UX problem while maintaining a clean technical design?'''
+
+
+[settings]
+scan_depth = 5
+material = "glass"
+appearance = "light"
+case_sensitive = false
+max_branch_age_days = 90
+badge_palette = "minimal"
+ignore_patterns = ["node_modules", ".git", "dist", "build"]
 
 
 trigger = ";;"
