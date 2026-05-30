@@ -166,6 +166,15 @@ step_macos_defaults() {
     # Takes effect after logout/reboot.
     defaults write -g com.apple.swipescrolldirection -bool false
     ok "natural scrolling: off (logout/reboot to apply)"
+
+    # Power management. Stock macOS / a config profile can leave system
+    # sleep absurdly low (seen: sleep=1 min, so the Mac naps after a
+    # minute idle). pmset values are in MINUTES, 0 = never. -b battery,
+    # -c charger/AC. Needs sudo (unlike `defaults write`) — you'll be
+    # prompted for your password here.
+    sudo pmset -b sleep 30 displaysleep 10   # battery: sleep 30m, screen off 10m
+    sudo pmset -c sleep 0  displaysleep 20   # AC:      never sleep, screen off 20m
+    ok "power: battery sleep 30m / AC never (verify with 'pmset -g custom')"
 }
 
 step_default_shell() {

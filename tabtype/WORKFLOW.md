@@ -20,35 +20,39 @@ The full arc covers a single feature from problem framing through PR. Most steps
 
 7. *(common for nontrivial specs)* **`update-spec-again`** → implementer. Round-2 feedback applied inline, no formal validity gate. Focus is converging.
 
+## Stage transition
+
+8. **`compact-for-plan`** → implementer. Just before the plan stage. Invokes `/compact` with a structured prompt that preserves the settled spec, architectural direction, and rationale while dropping brainstorming alternatives, cross-agent synthesis, and round-1 critiques. Shifts the implementer from creative-divergent mode to focused-execution mode.
+
 ## Plan stage
 
-8. **`tdd-plan`** (or `tdd-plan-strict` / `start-plan` for non-TDD work) → implementer. With the spec settled, the implementer writes a detailed plan: vertical slices, specific test cases, helper sketches, fixture shape, line-level references for existing code. Stops short of full code bodies.
+9. **`tdd-plan`** (or `tdd-plan-strict` / `start-plan` for non-TDD work) → implementer. With the spec settled, the implementer writes a detailed plan: vertical slices, specific test cases, helper sketches, fixture shape, line-level references for existing code. Stops short of full code bodies.
 
-9. **`review-plan`** → reviewer. Critiques the plan against the TDD and architecture skills, applies the altitude lens.
+10. **`review-plan`** → reviewer. Critiques the plan against the TDD and architecture skills, applies the altitude lens.
 
-10. **`update-plan`** → implementer. Paste feedback at `$0`. The plan gets revised.
+11. **`update-plan`** → implementer. Paste feedback at `$0`. The plan gets revised.
 
-11. *(rare)* **`review-plan-again`** / **`update-plan-again`** → round-2 for plans. Usually one iteration suffices.
+12. *(rare)* **`review-plan-again`** / **`update-plan-again`** → round-2 for plans. Usually one iteration suffices.
 
 ## Implementation stage
 
-12. *(no snippet)* Implementation. The implementer writes code per the approved plan, doing the actual red-green-refactor cycles.
+13. *(no snippet)* Implementation. The implementer writes code per the approved plan, doing the actual red-green-refactor cycles.
 
-13. **`commits-summary`** + **`review-implementation`** → reviewer. Round-1 code review. The `commits-summary` block gets pasted in first for high-level context. The reviewer evaluates correctness, test quality, plan deviation, and whether the implementation actually solves the spec's problem.
+14. **`commits-summary`** + **`review-implementation`** → reviewer. Round-1 code review. The `commits-summary` block gets pasted in first for high-level context. The reviewer evaluates correctness, test quality, plan deviation, and whether the implementation actually solves the spec's problem.
 
-14. **`respond-review`** → implementer. Paste reviewer feedback at `$0`. The implementer analyzes each point first — **no code changes yet**. The analysis-first gate matters here because code changes are expensive.
+15. **`respond-review`** → implementer. Paste reviewer feedback at `$0`. The implementer analyzes each point first — **no code changes yet**. The analysis-first gate matters here because code changes are expensive.
 
-15. *(no snippet — manual prompt)* "Go ahead and apply." After reviewing the analysis, I tell the implementer to make the agreed changes.
+16. *(no snippet — manual prompt)* "Go ahead and apply." After reviewing the analysis, I tell the implementer to make the agreed changes.
 
-16. **`review-implementation-again`** → reviewer. Round-2 code review on the updated implementation. Focus shifts to "was the previous feedback actually addressed?"
+17. **`review-implementation-again`** → reviewer. Round-2 code review on the updated implementation. Focus shifts to "was the previous feedback actually addressed?"
 
-17. **`respond-review-again`** → implementer. Paste round-2 feedback at `$0`. The implementer applies fixes inline, no analysis gate — this round is about converging.
+18. **`respond-review-again`** → implementer. Paste round-2 feedback at `$0`. The implementer applies fixes inline, no analysis gate — this round is about converging.
 
 ## Wrap-up
 
-18. **`pr-description`** → implementer. Drafts the PR description aimed at a technical colleague who won't read the diff.
+19. **`pr-description`** → implementer. Drafts the PR description aimed at a technical colleague who won't read the diff.
 
-19. *(optional)* **`find-similar-bugs`** → implementer. Before committing, sweeps the codebase for other places likely to have the same bug pattern.
+20. *(optional)* **`find-similar-bugs`** → implementer. Before committing, sweeps the codebase for other places likely to have the same bug pattern.
 
 ## Helpers that fit anywhere
 

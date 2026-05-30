@@ -114,11 +114,16 @@ and hitting `prefix + I`.
 
 ### What `step_macos_defaults` sets
 
-Currently just one tweak: natural scrolling off
-(`com.apple.swipescrolldirection = false`). The single key controls
-**both** mouse and trackpad — the GUI's two toggles are aliases for it.
-Takes effect after logout/reboot. Add more `defaults write` lines to
-this step over time.
+- **Natural scrolling off** (`com.apple.swipescrolldirection = false`).
+  The single key controls **both** mouse and trackpad — the GUI's two
+  toggles are aliases for it. Takes effect after logout/reboot.
+- **Power management** via `pmset`: battery sleeps after 30 min (screen
+  off at 10), on AC it never auto-sleeps (screen off at 20). This exists
+  because stock macOS / a config profile once left `sleep=1` — the Mac
+  napped after a single idle minute. **Needs sudo**, so this step prompts
+  for your password (see the interrupt table above).
+
+Add more `defaults write` / `pmset` lines to this step over time.
 
 ## 5. Post-bootstrap manual setup
 
@@ -292,6 +297,8 @@ Run from a fresh terminal after bootstrap completes.
 - [ ] `node --version` prints LTS, `cargo --version` and `rustc --version` work.
 - [ ] `z <some old project>` jumps (zoxide is initialized).
 - [ ] Natural scrolling matches your preference (logout/reboot first if not).
+- [ ] `pmset -g custom` shows a sane system `sleep` (≠ 1 min) — battery
+      30 / AC 0, per `step_macos_defaults`.
 
 ## Reference: files outside the repo
 

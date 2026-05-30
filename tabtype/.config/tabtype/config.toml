@@ -1,4 +1,3 @@
-
 # ── Reasoning helpers ─────────────────────────────────
 
 [[snippets]]
@@ -6,10 +5,11 @@ key = "think-holistic"
 expand = '''
 **DO NOT CHANGE ANY CODE YET.** Reason holistically — grounded in actual code, not assumptions.
 
-1. **State the real problem** and the underlying UX goal **in your own words**. Push back before going further if my framing seems off.
-2. **Read the relevant code** to see how things work today. Trace real data/control flow, note existing constraints and why they exist, cite the files/functions you read. Without this, "first principles" is guessing.
-3. **Evaluate the current design** against the goal based on what you actually saw — local issue or structural?
-4. **Propose 2–3 approaches** from first principles, with tradeoffs (complexity, blast radius, UX impact, future flexibility). Recommend one and explain why.
+1. **Read the relevant code** to see how things work today. Trace real data/control flow, note existing constraints and why they exist, cite the files/functions you read. Without this, "first principles" is guessing.
+2. **Interview me about ambiguous product intent** (fuzzy terms, unclear scope, priorities you're guessing at) and **push back if my framing seems off**. One question at a time, each with your recommended answer. Don't ask what code can answer — you've just read it. **For clear, targeted bug fixes, skip this step.**
+3. **State the real problem** and the underlying UX goal **in your own words**, informed by what you read and learned.
+4. **Evaluate the current design** against the goal — local issue or structural?
+5. **Propose 2–3 approaches** from first principles, with tradeoffs (complexity, blast radius, UX impact, future flexibility). Recommend one and explain why.
 
 Don't patch a flawed design with another patch. Don't shy from structural changes when justified — but back "structurally wrong" claims with code, and name the cost.'''
 
@@ -86,6 +86,8 @@ The spec is intentionally high-level: problem, UX goal, conceptual approach, non
 
 Weigh technical merit and UX goals together. **Challenge assumptions and propose alternatives** — don't default to politeness. Don't say "not specific enough" without naming the unanswered concept.
 
+---
+
 $0'''
 
 [[snippets]]
@@ -125,12 +127,32 @@ Round-2 reviewer feedback on the spec below. Apply valid points and update. Disa
 
 $0'''
 
+# ── Stage transition ─────────────────────────────────
+
+[[snippets]]
+key = "compact-for-plan"
+expand = '''
+/compact Transitioning from spec exploration to technical implementation planning. Compact for **focus on the settled path** — keep the decisions, drop how we reached them.
+
+**Preserve:**
+- The final settled spec — problem, UX goal, conceptual approach, non-goals, open questions.
+- Architectural direction: module/function names, composition shape, coupling decision (extension vs. independent).
+- *Why* we chose this approach — but not the alternatives we rejected.
+- Spec-stage deferral rules: line-level edits, test cases, doc plans, commit order are designed **later** — don't pre-empt them in the plan.
+
+**Drop or summarize:**
+- Brainstorming alternatives and tradeoff debates that didn't win.
+- Synthesis between competing analyses from different agents.
+- Round-1 spec critiques the final spec already addresses.
+- Code reads and exploration that fed the spec — conclusions live in the spec; the reading process isn't needed.
+'''
+
 # ── Plan stage ────────────────────────────────────────
 
 [[snippets]]
 key = "tdd-plan"
 expand = '''
-Plan the implementation as vertical slices based on the latest spec.
+Plan the implementation as vertical slices based on the latest spec. Reread the spec first.
 
 Go detailed — name each slice, list specific test cases, sketch helpers and fixtures, cite line numbers for changes in existing code. **Don't pre-write full code bodies** — describe tests and helpers; actual code happens during red-green-refactor.
 
@@ -405,13 +427,4 @@ ignore_patterns = ["node_modules", ".git", "dist", "build"]
 
 
 trigger = ";;"
-providers = [
-  "recent",
-  "files",
-  "app",
-  "manual",
-  "skills",
-  "git",
-  "docs",
-  "scripts",
-]
+providers = ["recent", "files", "app", "manual", "skills", "git", "docs", "scripts"]
