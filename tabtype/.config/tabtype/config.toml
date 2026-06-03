@@ -204,6 +204,7 @@ Create a technical plan from our discussion.
 1. A few focused phases, each ending in its own commit.
 2. **Delete complexity, don't rearrange it.** Concepts, modes, and branches should disappear, not get moved around. Prefer clean architecture and clear integration points over ad-hoc patches — the right plan should feel inevitable, not clever.
 3. If existing architecture blocks a clean solution, redesign from first principles around the actual problem — composition and data structures tailored to it.
+4. **Verification per phase** — for each phase, say how you'll confirm it works: the key behaviors to test (not exhaustive), or another check where a test doesn't fit. Note anything deliberately left unverified and why.
 
 **Constraints:**
 - Large UX-affecting changes → **stop, get my approval first**. Provide rationale and 2+ alternatives with tradeoffs.
@@ -230,6 +231,8 @@ Background (skim as a lens, don't recite):
 - Disagree → give reasons and a concrete alternative. If architectural, say so and propose the structural fix.
 
 Challenge sequencing, scope, choice of vertical slices, **whether the plan deletes complexity or just rearranges it**, and **whether the resulting modules are deep or shallow** — not just surface details. The right plan should feel inevitable. Don't default to politeness.
+
+---
 
 $0'''
 
@@ -270,11 +273,92 @@ Round-2 reviewer feedback on the plan below. Apply valid points and update. Disa
 
 $0'''
 
+# ── Mid-implementation checkpoint ─────────────────────
+
+[[snippets]]
+key = "midpoint-status"
+expand = '''
+Pausing mid-implementation for a checkpoint review. Summarize the current state so a reviewer can pick it up cold — **status snapshot, not a self-review**.
+
+- **Where we are:** which slices are done and committed, and the slice you paused at (e.g. "4 of ~12").
+- **What's done:** per completed slice, the behavior it added and any decision worth knowing — one line each, no code dumps.
+- **What's left:** the remaining slices in planned order, briefly.
+- **Test state:** what's covered so far and at what altitude, plus any test debt you've deferred (slices committed light on tests, placeholder mocks) — surface it rather than let it hide.
+- **Deviations & surprises:** where the code diverged from the plan, what turned out harder or different than expected, and any plan assumption that didn't hold. **Be candid here — this is the highest-signal part.**
+- **Open questions / risks** you're carrying into the rest of the work.
+
+Ground it in the actual commits and code, not memory.'''
+
+[[snippets]]
+key = "review-midpoint"
+expand = '''
+Implementation is **paused mid-way** — only some slices are done; the rest are intentionally not built yet. Review the work so far AND set up the rest to go well. **Read the actual code, not just the status report below.**
+
+Two jobs:
+
+**1. Review what's done.**
+- **Correctness & tests** of completed slices — bugs, edge cases, test altitude.
+- **Foundation soundness** — everything left builds on this. Are the abstractions, seams, and data structures chosen so far going to *hold* for the remaining slices, or will they need to be torn up later? Code-judo, spaghetti growth, thin abstractions, leaky boundaries, wrong canonical layer — flag them now while they're cheap.
+- **Plan ↔ code tracking** — silent deviations, missing planned tests for *completed* slices.
+
+**2. Guide the rest.**
+- **Gotchas & traps** the remaining slices will hit given the current code — invariants to keep, sequencing hazards, places the existing shape fights what's coming.
+- **Plan course-correction** — given what the code actually revealed, does the remaining plan still hold? Re-sequence, re-scope, or reshape a slice if warranted — say so explicitly. A remaining slice that could *delete* something already written is a win; call it out.
+- **Tips** — existing helpers/patterns to reuse instead of reinventing.
+
+**Time-axis altitude lens:**
+- Slices not yet reached → **intentionally undone, do NOT flag as missing**.
+- A foundational/structural problem that will **compound** across the remaining slices → **highest priority** — catching it at slice 4 is far cheaper than at slice 12. Flag loudly.
+- A purely local nit in completed code that doesn't affect what's left → note briefly or leave it for the final review; **don't dwell**.
+
+**Per issue:** mark **fix-before-continuing** vs **fine to defer to the final review**, and give a concrete fix with file/function references.
+
+Status report from the implementer below for context.
+
+---
+
+$0'''
+
+[[snippets]]
+key = "respond-midpoint"
+expand = '''
+Mid-point review feedback below. **Triage first — no code changes yet.** For each point:
+1. **Assess validity** — be honest, don't agree just to agree.
+2. **If valid, sort it:**
+   - **Fix before continuing** — foundational problems the remaining slices would build on top of. These get fixed first.
+   - **Fold into the remaining plan** — adjust, re-sequence, or re-scope upcoming slices; note which slice absorbs it.
+   - You may propose a better fix than suggested — explain why.
+3. **If you disagree:** explain from first principles why the current code or plan is right as-is.
+
+**Course-corrections to the remaining plan** — engage with the reframing, don't counter with a narrower local patch or defer a deletion as "future work."
+
+**Test fallout** — where a finding reveals a test gap in a completed slice, fix it alongside the now-problems; where it reshapes an upcoming slice, fold the test change into that slice's plan.
+
+Then summarize the updated plan: what you'll fix now, then the remaining slices in order. **Wait for my go-ahead before changing code.**
+
+---
+
+$0'''
+
 # ── Implementation review ─────────────────────────────
 
 [[snippets]]
 key = "commits-summary"
 expand = "Commits summary for high-level context — what changed and why. **Don't review commit-by-commit;** review the current state of the codebase as a whole, with these commits as context."
+
+[[snippets]]
+key = "implementation-handoff"
+expand = '''
+Implementation finished. Write a handoff that orients the reviewer fast — **report what changed and point them at what matters.** Ground it in the actual code and commits, not memory.
+
+This is a guided map, **not a self-review** — don't grade your own work ("correct", "clean", "well-tested"); that's the reviewer's call. Do surface where the bodies are buried.
+
+- **What & why:** the problem solved, tied back to the spec — a line or two.
+- **Change map:** the files/modules touched, with the **load-bearing** ones marked. Skip trivial churn — the reviewer can read the diff; tell them where to start.
+- **Key decisions & tradeoffs:** judgment calls made while implementing, especially structural ones (a boundary drawn here, a concept collapsed there), and any alternative you weighed and rejected.
+- **Deviations from spec/plan:** where the code diverged and why. **Be candid.**
+- **Tests:** what's covered and at what altitude (behavior vs. internals), plus what you deliberately left untested and why.
+- **Where to look hardest:** the riskiest, most complex, or least-certain changes — anything you're unsure about or that fought you. This is the part that earns its keep.'''
 
 [[snippets]]
 key = "review-implementation"
@@ -306,7 +390,7 @@ Spec and plan settled. Code-review my implementation. **Read the actual code, no
 
 **Approval bar:** don't pass because it works. Structural regressions and missed code-judo opportunities are presumptive blockers — flag as **critical**, not minor.
 
-Commits summary for context below.
+Implementation report below — treat it as a starting point: the implementer's pointers to reduce your overhead, not the boundary of your review. Review the whole feature against its actual goal, and actively look for what the report leaves out; if you only check what the implementer surfaced, it isn't an independent review.
 
 ---
 
@@ -322,6 +406,10 @@ Senior engineer's review feedback below. **For each point:**
 
 **Structural feedback** — engage with the reframing the reviewer proposed. Don't counter with a narrower local patch, and don't defer the deletion path as "future work."
 
+**Test implications** — for each valid finding, reason about what it means for the tests (analysis only — don't write them yet):
+- **Why didn't a test catch this?** A genuine coverage gap (untested behavior), or a weak test that should have caught it but didn't — wrong altitude, asserting internals, over-mocked? A bug that slipped through is a signal about test quality, not just a missing case.
+- **What does the fix change in the suite?** A new test for the now-correct behavior, a strengthened existing test, or tests to **delete** because the fix removes the behavior or branch they covered.
+
 **Do not change any code yet — focus on analysis.**
 
 ---
@@ -332,6 +420,8 @@ $0'''
 key = "review-implementation-again"
 expand = '''
 Updated the files per your suggestions (summarized below for targeted re-check). Focus on **whether feedback was actually integrated**, and flag any off-track changes or unintended regressions. Elaborate disagreements.
+
+**Test changes** — where a fix touched tests, check they hold up: new or strengthened tests actually cover the behavior that slipped (right altitude, not asserting internals), and any deleted test was genuinely made obsolete, not dropped to get to green.
 
 ---
 
@@ -427,4 +517,13 @@ ignore_patterns = ["node_modules", ".git", "dist", "build"]
 
 
 trigger = ";;"
-providers = ["recent", "files", "app", "manual", "skills", "git", "docs", "scripts"]
+providers = [
+  "recent",
+  "files",
+  "app",
+  "manual",
+  "skills",
+  "git",
+  "docs",
+  "scripts",
+]

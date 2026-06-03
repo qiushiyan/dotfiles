@@ -31,6 +31,25 @@ What counts as "intentional" differs by stage:
 
 **Reflect-before-change for code feedback** (`respond-review`). The drafter analyzes critique _before_ touching code. Spec/plan use direct `update-*` snippets since text is cheap to revise; code uses the reflect pattern because code changes are more expensive. Round-2 (`respond-review-again`) drops the analysis gate and applies inline, since the work is narrower and the goal is converging.
 
+**Mid-point checkpoint** (`midpoint-status`, `review-midpoint`, `respond-midpoint`). For large implementations (10+ slices), the implementer is paused partway to report status, the reviewer critiques the work-so-far _and_ guides the rest, then the implementer triages the feedback before resuming. Two ideas specialize the altitude lens here:
+
+- **Time axis** — slices not yet reached are _intentionally undone_, not defects; the reviewer must not flag them as missing (the temporal analogue of "don't ask for more on deferred things").
+- **Early-correction leverage** — foundational/structural problems are weighted _highest_ because they compound across every remaining slice, while local nits defer to the final `review-implementation`.
+
+The response reuses the reflect-before-change gate from `respond-review`, but its triage is forward-looking: each point sorts into fix-now / fold-into-remaining-slices / disagree. No `-again` round-2 variants — a checkpoint is one-shot; you fix and continue.
+
+**Review-aligned handoff** (`implementation-handoff`). When the implementer reports finished work to orient the reviewer, the report's sections mirror `review-implementation`'s evaluation axes — what/why, change map, key decisions, deviations, tests, where-to-look-hardest — so each thing the reviewer is about to assess is pre-loaded. It's a guided map, _not a self-review_: the implementer marks the riskiest/most-complex changes (shifting the framing burden to whoever knows the code best) but does **not** grade quality — that's the reviewer's job. It supersedes the thin `commits-summary` as the final review's context block, feeding `review-implementation`'s `$0` directly. The general principle: a report snippet should be shaped by the review snippet it feeds.
+
+**Tests as a cross-cutting concern.** Test thinking isn't confined to the plan/TDD stage — it threads through the whole arc, each phase at its own altitude. Match the prompt to the phase: don't ask for test cases where they're intentionally deferred, and don't let them silently drop where they're due.
+
+- **Spec** (`write-spec`, `review-spec`) — name the behaviors that matter; specific cases, fixtures, and mocking boundaries are deferred (the altitude lens enforces this).
+- **Plan** (`tdd-plan`, `review-plan`) — test cases, fixtures, and mocking boundaries are first-class and reviewable. Non-TDD plans (`start-plan`) still owe a verification story per phase.
+- **Implementation review** (`review-implementation`, `implementation-handoff`) — test quality is an explicit evaluation axis and a reported section.
+- **Responding to review** (`respond-review`) — a finding is a signal about test quality: diagnose coverage-gap vs. weak-test, then plan add / strengthen / delete. `review-implementation-again` then verifies those test changes actually held up.
+- **Mid-point checkpoint** (`midpoint-status`, `review-midpoint`, `respond-midpoint`) — test state is surfaced for the completed slices, reviewed, and any fallout triaged into fix-now / fold-into-a-slice.
+
+When adding or revising a snippet, ask whether its phase has a test angle and pitch it at that phase's altitude.
+
 ## Snippet schema
 
 ```toml
@@ -46,7 +65,7 @@ and $0 cursor'''
 - `$0` marks where the cursor lands after expansion (used wherever the user is about to paste reviewer feedback: `update-*`, `respond-*`, `review-*-again`).
 - A `---` separator with a blank line before `$0` is the convention for snippets that need a visual separator before the pasted content.
 
-Naming convention: stage artifacts follow `write-X` (implementer creates), `review-X` (reviewer critiques), `update-X` / `respond-X` (implementer revises based on critique), and `review-X-again` / `update-X-again` / `respond-X-again` for the round-2 variant. Standalone snippets use descriptive names (`think-holistic`, `find-similar-bugs`).
+Naming convention: stage artifacts follow `write-X` (implementer creates), `review-X` (reviewer critiques), `update-X` / `respond-X` (implementer revises based on critique), and `review-X-again` / `update-X-again` / `respond-X-again` for the round-2 variant. Implementer-produced status reports take a descriptive `-status` / `-handoff` name (`midpoint-status`, `implementation-handoff`). Standalone snippets use descriptive names (`think-holistic`, `find-similar-bugs`).
 
 ## Editing
 
