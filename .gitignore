@@ -5,7 +5,7 @@
 # === Claude Code (claude/.claude/ — config like settings.json, skills/,
 # hooks/, agents/, commands/, memory/, CLAUDE.md, keybindings.json
 # stays tracked) ===
-claude/.claude/.last-cleanup
+claude/.claude/.last-*
 claude/.claude/backups/
 claude/.claude/cache/
 claude/.claude/downloads/
