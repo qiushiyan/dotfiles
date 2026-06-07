@@ -1,5 +1,6 @@
 ---
 name: pair-coding
+disable-model-invocation: true
 description: "Pair-code with Codex by driving it in a sibling tmux pane for design review and code review. Use when the user has a design document or high-level plan ready and wants critical peer review from Codex before implementation, or after implementation for code review. Requires tmux and Codex CLI. Triggers: 'pair-code with codex', 'begin pair-coding', 'get codex review', 'review this plan with codex', 'start codex in another pane'."
 ---
 

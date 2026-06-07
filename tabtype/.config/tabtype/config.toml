@@ -343,6 +343,21 @@ $0'''
 # ── Implementation review ─────────────────────────────
 
 [[snippets]]
+key = "compact-for-review"
+expand = '''
+/compact A long implementation is finished and about to go into code review. Compact for a **focused window ready for review** — keep what lets you defend and revise the work, drop how you got there.
+
+**Preserve:**
+- Implementation status: what this work set out to do (feature, refactor, or fix) and what's now built.
+- The load-bearing mental model: the core abstractions, data/control flow, and invariants — plus the critical files where the real logic lives, so you can reason about feedback without re-reading everything.
+- Key decisions and *why* — especially the contestable ones a reviewer will probe; keep the rationale so you can defend or reconsider each from first principles.
+- Deviations from the plan, known risk areas, and current test state — the spots most likely to draw scrutiny.
+
+**Drop:**
+- The step-by-step build process: red-green-refactor cycles, intermediate states, debugging detours, dead ends.
+- Superseded plan iterations, brainstorming, and exploration reads — keep the conclusions, not the path.'''
+
+[[snippets]]
 key = "commits-summary"
 expand = "Commits summary for high-level context — what changed and why. **Don't review commit-by-commit;** review the current state of the codebase as a whole, with these commits as context."
 
@@ -437,6 +452,20 @@ Round-2 reviewer feedback below. Apply valid points and update the code. Disagre
 $0'''
 
 # ── Wrap-up ───────────────────────────────────────────
+
+[[snippets]]
+key = "compact-for-cleanup"
+expand = '''
+/compact Implementation is essentially done and polished through review — only small, non-blocking tasks remain (docs, minor fixes, cleanup). Compact for a **focused window on the finished code**, not on how we built it.
+
+**Preserve:**
+- What the feature does and its user-facing intent — enough to write accurate docs.
+- The current state of the implementation: what was built and where it lives (key modules/files), and any decision or invariant docs or callers must respect.
+- The remaining tasks — the specific docs, fixes, and cleanup still to do.
+
+**Drop:**
+- The whole spec → plan → review journey: alternatives, plan iterations, review rounds, and the back-and-forth that produced the code.
+- Reasoning debates and superseded critiques — the code already reflects their conclusions.'''
 
 [[snippets]]
 key = "pr-description"

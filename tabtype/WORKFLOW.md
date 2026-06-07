@@ -48,23 +48,27 @@ When the work is large, I manually pause the implementer at a commit partway thr
 
 16. **`respond-midpoint`** → implementer. Paste the review at `$0`. The implementer triages each point into fix-now / fold-into-remaining-slices / disagree — **no code changes yet** — then summarizes the updated plan and waits for my go-ahead. After I greenlight, it fixes the now-problems first, then resumes the remaining slices.
 
-17. **`implementation-handoff`** → implementer. With the work finished, the implementer writes a structured handoff: what changed and why, a change map with the load-bearing files marked, key decisions and tradeoffs, deviations from the plan, test coverage, and — critically — where the reviewer should look hardest. It orients the review and shifts the framing to the person who knows the code best. Supersedes the bare `commits-summary` as the review's context block.
+17. *(optional — after a long implementation, when context is heavy)* **`compact-for-review`** → implementer. Before the review cycle, `/compact` to a focused window: keep the implementation status, the load-bearing mental model and critical files, and the key decisions + why — drop the step-by-step build process. Readies the implementer to write a sharp handoff and respond to review from first principles. Usually the review that follows is `review-implementation`, but not always.
 
-18. **`review-implementation`** → reviewer. Round-1 code review. Paste the handoff at `$0` for context. The reviewer evaluates correctness, test quality, plan deviation, structural quality, and whether the implementation actually solves the spec's problem.
+18. **`implementation-handoff`** → implementer. With the work finished, the implementer writes a structured handoff: what changed and why, a change map with the load-bearing files marked, key decisions and tradeoffs, deviations from the plan, test coverage, and — critically — where the reviewer should look hardest. It orients the review and shifts the framing to the person who knows the code best. Supersedes the bare `commits-summary` as the review's context block.
 
-19. **`respond-review`** → implementer. Paste reviewer feedback at `$0`. The implementer analyzes each point first — **no code changes yet**. The analysis-first gate matters here because code changes are expensive.
+19. **`review-implementation`** → reviewer. Round-1 code review. Paste the handoff at `$0` for context. The reviewer evaluates correctness, test quality, plan deviation, structural quality, and whether the implementation actually solves the spec's problem.
 
-20. *(no snippet — manual prompt)* "Go ahead and apply." After reviewing the analysis, I tell the implementer to make the agreed changes.
+20. **`respond-review`** → implementer. Paste reviewer feedback at `$0`. The implementer analyzes each point first — **no code changes yet**. The analysis-first gate matters here because code changes are expensive.
 
-21. **`review-implementation-again`** → reviewer. Round-2 code review on the updated implementation. Focus shifts to "was the previous feedback actually addressed?"
+21. *(no snippet — manual prompt)* "Go ahead and apply." After reviewing the analysis, I tell the implementer to make the agreed changes.
 
-22. **`respond-review-again`** → implementer. Paste round-2 feedback at `$0`. The implementer applies fixes inline, no analysis gate — this round is about converging.
+22. **`review-implementation-again`** → reviewer. Round-2 code review on the updated implementation. Focus shifts to "was the previous feedback actually addressed?"
+
+23. **`respond-review-again`** → implementer. Paste round-2 feedback at `$0`. The implementer applies fixes inline, no analysis gate — this round is about converging.
 
 ## Wrap-up
 
-23. **`pr-description`** → implementer. Drafts the PR description aimed at a technical colleague who won't read the diff.
+24. *(optional — when the session is running long)* **`compact-for-cleanup`** → implementer. When implementation is essentially done and polished but small non-blocking tasks remain (docs, minor fixes, cleanup), `/compact` to a focused window on the finished code: preserves what was built and the leftover task list, drops the whole spec → plan → review journey. Unlike `compact-for-plan`, nothing about planning follows — you just work the remaining tasks.
 
-24. *(optional)* **`find-similar-bugs`** → implementer. Before committing, sweeps the codebase for other places likely to have the same bug pattern.
+25. **`pr-description`** → implementer. Drafts the PR description aimed at a technical colleague who won't read the diff.
+
+26. *(optional)* **`find-similar-bugs`** → implementer. Before committing, sweeps the codebase for other places likely to have the same bug pattern.
 
 ## Helpers that fit anywhere
 

@@ -1,5 +1,6 @@
 ---
 name: refactoring
+disable-model-invocation: true
 description: Standalone refactoring passes — code organization, API design, code reuse, hygiene — distinct from the in-cycle refactor step of TDD. Use when the user asks to refactor a module/package, reduce coupling, simplify an API, extract shared utilities, clean up dead code, or improve architecture without changing behavior. Triggers on phrases like "refactor X", "clean up X", "simplify X", "split X into modules", "reduce duplication", "improve the API of X".
 ---
 

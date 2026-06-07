@@ -1,5 +1,6 @@
 ---
 name: review-council
+disable-model-invocation: true
 description: Multi-perspective code review using 3-5 parallel subagents with dynamically chosen personas. Each persona argues for their approach, then synthesizes into prioritized recommendations. Use when user wants to review changes from multiple angles, requests "/review-council", asks for multi-perspective review, or wants creative/outside-the-box feedback on their work.
 ---
 

@@ -8,6 +8,7 @@ sandbox_mode = "danger-full-access"
 
 
 notify = ["/Users/qiushi/dotfiles/codex/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+service_tier = "default"
 
 [shell_environment_policy]
 
@@ -135,7 +136,7 @@ source_type = "local"
 source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-05-22T01:21:10Z"
+last_updated = "2026-06-02T11:17:57Z"
 source_type = "local"
 source = "/Users/qiushi/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -155,6 +156,9 @@ enabled = true
 enabled = true
 
 [plugins."browser-use@openai-bundled"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
 enabled = true
 
 [tui.model_availability_nux]

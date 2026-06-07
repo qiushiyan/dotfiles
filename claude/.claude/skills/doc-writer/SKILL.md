@@ -1,5 +1,6 @@
 ---
 name: doc-writer
+disable-model-invocation: true
 description: Guide for creating effective technical documentation. Use when writing, reviewing, or updating documentation files (*.md in docs/). Triggers on tasks involving README files, feature documentation, API docs, or when user asks to document a feature or system.
 ---
 

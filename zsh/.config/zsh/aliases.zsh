@@ -75,12 +75,6 @@ alias sshprod="ssh marswave.production"
 # --------------------------------------------------------------------
 alias c="cursor"
 alias ct="count-token"
-# make → mmake (https://github.com/tj/mmake), with a fallback so `make`
-# never breaks outright if mmake isn't installed.
-make() {
-  if command -v mmake >/dev/null 2>&1; then command mmake "$@"
-  else command make "$@"; fi
-}
 alias tsx='tsx --no-warnings'
 alias -s ts='bun'                    # suffix: *.ts files run with bun
 alias -s git="git clone"             # suffix: *.git URLs auto-clone

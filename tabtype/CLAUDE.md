@@ -50,6 +50,14 @@ The response reuses the reflect-before-change gate from `respond-review`, but it
 
 When adding or revising a snippet, ask whether its phase has a test angle and pitch it at that phase's altitude.
 
+**Compaction is shaped by the next phase** (`compact-for-plan`, `compact-for-review`, `compact-for-cleanup`). Compaction snippets reset context at a stage boundary — they preserve the settled artifact and drop the journey that produced it. Each is tuned to what the _next_ phase consumes, so each keeps a different slice:
+
+- `compact-for-plan` keeps the spec, architectural direction, and _why_ — planning builds on them — and drops brainstorming, cross-agent synthesis, and round-1 critiques.
+- `compact-for-review` keeps the implementation status, the load-bearing mental model and critical files, and the decisions + _why_ — the reviewer will probe them — and drops the step-by-step build process.
+- `compact-for-cleanup` keeps the finished code's state and the leftover task list — finishing builds on them — and drops the whole spec → plan → review journey.
+
+The pair around the review boundary shows the principle sharply: `compact-for-review` _retains_ the decision rationale (you must defend it under review) that `compact-for-cleanup` _discards_ (finishing doesn't relitigate it). The load-bearing rule when adding another: preserve only what the work _after_ the compaction consumes; everything else is noise.
+
 ## Snippet schema
 
 ```toml
