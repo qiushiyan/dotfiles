@@ -23,33 +23,19 @@ claude/.claude/shell-snapshots/
 claude/.claude/tasks/
 claude/.claude/telemetry/
 
-# === Codex CLI (codex/.codex/ — config.toml, skills/, prompts/,
-# AGENTS.md, profiles/ stay tracked) ===
-codex/.codex/.codex-global-state.json
-codex/.codex/.codex-global-state.json.bak
-codex/.codex/.personality_migration
-codex/.codex/.tmp/
-codex/.codex/auth.json
-codex/.codex/cache/
-codex/.codex/computer-use/
-codex/.codex/log/
-codex/.codex/logs_*.sqlite*
-codex/.codex/goals_*.sqlite*
-codex/.codex/memories/
-codex/.codex/models_cache.json
-codex/.codex/plugins/
+# === Codex CLI (codex/.codex/) ===
+# ~/.codex is a single folded stow symlink to this dir, so Codex writes
+# ALL of its runtime state here: sqlite DBs (logs are ~160 MB), session
+# transcripts, caches, plugins, auth.json, pasted-text attachments, etc.
+# This repo is PUBLIC, so ignore everything by default and allow-list only
+# real config — that way new runtime files Codex invents can't sneak in.
+codex/.codex/*
+!codex/.codex/config.toml
+!codex/.codex/AGENTS.md
+!codex/.codex/prompts/
+!codex/.codex/skills/
+# ...but skip the bundled system skills (Codex reinstalls these).
 codex/.codex/skills/.system/
-codex/.codex/archived_sessions/
-codex/.codex/installation_id
-codex/.codex/history.jsonl
-codex/.codex/session_index.jsonl
-codex/.codex/sessions/
-codex/.codex/shell_snapshots/
-codex/.codex/sqlite/
-codex/.codex/state_*.sqlite*
-codex/.codex/tmp/
-codex/.codex/vendor_imports/
-codex/.codex/version.json
 
 # === Ghostty (auto/ is auto-written theme include; the real config
 # lives in ghostty/.config/ghostty/config) ===
