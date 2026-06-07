@@ -22,6 +22,8 @@ claude/.claude/sessions/
 claude/.claude/shell-snapshots/
 claude/.claude/tasks/
 claude/.claude/telemetry/
+# Packaged skill exports (zip artifacts) — the real skills live in skills/
+claude/.claude/*.skill
 
 # === Codex CLI (codex/.codex/) ===
 # ~/.codex is a single folded stow symlink to this dir, so Codex writes
@@ -36,6 +38,17 @@ codex/.codex/*
 !codex/.codex/skills/
 # ...but skip the bundled system skills (Codex reinstalls these).
 codex/.codex/skills/.system/
+
+# === Neovim scratch sandbox (nvim/.config/nvim/sandbox/) ===
+# Throwaway playground files for testing LSP/formatters/treesitter across
+# filetypes — not config. Kept on disk locally, out of the repo.
+nvim/.config/nvim/sandbox/
+
+# === SSH (ssh/.ssh/config) ===
+# config is a per-file stow symlink; untracked here because on a PUBLIC
+# repo it leaks work usernames/orgs and host logins. The live
+# ~/.ssh/config keeps working via the symlink.
+ssh/.ssh/config
 
 # === Ghostty (auto/ is auto-written theme include; the real config
 # lives in ghostty/.config/ghostty/config) ===
