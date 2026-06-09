@@ -51,6 +51,8 @@ A tree-style before/after often makes the change crisp — adapt the format (tre
           └─ Webhook fired
           └─ Confirmation shown
 
+**Be concrete, not vague.** Vague verbs — "improve", "enhance", "polish", "better", "optimize", "streamline" and friends — name a *direction*, not a *decision*; they quietly defer the real choice to implementation, which defeats the point of writing a spec. Say **what** changes: the specific behavior, state, or outcome that differs, and the rule or shape that produces it. Concrete ≠ exhaustive, though — pin the decision, not the mechanics (no line-level edits or code). E.g. "improve error handling" → "on a failed webhook, retry with backoff, then surface a dismissible banner instead of failing silently."
+
 The spec is a high-level implementation plan — technical content is fine, but stay at that level. **Don't smuggle in later-stage details:**
 - **Skip** line-by-line edits, function renames, exact call-site changes — designed later.
 - **No** doc update plans — later.
@@ -167,7 +169,7 @@ Read these as a lens, not a checklist (adapt; drop what doesn't fit):
 
 **What to test:** observable behavior through public interfaces and critical paths — not implementation details or every edge case. Skip UI tests unless requested; focus on pure business logic. Confirm with me if unclear.
 
-**Slice = one behavior + the code making it work.** One slice per commit. Aim for deep modules (small interface, hidden implementation) — shrinks the test surface, keeps slices independently committable. **Prefer slicings that delete concepts** (branches, modes, helper layers disappear) over ones that just spread them.
+**Slice = one meaningful unit — a subsystem or a cluster of related behaviors.** Be ambitious: group a behavior with the behaviors and wiring that belong with it into one slice a reviewer can grasp as a single idea — the mechanical steps that serve it (an import, mounting a component, wiring) ride in that slice, not slices of their own. Lean larger; split only when two parts are genuinely unrelated or a slice grows too big to hold in your head. Aim for deep modules (small interface, hidden implementation) — shrinks the test surface, keeps slices independently committable. **Prefer slicings that delete concepts** (branches, modes, helper layers disappear) over ones that just spread them. Commits follow slices — that's implied; don't engineer commit boundaries.
 
 Strict red-green-refactor isn't required throughout — apply it inside a slice when design is uncertain or behavior is subtle and a failing test gives real signal. For straightforward slices, writing test + code together is fine. **The discipline is "one slice per commit", not keystroke order.**
 
