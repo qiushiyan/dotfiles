@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A **GNU Stow-managed dotfiles repository**. Each top-level directory is a Stow package whose contents mirror a path under `$HOME` — e.g. `zsh/.zshrc` → `~/.zshrc`, `nvim/.config/nvim/` → `~/.config/nvim/`. Files are **symlinked, not copied: editing anything here changes the user's live system immediately.** The `claude/` directory *is* `~/.claude/` — its `settings.json`, skills, and hooks are the user's global Claude Code config.
+A **GNU Stow-managed dotfiles repository**. Each top-level directory is a Stow package whose contents mirror a path under `$HOME` — e.g. `zsh/.zshrc` → `~/.zshrc`, `nvim/.config/nvim/` → `~/.config/nvim/`. Files are **symlinked, not copied: editing anything here changes the user's live system immediately.** The `claude/` package holds the user's global Claude Code config — `settings.json`, `hooks/`, `skills/`, `agents/`, `commands/`, `rules/`, `CLAUDE.md`.
+
+**`~/.claude` is a real directory, not a folded symlink.** Only the tracked config items above are symlinked in from `claude/.claude/` (per-item folding); everything Claude Code writes at runtime — `history.jsonl`, `sessions/`, `projects/`, `telemetry/`, `plugins/`, caches — stays in the real `~/.claude` and never enters this repo. `make install`/`restow` `mkdir -p ~/.claude` first to preserve this (see `REAL_DIRS` in the Makefile); the `.gitignore` allow-lists only config as defense-in-depth. **Do not** let `~/.claude` become a single symlink to the package, or all that runtime state lands in this public repo. (Contrast: `~/.codex` *is* still a folded symlink, so its `codex/.gitignore` ignores everything and allow-lists config instead.)
 
 This repo is **public** — never commit credentials (see Secrets below).
 

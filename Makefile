@@ -1,12 +1,20 @@
 PACKAGES := $(sort $(dir $(wildcard */)))
 
+# Dirs that must exist as REAL directories before stowing, so stow folds only
+# the tracked config inside them (per-item symlinks) instead of replacing the
+# whole dir with one folded symlink. This keeps each app's runtime state
+# (Claude history/sessions/telemetry, etc.) in the real ~/dir, out of this repo.
+REAL_DIRS := $(HOME)/.claude
+
 install: ## Stow all packages
+	@mkdir -p $(REAL_DIRS)
 	stow $(PACKAGES)
 
 uninstall: ## Unstow all packages
 	stow -D $(PACKAGES)
 
 restow: ## Re-stow all packages (useful after adding new files)
+	@mkdir -p $(REAL_DIRS)
 	stow -R $(PACKAGES)
 
 brew: ## Install Homebrew packages from Brewfile

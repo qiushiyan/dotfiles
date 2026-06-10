@@ -2,28 +2,24 @@
 # config worth versioning. Each entry is intentionally specific so we
 # don't accidentally hide real config files in the same directory.
 
-# === Claude Code (claude/.claude/ — config like settings.json, skills/,
-# hooks/, agents/, commands/, memory/, CLAUDE.md, keybindings.json
-# stays tracked) ===
-claude/.claude/.last-*
-claude/.claude/backups/
-claude/.claude/cache/
-claude/.claude/downloads/
-claude/.claude/file-history/
-claude/.claude/history.jsonl
-claude/.claude/image-cache/
-claude/.claude/mcp-needs-auth-cache.json
-claude/.claude/paste-cache/
-claude/.claude/plans/
-claude/.claude/plugins/
-claude/.claude/projects/
-claude/.claude/session-env/
-claude/.claude/sessions/
-claude/.claude/shell-snapshots/
-claude/.claude/tasks/
-claude/.claude/telemetry/
-# Packaged skill exports (zip artifacts) — the real skills live in skills/
-claude/.claude/*.skill
+# === Claude Code (claude/.claude/) ===
+# ~/.claude is a real directory; only config is symlinked in from this
+# package (settings.json, hooks/, agents/, commands/, rules/, skills/,
+# CLAUDE.md), so Claude's runtime state (history, sessions, projects,
+# telemetry, plugins, caches, …) lives in the real ~/.claude and never
+# reaches this repo. This allow-list is defense-in-depth for a PUBLIC repo:
+# ignore everything under the package, then re-include only real config —
+# so any runtime file that ever lands here can't be committed by accident.
+claude/.claude/*
+!claude/.claude/CLAUDE.md
+!claude/.claude/settings.json
+!claude/.claude/agents/
+!claude/.claude/commands/
+!claude/.claude/hooks/
+!claude/.claude/rules/
+!claude/.claude/skills/
+# ...but never the packaged skill exports (zip artifacts).
+claude/.claude/skills/**/*.skill
 
 # === Codex CLI (codex/.codex/) ===
 # ~/.codex is a single folded stow symlink to this dir, so Codex writes
