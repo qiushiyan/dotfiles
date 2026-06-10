@@ -3,6 +3,10 @@
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command')
 
+# Branches Claude may NEVER push (no bypass) — your trunk(s). Edit this list to
+# protect more, e.g. "main master develop release".
+PROTECTED_BRANCHES="main master"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier 1: Always-blocked git push variants — no env-var bypass.
 # Force pushes, deletes, and mirror pushes can wipe history or destroy
@@ -29,40 +33,46 @@ EOF
 done
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Tier 2: Pushes from a protected current branch — no env-var bypass.
-# (`develop`, `main`, `master`.) Even when the user has authorized pushes
-# generally, a push from a protected branch warrants a fresh manual decision.
+# Tier 2: Pushes from a protected branch (see PROTECTED_BRANCHES) — no bypass.
+# Even when pushes are otherwise allowed, pushing the trunk warrants a fresh
+# manual decision by the user.
 # ─────────────────────────────────────────────────────────────────────────────
 if echo "$COMMAND" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-  case "$CURRENT_BRANCH" in
-    develop|main|master)
+  for b in $PROTECTED_BRANCHES; do
+    if [ "$CURRENT_BRANCH" = "$b" ]; then
       cat >&2 <<EOF
 BLOCKED: current branch is '$CURRENT_BRANCH' (protected).
 
-Pushes from develop / main / master cannot be bypassed by CLAUDE_ALLOW_PUSH.
-The user must run these manually.
+Pushes from protected branches ($PROTECTED_BRANCHES) cannot be bypassed by
+CLAUDE_ALLOW_PUSH. The user must run these manually.
 EOF
-      exit 2 ;;
-  esac
+      exit 2
+    fi
+  done
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Tier 3: Plain git push — bypassable via CLAUDE_ALLOW_PUSH=1 prefix.
-# Default-block so the user can review local commits before they reach the
-# remote. Claude must only set the env var when the user has explicitly
-# authorized this push (or pushes during the current task).
+# Tier 3: Plain git push from a NON-protected branch.
+#
+# Default: ALLOWED. Claude may push feature branches freely — the trunk is
+# already covered by Tier 2 and force/delete by Tier 1.
+#
+# Opt-in gate: set CLAUDE_GATE_PUSH=1 in the hook's environment (e.g. add it to
+# the "env" block in ~/.claude/settings.json) to restore the old default-block
+# behavior. When the gate is on, each push must be authorized per-command with
+# a CLAUDE_ALLOW_PUSH=1 prefix.
 # ─────────────────────────────────────────────────────────────────────────────
-if echo "$COMMAND" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
+if [ "$CLAUDE_GATE_PUSH" = "1" ] && echo "$COMMAND" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
   if echo "$COMMAND" | grep -qE "(^|[[:space:]])CLAUDE_ALLOW_PUSH=1[[:space:]]"; then
     exit 0  # user-authorized push
   fi
   cat >&2 <<'EOF'
-BLOCKED: git push is gated by default.
+BLOCKED: git push is gated (CLAUDE_GATE_PUSH=1).
 
 The gate exists so the user can review your local commits before they reach
-the remote. This is the expected default state — not an error you should
-work around on your own.
+the remote. This is the expected state while the gate is on — not an error you
+should work around on your own.
 
 How to bypass when authorized:
 
@@ -72,8 +82,8 @@ When to use the bypass:
 - ONLY when the user has explicitly said something like "go ahead and push",
   "you can push", or has authorized pushes for this task (e.g., during a
   multi-round code-review loop).
-- Force pushes (--force, -f, --delete, --mirror) and pushes from develop /
-  main / master are NEVER bypassable, even with the env var.
+- Force pushes (--force, -f, --delete, --mirror) and pushes from a protected
+  branch are NEVER bypassable, even with the env var.
 
 When NOT to use the bypass:
 - On your own initiative because you decided the work looks ready.
