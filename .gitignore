@@ -22,11 +22,12 @@ claude/.claude/*
 claude/.claude/skills/**/*.skill
 
 # === Codex CLI (codex/.codex/) ===
-# ~/.codex is a single folded stow symlink to this dir, so Codex writes
-# ALL of its runtime state here: sqlite DBs (logs are ~160 MB), session
-# transcripts, caches, plugins, auth.json, pasted-text attachments, etc.
-# This repo is PUBLIC, so ignore everything by default and allow-list only
-# real config — that way new runtime files Codex invents can't sneak in.
+# ~/.codex is a real directory (like ~/.claude); only config is symlinked in
+# from here, so Codex's runtime state — sqlite DBs (logs ~160 MB), session
+# transcripts, caches, plugins, the auth.json SECRET, attachments, etc. —
+# lives in the real ~/.codex and never reaches this repo. This allow-list is
+# defense-in-depth for a PUBLIC repo: ignore everything, re-include only real
+# config, so any runtime file Codex invents can't be committed by accident.
 codex/.codex/*
 !codex/.codex/config.toml
 !codex/.codex/AGENTS.md

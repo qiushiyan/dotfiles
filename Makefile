@@ -3,8 +3,9 @@ PACKAGES := $(sort $(dir $(wildcard */)))
 # Dirs that must exist as REAL directories before stowing, so stow folds only
 # the tracked config inside them (per-item symlinks) instead of replacing the
 # whole dir with one folded symlink. This keeps each app's runtime state
-# (Claude history/sessions/telemetry, etc.) in the real ~/dir, out of this repo.
-REAL_DIRS := $(HOME)/.claude
+# (Claude history/sessions/telemetry; Codex sqlite/sessions/auth.json, etc.)
+# in the real ~/dir, out of this repo.
+REAL_DIRS := $(HOME)/.claude $(HOME)/.codex
 
 install: ## Stow all packages
 	@mkdir -p $(REAL_DIRS)
