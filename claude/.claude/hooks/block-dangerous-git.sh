@@ -8,6 +8,37 @@ COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command')
 PROTECTED_BRANCHES="main master"
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Match against the command's *executable* parts, not inert text.
+#
+# We strip heredoc bodies and quoted strings before pattern-matching, so a
+# dangerous pattern that only appears inside a commit message ("fix the git
+# push retry") or a heredoc body no longer trips the guard. Error messages
+# still show the full original $COMMAND.
+#
+# Trade-off (intentional): a dangerous command hidden *inside* a quoted string
+# or heredoc — e.g. `bash -c "git push --force"` — is no longer caught. This is
+# an accident-prevention guardrail, not an adversarial sandbox; direct and
+# chained invocations (`git push`, `… && git push`) are still caught.
+# ─────────────────────────────────────────────────────────────────────────────
+strip_noise() {
+  printf '%s' "$1" | awk '
+    function trim(s){ sub(/^[ \t]+/,"",s); sub(/[ \t]+$/,"",s); return s }
+    {
+      if (inhd) { if (trim($0) == term) inhd=0; next }   # drop heredoc body
+      # heredoc opener: << [-] [quote] WORD   (not <<< here-strings)
+      if (match($0, /<<[^<A-Za-z0-9]*[A-Za-z_][A-Za-z0-9_]*/)) {
+        m = substr($0, RSTART, RLENGTH)
+        gsub(/[^A-Za-z0-9_]/, "", m)                     # bare terminator word
+        term = m; inhd = 1
+      }
+      print
+    }
+  ' | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g"             # drop quoted strings
+}
+
+SCAN=$(strip_noise "$COMMAND")
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Tier 1: Always-blocked git push variants — no env-var bypass.
 # Force pushes, deletes, and mirror pushes can wipe history or destroy
 # branches. These require the user to run them manually outside Claude.
@@ -20,7 +51,7 @@ FORCE_PATTERNS=(
 )
 
 for pattern in "${FORCE_PATTERNS[@]}"; do
-  if echo "$COMMAND" | grep -qE -- "$pattern"; then
+  if echo "$SCAN" | grep -qE -- "$pattern"; then
     cat >&2 <<EOF
 BLOCKED: '$COMMAND' is a force/delete/mirror push.
 
@@ -37,7 +68,7 @@ done
 # Even when pushes are otherwise allowed, pushing the trunk warrants a fresh
 # manual decision by the user.
 # ─────────────────────────────────────────────────────────────────────────────
-if echo "$COMMAND" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
+if echo "$SCAN" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
   for b in $PROTECTED_BRANCHES; do
     if [ "$CURRENT_BRANCH" = "$b" ]; then
@@ -63,8 +94,8 @@ fi
 # behavior. When the gate is on, each push must be authorized per-command with
 # a CLAUDE_ALLOW_PUSH=1 prefix.
 # ─────────────────────────────────────────────────────────────────────────────
-if [ "$CLAUDE_GATE_PUSH" = "1" ] && echo "$COMMAND" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
-  if echo "$COMMAND" | grep -qE "(^|[[:space:]])CLAUDE_ALLOW_PUSH=1[[:space:]]"; then
+if [ "$CLAUDE_GATE_PUSH" = "1" ] && echo "$SCAN" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
+  if echo "$SCAN" | grep -qE "(^|[[:space:]])CLAUDE_ALLOW_PUSH=1[[:space:]]"; then
     exit 0  # user-authorized push
   fi
   cat >&2 <<'EOF'
@@ -110,7 +141,7 @@ DANGEROUS_PATTERNS=(
 )
 
 for pattern in "${DANGEROUS_PATTERNS[@]}"; do
-  if echo "$COMMAND" | grep -qE "$pattern"; then
+  if echo "$SCAN" | grep -qE "$pattern"; then
     echo "BLOCKED: '$COMMAND' matches dangerous pattern '$pattern'. The user has prevented you from doing this." >&2
     exit 2
   fi
