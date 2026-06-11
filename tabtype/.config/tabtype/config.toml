@@ -149,6 +149,11 @@ expand = '''
 - Code reads and exploration that fed the spec — conclusions live in the spec; the reading process isn't needed.
 '''
 
+[[snippets]]
+key = "reread-context"
+expand = '''
+Reread the files this change touches and rebuild your mental model from the actual code, not memory — trace the real data/control flow, note existing constraints, and find the seams the work will build on. **No code yet.**'''
+
 # ── Plan stage ────────────────────────────────────────
 
 [[snippets]]

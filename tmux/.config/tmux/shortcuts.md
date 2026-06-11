@@ -38,6 +38,7 @@ tmux kill-session -a           # kill all except current
 | `prefix \|` | split horizontal (side by side) |
 | `prefix -` | split vertical (stacked) |
 | `prefix h / j / k / l` | navigate panes |
+| `Ctrl+h / j / k / l` | navigate panes (no prefix, vim-aware) |
 | `prefix H / J / K / L` | resize panes |
 | `prefix z` | zoom/unzoom (fullscreen toggle) |
 | `prefix x` | kill pane |
@@ -75,6 +76,8 @@ Enter with `prefix [`, exit with `q` or `Escape`.
 
 ## Resurrect (save/restore across reboots)
 
+Continuum auto-saves every 15 min and auto-restores on server start; manual:
+
 | Key | Action |
 |-----|--------|
 | `prefix C-s` | save session layout |
@@ -85,5 +88,7 @@ Enter with `prefix [`, exit with `q` or `Escape`.
 | Key | Action |
 |-----|--------|
 | `prefix r` | reload config |
+| `Ctrl+L` | clear screen (navigates right instead if a pane is there) |
 | `prefix C-k` | clear screen + scrollback |
+| `prefix u` | fzf picker: open a URL from scrollback in browser |
 | `Shift+Ctrl+click` | open URL in browser (bypasses tmux mouse) |
