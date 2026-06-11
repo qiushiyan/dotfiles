@@ -7,7 +7,7 @@
       "mcp__pencil"
     ]
   },
-  "model": "claude-opus-4-8",
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -72,5 +72,6 @@
   "theme": "auto",
   "editorMode": "vim",
   "verbose": true,
-  "autoCompactEnabled": false
+  "autoCompactEnabled": false,
+  "agentPushNotifEnabled": true
 }

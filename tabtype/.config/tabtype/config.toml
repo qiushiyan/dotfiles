@@ -183,7 +183,7 @@ key = "tdd-plan-strict"
 expand = '''
 Plan the implementation using **strict TDD**. Read `~/.claude/skills/tdd/SKILL.md` and the files it references — **treat them as the process, not just a guide**.
 
-Go detailed — name each slice, list specific test cases, sketch helpers and fixtures, cite line numbers for changes in existing files. **Don't pre-write full code bodies** — describe tests and helpers; actual code happens during red-green-refactor.
+Go detailed — name each slice, list specific test cases, sketch helpers and fixtures, cite functions for changes in existing files. **Don't pre-write full code bodies** — describe tests and helpers; actual code happens during red-green-refactor.
 
 Follow red-green-refactor literally per behavior:
 1. **RED** — One failing test. Run it. Verify it fails for the right reason.
