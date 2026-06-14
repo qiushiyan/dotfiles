@@ -18,6 +18,16 @@ alias cspellconfig="code ~/.cspell/custom-dictionary-user.txt"
 alias zshreload="exec zsh -l"
 
 # --------------------------------------------------------------------
+# Tmux
+# --------------------------------------------------------------------
+# t: attach to the most recent session, create one only if none exist
+# (function, not alias, so it can fall through; see CLAUDE.md zsh lessons)
+t() {
+    emulate -L zsh
+    tmux attach 2>/dev/null || tmux new-session
+}
+
+# --------------------------------------------------------------------
 # Git
 # --------------------------------------------------------------------
 alias lg="lazygit"

@@ -55,7 +55,7 @@ Within a project you'll have a few windows — worktrees, a notes window, a long
 - **Create:** `prefix c` (at the end) or **`prefix N`** (right after the current one).
 - **Move:** `prefix C-h` / `prefix C-l` for previous/next, **`prefix Tab`** for the last window, **`prefix 1`–`9`** to jump straight to one by number.
 - **Reorder:** `Shift-Left` / `Shift-Right` (no prefix) slide the current window left/right.
-- **Rename:** `prefix m`. **Close:** `prefix x`.
+- **Rename:** `prefix m`. **Close:** `prefix x` (asks to confirm — it's a whole task).
 
 ## Seeing tools side by side (panes = splits)
 
@@ -65,7 +65,7 @@ A typical task window: agent on one side, dev server on the other, a scratch she
 - **Move between panes:** `prefix h/j/k/l`, or **`Ctrl+h/j/k/l` with no prefix** (these also hop in and out of Neovim splits seamlessly).
 - **Focus one:** **`prefix z`** zooms the current pane fullscreen; `prefix z` again restores the layout.
 - **Resize:** `prefix H/J/K/L`. **Swap:** `prefix >` / `prefix <`.
-- **Reshape:** `prefix !` breaks a pane out into its own (hidden) window; `prefix @` joins that hidden pane back. **Close:** `prefix x`.
+- **Reshape:** `prefix !` breaks a pane out into its own (hidden) window; `prefix @` joins that hidden pane back. **Close:** just exit its shell (`C-d`); `prefix X` force-kills a stuck pane.
 
 ## Knowing when a background agent is done (agent-done dots)
 
@@ -85,6 +85,7 @@ It's an ambient "unread" badge, not an interrupt — glance at the bar, triage, 
 ## Quick helpers
 
 - **`prefix u`** — fuzzy-pick any URL from the visible scrollback and open it in the browser. (`Shift+Ctrl+click` opens one directly, bypassing tmux's mouse.)
+- **`prefix t`** — **theme picker**: pick a terminal theme and it switches everywhere at once — shell colors, prompt, this status bar, and Neovim (Ghostty needs a manual `⌘⇧,` reload on macOS). See `docs/theming.md`.
 - **`Ctrl+L`** — clear the screen like normal; if there's a pane to the right with nothing to clear, it jumps there instead. **`prefix C-k`** clears the screen *and* wipes scrollback.
 - **`prefix r`** — reload the tmux config after editing it.
 
@@ -115,13 +116,13 @@ Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore wh
 
 **Rename** — session `prefix M` · window `prefix m`
 
-**Close / remove** — pane or window `prefix x` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x` · break/join pane `prefix !` / `prefix @`
+**Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x` · break/join pane `prefix !` / `prefix @`
 
 **Reorder / resize / zoom** — windows `Shift-Left`/`Shift-Right` · panes `prefix >`/`prefix <` · resize `prefix H/J/K/L` · zoom `prefix z`
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom
 
-**Misc** — detach `prefix d` · reload `prefix r` · clear `Ctrl+L` / `prefix C-k` · URL picker `prefix u` · save/restore `prefix C-s`/`prefix C-r`
+**Misc** — detach `prefix d` · reload `prefix r` · theme picker `prefix t` · clear `Ctrl+L` / `prefix C-k` · URL picker `prefix u` · save/restore `prefix C-s`/`prefix C-r`
 
 **From outside tmux**
 

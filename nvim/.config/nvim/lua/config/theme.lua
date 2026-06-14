@@ -1,11 +1,6 @@
--- Resolve the active terminal theme from (in order):
---   1. $TERMINAL_THEME env var
---   2. ~/.config/terminal-theme  (single line)
---   3. flexoki_light  (default)
---
--- Shared with zsh/.config/zsh/theme.zsh and
--- claude/.claude/commands/statusline-command.sh — keep the supported
--- values list in sync across all three.
+-- Resolves the active terminal theme (env → ~/.config/terminal-theme →
+-- flexoki_light) and maps it to a colorscheme + background. The live-swap
+-- watcher in config/autocmds.lua reuses M.map. See docs/theming.md.
 
 local M = {}
 
@@ -25,8 +20,9 @@ local function resolve()
 end
 
 local map = {
-  flexoki_light    = { colorscheme = "flexoki-light", background = "light" },
-  catppuccin_mocha = { colorscheme = "catppuccin",    background = "dark"  },
+  flexoki_light    = { colorscheme = "flexoki-light",            background = "light" },
+  catppuccin_mocha = { colorscheme = "catppuccin",               background = "dark"  },
+  tailwind_light   = { colorscheme = "tailwind-light-contrast",  background = "light" },
 }
 
 M.name = resolve()
@@ -42,5 +38,8 @@ end
 
 M.colorscheme = entry.colorscheme
 M.background = entry.background
+-- exposed so the live-theme watcher (config/autocmds.lua) can resolve any
+-- theme name written to ~/.config/terminal-theme, not just the startup one.
+M.map = map
 
 return M

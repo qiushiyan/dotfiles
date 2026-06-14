@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# theme-set — switch the terminal theme across every terminal app at once.
+#
+# Single source of truth: ~/.config/terminal-theme holds one canonical name;
+# each app maps that name to its own hand-tuned palette (zsh ls-colors,
+# oh-my-posh, the Claude statusline, tmux, neovim, ghostty). This command writes
+# the name, then fans out live reloads to the apps that can take one
+# programmatically. It is UI-agnostic on purpose — the tmux `prefix t` popup,
+# the CLI, and anything later all call this same script.
+#
+#   theme-set            print the current theme + the valid names
+#   theme-set <name>     switch to <name>
+#
+# Reload is not uniform: tmux / neovim / Claude statusline update live, ghostty
+# is manual (⌘⇧, — macOS has no external config reload), shells next-launch.
+# See docs/theming.md for the full matrix and the system model.
+
+set -euo pipefail
+
+STATE="$HOME/.config/terminal-theme"
+GHOSTTY_INCLUDE="$HOME/.config/ghostty/auto/theme.ghostty"   # gitignored runtime file
+TMUX_CONF="$HOME/.config/tmux/tmux.conf"
+
+# Canonical names. Keep in sync with the per-app case statements (theme.zsh,
+# statusline-command.sh, zen.omp.json, nvim config/theme.lua, tmux.conf).
+THEMES=(flexoki_light catppuccin_mocha tailwind_light)
+
+# --- per-theme ghostty field set ---------------------------------------------
+# Emit the ghostty config line(s) a theme owns. The whole include file is
+# regenerated from this on every switch, so a key removed from a theme can never
+# linger — the clean form of "find old fields → delete → write new". Switching
+# more than the theme (e.g. a per-theme background-opacity / blur) is just extra
+# lines here; ghostty's base config keeps the shared defaults.
+ghostty_block() {
+  case "$1" in
+    flexoki_light)    printf 'theme = Flexoki Light\n' ;;
+    catppuccin_mocha) printf 'theme = Catppuccin Mocha\n' ;;
+    tailwind_light)   printf 'theme = tailwind-light-contrast\n' ;;
+  esac
+}
+
+is_valid() { local t; for t in "${THEMES[@]}"; do [ "$t" = "$1" ] && return 0; done; return 1; }
+
+current() { if [ -r "$STATE" ]; then tr -d '[:space:]' < "$STATE"; else printf '(unset)'; fi; }
+
+usage() {
+  printf 'current: %s\n' "$(current)"
+  printf 'usage:   theme-set <%s>\n' "$(IFS='|'; printf '%s' "${THEMES[*]}")"
+}
+
+# write stdin to a path atomically (temp in the same dir, then rename)
+write_atomic() {
+  local path="$1" dir tmp
+  dir="$(dirname "$path")"
+  mkdir -p "$dir"
+  tmp="$(mktemp "$dir/.theme-set.XXXXXX")"
+  cat > "$tmp"
+  mv -f "$tmp" "$path"
+}
+
+main() {
+  local name="${1:-}"
+  if [ -z "$name" ]; then usage; exit 0; fi
+  if ! is_valid "$name"; then
+    printf 'theme-set: unknown theme %q\n\n' "$name" >&2
+    usage >&2
+    exit 2
+  fi
+
+  # 1. source of truth
+  printf '%s\n' "$name" | write_atomic "$STATE"
+
+  # 2. ghostty runtime include — full regen (delete-old + write-new)
+  ghostty_block "$name" | write_atomic "$GHOSTTY_INCLUDE"
+
+  # 3. tmux: re-source the config (identical to prefix r) if a server is up
+  local tmux_msg="skipped (no server)"
+  if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
+    if tmux source-file "$TMUX_CONF" >/dev/null 2>&1; then
+      tmux_msg="reloaded"
+    else
+      tmux_msg="source-file failed"
+    fi
+  fi
+
+  # 4/5. neovim + Claude statusline self-update from the state file — no push.
+
+  printf 'theme → %s\n' "$name"
+  printf '  tmux:    %s\n' "$tmux_msg"
+  printf '  nvim:    live (file watcher)\n'
+  printf '  claude:  live (statusline re-render)\n'
+  printf '  ghostty: include written — press ⌘⇧, in ghostty to reload\n'
+  printf '  shells:  new shells inherit; run `exec zsh` to refresh this one\n'
+}
+
+main "$@"

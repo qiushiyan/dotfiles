@@ -99,6 +99,28 @@ function M.get_palette()
       pink = "#fb64b6",
       sky = "#51a2ff",
     }
+  elseif scheme:match("^tailwind%-light") then
+    return {
+      base = "#ffffff",
+      mantle = "#f1f5f9",
+      crust = "#e2e8f0",
+      surface0 = "#cad5e2",
+      surface1 = "#90a1b9",
+      surface2 = "#62748e",
+      text = "#1d293d",
+      subtext0 = "#45556c",
+      subtext1 = "#62748e",
+      overlay0 = "#90a1b9",
+      overlay1 = "#62748e",
+      blue = "#155dfc",
+      green = "#009966",
+      red = "#c70036",
+      yellow = "#e17100",
+      mauve = "#9810fa",
+      teal = "#0092b8",
+      pink = "#e60076",
+      sky = "#0084d1",
+    }
   elseif scheme:match("^flexoki") then
     local p = flexoki_palette()
     -- flexoki-cyan-50: subtle mint-cream tint, the only off-paper accent in

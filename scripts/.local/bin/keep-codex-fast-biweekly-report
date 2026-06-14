@@ -1,0 +1,36 @@
+#!/bin/zsh
+emulate -L zsh
+set -o errexit
+set -o nounset
+set -o pipefail
+
+readonly interval_seconds=$((14 * 24 * 60 * 60))
+readonly state_dir="${HOME}/Library/Application Support/CodexMaintenance"
+readonly log_dir="${HOME}/Library/Logs/CodexMaintenance"
+readonly last_run_file="${state_dir}/keep-codex-fast.last-run"
+readonly report_log="${log_dir}/keep-codex-fast-report.log"
+readonly skill_dir="${HOME}/.codex/skills/keep-codex-fast"
+
+mkdir -p "${state_dir}" "${log_dir}"
+
+now="$(date +%s)"
+last_run=0
+if [[ -r "${last_run_file}" ]]; then
+  last_run="$(<"${last_run_file}")"
+  if [[ ! "${last_run}" == <-> ]]; then
+    last_run=0
+  fi
+fi
+
+if (( now - last_run < interval_seconds )); then
+  exit 0
+fi
+
+{
+  print "== keep-codex-fast report: $(date -u '+%Y-%m-%dT%H:%M:%SZ') =="
+  cd "${skill_dir}"
+  python3 scripts/keep_codex_fast.py
+  print
+} >>"${report_log}" 2>&1
+
+print -r -- "${now}" >"${last_run_file}"

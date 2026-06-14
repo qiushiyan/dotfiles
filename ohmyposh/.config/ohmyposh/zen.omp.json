@@ -22,6 +22,16 @@
         "green": "#A6E3A1",
         "peach": "#FAB387",
         "red": "#F38BA8"
+      },
+      "tailwind_light": {
+        "os": "#62748e",
+        "closer": "p:os",
+        "pink": "#9810fa",
+        "lavender": "#9810fa",
+        "blue":  "#1447e6",
+        "green": "#009966",
+        "peach": "#e17100",
+        "red": "#c70036"
       }
     }
   },

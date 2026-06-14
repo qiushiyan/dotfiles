@@ -48,6 +48,61 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- Live theme switching. `theme-set` (the shared switcher behind tmux `prefix t`)
+-- writes the canonical name to ~/.config/terminal-theme; every running nvim
+-- watches that file and re-applies the matching colorscheme without a restart.
+-- fs_poll, not fs_event: on macOS fs_event watches the inode and goes stale on
+-- the atomic rename theme-set does, so it would only ever fire once. lazy.nvim's
+-- ColorSchemePre autoloads the matching (lazy) colorscheme plugin when
+-- :colorscheme runs, so swapping in any direction works.
+do
+  local theme = require("config.theme")
+  local state = vim.fn.expand("~/.config/terminal-theme")
+
+  local function read_name()
+    local f = io.open(state, "r")
+    if not f then
+      return nil
+    end
+    local line = (f:read("*l") or ""):gsub("%s+", "")
+    f:close()
+    return line ~= "" and line or nil
+  end
+
+  local function apply(name)
+    local entry = theme.map[name]
+    if not entry then
+      return
+    end
+    if entry.colorscheme == vim.g.colors_name then
+      return -- already on it
+    end
+    if entry.background then
+      vim.o.background = entry.background
+    end
+    pcall(vim.cmd.colorscheme, entry.colorscheme)
+  end
+
+  if vim.uv and read_name() then -- only watch if the state file exists
+    local poll = vim.uv.new_fs_poll()
+    if poll then
+      poll:start(
+        state,
+        1000,
+        vim.schedule_wrap(function(err)
+          if err then
+            return
+          end
+          local name = read_name()
+          if name then
+            apply(name)
+          end
+        end)
+      )
+    end
+  end
+end
+
 -- custom macros
 local esc = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
 vim.api.nvim_create_augroup("JSLogMacro", { clear = true })

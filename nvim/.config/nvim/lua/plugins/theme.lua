@@ -1,5 +1,6 @@
--- Colorscheme selection is driven by $TERMINAL_THEME via lua/config/theme.lua.
--- Only the matching plugin is enabled; restart Neovim after switching themes.
+-- Colorscheme plugins for each terminal theme. All are installed (the active one
+-- eager, the rest lazy) so the live-swap watcher can switch in any direction.
+-- See docs/theming.md.
 
 local theme = require("config.theme")
 
@@ -22,9 +23,11 @@ return {
   {
     "catppuccin/nvim",
     name = "catppuccin",
-    enabled = theme.name == "catppuccin_mocha",
+    -- Always installed so the live-theme watcher can swap to it; loaded eagerly
+    -- only when it's the active theme, lazily otherwise (lazy.nvim's
+    -- ColorSchemePre autoloads it the first time :colorscheme runs).
     priority = 1000,
-    lazy = false,
+    lazy = theme.name ~= "catppuccin_mocha",
     opts = {
       flavour = "mocha",
       integrations = {
@@ -39,14 +42,17 @@ return {
   {
     "kepano/flexoki-neovim",
     name = "flexoki",
-    enabled = theme.name == "flexoki_light",
+    -- Same pattern as catppuccin: always installed, eager only when active.
     priority = 1000,
-    lazy = false,
+    lazy = theme.name ~= "flexoki_light",
     init = function()
       vim.o.background = theme.background
     end,
+    -- flexoki here only ever stands in for flexoki_light, so pin the light
+    -- variant (theme.background is captured once at startup and would be wrong
+    -- if the watcher swaps in flexoki from a dark startup theme).
     opts = {
-      variant = theme.background,
+      variant = "light",
     },
     config = function(_, opts)
       require("flexoki").setup(opts)

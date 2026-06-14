@@ -71,7 +71,7 @@
   "base_keymap": "VSCode",
   "theme": {
     "mode": "light",
-    "light": "Tailwind CSS Light",
+    "light": "Tailwind CSS Light (Enhanced)",
     "dark": "Flexoki Dark"
   },
   "vim_mode": true,
