@@ -84,21 +84,22 @@ fi
 DISPLAY_DIR="${CURRENT_DIR/#$HOME\/workspace\//}"
 [[ "$DISPLAY_DIR" == "$HOME"* ]] && DISPLAY_DIR="~${DISPLAY_DIR#$HOME}"
 
-# Semantic context display — numeric percentage, colored by severity
+# Semantic context display — numeric percentage, colored by severity.
+# CTX_PLAIN mirrors the visible text (no ANSI) so we can measure width for wrapping.
 if [ "$PERCENT_USED" -lt 50 ]; then
-    CTX_DISPLAY="${GREEN}${PERCENT_USED}%${RESET}"
+    CTX_DISPLAY="${GREEN}${PERCENT_USED}%${RESET}"; CTX_PLAIN="${PERCENT_USED}%"
 elif [ "$PERCENT_USED" -lt 75 ]; then
-    CTX_DISPLAY="${YELLOW}${PERCENT_USED}%${RESET}"
+    CTX_DISPLAY="${YELLOW}${PERCENT_USED}%${RESET}"; CTX_PLAIN="${PERCENT_USED}%"
 elif [ "$PERCENT_USED" -lt 90 ]; then
-    CTX_DISPLAY="${YELLOW}ctx:high ${PERCENT_USED}%${RESET}"
+    CTX_DISPLAY="${YELLOW}ctx:high ${PERCENT_USED}%${RESET}"; CTX_PLAIN="ctx:high ${PERCENT_USED}%"
 else
-    CTX_DISPLAY="${RED}⚠ ctx:${PERCENT_USED}%${RESET}"
+    CTX_DISPLAY="${RED}⚠ ctx:${PERCENT_USED}%${RESET}"; CTX_PLAIN="⚠ ctx:${PERCENT_USED}%"
 fi
 
 # API billing indicator
-API_INDICATOR=""
+API_DISPLAY=""; API_PLAIN=""
 if [ -n "$ANTHROPIC_BASE_URL" ]; then
-    API_INDICATOR=" | ${YELLOW}API${RESET}"
+    API_DISPLAY="${YELLOW}API${RESET}"; API_PLAIN="API"
 fi
 
 # Git information - single call for all data
@@ -116,20 +117,56 @@ if [ $? -eq 0 ] && [ -n "$GIT_OUTPUT" ]; then
       END { print s, u, q }
     ')"
 
-    # Build git status string - only show non-zero counts
-    GIT_STATUS=""
-    [ "$STAGED" -gt 0 ] 2>/dev/null && GIT_STATUS="${GIT_STATUS}${GREEN}+${STAGED}${RESET} "
-    [ "$UNSTAGED" -gt 0 ] 2>/dev/null && GIT_STATUS="${GIT_STATUS}${YELLOW}~${UNSTAGED}${RESET} "
-    [ "$UNTRACKED" -gt 0 ] 2>/dev/null && GIT_STATUS="${GIT_STATUS}?${UNTRACKED} "
-    GIT_STATUS="${GIT_STATUS% }"  # trim trailing space
+    # Build git status string - only show non-zero counts. GIT_PLAIN mirrors the
+    # visible text (no ANSI) so the wrapper can measure its width.
+    GIT_STATUS=""; GIT_PLAIN=""
+    [ "$STAGED" -gt 0 ] 2>/dev/null && { GIT_STATUS="${GIT_STATUS}${GREEN}+${STAGED}${RESET} "; GIT_PLAIN="${GIT_PLAIN}+${STAGED} "; }
+    [ "$UNSTAGED" -gt 0 ] 2>/dev/null && { GIT_STATUS="${GIT_STATUS}${YELLOW}~${UNSTAGED}${RESET} "; GIT_PLAIN="${GIT_PLAIN}~${UNSTAGED} "; }
+    [ "$UNTRACKED" -gt 0 ] 2>/dev/null && { GIT_STATUS="${GIT_STATUS}?${UNTRACKED} "; GIT_PLAIN="${GIT_PLAIN}?${UNTRACKED} "; }
+    GIT_STATUS="${GIT_STATUS% }"; GIT_PLAIN="${GIT_PLAIN% }"  # trim trailing space
+fi
 
-    if [ -n "$GIT_STATUS" ]; then
-        printf "${LAVENDER}%s${RESET} | ${PINK}%s${RESET} | %s | %s%s" \
-            "$DISPLAY_DIR" "$BRANCH" "$CTX_DISPLAY" "$GIT_STATUS" "$API_INDICATOR"
-    else
-        printf "${LAVENDER}%s${RESET} | ${PINK}%s${RESET} | %s%s" \
-            "$DISPLAY_DIR" "$BRANCH" "$CTX_DISPLAY" "$API_INDICATOR"
-    fi
+# Assemble the line as ordered segments, each carrying its colored form and its
+# plain (visible) text. render_segments decides between one line and wrapping.
+SEG_COLORED=(); SEG_PLAIN=()
+add_seg() { [ -n "$2" ] && { SEG_COLORED+=("$1"); SEG_PLAIN+=("$2"); }; }
+
+add_seg "${LAVENDER}${DISPLAY_DIR}${RESET}" "$DISPLAY_DIR"
+add_seg "${PINK}${BRANCH}${RESET}" "$BRANCH"
+add_seg "$CTX_DISPLAY" "$CTX_PLAIN"
+add_seg "$GIT_STATUS" "$GIT_PLAIN"
+add_seg "$API_DISPLAY" "$API_PLAIN"
+
+# Greedy-wrap segments to the pane width. Claude Code sets $COLUMNS to the
+# terminal/pane width before invoking us (v2.1.153+); when it's absent or the
+# whole line fits, we emit a single row identical to the pre-wrap behavior. A
+# lone segment wider than the pane still overflows — accepted, not fought.
+SEP=" | "; SEPLEN=3
+COLS="${COLUMNS:-0}"
+n=${#SEG_PLAIN[@]}
+
+total=0
+for ((i=0; i<n; i++)); do total=$(( total + ${#SEG_PLAIN[i]} )); done
+[ "$n" -gt 0 ] && total=$(( total + (n-1)*SEPLEN ))
+
+if [ "$COLS" -le 0 ] || [ "$total" -le "$COLS" ]; then
+    out=""
+    for ((i=0; i<n; i++)); do
+        [ "$i" -gt 0 ] && out="${out}${SEP}"
+        out="${out}${SEG_COLORED[i]}"
+    done
+    printf '%s' "$out"
 else
-    printf "${LAVENDER}%s${RESET} | %s%s" "$DISPLAY_DIR" "$CTX_DISPLAY" "$API_INDICATOR"
+    out=""; line=""; linelen=0
+    for ((i=0; i<n; i++)); do
+        seglen=${#SEG_PLAIN[i]}
+        if [ -z "$line" ]; then
+            line="${SEG_COLORED[i]}"; linelen=$seglen
+        elif [ $(( linelen + SEPLEN + seglen )) -le "$COLS" ]; then
+            line="${line}${SEP}${SEG_COLORED[i]}"; linelen=$(( linelen + SEPLEN + seglen ))
+        else
+            out="${out}${line}"$'\n'; line="${SEG_COLORED[i]}"; linelen=$seglen
+        fi
+    done
+    printf '%s' "${out}${line}"
 fi
