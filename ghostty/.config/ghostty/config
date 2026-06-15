@@ -11,7 +11,7 @@ background-blur-radius = 25
 # font-family = DankMono Nerd Font Mono
 
 
-font-family = SF Mono
+font-family = Berkeley Mono
 font-size = 22
 font-thicken = true
 adjust-cell-width = -2%
@@ -43,8 +43,8 @@ macos-titlebar-style = hidden
 window-width = 130
 window-height = 27
 window-padding-balance = true
-window-padding-x = 2
-window-padding-y = 2
+window-padding-x = 4
+window-padding-y = 4
 window-save-state = always
 window-colorspace = "display-p3"
 

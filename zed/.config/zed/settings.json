@@ -79,7 +79,7 @@
 
   "current_line_highlight": "line",
   "ui_font_size": 19.0,
-  "buffer_font_size": 20.0,
+  "buffer_font_size": 21.0,
   "agent_ui_font_size": 21.0,
   "cursor_blink": false,
   "vertical_scroll_margin": 5,

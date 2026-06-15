@@ -152,12 +152,12 @@ hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
 
 [marketplaces.openai-bundled]
-last_updated = "2026-06-13T13:58:37Z"
+last_updated = "2026-06-15T13:28:48Z"
 source_type = "local"
 source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-06-02T11:17:57Z"
+last_updated = "2026-06-15T14:16:59Z"
 source_type = "local"
 source = "/Users/qiushi/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -183,6 +183,9 @@ enabled = true
 enabled = true
 
 [plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
 enabled = true
 
 [tui.model_availability_nux]
