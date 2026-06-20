@@ -65,17 +65,22 @@ either `gh pr view --web` or reuse the worktree create path with the PR's branch
 
 ## B. Standalone one-offs
 
-### Hint copy (tmux-thumbs)
+### Hint copy (tmux-fingers)
 
 **What:** press a key and every file path / git SHA / URL / `line:col` on screen
 gets a letter label; type it to copy. A generalization of the existing `prefix u`
-URL picker.
+URL picker. (Distinct from `easyjump.tmux` on `prefix s`, which labels matches of
+a *typed search string* to move the cursor — flash.nvim-style. Hint-copy labels
+*pattern tokens* with no search and is copy-, not navigation-, oriented.)
 
 **Why:** grab paths, SHAs, and error locations out of agent/test output without
 the mouse.
 
-**Mechanism:** install `fcsonline/tmux-thumbs` (Rust, fast) via TPM; configure
-match regexes and keys.
+**Mechanism:** install `Morantron/tmux-fingers` (Crystal) via TPM; configure match
+regexes and keys. (Chosen over the once-default `fcsonline/tmux-thumbs`: as of
+2026-06 fingers leads on stars (1.4k vs 1.1k), was updated this month vs ~2yr
+stale, and carries 8 open issues vs 48 — the "thumbs = the modern Rust rewrite"
+framing has inverted.)
 
 **Depends on:** nothing.
 
