@@ -82,6 +82,15 @@ It's an ambient "unread" badge, not an interrupt — glance at the bar, triage, 
 - Scroll: `C-u`/`C-d` (10 lines), `j`/`k` (one line), `gg`/`G` (top/bottom), `/` to search forward.
 - Select + copy: `v` start selection, `C-v` rectangle, `H`/`L` to line start/end, `y` to copy and exit.
 
+## Jumping to a string on screen (flash-style)
+
+When you can *see* the word you want — a path, a SHA, a function name — `prefix s` gets the cursor there without scrolling or stepping through `/` matches.
+
+- **`prefix s`** dims the pane; start typing the target and every match gets a letter label *live as you type*. Press a label to jump the copy-mode cursor onto that match (it starts a selection, so `y` copies). The nearest match is tinted differently and is also reachable with **`Enter`**. Type more to narrow; **`Esc`** cancels. If your typing leaves a single match, it jumps automatically.
+- **`C-s`** does the same from *inside* copy mode, so it composes with `prefix [`.
+
+A vendored, flash.nvim-style tool in `scripts/easyjump/` (see its `DESIGN.md`) — distinct from `prefix u`, which only grabs URLs.
+
 ## Quick helpers
 
 - **`prefix u`** — fuzzy-pick any URL from the visible scrollback and open it in the browser. (`Shift+Ctrl+click` opens one directly, bypassing tmux's mouse.)
@@ -121,6 +130,8 @@ Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore wh
 **Reorder / resize / zoom** — windows `Shift-Left`/`Shift-Right` · panes `prefix >`/`prefix <` · resize `prefix H/J/K/L` · zoom `prefix z`
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom
+
+**Jump (flash-style)** — `prefix s` (or `C-s` in copy mode) → type to search · label to jump · `Enter` nearest · `Esc` cancel
 
 **Misc** — detach `prefix d` · reload `prefix r` · theme picker `prefix t` · clear `Ctrl+L` / `prefix C-k` · URL picker `prefix u` · save/restore `prefix C-s`/`prefix C-r`
 
