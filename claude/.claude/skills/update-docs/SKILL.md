@@ -1,8 +1,6 @@
 ---
 name: update-docs
-description: Update relevant documentations
-user-invocable: true
-disable-model-invocation: true
+description: Update a project's documentation after a change lands, so the docs still give a senior engineer the mental model of the system. Use when the user wants docs updated to reflect recent or shipped changes, or brought back in line with the code. Defers to a repo's own update-docs skill or documentation-standards.md when present.
 allowed-tools: Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git merge-base:*), Bash(git symbolic-ref:*), Bash(git show-ref:*), Bash(git branch:*), Read, Write, Edit, Glob, Grep, Agent
 ---
 
@@ -90,7 +88,7 @@ The user may adjust scope, skip docs, or add areas you missed.
 
 ## Step 5 — Update the docs
 
-Apply the writing and consolidation standards below. The key rule: **adding content is an opportunity to simplify** — for every doc you touch, remove redundancy, merge overlap, and tighten the flow rather than only appending. When a forward-looking spec ships, fold its surviving decisions into the durable doc (present tense), then prune the spec. When the change alters the system's shape, update the structure map / file index and any always-loaded mental-model file.
+Write the updates from your confirmed plan, applying the **Documentation standards** below. Two rules carry this step — apply them as defined there: **consolidation** (every doc you touch gets tighter, not just longer) and **distillation** (a shipped spec's surviving decisions fold into the durable doc, then the spec is pruned). When the change alters the system's shape, also update the structure map / file index and any always-loaded mental-model file.
 
 ## Step 6 — Verify
 

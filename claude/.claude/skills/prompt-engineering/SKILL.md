@@ -1,7 +1,7 @@
 ---
 name: prompt-engineering
 disable-model-invocation: true
-description: Principles for designing and improving prompts and agent system prompts, the context an agent works from (what to load, when, and how to keep the window lean), and the tools/functions it calls (names, descriptions, schemas, results, errors). Use when writing or refining a prompt or instruction block, deciding what context to put in the window, designing or reviewing an agent's tool surface, shaping tool outputs or error messages, or adding LLM-friendly nudges and mini-context. Provider-agnostic; written for modern reasoning models.
+description: Reference for designing and improving prompts, agent context, and tool surfaces — written for how a model reads, not how a human documents.
 ---
 
 # Prompt engineering
@@ -21,7 +21,7 @@ This guide is organized around the three things you shape when you build with a 
 - **Context engineering** — what the model *knows* this turn.
 - **Tool design** — what the model can *do*.
 
-> **A note on delimiters.** Examples below use XML-style tags (`<context>…</context>`), which are a natural fit for Claude. Markdown headings and fenced blocks work just as well — pick one convention and stay consistent. On most tasks the choice makes little practical difference; the rule that matters is that you delimit clearly, not which characters you use.
+> **A note on delimiters.** Examples below use XML-style tags (`<context>…</context>`); Markdown headings and fenced blocks work just as well. What matters is that you delimit content clearly and stay consistent — not which characters you use.
 
 ---
 
