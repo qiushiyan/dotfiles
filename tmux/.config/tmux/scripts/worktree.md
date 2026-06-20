@@ -42,18 +42,82 @@ The workflow this serves:
    (switch/remove) needs a list → fzf. Creation needs free text → we reuse fzf's
    own query (`--print-query`) instead of a second prompt, keeping everything on
    one surface. The cost is the output-parsing contract noted below.
-3. **Lean on git's built-in safety, then confirm.** `git worktree remove` already
+   - **`enter` switches *or* creates.** It accepts the highlighted row, but if the
+     typed query matched **nothing** (fzf returns exit 1 with an empty selection
+     but still echoes the query), `enter` falls through to create-from-query — so
+     typing a brand-new name and pressing enter Just Works. We deliberately do
+     *not* override fzf's highlight: when the query still fuzzy-matches an existing
+     worktree (e.g. `min` matches `main`), `enter` switches to that match and
+     `ctrl-n` is the **force-create** escape hatch that ignores the highlight.
+     This keeps `enter` predictable — it always honors what's visibly selected.
+3. **Switch/create exit, remove loops.** The pick-and-dispatch runs in a `while`
+   loop. `switch` and `create` are *terminal* (you want to land in that window, so
+   they `exit` and the `-E` popup closes). `remove` (`ctrl-x`) is an *in-popup*
+   operation — it returns to a **refreshed** list (the just-removed entry gone) so
+   you can remove more or pick again, rather than ejecting you on every delete. A
+   *failed* create also loops back (showing its error) instead of closing, which
+   is why `create_worktree` returns a real 0/1 status the dispatcher branches on.
+   `esc`/`ctrl-c` (fzf exit 130) is the only thing that breaks the loop from the
+   list — keep that escape hatch intact or the popup becomes a trap.
+4. **Lean on git's built-in safety, then confirm.** `git worktree remove` already
    refuses a dirty worktree; we surface that and only `--force` after an explicit
    second confirm. Don't reimplement safety git already gives you. Destructive
    actions always confirm; the main worktree is never removable.
-4. **The script talks back to tmux via the CLI.** Inside the popup it calls
+5. **The script talks back to tmux via the CLI.** Inside the popup it calls
    `tmux new-window / select-window / kill-window`. The session is **self-detected**
    via `tmux display-message` (NOT passed as an arg — `display-popup` doesn't
    expand `#{...}` in its command, so an arg would arrive literally), and `$PWD`
    is the repo because the binding opens the popup there with `-d`.
-5. **Create does only the create.** Make the worktree (branch forked from the
-   repo's default branch) and open its window — no post-creation commands (no
-   `pnpm install`, no `.env` copy). Keep it that way unless asked.
+6. **Post-creation work runs in the new window, never in the popup.** Create
+   makes the worktree (branch forked from the repo's default branch), opens its
+   window, and — for a Node project — kicks off a dependency install. The install
+   is sent into the **new window** with `send-keys` (targeted by `#{window_id}`,
+   not name), so it runs *visibly* where you land and you can `Ctrl-C` it; it does
+   **not** run inside the script, which would freeze the modal popup for the whole
+   install. The package manager is read from the committed lockfile
+   (`pnpm-lock.yaml`/`package-lock.json`/`yarn.lock`/`bun.lock*`) so we never
+   clobber an npm repo with a pnpm lockfile, defaulting to `pnpm` (repo
+   convention) when there's none. On by default; disable with
+   `tmux set -g @worktree_auto_install off`.
+   - **Sync vs async split.** The rule above is about *slow* work: a multi-minute
+     install must not block the popup, so it goes async into the window. *Fast,
+     must-happen-first* work — the gitignored-file seed (guideline 7) — runs
+     **synchronously in the script** instead, so those files are on disk before
+     the install (which may need `.npmrc`/`.env`) starts. Match the mechanism to
+     the cost: cheap+prerequisite → sync in script; slow → async via `send-keys`.
+7. **Seed gitignored files _and dirs_ from the main worktree.** A fresh checkout
+   omits ignored paths (`.env*`, `scripts.local/`, …), so create copies them in
+   from the **main** worktree (`maybe_copy_files`). Key choices:
+   - **Pattern list** is `@worktree_copy_globs` (space/newline-separated; default
+     `.env* .npmrc scripts.local`; `off`/`none` to disable). Patterns match an
+     entry's **basename**, so `.env*` catches env files at *any depth*
+     (`application/.env.development.local`) and `scripts.local` matches that ignored
+     directory; each match is recreated at the same relative path — a **matched
+     directory is copied whole** (`cp -pR`). Depth-independence is the whole point,
+     since these often live in a subdir, not the repo root.
+     `.npmrc` is in the default because the ignored-only scope makes it free: a
+     *tracked* `.npmrc` (the common case — registry config) already rides the
+     checkout and is never touched here, so it only acts on a *gitignored*,
+     token-bearing `.npmrc`, which is exactly the one a fresh worktree's install
+     would otherwise miss. (Auth tokens kept in `~/.npmrc` are global and need no
+     copy either way.)
+   - **Scope is git-IGNORED paths only** (`git ls-files -oi --exclude-standard`).
+     That's deliberately exactly "what `worktree add` left behind": never tracked
+     paths (already checked out) nor untracked-but-unignored WIP. Consequence: a
+     pattern that targets a *non-ignored* untracked file won't copy it — fine for
+     env/secret files and local script dirs, which are gitignored.
+   - **`--directory` is load-bearing, and the PATTERN is now the only gate.**
+     Without `--directory`, `ls-files -oi` descends into `node_modules/` and lists
+     every `.env` inside it (dependencies ship them) — a copy explosion.
+     `--directory` collapses each wholly-ignored dir to one `dir/` entry; we strip
+     the trailing slash, match its basename, and `cp -pR` it **only if it matches**.
+     That's why `scripts.local` gets copied but `node_modules`/`dist` don't — they
+     simply don't match. There is no longer a `[ -f ]` safety net excluding all
+     dirs, so **keep the default patterns specific**: a broad glob (e.g. `*`) would
+     now drag in whole ignored directories. Don't remove `--directory`.
+   - **Source = main worktree, always**, even if you launched the popup from a
+     linked worktree — the main checkout is the canonical home for these files.
+     Perms are preserved (`cp -pR`; env files are often mode 600, scripts +x).
 
 ## Gotchas / watch-outs (read before editing)
 
@@ -62,6 +126,12 @@ The workflow this serves:
   `enter`), line 3 = selected row. Adding/removing either flag — or any other
   flag that adds output lines — shifts these and silently breaks dispatch. If you
   touch the fzf invocation, re-check the parser.
+- **Only exit 130 is special; exit 1 is normal here.** fzf returns **1** ("no
+  match") when you press `enter`/`ctrl-n` on a query that filtered the list to
+  empty — but it *still* prints the query on line 1, which is exactly what the
+  create-on-`enter` path needs. So the script gates *only* on `130` (esc/ctrl-c →
+  close popup) and treats every other code as "parse and dispatch". Don't add an
+  `exit` on code 1 — it would kill create-from-a-new-name. (Verified on fzf 0.73.)
 - **The popup stays interactive after fzf exits.** fzf uses `/dev/tty`, returns,
   and the script keeps running on the same terminal — that's why the `read`
   confirmations work. `-E` on `display-popup` closes the popup when the *script*
@@ -96,9 +166,16 @@ The workflow this serves:
   clone without `origin/HEAD` set falls through the chain — if a new worktree
   forks from the wrong base, that chain is the first place to look
   (`git remote set-head origin -a` fixes a missing `origin/HEAD`).
-- **Create is intentionally bare** — no `pnpm install`, no `.env` copy, no agent
-  launch. If you re-add any post-creation step, prefer doing it visibly in the new
-  window (`send-keys`) over blocking the popup, and keep it opt-in.
+- **Create's only post-creation step is the dependency install** (Node projects;
+  see guideline 6) — still no `.env` copy, no agent launch. The install is fired
+  with `send-keys` into the new window, *after* `new-window` returns its
+  `#{window_id}` — so a slow `pnpm install` never blocks the popup, and the
+  command lands in the right window even if two branches sanitize to the same
+  name. There's a small inherent race (keys are sent the instant the window's
+  shell spawns); tmux buffers them to the pane's pty, so they run once the shell's
+  line editor is ready — don't "fix" it with a blocking `sleep` in the script.
+  Any new post-creation step should follow the same pattern (visible, non-blocking,
+  toggleable).
 - **Version + reload mechanics.** Needs tmux 3.2+ (`display-popup`); 3.3+ for
   `-e`. Because the script is stow-symlinked, **edits to it are live
   immediately**, but edits to the **binding** in `tmux.conf` need a config reload

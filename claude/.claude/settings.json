@@ -3,6 +3,7 @@
     "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"
   },
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "mcp__pencil"
     ]
@@ -63,7 +64,8 @@
     "superpowers@claude-plugins-official": false,
     "codex@openai-codex": true,
     "impeccable@impeccable": true,
-    "vercel@claude-plugins-official": true
+    "vercel@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "impeccable": {
