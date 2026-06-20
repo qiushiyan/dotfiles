@@ -646,22 +646,22 @@ def assign_labels(
     ranked: typing.List[int],
     previous: typing.Dict[int, str],
 ) -> typing.List[str]:
-    # Assign single-char labels nearest-first, with two flash refinements:
-    #   * skip ranked[0] — the nearest match is the Enter target, so it needs no
-    #     label (frees a label char and declutters the likeliest target); and
-    #   * reuse a match's previous label when it's still available, so labels
-    #     stay put as the query narrows instead of reshuffling under the user.
+    # Assign single-char labels nearest-first. Every match gets a label,
+    # including the nearest one — like flash's label.current: a match you can see
+    # always has a key to jump to it, and Enter is just a shortcut to the nearest
+    # (which also carries the distinct "current" highlight). Reuse a match's
+    # previous label when it's still available so labels stay put as the query
+    # narrows instead of reshuffling under the user.
     assigned = [""] * len(positions)
-    targets = ranked[1:]  # ranked[0] is the Enter target
     pool_set = set(labels)
     taken: typing.Set[str] = set()
-    for idx in targets:
+    for idx in ranked:
         prev = previous.get(positions[idx].offset)
         if prev and prev in pool_set and prev not in taken:
             assigned[idx] = prev
             taken.add(prev)
     fresh = (label for label in labels if label not in taken)
-    for idx in targets:
+    for idx in ranked:
         if assigned[idx] == "":
             label = next(fresh, "")
             if label == "":
@@ -703,13 +703,13 @@ def interactive(screen: Screen) -> typing.Optional[Position]:
             current_idx = ranked[0] if ranked else -1
             if AUTOJUMP and len(positions) == 1 and not just_deleted:
                 return positions[0]
-            if len(positions) > 1:
+            if positions:
                 excluded = continuation_chars(screen.raw, positions, len(query))
                 alphabet = [c for c in LABEL_CHARS if c.lower() not in excluded]
-                labels = generate_labels(alphabet, len(ranked) - 1)
+                labels = generate_labels(alphabet, len(positions))
                 assigned = assign_labels(labels, positions, ranked, previous)
             else:
-                assigned = [""] * len(positions)
+                assigned = []
             previous = {
                 positions[i].offset: assigned[i]
                 for i in range(len(positions))

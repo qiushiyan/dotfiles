@@ -58,11 +58,13 @@ and logs stderr to `$TMPDIR/tmux-easyjump.log`.
   the search vs. pick a label). Labels are **single-character only**: matches
   beyond the alphabet go unlabelled and you narrow by typing (flash's
   philosophy) — this keeps a keypress unambiguous and stops a label from
-  overdrawing an adjacent match. Three flash refinements: nearest matches get
-  labels first (`rank_positions`); the **nearest match is left unlabelled** (it
-  is the `Enter` target, which frees a label and declutters it); and a match
-  **reuses its previous label** across keystrokes when still available, so labels
-  don't reshuffle as you narrow.
+  overdrawing an adjacent match. Two flash refinements: nearest matches get
+  labels first (`rank_positions`), and a match **reuses its previous label**
+  across keystrokes when still available, so labels don't reshuffle as you
+  narrow. **Every** match is labelled, including the nearest (flash's
+  `label.current`): the nearest additionally carries the distinct "current"
+  highlight and `Enter` is a shortcut to it — but it still has its own label, so
+  a match you can see always has a key to jump to it.
 - **Render** (`Screen.render`): a calm grey **backdrop**, the typed substring
   **highlighted**, the nearest match (the `Enter` target) in a **distinct**
   colour, and a **label** overlaid on each labelled match.
