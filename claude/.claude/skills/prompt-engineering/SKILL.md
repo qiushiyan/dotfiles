@@ -1,6 +1,5 @@
 ---
 name: prompt-engineering
-disable-model-invocation: true
 description: Reference for designing and improving prompts, agent context, and tool surfaces — written for how a model reads, not how a human documents.
 ---
 
@@ -11,15 +10,15 @@ Distilled, provider-agnostic guidance for two jobs that share one rulebook:
 1. **Writing** a new prompt, instruction block, or tool definition.
 2. **Improving** an existing one.
 
-The principles are the same either way. When writing, use them as a design guide. When improving, use them as a defect lens — read the target against the principles and the [Common defects](#common-defects-the-improvement-lens) list, then propose each change *with the reason it helps*. The [Before → after](#before--after) section shows the move on concrete examples. There is no hard line between the two jobs; improving is just writing with a draft already in front of you.
+The principles are the same either way. When writing, use them as a design guide. When improving, use them as a defect lens — read the target against the principles and the [Common defects](#common-defects-the-improvement-lens) list, then propose each change _with the reason it helps_. The [Before → after](#before--after) section shows the move on concrete examples. There is no hard line between the two jobs; improving is just writing with a draft already in front of you.
 
 **The reader of every word you write is the model.** Optimize for how a model reads, not for how a human documents a system.
 
 This guide is organized around the three things you shape when you build with a model — and you rarely touch one without the others:
 
-- **Prompt design** — how the model should *behave*.
-- **Context engineering** — what the model *knows* this turn.
-- **Tool design** — what the model can *do*.
+- **Prompt design** — how the model should _behave_.
+- **Context engineering** — what the model _knows_ this turn.
+- **Tool design** — what the model can _do_.
 
 > **A note on delimiters.** Examples below use XML-style tags (`<context>…</context>`); Markdown headings and fenced blocks work just as well. What matters is that you delimit content clearly and stay consistent — not which characters you use.
 
@@ -29,11 +28,11 @@ This guide is organized around the three things you shape when you build with a 
 
 These five carry the rest. Most specific rules are a corollary of one of them.
 
-- **Write for the model, not the developer.** The most common defect is developer-facing framing leaking into model-facing text — architecture commentary, mechanism explanations, implementation rationale. The model doesn't need to know *how the system works*; it needs to know *what to do*. Read each line and ask: does this tell the model what to do, or explain how the plumbing works? If the latter, cut it or rewrite it as an action.
-- **Explain the why.** A model generalizes from a reason far better than from a bare rule — it will apply the intent to cases you never anticipated. A constraint stated as a bare prohibition invites creative violation; the same constraint stated as a framework *with its motivation* becomes part of how the model reasons.
+- **Write for the model, not the developer.** The most common defect is developer-facing framing leaking into model-facing text — architecture commentary, mechanism explanations, implementation rationale. The model doesn't need to know _how the system works_; it needs to know _what to do_. Read each line and ask: does this tell the model what to do, or explain how the plumbing works? If the latter, cut it or rewrite it as an action.
+- **Explain the why.** A model generalizes from a reason far better than from a bare rule — it will apply the intent to cases you never anticipated. A constraint stated as a bare prohibition invites creative violation; the same constraint stated as a framework _with its motivation_ becomes part of how the model reasons.
 - **Minimal but complete.** Aim for the smallest set of information that fully specifies the behavior you want — nothing redundant, nothing missing. Minimal does not mean short; it means no padding. Over-specification breeds brittleness and overtriggering; under-specification yields generic output.
 - **Everything is prompt surface.** Tool names, parameter names, descriptions, result text, and error messages all consume the model's attention and steer its behavior. Treat them with the same care as the system prompt.
-- **The cold-reader test.** The artifact you write is read *standalone* — by a model that has none of your conversation: not the problem you've been solving, the system you've been building, or the code tour you just took. That context is yours, not the file's. So anchor the basics before the specifics — what this thing is, the system it's part of, what it's for — then check: if a fresh reader saw *only* this, would they know what it is and what to do? The trap is sharpest exactly when your own context is richest, which is when you're most likely to be authoring.
+- **The cold-reader test.** The artifact you write is read _standalone_ — by a model that has none of your conversation: not the problem you've been solving, the system you've been building, or the code tour you just took. That context is yours, not the file's. So anchor the basics before the specifics — what this thing is, the system it's part of, what it's for — then check: if a fresh reader saw _only_ this, would they know what it is and what to do? The trap is sharpest exactly when your own context is richest, which is when you're most likely to be authoring.
 
 ---
 
@@ -43,28 +42,28 @@ How the model should behave.
 
 ### Structure and placement
 
-- **Long content first, the task last.** Put documents, templates, and other longform context at the *top*; put the instruction/question in a block at the *end*. Models attend most reliably to the beginning and end of a context and degrade on material buried in the middle, so a load-bearing instruction must not live mid-context. On long multi-document inputs this ordering measurably improves quality.
+- **Long content first, the task last.** Put documents, templates, and other longform context at the _top_; put the instruction/question in a block at the _end_. Models attend most reliably to the beginning and end of a context and degrade on material buried in the middle, so a load-bearing instruction must not live mid-context. On long multi-document inputs this ordering measurably improves quality.
 - **Delimit content types** so data is unambiguous from instructions. Use descriptive tags; nest when the content is hierarchical.
 - A reliable order for a system prompt: **role/context → task → detailed instructions → output format.**
 
 ### Be specific and concrete
 
 - **State the output contract** — format, length, style, what "done" looks like. The less the model has to guess, the more likely you get what you want. If you want it to go above and beyond, say so explicitly; it won't infer ambition.
-- **For behavioral instructions, specify trigger + action + skip condition** — *when* it should fire, *what* to do, and *when not to*. The skip condition is what prevents overtriggering, and is the part people forget.
+- **For behavioral instructions, specify trigger + action + skip condition** — _when_ it should fire, _what_ to do, and _when not to_. The skip condition is what prevents overtriggering, and is the part people forget.
 - **Cut generic directives.** "Be helpful," "be proactive," "ask good questions" are noise — the model already tries to do these. If you can't name the trigger, the action, and the skip condition, the instruction isn't ready to add.
 
 ### Framework over prohibition; positive over negative
 
-- **Prefer the positive path.** Tell the model what *to do*, not what to avoid. Negation forces the model to first surface the very concept it's meant to suppress (the "pink elephant" problem), and larger models can actually do *worse* on negated instructions. Reframe "don't ask generic questions" as "ask only when you can name the concrete decision that hinges on the answer."
-- **Reserve `never`/`do not` for hard safety boundaries** — destructive commands, data loss — where a positive rephrase would be vaguer and the cost of violation is severe. Negation as the *primary* steering mechanism is fragile; a prompt full of "do not" reads like a list of things the model now knows it *could* do.
+- **Prefer the positive path.** Tell the model what _to do_, not what to avoid. Negation forces the model to first surface the very concept it's meant to suppress (the "pink elephant" problem), and larger models can actually do _worse_ on negated instructions. Reframe "don't ask generic questions" as "ask only when you can name the concrete decision that hinges on the answer."
+- **Reserve `never`/`do not` for hard safety boundaries** — destructive commands, data loss — where a positive rephrase would be vaguer and the cost of violation is severe. Negation as the _primary_ steering mechanism is fragile; a prompt full of "do not" reads like a list of things the model now knows it _could_ do.
 
 ### Calibrate emphasis
 
-Dial back `CRITICAL:`, `you MUST`, ALL-CAPS, "exactly once." Modern models are highly instruction-responsive and *overtrigger* on aggressive emphasis — language meant to fix undertriggering on older models now backfires. Write normal imperatives. Reserve strong language for a genuine hard constraint backed by a real, observed failure mode — not as precaution.
+Dial back `CRITICAL:`, `you MUST`, ALL-CAPS, "exactly once." Modern models are highly instruction-responsive and _overtrigger_ on aggressive emphasis — language meant to fix undertriggering on older models now backfires. Write normal imperatives. Reserve strong language for a genuine hard constraint backed by a real, observed failure mode — not as precaution.
 
 ### Right altitude
 
-- Write **strong heuristics, not brittle if-else logic, and not vague platitudes.** Encode the expert *strategy*; leave the model judgment room where you don't actually care about the specifics. "Think carefully about whether the loop has converged before continuing" beats a hand-authored decision tree — and survives cases the tree didn't foresee.
+- Write **strong heuristics, not brittle if-else logic, and not vague platitudes.** Encode the expert _strategy_; leave the model judgment room where you don't actually care about the specifics. "Think carefully about whether the loop has converged before continuing" beats a hand-authored decision tree — and survives cases the tree didn't foresee.
 - **Prefer general instructions over prescriptive step lists.** Use numbered steps only when order or completeness genuinely matters.
 
 ### Examples (few-shot)
@@ -96,26 +95,26 @@ This guide targets modern reasoning models, and many prompts drive an agent acro
 
 What the model knows this turn. Instructions tell it how to behave and tools say what it can do; context is the information you place in — and keep out of — its window. **The window is a finite budget, not free space**, and the most common agent failure is not clumsy wording but the right information missing, or buried under noise.
 
-- **Treat the window as a finite budget.** Aim for the smallest set of high-signal tokens that does the job. Model quality degrades as the window fills — measurably, and often well before the advertised limit (*context rot*) — so padding "just in case" actively hurts. More context is not safer context.
+- **Treat the window as a finite budget.** Aim for the smallest set of high-signal tokens that does the job. Model quality degrades as the window fills — measurably, and often well before the advertised limit (_context rot_) — so padding "just in case" actively hurts. More context is not safer context.
 - **Load just-in-time.** Hold lightweight references — file paths, IDs, queries — and pull full content at runtime via tools, instead of pre-loading everything you might need. Metadata (names, directory structure, timestamps) is high-signal navigation in its own right.
 - **Disclose progressively.** Load in tiers: a lightweight menu or index first, full detail only when the task matches it. (Same shape as a phase-scoped tool menu, or the `note` in a tool result — show what's relevant now, keep identifiers for the rest.)
-- **Place for attention; keep the prefix stable.** Put high-signal material and the live task where the model attends best — the edges, not the middle (see [Structure and placement](#structure-and-placement)). Keep the prompt *prefix* stable and let variable, per-request content ride at the end, so the cache hits the static portion and you don't pay to re-read it every turn.
-- **Externalize state; compact at the boundary.** For work that spans many turns or survives compaction, keep state in durable artifacts *outside* the window — a plan/todo file, structured JSON for status, git for checkpoints — and read enough back on a fresh window to continue. As the window fills, summarize and reinitialize: preserve decisions, open problems, and load-bearing detail; drop redundant tool output. Tell the agent its context is managed automatically so it doesn't wrap up early to save budget.
+- **Place for attention; keep the prefix stable.** Put high-signal material and the live task where the model attends best — the edges, not the middle (see [Structure and placement](#structure-and-placement)). Keep the prompt _prefix_ stable and let variable, per-request content ride at the end, so the cache hits the static portion and you don't pay to re-read it every turn.
+- **Externalize state; compact at the boundary.** For work that spans many turns or survives compaction, keep state in durable artifacts _outside_ the window — a plan/todo file, structured JSON for status, git for checkpoints — and read enough back on a fresh window to continue. As the window fills, summarize and reinitialize: preserve decisions, open problems, and load-bearing detail; drop redundant tool output. Tell the agent its context is managed automatically so it doesn't wrap up early to save budget.
 
 ---
 
 ## Steer at the right surface
 
-The system prompt is not the only — or always the best — place to steer behavior. It's read once, early; by the time the model is on its fifth tool call, the system prompt is far away in context. A behavior that must happen *at a specific moment* is more reliably driven by a nudge that lands at that moment.
+The system prompt is not the only — or always the best — place to steer behavior. It's read once, early; by the time the model is on its fifth tool call, the system prompt is far away in context. A behavior that must happen _at a specific moment_ is more reliably driven by a nudge that lands at that moment.
 
 Use each surface for what it does best, and **keep one source of truth per behavior** — if the same rule appears in the system prompt, a tool description, and a result, the model reads all three, may overtrigger, and the copies drift when one is updated.
 
-| Surface | Best for | The question it answers |
-|---|---|---|
-| System prompt | General principles, posture, durable policy | "How should I approach this in general?" |
-| Tool description | That tool's mechanics, when/when-not to call it | "How do I use this specific tool?" |
-| Tool result text | Moment-specific nudges (see below) | "What should I do right now, given what just happened?" |
-| Subagent output format | What the parent gets to act on | "What structured result should I hand back?" |
+| Surface                | Best for                                        | The question it answers                                 |
+| ---------------------- | ----------------------------------------------- | ------------------------------------------------------- |
+| System prompt          | General principles, posture, durable policy     | "How should I approach this in general?"                |
+| Tool description       | That tool's mechanics, when/when-not to call it | "How do I use this specific tool?"                      |
+| Tool result text       | Moment-specific nudges (see below)              | "What should I do right now, given what just happened?" |
+| Subagent output format | What the parent gets to act on                  | "What structured result should I hand back?"            |
 
 Tool result text is the **most underused, highest-signal** surface — it's read at the exact moment the model decides its next action. When system-prompt guidance isn't landing, the first question is: "is there a tool result that fires at the right moment where a nudge would be more effective?"
 
@@ -134,7 +133,7 @@ What the model can do. The through-line: **everything the agent sees through a t
 
 - Write the description **as if onboarding a new teammate.** Make explicit what the model cannot discover on its own: query formats, niche terminology, how resources relate, lifecycle facts.
 - **Unambiguous parameter names** (`user_id`, not `user`). **Strict, typed schemas**; use **enums to teach usage patterns** — a `mode: steer | follow_up` parameter teaches the two patterns through the schema itself, no prose rule needed.
-- *What* the tool is belongs in the description; *when* to call it (and when not to, among overlapping tools) belongs in the system prompt.
+- _What_ the tool is belongs in the description; _when_ to call it (and when not to, among overlapping tools) belongs in the system prompt.
 
 ### Return meaningful context
 
@@ -149,7 +148,7 @@ An error result is a steering opportunity, not a stack trace. **Name the failure
 
 > The {service} call failed at the infrastructure layer ({detail}); your input was never processed, so this is not a content problem. Retry the identical call once; if it fails again, stop and report to the user rather than continuing.
 
-Validation errors should communicate the **specific fix** ("expected `role` to be `implementer` or `reviewer`"), never opaque codes. And the error must reach the *model* (in the result it reads), or it can't self-correct and will retry the same mistake blindly.
+Validation errors should communicate the **specific fix** ("expected `role` to be `implementer` or `reviewer`"), never opaque codes. And the error must reach the _model_ (in the result it reads), or it can't self-correct and will retry the same mistake blindly.
 
 ### Results nudge the next step (mini-context)
 
@@ -159,12 +158,12 @@ The highest-leverage tool-design pattern. When a result changes what the agent s
 
 Two specialized variants:
 
-- **Warn-once-then-allow** — for an action that's *usually but not always* wrong. The first attempt returns a steering error naming the why and the alternatives; an identical repeat call passes. Judgment keeps the override; the harness just makes it deliberate. Prefer this over a hard block whenever the rule has legitimate exceptions — a hard block tries to replace judgment with a mechanism.
-- **Reactive state-triggered nudge** — fire *once at a threshold* (not on every call), on the existing result surface, and give the *reason* the threshold matters, not just a count. (This is how a harness "system reminder" works.)
+- **Warn-once-then-allow** — for an action that's _usually but not always_ wrong. The first attempt returns a steering error naming the why and the alternatives; an identical repeat call passes. Judgment keeps the override; the harness just makes it deliberate. Prefer this over a hard block whenever the rule has legitimate exceptions — a hard block tries to replace judgment with a mechanism.
+- **Reactive state-triggered nudge** — fire _once at a threshold_ (not on every call), on the existing result surface, and give the _reason_ the threshold matters, not just a count. (This is how a harness "system reminder" works.)
 
 ### Tool design is eval-driven
 
-Tool ergonomics can't be fully predicted up front because agents are non-deterministic. Iterate: prototype, run **realistic multi-call scenarios**, read the transcripts — *what the agent omits or fumbles is as informative as what it does* — then refine. Small description changes can shift behavior a lot, so don't bikeshed naming or response format in the abstract; decide it with an eval.
+Tool ergonomics can't be fully predicted up front because agents are non-deterministic. Iterate: prototype, run **realistic multi-call scenarios**, read the transcripts — _what the agent omits or fumbles is as informative as what it does_ — then refine. Small description changes can shift behavior a lot, so don't bikeshed naming or response format in the abstract; decide it with an eval.
 
 ---
 
@@ -173,7 +172,7 @@ Tool ergonomics can't be fully predicted up front because agents are non-determi
 When improving an existing prompt or tool, scan for these. Each maps to a principle above; the fix is in parentheses.
 
 - **Developer-facing framing** — explains how the system works rather than what to do. (Cut, or rewrite as an action.)
-- **Assumed conversational context** — the artifact opens mid-stream: specifics, options, or sub-rules without first naming what the thing *is* and the system it belongs to, because the author held that in-session and a cold reader won't. The inverse of developer-facing framing — too little identity, not too much mechanism. (Add a one- or two-line "what this is" anchor up front, then go specific.)
+- **Assumed conversational context** — the artifact opens mid-stream: specifics, options, or sub-rules without first naming what the thing _is_ and the system it belongs to, because the author held that in-session and a cold reader won't. The inverse of developer-facing framing — too little identity, not too much mechanism. (Add a one- or two-line "what this is" anchor up front, then go specific.)
 - **Mechanism narration** — "this works by…", "the system will…", "the result arrives as…". (Replace with the action and its trigger.)
 - **Generic directives** — "be helpful," "stay responsive." (Replace with trigger + action + skip, or cut.)
 - **Negation as the main lever** — a pile of "do not" rules. (Reframe as the positive path; keep "never" only for hard safety.)
@@ -189,7 +188,7 @@ When improving an existing prompt or tool, scan for these. Each maps to a princi
 
 ## Before → after
 
-Four worked examples of improving something that already exists — one per pillar, plus an error. Each "why" maps back to a principle above; the point is the *move*, not the specific wording.
+Four worked examples of improving something that already exists — one per pillar, plus an error. Each "why" maps back to a principle above; the point is the _move_, not the specific wording.
 
 ### 1. A behavioral instruction block (prompt)
 
@@ -226,9 +225,9 @@ can name the specific choice that depends on the answer.
 
 **Why**
 
-- **Cut vs. transform — the move worth seeing.** Developer-facing framing isn't always deletable; often it *hides* a fact the model needs. "spawned over RPC… on the event bus" is pure plumbing — *cut* it; the model learns that from using the tools, not from prose. But "a worker turn can take several minutes" is a real fact wearing an implementation-detail costume — *transform* it into context the model acts on: send one complete request, and work elsewhere meanwhile (which also gives "don't block" its positive form). The skill is to tell those two apart, not to strip every line that mentions the system.
-- `CRITICAL: MUST NEVER` → a plain framework *with its reason* ("would skip the user's review and shape the work invisibly"). The model now applies the intent to cases the rule never enumerated, and the de-escalated tone stops it overtriggering.
-- "stay responsive / always be proactive" → a concrete *trigger + action + skip* — ask only when the decision is theirs *and* you can name the choice.
+- **Cut vs. transform — the move worth seeing.** Developer-facing framing isn't always deletable; often it _hides_ a fact the model needs. "spawned over RPC… on the event bus" is pure plumbing — _cut_ it; the model learns that from using the tools, not from prose. But "a worker turn can take several minutes" is a real fact wearing an implementation-detail costume — _transform_ it into context the model acts on: send one complete request, and work elsewhere meanwhile (which also gives "don't block" its positive form). The skill is to tell those two apart, not to strip every line that mentions the system.
+- `CRITICAL: MUST NEVER` → a plain framework _with its reason_ ("would skip the user's review and shape the work invisibly"). The model now applies the intent to cases the rule never enumerated, and the de-escalated tone stops it overtriggering.
+- "stay responsive / always be proactive" → a concrete _trigger + action + skip_ — ask only when the decision is theirs _and_ you can name the choice.
 
 ### 2. A bloated window (context)
 
@@ -258,10 +257,10 @@ read_doc(path) → returns the requested doc.
 
 **Why**
 
-- The 8k prompt pays for all 12 docs and the full log on *every* call regardless of relevance, and a near-full window degrades (*context rot*). Keep the prefix small and stable so the cache hits and attention stays sharp.
-- *Just-in-time*: hold lightweight references (paths) plus a tool to load the one doc the task actually needs.
-- *Progressive disclosure*: an index up front, full content only on match.
-- Cut the duplicated "follow the style guide" line — *one source of truth*.
+- The 8k prompt pays for all 12 docs and the full log on _every_ call regardless of relevance, and a near-full window degrades (_context rot_). Keep the prefix small and stable so the cache hits and attention stays sharp.
+- _Just-in-time_: hold lightweight references (paths) plus a tool to load the one doc the task actually needs.
+- _Progressive disclosure_: an index up front, full content only on match.
+- Cut the duplicated "follow the style guide" line — _one source of truth_.
 
 ### 3. A tool, end to end (tool)
 
@@ -295,10 +294,10 @@ read_doc(path) → returns the requested doc.
 
 **Why**
 
-- Vague `search` → namespaced `docs_search`; `q` → `query` with a description — *unambiguous names*, and the description *surfaces the implicit* (keywords-not-boolean, relevance order) that the model can't otherwise know.
-- Added `limit` with a default — *token-efficient* by construction.
-- Opaque `id`/`mime` → *semantic returns* (`title`, `path`, `snippet`) the model can act on directly.
-- The `note` is *mini-context*: it nudges the next step (narrow and re-search, not raise the limit) with the reason, exactly when the model is deciding what to do after a thin result.
+- Vague `search` → namespaced `docs_search`; `q` → `query` with a description — _unambiguous names_, and the description _surfaces the implicit_ (keywords-not-boolean, relevance order) that the model can't otherwise know.
+- Added `limit` with a default — _token-efficient_ by construction.
+- Opaque `id`/`mime` → _semantic returns_ (`title`, `path`, `snippet`) the model can act on directly.
+- The `note` is _mini-context_: it nudges the next step (narrow and re-search, not raise the limit) with the reason, exactly when the model is deciding what to do after a thin result.
 
 ### 4. An error result (tool)
 
@@ -317,5 +316,5 @@ must be 01–12. Fix the month and retry; the rest of the call was fine.
 
 **Why**
 
-- An opaque code → an error that *prescribes the recovery path*: what was wrong, the specific fix, and that nothing else needs to change — so the model doesn't improvise recovery or retry the identical bad call.
+- An opaque code → an error that _prescribes the recovery path_: what was wrong, the specific fix, and that nothing else needs to change — so the model doesn't improvise recovery or retry the identical bad call.
 - It lands in the result text the model actually reads, which is what makes self-correction possible at all.

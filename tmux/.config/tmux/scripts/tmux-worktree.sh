@@ -15,9 +15,9 @@
 # New worktrees go under  ~/dev/.worktrees/<repo>/<branch>  for every project
 # (no per-repo special-casing). Create makes the worktree, opens its window, then:
 #   - copies the gitignored files/dirs a checkout leaves behind (`.env* .npmrc
-#     scripts.local` by default, from the MAIN worktree, at any depth; matched
-#     directories are copied whole) into the new tree — configurable via
-#     @worktree_copy_globs ("off" to disable);
+#     scripts.local .duet docs.local` by default, from the MAIN worktree, at any
+#     depth; matched directories are copied whole) into the new tree — configurable
+#     via @worktree_copy_globs ("off" to disable);
 #   - if it's a Node project, fires a dependency install (pnpm/npm/yarn/bun, from
 #     the lockfile) into the new window via send-keys, so the install runs visibly
 #     there instead of blocking the popup — @worktree_auto_install off to disable.
@@ -98,7 +98,7 @@ maybe_install_deps() {
 # Seed the new worktree with the gitignored files/dirs a fresh checkout leaves
 # behind (`.env*`, `.npmrc`, `scripts.local/` …), copied from the MAIN worktree.
 # The pattern list lives in @worktree_copy_globs (space/newline-separated; default
-# ".env* .npmrc scripts.local"; set to "off" to disable). Each pattern matches an
+# ".env* .npmrc scripts.local .duet docs.local"; set to "off" to disable). Each pattern matches an
 # entry's BASENAME, so ".env*" catches env files at *any depth* (e.g.
 # application/.env.development.local) and "scripts.local" matches that ignored
 # directory; every match is recreated at the same relative path in the new tree,
@@ -126,7 +126,7 @@ maybe_copy_files() {
   [ -n "$main" ] && [ "$main" != "$newdir" ] || return
   globs="$(tmux show-option -gqv @worktree_copy_globs 2>/dev/null)"
   case "$globs" in off|none|no|0|false|disabled) return ;; esac
-  [ -z "$globs" ] && globs=".env* .npmrc scripts.local"
+  [ -z "$globs" ] && globs=".env* .npmrc scripts.local .duet docs.local"
   set -f; set -- $globs; set +f          # split patterns; never pathname-expand them
   while IFS= read -r -d '' rel; do
     relstripped="${rel%/}"                # --directory yields ignored dirs as "dir/"

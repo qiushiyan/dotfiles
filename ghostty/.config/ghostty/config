@@ -4,8 +4,8 @@
 # `theme` here — leaving it out makes the include the single source of truth.
 # macOS has no external config reload, so after switching press ⌘⇧, to reload.
 # theme = Catppuccin Mocha
-# background-opacity = 0.85
-# background-blur-radius = 25
+background-opacity = 0.90
+background-blur-radius = 25
 # theme = TokyoNight
 # font-family = JetBrainsMono Nerd Font
 
