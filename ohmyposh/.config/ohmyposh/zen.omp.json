@@ -32,6 +32,26 @@
         "green": "#009966",
         "peach": "#e17100",
         "red": "#c70036"
+      },
+      "tokyo_night_moon": {
+        "os": "#828bb8",
+        "closer": "p:os",
+        "pink": "#fca7ea",
+        "lavender": "#c8d3f5",
+        "blue":  "#86e1fc",
+        "green": "#c3e88d",
+        "peach": "#ff966c",
+        "red": "#ff757f"
+      },
+      "gruvbox_dark": {
+        "os": "#928374",
+        "closer": "p:os",
+        "pink": "#d3869b",
+        "lavender": "#ebdbb2",
+        "blue":  "#8ec07c",
+        "green": "#b8bb26",
+        "peach": "#fe8019",
+        "red": "#fb4934"
       }
     }
   },

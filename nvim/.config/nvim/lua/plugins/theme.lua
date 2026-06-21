@@ -7,8 +7,22 @@ local theme = require("config.theme")
 return {
   {
     "folke/tokyonight.nvim",
-    enabled = false,
-    opts = { style = "storm" },
+    -- Same pattern as catppuccin: always installed so the live-theme watcher can
+    -- swap to it, eager only when active. "moon" is the variant the
+    -- tokyo_night_moon terminal theme maps to (colorscheme "tokyonight-moon").
+    priority = 1000,
+    lazy = theme.name ~= "tokyo_night_moon",
+    opts = { style = "moon" },
+  },
+  {
+    "ellisonleao/gruvbox.nvim",
+    -- Same pattern as the others: always installed so the live-theme watcher can
+    -- swap to it, eager only when active. Plugin-only (no hand-rolled colors/
+    -- file); registers the "gruvbox" colorscheme and reads vim.o.background,
+    -- which flexoki's init / the watcher set to "dark" for gruvbox_dark.
+    priority = 1000,
+    lazy = theme.name ~= "gruvbox_dark",
+    opts = { contrast = "" }, -- "" = medium (#282828), matching Ghostty "Gruvbox Dark" + morhetz
   },
   {
     "rose-pine/neovim",

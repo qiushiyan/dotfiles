@@ -23,7 +23,7 @@ TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 
 # Canonical names. Keep in sync with the per-app case statements (theme.zsh,
 # statusline-command.sh, zen.omp.json, nvim config/theme.lua, tmux.conf).
-THEMES=(flexoki_light catppuccin_mocha tailwind_light)
+THEMES=(flexoki_light catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark)
 
 # --- per-theme ghostty field set ---------------------------------------------
 # Emit the ghostty config line(s) a theme owns. The whole include file is
@@ -36,6 +36,8 @@ ghostty_block() {
     flexoki_light)    printf 'theme = Flexoki Light\n' ;;
     catppuccin_mocha) printf 'theme = Catppuccin Mocha\n' ;;
     tailwind_light)   printf 'theme = tailwind-light-contrast\n' ;;
+    tokyo_night_moon) printf 'theme = TokyoNight Moon\n' ;;
+    gruvbox_dark)     printf 'theme = Gruvbox Dark\n' ;;
   esac
 }
 
@@ -73,11 +75,18 @@ main() {
   # 2. ghostty runtime include — full regen (delete-old + write-new)
   ghostty_block "$name" | write_atomic "$GHOSTTY_INCLUDE"
 
-  # 3. tmux: re-source the config (identical to prefix r) if a server is up
+  # 3. tmux: update the server environment, then re-source the config (identical
+  # to prefix r) if a server is up. The set-environment push is load-bearing: the
+  # server snapshots TERMINAL_THEME at launch and seeds it into every new pane, so
+  # without it new panes keep inheriting the stale value and shells render the old
+  # theme inside tmux (theme.zsh now reads the file regardless, but this keeps
+  # tmux's own env honest for any other consumer). Existing shells still need
+  # `exec zsh`.
   local tmux_msg="skipped (no server)"
   if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
+    tmux set-environment -g TERMINAL_THEME "$name" 2>/dev/null || true
     if tmux source-file "$TMUX_CONF" >/dev/null 2>&1; then
-      tmux_msg="reloaded"
+      tmux_msg="reloaded (+env)"
     else
       tmux_msg="source-file failed"
     fi

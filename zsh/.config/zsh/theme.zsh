@@ -7,7 +7,15 @@
 # 16-color palette (set by Ghostty's theme); the per-theme arms differ only to
 # tune bold-vs-plain for the background.
 
-if [[ -z "$TERMINAL_THEME" && -r "$HOME/.config/terminal-theme" ]]; then
+# The state file is the single source of truth — read it unconditionally so an
+# inherited value can never win. This matters inside tmux: the server captures
+# TERMINAL_THEME into its environment the first time it launches and hands that
+# (now stale) value to every new pane, so guarding the read on `-z` would pin
+# panes to whatever theme was active when the server started — the prompt then
+# renders the old palette inside tmux while new shells outside tmux track the
+# file. Fall back to an inherited value, then the default, only when the file is
+# unreadable.
+if [[ -r "$HOME/.config/terminal-theme" ]]; then
     TERMINAL_THEME=$(tr -d '[:space:]' < "$HOME/.config/terminal-theme")
 fi
 : "${TERMINAL_THEME:=flexoki_light}"
@@ -50,6 +58,21 @@ case "$TERMINAL_THEME" in
         # Mid-gray (242 = #6c6c6c, not remapped by the theme) for the grayed
         # inline suggestion — reads clearly on the white paper bg.
         ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
+        ;;
+    tokyo_night_moon)
+        # Dark bg (#222436): bold/bright dir for emphasis, same as catppuccin_mocha.
+        export LSCOLORS='Gxfxcxdxbxegedabagacad'
+        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+        # On the dark bg the plugin's default fg=8 reads well; set it explicitly
+        # so the value is owned here alongside the other arms.
+        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+        ;;
+    gruvbox_dark)
+        # Dark bg (#282828): bold/bright dir for emphasis, same as the other dark arms.
+        export LSCOLORS='Gxfxcxdxbxegedabagacad'
+        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+        # Dark bg → the plugin default fg=8 reads well; set explicitly to own it.
+        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
         ;;
     *)
         print -ru2 "theme.zsh: unknown TERMINAL_THEME '$TERMINAL_THEME'"

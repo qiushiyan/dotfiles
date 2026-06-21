@@ -45,6 +45,24 @@ case "$THEME" in
         PINK=$'\033[38;2;152;16;250m'       # Purple #9810fa
         LAVENDER=$'\033[38;2;20;71;230m'    # Blue #1447e6
         ;;
+    tokyo_night_moon)
+        # Dark bg (#222436) — Tokyo Night Moon's bright accents read well on it
+        CYAN=$'\033[38;2;134;225;252m'      # Cyan #86e1fc
+        GREEN=$'\033[38;2;195;232;141m'     # Green #c3e88d
+        YELLOW=$'\033[38;2;255;199;119m'    # Yellow #ffc777
+        RED=$'\033[38;2;255;117;127m'       # Red #ff757f
+        PINK=$'\033[38;2;192;153;255m'      # Magenta #c099ff
+        LAVENDER=$'\033[38;2;130;170;255m'  # Blue #82aaff
+        ;;
+    gruvbox_dark)
+        # Dark bg (#282828) — gruvbox's bright accents read well on it
+        CYAN=$'\033[38;2;142;192;124m'      # Aqua #8ec07c
+        GREEN=$'\033[38;2;184;187;38m'      # Green #b8bb26
+        YELLOW=$'\033[38;2;250;189;47m'     # Yellow #fabd2f
+        RED=$'\033[38;2;251;73;52m'         # Red #fb4934
+        PINK=$'\033[38;2;211;134;155m'      # Purple #d3869b
+        LAVENDER=$'\033[38;2;131;165;152m'  # Blue #83a598
+        ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2
         exit 1

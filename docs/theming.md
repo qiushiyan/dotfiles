@@ -15,12 +15,14 @@ prompt, Claude statusline, tmux, Neovim, Ghostty — and how switching works.
   authored per tool, not generated from a central spec.
 - **`theme-set <name>`** writes the name and fans out reloads;
   **`prefix t`** in tmux is the picker that calls it.
-- Supported themes: `flexoki_light`, `catppuccin_mocha`, `tailwind_light`.
+- Supported themes: `flexoki_light`, `catppuccin_mocha`, `tailwind_light`,
+  `tokyo_night_moon`, `gruvbox_dark`.
 
 ## Model 1 — a name in a file, a palette per tool
 
 `~/.config/terminal-theme` holds a single token. `$TERMINAL_THEME` (exported by
-zsh at startup) is just a cached copy of it for shell-side consumers. Every tool
+zsh at startup, re-read from the file on every shell launch so it can't go
+stale — see Model 3) is just a cached copy of it for shell-side consumers. Every tool
 resolves that name and looks up **its own** palette — there is no shared color
 table.
 
@@ -62,11 +64,24 @@ is the load-bearing mental model:
 | Ghostty | include is rewritten, but **macOS has no external config reload** (the `SIGUSR2` reload is Linux-only) | ⚠️ press **⌘⇧,** |
 | zsh prompt / `ls` colors | per-shell env, fixed at startup | ⚠️ new shells, or `exec zsh` |
 
-Two consequences worth internalizing:
+Three consequences worth internalizing:
 
 - **The statusline reads the file, not the env, on purpose.** A running Claude
   session inherited a now-stale `$TERMINAL_THEME` from its launching shell;
   reading the file each render lets it track switches anyway.
+- **Inside tmux the file must still win — and it does, two ways.** A tmux server
+  snapshots `TERMINAL_THEME` into its environment the first time it launches and
+  seeds that value into *every* pane it spawns afterward. A shell that trusted
+  the inherited value would therefore pin all panes to whatever theme was active
+  when the server started — stale forever after a switch, so the prompt renders
+  one palette inside tmux and another outside it. Two defenses keep the file
+  authoritative: `theme.zsh` reads `~/.config/terminal-theme` **unconditionally**
+  (it is *not* gated on `$TERMINAL_THEME` already being set), and `theme-set`
+  runs `tmux set-environment -g TERMINAL_THEME` so the server's own env tracks
+  the switch too. This is generic — new or renamed themes need no extra work for
+  it. ⚠️ Don't reintroduce a `-z "$TERMINAL_THEME"` guard around the read in
+  `theme.zsh`: that one line *is* the bug, and it only surfaces inside tmux, so
+  it's easy to "optimize" back in without noticing.
 - **Ghostty can't be driven on macOS.** `theme-set` makes the *content* correct
   immediately; the *reload* is a manual keystroke. This is accepted, not a bug.
 
