@@ -179,7 +179,7 @@ create_worktree() {
   base="$(default_base)"
   tmp="$(mktemp)"
   mkdir -p "$(dirname "$path")"
-  if git worktree add -b "$name" "$path" "$base" 2>"$tmp"; then
+  if git worktree add --no-track -b "$name" "$path" "$base" 2>"$tmp"; then
     :
   elif git worktree add "$path" "$name" 2>>"$tmp"; then
     :  # branch already existed — checked it out into the worktree instead
@@ -191,6 +191,24 @@ create_worktree() {
   maybe_copy_files "$path"               # seed .env* etc. BEFORE install may need them
   maybe_install_deps "$path" "$winid"
   return 0
+}
+
+# After a worktree is gone, offer to delete its branch too — called from BOTH the
+# normal and force-removal paths so a branch (and its [branch …] config section,
+# which `git branch -d/-D` removes with it) never leaks. Merged branches default to
+# YES and use the safe `git branch -d`; unmerged branches default to NO and need an
+# explicit force (`-D`) past a warning, so you can't silently drop unmerged work.
+maybe_delete_branch() {
+  local branch="$1" base ans
+  [ -n "$branch" ] && [ "$branch" != "(detached)" ] || return
+  base="$(default_base)"
+  if git merge-base --is-ancestor "$branch" "$base" 2>/dev/null; then
+    printf 'delete merged branch "%s"? [Y/n] ' "$branch"; read -r ans
+    case "$ans" in n|N) ;; *) git branch -d "$branch" 2>/dev/null || true ;; esac
+  else
+    printf 'branch "%s" is NOT merged into %s — force-delete it? [y/N] ' "$branch" "$base"; read -r ans
+    case "$ans" in y|Y) git branch -D "$branch" 2>/dev/null || true ;; esac
+  fi
 }
 
 remove_worktree() {
@@ -205,14 +223,17 @@ remove_worktree() {
   tmp="$(mktemp)"
   if git worktree remove "$path" 2>"$tmp"; then
     tmux kill-window -t "$session:$win" 2>/dev/null || true
-    printf 'also delete branch "%s"? [y/N] ' "$branch"; read -r ans
-    case "$ans" in y|Y) git branch -D "$branch" 2>/dev/null || true ;; esac
+    maybe_delete_branch "$branch"
   else
     err="$(cat "$tmp")"
     echo "could not remove: $err"
     printf 'force-remove (DISCARDS uncommitted changes)? [y/N] '; read -r ans
     case "$ans" in
-      y|Y) git worktree remove --force "$path" && tmux kill-window -t "$session:$win" 2>/dev/null || true ;;
+      y|Y)
+        if git worktree remove --force "$path"; then
+          tmux kill-window -t "$session:$win" 2>/dev/null || true
+          maybe_delete_branch "$branch"
+        fi ;;
     esac
   fi
   rm -f "$tmp"

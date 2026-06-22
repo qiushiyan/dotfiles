@@ -70,9 +70,9 @@
   },
   "base_keymap": "VSCode",
   "theme": {
-    "mode": "light",
+    "mode": "dark",
     "light": "Tailwind CSS Light (Enhanced)",
-    "dark": "Flexoki Dark"
+    "dark": "Gruber Darker"
   },
   "vim_mode": true,
   "relative_line_numbers": "enabled",
@@ -244,6 +244,13 @@
     "min_line_number_digits": 2
   },
   "theme_overrides": {
+    "Gruber Darker": {
+      "syntax": {
+        "title": {
+          "color": "#ffdd33"
+        }
+      }
+    },
     "Catppuccin Latte (Blur)": {
       "syntax": {
         "title": {

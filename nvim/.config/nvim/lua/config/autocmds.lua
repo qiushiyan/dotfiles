@@ -2,21 +2,31 @@
 -- Default autocmds that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 -- Add any additional autocmds here
 
--- remove padding around neovim instance
-vim.api.nvim_create_autocmd({ "UIEnter", "ColorScheme" }, {
-  callback = function()
-    local normal = vim.api.nvim_get_hl(0, { name = "Normal" })
-    if not normal.bg then
-      return
-    end
-    io.write(string.format("\027]11;#%06x\027\\", normal.bg))
-  end,
-})
-vim.api.nvim_create_autocmd("UILeave", {
-  callback = function()
-    io.write("\027]111\027\\")
-  end,
-})
+-- Match the host terminal's background to Neovim's so terminal window padding
+-- (Ghostty: window-padding-x/y) blends with the editor instead of showing a
+-- mismatched border. OSC 11 sets it on enter/colorscheme; OSC 111 resets it on exit.
+--
+-- Skipped on Apple Terminal: it honors the OSC 11 *set* but ignores the OSC 111
+-- *reset* (and won't answer OSC 11 queries, so saving/restoring the real bg can't
+-- work either), so a dark colorscheme would leave the terminal stuck dark after
+-- quitting. It also has no inner padding, so the blend buys nothing there. Ghostty
+-- / kitty / wezterm / iTerm2 reset correctly.
+if vim.env.TERM_PROGRAM ~= "Apple_Terminal" then
+  vim.api.nvim_create_autocmd({ "UIEnter", "ColorScheme" }, {
+    callback = function()
+      local normal = vim.api.nvim_get_hl(0, { name = "Normal" })
+      if not normal.bg then
+        return
+      end
+      io.write(string.format("\027]11;#%06x\027\\", normal.bg))
+    end,
+  })
+  vim.api.nvim_create_autocmd("UILeave", {
+    callback = function()
+      io.write("\027]111\027\\")
+    end,
+  })
+end
 
 -- close neovim if all named buffers are closed
 vim.api.nvim_create_autocmd("BufEnter", {

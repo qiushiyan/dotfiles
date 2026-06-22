@@ -57,6 +57,8 @@ Within a project you'll have a few windows — worktrees, a notes window, a long
 - **Reorder:** `Shift-Left` / `Shift-Right` (no prefix) slide the current window left/right.
 - **Rename:** `prefix m`. **Close:** `prefix x` (asks to confirm — it's a whole task).
 
+When the terminal narrows past `@window_collapse_width` (default 80 cols), inactive tabs **collapse to just their number badge** so a row of worktrees stops crowding the bar; the current window keeps its full name, and a waiting agent's badge still shows (yellow instead of aqua). They expand again as you widen — it's live, no reload. Tune with `tmux set -g @window_collapse_width <cols>` (`0` disables).
+
 ## Seeing tools side by side (panes = splits)
 
 A typical task window: agent on one side, dev server on the other, a scratch shell below.

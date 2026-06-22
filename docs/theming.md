@@ -120,7 +120,7 @@ Mechanical, one touch per tool — the cost of hand-tuned palettes. For `<name>`
 3. statusline — a `case` arm (six color slots) in `statusline-command.sh`.
 4. oh-my-posh — a `palettes.list` entry in `zen.omp.json`.
 5. tmux — `themes/<name>_tmux.conf` + a branch in the selector `case` in `tmux.conf`.
-6. Neovim — a `map` entry in `config/theme.lua` + a colorscheme (a `colors/` file or a plugin spec).
+6. Neovim — a `map` entry in `config/theme.lua` + a colorscheme (a `colors/` file or a plugin spec) **and** a matching `scheme:match` branch in `config/palette.lua` (return the theme's colors mapped onto the catppuccin-shaped table, including a `bar_bg`). Skip the palette branch and the lualine statusline silently falls through to the catppuccin else-arm — e.g. gruvbox inheriting mocha's navy `#181825` bar.
 7. Ghostty — a palette in `themes/` (or a built-in name).
 8. Add a `display-menu` row to the `prefix t` binding.
 

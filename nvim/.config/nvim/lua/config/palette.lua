@@ -128,6 +128,37 @@ function M.get_palette()
     -- as intentional accents rather than washed-out cream.
     p.bar_bg = "#EBF2E7"
     return p
+  elseif scheme:match("^gruvbox") then
+    -- gruvbox.nvim's dark-medium palette mapped onto the catppuccin-shaped
+    -- table ui.lua consumes. Without this branch the "gruvbox" colorscheme name
+    -- falls through to the catppuccin else-arm below, so the lualine bar
+    -- inherits mocha's mantle (#181825 — a cold navy) and clashes with
+    -- gruvbox's warm #282828 editor bg. Hex values are gruvbox.nvim's palette.
+    return {
+      base = "#282828", -- dark0 (editor bg)
+      mantle = "#1d2021", -- dark0_hard
+      crust = "#1d2021", -- dark0_hard (darkest gruvbox neutral)
+      surface0 = "#3c3836", -- dark1
+      surface1 = "#504945", -- dark2
+      surface2 = "#665c54", -- dark3
+      text = "#ebdbb2", -- light1 (fg)
+      subtext0 = "#a89984", -- light4
+      subtext1 = "#bdae93", -- light3
+      overlay0 = "#7c6f64", -- dark4
+      overlay1 = "#928374", -- gray
+      blue = "#83a598", -- bright_blue
+      green = "#b8bb26", -- bright_green
+      red = "#fb4934", -- bright_red
+      yellow = "#fabd2f", -- bright_yellow
+      mauve = "#d3869b", -- bright_purple
+      teal = "#8ec07c", -- bright_aqua
+      pink = "#b16286", -- neutral_purple
+      sky = "#458588", -- neutral_blue
+      -- Elevated warm band for the lualine bar: dark1, one step up from the
+      -- #282828 editor bg so the statusline/tabline reads as an intentional
+      -- band (the gruvbox analogue of flexoki's bar_bg tint above).
+      bar_bg = "#3c3836",
+    }
   else
     -- catppuccin or any other theme with catppuccin palettes
     local ok, palettes = pcall(require, "catppuccin.palettes")
