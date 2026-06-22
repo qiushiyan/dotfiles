@@ -25,6 +25,34 @@ return {
     opts = { contrast = "" }, -- "" = medium (#282828), matching Ghostty "Gruvbox Dark" + morhetz
   },
   {
+    "blazkowolf/gruber-darker.nvim",
+    -- Neovim-only colorscheme, deliberately NOT in config.theme's terminal map: it
+    -- has no `$TERMINAL_THEME` counterpart, so it never starts eagerly and the
+    -- live-swap watcher (config/autocmds.lua) never targets it. Installed but lazy;
+    -- LazyVim's ColorSchemePre autoloads it on demand when you run
+    -- `:colorscheme gruber-darker`. (The next `theme-set` swaps nvim back to the
+    -- mapped terminal theme.) Defaults already italicize strings/comments/folds,
+    -- which mirrors the Zed "Gruber Darker" look this is ported from.
+    priority = 1000,
+    lazy = true,
+    -- Match the Zed config's `syntax.title` override: paint markdown section
+    -- headers gruber yellow (#ffdd33) instead of upstream's quartz/blue. The
+    -- per-level @markup.heading.N.markdown groups cover both raw treesitter
+    -- headings and render-markdown.nvim (its RenderMarkdownH1..H6 link to them);
+    -- the base @markup.heading is left alone so table headers don't go yellow.
+    -- Registered in init() so it's armed before any `:colorscheme gruber-darker`.
+    init = function()
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        pattern = "gruber-darker",
+        callback = function()
+          for level = 1, 6 do
+            vim.api.nvim_set_hl(0, ("@markup.heading.%d.markdown"):format(level), { fg = "#ffdd33" })
+          end
+        end,
+      })
+    end,
+  },
+  {
     "rose-pine/neovim",
     enabled = false,
     priority = 1000,

@@ -16,9 +16,9 @@ The full arc covers a single feature from problem framing through PR. Most steps
 
 5. **`update-spec`** → implementer. Paste the reviewer's feedback at `$0`. The implementer assesses each point (validity → update or pushback) and revises the spec.
 
-6. *(common for nontrivial specs)* **`review-spec-again`** → reviewer. Re-checks whether the round-1 feedback was actually integrated, or hand-waved.
+6. _(common for nontrivial specs)_ **`review-spec-again`** → reviewer. Re-checks whether the round-1 feedback was actually integrated, or hand-waved.
 
-7. *(common for nontrivial specs)* **`update-spec-again`** → implementer. Round-2 feedback applied inline, no formal validity gate. Focus is converging.
+7. _(common for nontrivial specs)_ **`update-spec-again`** → implementer. Round-2 feedback applied inline, no formal validity gate. Focus is converging.
 
 ## Stage transition
 
@@ -34,13 +34,13 @@ The full arc covers a single feature from problem framing through PR. Most steps
 
 12. **`update-plan`** → implementer. Paste feedback at `$0`. The plan gets revised.
 
-13. *(rare)* **`review-plan-again`** / **`update-plan-again`** → round-2 for plans. Usually one iteration suffices.
+13. _(rare)_ **`review-plan-again`** / **`update-plan-again`** → round-2 for plans. Usually one iteration suffices.
 
 ## Implementation stage
 
-14. *(no snippet)* Implementation. The implementer writes code per the approved plan, doing the actual red-green-refactor cycles.
+14. _(no snippet)_ Implementation. The implementer writes code per the approved plan, doing the actual red-green-refactor cycles.
 
-### Mid-point checkpoint *(optional — for large implementations, e.g. 10+ slices)*
+### Mid-point checkpoint _(optional — for large implementations, e.g. 10+ slices)_
 
 When the work is large, I manually pause the implementer at a commit partway through (say slice 4 or 5) and run a checkpoint review before it continues. Catching a structural problem here is far cheaper than at the final review, and it compounds across every remaining slice.
 
@@ -50,7 +50,7 @@ When the work is large, I manually pause the implementer at a commit partway thr
 
 17. **`respond-midpoint`** → implementer. Paste the review at `$0`. The implementer triages each point into fix-now / fold-into-remaining-slices / disagree — **no code changes yet** — then summarizes the updated plan and waits for my go-ahead. After I greenlight, it fixes the now-problems first, then resumes the remaining slices.
 
-18. *(optional — after a long implementation, when context is heavy)* **`compact-for-review`** → implementer. Before the review cycle, `/compact` to a focused window: keep the implementation status, the load-bearing mental model and critical files, and the key decisions + why — drop the step-by-step build process. Readies the implementer to write a sharp handoff and respond to review from first principles. Usually the review that follows is `review-implementation`, but not always.
+18. _(optional — after a long implementation, when context is heavy)_ **`compact-for-review`** → implementer. Before the review cycle, `/compact` to a focused window: keep the implementation status, the load-bearing mental model and critical files, and the key decisions + why — drop the step-by-step build process. Readies the implementer to write a sharp handoff and respond to review from first principles. Usually the review that follows is `review-implementation`, but not always.
 
 19. **`implementation-handoff`** → implementer. With the work finished, the implementer writes a structured handoff: what changed and why, a change map with the load-bearing files marked, key decisions and tradeoffs, deviations from the plan, test coverage, and — critically — where the reviewer should look hardest. It orients the review and shifts the framing to the person who knows the code best. Supersedes the bare `commits-summary` as the review's context block.
 
@@ -58,7 +58,7 @@ When the work is large, I manually pause the implementer at a commit partway thr
 
 21. **`respond-review`** → implementer. Paste reviewer feedback at `$0`. The implementer analyzes each point first — **no code changes yet**. The analysis-first gate matters here because code changes are expensive.
 
-22. *(no snippet — manual prompt)* "Go ahead and apply." After reviewing the analysis, I tell the implementer to make the agreed changes.
+22. _(no snippet — manual prompt)_ "Go ahead and apply." After reviewing the analysis, I tell the implementer to make the agreed changes.
 
 23. **`review-implementation-again`** → reviewer. Round-2 code review on the updated implementation. Focus shifts to "was the previous feedback actually addressed?"
 
@@ -66,11 +66,11 @@ When the work is large, I manually pause the implementer at a commit partway thr
 
 ## Wrap-up
 
-25. *(optional — when the session is running long)* **`compact-for-cleanup`** → implementer. When implementation is essentially done and polished but small non-blocking tasks remain (docs, minor fixes, cleanup), `/compact` to a focused window on the finished code: preserves what was built and the leftover task list, drops the whole spec → plan → review journey. Unlike `compact-for-plan`, nothing about planning follows — you just work the remaining tasks.
+25. _(optional — when the session is running long)_ **`compact-for-cleanup`** → implementer. When implementation is essentially done and polished but small non-blocking tasks remain (docs, minor fixes, cleanup), `/compact` to a focused window on the finished code: preserves what was built and the leftover task list, drops the whole spec → plan → review journey. Unlike `compact-for-plan`, nothing about planning follows — you just work the remaining tasks.
 
 26. **`pr-description`** → implementer. Drafts the PR description aimed at a technical colleague who won't read the diff.
 
-27. *(optional)* **`find-similar-bugs`** → implementer. Before committing, sweeps the codebase for other places likely to have the same bug pattern.
+27. _(optional)_ **`find-similar-bugs`** → implementer. Before committing, sweeps the codebase for other places likely to have the same bug pattern.
 
 ## Helpers that fit anywhere
 
