@@ -19,6 +19,51 @@ bindkey -M vicmd 'v' edit-command-line
 bindkey -M viins '^L' clear-screen
 bindkey -M vicmd '^L' clear-screen
 
+# ── Ctrl+D guard ──────────────────────────────────────  docs/ctrl-d-guard.md
+# An accidental Ctrl+D must never silently close the last pane of a tmux window
+# (losing e.g. a Claude Code session). Two layers, robust against keymap and
+# plugin load order:
+#
+#   Floor — `setopt ignore_eof`: keymap-/plugin-independent. An empty-line EOF
+#     can no longer exit zsh on its own, whatever ^D happens to be bound to.
+#   UX — a widget on ^D that, on an empty line in the SOLE pane of a tmux
+#     window, refuses to exit and shows how to close deliberately; everywhere
+#     else (multi-pane, no tmux) it exits as usual. No in-widget `read` — that
+#     was fragile (message painted late, keypress leaked to the command line).
+#     It is (re)bound from a precmd hook (below) so it runs AFTER oh-my-zsh's
+#     `bindkey -e`, fzf, smart-suggestion, etc. — and in every keymap.
+setopt ignore_eof
+
+_guard_ctrl_d() {
+  if [[ -n $BUFFER ]]; then            # non-empty line: normal delete/list
+    zle delete-char-or-list
+    return
+  fi
+  if [[ -n $TMUX && "$(tmux display -p '#{window_panes}')" == 1 ]]; then
+    # Last pane: refuse the bare Ctrl+D so the window survives. No read; the
+    # message just paints (it's the next redraw) and we return.
+    zle -M "Last pane in this tmux window — type 'exit' or prefix-x to close it."
+    return
+  fi
+  exit                                 # multi-pane or no tmux: exit normally
+}
+zle -N _guard_ctrl_d
+
+# Bind once, after all plugins have loaded, in every keymap, for both the raw
+# C0 byte and Ghostty's CSI-u form. (oh-my-zsh runs `bindkey -e` at source time
+# — .zshrc:~140 — which is why binding earlier in viins/vicmd did nothing.)
+_guard_ctrl_d_bind() {
+  local m
+  for m in emacs viins vicmd; do
+    bindkey -M $m '^D'        _guard_ctrl_d
+    bindkey -M $m '\e[100;5u' _guard_ctrl_d
+  done
+  add-zsh-hook -d precmd _guard_ctrl_d_bind   # one-shot
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _guard_ctrl_d_bind
+# ────────────────────────────────────────────────────────────────────────────
+
 # Handle CSI u (Kitty Keyboard Protocol) encoded Ctrl keys.
 # When a TUI exits without popping KKP, Ghostty sends CSI u sequences
 # instead of raw C0 bytes. Zsh 5.9 can't decode these natively,
@@ -28,7 +73,7 @@ bindkey -M viins '\e[99;5u'  send-break     # Ctrl+C (CSI u)
 bindkey -M vicmd '\e[99;5u'  send-break     # Ctrl+C (CSI u)
 bindkey -M viins '\e[108;5u' clear-screen   # Ctrl+L (CSI u)
 bindkey -M vicmd '\e[108;5u' clear-screen   # Ctrl+L (CSI u)
-bindkey -M viins '\e[100;5u' delete-char-or-list  # Ctrl+D (CSI u)
+# (Ctrl+D is handled by the guard block above, bound from a precmd hook.)
 
 # Reduce vi mode key timeout (default 400ms eats characters after Esc/Ctrl sequences)
 KEYTIMEOUT=10
@@ -183,4 +228,24 @@ pl-bedrock() {
   fi
   eval "$(aws configure export-credentials --profile pl-bedrock --format env)"
   echo "pl-bedrock: Bedrock creds loaded into shell"
+}
+
+# Default `git push` to --no-verify inside the planlab/main clone (and all its
+# worktrees), bypassing the git-lfs pre-push upload hook. Safe for everyday
+# commits that don't touch LFS-tracked binaries (png/svg/xml/xer/pdf/...); when
+# you DO change an asset, run a real push with `command git push` (bypasses this
+# function) or force the blobs with `git lfs push --all origin <branch>`.
+# Keys off the shared common git dir so it matches the clone and any worktree,
+# wherever the worktree lives. -ef compares inodes, so relative-vs-absolute
+# paths still match. Only spawns a subprocess on `push`; every other git command
+# short-circuits and runs untouched.
+git() {
+  if [[ "$1" == push ]] && \
+     [[ "$(command git rev-parse --git-common-dir 2>/dev/null)" -ef "$HOME/dev/planlab/main/.git" ]]; then
+    print -P "%F{242}↳ push --no-verify (skipping git-lfs pre-push)%f" >&2
+    shift
+    command git push --no-verify "$@"
+  else
+    command git "$@"
+  fi
 }

@@ -3,10 +3,10 @@
     "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"
   },
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "mcp__pencil"
-    ]
+    ],
+    "defaultMode": "bypassPermissions"
   },
   "hooks": {
     "PreToolUse": [
@@ -94,5 +94,6 @@
   "editorMode": "vim",
   "verbose": true,
   "autoCompactEnabled": false,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "tui": "fullscreen"
 }

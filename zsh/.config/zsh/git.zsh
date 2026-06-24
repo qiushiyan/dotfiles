@@ -526,6 +526,185 @@ gremote() {
 }
 
 # --------------------------------------------------------------------
+# gopen - open the current repo/branch on GitHub in the browser
+# --------------------------------------------------------------------
+# Branch-aware. The deciding factor is "is this ref on the remote?", not
+# "is it tracked?" — GitHub only knows refs you've pushed. Resolution order:
+#   detached HEAD        -> the commit's tree (/tree/<sha>)
+#   branch with open PR  -> the PR thread          (via gh, when available)
+#   branch on origin     -> the branch's file tree (/tree/<branch>)
+#   local-only branch    -> offer to push -u, then a PR-create page
+# Remote-existence is checked locally (upstream, then origin/<branch>) so the
+# common path makes no network call; gh is consulted only once a branch is
+# known to be on the remote (no PR can exist for an unpushed branch).
+gopen() {
+  emulate -L zsh
+
+  local print_only=0 assume_yes=0 force_tree=0 refresh=0
+  while (( $# )); do
+    case "$1" in
+      -n|--print)   print_only=1 ;;
+      -y|--yes)     assume_yes=1 ;;
+      --tree)       force_tree=1 ;;
+      --refresh)    refresh=1 ;;
+      -h|--help)  _gopen_help; return 0 ;;
+      -*)         echo "gopen: unknown option '$1'" >&2; _gopen_help; return 1 ;;
+      *)          echo "gopen: unexpected argument '$1'" >&2; return 1 ;;
+    esac
+    shift
+  done
+
+  git rev-parse --is-inside-work-tree &>/dev/null || {
+    echo "gopen: not in a git repository" >&2; return 1
+  }
+
+  local origin
+  origin=$(git remote get-url origin 2>/dev/null) || {
+    echo "gopen: no 'origin' remote" >&2; return 1
+  }
+
+  # Base https URL — reuse gremote's SSH-shorthand rewrite (incl. host aliases
+  # like git@github.com-personal:), normalize ssh://, strip .git/trailing slash.
+  local base
+  base=$(printf '%s\n' "$origin" \
+    | sed -E -e 's|git@github\.com(-[a-z0-9]+)?:|https://github.com/|' \
+             -e 's|ssh://git@github\.com/|https://github.com/|' \
+             -e 's|\.git$||' -e 's|/$||')
+
+  case "$base" in
+    https://github.com/*) ;;
+    *) echo "gopen: origin is not a github.com remote ($origin)" >&2; return 1 ;;
+  esac
+
+  local url branch up rbranch
+  branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)
+
+  if [[ -z "$branch" ]]; then
+    # Detached HEAD — open the exact commit.
+    url="$base/tree/$(git rev-parse --short HEAD 2>/dev/null)"
+  else
+    # On the remote? Prefer the upstream's branch name; fall back to a
+    # same-named origin/<branch> tracking ref. Both are local (no network).
+    up=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null)
+    if [[ -n "$up" ]]; then
+      rbranch=${up#*/}
+    elif git rev-parse --verify --quiet "refs/remotes/origin/$branch" >/dev/null; then
+      rbranch=$branch
+    fi
+
+    if [[ -n "$rbranch" ]]; then
+      # On the remote. Prefer an open PR's thread when gh can find one — but
+      # never on the default branch: a PR is never *from* main, so that lookup
+      # is a guaranteed-empty network round-trip on the hottest path. Detect the
+      # default branch from a local ref (no network); fall back to main/master.
+      local default_branch
+      default_branch=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
+      default_branch=${default_branch#origin/}
+      [[ -z "$default_branch" ]] && case "$branch" in main|master) default_branch=$branch ;; esac
+
+      if (( ! force_tree )) && [[ "$branch" != "$default_branch" ]] && command -v gh >/dev/null 2>&1; then
+        # PR lookup is the one unavoidable network call. Cache its result in
+        # branch.<name>.gopen-pr as "<pushed-sha> <url-or-dash>" so repeats are
+        # instant. Key on the pushed tip: a hit only counts while it matches, so
+        # pushing new commits auto-invalidates. Caches "no PR" (a dash) too, so a
+        # PR-less feature branch is fast on repeat. --refresh forces a re-query.
+        local key_sha cached pr_url
+        key_sha=$(git rev-parse --verify --quiet "refs/remotes/origin/$rbranch" 2>/dev/null)
+        [[ -z "$key_sha" ]] && key_sha=$(git rev-parse HEAD 2>/dev/null)
+        (( refresh )) || cached=$(git config --get "branch.$branch.gopen-pr" 2>/dev/null)
+
+        if [[ -n "$cached" && "${cached%% *}" == "$key_sha" ]]; then
+          [[ "${cached#* }" != "-" ]] && url="${cached#* }"   # fresh hit, no network
+        else
+          pr_url=$(gh pr view "$branch" --json url --jq .url 2>/dev/null)
+          git config "branch.$branch.gopen-pr" "${key_sha} ${pr_url:--}"
+          [[ -n "$pr_url" ]] && url="$pr_url"
+        fi
+      fi
+      [[ -z "$url" ]] && url="$base/tree/$rbranch"
+    elif (( print_only )); then
+      # Local-only branch — nothing on GitHub to point at. Don't mutate in
+      # --print mode; surface the repo home and warn.
+      echo "gopen: '$branch' is not on origin; push first for a branch/PR URL" >&2
+      url="$base"
+    else
+      local reply
+      if (( assume_yes )); then
+        reply=y
+      else
+        printf "gopen: '%s' isn't on origin. Push and open a PR? [y/N] " "$branch"
+        read -r reply
+      fi
+      if [[ "$reply" == [yY]* ]]; then
+        git push -u origin "$branch" || return 1
+        url="$base/compare/$branch?expand=1"
+      else
+        url="$base"   # fall back to the repo home
+      fi
+    fi
+  fi
+
+  if (( print_only )); then
+    print -r -- "$url"
+    return 0
+  fi
+  _gopen_browser "$url"
+}
+
+_gopen_browser() {
+  local url="$1"
+  if command -v open >/dev/null 2>&1; then
+    open "$url"
+  elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$url" >/dev/null 2>&1
+  elif [[ -n "$BROWSER" ]]; then
+    "$BROWSER" "$url"
+  else
+    echo "gopen: no browser opener found; URL: $url" >&2
+    return 1
+  fi
+}
+
+_gopen_help() {
+  cat <<'EOF'
+Usage: gopen [options]
+
+Open the current GitHub repo in your browser, branch-aware.
+
+Resolution:
+  detached HEAD        the commit's tree
+  branch with open PR  the PR thread          (needs gh)
+  branch on origin     the branch's file tree
+  local-only branch    offers to push -u, then a PR-create page
+
+The PR lookup (the only network call) is cached per branch, keyed on the
+pushed tip, so repeats are instant and a new push re-checks automatically.
+
+Options:
+  -n, --print   print the URL instead of opening it
+  -y, --yes     auto-confirm the push for an unpushed branch
+      --tree    open the file tree even when an open PR exists
+      --refresh re-query the PR (ignore the cached result)
+  -h, --help    show this help
+
+Examples:
+  gopen            Open the current branch (PR thread if one exists)
+  gopen --tree     Open the branch's files, not its PR
+  gopen --refresh  Re-check for a PR after creating/closing one
+  gopen -n         Print the URL (e.g. to copy)
+EOF
+}
+
+_gopen() {
+  _arguments \
+    '(-n --print)'{-n,--print}'[print the URL instead of opening it]' \
+    '(-y --yes)'{-y,--yes}'[auto-confirm push for an unpushed branch]' \
+    '--tree[open the file tree even when an open PR exists]' \
+    '--refresh[re-query the PR, ignoring the cached result]' \
+    '(-h --help)'{-h,--help}'[show help]'
+}
+
+# --------------------------------------------------------------------
 # gitswitch - Switch between git profiles (personal, marswave, cola)
 # --------------------------------------------------------------------
 gitswitch() {
@@ -605,4 +784,5 @@ _git_zsh_register_completions() {
   compdef _gitgc     gitgc
   compdef _stage     stage
   compdef _gitswitch gitswitch
+  compdef _gopen     gopen
 }
