@@ -124,4 +124,23 @@
       "ctrl-h": "editor::ToggleFocus",
     },
   },
+
+  // Option+Enter inserts a newline in multi-line text inputs.
+  // Plain Enter and Shift+Enter already do this in the main editor; this adds
+  // Option+Enter to match muscle memory, and enables it in the agent message
+  // composer. Contexts mirror Zed's defaults exactly so these override them
+  // (a more-specific default context like `Editor && mode == full` would
+  // otherwise beat a broad user `Editor` rule).
+  {
+    "context": "Editor && mode == full",
+    "bindings": {
+      "alt-enter": "editor::Newline",
+    },
+  },
+  {
+    "context": "AcpThread > Editor",
+    "bindings": {
+      "alt-enter": "editor::Newline",
+    },
+  },
 ]

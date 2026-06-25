@@ -172,6 +172,10 @@
     }
   },
   "terminal": {
+    // Treat Option as Meta/Alt so Option+Enter sends Alt+Enter (ESC+CR) to
+    // CLI TUIs (Claude Code, Codex), which insert a newline. Trade-off: Option
+    // no longer types composed/special glyphs in the terminal.
+    "option_as_meta": true,
     "dock": "bottom",
     "font_size": 19.0,
     "font_family": "IosevkaTerm Nerd Font",
