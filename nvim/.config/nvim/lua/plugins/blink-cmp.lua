@@ -61,13 +61,14 @@ return {
           module = "blink.cmp.sources.lsp",
           score_offset = 100, -- the higher the number, the higher the priority
         },
-        -- copilot = {
-        --   name = "copilot",
-        --   module = "blink-cmp-copilot",
-        --   kind = "Copilot",
-        --   score_offset = 90, -- the higher the number, the higher the priority
-        --   async = true,
-        -- },
+        -- Copilot's name/module/async are configured by LazyVim's ai.copilot
+        -- extra (vim.g.ai_cmp defaults to true), which sets score_offset = 100 to
+        -- float it to the top. Deep-merge lets us override just the score so
+        -- Copilot ranks at the bottom -- below path (3), snippets (85), lsp (100).
+        -- Lower further (e.g. negative) to push it down even harder.
+        copilot = {
+          score_offset = 0,
+        },
         buffer = {
           name = "Buffer",
           enabled = false,
