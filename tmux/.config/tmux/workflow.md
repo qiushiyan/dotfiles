@@ -80,9 +80,10 @@ It's an ambient "unread" badge, not an interrupt — glance at the bar, triage, 
 
 ## Reading back & copying output (copy mode)
 
-- Enter with **`prefix [`** (leave with `q` or `Esc`).
+- Enter with **`prefix [`**; leave with `q` or a quick **double-`Esc`** (a single `Esc` won't exit — see below).
 - Scroll: `C-u`/`C-d` (10 lines), `j`/`k` (one line), `gg`/`G` (top/bottom), `/` to search forward.
 - Select + copy: `v` start selection, `C-v` rectangle, `H`/`L` to line start/end, `y` to copy and exit.
+- Botched a selection? Tap **`Esc`** once — it clears the selection but *stays* in copy mode at the same scroll spot, so you just re-`v`. A lone `Esc` never tears down copy mode and dumps you at the bottom the way stock tmux does. To actually exit via `Esc`, double-tap it within ~0.4s (tunable: the `sleep 0.4` on the binding in `tmux.conf`), since tmux has no native double-tap — the first press arms a flag a background timer clears.
 
 ## Jumping to a string on screen (flash-style)
 
@@ -131,7 +132,7 @@ Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore wh
 
 **Reorder / resize / zoom** — windows `Shift-Left`/`Shift-Right` · panes `prefix >`/`prefix <` · resize `prefix H/J/K/L` · zoom `prefix z`
 
-**Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom
+**Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom · `Esc` clear selection (stays in copy mode) · `q` or double-`Esc` exit
 
 **Jump (flash-style)** — `prefix s` (or `C-s` in copy mode) → type to search · label to jump · `Enter` nearest · `Esc` cancel
 
