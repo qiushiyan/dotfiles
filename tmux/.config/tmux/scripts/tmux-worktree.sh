@@ -29,6 +29,11 @@
 
 set -u
 
+# Pure git-worktree logic (path convention, base resolution, the worktree-add
+# dance, gitignored-file seeding, pkg-manager detection) lives in the tmux-free
+# worktree-core.sh, shared with the gwtn shell function. We add only tmux glue.
+source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
+
 session="$(tmux display-message -p '#{session_name}' 2>/dev/null)"
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -39,20 +44,10 @@ fi
 
 # --- repo identity & worktree root -------------------------------------------
 
-# every project's worktrees live under one root, grouped by repo dir name.
-wt_root="$HOME/dev/.worktrees/$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")"
-
-main_worktree() {
-  git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}'
-}
-
-default_base() {
-  local b
-  for b in origin/HEAD origin/main origin/master main master; do
-    if git rev-parse --verify --quiet "$b" >/dev/null 2>&1; then echo "$b"; return; fi
-  done
-  git rev-parse --abbrev-ref HEAD
-}
+# Path convention, main_worktree, and default_base now come from worktree-core.sh
+# (wt_worktree_root / wt_main_worktree / wt_default_base). wt_root is resolved once
+# here, exactly as before.
+wt_root="$(wt_worktree_root)"
 
 # --- list:  "<marker><branch>\t<path>\t<branch>"  (display = field 1) ---------
 
@@ -74,10 +69,9 @@ win_name() { printf '%s' "$1" | tr '/' '-'; }
 
 # If the new worktree is a Node project, kick off a dependency install VISIBLY in
 # its new window via send-keys — NOT inside this script, which would freeze the
-# modal popup for the whole install. You land in the window, watch it run, and
-# can Ctrl-C it if you didn't want it. The package manager is chosen from the
-# committed lockfile (so we never clobber an npm repo with a pnpm lockfile),
-# defaulting to pnpm (this repo's convention) when none is present.
+# modal popup for the whole install. You land in the window, watch it run, and can
+# Ctrl-C it if you didn't want it. The package-manager SELECTION (by lockfile) is
+# wt_install_cmd in worktree-core.sh; only the tmux DELIVERY lives here.
 # Disable entirely with:  tmux set -g @worktree_auto_install off
 maybe_install_deps() {
   local path="$1" target="$2" cmd
@@ -85,68 +79,22 @@ maybe_install_deps() {
   case "$(tmux show-option -gqv @worktree_auto_install 2>/dev/null)" in
     off|0|false|no|disabled) return ;;
   esac
-  [ -f "$path/package.json" ] || return
-  if   [ -f "$path/pnpm-lock.yaml" ];    then cmd="pnpm install"
-  elif [ -f "$path/yarn.lock" ];         then cmd="yarn"
-  elif [ -f "$path/package-lock.json" ]; then cmd="npm install"
-  elif [ -f "$path/bun.lockb" ] || [ -f "$path/bun.lock" ]; then cmd="bun install"
-  else cmd="pnpm install"; fi
+  cmd="$(wt_install_cmd "$path")"   # empty if not a Node project
+  [ -n "$cmd" ] || return
   # target by window-id (not name): new-window can make duplicate names.
   tmux send-keys -t "$target" "$cmd" Enter
 }
 
-# Seed the new worktree with the gitignored files/dirs a fresh checkout leaves
-# behind (`.env*`, `.npmrc`, `scripts.local/` …), copied from the MAIN worktree.
-# The pattern list lives in @worktree_copy_globs (space/newline-separated; default
-# ".env* .npmrc scripts.local .duet docs.local"; set to "off" to disable). Each pattern matches an
-# entry's BASENAME, so ".env*" catches env files at *any depth* (e.g.
-# application/.env.development.local) and "scripts.local" matches that ignored
-# directory; every match is recreated at the same relative path in the new tree,
-# directories copied whole (-R). (.npmrc is only ever copied when it's gitignored
-# — a tracked one already rides the checkout; see scope below.)
-#
-# Why `git ls-files -oi --exclude-standard --directory`:
-#   -oi --exclude-standard  → only paths git is IGNORING (exactly what `worktree
-#                             add` didn't bring over; never tracked paths, which
-#                             already exist, nor random untracked WIP)
-#   --directory             → collapses a wholly-ignored dir to ONE entry ("dir/")
-#                             instead of every file under it (e.g. the hundreds of
-#                             .env files dependencies ship inside node_modules/).
-#                             We then copy that one entry recursively IF it matches
-#                             a pattern — so the PATTERN is the only gate: node_
-#                             modules/ & dist/ are excluded purely by not matching.
-#                             Keep default patterns specific; a broad glob like "*"
-#                             would now pull whole ignored dirs.
-# Source is the main worktree (canonical home for these files) regardless of which
-# worktree you launched the popup from. Perms are preserved (-pR) — env files are
-# often mode 600, scripts often +x.
+# Seed the new worktree with gitignored files/dirs from the main worktree. The
+# copy itself is wt_copy_ignored in worktree-core.sh (where the @worktree_copy_globs
+# patterns, the --directory mechanics, and the "keep patterns specific" warning are
+# documented). Here we only pass the tmux-configured globs in and surface the
+# core's summary via display-message.
 maybe_copy_files() {
-  local newdir="$1" main globs rel relstripped src dst base pat copied=0
-  main="$(main_worktree)"
-  [ -n "$main" ] && [ "$main" != "$newdir" ] || return
+  local globs msg
   globs="$(tmux show-option -gqv @worktree_copy_globs 2>/dev/null)"
-  case "$globs" in off|none|no|0|false|disabled) return ;; esac
-  [ -z "$globs" ] && globs=".env* .npmrc scripts.local .duet docs.local"
-  set -f; set -- $globs; set +f          # split patterns; never pathname-expand them
-  while IFS= read -r -d '' rel; do
-    relstripped="${rel%/}"                # --directory yields ignored dirs as "dir/"
-    src="$main/$relstripped"
-    [ -e "$src" ] || continue
-    base="${relstripped##*/}"
-    for pat in "$@"; do
-      case "$base" in
-        $pat)
-          dst="$newdir/$relstripped"
-          mkdir -p "$(dirname "$dst")"
-          # -R copies a matched directory's whole tree (e.g. scripts.local/);
-          # harmless on a plain file. Pattern is the only gate now, so node_modules/
-          # & dist/ are excluded by NOT matching — keep the default patterns specific.
-          cp -pR "$src" "$dst" 2>/dev/null && copied=$((copied + 1))
-          break ;;
-      esac
-    done
-  done < <(git -C "$main" ls-files -oi --exclude-standard --directory -z)
-  [ "$copied" -gt 0 ] && tmux display-message "worktree: copied $copied item(s) from main" || true
+  msg="$(wt_copy_ignored "$1" "$globs")"
+  [ -n "$msg" ] && tmux display-message "$msg" || true
 }
 
 switch_worktree() {
@@ -168,7 +116,7 @@ switch_worktree() {
 # returns 0 on success (worktree created, window opened → caller exits popup);
 # returns 1 on any failure (caller loops back to the list so you can retry).
 create_worktree() {
-  local name path win base tmp winid
+  local name path win base winid
   name="$(printf '%s' "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   if [ -z "$name" ]; then
     echo "type a name first"; sleep 1.5; return 1
@@ -176,17 +124,11 @@ create_worktree() {
   path="$wt_root/$name"
   win="$(win_name "$name")"
   if [ -e "$path" ]; then echo "path already exists: $path"; sleep 1.5; return 1; fi
-  base="$(default_base)"
-  tmp="$(mktemp)"
+  base="$(wt_default_base)"
   mkdir -p "$(dirname "$path")"
-  if git worktree add --no-track -b "$name" "$path" "$base" 2>"$tmp"; then
-    :
-  elif git worktree add "$path" "$name" 2>>"$tmp"; then
-    :  # branch already existed — checked it out into the worktree instead
-  else
-    echo "git worktree add failed:"; cat "$tmp"; rm -f "$tmp"; sleep 2.5; return 1
-  fi
-  rm -f "$tmp"
+  # wt_add forks a new branch (falls back to checking out an existing one); on
+  # failure it prints git's error to stderr — pause so it's readable before the loop refreshes.
+  if ! wt_add "$name" "$base" "$path"; then sleep 2.5; return 1; fi
   winid="$(tmux new-window -t "$session" -n "$win" -c "$path" -P -F '#{window_id}')"
   maybe_copy_files "$path"               # seed .env* etc. BEFORE install may need them
   maybe_install_deps "$path" "$winid"
@@ -201,7 +143,7 @@ create_worktree() {
 maybe_delete_branch() {
   local branch="$1" base ans
   [ -n "$branch" ] && [ "$branch" != "(detached)" ] || return
-  base="$(default_base)"
+  base="$(wt_default_base)"
   if git merge-base --is-ancestor "$branch" "$base" 2>/dev/null; then
     printf 'delete merged branch "%s"? [Y/n] ' "$branch"; read -r ans
     case "$ans" in n|N) ;; *) git branch -d "$branch" 2>/dev/null || true ;; esac
@@ -215,7 +157,7 @@ remove_worktree() {
   local path branch win main ans err tmp
   path="$1"; branch="$2"
   [ -z "$path" ] && return
-  main="$(main_worktree)"
+  main="$(wt_main_worktree)"
   if [ "$path" = "$main" ]; then echo "refusing to remove the main worktree"; sleep 1.5; return; fi
   printf 'remove worktree "%s"\n  %s ? [y/N] ' "$branch" "$path"; read -r ans
   case "$ans" in y|Y) ;; *) return ;; esac

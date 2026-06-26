@@ -5,6 +5,40 @@ worktrees**. Implemented as `scripts/tmux-worktree.sh`, bound in `tmux.conf`.
 This doc is the *why* and the *watch-outs* — the script is the *how*. Don't read
 it for syntax; read it before you change behavior.
 
+## Two front-ends, one core
+
+The git-worktree logic itself — the `~/dev/.worktrees/<repo>/<branch>` path
+convention, base resolution, the `worktree add` new-branch dance (with the
+existing-branch fallback), the gitignored-file seeding, and package-manager
+detection — lives in **`scripts/worktree-core.sh`**, which is **tmux-free** and
+sourced by this popup. Two front-ends wrap it:
+
+- **`tmux-worktree.sh`** (this popup) — the heavyweight surface: an fzf
+  switch/create/remove UI that opens each worktree in its **own tmux window** and
+  auto-installs deps there.
+- **`gwt`** (a zsh function in `zsh/.config/zsh/git.zsh`) — the lightweight
+  surface: create a worktree + new branch and **`cd` into it in the current
+  pane**. No new window, no dependency install. It runs `worktree-core.sh create`
+  (which prints only the new path to stdout) as a subprocess and `cd`s there — the
+  `cd` is the whole reason it's a shell function, not a call to the core's CLI.
+
+Keep the split clean: **pure git logic goes in the core; anything that talks to
+tmux stays in the popup wrapper.** The popup's `maybe_copy_files` /
+`maybe_install_deps` are now thin shims — they call the core for the *what*
+(`wt_copy_ignored`, `wt_install_cmd`) and own only the tmux *delivery*
+(`display-message`, `send-keys`). `wt_add` keeps git's "Preparing worktree…" /
+"HEAD is now at…" chatter off stdout so the core's CLI contract (stdout = the new
+path, nothing else) holds for `gwt`.
+
+Two `gwt` behaviors diverge from the popup **on purpose**:
+
+1. **Base branch.** The popup forks from the `origin/HEAD → main → master` chain
+   (`wt_default_base`); `gwt` defaults to the **current** branch (you usually
+   want to fork from where you stand) behind a `[y/N]` confirm. An explicit base
+   arg overrides either.
+2. **No install.** `gwt` stays lightweight — it seeds gitignored files but never
+   runs `pnpm install`. (The popup still does, in the new window.)
+
 ## Use cases
 
 The workflow this serves:

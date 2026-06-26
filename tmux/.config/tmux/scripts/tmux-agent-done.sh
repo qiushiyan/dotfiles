@@ -14,6 +14,17 @@
 
 set -u
 
+# --- DISABLED (2026-06) -------------------------------------------------------
+# Agent-done notifications are turned off for now. This single short-circuit is
+# the source of the whole feature: with the setter no-op'd here, no window ever
+# gets @agent_done / @agents_ready, so the dot and the ◷ badge never render. All
+# downstream code is intentionally left intact — the display formats and the
+# nav-clear bindings (tmux.conf), tmux-agent-recount.sh, and the Claude
+# Stop/Notification hooks (claude/.claude/settings.json). To re-enable, delete
+# this block. See agent-notify.md for the full design.
+exit 0
+# ------------------------------------------------------------------------------
+
 [ -z "${TMUX_PANE:-}" ] && exit 0   # not running inside tmux
 
 pane="$TMUX_PANE"

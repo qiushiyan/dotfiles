@@ -153,9 +153,8 @@ export GEMINI_MODEL="gemini-2.5-flash"
 # 4. OH-MY-ZSH
 # --------------------------------------------------------------------
 ZSH_THEME=""
-plugins=(history zsh-autosuggestions git)
+plugins=(history zsh-autosuggestions)
 source "$ZSH/oh-my-zsh.sh"
-unalias gg 2>/dev/null   # git plugin sets gg='git gui citool'; we define our own in aliases.zsh
 
 # --------------------------------------------------------------------
 # 5. TOOL INIT (order matters — oh-my-posh must be last)

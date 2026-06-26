@@ -30,6 +30,7 @@ t() {
 # --------------------------------------------------------------------
 # Git
 # --------------------------------------------------------------------
+alias g='git'          # was the oh-my-zsh git plugin's only alias we used (plugin now removed)
 alias lg="lazygit"
 alias gsp='git stash -p'
 

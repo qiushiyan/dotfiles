@@ -28,7 +28,7 @@ The full arc covers a single feature from problem framing through PR. Most steps
 
 ## Plan stage
 
-10. **`tdd-plan`** (or `tdd-plan-strict` / `start-plan` for non-TDD work) → implementer. With the spec settled, the implementer writes a detailed plan: vertical slices, specific test cases, helper sketches, fixture shape, line-level references for existing code. Stops short of full code bodies.
+10. **`tdd-plan`** (or `start-plan` for non-TDD work) → implementer. With the spec settled, the implementer writes a detailed plan: vertical slices, specific test cases, helper sketches, fixture shape, line-level references for existing code. Stops short of full code bodies.
 
 11. **`review-plan`** → reviewer. Critiques the plan against the TDD and architecture skills, applies the altitude lens.
 

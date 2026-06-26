@@ -169,52 +169,43 @@ Reread the files this change touches and rebuild your mental model from the actu
 [[snippets]]
 key = "tdd-plan"
 expand = '''
-Plan the implementation as vertical slices based on the latest spec. Reread the spec first.
+Plan the implementation as vertical slices against the latest spec — reread the spec first.
 
-Write this plan so that it is complementary to the spec, not overlapping. Don't re-summarize the spec's goals or re-argue its approach — point to it, and spend the tokens on the tactics it deferred (answer its open questions here). The relay that earns its tokens is a load-bearing gotcha, invariant, or constraint **bolded in the exact slice that must honor it** — surfaced at the point of action, where rereading the spec wouldn't put it in front of you.
-
-Go detailed — name each slice, list specific test cases, sketch helpers and fixtures, cite line numbers for changes in existing code. **Don't pre-write full code bodies** — describe tests and helpers; actual code happens during red-green-refactor.
-
-Read these as a lens, not a checklist (adapt; drop what doesn't fit):
-- `~/.claude/skills/tdd/SKILL.md` — vertical slices, what to test, anti-patterns
+## Read these first, then plan
+Read each one and adapt it to this change — they're the bar for a good plan, not optional background. If a path is missing, ask me rather than guessing.
+- `~/.claude/skills/tdd/SKILL.md` — vertical slices, what to test, the anti-patterns
 - `~/.claude/skills/tdd/tests.md` — behavior-focused tests; `test.for`, `expect.soft`, custom matchers
 - `~/.claude/skills/tdd/mocking.md` — mock only at boundaries, never your own modules
 - `~/.claude/skills/tdd/interface-design.md` — testability via `test.extend` fixtures
-- `~/.claude/skills/tdd/deep-modules.md` — small interface, deep implementation; keeps the test surface small and tests stable across refactors
+- `~/.claude/skills/tdd/deep-modules.md` — small interface over hidden implementation
+- `~/.claude/skills/improve-codebase-architecture/SKILL.md` — deep modules, seams, the deletion test
 - `~/.claude/skills/tdd/vitest-patterns.md` — Vitest APIs *(TS-Vitest projects only)*
-- `~/.claude/skills/improve-codebase-architecture/SKILL.md` — also informs designing well from the start
 
-**What to test:** observable behavior through public interfaces and critical paths — not implementation details or every edge case. Skip UI tests unless requested; focus on pure business logic. Confirm with me if unclear.
+## What you're producing
+A plan written **complementary to the spec**, not overlapping it. Don't re-summarize its goals or re-argue its approach — point to it, and spend the tokens on the tactics it deferred (answer its open questions here). The relay that earns its tokens is a load-bearing gotcha, invariant, or constraint **bolded in the exact slice that must honor it** — surfaced at the point of action, where rereading the spec wouldn't put it in front of you.
 
-**Slice = one meaningful unit — a subsystem or a cluster of related behaviors.** Be ambitious: group a behavior with the behaviors and wiring that belong with it into one slice a reviewer can grasp as a single idea — the mechanical steps that serve it (an import, mounting a component, wiring) ride in that slice, not slices of their own. Lean larger; split only when two parts are genuinely unrelated or a slice grows too big to hold in your head. Aim for deep modules (small interface, hidden implementation) — shrinks the test surface, keeps slices independently committable. **Prefer slicings that delete concepts** (branches, modes, helper layers disappear) over ones that just spread them. Commits follow slices — that's implied; don't engineer commit boundaries.
+Go detailed: name each slice, list specific test cases, sketch helpers and fixtures, cite line numbers for changes to existing code. **Don't pre-write full code bodies** — describe the tests and helpers; the code itself happens during the build.
 
-**Preparatory refactoring first, when the foundation blocks the design** (Kent Beck: *make the change easy, then make the easy change*). If the spec named a blocking foundation — or you find one now — make the first slice or two a behavior-preserving reshaping — kept green by existing tests, or, if that code isn't covered, pinned with a characterization test first — that lays the groundwork before the feature slices land on it. Refactor only what the feature actually rests on; a prep slice that balloons into a module rewrite is the failure mode, not the goal.
+## How to plan it
 
-Strict red-green-refactor isn't required throughout — apply it inside a slice when design is uncertain or behavior is subtle and a failing test gives real signal. For straightforward slices, writing test + code together is fine. **The discipline is "one slice per commit", not keystroke order.**
+### Slicing
+**Slice = one meaningful unit** — a subsystem or a cluster of related behaviors a reviewer can grasp as a single idea. Be ambitious: group a behavior with the wiring that serves it (an import, mounting a component) into one slice, not slices of their own. Lean larger; split only when two parts are genuinely unrelated or a slice grows too big to hold in your head. **Prefer slicings that delete a concept** — a branch, mode, or helper layer disappears — over ones that just spread it around.
 
-Constraints:
+### Preparatory refactoring
+When the foundation blocks the design, reshape it first (Kent Beck: *make the change easy, then make the easy change*). If the spec named a blocking foundation — or you find one now — make the first slice or two a **behavior-preserving** reshaping, kept green by existing tests (or pinned with a characterization test first if that code isn't covered), before the feature slices land on it. Refactor only what the feature actually rests on; a prep slice that balloons into a module rewrite is the failure mode.
+
+### Right-size the code
+The default failure here is too much code, not too little — defensive branches for cases that can't occur, and abstractions invented before the pattern is real. Plan against it:
+- **Make a bad state impossible to construct, don't guard against it.** Reach for a type, a narrow constructor, or an enum an invalid value can't inhabit, over runtime guards repeated at every call site. Validate untrusted input once at the boundary so everything downstream can trust it (*parse, don't validate*); where a state genuinely can't be made unrepresentable, validate at that **one** boundary, not everywhere it's read. A real invariant violation should fail loudly — not get a fallback that hides the bug, or a local defense wherever it happened to surface.
+- **Prefer a little duplication over the wrong abstraction.** Plan a shared abstraction only when the pattern is real (around the third occurrence) and pulling it out *concentrates* complexity instead of just moving it (the deletion test) — un-abstracting later costs more than the duplication did.
+- **Plan only what the spec settled.** No speculative features, config knobs, or extensibility seams it didn't ask for — each is maintenance forever and earns its place only when something uses it.
+
+### Tests
+**What to test:** observable behavior through public interfaces and the critical paths — not internals or every edge case. Skip UI tests unless asked; confirm with me if unclear. **Red-green-refactor is a tool, not a mandate:** reach for it inside a slice when design is uncertain or behavior is subtle and a failing test gives real signal; writing test and code together is fine otherwise. The discipline is **one slice per commit**, not keystroke order.
+
+## Constraints
 - Follow the settled spec and the project's conventions. Tweak small details if exploration warrants; pause before challenging major direction.
-- Skip doc updates — we'll do those after implementation.
-- Commit per slice, not all at the end.'''
-
-[[snippets]]
-key = "tdd-plan-strict"
-expand = '''
-Plan the implementation using **strict TDD**. Read `~/.claude/skills/tdd/SKILL.md` and the files it references — **treat them as the process, not just a guide**.
-
-Go detailed — name each slice, list specific test cases, sketch helpers and fixtures, cite functions for changes in existing files. **Don't pre-write full code bodies** — describe tests and helpers; actual code happens during red-green-refactor.
-
-Follow red-green-refactor literally per behavior:
-1. **RED** — One failing test. Run it. Verify it fails for the right reason.
-2. **GREEN** — Minimum code to pass. No anticipating future tests, no speculative features.
-3. **REFACTOR** — Only while green. Anything goes red → back to green first.
-
-Then next behavior. **One test, one slice, one cycle.** No batching tests up front, no batching implementation at the end.
-
-Constraints:
-- Follow settled implementation guidelines. Tweak small details if needed; pause before challenging major direction.
-- Skip doc updates — after implementation.
-- One commit per RGR cycle, as you progress.'''
+- Skip doc updates — we'll do those after implementation.'''
 
 [[snippets]]
 key = "start-plan"
@@ -245,13 +236,17 @@ Background (skim as a lens, don't recite):
 **Altitude lens:**
 - Vagueness on full code bodies (test implementations, function bodies) → **intentional, don't ask for them**.
 - Vagueness on anything else — slice boundaries, sequencing, specific test cases, helper internals, fixture shape, line-level placement, module shape, integration seams, what the spec left open → **bug, flag it**.
-- Technical content the plan DOES propose — slice choice, test cases, helper design, names, composition, deep-module shape → **fair game; propose better if a slice is wrong, a test case missing, a helper awkward, sequencing off, or a module shallow**.
+- Technical content the plan DOES propose — slice choice, test cases, helper design, names, composition, deep-module shape → **fair game; propose better if a slice is wrong, a test case missing, a helper awkward, sequencing off, a module shallow, or the design over-built**.
 
 **Per point:**
 - Agree → add technical suggestions, caveats, or risks worth flagging.
 - Disagree → give reasons and a concrete alternative. If architectural, say so and propose the structural fix.
 
-Challenge sequencing, scope, choice of vertical slices, **whether the plan deletes complexity or just rearranges it**, **whether the resulting modules are deep or shallow**, and **whether any preparatory-refactoring slice is proportionate to the feature, not quietly a rewrite** — not just surface details. The right plan should feel inevitable. Don't default to politeness.
+Challenge sequencing, scope, choice of vertical slices, **whether the plan deletes complexity or just rearranges it**, **whether the resulting modules are deep or shallow**, and **whether any preparatory-refactoring slice is proportionate to the feature, not quietly a rewrite** — not just surface details.
+
+**Watch for over-building** — the plan's likelier failure is too much code, not too little: defensive handling for states it could make unrepresentable, fallbacks for cases that can't occur, speculative features or config the spec didn't ask for, or a shared abstraction pulled out too early. Flag these the way you'd flag a missing case. And steer the other way when you catch yourself wanting *more* — prefer pushing a bad state to where it's unrepresentable, or validation to a single boundary, over adding error handling at every call site.
+
+The right plan should feel inevitable. Don't default to politeness.
 
 ---
 

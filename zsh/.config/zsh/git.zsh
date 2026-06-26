@@ -773,6 +773,80 @@ _gitswitch() {
   _arguments '1:profile:(personal marswave cola)'
 }
 
+# gwt — lightweight "git worktree new": create a worktree for a NEW branch off a
+# base, seed the main worktree's gitignored files into it, and cd there IN THE
+# CURRENT PANE. The no-new-window, no-install counterpart to the `prefix W` popup;
+# both share tmux/.config/tmux/scripts/worktree-core.sh (the actual git work). The
+# cd must happen in this shell, which is the whole reason this is a function and
+# not a call to the core's CLI directly.
+#
+# Base resolution diverges from the popup ON PURPOSE: omit it and gwt defaults to
+# the CURRENT branch (you usually want to fork from where you stand) behind a [y/N]
+# confirm; the popup instead forks from the origin/HEAD→main→master chain.
+gwt() {
+  emulate -L zsh
+  local branch="$1" base="$2"
+  local core="$HOME/.config/tmux/scripts/worktree-core.sh"
+
+  if [[ "$branch" == "-h" || "$branch" == "--help" ]]; then _gwt_help; return 0; fi
+  if [[ -z "$branch" ]]; then
+    print -u2 "gwt: branch name required"; _gwt_help; return 1
+  fi
+  if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    print -u2 "gwt: not inside a git repository"; return 1
+  fi
+
+  # No base given → default to the current branch, but confirm (the worktree+branch
+  # are cheap to make but annoying to undo, and the base is easy to get wrong).
+  if [[ -z "$base" ]]; then
+    base="$(git rev-parse --abbrev-ref HEAD)"
+    printf 'gwt: no base given — fork "%s" from current branch "%s"? [y/N] ' "$branch" "$base"
+    local ans; read -r ans
+    [[ "$ans" == [yY]* ]] || { print "aborted"; return 1; }
+  fi
+
+  # The core does the git work and prints ONLY the new worktree's path to stdout
+  # (its copy summary / errors go to stderr, visible). cd into it on success.
+  # NB: do NOT name this `path` — that's a zsh special var tied to $PATH, and a
+  # `local path` would blank PATH for the rest of this function (bash can't be found).
+  local dest
+  dest="$(bash "$core" create "$branch" "$base")" || return 1
+  [[ -n "$dest" ]] && cd "$dest"
+}
+
+_gwt_help() {
+  cat <<'EOF'
+Usage: gwt <branch> [base]
+
+Create a git worktree for a NEW branch off <base>, copy the main worktree's
+gitignored files (.env*, .npmrc, scripts.local, …) into it, and cd there — in the
+current pane (no new tmux window, no dependency install).
+
+Worktrees land at  ~/dev/.worktrees/<repo>/<branch>.
+
+Arguments:
+  branch   (required)  name of the new branch / worktree
+  base     (optional)  branch to fork from; if omitted, defaults to the CURRENT
+                       branch and asks for [y/N] confirmation
+
+Options:
+  -h, --help  Show this help message
+
+Examples:
+  gwt fix/login          fork fix/login from the current branch (after y/N)
+  gwt fix/login main     fork fix/login from main, no prompt
+
+Related:
+  prefix W   tmux popup to switch / create / remove worktrees (opens a new window)
+EOF
+}
+
+_gwt() {
+  _arguments \
+    '1:new branch name:' \
+    '2:base branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
+}
+
 # --------------------------------------------------------------------
 # Completion registration — called from .zshrc after compinit. compdef is
 # unavailable when this file is first sourced from .zshenv (pre-compinit),
@@ -785,4 +859,5 @@ _git_zsh_register_completions() {
   compdef _stage     stage
   compdef _gitswitch gitswitch
   compdef _gopen     gopen
+  compdef _gwt      gwt
 }
