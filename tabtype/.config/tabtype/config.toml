@@ -551,11 +551,15 @@ expand = '''
 **Most importantly:** does this solve the core UX problem while maintaining a clean technical design?'''
 
 [[snippets]]
-key = "use-latest-docs"
+key = "use-latest-stack"
 expand = '''
-When the work leans on an external library, framework, or SDK, check its current behavior before committing to an approach. Use Context7 to confirm the latest APIs, defaults, and recommended patterns, and your web-search tools to surface best-practice patterns, known quirks, and gotchas the reference docs don't capture. Training data lags real releases, so a plausible-looking call can be deprecated or wrong, and that error compounds straight into the build. If you can't reach either, don't guess from memory — name the specific API surfaces that need verifying so they get checked.
+When the work needs non-trivial, well-understood mechanical logic — retries and backoff, concurrency limiting, parsing, date/time math, and the like — choose deliberately between the platform's own primitives, a small specialized library, and writing it yourself. Hand-rolling a solved problem wastes effort; a new dependency is maintenance forever — take the lightest option that genuinely fits. Training data lags real releases, so ground the choice in what the stack offers *now*, not memory.
 
-Skip this for the repo's own code and stable language/runtime facts — read those from the source here. It's for the moving parts you don't control.'''
+- **Prefer current stable platform primitives when they cover the need** — runtimes keep absorbing what libraries used to own. In TypeScript, `Intl` handles most date/time and number formatting without `date-fns`; native `fetch`, `structuredClone`, and `AbortController` replaced their old library equivalents. Confirm what's stable now rather than reaching for a dependency from habit.
+- **Reach for a small, specialized library when it owns a genuinely tricky problem the platform doesn't** — retry/backoff and concurrency queues are the clear wins (e.g. `p-retry`, `p-queue`). Keep it specialized: a general-purpose giant pulled in for one function (Lodash for a `groupBy`) is its own cost, and a larger framework earns its place only for the genuinely complex state or processing it's built for — say why if you reach for one.
+- **When you adopt one**, first check the repo doesn't already depend on something that covers it. Then **confirm its current API with Context7** and **use web search for best practices, common pitfalls, the latest version, and any breaking changes** — a call from memory may be deprecated, and that error compounds straight into the build. Match how nearby code already wires its dependencies. If you can't reach either tool, don't guess from memory — name the specific API surfaces that need verifying so they get checked.
+
+Skip this for the repo's own code and stable language/runtime facts — read those from the source here. It's for the moving parts you don't control. A dependency weighty enough to be an architecture decision in its own right is the user's call, not a silent add — surface it.'''
 
 
 [settings]

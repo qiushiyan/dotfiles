@@ -57,14 +57,14 @@
   "enabledPlugins": {
     "feature-dev@claude-code-plugins": true,
     "code-review@claude-code-plugins": true,
-    "typescript-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": false,
     "lua-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": false,
     "swift-lsp@claude-plugins-official": false,
     "superpowers@claude-plugins-official": false,
     "codex@openai-codex": true,
     "impeccable@impeccable": true,
-    "vercel@claude-plugins-official": true,
+    "vercel@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
@@ -89,11 +89,11 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
   "editorMode": "vim",
   "verbose": true,
   "autoCompactEnabled": false,
-  "agentPushNotifEnabled": true,
-  "tui": "fullscreen"
+  "agentPushNotifEnabled": true
 }
