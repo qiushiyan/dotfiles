@@ -6,7 +6,7 @@ description: Standalone refactoring passes — code organization, API design, co
 
 # Refactoring
 
-This skill is for **standalone refactoring passes** — work whose goal is to improve structure while preserving behavior. For the refactor step *inside* a TDD red-green-refactor cycle, see `~/.claude/skills/tdd/refactoring.md` instead.
+This skill is for **standalone refactoring passes** — work whose goal is to improve structure while preserving behavior. For the refactor step *inside* a TDD red-green-refactor cycle, see `~/.config/lessons/testing/tdd-loop.md` (the Refactor section) instead.
 
 ## Focus Areas
 

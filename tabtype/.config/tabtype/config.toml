@@ -173,13 +173,12 @@ Plan the implementation as vertical slices against the latest spec — reread th
 
 ## Read these first, then plan
 Read each one and adapt it to this change — they're the bar for a good plan, not optional background. If a path is missing, ask me rather than guessing.
-- `~/.claude/skills/tdd/SKILL.md` — vertical slices, what to test, the anti-patterns
-- `~/.claude/skills/tdd/tests.md` — behavior-focused tests; `test.for`, `expect.soft`, custom matchers
-- `~/.claude/skills/tdd/mocking.md` — mock only at boundaries, never your own modules
-- `~/.claude/skills/tdd/interface-design.md` — testability via `test.extend` fixtures
-- `~/.claude/skills/tdd/deep-modules.md` — small interface over hidden implementation
-- `~/.claude/skills/improve-codebase-architecture/SKILL.md` — deep modules, seams, the deletion test
-- `~/.claude/skills/tdd/vitest-patterns.md` — Vitest APIs *(TS-Vitest projects only)*
+- `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test, illegal states
+- `~/.config/lessons/testing/tdd-loop.md` — vertical slices, red-green-refactor, the anti-patterns
+- `~/.config/lessons/testing/mocking-and-fixtures.md` — mock only at boundaries; `test.extend` fixtures
+- `~/.config/lessons/testing/vitest.md` — Vitest APIs *(TS-Vitest projects only)*
+
+When the plan restructures an existing cluster or the interface is uncertain, also read `~/.config/lessons/codebase-design/deepening.md` and `~/.config/lessons/codebase-design/design-it-twice.md`.
 
 ## What you're producing
 A plan written **complementary to the spec**, not overlapping it. Don't re-summarize its goals or re-argue its approach — point to it, and spend the tokens on the tactics it deferred (answer its open questions here). The relay that earns its tokens is a load-bearing gotcha, invariant, or constraint **bolded in the exact slice that must honor it** — surfaced at the point of action, where rereading the spec wouldn't put it in front of you.
@@ -199,6 +198,14 @@ The default failure here is too much code, not too little — defensive branches
 - **Make a bad state impossible to construct, don't guard against it.** Reach for a type, a narrow constructor, or an enum an invalid value can't inhabit, over runtime guards repeated at every call site. Validate untrusted input once at the boundary so everything downstream can trust it (*parse, don't validate*); where a state genuinely can't be made unrepresentable, validate at that **one** boundary, not everywhere it's read. A real invariant violation should fail loudly — not get a fallback that hides the bug, or a local defense wherever it happened to surface.
 - **Prefer a little duplication over the wrong abstraction.** Plan a shared abstraction only when the pattern is real (around the third occurrence) and pulling it out *concentrates* complexity instead of just moving it (the deletion test) — un-abstracting later costs more than the duplication did.
 - **Plan only what the spec settled.** No speculative features, config knobs, or extensibility seams it didn't ask for — each is maintenance forever and earns its place only when something uses it.
+
+### Build on the right layer
+Choosing what to build *on* is part of the plan. When a slice needs non-trivial, well-understood mechanical logic — retries/backoff, concurrency limits, parsing, date/time math — decide deliberately between the platform's own primitives, a small specialized library, and writing it yourself. Hand-rolling a solved problem wastes effort; a new dependency is maintenance forever — plan the lightest option that genuinely fits, and record the call and why in the slice that needs it. Training data lags real releases, so ground the choice in what the stack offers *now*, not memory.
+- **Prefer current stable platform primitives when they cover the need** — runtimes keep absorbing what libraries used to own (in TypeScript, `Intl` handles most date/time and number formatting without `date-fns`; native `fetch`, `structuredClone`, and `AbortController` replaced their old library equivalents). Confirm what's stable now rather than reaching for a dependency from habit.
+- **Reach for a small, specialized library when it owns a genuinely tricky problem the platform doesn't** — retry/backoff and concurrency queues are the clear wins (e.g. `p-retry`, `p-queue`). Keep it specialized: a general-purpose giant pulled in for one function (Lodash for a `groupBy`) is its own cost, and a larger framework earns its place only for the genuinely complex state it's built for.
+- **When the plan adopts a dependency**, check the repo doesn't already depend on something that covers it, then **confirm its current API with Context7** and **web-search for best practices, pitfalls, the latest version, and breaking changes**, and match how nearby code already wires its dependencies.
+
+A dependency weighty enough to be an architecture decision in its own right is mine to weigh — flag it rather than committing the repo to it.
 
 ### Tests
 **What to test:** observable behavior through public interfaces and the critical paths — not internals or every edge case. Skip UI tests unless asked; confirm with me if unclear. **Red-green-refactor is a tool, not a mandate:** reach for it inside a slice when design is uncertain or behavior is subtle and a failing test gives real signal; writing test and code together is fine otherwise. The discipline is **one slice per commit**, not keystroke order.
@@ -228,8 +235,8 @@ expand = '''
 I've drafted an implementation plan. Review with the same rigor as the spec.
 
 Background (skim as a lens, don't recite):
-- `~/.agents/skills/tdd/SKILL.md` — vertical slices, behavior-focused tests, when to mock
-- `~/.agents/skills/improve-codebase-architecture/SKILL.md` — deep modules, seams, the deletion test
+- `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test
+- `~/.config/lessons/testing/tdd-loop.md` — vertical slices, behavior-focused tests, when to mock
 
 **Adapt; drop what doesn't fit our use case.**
 
