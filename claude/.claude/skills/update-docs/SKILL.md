@@ -102,7 +102,7 @@ Write the updates from your confirmed plan, applying the **Documentation standar
 ## Step 7 — Maintain the surfaces above the docs
 
 - **A topic-scoped onboarding / bootstrap skill**, if the project has one: check the branch didn't break it — a new top-level doc its routing doesn't cover, a renamed doc on its always-read list, a drifted file path. Routine edits inside an existing doc don't touch it.
-- **The always-loaded mental-model file** (`CLAUDE.md` / `AGENTS.md`): touch it only when a new cross-cutting, load-bearing rule emerged or an existing one's framing rotted. The bar is high; most branches need no change here.
+- **The always-loaded mental-model file** (`CLAUDE.md` / `AGENTS.md`) is appended to *every* request, so every word is paid on every task. Keep it to load-bearing facts plus a map of *where to read the rest*; point rather than re-explain (an invariant states its conclusion and points to the doc holding the mechanism), and never let an enumeration, count, or status dump settle here. Touch it only when a new cross-cutting rule emerged or one's framing rotted — the bar is high; most branches need no change.
 
 Close with a short summary of what you updated, what you deleted, what needed no change, and why.
 
@@ -159,6 +159,15 @@ Organize docs by **kind of content**, not by feature churn:
 - **None** — bug fixes, internal refactors, test additions, dependency bumps.
 - **Module-level** — a new function, flow, or option inside an existing subsystem. Update the one doc that owns it.
 - **Architecture-level** — a new subsystem, integration, boundary, or policy. May touch the structure map, a new doc, the status line, and the always-loaded mental-model file.
+
+### Spotlight the load-bearing, not the complete
+
+The reader is a senior engineer who will read the code. Re-listing what the code already enumerates spends their attention and rots the moment the code changes. Name what is load-bearing; leave the complete list to the source.
+
+- **Don't enumerate exhaustively.** List the interfaces, modules, or fields a reader *must* grasp to hold the mental model; let the rest live in the code or get one grouped mention. A complete catalogue is the code's job.
+- **A table row is earned, not automatic.** A new function or type is not a reason for a new row — fold a secondary change into an existing entry; add a row only when a reader needs that item to navigate.
+- **No live counts.** "Seven handlers", "the five rules" — a cardinal number is a maintenance tax that silently rots (and drifts: one doc says seven while another says five), and a reader never navigates by it. Name the few that matter; the count is the code's to know.
+- **Draw a flow, don't narrate it.** A relationship or sequence reads better as an indented tree or an arrow chain (`request → middleware → handler`) than threaded through a long sentence.
 
 ### Consolidation — adding is an opportunity to simplify
 
