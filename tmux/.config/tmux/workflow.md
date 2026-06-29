@@ -34,6 +34,7 @@ The picker and status bar are only as useful as your names.
 
 - **`prefix M`** renames the **current session** — do this when a session's default name (`0`, `1`) is meaningless, so `prefix T` reads well.
 - **`prefix m`** renames the **current window**.
+- **Panes** rename via the command prompt instead of a key (you do it rarely): **`prefix :`** then **`rename-pane "label"`** names the current pane, **`unname-pane`** clears it — both tab-complete like native commands. Naming a pane shows the label on its **border**; unnaming removes the border again. To fully reset a pane, use `unname-pane`, *not* `rename-pane ""` (which re-shows an empty border). One catch: the border is per-window, so `unname-pane` clears every label in that window — re-run `rename-pane` on any you want to keep.
 
 The worktree popup names windows after their branch automatically; rename ad-hoc windows (`prefix m`) so browsing with `prefix C-h`/`C-l` makes sense.
 
@@ -126,7 +127,7 @@ Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore wh
 | split | `prefix \|` side-by-side · `prefix -` stacked |
 | worktree | `prefix W` → type name → `ctrl-n` |
 
-**Rename** — session `prefix M` · window `prefix m`
+**Rename** — session `prefix M` · window `prefix m` · pane `prefix :` → `rename-pane "…"` / `unname-pane`
 
 **Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x` · break/join pane `prefix !` / `prefix @`
 
