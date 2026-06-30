@@ -117,6 +117,12 @@ trust_level = "trusted"
 [projects."/Users/qiushi/dev/duet"]
 trust_level = "trusted"
 
+[projects."/private/var/folders/kl/7wvm1wp50ng3z83rfdwxks480000gn/T/tmp.s8FqJxuLYy"]
+trust_level = "trusted"
+
+[projects."/Users/qiushi/dev/itell"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
