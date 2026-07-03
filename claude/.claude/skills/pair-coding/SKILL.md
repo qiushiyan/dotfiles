@@ -1,7 +1,7 @@
 ---
 name: pair-coding
 disable-model-invocation: true
-description: "Pair-code with Codex by driving it in a sibling tmux pane for design review and code review. Use when the user has a design document or high-level plan ready and wants critical peer review from Codex before implementation, or after implementation for code review. Requires tmux and Codex CLI. Triggers: 'pair-code with codex', 'begin pair-coding', 'get codex review', 'review this plan with codex', 'start codex in another pane'."
+description: "Pair-code with Codex in a sibling tmux pane: design review before implementation, code review after."
 ---
 
 # Pair-coding with Codex
@@ -17,9 +17,10 @@ Drive Codex in a sibling tmux pane for design and code review. Claude Code acts 
 
 ```bash
 PANE=$(codex-pane-setup)
+tmux-wait-for-text -t "$PANE" -p '^›\s*$' -T 15
 ```
 
-The function is idempotent: it reuses an existing sibling pane and skips launching Codex if it's already running. After running setup, capture the last few lines of the pane to check if Codex is ready (look for the `›` prompt). If Codex was just started, wait ~5 seconds first. Tell the user when Codex is ready.
+`codex-pane-setup` is idempotent: it reuses an existing sibling pane and skips launching Codex if it's already running. `tmux-wait-for-text` blocks until Codex's prompt is ready — a bare `›` alone on its line — instead of a fixed sleep, so it works the same whether Codex just started or was already sitting there. Tell the user when Codex is ready.
 
 ## Sending prompts
 
@@ -33,20 +34,21 @@ tmux send-keys -t "$PANE" Enter
 
 ## Waiting for Codex to finish
 
-Codex responses for design reviews often take 2-5 minutes as it explores the codebase. Be patient.
+Codex responses for design reviews often take 2-5 minutes as it explores the codebase.
 
-1. After sending a prompt, wait at least 30 seconds before checking.
-2. Capture the last ~15 lines of the pane:
-   ```bash
-   tmux capture-pane -t "$PANE" -p -J -S - | tail -15
-   ```
-3. Use your judgment to determine if Codex is still working or finished:
-   - **Still working**: `•` bullets with progress text ("Explored", "Ran", "Read"), separator lines (`───`), or spinners. Wait another 30 seconds and check again.
-   - **Finished**: a bare `›` prompt at the bottom of the pane, typically followed by a status line like `gpt-5.3-codex ... left`.
-4. Once finished, capture the full response:
-   ```bash
-   tmux capture-pane -t "$PANE" -p -J -S -
-   ```
+```bash
+tmux-wait-for-text -t "$PANE" -p '^›\s*$' -T 300 -i 3
+```
+
+This blocks until the prompt returns to a bare `›` on its own line — the same ready signal as setup — instead of polling on a fixed schedule. On timeout it exits 1 and prints the last captured text to stderr; decide whether to wait again or check in with the user.
+
+Once it returns, capture the response since the prompt you sent — anchor on a short, distinctive fragment of it, since long or multiline input may wrap in the pane and won't match verbatim:
+
+```bash
+tmux capture-pane -t "$PANE" -p -J | sed -n '/<fragment of your sent prompt>/,$p' | sed '1d'
+```
+
+This avoids re-reading the whole session's scrollback on later rounds, since Codex stays in the same pane across both review phases.
 
 ## Phase 1: Design review (two rounds)
 

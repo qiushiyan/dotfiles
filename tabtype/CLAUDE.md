@@ -58,6 +58,8 @@ When adding or revising a snippet, ask whether its phase has a test angle and pi
 
 The pair around the review boundary shows the principle sharply: `compact-for-review` _retains_ the decision rationale (you must defend it under review) that `compact-for-cleanup` _discards_ (finishing doesn't relitigate it). The load-bearing rule when adding another: preserve only what the work _after_ the compaction consumes; everything else is noise.
 
+`compact-inflight` (standalone helper) is the cousin for a pause that _isn't_ a stage boundary — the same task continues immediately after, so there's no "next phase" to tune for. It keeps the work's live state (what's in progress, decisions made and why, live repo facts) instead of a settled artifact, but drops the journey the same way the boundary compacts do. Choosing rule: `compact-for-*` at a stage boundary, `compact-inflight` when the pause is mid-work.
+
 ## Snippet schema
 
 ```toml

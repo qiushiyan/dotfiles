@@ -4,16 +4,6 @@
 
 `session:window.pane` (e.g. `work:1.2`).
 
-## Send input
-
-Always send text and Enter separately for TUI apps. Use `-l` for literal text:
-
-```bash
-tmux send-keys -t $PANE -l -- "your message"
-sleep 0.5
-tmux send-keys -t $PANE Enter
-```
-
 ## Control keys
 
 ```bash
@@ -24,13 +14,13 @@ tmux send-keys -t $PANE Escape   # escape
 
 ## Wait for prompt
 
-Use `wait-for-text.sh` instead of fixed sleeps:
+Use `tmux-wait-for-text` instead of fixed sleeps:
 
 ```bash
-scripts/wait-for-text.sh -t $PANE -p '›' -T 15
+tmux-wait-for-text -t $PANE -p '›' -T 15
 ```
 
-Options: `-p` pattern (regex), `-F` fixed string, `-T` timeout seconds, `-i` poll interval, `-l` history lines.
+Options: `-p` pattern (regex), `-F` fixed string, `-T` timeout seconds, `-i` poll interval, `-l` history lines. Defined in `zsh/.config/zsh/tmux-utils.zsh`, loaded in every shell.
 
 ## Read pane output
 
@@ -41,7 +31,8 @@ tmux capture-pane -t $PANE -p -J
 # last N lines of scrollback
 tmux capture-pane -t $PANE -p -J -S -200
 
-# response after a known input (token-efficient)
+# response after a known input (token-efficient) — anchor on a short,
+# distinctive fragment, since long/multiline input may wrap in the pane
 tmux capture-pane -t $PANE -p -J | sed -n '/known input/,$p' | sed '1d'
 ```
 

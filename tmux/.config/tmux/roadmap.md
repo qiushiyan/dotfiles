@@ -108,4 +108,4 @@ survives toggles (hand-rolled, ~10 lines, or the `omerxx/tmux-floax` plugin).
   (`scripts/worktree.md`): one surface per concept, lean on built-in safety, pass
   tmux context (session, path) in as args rather than inferring it.
 - For **B** and any pane-driving automation, `tmux-scripting.md` already documents
-  `send-keys` / `capture-pane` / `wait-for-text.sh`.
+  `send-keys` / `capture-pane` / `tmux-wait-for-text`.
