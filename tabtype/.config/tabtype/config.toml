@@ -7,16 +7,16 @@ expand = '''
 
 1. **Read the relevant code** to see how things work today. Trace real data/control flow, note existing constraints and why they exist, cite the files/functions you read. Without this, "first principles" is guessing.
 2. **Interview me about ambiguous product intent** (fuzzy terms, unclear scope, priorities you're guessing at) and **push back if my framing seems off**. One question at a time, each with your recommended answer. Don't ask what code can answer — you've just read it. **For clear, targeted bug fixes, skip this step.**
-3. **State the real problem** and the underlying UX goal **in your own words**, informed by what you read and learned.
-4. **Evaluate the current design** against the goal — is this a *local* change the current structure absorbs cleanly, or is the structure itself in the way? When the foundation fights the change, the move is **preparatory refactoring** (Kent Beck: *make the change easy, then make the easy change*) — reshape what's there first so the feature becomes a natural addition, instead of wedging it into a shape that resists it.
-5. **Propose 2–3 approaches** from first principles, with tradeoffs (complexity, blast radius, UX impact, future flexibility). Recommend one and explain why.
+3. **State the real problem** and the underlying goal **in your own words**, informed by what you read and learned.
+4. **Evaluate the current design** against the goal — is this a *local* change the structure absorbs cleanly, or is the structure itself in the way? When the foundation fights the change, reach for **preparatory refactoring** (Kent Beck: *make the change easy, then make the easy change*) — reshape the foundation first so the feature becomes a natural addition.
+5. **Explore the design space, then synthesize.** Sketch 2–3 approaches that make *genuinely different bets* — from a contained change within the subsystem's current structure to a rework of its architecture — so they stress-test each other instead of standing in as strawmen for a choice you've already made. Then recommend a direction built *from* that comparison, weighed by how fully it solves the root problem rather than how little it disturbs: combine the best of more than one where it helps, rather than adopt a single option whole. Name the tradeoff you're accepting, and where the decision is genuinely a judgment call, say so.
 
-Don't patch a flawed design with another patch. Don't shy from structural changes when justified — but back "structurally wrong" claims with code, and name the cost. Preparatory refactoring earns its place only when the structure genuinely blocks the goal — not as license to rewrite what merely looks imperfect.'''
+Don't patch a flawed design with another patch, and don't shy from structural change when it's justified — but back a "structurally wrong" claim with code and name its cost. Preparatory refactoring is earned only when the structure genuinely blocks the goal, never license to rewrite what merely looks imperfect.'''
 
 [[snippets]]
 key = "compare-notes"
 expand = '''
-Another engineer analyzed the same problem. Think critically, compare notes, synthesize the best of both — **don't change your position just because they disagree**. If their reasoning is wrong, say so. For each disagreement, take a clear position and explain why; **don't split the difference**.
+Another engineer analyzed the same problem independently. Compare notes and build the sharper direction — take what's genuinely stronger in their reasoning and combine it with yours, rather than defending your draft or averaging the two. **Update where they're right; hold where they're not**, and say why — don't shift just because they disagree, and **don't split the difference**. Settle a factual disagreement on what the code actually shows, not on who argued it better; where a difference is a real judgment call rather than a matter of fact, surface it as an open choice rather than forcing agreement.
 
 Their analysis below:
 
@@ -296,6 +296,38 @@ Round-2 reviewer feedback on the plan below. Apply valid points and update. Disa
 
 $0'''
 
+# ── Direct build (skip spec/plan) ─────────────────────
+
+[[snippets]]
+key = "implement-direct"
+expand = '''
+Build the change directly from what we settled in our discussion — that's the spec here; there's no separate spec or plan doc. This is small, well-understood work, so treat what follows as a lens scaled to the change, not ceremony — adapt it, drop what doesn't fit.
+
+## Read these first, then build
+Read each and adapt it to this change — the bar, not optional background; don't go hunting them mid-build, and ask me for a path if one's missing.
+- `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test, illegal states
+- `~/.config/lessons/testing/tdd-loop.md` — vertical slices, behavior-focused tests, mock only at boundaries, anti-patterns
+
+## Before you write code
+- **Re-read what we settled** — the direction and target shape are decided; execute them, don't re-decide.
+- **Re-read the code you're about to touch** — trace the real data/control flow and existing patterns, so the change fits what's already there.
+
+## How to build it
+
+### Slicing
+Build in **vertical slices** — one meaningful unit at a time (a behavior plus the wiring that belongs with it), each independently committable, one slice per commit. Lean larger, and **prefer a shape that deletes a concept** — a branch, mode, or helper layer disappears — over one that just rearranges it. If the foundation needs reshaping first, do it as a **behavior-preserving** step kept green before the change lands on it.
+
+### Right-size the code
+The default failure here is too much code, not too little — defensive branches for cases that can't occur, and abstractions invented before the pattern is real. Build against it:
+- **Make a bad state impossible to construct, don't guard against it.** Reach for a type, a narrow constructor, or an enum an invalid value can't inhabit, over runtime guards repeated at every call site. Validate untrusted input once at the boundary (*parse, don't validate*); let a real invariant violation fail loudly rather than hide behind a fallback.
+- **Prefer a little duplication over the wrong abstraction.** Pull out a shared abstraction only when the pattern is real (around the third occurrence) and doing so *concentrates* complexity instead of just moving it (the deletion test).
+- **Build only what we settled** — no speculative features, config knobs, or extensibility seams nobody asked for; each is maintenance forever.
+
+### Tests
+Write each test against **real** behavior as you build its slice, not a batch up front against imagined shapes — behavior through the public interface, covering the critical paths and complex logic, not every edge case (skip UI tests unless asked). Apply red-green-refactor inside a slice when design is uncertain or behavior is subtle; test and code together is fine otherwise. Run them as you go and keep them green.
+
+If a decision turns out wrong or underspecified once you're in the code, **stop and flag it** rather than guessing your way past it.'''
+
 # ── Mid-implementation checkpoint ─────────────────────
 
 [[snippets]]
@@ -567,6 +599,14 @@ When the work needs non-trivial, well-understood mechanical logic — retries an
 - **When you adopt one**, first check the repo doesn't already depend on something that covers it. Then **confirm its current API with Context7** and **use web search for best practices, common pitfalls, the latest version, and any breaking changes** — a call from memory may be deprecated, and that error compounds straight into the build. Match how nearby code already wires its dependencies. If you can't reach either tool, don't guess from memory — name the specific API surfaces that need verifying so they get checked.
 
 Skip this for the repo's own code and stable language/runtime facts — read those from the source here. It's for the moving parts you don't control. A dependency weighty enough to be an architecture decision in its own right is the user's call, not a silent add — surface it.'''
+
+[[snippets]]
+key = "handle-review"
+expand = '''
+Consider the code review feedback critically and reason if they are valid. If valid, what's a clean
+and integrated solution should be, which might be different than what the reviewer originally
+suggested. Discard requests that are out of scope for this session, but also value small things that genuinly improves code quality and readability, don't defer them just because they are small. Think from first principles and our overall sesssion goals.
+'''
 
 
 [settings]
