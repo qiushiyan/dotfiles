@@ -1,6 +1,6 @@
 ---
 name: prompt-engineering
-description: Reference for designing and improving prompts, agent context, and tool surfaces — written for how a model reads, not how a human documents.
+description: Prompt-engineering rulebook for model-facing text — system prompts, agent instructions, tool definitions and results, skill bodies, context layout. Use when writing a new prompt or tool surface, or when improving or reviewing an existing one.
 ---
 
 # Prompt engineering
@@ -32,7 +32,7 @@ These five carry the rest. Most specific rules are a corollary of one of them.
 - **Explain the why.** A model generalizes from a reason far better than from a bare rule — it will apply the intent to cases you never anticipated. A constraint stated as a bare prohibition invites creative violation; the same constraint stated as a framework _with its motivation_ becomes part of how the model reasons.
 - **Minimal but complete.** Aim for the smallest set of information that fully specifies the behavior you want — nothing redundant, nothing missing. Minimal does not mean short; it means no padding. Over-specification breeds brittleness and overtriggering; under-specification yields generic output.
 - **Everything is prompt surface.** Tool names, parameter names, descriptions, result text, and error messages all consume the model's attention and steer its behavior. Treat them with the same care as the system prompt.
-- **The cold-reader test.** The artifact you write is read _standalone_ — by a model that has none of your conversation: not the problem you've been solving, the system you've been building, or the code tour you just took. That context is yours, not the file's, and it skews you two ways at once. You _under-supply_ the basics — what this thing is, the system it's part of — because they're obvious to you. And you _over-supply_ your own vocabulary — internal names, product concepts, domain terms that read as precise to you and as noise to a reader who's never seen them, _because_ they carry so much meaning for you. Both are the curse of knowledge, sharpest exactly when your context is richest — i.e. while authoring. Run a check for each direction. _Under-supply:_ anchor the basics, then read it cold — if a fresh reader saw _only_ this, would they know what it is and what to do? _Over-supply:_ the **familiar-term test** — for every internal name, product concept, or domain term, ask _does this help the model do the task, or understand the problem it's on — or is it here only because I know what it means?_ Familiarity is not value. Make this a deliberate test, not a recognition rule, because your own jargon never _feels_ like jargon — it feels necessary; the test catches it precisely by interrogating the comfortable terms too. When a term fails, replace it with the plain thing it stands for: name the work, not the label you filed it under.
+- **The cold-reader test.** The artifact is read _standalone_, by a model with none of your conversation — and your authoring context skews you two ways at once (both are the curse of knowledge, sharpest exactly when your context is richest). You _under-supply_ the basics — what this thing is, the system it belongs to — because they're obvious to you: anchor the identity first, then read it cold — if a fresh reader saw _only_ this, would they know what it is and what to do? And you _over-supply_ your own vocabulary: run the **familiar-term test** on every internal name, product concept, or domain term — _does this help the model act, or is it here only because I know what it means?_ Make it a deliberate test, not a recognition rule — your own jargon never _feels_ like jargon — and when a term fails, replace it with the plain thing it stands for: name the work, not the label you filed it under.
 
 ---
 
@@ -65,6 +65,10 @@ Dial back `CRITICAL:`, `you MUST`, ALL-CAPS, "exactly once." Modern models are h
 
 - Write **strong heuristics, not brittle if-else logic, and not vague platitudes.** Encode the expert _strategy_; leave the model judgment room where you don't actually care about the specifics. "Think carefully about whether the loop has converged before continuing" beats a hand-authored decision tree — and survives cases the tree didn't foresee.
 - **Prefer general instructions over prescriptive step lists.** Use numbered steps only when order or completeness genuinely matters.
+
+### One world per rendered prompt
+
+When prompts are assembled from configuration — templates, modes, feature flags, per-deployment variants — **branch in the composer, not in the prose**. The model should read only the instructions that apply to _this_ configuration, and shouldn't be able to tell other modes exist: conditional prose ("if X mode, …; otherwise …") makes it parse configuration state, hedges the instruction, and spends attention on branches that don't apply. Where configurations diverge in what the model should _do_, give each value its own dedicated fragment; share prose only when it's genuinely identical across values — prefer forking a fragment over parameterizing it into hedged generality.
 
 ### Examples (few-shot)
 
@@ -118,6 +122,8 @@ Use each surface for what it does best, and **keep one source of truth per behav
 
 Tool result text is the **most underused, highest-signal** surface — it's read at the exact moment the model decides its next action. When system-prompt guidance isn't landing, the first question is: "is there a tool result that fires at the right moment where a nudge would be more effective?"
 
+The complement that bounds result-surface teaching: **a result carries per-call state and the next action; invariant procedure lives in the durable prompt.** Agents compact — teaching that exists only in a tool result is discarded with the turn that carried it, leaving later turns referencing a procedure the model no longer holds. If the same procedural text would ride every result, relocate it to the system prompt and let the result say only what's specific to this call.
+
 ---
 
 ## Tool design
@@ -149,6 +155,11 @@ An error result is a steering opportunity, not a stack trace. **Name the failure
 > The {service} call failed at the infrastructure layer ({detail}); your input was never processed, so this is not a content problem. Retry the identical call once; if it fails again, stop and report to the user rather than continuing.
 
 Validation errors should communicate the **specific fix** ("expected `role` to be `implementer` or `reviewer`"), never opaque codes. And the error must reach the _model_ (in the result it reads), or it can't self-correct and will retry the same mistake blindly.
+
+Two constraints keep prescriptions honest:
+
+- **An error may only prescribe what it can prove.** "Your input was never processed — retry" is the right message only when that's verifiably true; the same words after a partially-completed operation license a duplicate. Split the result on what actually happened (never-started → retry; partially-done → resume or inspect, don't re-send). The discriminator is the _action the message licenses_ — the wrong one corrupts state a retry can't fix.
+- **Keep the detail slot concise.** Extract the underlying failure's reason line, never the raw dump — an error that prescribes recovery from inside a 30KB log has defeated its own purpose.
 
 ### Results nudge the next step (mini-context)
 
@@ -183,6 +194,8 @@ When improving an existing prompt or tool, scan for these. Each maps to a princi
 - **Context bloat / pre-loading everything** — stuffing all possibly-relevant material into the window up front. (Hold references and load just-in-time; keep the prefix small and stable.)
 - **Everything in the system prompt** — moment-specific behavior crammed into the always-on prompt. (Move it to a tool-result nudge that fires at the moment.)
 - **Duplication across surfaces** — the same rule in the system prompt, a tool description, and a result. (One source of truth.)
+- **Config-conditional prose** — rendered instructions that branch on modes the model can't see ("if the posture is X, …; otherwise …"). (Branch in the composer; a dedicated fragment per value.)
+- **Unearned error certainty** — a recovery prescription ("never processed — retry") the system can't actually verify, licensing duplicate or destructive re-work. (Split the error on what provably happened; prescribe only the action that's safe under it.)
 - **Opaque tool returns and errors** — UUIDs, raw blobs, stack traces, bare error codes. (Semantic fields; recovery-prescribing errors.)
 
 ---
