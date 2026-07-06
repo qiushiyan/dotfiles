@@ -70,6 +70,8 @@ The spec is a high-level implementation plan — technical content is fine, but 
 
 **Do not include any time/effort estimates** ("2 days", "~3 hours"), describe the work itself.
 
+**Before you finish, hunt the rabbit holes** — walk the approach end to end looking for what could quietly eat the build: a technical unknown nobody has proven, a design problem the spec gestures at but doesn't solve, an interdependency that reads simpler than it is. For each one: solve it here, cut it out of scope explicitly, or name it in the open questions. An unnamed hole doesn't disappear — it resurfaces mid-build as a stall or a silent wrong turn.
+
 If you have remaining product questions or major technical uncertainty, interview me before you write.'''
 
 [[snippets]]
@@ -252,6 +254,8 @@ Background (skim as a lens, don't recite):
 Challenge sequencing, scope, choice of vertical slices, **whether the plan deletes complexity or just rearranges it**, **whether the resulting modules are deep or shallow**, and **whether any preparatory-refactoring slice is proportionate to the feature, not quietly a rewrite** — not just surface details.
 
 **Watch for over-building** — the plan's likelier failure is too much code, not too little: defensive handling for states it could make unrepresentable, fallbacks for cases that can't occur, speculative features or config the spec didn't ask for, or a shared abstraction pulled out too early. Flag these the way you'd flag a missing case. And steer the other way when you catch yourself wanting *more* — prefer pushing a bad state to where it's unrepresentable, or validation to a single boundary, over adding error handling at every call site.
+
+**Run a pre-mortem before you write up findings.** It's a month from now: the build off this plan stalled, or shipped subtly wrong — no crash, no failing test. Write down the two or three most plausible causes, then check whether the plan already defends against each; any it doesn't becomes a finding. Looking back from an assumed failure surfaces risks that reading forward misses.
 
 The right plan should feel inevitable. Don't default to politeness.
 
