@@ -1,4 +1,6 @@
-PACKAGES := $(sort $(dir $(wildcard */)))
+# vpn-private/ is a local backup/handoff folder (gitignored), NOT a stow
+# package — filter it out so `install`/`restow` never symlinks it into $HOME.
+PACKAGES := $(filter-out vpn-private/,$(sort $(dir $(wildcard */))))
 
 # Dirs that must exist as REAL directories before stowing, so stow folds only
 # the tracked config inside them (per-item symlinks) instead of replacing the

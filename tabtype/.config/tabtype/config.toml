@@ -29,7 +29,7 @@ $0'''
 [[snippets]]
 key = "write-spec"
 expand = '''
-Now, write the spec to `docs/superpowers/specs/`. Ground problem and approach in actual code — read the relevant modules first if you haven't. **Tight prose beats exhaustive sections.**
+Now, write the spec to `docs/specs/`. Ground problem and approach in actual code — read the relevant modules first if you haven't. **Tight prose beats exhaustive sections.**
 
 **Open with a leader-facing summary.** The spec's first section reports the change the way you'd report it to your leader:
 - What we're adding or fixing, in product terms — the feature, the bug, the problem it solves.

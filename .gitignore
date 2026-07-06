@@ -63,6 +63,14 @@ tmux/.config/tmux/plugins/
 # === Zed prompt library (binary LMDB; rsync from old Mac if needed) ===
 zed/.config/zed/prompts/
 
+# === Home VPN / GFW-bypass setup — PRIVATE (handoff docs + config backups) ===
+# NOT a Stow package (filtered out of PACKAGES in the Makefile so `make
+# install`/`restow` never symlinks it into $HOME). Ignored as a whole because
+# it holds CREDENTIALS — airport subscription URLs and node UUIDs — that must
+# never reach this PUBLIC repo. Lives on disk locally as the backup/handoff
+# reference; see vpn-private/README.md.
+vpn-private/
+
 # === Misc tool droppings ===
 .python-version
 .DS_Store

@@ -74,7 +74,7 @@ When the work is large, I manually pause the implementer at a commit partway thr
 
 ## Helpers that fit anywhere
 
-- **`compact-inflight`** — when context is running long mid-work but the same task continues right after, not at a stage boundary. Unlike `compact-for-plan`/`compact-for-review`/`compact-for-cleanup`, which each keep what the *next stage* consumes, this keeps the *in-flight state* — what's in progress, decisions made and why, live repo facts — and drops the journey. Also the right one to reach for when resuming after a compaction got interrupted mid-slice.
+- **`compact-inflight`** — when context is running long mid-work but the same task continues right after, not at a stage boundary. Unlike `compact-for-plan`/`compact-for-review`/`compact-for-cleanup`, which each keep what the _next stage_ consumes, this keeps the _in-flight state_ — what's in progress, decisions made and why, live repo facts — and drops the journey. Also the right one to reach for when resuming after a compaction got interrupted mid-slice.
 
 - **`list-assumptions`** — when you suspect the agent is guessing about data, intent, or system state. Forces categorization into verified / likely / speculative.
 

@@ -43,6 +43,7 @@ function parseArgs(argv) {
     model: undefined,
     effort: undefined,
     resume: undefined,
+    baseline: undefined,
     allowWrite: false,
     cwd: process.cwd(),
     outDir: undefined,
@@ -62,6 +63,7 @@ function parseArgs(argv) {
       case '--model': opts.model = next(); break;
       case '--effort': opts.effort = next(); break;
       case '--resume': opts.resume = next(); break;
+      case '--baseline': opts.baseline = next(); break;
       case '--allow-write': opts.allowWrite = true; break;
       case '--cwd': opts.cwd = path.resolve(next()); break;
       case '--out-dir': opts.outDir = path.resolve(next()); break;
@@ -102,6 +104,52 @@ function gitRoot(cwd) {
       .toString().trim();
   } catch {
     return undefined;
+  }
+}
+
+function gitHead(cwd) {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { cwd, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString().trim();
+  } catch {
+    return undefined;
+  }
+}
+
+// ---------- session lock (one live turn per session id) ----------
+// A concurrent second turn on the same session — including a --resume racing a
+// live one — corrupts the conversation. The lock makes that race fail fast
+// instead of silently interleaving. Stale locks (dead pid) are taken over.
+
+function lockPath(sessionId) {
+  const dir = path.join(os.homedir(), '.local', 'state', 'sidekick', 'locks');
+  fs.mkdirSync(dir, { recursive: true });
+  return path.join(dir, `${sessionId.replace(/[^a-zA-Z0-9._-]+/g, '-')}.lock`);
+}
+
+function pidAlive(pid) {
+  try { process.kill(pid, 0); return true; }
+  catch (err) { return err.code === 'EPERM'; }
+}
+
+function acquireSessionLock(sessionId, outDir, { soft = false } = {}) {
+  const p = lockPath(sessionId);
+  const payload = JSON.stringify({ pid: process.pid, outDir, startedAt: new Date().toISOString() }) + '\n';
+  try {
+    fs.writeFileSync(p, payload, { flag: 'wx' });
+    return p;
+  } catch (err) {
+    if (err.code !== 'EEXIST') throw err;
+    let held;
+    try { held = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { held = undefined; }
+    if (held && pidAlive(held.pid)) {
+      const msg = `session ${sessionId} already has a live turn (pid ${held.pid}, started ${held.startedAt}, out-dir ${held.outDir}). One turn per session: wait for it, or watch it with: tail -f ${path.join(held.outDir ?? '', 'raw.log')}`;
+      if (soft) { console.log(`lock warning: ${msg}`); return undefined; }
+      process.stderr.write(`lock error: ${msg}\n`);
+      process.exit(3);
+    }
+    fs.writeFileSync(p, payload); // stale lock from a dead process — take it over
+    return p;
   }
 }
 
@@ -173,7 +221,12 @@ function parseClaudeStdout(stdout) {
   if (!envelope) return { kind: 'unparseable' };
 
   const usage = envelope.usage && typeof envelope.usage.input_tokens === 'number'
-    ? { input: envelope.usage.input_tokens, output: envelope.usage.output_tokens ?? 0 }
+    ? {
+        input: envelope.usage.input_tokens,
+        cacheRead: envelope.usage.cache_read_input_tokens ?? 0,
+        cacheCreation: envelope.usage.cache_creation_input_tokens ?? 0,
+        output: envelope.usage.output_tokens ?? 0,
+      }
     : undefined;
   const base = {
     sessionId: envelope.session_id,
@@ -221,6 +274,42 @@ const startedAt = new Date();
 // fresh thread's id from the first thread.started event.
 let sessionId = opts.provider === 'claude' ? (opts.resume ?? randomUUID()) : opts.resume;
 
+// The review anchor: explicit --baseline wins; a write turn defaults to HEAD so
+// collect.mjs can always diff the delegate's work.
+const baseline = opts.baseline ?? (opts.allowWrite ? gitHead(opts.cwd) : undefined);
+let sessionLock = sessionId ? acquireSessionLock(sessionId, outDir) : undefined;
+
+const takeoverFor = (id) => (opts.provider === 'claude' ? `claude --resume ${id}` : `codex resume ${id}`);
+
+// meta.json exists from turn start (status "running") so a killed or crashed job
+// still leaves its coordinates on disk; finish() overwrites with the final record.
+function writeMeta(extra) {
+  const meta = {
+    status: 'running',
+    provider: opts.provider,
+    model: opts.model ?? null, // null = the provider's own configured default
+    effort: opts.effort ?? null,
+    cwd: opts.cwd,
+    allowWrite: opts.allowWrite,
+    gitBaseline: baseline ?? null,
+    sessionId: sessionId ?? null,
+    resumeFlag: sessionId ? `--resume ${sessionId}` : null,
+    takeoverCommand: sessionId ? takeoverFor(sessionId) : null,
+    startedAt: startedAt.toISOString(),
+    endedAt: null,
+    durationMs: null,
+    timeoutMin: opts.timeoutMin,
+    label: opts.label ?? null,
+    promptFile: path.resolve(opts.promptFile),
+    outDir,
+    tokens: null,
+    costUsd: null,
+    error: null,
+    ...extra,
+  };
+  fs.writeFileSync(path.join(outDir, 'meta.json'), JSON.stringify(meta, null, 2) + '\n');
+}
+
 const argv = opts.provider === 'claude' ? claudeArgs(opts, sessionId) : codexArgs(opts, lastMessagePath);
 const env = opts.provider === 'claude'
   ? { ...process.env, API_FORCE_IDLE_TIMEOUT: '1' } // claude's native stall watchdog; a Claude API knob, never set on codex
@@ -228,7 +317,13 @@ const env = opts.provider === 'claude'
 
 fs.appendFileSync(rawLog, `# ${opts.provider} ${argv.join(' ')}\n# cwd: ${opts.cwd}\n# started: ${startedAt.toISOString()}\n`);
 console.log(`out-dir: ${outDir}`);
-if (sessionId) console.log(`session: ${sessionId}`);
+console.log(`watch: tail -f ${rawLog}`);
+if (baseline) console.log(`baseline: ${baseline}`);
+if (sessionId) {
+  console.log(`session: ${sessionId}`);
+  console.log(`takeover: ${takeoverFor(sessionId)}`);
+}
+writeMeta({ status: 'running' });
 
 const child = spawn(opts.provider, argv, { cwd: opts.cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
 child.stdin.write(promptText);
@@ -251,11 +346,20 @@ function handleCodexLine(line) {
     if (!sessionId) {
       sessionId = event.thread_id;
       console.log(`session: ${sessionId}`);
+      console.log(`takeover: ${takeoverFor(sessionId)}`);
+      // soft: a fresh thread id can't be mid-race; never kill a running turn over it
+      sessionLock = sessionLock ?? acquireSessionLock(sessionId, outDir, { soft: true });
+      writeMeta({ status: 'running' });
     }
   } else if (event.type === 'item.completed' && event.item?.type === 'agent_message') {
     codex.finalText = event.item.text;
   } else if (event.type === 'turn.completed' && event.usage) {
-    codex.tokens = { input: event.usage.input_tokens ?? 0, output: event.usage.output_tokens ?? 0 };
+    codex.tokens = {
+      input: event.usage.input_tokens ?? 0,
+      cachedInput: event.usage.cached_input_tokens ?? 0,
+      output: event.usage.output_tokens ?? 0,
+      reasoningOutput: event.usage.reasoning_output_tokens ?? 0,
+    };
   } else if (event.type === 'turn.failed') {
     codex.errorText = event.error?.message ?? 'turn failed';
   } else if (event.type === 'error') {
@@ -305,7 +409,19 @@ child.on('error', (err) => {
   finish({ status: 'infra', errorText: `failed to spawn ${opts.provider}: ${err.message}` });
 });
 
-child.on('close', (code) => {
+// Normal completion waits for 'close' (streams flushed). A timeout kill can
+// leave grandchild processes holding the stdio pipes so 'close' never fires;
+// 'exit' + a short grace period is the fallback that keeps the cap honest.
+let childDone = false;
+child.on('close', (code) => onChildDone(code));
+child.on('exit', (code) => {
+  if (!timedOut) return;
+  setTimeout(() => onChildDone(code ?? 0), 2000);
+});
+
+function onChildDone(code) {
+  if (childDone) return;
+  childDone = true;
   clearInterval(heartbeat);
   if (timeoutPoll) clearInterval(timeoutPoll);
   if (lineBuffer && opts.provider === 'codex') handleCodexLine(lineBuffer);
@@ -351,7 +467,7 @@ child.on('close', (code) => {
   } else {
     finish({ status: 'failed', errorText: parsed.errorText, partial: parsed.partial, tokens: parsed.tokens, costUsd: parsed.costUsd });
   }
-});
+}
 
 function finish({ status, text, errorText, partial, tokens, costUsd }) {
   const endedAt = new Date();
@@ -365,39 +481,22 @@ function finish({ status, text, errorText, partial, tokens, costUsd }) {
   const resultPath = path.join(outDir, 'result.md');
   fs.writeFileSync(resultPath, resultBody);
 
-  const takeover = sessionId
-    ? (opts.provider === 'claude' ? `claude --resume ${sessionId}` : `codex resume ${sessionId}`)
-    : undefined;
-  const meta = {
+  writeMeta({
     status,
-    provider: opts.provider,
-    model: opts.model ?? null, // null = the provider's own configured default
-    effort: opts.effort ?? null,
-    cwd: opts.cwd,
-    allowWrite: opts.allowWrite,
-    sessionId: sessionId ?? null,
-    resumeFlag: sessionId ? `--resume ${sessionId}` : null,
-    takeoverCommand: takeover ?? null,
-    startedAt: startedAt.toISOString(),
     endedAt: endedAt.toISOString(),
     durationMs: endedAt.getTime() - startedAt.getTime(),
-    timeoutMin: opts.timeoutMin,
-    label: opts.label ?? null,
-    promptFile: path.resolve(opts.promptFile),
-    outDir,
     tokens: tokens ?? null,
     costUsd: costUsd ?? null,
     error: status === 'ok' ? null : (errorText ?? null),
-  };
-  const metaPath = path.join(outDir, 'meta.json');
-  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + '\n');
+  });
+  if (sessionLock) { try { fs.unlinkSync(sessionLock); } catch {} }
 
   console.log('');
   console.log(`status: ${status}`);
   console.log(`result: ${resultPath}`);
-  console.log(`meta: ${metaPath}`);
+  console.log(`meta: ${path.join(outDir, 'meta.json')}`);
   console.log(`session: ${sessionId ?? '(none)'}`);
-  if (takeover) console.log(`takeover: ${takeover}`);
+  if (sessionId) console.log(`takeover: ${takeoverFor(sessionId)}`);
 
   process.exit(status === 'ok' ? 0 : status === 'failed' ? 1 : status === 'timeout' ? 4 : 2);
 }
