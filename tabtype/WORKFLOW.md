@@ -10,9 +10,9 @@ The full arc covers a single feature from problem framing through PR. Most steps
 
 2. **`compare-notes`** → implementer. After both agents respond to `think-holistic`, paste the reviewer's analysis at the end of `compare-notes` and send to the implementer to synthesize the two views before committing to a direction.
 
-3. **`write-spec`** → implementer. With a direction settled, the implementer writes the spec to `docs/superpowers/specs/`. The spec stays moderately technical but defers line-level details, test design, doc plans, and precise commit order.
+3. **`write-spec`** → implementer. With a direction settled, the implementer writes the spec to `docs/specs/`. The spec is half-technical: product goals and behaviors on top; module boundaries, seams, the target shape (file structure, public API, wiring), and test standards below. The interface is chosen here — the implementer designs it twice and records the discards. It defers line-level edits, per-case test enumeration and fixtures, doc plans, and precise commit order.
 
-4. **`review-spec`** → reviewer. Critiques the spec using the three-part altitude lens. Output is structured feedback.
+4. **`review-spec`** → reviewer. Critiques the spec using the section-scoped altitude lens (product tier at product altitude, technical tier at design altitude), runs a pre-mortem, and audits whether the target shape was *chosen* or merely *first*. Output is structured feedback, ending in an "Optional polish" section of exact before → after replacements.
 
 5. **`update-spec`** → implementer. Paste the reviewer's feedback at `$0`. The implementer assesses each point (validity → update or pushback) and revises the spec.
 
@@ -28,7 +28,7 @@ The full arc covers a single feature from problem framing through PR. Most steps
 
 ## Plan stage
 
-10. **`tdd-plan`** (or `start-plan` for non-TDD work) → implementer. With the spec settled, the implementer writes a detailed plan: vertical slices, specific test cases, helper sketches, fixture shape, line-level references for existing code. Stops short of full code bodies.
+10. **`tdd-plan`** (or `start-plan` for non-TDD work) → implementer. With the spec settled — its module shape, seams, and test standards already fixed — the implementer writes the tactics it deferred: vertical slices, specific test cases, helper sketches, fixture shape, line-level references for existing code. Stops short of full code bodies, and never redraws the spec's structure.
 
 11. **`review-plan`** → reviewer. Critiques the plan against the TDD and architecture skills, applies the altitude lens.
 

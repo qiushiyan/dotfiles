@@ -29,21 +29,34 @@ $0'''
 [[snippets]]
 key = "write-spec"
 expand = '''
-Now, write the spec to `docs/specs/`. Ground problem and approach in actual code — read the relevant modules first if you haven't. **Tight prose beats exhaustive sections.**
+Now, write the spec to `docs/specs/`. Ground the problem and the approach in actual code — read the relevant modules first if you haven't.
 
-**Open with a leader-facing summary.** The spec's first section reports the change the way you'd report it to your leader:
+This document carries the design the plan is built on, and a human reads it later to understand the change. Tight prose beats exhaustive sections, and every section earns its place.
+
+## Read these first
+Adapt each to this change — they are the bar for the shape you're about to commit, not optional background. If a path is missing, ask me rather than guessing.
+
+**Read closely.** The spec decides module structure, interfaces, and where seams fall; these are the vocabulary those decisions are made in.
+- `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test, illegal states.
+- `~/.config/lessons/codebase-design/design-it-twice.md` — how to arrive at an interface instead of settling for the first one. Read it when you write the target-shape section.
+- `~/.config/lessons/codebase-design/deepening.md` — read it when the change restructures an existing cluster, or leans on a dependency across a seam you don't own: its dependency categories decide whether a seam needs a port at all.
+
+**Skim the `## The bar` at the top of each of these.** You decide *which* behaviors matter and what gets faked where; the depth below the bar belongs to the plan and the build.
+- `~/.config/lessons/testing/tdd-loop.md` — behavior through interfaces. Which behaviors matter is a product call to surface, not to assume.
+- `~/.config/lessons/testing/mocking-and-fixtures.md` — mock only at boundaries. A mock of your own module is a design signal: fix the interface here rather than plan a mock later.
+
+## The document's shape
+The spec runs top-down, product to technical, each tier at its own altitude.
+
+**A leader-facing summary, first.** Report the change the way you'd report it to your leader:
 - What we're adding or fixing, in product terms — the feature, the bug, the problem it solves.
 - The approach we're taking, and the scope of the change.
-- The boundary once it lands: what's fixed, what isn't, and what's explicitly deferred (one-line why each).
-- Risks or impacts on existing users, our mitigations, if any
+- The boundary once it lands: what's fixed, what isn't, and what's explicitly deferred (one line why each).
+- Risks or impacts on existing users, and our mitigations, if any.
 
-Technical detail earns a place here only as context that makes the problem or solution easier to grasp; someone who reads nothing else should still know what they're getting and not getting.
+Technical detail earns a place here only where it makes the problem or the solution easier to grasp. Someone who reads nothing else should still know what they're getting and not getting.
 
-**Structure the body around the flow of the change:**
-- **Distinguish current vs. desired** — what's preserved vs. what's changing.
-- **Name the coupling decision** — extension of an existing concept, or intentionally independent?
-- **Name the foundation decision (preparatory refactoring).** Is the existing code a base this extends cleanly, or a structure that blocks the design you actually want? If it blocks, scope a *bounded* reshaping as the opening move — sized to this feature, not a module rewrite — and name what you're deliberately leaving alone.
-- **Use implementation anchors** (modules, functions, files) attached to the flow — not the main narrative.
+**Product sections** — the goals, the user-facing behaviors, the non-goals. Distinguish current from desired (what's preserved versus what's changing), and name the coupling decision: an extension of an existing concept, or intentionally independent?
 
 A tree-style before/after often makes the change crisp — adapt the format (tree, prose, diagram) to what fits:
 
@@ -60,10 +73,18 @@ A tree-style before/after often makes the change crisp — adapt the format (tre
           └─ Webhook fired
           └─ Confirmation shown
 
-**When the change reshapes structure or grows a surface, give the target shape a dedicated section** — the envisioned end-state, in the same before → after register:
+**Technical sections** — the shape of the build:
+- *Module boundaries and seams* — which modules own the change, the interface each presents, and where the seam falls.
+- *The foundation decision* — is the existing code a base this extends cleanly, or a structure that blocks the design you actually want? If it blocks, scope a bounded reshaping as the opening move — sized to this feature, not a module rewrite — and name what you're deliberately leaving alone.
+- *The target shape* — the envisioned end-state; the next section says how.
+- *Test standards* — the behaviors that must be tested, and for each the strategy: through which interface, what gets faked at which boundary, plus the gotchas worth flagging. What to test and how to think about testing it — the plan enumerates the cases.
+
+## The target shape
+When the change reshapes structure or grows a surface, give the target shape its own section — the envisioned end-state, in the same before → after register. Include only the views where the change actually lives: a contained bug fix may need none; an SDK or a structural refactor may earn all three. This is the spec's highest-value handoff — the plan deepens the shape you propose instead of redrawing it.
+
 - **File/module structure** — where the pieces live once this lands: a directory tree with one-line roles, each entry a domain concept (a state, a kind of data, a responsibility), not a layer of plumbing. The structure is the spec's domain model made visible.
 - **Public API or syntax** — what a caller writes once this exists: the exported functions, the config shape, the command line. The surface a user touches, never the bodies behind it.
-- **Integration wiring** — how the new piece connects to what exists: who calls it, what it replaces, which seams it plugs into.
+- **Integration wiring** — how the new piece connects to what exists, and how data and control flow through the changed system: who calls it, what it replaces, which seams it plugs into. Prose or a diagram, with implementation anchors (modules, functions, files) attached to the flow rather than carrying it.
 
 Sketches stay small — the shape, not the build:
 
@@ -77,46 +98,65 @@ Sketches stay small — the shape, not the build:
     exportReport(report, { format: "csv" })
     (one deep entry point — not exportCsv / exportPdf / exportXlsx each exported)
 
-Shape all three with a **deep-module mindset**: small surfaces concentrating complexity behind them, the domain's states and data carved so wrong ones are hard to express, seams few and narrow rather than many and chatty. The full methodology is planning-stage reading — the mindset costs nothing now, and the shape you propose is what the plan deepens rather than redraws. This section is the spec's highest-value handoff: the builder starts out holding your mental model of the ideal shape instead of reverse-engineering one. Include only the views where the change actually lives (a contained bug fix may need none; an SDK or structural refactor may earn all three), and mark them as the *envisioned* shape, not a contract — the build may drift for stated reasons when the code teaches better, never silently.
+Shape all three with a deep-module mindset: small surfaces concentrating complexity behind them, the domain's states and data carved so wrong ones are hard to express, seams few and narrow rather than many and chatty. Mark them as the *envisioned* shape, not a contract — the build may drift for stated reasons when the code teaches better, never silently.
 
-**Be concrete, not vague.** Vague verbs — "improve", "enhance", "polish", "better", "optimize", "streamline" and friends — name a *direction*, not a *decision*; they quietly defer the real choice to implementation, which defeats the point of writing a spec. Say **what** changes: the specific behavior, state, or outcome that differs, and the rule or shape that produces it. E.g. "improve error handling" → "on a failed webhook, retry with backoff, then surface a dismissible banner instead of failing silently."
+**Design it twice before you commit.** Your first interface idea is rarely your best, and the shape you settle here is the shape the plan deepens. Per `design-it-twice.md`:
+- Sketch three shapes *different in kind*, each following one constraint further than feels comfortable: **minimal** (one to three entry points, maximum leverage each) · **flexible** (many use cases, room to extend) · **common case** (the default caller's path trivial, even at the rare one's expense) · **ports and adapters** (when a dependency crosses a seam you don't own).
+- Write the three constraints down before developing any of them, and hold the others out of view while you work each. Sequential authorship converges, and that convergence is the failure this exercise exists to prevent.
+- Compare on depth, locality, and seam placement — not taste.
 
-The spec pins decisions, not mechanics. **Don't smuggle in later-stage details:**
-- **Skip** line-by-line edits, function renames, exact call-site changes — designed later. Code appears only as the target shape's surface sketches, never as implementation bodies.
-- **No** doc update plans — later.
-- **Testing:** name behaviors that matter at a high level; specific cases, fixtures, and mocking boundaries come later.
-- Phases are fine; **no precise commit order** — sequencing later.
-- **No time/effort estimates** ("2 days", "~3 hours") — describe the work itself.
+What lands in the document is the winner, not the menu: the chosen structure / API / wiring, plus a short **Shapes considered** note — the constraint each alternative optimized and the one-line reason it lost, in that same vocabulary. Two or three lines, not three sections. It pays for itself twice: a reviewer can check whether the shape was *chosen* or merely *first*, and the plan knows why *not* the other shape, so it doesn't quietly re-derive it.
 
-**Before you finish, hunt the rabbit holes** — walk the approach end to end looking for what could quietly eat the build: a technical unknown nobody has proven, a design problem the spec gestures at but doesn't solve, an interdependency that reads simpler than it is. Solve each here, cut it out of scope explicitly, or name it in the open questions — an unnamed hole resurfaces mid-build as a stall or a silent wrong turn.
+## Before you finish
+
+**Be concrete, not vague.** Vague verbs — improve, enhance, polish, better, optimize, streamline — name a *direction*, not a *decision*; they quietly defer the real choice to implementation, which defeats the point of writing a spec. Say what changes: the specific behavior, state, or outcome that differs, and the rule or shape that produces it. "Improve error handling" → "on a failed webhook, retry with backoff, then surface a dismissible banner instead of failing silently."
+
+**Leave out what isn't yours to pin.** Two kinds. Details the code hasn't taught us yet — full code bodies, per-case test enumeration and fixtures, line-level edit plans, function renames, exact call-site changes, doc-update plans, commit order — belong to the plan and the build; the spec owes the *what*, the *why*, and the *shape*. And time or effort estimates ("2 days", "~3 hours") describe the work no better than the work itself does. Phases are fine; a precise commit order is not. Code appears only as the target shape's surface sketches.
+
+**Hunt the rabbit holes.** Walk the approach end to end looking for what could quietly eat the build: a technical unknown nobody has proven, a design problem the spec gestures at but doesn't solve, an interdependency that reads simpler than it is. Solve each here, cut it out of scope explicitly, or name it in the open questions. An unnamed hole doesn't disappear — it resurfaces mid-build as a stall or a silent wrong turn.
 
 If you have remaining product questions or major technical uncertainty, interview me before you write.'''
 
 [[snippets]]
 key = "review-spec"
 expand = '''
-I've drafted a spec. Review critically — verify problem statements and intended solutions against the actual code.
+I've drafted a spec — the design document for this change. Review critically, and verify its problem statements and intended solutions against the actual code.
 
-The spec is intentionally high-level: problem, UX goal, conceptual approach, non-goals, open questions. It IS moderately technical (can name modules, functions, composition patterns) but **defers line-level details, test design, doc plans, and commit order** — those come later.
+Background (skim as a lens, don't recite):
+- `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test
+- `~/.config/lessons/testing/tdd-loop.md` — vertical slices, behavior-focused tests, when to mock
 
-**Altitude lens:**
-- Vagueness on implementation details (signatures, helper internals, specific test cases) → **intentional, don't ask for more**.
-- Vagueness on concepts the spec should answer (data flow, ordering, failure modes, scope, edge cases, current vs. desired distinction, coupling to existing concepts) → **bug, flag it**.
-- Technical content the spec DOES propose (names, placement, composition, boundaries — including a target-shape section's envisioned file structure, public API, or wiring) → **fair game**; hold it to surface altitude (interfaces and placement, not bodies) and propose a better shape where this one is awkward or shallow.
+The spec runs top-down — product sections (goals, behaviors, non-goals) above technical sections (module boundaries, seams, the target shape, test standards) — and each tier reviews at its own altitude.
+
+**Product sections — hold them to product altitude:**
+- Vagueness on a behavior the feature must define (data flow, ordering, failure modes, scope, edge cases, current vs. desired) → a real gap; flag it.
+- Module or test design pressed here → it lives in the spec's own technical sections. Judge it there, not as a product-section gap.
+
+**Technical sections — hold them to design altitude:**
+- Module boundaries, seams, the target shape, and the test strategy → fair game; propose better where a boundary is wrong, a module shallow, a seam misplaced, a test strategy weak, or the design over-built.
+- The public API → hold it to surface altitude: interfaces and placement, not bodies.
+- Vagueness on full code bodies, per-case test enumeration, fixtures, line-level edit plans, commit order → intentional; don't ask for them. The plan and the build decide those, and pressing the spec down to that depth re-grows the review rounds this document exists to avoid.
 
 **Push hard on:**
 - Are we solving the right problem? Is the UX goal right?
-- Does the conceptual approach hold up: data flow, state, ordering, failure modes, performance, backward compat, migrations?
-- Spec ↔ code mismatches.
-- Cleaner alternative approaches.
-- **Foundation & preparatory refactoring:** is the feature being bolted onto a structure that can't hold it (a missing prep step), or is a proposed cleanup disproportionate to the feature (scope creep)? Flag either.
-- Non-goals + open questions: anything in-scope that should defer? Anything missing from the uncertainty list?
+- Does the approach hold up: data flow, state, ordering, failure modes, performance, backward compat, migrations?
+- Spec ↔ code mismatches; cleaner alternative approaches.
+- Whether the design deletes complexity or just rearranges it, and whether the resulting modules are deep or shallow.
+- The target shape, where the spec proposes one: was it *chosen*, or merely *first*? Its "Shapes considered" note should name what each rejected alternative optimized and why it lost, on depth / locality / seam placement — check the reasoning holds and the winner really beats them. On a change big enough to warrant the section, a shape with no alternatives behind it is itself a finding.
+- Foundation and preparatory refactoring: a feature bolted onto a structure that can't hold it (a missing prep step), or a cleanup disproportionate to the feature (scope creep).
+- Over-building: defensive handling for states that could be made unrepresentable, speculative features or config nobody asked for, an abstraction pulled out too early. Flag these the way you'd flag a missing case.
+- Test standards: do the named behaviors cover the critical paths, and are the strategies at the right altitude (behavior through interfaces, mocking only at boundaries)?
+- Non-goals and open questions: anything in-scope that should defer? Anything missing from the uncertainty list?
+
+**Run a pre-mortem before you write up findings.** It's a month from now: the build that came out of this spec stalled, or shipped subtly wrong — no crash, no failing test. Write down the two or three most plausible causes, then check whether the spec already defends against each; any it doesn't becomes a finding. Looking back from an assumed failure surfaces risks that reading forward misses.
 
 **Per point:**
 - Agree → add technical suggestions, caveats, or risks worth flagging.
 - Disagree → give reasons and a concrete alternative. If architectural, say so and propose the structural fix.
 
-Weigh technical merit and UX goals together. **Challenge assumptions and propose alternatives** — don't default to politeness. Don't say "not specific enough" without naming the unanswered concept.
+Weigh technical merit and UX goals together. Challenge assumptions and propose alternatives rather than defaulting to politeness. When something is underspecified, name the unanswered concept and the section that owes it — "not specific enough" on its own gives the author nothing to act on.
+
+**End with an "Optional polish" section**, separate from the findings above: wording-level fixes where you can supply the exact replacement and the meaning doesn't change. Write each as location plus replacement (before → after), ready to apply verbatim. If an imprecision changes behavior, scope, or a testable claim, it's a finding, not polish; if you can't write the exact replacement, it isn't polish either — raise it as a finding or drop it. When nothing qualifies, say so in a line rather than manufacturing items. Delivered as concerns, wording points cost the author a reread of the whole document; delivered as ready replacements, they cost nothing.
 
 ---
 
@@ -129,6 +169,8 @@ Engineering team's review feedback on your spec below. **For each point:**
 1. **Assess validity** — be honest, don't agree just to agree.
 2. **If valid:** update the spec. You may propose a better solution than suggested — explain why.
 3. **If you disagree:** explain from first principles why the spec is correct as-is.
+
+The feedback may end with an "Optional polish" section — exact before → after replacements, pre-checked to change no meaning. Apply them as given, or skip any you disagree with; they need no re-analysis, so spend the thinking on the findings above them.
 
 ---
 
@@ -144,7 +186,9 @@ Spec updated per your review. Re-check — focus on **whether feedback was integ
 - Did it introduce a new problem (over-corrected, broke an unrelated section)?
 - Still wrong → restate concretely and propose the structural fix.
 
-Same altitude lens as before — spec stays high-level, don't demand line-level details, test cases, or doc plans. **New issues OK; don't relitigate settled points.**
+Same section-scoped altitude as before — product sections at product altitude, technical sections at design altitude; don't demand code bodies, per-case test enumeration, or line-level plans. **New issues OK; don't relitigate settled points.**
+
+Wording-level points go in the same "Optional polish" section as before — exact before → after replacements only.
 
 ---
 
@@ -153,7 +197,7 @@ $0'''
 [[snippets]]
 key = "update-spec-again"
 expand = '''
-Round-2 reviewer feedback on the spec below. Apply valid points and update. Disagreements: explain briefly, don't dwell — **this round is about converging**. Major disagreement needing my input → flag clearly and **stop** instead of pushing through.
+Round-2 reviewer feedback on the spec below. Apply valid points and update. Disagreements: explain briefly, don't dwell — **this round is about converging**. Major disagreement needing my input → flag clearly and **stop** instead of pushing through. "Optional polish" items apply as given (or skip) — no re-analysis.
 
 ---
 
@@ -192,19 +236,18 @@ expand = '''
 Plan the implementation as vertical slices against the latest spec — reread the spec first.
 
 ## Read these first, then plan
-Read each one and adapt it to this change — they're the bar for a good plan, not optional background. If a path is missing, ask me rather than guessing.
-- `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test, illegal states
+The spec settled the module shape and the seams; this plan owes the test discipline. Adapt each to this change — they're the bar for a good plan, not optional background. If a path is missing, ask me rather than guessing.
 - `~/.config/lessons/testing/tdd-loop.md` — vertical slices, red-green-refactor, the anti-patterns
 - `~/.config/lessons/testing/mocking-and-fixtures.md` — mock only at boundaries; `test.extend` fixtures
 - `~/.config/lessons/testing/test-quality.md` — what earns a place in the suite; assert tokens and relations, not prose
 - `~/.config/lessons/testing/vitest.md` — Vitest APIs *(TS-Vitest projects only)*
 
-When the plan restructures an existing cluster or the interface is uncertain, also read `~/.config/lessons/codebase-design/deepening.md` and `~/.config/lessons/codebase-design/design-it-twice.md`.
+Where a structural decision in the spec is still unclear to you, `~/.config/lessons/codebase-design/deep-modules.md` is the vocabulary it was written in — read it to plan against that shape, not to redraw it.
 
 ## What you're producing
-A plan written **complementary to the spec**, not overlapping it. Don't re-summarize its goals or re-argue its approach — point to it, and spend the tokens on the tactics it deferred (answer its open questions here). The relay that earns its tokens is a load-bearing gotcha, invariant, or constraint **bolded in the exact slice that must honor it** — surfaced at the point of action, where rereading the spec wouldn't put it in front of you.
+A plan **complementary to the spec**, not overlapping it. The spec settled the module shape, the seams, the target shape, and the test standards; point to them and spend the tokens on the tactics it deferred: the slices, the sequencing, the specific test cases and fixtures, the line-level anchors — and answer its open questions here. The relay that earns its tokens is a load-bearing gotcha, invariant, or constraint bolded in the exact slice that must honor it, surfaced at the point of action where rereading the spec wouldn't put it in front of you.
 
-Go detailed: name each slice, list specific test cases, sketch helpers and fixtures, cite line numbers for changes to existing code. **Don't pre-write full code bodies** — describe the tests and helpers; the code itself happens during the build.
+Go detailed: name each slice, list specific test cases, sketch helpers and fixtures, cite line numbers for changes to existing code. Describe the tests and helpers rather than pre-writing them — the code itself happens during the build.
 
 ## How to plan it
 
@@ -328,25 +371,33 @@ expand = '''
 Build the change directly from what we settled in our discussion — that's the spec here; there's no separate spec or plan doc. This is small, well-understood work, so treat what follows as a lens scaled to the change, not ceremony — adapt it, drop what doesn't fit.
 
 ## Read these first, then build
-Read each and adapt it to this change — the bar, not optional background; don't go hunting them mid-build, and ask me for a path if one's missing.
+Read each one and adapt it to this change — they're the bar, not optional background; don't go hunting them mid-build, and ask me for a path if one's missing.
 - `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test, illegal states
 - `~/.config/lessons/testing/tdd-loop.md` — vertical slices, behavior-focused tests, mock only at boundaries, anti-patterns
 - `~/.config/lessons/testing/test-quality.md` — what earns a place in the suite; tokens and relations, not prose pins
 
 ## Before you write code
 - **Re-read what we settled** — the direction and target shape are decided; execute them, don't re-decide.
-- **Re-read the code you're about to touch** — trace the real data/control flow and existing patterns, so the change fits what's already there.
+- **Re-read the code you're about to touch** — trace the real data/control flow and the existing patterns, so the change fits what's already there.
 
 ## How to build it
 
 ### Slicing
-Build in **vertical slices** — one meaningful unit at a time (a behavior plus the wiring that belongs with it), each independently committable, one slice per commit. Lean larger, and **prefer a shape that deletes a concept** — a branch, mode, or helper layer disappears — over one that just rearranges it. If the foundation needs reshaping first, do it as a **behavior-preserving** step kept green before the change lands on it.
+Build in **vertical slices** — one meaningful unit at a time (a behavior plus the wiring that belongs with it), each independently committable, one slice per commit. Lean larger; group related behavior rather than splitting mechanical steps into their own commits. **Prefer a shape that deletes a concept** — a branch, mode, or helper layer disappears — over one that just rearranges it. If what we settled calls for reshaping the foundation first (*make the change easy, then make the easy change*), do it as a **behavior-preserving** step kept green — pin uncovered code with a characterization test first — and keep it proportionate; a prep step that balloons into a rewrite is the failure mode.
 
 ### Right-size the code
 The default failure here is too much code, not too little — defensive branches for cases that can't occur, and abstractions invented before the pattern is real. Build against it:
-- **Make a bad state impossible to construct, don't guard against it.** Reach for a type, a narrow constructor, or an enum an invalid value can't inhabit, over runtime guards repeated at every call site. Validate untrusted input once at the boundary (*parse, don't validate*); let a real invariant violation fail loudly rather than hide behind a fallback.
+- **Make a bad state impossible to construct, don't guard against it.** Reach for a type, a narrow constructor, or an enum an invalid value can't inhabit, over runtime guards repeated at every call site. Validate untrusted input once at the boundary so everything downstream can trust it (*parse, don't validate*); where a state genuinely can't be made unrepresentable, validate at that **one** boundary. Let a real invariant violation fail loudly — not a fallback that hides the bug, or a local defense wherever it happened to surface.
 - **Prefer a little duplication over the wrong abstraction.** Pull out a shared abstraction only when the pattern is real (around the third occurrence) and doing so *concentrates* complexity instead of just moving it (the deletion test).
 - **Build only what we settled** — no speculative features, config knobs, or extensibility seams nobody asked for; each is maintenance forever.
+
+### Build on the right layer
+Choosing what to build *on* is part of the work. When a slice needs non-trivial, well-understood mechanical logic — retries/backoff, concurrency limits, parsing, date/time math — decide deliberately between the platform's own primitives, a small specialized library, and writing it yourself. Hand-rolling a solved problem wastes effort; a new dependency is maintenance forever — take the lightest option that genuinely fits. Training data lags real releases, so ground the choice in what the stack offers *now*, not memory.
+- **Prefer current stable platform primitives when they cover the need** — runtimes keep absorbing what libraries used to own (in TypeScript, `Intl` handles most date/time and number formatting without `date-fns`; native `fetch`, `structuredClone`, and `AbortController` replaced their old library equivalents). Confirm what's stable now rather than reaching for a dependency from habit.
+- **Reach for a small, specialized library when it owns a genuinely tricky problem the platform doesn't** — retry/backoff and concurrency queues are the clear wins (e.g. `p-retry`, `p-queue`). Keep it specialized: a general-purpose giant pulled in for one function (Lodash for a `groupBy`) is its own cost, and a larger framework earns its place only for the genuinely complex state it's built for.
+- **When you adopt one**, check the repo doesn't already depend on something that covers it, then **confirm its current API with Context7** and **web-search for best practices, pitfalls, the latest version, and breaking changes**, and match how nearby code already wires its dependencies.
+
+A dependency weighty enough to be an architecture decision in its own right is mine to weigh — flag it rather than committing the repo to it.
 
 ### Tests
 Write each test against **real** behavior as you build its slice, not a batch up front against imagined shapes — behavior through the public interface, covering the critical paths and complex logic, not every edge case (skip UI tests unless asked). Before adding one, find where that behavior is already covered and assert only what's new: a second test proving what another already proves fails twice for one bug, and drifts when only one is updated. Skip the test that can't fail for a real reason — one pinning wording no caller depends on, or restating a constant — because coverage is feedback, never the goal. Apply red-green-refactor inside a slice when design is uncertain or behavior is subtle; test and code together is fine otherwise. Run them as you go and keep them green.
@@ -461,6 +512,7 @@ expand = '''
 Code-review my implementation. **Read the actual code, not just commit messages.**
 
 **Lens:**
+- **Step back before judging locally.** The default reviewer failure is tactical: accept the implementation's framing and optimize inside it, converging on a local optimum — the adjusted argument, the patched conditional. First ask whether reshaping the design dissolves the problem: a new module or helper, a shared component extracted, a function redesigned around a different contract, modules wired differently. The local patch is the fallback, not the finding.
 - Implementation is fair game across the board — correctness, structure, test quality, performance, readability, edge cases, pattern consistency.
 - Plan ↔ code mismatches → flag silent deviations (missing planned tests, missing helpers, scope creep).
 - Spec/plan are settled — **don't relitigate approved decisions**. If a fundamental issue only surfaces from the code, say so explicitly; don't smuggle it in as a "small fix."
@@ -474,9 +526,11 @@ Code-review my implementation. **Read the actual code, not just commit messages.
 - **Structural quality — be ambitious, not just local:**
     - **Code-judo:** is there a reframing that makes whole branches, helpers, modes, conditionals, or layers disappear entirely — not just rearranges them? Don't stop at "this could be a bit cleaner."
     - **Spaghetti growth:** ad-hoc conditionals or special cases bolted into unrelated flows = design problem, not a stylistic nit. Push the logic behind its own abstraction.
-    - **Thin abstractions:** pass-through wrappers, identity helpers, abstractions that add indirection without buying clarity — flag them.
+    - **Thin abstractions:** pass-through wrappers, identity helpers, an interface nearly as complex as its implementation — apply the deletion test to a new module: does it concentrate complexity, or just relocate it?
     - **Boundary cleanliness:** casts, `any`, `unknown`, optionality papering over unclear invariants — push for an explicit contract.
     - **Canonical layer:** is the logic in the right module/package, or leaking across boundaries? Prefer existing canonical helpers over near-duplicates.
+    - **Preparatory refactoring** (when the diff includes one): behavior-preserving and proportionate — sized to this change, not a rewrite smuggled in alongside it.
+- **Right-sizing — over-building is the likelier failure:** defensive branches for states that can't occur, fallbacks the invariants already rule out, speculative features or config beyond the spec, abstractions pulled out before the pattern is real. Prefer making a bad state unrepresentable (a type, constructor, or enum) or validating at one boundary over more handling — and don't reflexively ask for more handling; that reflex is the slop we're avoiding.
 
 **Per issue:**
 - Severity: **critical** (blocks merge) / **moderate** (fix before merge) / **minor** (nice-to-have).
