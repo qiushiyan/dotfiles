@@ -30,6 +30,16 @@ your report rather than guessing past it.
 docs, glossary), then the key source files this change touches — read each
 before editing it.»
 
+<!-- Keep this when the exploration behind the spec surfaced lessons the spec
+     doesn't already carry; when the spec has its own gotchas section, point
+     there instead of restating. -->
+## Hard-won context
+
+«The non-obvious facts this work paid to learn — traps that cost hours,
+invariants that bite, why the tempting shortcut fails — one line each, naming
+the file or doc that proves it. These transfer the journey, not competence:
+skip anything a senior engineer would know without having been here.»
+
 ## Project conventions
 
 «The rules a reviewer would reject violations of, with exact commands: package

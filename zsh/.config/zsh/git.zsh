@@ -848,6 +848,182 @@ _gwt() {
 }
 
 # --------------------------------------------------------------------
+# git (wrapper) - warn before creating a branch off a stale base
+# --------------------------------------------------------------------
+# Intercepts branch-creating invocations typed at the prompt
+#   git switch -c/-C/--create <name>
+#   git checkout -b/-B <name>
+#   git branch <name>
+# and, when the current branch is behind its upstream, prompts before
+# creating (create anyway / fast-forward first / abort). Everything else
+# passes straight through to the git binary (~0.1 ms added per call).
+#
+# Scope is deliberate: only *interactive* shells are guarded (scripts,
+# editors, and tools exec the git binary directly and never see this),
+# and an explicit start-point (`git switch -c foo origin/main`) skips
+# the check — you already chose your base.
+#
+# Freshness: comparing against the local tracking ref is only honest if
+# it's recent, so the guard fetches the one upstream branch first —
+# except when any fetch/pull happened in the last GIT_GUARD_MAX_AGE
+# seconds (FETCH_HEAD mtime), which makes "pull, then branch" free
+# (~15 ms). The fetch is bounded by GIT_GUARD_TIMEOUT via coreutils
+# timeout; on timeout/failure it falls back to the last-fetched state
+# and *says so* — a failed probe never passes silently.
+#
+# Toggle: `gitguard on|off` (persistent, all shells, immediate — it's a
+# marker file checked when a creation is detected, so no per-call cost).
+# GIT_GUARD_OFF=1 additionally disables it for the current shell only.
+# --------------------------------------------------------------------
+
+: ${GIT_GUARD_MAX_AGE:=600}   # seconds a previous fetch counts as fresh
+: ${GIT_GUARD_TIMEOUT:=6}     # seconds to wait for the network probe
+: ${GIT_GUARD_STATE:=$HOME/.config/git-guard-off}   # exists = disabled
+
+git() {
+  emulate -L zsh
+  if [[ ( -t 0 && -t 1 ) || -n "$GIT_GUARD_FORCE" ]] && [[ -z "$GIT_GUARD_OFF" ]]; then
+    case "$1" in
+      switch|checkout|branch)
+        if [[ ! -e "$GIT_GUARD_STATE" ]] && _git_guard_creates_branch "$@"; then
+          _git_guard_confirm || return $?
+        fi
+        ;;
+    esac
+  fi
+  command git "$@"
+}
+
+# True (0) only for a branch creation based on HEAD — the case where a
+# stale base silently becomes the new branch's history. Any explicit
+# start-point, or anything this parser doesn't recognize, skips the
+# guard (fails open: worst case is git's normal behavior).
+_git_guard_creates_branch() {
+  emulate -L zsh
+  local sub="$1"; shift
+  local creating=0
+  local -a positional
+
+  case "$sub" in
+    switch|checkout)
+      while (( $# )); do
+        case "$1" in
+          -c|-C|--create|--force-create)
+            [[ "$sub" == switch ]] && creating=1
+            (( $# )) && shift   # the flag's value (branch name)
+            ;;
+          -b|-B)
+            [[ "$sub" == checkout ]] && creating=1
+            (( $# )) && shift
+            ;;
+          --create=*|--force-create=*)
+            [[ "$sub" == switch ]] && creating=1
+            ;;
+          --) shift; positional+=("$@"); break ;;
+          -*) ;;   # other flags; a flag with a separate value lands in
+                   # positional and reads as a start-point → fails open
+          *) positional+=("$1") ;;
+        esac
+        (( $# )) && shift
+      done
+      (( creating )) || return 1
+      (( ${#positional} == 0 )) || return 1   # explicit start-point
+      ;;
+    branch)
+      # Only the bare `git branch <name>` form; any flag means list/
+      # delete/move/copy or an explicit start-point follows.
+      local a
+      for a in "$@"; do [[ "$a" == -* ]] && return 1; done
+      (( $# == 1 )) || return 1
+      ;;
+    *) return 1 ;;
+  esac
+  return 0
+}
+
+_git_guard_confirm() {
+  emulate -L zsh
+  zmodload -F zsh/stat b:zstat 2>/dev/null
+  zmodload zsh/datetime 2>/dev/null
+
+  # One spawn for both facts; fails (→ pass through) when there is no
+  # upstream or we're detached. --git-common-dir, not --git-dir: that's
+  # where FETCH_HEAD lives when inside a linked worktree.
+  local info
+  info=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' \
+           --path-format=absolute --git-common-dir 2>/dev/null) || return 0
+  local upstream="${info%%$'\n'*}" gitdir="${info#*$'\n'}"
+  [[ -n "$upstream" && "$upstream" != "$info" ]] || return 0
+
+  local remote="${upstream%%/*}" rbranch="${upstream#*/}"
+
+  # Skip the network probe if anything fetched recently. -s, not -e: a
+  # fetch killed mid-flight (our timeout, or a Ctrl-C'd pull) truncates
+  # FETCH_HEAD to empty with a fresh mtime — that must read as stale.
+  local fresh=0 mtime
+  if [[ -s "$gitdir/FETCH_HEAD" ]]; then
+    mtime=$(zstat +mtime -- "$gitdir/FETCH_HEAD" 2>/dev/null)
+    (( EPOCHSECONDS - ${mtime:-0} < GIT_GUARD_MAX_AGE )) && fresh=1
+  fi
+
+  local note="" probe_failed=0
+  if (( ! fresh )); then
+    local -a runner
+    if (( $+commands[timeout] )); then runner=(timeout "$GIT_GUARD_TIMEOUT")
+    elif (( $+commands[gtimeout] )); then runner=(gtimeout "$GIT_GUARD_TIMEOUT")
+    fi
+    if ! "${runner[@]}" git fetch --quiet -- "$remote" "$rbranch" 2>/dev/null; then
+      probe_failed=1
+      note=" (couldn't reach '$remote' — comparing against last-fetched state)"
+    fi
+  fi
+
+  local behind
+  behind=$(command git rev-list --count "HEAD..$upstream" -- 2>/dev/null) || return 0
+  if (( behind == 0 )); then
+    # A failed probe must not pass silently: "not behind" is only as
+    # good as the last successful fetch, and we couldn't get one.
+    (( probe_failed )) && print -u2 \
+      "git-guard: couldn't reach '$remote' to verify against $upstream — proceeding from last-fetched state"
+    return 0
+  fi
+
+  local cur
+  cur=$(command git symbolic-ref --short -q HEAD 2>/dev/null) || cur=HEAD
+
+  print -u2 "git-guard: '$cur' is $behind commit(s) behind $upstream$note"
+  local reply
+  read -r "reply?Create branch anyway? [y]es / [f]ast-forward '$cur' first / [N]o: " || reply=n
+  case "$reply" in
+    y|Y|yes) return 0 ;;
+    f|F|ff)
+      if command git merge --ff-only "$upstream"; then
+        return 0
+      fi
+      print -u2 "git-guard: fast-forward failed ('$cur' and $upstream have diverged) — aborting"
+      return 1
+      ;;
+    *) return 1 ;;
+  esac
+}
+
+# gitguard — persistent on/off switch for the branch-creation guard.
+# Applies to all shells immediately (state lives in a file, not the env).
+gitguard() {
+  emulate -L zsh
+  case "$1" in
+    on)        rm -f -- "$GIT_GUARD_STATE"; print "git-guard: on" ;;
+    off)       touch -- "$GIT_GUARD_STATE"; print "git-guard: off" ;;
+    ""|status) [[ -e "$GIT_GUARD_STATE" ]] && print "git-guard: off" || print "git-guard: on" ;;
+    *)         print -u2 "usage: gitguard [on|off|status]"; return 1 ;;
+  esac
+}
+
+_gitguard() {
+  _arguments '1:state:(on off status)'
+}
+
+# --------------------------------------------------------------------
 # Completion registration — called from .zshrc after compinit. compdef is
 # unavailable when this file is first sourced from .zshenv (pre-compinit),
 # so registration is deferred here instead of re-sourcing the whole file.
@@ -860,4 +1036,5 @@ _git_zsh_register_completions() {
   compdef _gitswitch gitswitch
   compdef _gopen     gopen
   compdef _gwt      gwt
+  compdef _gitguard  gitguard
 }

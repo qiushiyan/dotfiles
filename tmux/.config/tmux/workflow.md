@@ -42,10 +42,12 @@ The worktree popup names windows after their branch automatically; rename ad-hoc
 
 You want to work on a feature without disturbing `main` or another agent — give it an isolated checkout.
 
-- **`prefix W`** opens the worktree popup for the current repo (preview shows each one's git status + recent commits).
-- Type a branch name and press **`ctrl-n`** → it creates `~/dev/.worktrees/<repo>/<branch>`, opens a window named after the branch, and drops you in. That's all it does — no install or setup commands.
+- **`prefix W`** opens the worktree popup for the current repo (`»` marks the one you're in, `*` marks dirty; preview shows each one's git status + recent commits, `ctrl-d`/`ctrl-u` scrolls it).
+- Type a branch name and press **`ctrl-n`** → it creates `~/dev/.worktrees/<repo>/<branch>`, opens a window named after the branch, seeds gitignored files (`.env*` …) from the main worktree, and runs the Node install (by lockfile) chained with the post-create command — default `x`, so the agent is already starting when you land. (`@worktree_auto_install off` / `@worktree_post_create_cmd off` to disable.)
 - Press **`enter`** on a listed worktree to jump to its window (created if it doesn't exist yet).
-- Press **`ctrl-x`** to remove a finished worktree — it refuses if the worktree is dirty (offers `--force`), and can delete the branch too.
+- Mark several with **`tab`** (or all with **`ctrl-a`**) and press **`ctrl-x`** to remove them as one confirmed batch — deletion is instant (trash-and-sweep: the `rm -rf` happens in the background), dirty ones need an extra explicit discard, and branch deletion is offered in aggregate.
+- Press **`ctrl-g`** to *reap*: batch-remove every clean worktree already merged into the default base — end-of-week cleanup in three keystrokes. (Squash-merged branches don't count as merged; remove those with `ctrl-x`.)
+- Press **`ctrl-p`** to pick an open GitHub PR and check it out into a fresh worktree (`ctrl-o` opens it in the browser instead).
 
 One worktree per window keeps parallel agents from stepping on each other. (See `scripts/worktree.md` for the design.)
 

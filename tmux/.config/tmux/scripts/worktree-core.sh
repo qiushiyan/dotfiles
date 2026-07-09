@@ -138,6 +138,33 @@ wt_install_cmd() {
   else echo "pnpm install"; fi
 }
 
+# --- reap candidacy ------------------------------------------------------------
+
+# Worktrees that are safe to batch-remove ("reap"): linked (never the main
+# worktree), on a real branch (detached entries emit no `branch` line in the
+# porcelain output, so they drop out in awk), clean (no uncommitted changes),
+# and fully merged into the default base. Prints "path<TAB>branch" lines;
+# prints nothing when there's nothing to reap. NB: merged-ness is
+# `merge-base --is-ancestor`, so a branch that was SQUASH-merged on GitHub does
+# not count (its commits aren't ancestors of the base) — those still need a
+# manual ctrl-x. The popup front-end additionally excludes the worktree it was
+# launched from.
+wt_reap_candidates() {
+  local main base path branch
+  main="$(wt_main_worktree)"
+  base="$(wt_default_base)"
+  git worktree list --porcelain | awk '
+    /^worktree /{p = substr($0, 10)}
+    /^branch /  {b = $2; sub("refs/heads/", "", b); print p "\t" b}
+  ' | while IFS=$'\t' read -r path branch; do
+    [ "$path" = "$main" ] && continue
+    [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ] && continue
+    git merge-base --is-ancestor "$branch" "$base" 2>/dev/null || continue
+    printf '%s\t%s\n' "$path" "$branch"
+  done
+  return 0
+}
+
 # --- CLI (only when EXECUTED directly, not when sourced) ----------------------
 
 # create <branch> [base] [--no-copy]
@@ -184,4 +211,8 @@ _wt_core_main() {
 }
 
 # Run the CLI only when executed directly; a `source` leaves BASH_SOURCE[0] != $0.
-[ "${BASH_SOURCE[0]}" = "$0" ] && _wt_core_main "$@"
+# A clean `if` (not `[ … ] &&`) so sourcing returns 0 — a trailing false && would
+# make `source worktree-core.sh` itself "fail" (same lesson as .zshenv's exit 0).
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  _wt_core_main "$@"
+fi

@@ -1,6 +1,6 @@
 # turn.mjs — engine contract
 
-Runs one headless AI-session turn (claude or codex) and returns it as data. It is not a job manager (Bash `run_in_background` is the job layer) and not a sandbox (write intent is a flag; read-only asks belong in the prompt). Shared by the `/consult` and `/delegate` skills; callable directly.
+Runs one headless AI-session turn (claude or codex) and returns it as data. It is not a job manager (Bash `run_in_background` is the job layer) and not a sandbox (write intent is a flag; read-only asks belong in the prompt). Shared by the `/consult`, `/delegate`, and `/review` skills; callable directly.
 
 ```
 node ~/.claude/skills/sidekick-runtime/turn.mjs --provider <claude|codex> --prompt-file <F> [flags]
@@ -46,6 +46,6 @@ stdout: `out-dir:`, `watch:` (a `tail -f` on the live raw.log), `baseline:` when
 
 ## Billing
 
-Headless claude (`claude -p`) bills metered API rates — the flat subscription does not cover it; that is what `--max-budget-usd` is for. `codex exec` bills the ChatGPT subscription.
+Both `codex exec` and headless claude (`claude -p`) bill their flat subscriptions. `--max-budget-usd` (claude-only) is retained as an optional per-turn spend cap for future use — the subscription doesn't require it.
 
 Argv facts verified against claude 2.1.x / codex 0.142.x. After a CLI upgrade, an odd failure means re-checking `--help` before blaming the prompt.

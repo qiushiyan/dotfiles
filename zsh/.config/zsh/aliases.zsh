@@ -70,7 +70,22 @@ python() { command python3 "$@"; }
 alias workspace='cd ~/workspace'
 alias l='gls --color -lhF --group-directories-first'
 alias bat="bat --tabs 4 --paging=never"
-alias scripts="cat package.json | jq --color-output '.scripts'"
+
+# List package.json scripts, searching upward from cwd (handles monorepo subdirs)
+node-scripts() {
+    emulate -L zsh
+    local dir="$PWD"
+    while [[ -n "$dir" ]]; do
+        if [[ -f "$dir/package.json" ]]; then
+            jq --color-output '.scripts // {}' "$dir/package.json"
+            return
+        fi
+        [[ "$dir" == "/" ]] && break
+        dir="${dir:h}"
+    done
+    echo "node-scripts: no package.json found in $PWD or any parent directory" >&2
+    return 1
+}
 
 # --------------------------------------------------------------------
 # Dev Scripts & SSH

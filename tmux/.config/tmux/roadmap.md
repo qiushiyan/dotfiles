@@ -47,19 +47,19 @@ alert can name *which* worktree wants attention.
 **Effort:** small (universal silence flag) → medium (agent-native hooks + routing
 which worktree/window the alert refers to).
 
-### gh PR picker
+### ✅ gh PR picker  (built — `ctrl-p` inside the worktree popup)
+
+**Status:** implemented as a second fzf screen inside `prefix W` (per the
+"one key, one surface" guideline — no new global binding): `ctrl-p` lists open
+PRs with a `gh pr view` preview; `enter` fetches `refs/pull/<n>/head` into a
+local branch (fork PRs work too) and reuses the worktree-create path (window,
+file seed, install + agent); `ctrl-o` opens the PR in the browser; `esc` goes
+back to the worktree list. See `scripts/worktree.md`.
 
 **What:** a popup listing open PRs (`gh pr list`) with a preview; pick one to open
 in the browser or **check it out into a fresh worktree**.
 
 **Why:** you live in git/gh; reviewing a PR is currently several manual commands.
-
-**Mechanism:** fzf popup over `gh pr list`, `--preview 'gh pr view {}'`; on select
-either `gh pr view --web` or reuse the worktree create path with the PR's branch.
-
-**Depends on:** the worktree popup (for the checkout action).
-
-**Effort:** small once the worktree popup exists.
 
 ---
 

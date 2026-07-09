@@ -1,7 +1,10 @@
 # Worktree popup — design notes
 
-`prefix W` opens a single tmux popup that **switches, creates, and removes git
-worktrees**. Implemented as `scripts/tmux-worktree.sh`, bound in `tmux.conf`.
+`prefix W` opens a single tmux popup that **switches, creates, batch-removes,
+reaps, and PR-checkouts git worktrees**. Implemented as
+`scripts/tmux-worktree.sh`, bound in `tmux.conf`. Keys: `enter` switch/create,
+`ctrl-n` create-from-name, `tab`/`ctrl-a` mark rows, `ctrl-x` batch-remove,
+`ctrl-g` reap merged, `ctrl-p` PR picker, `ctrl-d`/`ctrl-u` scroll the preview.
 This doc is the *why* and the *watch-outs* — the script is the *how*. Don't read
 it for syntax; read it before you change behavior.
 
@@ -9,9 +12,10 @@ it for syntax; read it before you change behavior.
 
 The git-worktree logic itself — the `~/dev/.worktrees/<repo>/<branch>` path
 convention, base resolution, the `worktree add` new-branch dance (with the
-existing-branch fallback), the gitignored-file seeding, and package-manager
-detection — lives in **`scripts/worktree-core.sh`**, which is **tmux-free** and
-sourced by this popup. Two front-ends wrap it:
+existing-branch fallback), the gitignored-file seeding, package-manager
+detection, and reap candidacy (`wt_reap_candidates`) — lives in
+**`scripts/worktree-core.sh`**, which is **tmux-free** and sourced by this
+popup. Two front-ends wrap it:
 
 - **`tmux-worktree.sh`** (this popup) — the heavyweight surface: an fzf
   switch/create/remove UI that opens each worktree in its **own tmux window** and
@@ -84,19 +88,38 @@ The workflow this serves:
      worktree (e.g. `min` matches `main`), `enter` switches to that match and
      `ctrl-n` is the **force-create** escape hatch that ignores the highlight.
      This keeps `enter` predictable — it always honors what's visibly selected.
+   - **`--multi` rides on top.** `tab`/`shift-tab` mark rows, `ctrl-a` toggles
+     all, and `ctrl-x` consumes the marked set — or just the highlighted row
+     when nothing is marked, so single-delete costs no extra keystrokes. A
+     plain `enter` with marks acts on the *first* marked row.
 3. **Switch/create exit, remove loops.** The pick-and-dispatch runs in a `while`
-   loop. `switch` and `create` are *terminal* (you want to land in that window, so
-   they `exit` and the `-E` popup closes). `remove` (`ctrl-x`) is an *in-popup*
-   operation — it returns to a **refreshed** list (the just-removed entry gone) so
-   you can remove more or pick again, rather than ejecting you on every delete. A
-   *failed* create also loops back (showing its error) instead of closing, which
-   is why `create_worktree` returns a real 0/1 status the dispatcher branches on.
-   `esc`/`ctrl-c` (fzf exit 130) is the only thing that breaks the loop from the
-   list — keep that escape hatch intact or the popup becomes a trap.
-4. **Lean on git's built-in safety, then confirm.** `git worktree remove` already
-   refuses a dirty worktree; we surface that and only `--force` after an explicit
-   second confirm. Don't reimplement safety git already gives you. Destructive
-   actions always confirm; the main worktree is never removable.
+   loop. `switch`, `create`, and a successful PR-checkout are *terminal* (you
+   want to land in that window, so they `exit` and the `-E` popup closes).
+   `remove` (`ctrl-x`) and `reap` (`ctrl-g`) are *in-popup* operations — they
+   return to a **refreshed** list (the just-removed entries gone) so you can
+   keep going, rather than ejecting you on every delete. A *failed* create and
+   a cancelled PR pick also loop back, which is why `create_worktree` and
+   `pick_pr` return a real 0/1 status the dispatcher branches on. `esc`/`ctrl-c`
+   (fzf exit 130) is the only thing that breaks the loop from the list — keep
+   that escape hatch intact or the popup becomes a trap.
+4. **Removal is trash-and-sweep, and the script owns the dirty check.** A batch
+   (`ctrl-x` on the marked set) is: one confirm listing every branch with its
+   dirty flag → `mv` each worktree into `~/dev/.worktrees/.trash/<batch>` (a
+   same-filesystem rename — instant however big node_modules is) → one
+   `git worktree prune` → kill the windows → **aggregated** branch deletion
+   (merged → safe `-d` behind one default-yes confirm; unmerged → explicit
+   force past a warning) → `tmux run-shell -b "rm -rf …"` sweeps the trash
+   server-side, so it survives the popup closing, and empty parent dirs are
+   tidied. Parallel `rm -rf`s were considered and rejected: deletion is
+   disk-metadata-bound (parallelism buys little on one SSD) and concurrent git
+   commands contend on ref locks — hiding the latency beats parallelizing it.
+   The price of bypassing `git worktree remove` is that its dirty-refusal never
+   fires, so the script re-checks dirtiness itself: discarding uncommitted
+   changes takes a *second* explicit `[y/N]`, and declining removes just the
+   clean ones. The main worktree and the worktree the popup was launched from
+   are never removable. `ctrl-g` (**reap**) feeds this same path with every
+   clean worktree already merged into the default base (`wt_reap_candidates`)
+   — end-of-week cleanup in three keystrokes.
 5. **The script talks back to tmux via the CLI.** Inside the popup it calls
    `tmux new-window / select-window / kill-window`. The session is **self-detected**
    via `tmux display-message` (NOT passed as an arg — `display-popup` doesn't
@@ -104,15 +127,21 @@ The workflow this serves:
    is the repo because the binding opens the popup there with `-d`.
 6. **Post-creation work runs in the new window, never in the popup.** Create
    makes the worktree (branch forked from the repo's default branch), opens its
-   window, and — for a Node project — kicks off a dependency install. The install
-   is sent into the **new window** with `send-keys` (targeted by `#{window_id}`,
-   not name), so it runs *visibly* where you land and you can `Ctrl-C` it; it does
-   **not** run inside the script, which would freeze the modal popup for the whole
-   install. The package manager is read from the committed lockfile
+   window, and sends **one chained command line** into it with `send-keys`
+   (targeted by `#{window_id}`, not name): the dependency install `&&` the
+   post-create command. It runs *visibly* where you land and you can `Ctrl-C`
+   either half; it does **not** run inside the script, which would freeze the
+   modal popup. The install half (Node projects only) reads the package manager
+   from the committed lockfile
    (`pnpm-lock.yaml`/`package-lock.json`/`yarn.lock`/`bun.lock*`) so we never
    clobber an npm repo with a pnpm lockfile, defaulting to `pnpm` (repo
-   convention) when there's none. On by default; disable with
-   `tmux set -g @worktree_auto_install off`.
+   convention) when there's none; disable with
+   `tmux set -g @worktree_auto_install off`. The post-create half defaults to
+   **`x` (the claude alias)** — a fresh worktree lands with the agent already
+   starting, which is the whole parallel-agents workflow in one keystroke less;
+   override or disable with `tmux set -g @worktree_post_create_cmd <cmd|off>`.
+   It *must* be delivered via send-keys into the window's interactive zsh —
+   that's what lets an alias like `x` resolve at all.
    - **Sync vs async split.** The rule above is about *slow* work: a multi-minute
      install must not block the popup, so it goes async into the window. *Fast,
      must-happen-first* work — the gitignored-file seed (guideline 7) — runs
@@ -152,14 +181,58 @@ The workflow this serves:
    - **Source = main worktree, always**, even if you launched the popup from a
      linked worktree — the main checkout is the canonical home for these files.
      Perms are preserved (`cp -pR`; env files are often mode 600, scripts +x).
+8. **The PR picker reuses the create path.** `ctrl-p` opens a second fzf screen
+   (still one popup — guideline 1) over `gh pr list`, previewing with
+   `gh pr view`. `enter` fetches `refs/pull/<n>/head` into a local branch named
+   after the PR's head branch — that ref exists for fork PRs too — and then
+   calls the normal `create_worktree`: `wt_add`'s existing-branch fallback
+   checks it out, and the window / file seed / install+agent chain runs as for
+   any create. An existing local branch of the same name is used **as-is**
+   (never force-moved — it may hold local commits). `ctrl-o` opens the PR in
+   the browser instead; `esc` returns to the worktree list, not out of the
+   popup. The PR list is **memoized for the popup's lifetime**: esc + re-enter
+   skips the loading screen, `ctrl-r` inside the picker forces a refetch, and
+   a freshly opened popup always fetches anew — the cache is just a variable,
+   so there are no files or TTLs to invalidate. A stale row is harmless for
+   checkout (enter fetches the PR's *live* head ref), and an empty result is
+   deliberately not memoized so "no open PRs" keeps re-checking.
+9. **The UI is themed by tmux, not by the script.** fzf colors are read at
+   launch from the `@thm_*` options the active palette file publishes (the
+   same options the status bar uses), and the popup border is the global
+   `popup-border-lines rounded` + `popup-border-style` in `tmux.conf` — so a
+   new terminal theme styles this popup with zero per-theme config here. The
+   list markers (`»` = the worktree you're in, `*` = dirty) use plain ANSI
+   colors for the same reason.
 
 ## Gotchas / watch-outs (read before editing)
 
-- **The fzf output is a 3-line contract.** With `--print-query` + `--expect`, the
-  script reads line 1 = typed query, line 2 = pressed key (empty for a plain
-  `enter`), line 3 = selected row. Adding/removing either flag — or any other
-  flag that adds output lines — shifts these and silently breaks dispatch. If you
-  touch the fzf invocation, re-check the parser.
+- **The fzf output is a positional contract.** With `--print-query` +
+  `--expect` + `--multi`, the script reads line 1 = typed query, line 2 =
+  pressed key (empty for a plain `enter`), lines 3..N = the selected rows (the
+  marked ones, or just the highlighted row when nothing is marked). The PR
+  picker's inner fzf has a *different*, two-line contract (`--expect` without
+  `--print-query`): line 1 = key, line 2 = row. Adding/removing any of these
+  flags — or any flag that adds output lines — shifts the parse and silently
+  breaks dispatch. If you touch an fzf invocation, re-check its parser.
+- **`ctrl-a`/`ctrl-d`/`ctrl-u` are rebound inside the list.** `ctrl-a` =
+  toggle-all, `ctrl-d`/`ctrl-u` = preview half-page scroll (vim feel). Stock
+  fzf `ctrl-u` (clear query) is deliberately traded away.
+- **Reap can't see squash-merges.** Candidacy is `git merge-base
+  --is-ancestor`, so a branch squash-merged on GitHub isn't an ancestor of the
+  base: it won't be reaped, and at branch-deletion time it counts as "NOT
+  merged" (needs the explicit force). Those go through a manual `ctrl-x`.
+- **The trash sweep is age-gated on purpose.** Startup schedules a background
+  sweep of `~/dev/.worktrees/.trash` entries **older than 2 minutes** (crash
+  self-healing); each batch sweeps only its own uniquely-named dir. The age
+  gate is what makes the startup sweep unable to race a sweep another live
+  popup just scheduled — don't "simplify" it to `rm -rf` of the whole root.
+- **The script must stay bash-3.2-safe.** macOS ships bash 3.2 and there is no
+  brew bash on this machine; under `set -u`, expanding an *empty* array is
+  fatal on 3.2 — which is why the batch machinery passes TSV-line strings
+  around instead of arrays. Keep it array-free.
+- **The fzf theme is read once at popup launch.** Switching the terminal theme
+  while the popup is open keeps the old colors until you reopen. Trivial, by
+  design.
 - **Only exit 130 is special; exit 1 is normal here.** fzf returns **1** ("no
   match") when you press `enter`/`ctrl-n` on a query that filtered the list to
   empty — but it *still* prints the query on line 1, which is exactly what the
@@ -189,8 +262,9 @@ The workflow this serves:
   the same name (`feat/x` vs `feat-x`) collide on one window. Rare, but the
   branch→window mapping is not guaranteed injective.
 - **Slashed branches create nested folders.** `feat/login` →
-  `~/dev/.worktrees/<repo>/feat/login`. Git is fine with it, but removal leaves
-  the empty `feat/` parent behind. Cosmetic.
+  `~/dev/.worktrees/<repo>/feat/login`. Git is fine with it, and batch removal
+  now tidies the empty `feat/` parent afterwards (`find -mindepth 1 -type d
+  -empty -delete`, scoped to this repo's worktree root — keep that scoping).
 - **`display-popup` does NOT expand `#{...}` in its shell-command argument** (only
   in `-d`). Passing `'#{session_name}'` as a script arg delivers the literal text
   `#{session_name}`, and `new-window -t '#{session_name}'` then fails with "can't
@@ -200,29 +274,36 @@ The workflow this serves:
   clone without `origin/HEAD` set falls through the chain — if a new worktree
   forks from the wrong base, that chain is the first place to look
   (`git remote set-head origin -a` fixes a missing `origin/HEAD`).
-- **Create's only post-creation step is the dependency install** (Node projects;
-  see guideline 6) — still no `.env` copy, no agent launch. The install is fired
-  with `send-keys` into the new window, *after* `new-window` returns its
-  `#{window_id}` — so a slow `pnpm install` never blocks the popup, and the
-  command lands in the right window even if two branches sanitize to the same
-  name. There's a small inherent race (keys are sent the instant the window's
-  shell spawns); tmux buffers them to the pane's pty, so they run once the shell's
-  line editor is ready — don't "fix" it with a blocking `sleep` in the script.
-  Any new post-creation step should follow the same pattern (visible, non-blocking,
-  toggleable).
+- **Create's post-creation step is ONE chained send-keys line** — install `&&`
+  post-create command (guideline 6). It's fired into the new window *after*
+  `new-window` returns its `#{window_id}` — so a slow `pnpm install` never
+  blocks the popup, and the command lands in the right window even if two
+  branches sanitize to the same name. There's a small inherent race (keys are
+  sent the instant the window's shell spawns); tmux buffers them to the pane's
+  pty, so they run once the shell's line editor is ready — don't "fix" it with
+  a blocking `sleep` in the script. Any new post-creation step should follow
+  the same pattern (visible, non-blocking, toggleable) and join the chain
+  rather than adding a second send-keys.
 - **Version + reload mechanics.** Needs tmux 3.2+ (`display-popup`); 3.3+ for
   `-e`. Because the script is stow-symlinked, **edits to it are live
   immediately**, but edits to the **binding** in `tmux.conf` need a config reload
   (`prefix r`).
-- **You can't drive the popup headlessly.** The interactive popup needs an
-  attached client, so it can't run in CI/sandbox. Test the *pieces* instead: git
-  logic + the output parser in throwaway repos, and the binding in a scratch
-  server (`tmux -L <socket> source-file …`). That's how this was validated.
+- **The *popup* can't run headlessly, but the script can.** `display-popup`
+  needs an attached client — but the script itself runs fine in a pane of a
+  *detached* scratch server (`tmux -L <socket>`): a pane has a pty regardless
+  of attachment, so fzf renders and the `read` confirms work, driven by
+  `send-keys` and asserted with `capture-pane`. That's how the reap / batch /
+  create / guard flows were validated end-to-end; only the binding itself needs
+  a real client. NB: when testing, set `@worktree_post_create_cmd` to a
+  harmless `echo` on the scratch server first, or every test create launches a
+  real claude.
 
 ## Extension points
 
-- **PR picker** → reuse the create path with a branch checked out from a `gh` PR.
 - **Agent-done notifications** → attach to the agent pane *inside* a worktree
-  window so the alert can name the worktree (see `../roadmap.md`).
+  window so the alert can name the worktree (see `../roadmap.md`); the popup
+  list could then also mark which worktree's agent is waiting (`@agent_done`
+  is per-window and the branch→window mapping is already here).
 - **Richer preview** → the fzf `--preview` already shows `git status -sb` + recent
   log; a per-worktree ahead/behind or PR-status line slots in there.
+- (The PR picker from this list is built — `ctrl-p`, guideline 8.)
