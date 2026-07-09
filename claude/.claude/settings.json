@@ -4,12 +4,25 @@
     "CLAUDE_AFK_TIMEOUT_MS": "2147483647"
   },
   "permissions": {
-    "allow": [
-      "mcp__pencil"
+    "deny": [
+      "EnterPlanMode",
+      "ExitPlanMode",
+      "DesignSync",
+      "NotebookEdit",
+      "SendMessage",
+      "PushNotification",
+      "RemoteTrigger",
+      "ReportFindings",
+      "ScheduleWakeup",
+      "CronCreate",
+      "CronDelete",
+      "CronList"
     ],
     "defaultMode": "bypassPermissions"
   },
-  "model": "sonnet",
+  "model": "opus[1m]",
+  "disableClaudeAiConnectors": true,
+  "disableBundledSkills": true,
   "hooks": {
     "PreToolUse": [
       {
@@ -52,6 +65,9 @@
       }
     ]
   },
+  "disableRemoteControl": true,
+  "disableWorkflows": true,
+  "disableArtifact": true,
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/commands/statusline-command.sh"
@@ -67,7 +83,7 @@
     "codex@openai-codex": true,
     "impeccable@impeccable": true,
     "vercel@claude-plugins-official": false,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "impeccable": {

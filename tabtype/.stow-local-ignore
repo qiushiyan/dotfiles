@@ -1,0 +1,6 @@
+# tabtype package docs: keep them in the repo (so Claude loads tabtype/CLAUDE.md
+# when working in this package) but do NOT symlink them into $HOME on stow.
+# Without this, `stow tabtype` links tabtype/CLAUDE.md -> ~/CLAUDE.md, which then
+# loads TabType-only guidance into every project. Only .config/ should be stowed.
+CLAUDE\.md
+WORKFLOW\.md
