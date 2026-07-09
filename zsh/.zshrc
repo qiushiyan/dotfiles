@@ -31,7 +31,7 @@ bindkey -M vicmd '^L' clear-screen
 #     else (multi-pane, no tmux) it exits as usual. No in-widget `read` — that
 #     was fragile (message painted late, keypress leaked to the command line).
 #     It is (re)bound from a precmd hook (below) so it runs AFTER oh-my-zsh's
-#     `bindkey -e`, fzf, smart-suggestion, etc. — and in every keymap.
+#     `bindkey -e`, fzf, etc. — and in every keymap.
 setopt ignore_eof
 
 _guard_ctrl_d() {
@@ -142,10 +142,6 @@ export DISABLE_AUTO_TITLE=true
 export CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=1
 export ENABLE_LSP_TOOLS=1
 
-# AI suggestions
-export SMART_SUGGESTION_AI_PROVIDER=gemini
-export GEMINI_MODEL="gemini-2.5-flash"
-
 # Secrets
 [ -f ~/.secrets ] && source ~/.secrets
 
@@ -193,9 +189,6 @@ eval "$(zoxide init zsh)"
 # Google Cloud SDK
 [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ] && source "$HOME/google-cloud-sdk/path.zsh.inc"
 [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ] && source "$HOME/google-cloud-sdk/completion.zsh.inc"
-
-# smart-suggestion
-source "$HOME/.config/smart-suggestion/smart-suggestion.plugin.zsh"
 
 # oh-my-posh (must be last — other tools can override shell integration)
 eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
