@@ -1,6 +1,6 @@
 ---
 name: distill-docs
-description: Periodic whole-tree documentation distillation — consolidate duplication, prune rot against the project's own standards, and patch the standards so the same rot can't recur.
+description: Periodic whole-tree documentation distillation — consolidate duplication, split oversized docs into spine + satellites, prune rot against the project's own standards, and patch the standards so the same rot can't recur.
 user-invocable: true
 disable-model-invocation: true
 argument-hint: [optional scope, e.g. "docs/agents" — default the whole docs tree]
@@ -28,19 +28,19 @@ Run the cheap detectors over the whole scope before reading anything end-to-end 
 - **Live counts** — "the seven seams", "all 5 rules": numbers a reader never navigates by and the code already knows.
 - **Future tense in design docs** — "we will", "planned", "upcoming" outside the proposal tier.
 - **Status markers to re-check** — "unverified", "known gap", "not yet", "TODO": each is either still true or rot.
-- **Outliers** — a doc several times its siblings' size, or untouched by git for months while its subject churned, goes to the top of the map's reading list.
+- **Outliers** — a doc several times its siblings' size (the usual split candidate), or untouched by git for months while its subject churned, goes to the top of the map's reading list.
 
 Done when every detector has run and its hits sit on the worksheet with file:line.
 
 ## 3 — The redundancy map
 
-Dispatch one general-purpose agent to read the scope and return the section-level map, so your own window stays free for the surgery. For each top-level section of each design doc it reports: content kind (mental model / mechanism / policy / inventory / history), overlap (fully duplicated elsewhere / summarized elsewhere / only lives here — naming the other doc and section), staleness signals, and a recommendation — keep, tighten, consolidate into a named home, relocate, or prune with the survivor named. It also reports narrative dependencies (sections that must not be separated) and doc-vs-doc contradictions. Read the map critically: it's a subordinate's draft, not a verdict — spot-check any recommendation you'd act on destructively.
+Dispatch one general-purpose agent to read the scope and return the section-level map, so your own window stays free for the surgery. For each top-level section of each design doc it reports: content kind (mental model / mechanism / policy / inventory / history), overlap (fully duplicated elsewhere / summarized elsewhere / only lives here — naming the other doc and section), staleness signals, and a recommendation — keep, tighten, consolidate into a named home, relocate, split to named satellites (§The split), or prune with the survivor named. It also reports narrative dependencies (sections that must not be separated) and doc-vs-doc contradictions. Read the map critically: it's a subordinate's draft, not a verdict — spot-check any recommendation you'd act on destructively.
 
 Done when every design doc is mapped and every contradiction is listed.
 
 ## 4 — The plan is the owner's call
 
-Assemble sweep + map into a per-doc plan: consolidations (surviving home named), prunes (live copy of the content named), tightenings, relocations, and any generator fixes (step 7) already visible. Surface the genuinely owner-level calls as questions, each with your recommendation: membership of the always-read set, retire-vs-reconcile for a stale doc, an apparent rot that might be a deliberate convention the standards forgot to sanction. Wait for confirmation — this pass deletes.
+Assemble sweep + map into a per-doc plan: consolidations (surviving home named), splits (spine and satellites named), prunes (live copy of the content named), tightenings, relocations, and any generator fixes (step 7) already visible. Surface the genuinely owner-level calls as questions, each with your recommendation: membership of the always-read set, retire-vs-reconcile for a stale doc, an apparent rot that might be a deliberate convention the standards forgot to sanction. Wait for confirmation — this pass deletes.
 
 ## 5 — Surgery
 
@@ -49,7 +49,7 @@ Work doc by doc, finishing one before opening the next. The standards bind at th
 - **One home per meaning.** Every consolidation names the surviving copy and repoints the others. A deletion with no named survivor is a lost meaning, not a distillation.
 - **Present tense, edited in place.** Restructure prose to describe what is true now; git holds the history.
 - **The protected set survives verbatim** — sanctioned echoes, evidence tags, each doc's voice. Distillation compresses meaning; it doesn't flatten register.
-- **Deletion is the win condition.** Accumulated rot is usually whole sections and whole files; a pass that only tightened sentences has skimmed the surface.
+- **Deletion is the win condition — the split is its partner.** Accumulated rot is usually whole sections and whole files; a pass that only tightened sentences has skimmed the surface. Live content that only some sessions need isn't pruned — it moves to a satellite (§The split).
 
 Done when every planned action landed, or was consciously dropped with a one-line reason.
 
@@ -57,8 +57,9 @@ Done when every planned action landed, or was consciously dropped with a one-lin
 
 1. Re-read each modified doc end-to-end for a coherent narrative.
 2. Grep the tree — docs, the always-loaded file, README, and any doc-reading skills — for every basename and section heading you moved, renamed, or deleted: every hit resolves, or sits in a dated evidence file as history.
-3. Re-measure the always-read set against the budget; record before → after bytes.
-4. Confirm the protected set is untouched.
+3. Every satellite created this pass is routed: the spine points to it where the content used to sit, and the tree's navigation surfaces list it.
+4. Re-measure the always-read set against the budget; record before → after bytes.
+5. Confirm the protected set is untouched.
 
 ## 7 — Fix the generator
 
@@ -66,7 +67,15 @@ For each rot class that appeared more than once — or that a previous distillat
 
 ## Output
 
-Per doc: consolidated / pruned / tightened / untouched, with bytes before → after. Then: budget status, every deletion with its survivor, and the generator amendments proposed (or "none needed").
+Per doc: split / consolidated / pruned / tightened / untouched, with bytes before → after. Then: budget status, every deletion with its survivor, every new satellite with its route, and the generator amendments proposed (or "none needed").
+
+## The split — spine and satellites
+
+Reference for steps 3–5, and the usual resolution of a budget overrun. Deletion cures rot; the split cures bulk — a doc too big for its place in the reading order whose content is still live. The doc stays at its own path as the **spine**, keeping what a reader needs to *think about* the subsystem: the mental model, the vocabulary, the load-bearing invariants. What a reader needs only to *work on* one corner — operational detail, edge-case walkthroughs, per-feature mechanism — moves into smaller **satellite** docs read on demand. The step-3 map already grades the cut: *mental model* and *policy* sections are spine; *mechanism* sections are the satellite candidates.
+
+- **The spine keeps its path and its place.** The navigation map and the always-read set keep pointing at it; inbound references keep resolving. The hot path slims without moving.
+- **Each satellite earns a routed pointer**: one line in the spine where the content sat, worded with when to read it ("operating the cron: `run-operations.md`"), plus an entry in the tree's navigation surfaces — a README map, an onboarding skill's on-demand phase. A satellite nothing routes to is the next pass's orphan.
+- **Splitting is lossless; distill after.** The move itself deletes nothing — the same rot rules then run inside spine and satellites alike.
 
 ## The rot catalogue
 
@@ -81,5 +90,5 @@ Reference for steps 2–4. Where a project's standards overlap it, the standards
 | Stale status marker | "unverified" on a since-verified feature; a "known gap" since closed | Flip or delete; status lives in the project's status surfaces |
 | Dead reference | An anchor to a renamed section; a path to a moved file | Repoint it — a reference nobody can follow is worse than none |
 | Live count / inventory | A number or table re-listing what the code enumerates | Name the load-bearing few; the count is the code's to know |
-| Altitude creep | Mechanism piling up in a mental-model doc | Split: the model stays always-read, the mechanism moves to an on-demand doc (the standards' spine/satellite trigger, where declared) |
+| Altitude creep | Mechanism piling up in a mental-model doc | §The split — the model stays spine, the mechanism moves to a satellite |
 | Structural rot | Reading order gone disjoint; sibling sections describing one thing | Merge, reorder, or re-home |

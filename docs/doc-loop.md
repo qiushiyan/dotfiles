@@ -20,7 +20,7 @@ How durable knowledge crosses coding-agent sessions: **the project's docs are th
 |---|---|---|
 | duet | `/onboarding [harness \| providers \| prompts \| surface \| design]` | project `/update-docs`, global `/handoff` |
 | itell (`apps/platform`) | `/onboarding [topic]` | project `/update-docs`, global `/handoff` |
-| planlab — Loopy agent/eval | `/pl-loopy-onboarding [agent \| eval \| triage \| refactor]` | `/pl-loopy-update-docs` |
+| planlab — Loopy agent/triage | `/pl-loopy-onboarding [agent \| triage]` | `/pl-loopy-update-docs` |
 | planlab — infra migration | `/pl-loopy-infra-onboarding [topic]` | `/pl-loopy-infra-handoff` (rich four-phase variant; global `/handoff` defers to it) |
 | anywhere else | read the docs tree by hand | global `/update-docs`, global `/handoff` |
 
