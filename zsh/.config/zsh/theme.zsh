@@ -38,6 +38,9 @@ case "$TERMINAL_THEME" in
         # staying muted. .zshrc loads the plugin after this, and it only
         # applies its fg=8 default when this is unset.
         ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
+        # delta (git pager) + difftastic follow the same light/dark choice.
+        export DELTA_FEATURES='+light-mode'
+        export DFT_BACKGROUND='light'
         ;;
     catppuccin_mocha)
         # Dark bg: bold/bright dir for emphasis. Matches oh-my-zsh's
@@ -47,6 +50,9 @@ case "$TERMINAL_THEME" in
         # On the dark bg the plugin's default fg=8 already reads well; set it
         # explicitly so the value is owned here alongside the light variant.
         ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+        # delta (git pager) + difftastic follow the same light/dark choice.
+        export DELTA_FEATURES='+dark-mode'
+        export DFT_BACKGROUND='dark'
         ;;
     tailwind_light)
         # White bg (#ffffff), like flexoki_light: non-bold dark hues. The
@@ -58,6 +64,9 @@ case "$TERMINAL_THEME" in
         # Mid-gray (242 = #6c6c6c, not remapped by the theme) for the grayed
         # inline suggestion — reads clearly on the white paper bg.
         ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
+        # delta (git pager) + difftastic follow the same light/dark choice.
+        export DELTA_FEATURES='+light-mode'
+        export DFT_BACKGROUND='light'
         ;;
     tokyo_night_moon)
         # Dark bg (#222436): bold/bright dir for emphasis, same as catppuccin_mocha.
@@ -66,6 +75,9 @@ case "$TERMINAL_THEME" in
         # On the dark bg the plugin's default fg=8 reads well; set it explicitly
         # so the value is owned here alongside the other arms.
         ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+        # delta (git pager) + difftastic follow the same light/dark choice.
+        export DELTA_FEATURES='+dark-mode'
+        export DFT_BACKGROUND='dark'
         ;;
     gruvbox_dark)
         # Dark bg (#282828): bold/bright dir for emphasis, same as the other dark arms.
@@ -73,6 +85,9 @@ case "$TERMINAL_THEME" in
         export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
         # Dark bg → the plugin default fg=8 reads well; set explicitly to own it.
         ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+        # delta (git pager) + difftastic follow the same light/dark choice.
+        export DELTA_FEATURES='+dark-mode'
+        export DFT_BACKGROUND='dark'
         ;;
     *)
         print -ru2 "theme.zsh: unknown TERMINAL_THEME '$TERMINAL_THEME'"

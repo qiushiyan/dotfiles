@@ -182,20 +182,35 @@ function runningState(meta) {
   };
 }
 
+function resumeArgs(meta) {
+  if (meta.sessionLockConflict) return null;
+  const base = meta.resumeArgs ?? meta.resumeFlag ?? (meta.sessionId ? `--resume ${meta.sessionId}` : null);
+  if (!base || /(?:^|\s)--timeout-min(?:\s|=)/.test(base)) return base;
+  const timeoutMin = Number.isFinite(meta.timeoutMin) && meta.timeoutMin >= 0 ? meta.timeoutMin : 30;
+  return `${base} --timeout-min ${timeoutMin}`;
+}
+
 function recoveryForStale(meta, state) {
+  if (meta.sessionLockConflict) {
+    const conflict = String(meta.sessionLockConflict).replace(/[.\s]+$/, '');
+    const providerWarning = state.kind === 'orphaned'
+      ? ' This job also has a provider process that may still be alive; stop or wait for it first.'
+      : '';
+    return `This turn recorded a session-lock collision: ${conflict}.${providerWarning} Inspect or collect the job named in that conflict. Do not resume or redispatch the locked session from this job.`;
+  }
   if (state.kind === 'orphaned') {
-    return 'Do not resume or redispatch: another provider process may still be changing the tree. Stop or wait for that process first, then inspect raw.log and the working tree.';
+    return 'Another provider process may still be changing the tree. Stop or wait for that process first, then inspect progress.log, raw.log, stderr.log, and the working tree. Resume or redispatch only after the process is gone.';
   }
   if (state.kind === 'abandoned') {
     if (meta.promptState === 'accepted' && meta.sessionId) {
-      return `Inspect raw.log and the working tree, then continue the same session with --resume ${meta.sessionId}; re-sending the original prompt could duplicate work.`;
+      return `Inspect the recovered result, progress.log, raw.log, stderr.log, and the working tree, then continue the same session with ${resumeArgs(meta)}; do not redispatch the original prompt because it could duplicate accepted work.`;
     }
     if (meta.promptState === 'not_started') {
-      return 'The prompt was not started. Redispatch the identical call once.';
+      return 'The provider process did not start, so the prompt was not accepted. Retry the identical dispatch once.';
     }
-    return `Inspect raw.log and the working tree first. Redispatch only if neither shows partial work${meta.sessionId ? `; otherwise continue with --resume ${meta.sessionId}` : ''}.`;
+    return `Prompt acceptance is unconfirmed; absence of output is not proof that no work occurred. Inspect progress.log, raw.log, stderr.log, and the working tree. Redispatch only if you can positively establish that the prompt never began${meta.sessionId ? `; otherwise continue with ${resumeArgs(meta)}` : ''}.`;
   }
-  return 'Inspect raw.log, the provider process list, and the working tree before resuming or redispatching; liveness is unknown.';
+  return 'Inspect progress.log, raw.log, stderr.log, the provider process list, and the working tree before resuming or redispatching; liveness is unknown.';
 }
 
 function pendingJobs(base) {
@@ -235,7 +250,7 @@ function printPending(base) {
     if (item.kind === 'terminal') {
       console.log(`next: node ${shellQuote(process.argv[1])} ${shellQuote(item.dir)}`);
     } else if (item.kind === 'corrupt') {
-      console.log(`next: inspect ${path.join(item.dir, 'raw.log')} and the working tree; do not infer completion from the damaged metadata`);
+      console.log(`next: inspect ${path.join(item.dir, 'progress.log')}, ${path.join(item.dir, 'raw.log')}, ${path.join(item.dir, 'stderr.log')}, and the working tree; do not infer completion from the damaged metadata`);
     } else {
       console.log(`next: ${recoveryForStale(item.meta, item)}`);
     }
@@ -257,7 +272,7 @@ function reconcileAbandoned(outDir, meta, state) {
   };
   const resultPath = path.join(outDir, 'result.md');
   if (!fs.existsSync(resultPath)) {
-    writeFileAtomic(resultPath, `# Turn abandoned\n\n${error}\n\n**After collecting:** ${nextAction}\n`);
+    writeFileAtomic(resultPath, `# Turn abandoned\n\n${error}\n`);
   }
   writeFileAtomic(path.join(outDir, 'meta.json'), JSON.stringify(reconciled, null, 2) + '\n');
   return reconciled;
@@ -267,11 +282,11 @@ function collect(outDir) {
   const metaPath = path.join(outDir, 'meta.json');
   const resultPath = path.join(outDir, 'result.md');
   if (!fs.existsSync(metaPath)) {
-    fail(`${metaPath} not found — inspect ${path.join(outDir, 'raw.log')} before deciding whether to retry`);
+    fail(`${metaPath} not found — inspect ${path.join(outDir, 'progress.log')}, ${path.join(outDir, 'raw.log')}, ${path.join(outDir, 'stderr.log')}, and the working tree before deciding whether to retry`);
   }
   const read = readMeta(metaPath);
   if (read.error) {
-    fail(`${metaPath} is not valid JSON (${read.error.message}). Inspect raw.log and the working tree; do not assume the job finished or retry it blindly.`);
+    fail(`${metaPath} is not valid JSON (${read.error.message}). Inspect ${path.join(outDir, 'progress.log')}, ${path.join(outDir, 'raw.log')}, ${path.join(outDir, 'stderr.log')}, and the working tree; do not assume the job finished or retry it blindly.`);
   }
   let { meta } = read;
   let state = runningState(meta);
@@ -288,11 +303,17 @@ function collect(outDir) {
   console.log(`provider: ${meta.provider} · model ${meta.model ?? '(provider default)'} · effort ${meta.effort ?? '(provider default)'}${meta.label ? ` · label ${meta.label}` : ''}`);
   if (meta.durationMs != null) console.log(`duration: ${Math.round(meta.durationMs / 60000)}m${meta.costUsd != null ? ` · cost $${meta.costUsd}` : ''}`);
   console.log(`tokens: ${fmtTokens(meta.tokens)}`);
-  console.log(`prompt: ${meta.promptState ?? 'unknown'}`);
+  console.log(`prompt: ${meta.promptState ?? 'unknown'}${meta.promptStateEvidence ? ` · evidence ${meta.promptStateEvidence}` : ''}`);
+  if (meta.resultKind) console.log(`result kind: ${meta.resultKind}`);
+  if (meta.status === 'running' && meta.watchCommand) console.log(`watch: ${meta.watchCommand}`);
+  if (meta.progressPath || meta.rawPath || meta.stderrPath) {
+    console.log(`logs: progress ${meta.progressPath ?? path.join(outDir, 'progress.log')} · raw ${meta.rawPath ?? path.join(outDir, 'raw.log')} · stderr ${meta.stderrPath ?? path.join(outDir, 'stderr.log')}`);
+  }
   if (meta.sessionId) {
     console.log(`session: ${meta.sessionId}`);
-    console.log(`resume: --resume ${meta.sessionId}`);
-    console.log(`takeover: ${meta.takeoverCommand}`);
+    const resume = resumeArgs(meta);
+    if (resume) console.log(`resume: ${resume}`);
+    if (meta.takeoverCommand) console.log(`takeover: ${meta.takeoverCommand}`);
   }
   if (meta.error) console.log(`error: ${meta.error}`);
   if (meta.collectedAt) console.log(`collected: ${meta.collectedAt}`);
@@ -310,7 +331,7 @@ function collect(outDir) {
 
   if (meta.status === 'running') {
     console.log(`\nnext: ${state.kind === 'live'
-      ? 'Wait for Claude Code\'s native background-task notification; polling is unnecessary.'
+      ? `Return now and wait for Claude Code's native background-task notification.${meta.watchCommand ? ` Use ${meta.watchCommand} only for live observation.` : ''}`
       : recoveryForStale(meta, state)}`);
     return;
   }

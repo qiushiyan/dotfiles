@@ -85,3 +85,5 @@ When the work is large, I manually pause the implementer at a commit partway thr
 - **`smart-adapt-skills`** — meta reminder when an agent is using skill files: adapt the principles, don't apply pedantically.
 
 - **`technical-difficulty`** — reframes what "hard" means when discussing scope or complexity (impact and uncertainty, not lines changed).
+
+- **`handle-review`** — triage attitude for external PR reviews (GitHub apps like Claude/Cursor); pairs with a skill that fetches them. The spine: fix what's right (possibly better than suggested), drop what isn't (with a quick why), and bring product-level feedback to the human instead of acting on it. Ends with a quick fixed/dropped/flagged rundown.

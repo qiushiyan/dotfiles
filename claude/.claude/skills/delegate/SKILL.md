@@ -23,15 +23,17 @@ Engine: `node ~/.claude/skills/sidekick-runtime/turn.mjs`. [ENGINE.md](../sideki
    ```
    node ~/.claude/skills/sidekick-runtime/turn.mjs \
      --provider codex --allow-write --baseline <sha> \
-     --prompt-file <f> --timeout-min 120 --label delegate
+     --prompt-file <f> --timeout-min 180 --label delegate
    ```
 
-   `--baseline` is the sha from preflight, recorded in `meta.json` so collection can diff against it. Default is codex with no `--model`/`--effort` flags — the user's codex config governs. Use claude only when the user names it, and pass `--model` only when they name a model — otherwise their claude default runs. Echo whichever model is effective plus the engine's `watch:` / `takeover:` lines from the task output, then return and let the native task-completion notification trigger collection. A takeover is for after the turn finishes. Never substitute a model of your own choosing.
+   `--baseline` is the sha from preflight, recorded in `meta.json` so collection can diff against it. Default is codex with no `--model`/`--effort` flags — the user's codex config governs. Use claude only when the user names it, and pass `--model` only when they name a model — otherwise their claude default runs. The 180-minute value is a hard wall-clock safety cap for **every delegate turn**, including resumed fix turns; it does not reset on activity, and reaching it is not evidence of a hang. Never substitute a model of your own choosing.
+
+   After dispatch, relay the engine's startup coordinate block as printed: `out-dir:`, `provider:` (including model, effort, and hard cap), `watch:`, `raw:`, `stderr:`, `baseline:`, `session:`, `takeover-after-terminal:`, and `next:`. Preserve `(provider default)` literally — the runner knows that no override was passed, not which model/effort the provider resolved. The watch tails semantic `progress.log` plus raw provider stdout; it is optional observation, never a completion signal. Then obey `next:`: return and let the native task-completion notification trigger collection. A takeover is only for after terminal state.
 
    While it runs: keep discussing anything, but make no code edits in the delegate's tree — you would race it.
 
 4. **Collect and verify** on Claude Code's native task-completion notification: `node ~/.claude/skills/sidekick-runtime/collect.mjs <out-dir>` prints the handoff report plus the commits and diffstat since the baseline in one block. Where the report claims tests pass, re-run the project's checks yourself. Done when the report is read, every commit is enumerated, and the checks have been re-run.
 
-5. **Review the diff seriously** — correctness, spec-fit, test quality (signal, not count: a test that can't fail for a real reason, or that re-proves what an existing one owns, is a defect to remove rather than coverage to keep — and a test you'd ask for must name the bug it catches), consistency with the codebase — starting from the report's where-to-look-hardest. Route each finding: mechanical → fix it directly; substantive rework → send the findings into the **same session** (`--resume <sessionId>`, from the final block or `meta.json`) as a fix round; a direction-level problem → the user decides.
+5. **Review the diff seriously** — correctness, spec-fit, test quality (signal, not count: a test that can't fail for a real reason, or that re-proves what an existing one owns, is a defect to remove rather than coverage to keep — and a test you'd ask for must name the bug it catches), consistency with the codebase — starting from the report's where-to-look-hardest. Route each finding: mechanical → fix it directly; substantive rework → send the findings into the **same session** (`--resume <sessionId> --timeout-min 180`, from the final block or `meta.json`) as a fix round; a direction-level problem → the user decides.
 
 6. **Report** to the user: what was delegated and to whom, diff stats, the review verdict finding by finding (fixed / sent back / dismissed with reason), and the next commands — the resume flag and the takeover command from the final block or `meta.json`.

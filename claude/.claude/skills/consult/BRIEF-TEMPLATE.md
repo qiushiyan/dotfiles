@@ -21,6 +21,17 @@ orientation it gets.»
 «The problem, its constraints, and what a good solution must satisfy — stated
 without revealing the direction you currently favor.»
 
+## The design bar
+
+Read `~/.config/lessons/codebase-design/deep-modules.md` closely before you
+design — the shape you propose is judged in its vocabulary: depth, seams, the
+deletion test, illegal states. Where you commit an interface, design it twice
+(`design-it-twice.md`, same directory): sketch two or three shapes different
+in kind — write each one's constraint down first and hold the others out of
+view — compare on depth, locality, and seam placement, and land on the winner
+plus a line per discard, never a menu. When the problem restructures an
+existing cluster, `deepening.md` decides whether a seam earns a port.
+
 <!-- MODE: review — the voice critiques an existing artifact (spec, design doc,
      glossary). It gets the artifact; what it must not do is relitigate settled
      direction. -->
@@ -33,6 +44,13 @@ flag it with concrete evidence (code paths, failure scenarios), clearly marked
 
 1. «settled decision»
 2. «settled decision»
+
+## The design lens
+
+Where the artifact commits a module shape or an interface, skim the `## The
+bar` of `~/.config/lessons/codebase-design/deep-modules.md` as a lens — don't
+recite it: judge depth, seam placement, and illegal states in its vocabulary,
+and check the shape was *chosen*, not merely first.
 
 ## Read these, in this order
 

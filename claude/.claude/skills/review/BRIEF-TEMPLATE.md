@@ -68,12 +68,8 @@ files. The reviewer reads them itself — never restate their content.»
 - **Silent deviations** — planned tests that never appeared, promised helpers that don't exist, scope creep past the spec.
 - **Test quality** — right altitude (behavior, not internals); covers the planned cases plus the obvious additions; survives plausible refactors; follows project test patterns. Flag the tests that add churn without signal: tests of *shape* (signatures, data structures) that pass when behavior breaks, tests pinning wording or constants no caller depends on, a second test re-proving what an existing one already owns, and over-testing — every edge case or internals instead of the critical paths.
 - **UX & performance** — user-facing impact, performance characteristics.
-- **Structural quality — be ambitious, not just local:**
-  - **Code-judo:** is there a reframing that makes whole branches, helpers, modes, conditionals, or layers disappear entirely — not just rearranges them? Don't stop at "this could be a bit cleaner."
-  - **Spaghetti growth:** ad-hoc conditionals or special cases bolted into unrelated flows are a design problem, not a stylistic nit — push the logic behind its own abstraction.
-  - **Thin abstractions:** pass-through wrappers, identity helpers, an interface nearly as complex as its implementation — apply the deletion test to a new module: does it concentrate complexity, or just relocate it?
-  - **Boundary cleanliness:** casts, `any`/`unknown`, optionality papering over unclear invariants — push for an explicit contract.
-  - **Canonical layer:** is the logic in the right module, reusing existing canonical helpers rather than near-duplicates?
+- **Structural quality — be ambitious, not just local.** Read `~/.config/lessons/codebase-design/deep-modules.md` before judging structure: its bar (depth, seams, the deletion test, illegal states) is the lens, and its vocabulary is the language structural findings are written in. When the change restructures an existing cluster, also read `~/.config/lessons/codebase-design/deepening.md` — whether a seam earns a port, and replace-don't-layer for the moved tests. The reshape that makes a concept disappear — a branch, a mode, a helper layer — outranks the one that tidies it. Two axes the lessons don't carry:
+  - **Seam cleanliness:** casts, `any`/`unknown`, optionality papering over unclear invariants — push for an explicit contract.
   - **Preparatory refactoring** (when the range includes one): behavior-preserving and proportionate — sized to this change, not a rewrite smuggled in alongside it.
 - **Right-sizing — over-building is the likelier failure** (the code's additive bias): defensive branches for states that can't occur, fallbacks the invariants already rule out, speculative features or config beyond the spec, abstractions pulled out before the pattern is real. Prefer making a bad state unrepresentable (a type, constructor, or enum) or validating at one boundary over more handling.
 
@@ -88,7 +84,7 @@ files. The reviewer reads them itself — never restate their content.»
 
 Findings ordered by severity — **critical** (blocks merge) / **moderate**
 (fix before merge) / **minor** (nice-to-have) — and don't pass the review
-because the code works: structural regressions and missed code-judo moves are
+because the code works: structural regressions and missed reshapes are
 critical, not minor. For each finding: what, where (file/function), the
 evidence (cite the code that proves it — a finding you can't point at code
 for doesn't get reported), and a concrete fix. End with a **Foundational

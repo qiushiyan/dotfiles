@@ -10,7 +10,7 @@ The skill bodies say what to do; this file records **why** — the assumptions, 
 
 Three layers, each owning exactly one thing:
 
-- **The engine (`turn.mjs`)** is deterministic mechanism: one turn in, files out (`result.md` is the return value, `meta.json` the coordinates). It holds zero judgment — no retries, no review loops, no gates. It is not a job manager (Bash `run_in_background` is) and not a sandbox (write intent is a flag; read-only is a prompt convention).
+- **The engine (`turn.mjs`)** is deterministic mechanism: one turn in, files out (`result.md` is the return value, `meta.json` the coordinates/recovery state, `progress.log` the live semantic view). It holds zero judgment — no retries, no review loops, no gates. It is not a job manager (Bash `run_in_background` is) and not a sandbox (write intent is a flag; read-only is a prompt convention).
 - **The skills** are judgment procedures for the host: when to dispatch, what the prompt must contain, how to collect, verify, and route what comes back.
 - **The prompt files** (brief / dispatch prompt) carry all task-specific intelligence. Templates hold the invariant scaffold so per-run authoring is only the judgment slots.
 
@@ -19,10 +19,10 @@ Three layers, each owning exactly one thing:
 ## Shared commitments
 
 - **Human at every boundary.** Dispatch, collection, round-2, verdicts — a person (or the host acting in front of one) sits between every stage. That's why the engine can stay judgment-free.
-- **No model substitution, ever.** No `--model`/`--effort` → the provider's own config governs. The host never picks a model the user didn't name (a Sonnet default was proposed at authoring and retracted on user correction). The effective model is always echoed so nothing is silent.
+- **No model substitution, ever.** No `--model`/`--effort` → the provider's own config governs. The host never picks a model the user didn't name (a Sonnet default was proposed at authoring and retracted on user correction). The runner echoes the requested override or `(provider default)`; it must not pretend it resolved an “effective” configured value it cannot observe.
 - **Independence picks the default provider.** The host is usually Claude Code, so a codex sidekick buys cross-family review for free; both providers bill a flat subscription, so cost isn't the tiebreaker. Default codex; claude is opt-in by name. (`--max-budget-usd` stays claude-only, kept for future.)
 - **Background is the default posture**; collection is notification-driven. Polling a background task is a smell — the one acceptable read is grabbing the coordinate lines right after dispatch.
-- **Durable artifacts over stdout.** Files are authoritative; stdout is a convenience view of them.
+- **Durable artifacts over stdout.** Files are authoritative; stdout is a convenience view of them. But convenience surfaces still program the caller: startup lines, progress vocabulary, collection blocks, and recovery text are prompts with an agent on the other end. Give that agent facts, state, and one proven next action — never protocol trivia it must reinterpret.
 - **Native provider vocabulary only.** Effort values are never alias-translated, and validated pre-spawn because the providers fail differently (claude silently degrades; codex burns a turn-start on a 400).
 
 ## /consult — independent second opinions
@@ -60,6 +60,7 @@ Three layers, each owning exactly one thing:
 - No sandbox flag for codex, ever — `~/.codex/config.toml` governs (a derived read-only sandbox broke the session's own tooling; duet, 2026-06-22).
 - No prompt-templating engine — templates are markdown files the host edits with judgment.
 - No effort aliases, no model fallbacks, no automatic provider selection.
+- No activity-based “hung” detector. Healthy reasoning and stalled work overlap in silence; `progress.log` reports observations, while the hard wall-clock cap is only a safety bound. Timeout policy follows task scale — consult 30, review 60, delegate 180 minutes — and applies equally to resumed turns.
 
 ## Evidence log
 
@@ -68,3 +69,4 @@ Three layers, each owning exactly one thing:
 - **2026-07-06 — improvement pass** (transcript-driven): review/design modes split in consult; watch/takeover echoed at dispatch; `collect.mjs`; `--baseline` recorded in meta; early `meta.json` (crash-safe coordinates); full token capture (codex input is mostly cache — record the split); session lock against racing a live turn; brief/prompt templates; report gains test-file accounting. Smoke tests of the previously-untested paths found and fixed a real hang: a timed-out provider with grandchildren holding stdio pipes never fired `close` — `exit` + grace period is the fallback.
 - **2026-07-08 — /review authored** (from the user's manual `review-implementation` tabtype snippet + a web survey of production AI-review systems). Same-day posture pass: the brief now leads with the strategic step-back after the user flagged local-fix bias as the top reviewer failure. Untested at authoring; first invocations should confirm the report-by-provenance step, the judge pass, and the posture section earn their keep.
 - **2026-07-10 — lifecycle hardening:** provider turns now run in their own process group; timeout and host interruption stop the full tree before terminal state is published. Atomic metadata records runner/provider PIDs and prompt state, explicit collection is idempotent, `--pending` recovers missed notifications and distinguishes orphaned from abandoned work, and fake-provider integration tests cover the lifecycle without billing a model. Error results now separate the mandatory collection step from the recovery action and prescribe retry vs resume only from observed prompt state.
+- **2026-07-11 — Claude observability incident:** the first Fable consult burned about 20 minutes on a false hang diagnosis and a redispatch because `claude -p --output-format json` emits one buffered result while `watch: tail -f raw.log` implied live evidence. Obelisk evidence from session `4f70c661-65ae-4c07-8fa2-4e0e7f4a2d33` records the header-only watch alarm, the corrected buffering diagnosis, and the still-healthy provider process. The runtime now uses Claude's realtime `stream-json`, isolates provider stdout/stderr, writes runner-owned semantic heartbeats to `progress.log`, treats watch as observation rather than completion/acceptance, recovers same-turn transcript evidence on termination, and gives callers one lifecycle/recovery action through metadata + collection. Consult/review/delegate caps are now 30/60/180 minutes for initial and resumed turns. A final adversarial pass also closed two boundary races: stale locks are never auto-reclaimed over a possible orphan provider, and a terminal provider envelope wins if the cap fires only during process-tree cleanup.

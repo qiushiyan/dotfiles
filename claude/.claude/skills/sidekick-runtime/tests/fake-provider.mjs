@@ -35,13 +35,63 @@ for await (const chunk of process.stdin) prompt += chunk;
 if (process.env.SIDEKICK_FAKE_PROMPT_FILE) {
   fs.writeFileSync(process.env.SIDEKICK_FAKE_PROMPT_FILE, prompt);
 }
+if (process.env.SIDEKICK_FAKE_STDERR) {
+  process.stderr.write(process.env.SIDEKICK_FAKE_STDERR);
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const emit = (event) => process.stdout.write(`${JSON.stringify(event)}\n`);
 
+function claudeInit() {
+  return {
+    type: 'system',
+    subtype: 'init',
+    session_id: sessionId,
+    claude_code_version: 'fake-2.1.207',
+  };
+}
+
+function claudeAssistant(text) {
+  return {
+    type: 'assistant',
+    session_id: sessionId,
+    message: {
+      role: 'assistant',
+      content: [{ type: 'text', text }],
+      usage: { input_tokens: 11, output_tokens: 7 },
+    },
+  };
+}
+
+function claudeResult(overrides = {}) {
+  return {
+    type: 'result',
+    subtype: 'success',
+    is_error: false,
+    session_id: sessionId,
+    result: finalText,
+    total_cost_usd: 0.01,
+    usage: {
+      input_tokens: 11,
+      cache_read_input_tokens: 4,
+      cache_creation_input_tokens: 2,
+      output_tokens: 7,
+    },
+    ...overrides,
+  };
+}
+
 function outputPath() {
   const index = providerArgs.indexOf('-o');
   return index >= 0 ? providerArgs[index + 1] : undefined;
+}
+
+function claudeArgSessionId() {
+  for (const flag of ['--session-id', '--resume']) {
+    const index = providerArgs.indexOf(flag);
+    if (index >= 0 && providerArgs[index + 1]) return providerArgs[index + 1];
+  }
+  return sessionId;
 }
 
 function emitCodexStart() {
@@ -86,24 +136,80 @@ function startGrandchild({ ignoreSigterm = false } = {}) {
 }
 
 if (provider === 'claude') {
-  if (scenario !== 'success') {
+  if (scenario === 'success') {
+    emit(claudeInit());
+    emit(claudeAssistant('claude is finishing the fake task'));
+    process.stdout.write(JSON.stringify(claudeResult())); // no final newline exercises close-time flush
+  } else if (scenario === 'delayed-success') {
+    emit(claudeInit());
+    await sleep(Number(process.env.SIDEKICK_FAKE_START_DELAY_MS ?? 50));
+    emit(claudeAssistant('claude completed an intermediate step'));
+    await sleep(Number(process.env.SIDEKICK_FAKE_DELAY_MS ?? 500));
+    process.stdout.write(JSON.stringify(claudeResult()));
+  } else if (scenario === 'fragmented-success') {
+    emit(claudeInit());
+    const assistant = Buffer.from(`${JSON.stringify(claudeAssistant('split UTF-8 🧭 event'))}\n`);
+    const marker = Buffer.from('🧭');
+    const markerAt = assistant.indexOf(marker);
+    process.stdout.write(assistant.subarray(0, markerAt + 1));
+    await sleep(20);
+    process.stdout.write(assistant.subarray(markerAt + 1));
+    const result = Buffer.from(JSON.stringify(claudeResult()));
+    const splitAt = Math.floor(result.length / 2);
+    process.stdout.write(result.subarray(0, splitAt));
+    await sleep(20);
+    process.stdout.write(result.subarray(splitAt));
+  } else if (scenario === 'success-with-stubborn-grandchild') {
+    emit(claudeInit());
+    emit(claudeAssistant('claude completed before residual cleanup'));
+    emit(claudeResult());
+    startGrandchild({ ignoreSigterm: true });
+    const readyFile = process.env.SIDEKICK_FAKE_GRANDCHILD_READY_FILE;
+    if (readyFile) {
+      while (!fs.existsSync(readyFile)) await sleep(5);
+    }
+  } else if (scenario === 'terminal-success-then-hang') {
+    emit(claudeInit());
+    emit(claudeAssistant('claude completed before its CLI stalled'));
+    emit(claudeResult());
+    setInterval(() => {}, 60_000);
+  } else if (scenario === 'hang-with-stubborn-grandchild-only') {
+    emit(claudeInit());
+    emit(claudeAssistant('useful claude work before timeout'));
+    startGrandchild({ ignoreSigterm: true });
+    setInterval(() => {}, 60_000);
+  } else if (scenario === 'hang-before-acceptance') {
+    setInterval(() => {}, 60_000);
+  } else if (scenario === 'init-only-hang') {
+    emit(claudeInit());
+    setInterval(() => {}, 60_000);
+  } else if (scenario === 'transcript-only-hang') {
+    const id = claudeArgSessionId();
+    const transcriptDir = path.join(process.env.HOME, '.claude', 'projects', 'fake-project');
+    fs.mkdirSync(transcriptDir, { recursive: true });
+    const now = new Date().toISOString();
+    const rows = [
+      { type: 'user', timestamp: now, message: { role: 'user', content: [{ type: 'text', text: prompt }] } },
+      { type: 'assistant', timestamp: now, message: { role: 'assistant', content: [{ type: 'text', text: 'partial work from the Claude transcript' }] } },
+    ];
+    fs.writeFileSync(path.join(transcriptDir, `${id}.jsonl`), `${rows.map((row) => JSON.stringify(row)).join('\n')}\n`);
+    setInterval(() => {}, 60_000);
+  } else if (scenario === 'partial-failure') {
+    const reason = 'synthetic provider failure';
+    emit(claudeInit());
+    emit(claudeAssistant('useful claude work before failure'));
+    emit(claudeAssistant(reason));
+    process.stdout.write(JSON.stringify(claudeResult({
+      subtype: 'error_during_execution',
+      is_error: true,
+      result: undefined,
+      errors: [reason],
+    })));
+    process.exitCode = 7;
+  } else {
     process.stderr.write(`unsupported fake claude scenario: ${scenario}\n`);
     process.exit(64);
   }
-  process.stdout.write(JSON.stringify({
-    type: 'result',
-    subtype: 'success',
-    is_error: false,
-    session_id: sessionId,
-    result: finalText,
-    total_cost_usd: 0.01,
-    usage: {
-      input_tokens: 11,
-      cache_read_input_tokens: 4,
-      cache_creation_input_tokens: 2,
-      output_tokens: 7,
-    },
-  }));
 } else if (scenario === 'success') {
   emitCodexStart();
   emitCodexResult();
@@ -116,6 +222,11 @@ if (provider === 'claude') {
   emitCodexStart();
   await sleep(Number(process.env.SIDEKICK_FAKE_DELAY_MS ?? 500));
   emitCodexResult();
+} else if (scenario === 'delayed-thread-start-ignore-sigterm') {
+  process.on('SIGTERM', () => {});
+  await sleep(Number(process.env.SIDEKICK_FAKE_START_DELAY_MS ?? 100));
+  emitCodexStart();
+  setInterval(() => {}, 60_000);
 } else if (scenario === 'success-with-stubborn-grandchild') {
   emitCodexStart();
   emitCodexResult();
@@ -124,6 +235,10 @@ if (provider === 'claude') {
   if (readyFile) {
     while (!fs.existsSync(readyFile)) await sleep(5);
   }
+} else if (scenario === 'terminal-success-then-hang') {
+  emitCodexStart();
+  emitCodexResult();
+  setInterval(() => {}, 60_000);
 } else if (scenario === 'hang-with-grandchild') {
   emitCodexStart();
   startGrandchild();

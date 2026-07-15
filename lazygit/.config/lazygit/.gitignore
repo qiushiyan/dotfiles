@@ -1,0 +1,6 @@
+# Defense-in-depth (mirrors ~/.claude and ~/.codex): if ~/.config/lazygit is
+# ever a folded symlink into this package instead of a real dir, lazygit's
+# runtime state.yml must never be committed. Allow-list only tracked config.
+*
+!.gitignore
+!config.yml

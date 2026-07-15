@@ -523,12 +523,8 @@ Code-review my implementation. **Read the actual code, not just commit messages.
 - **Solves the problem** — does the implementation actually solve the spec's problem, not just pass its own tests?
 - **Test quality** — right altitude (behavior, not internals), covers planned cases + obvious additions, survives plausible refactors, uses project patterns. Flag the tests that add churn without signal: tests of *shape* (signatures, data structures) that pass when behavior breaks, tests pinning wording or constants no caller depends on, and a second test re-proving what an existing one already owns. A test worth deleting is a finding, not a nit — coverage is feedback, never the goal.
 - **UX & performance** — user-facing impact, performance characteristics.
-- **Structural quality — be ambitious, not just local:**
-    - **Code-judo:** is there a reframing that makes whole branches, helpers, modes, conditionals, or layers disappear entirely — not just rearranges them? Don't stop at "this could be a bit cleaner."
-    - **Spaghetti growth:** ad-hoc conditionals or special cases bolted into unrelated flows = design problem, not a stylistic nit. Push the logic behind its own abstraction.
-    - **Thin abstractions:** pass-through wrappers, identity helpers, an interface nearly as complex as its implementation — apply the deletion test to a new module: does it concentrate complexity, or just relocate it?
-    - **Boundary cleanliness:** casts, `any`, `unknown`, optionality papering over unclear invariants — push for an explicit contract.
-    - **Canonical layer:** is the logic in the right module/package, or leaking across boundaries? Prefer existing canonical helpers over near-duplicates.
+- **Structural quality — be ambitious, not just local.** Read `~/.config/lessons/codebase-design/deep-modules.md` before judging structure: its bar (depth, seams, the deletion test, illegal states) is the lens, and its vocabulary is the language structural findings are written in. When the change restructures an existing cluster, also read `~/.config/lessons/codebase-design/deepening.md` — whether a seam earns a port, and replace-don't-layer for the moved tests. The reshape that makes a concept disappear — a branch, a mode, a helper layer — outranks the one that tidies it. Two axes the lessons don't carry:
+    - **Seam cleanliness:** casts, `any`, `unknown`, optionality papering over unclear invariants — push for an explicit contract.
     - **Preparatory refactoring** (when the diff includes one): behavior-preserving and proportionate — sized to this change, not a rewrite smuggled in alongside it.
 - **Right-sizing — over-building is the likelier failure:** defensive branches for states that can't occur, fallbacks the invariants already rule out, speculative features or config beyond the spec, abstractions pulled out before the pattern is real. Prefer making a bad state unrepresentable (a type, constructor, or enum) or validating at one boundary over more handling — and don't reflexively ask for more handling; that reflex is the slop we're avoiding.
 
@@ -537,7 +533,7 @@ Code-review my implementation. **Read the actual code, not just commit messages.
 - Concrete fix with file/function references and enough detail to act on.
 - No "this could be cleaner" without a concrete alternative, and no "add a test here" without the bug it would catch — asking for coverage is the cheapest finding to make and the one you pay for later, so check nothing already covers it.
 
-**Approval bar:** don't pass because it works. Structural regressions and missed code-judo opportunities are presumptive blockers — flag as **critical**, not minor.
+**Approval bar:** don't pass because it works. Structural regressions and missed reshapes are presumptive blockers — flag as **critical**, not minor.
 
 Implementation report below — treat it as a starting point: the implementer's pointers to reduce your overhead, not the boundary of your review. Review the whole feature against its actual goal, and actively look for what the report leaves out; if you only check what the implementer surfaced, it isn't an independent review.
 
@@ -698,10 +694,7 @@ Skip this for the repo's own code and stable language/runtime facts — read tho
 [[snippets]]
 key = "handle-review"
 expand = '''
-Consider the code review feedback critically and reason if they are valid. If valid, what's a clean
-and integrated solution should be, which might be different than what the reviewer originally
-suggested. Discard requests that are out of scope for this session, but also value small things that genuinly improves code quality and readability, don't defer them just because they are small. Think from first principles and our overall sesssion goals.
-'''
+Take the review feedback for what it's worth: fix what's right, drop what isn't, and flag what isn't yours to decide. Reviewers overlap and can be confidently wrong, and comments often trail the latest commits — so weigh each point against the current code, not the reviewer's confidence. Where a point lands, go for the clean, integrated fix (yours may well be better than the one suggested); small genuine improvements to quality or readability are worth doing on the spot, not deferring. Where it doesn't — stale, mistaken, out of scope for this session — a quick word on why is enough. And where a comment is really about the product (intended behavior, scope, UX) rather than the code, set it aside and bring it to me: that call is mine, though technical disagreements are still yours to settle. Wrap up with a quick rundown of what got fixed, dropped, and flagged.'''
 
 
 [settings]

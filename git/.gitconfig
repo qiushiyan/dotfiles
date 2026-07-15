@@ -18,6 +18,7 @@ useConfigOnly = true
 
 [core]
 editor = nvim
+pager = delta
 # Global excludes live at the default location ~/.config/git/ignore
 # (stowed from git/.config/git/ignore in this repo).
 [submodule]
@@ -46,3 +47,20 @@ undo = reset --soft
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	# use n / N to jump between files in the pager
+	navigate = true
+	line-numbers = true
+	side-by-side = true
+	# Light vs dark is chosen at runtime by the DELTA_FEATURES env var
+	# (exported from zsh/theme.zsh, keyed off $TERMINAL_THEME) which selects
+	# one of the two features below. lazygit inherits the same env var, so its
+	# diffs match plain `git diff`.
+[delta "light-mode"]
+	light = true
+	syntax-theme = gruvbox-light
+[delta "dark-mode"]
+	dark = true
+	syntax-theme = Nord

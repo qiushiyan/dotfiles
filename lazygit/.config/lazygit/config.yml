@@ -1,0 +1,13 @@
+# Lazygit config — managed by this dotfiles repo (stow package: lazygit).
+# Read via the LG_CONFIG_FILE env var set in zsh/.config/zsh/git.zsh, so
+# lazygit's runtime state.yml stays in its default OS config dir and never
+# lands in this repo (~/.config/lazygit is also a REAL_DIR in the Makefile as
+# a second line of defense).
+#
+# Diff rendering is delegated to delta. side-by-side, line-numbers and the
+# light/dark syntax theme all come from ~/.gitconfig's [delta] section plus
+# the DELTA_FEATURES env var (zsh/theme.zsh), so lazygit's diffs match plain
+# `git diff` and follow $TERMINAL_THEME automatically.
+git:
+  pagers:
+    - pager: delta --paging=never

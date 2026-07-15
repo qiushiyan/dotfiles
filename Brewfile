@@ -56,9 +56,11 @@ brew "open-mpi"
 brew "bat"
 brew "bc"
 brew "coreutils"
+brew "difftastic"
 brew "dust"
 brew "fd"
 brew "fzf"
+brew "git-delta"
 brew "jq"
 brew "lazygit"
 brew "macos-trash", link: true
@@ -171,5 +173,6 @@ go "honnef.co/go/tools/cmd/staticcheck"
 
 # === Cargo binaries (installed via `cargo install`) ===
 cargo "cargo-wasi"
+cargo "deff"
 cargo "trunk"
 cargo "wasm-bindgen-cli"

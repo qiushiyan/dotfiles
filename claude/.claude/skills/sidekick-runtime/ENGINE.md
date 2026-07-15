@@ -1,68 +1,110 @@
 # turn.mjs — engine contract
 
-Runs one headless AI-session turn (claude or codex) and returns it as data. It is not a job manager (Bash `run_in_background` is the job layer) and not a sandbox (write intent is a flag; read-only asks belong in the prompt). Shared by the `/consult`, `/delegate`, and `/review` skills; callable directly.
+Runs one headless AI-session turn (`claude` or `codex`) and returns it as durable data. It is not a job manager (Bash `run_in_background` is the job layer) and not a sandbox (write intent is a flag; read-only asks belong in the prompt). It is shared by `/consult`, `/review`, and `/delegate` and is also callable directly.
 
-```
+```sh
 node ~/.claude/skills/sidekick-runtime/turn.mjs --provider <claude|codex> --prompt-file <F> [flags]
 node ~/.claude/skills/sidekick-runtime/collect.mjs [out-dir]
 node ~/.claude/skills/sidekick-runtime/collect.mjs --pending [--base DIR]
 ```
 
-`collect.mjs` prints one turn as a single block: the meta summary, the git delta since the recorded baseline (`log --oneline` + `diff --stat` + dirty state), and `result.md` in full. Out-dir omitted → the newest job dir under `<repo>/.sidekick`. `--pending` is discovery-only: it lists uncollected terminal jobs plus non-live or corrupt jobs that need recovery under the default job base (or `--base DIR`), skips live jobs, and neither prints full results nor marks anything collected. Follow the `next:` action printed for each item; terminal items point to explicit collection, while stale or corrupt items prescribe inspection first.
-
 ## Host lifecycle
 
-Launch each `turn.mjs` command as exactly one Bash `run_in_background` task, then return and let Claude Code's native task-completion notification wake the host. On that notification, run `collect.mjs` for the reported out-dir. The Bash task already owns completion tracking; an added Monitor, polling loop, or `TaskOutput` call would duplicate it and can act on the wrong lifecycle boundary. After a host restart or compaction that may have hidden a notification, run `collect.mjs --pending` and follow every listed `next:` action before continuing its workflow.
+Launch one `turn.mjs` command as exactly one Bash `run_in_background` task. Relay its startup coordinate lines, then return. Claude Code's native task-completion notification is the completion signal; on that notification, run `collect.mjs` for the reported out-dir. `watch:` is an optional live view, not a second lifecycle or a prompt-acceptance test. Do not add a Monitor, polling loop, or `TaskOutput` call.
+
+After a host restart or compaction that may have hidden a notification, run `collect.mjs --pending` and follow each printed `next:` action before continuing the invoking workflow. `--pending` is discovery-only: it skips provably live jobs, does not print full results, and does not mark anything collected.
 
 ## Flags
 
 | Flag | Default | Notes |
 |---|---|---|
 | `--provider` | required | `claude` or `codex`. |
-| `--prompt-file` | required | The full prompt; archived to `<out-dir>/prompt.md`. |
-| `--model` | provider's own config | Free-form; the provider validates at runtime (codex rejects account-unsupported models mid-turn — the session id is still captured, so the failure is inspectable). |
-| `--effort` | provider's own config | claude: `low medium high xhigh max` · codex: `none minimal low medium high xhigh max ultra`. Invalid values are rejected before spawn — claude would silently ignore them, codex would burn a turn-start on an API 400. |
-| `--resume <id>` | fresh session | Continue that provider session. Never resume across providers. One turn per session at a time: a live turn holds a lock on its session id, so a concurrent second `turn.mjs` on the same id is refused (exit 3, message names the live job). A manual takeover while a turn runs still races it — the lock can't see the interactive CLI. |
-| `--allow-write` | off | claude: launches `bypassPermissions` so the session edits/runs unattended; without it, write tools fail. codex: no flag either way — `~/.codex/config.toml` governs its sandbox. |
-| `--baseline <sha>` | HEAD when `--allow-write`, else unset | Recorded in `meta.json` as `gitBaseline` — the anchor `collect.mjs` diffs against. Pass explicitly when the review range shouldn't start at the current HEAD. |
-| `--cwd DIR` | current dir | Where the session reads (and, with write, edits). |
-| `--out-dir DIR` | `<repo>/.sidekick/<stamp>-<label>/` | Self-gitignored on first use; falls back to `~/.local/state/sidekick/<dir>/` outside a git repo. |
-| `--timeout-min N` | 30 | Wall-clock (laptop-sleep-proof). `0` = uncapped. |
-| `--max-budget-usd N` | off | claude only; rejected for codex (no such flag exists there). |
-| `--label TEXT` | provider name | Names the job dir. |
+| `--prompt-file` | required | Full prompt, copied to `<out-dir>/prompt.md` before spawn. |
+| `--model` | provider config | Free-form provider override. Omitted means the runner does **not know** the resolved model; report `(provider default)`, not an inferred “effective model.” |
+| `--effort` | provider config | claude: `low medium high xhigh max` · codex: `none minimal low medium high xhigh max ultra`. Invalid values are rejected before spawn. |
+| `--resume <id>` | fresh session | Continue the same provider session. Never cross providers. A resume id is known before setup, so any existing lock is refused before job artifacts are touched. A dead owner may have left a live orphan provider, so stale locks are never auto-reclaimed: collect/inspect the recorded job, account for its work, remove the lock only after the provider is gone, then retry. A fresh Codex id arrives after spawn; the improbable case that it collides with a lock stops and finalizes the new provider instead of continuing unlocked. |
+| `--allow-write` | off | claude: `bypassPermissions`; without it, unattended write tools fail. codex: no permission flag — `~/.codex/config.toml` governs. This is intent, not a sandbox guarantee. |
+| `--baseline <sha>` | HEAD for write turns; otherwise unset | Review anchor stored as `gitBaseline`; `collect.mjs` prints the commits, diffstat, and dirty state since it. |
+| `--cwd DIR` | current dir | Provider working directory. |
+| `--out-dir DIR` | `<repo>/.sidekick/<stamp>-<label>/` | Self-gitignored. Outside a repo, uses `~/.local/state/sidekick/<dir>/`. |
+| `--timeout-min N` | 30 | Hard wall-clock safety cap for this one turn. It counts healthy work, does not reset on output, and is **not** a stall detector. `0` disables it. Caller policy: consult 30, review 60, delegate 180 minutes, on fresh and resumed turns alike. |
+| `--max-budget-usd N` | off | claude only. |
+| `--label TEXT` | provider | Job-dir label. |
 
-## Output
+The timeout compares the current wall clock with a fixed deadline, so laptop sleep cannot silently stretch the cap. Reaching it says only that the cap elapsed; a healthy deep review may still have been working.
 
-stdout: `out-dir:`, `watch:` (a `tail -f` on the live raw.log), `baseline:` when recorded, then `session:` + `takeover:` as soon as the id is known (claude: at spawn; codex: seconds in), plus a `next:` instruction telling the host to wait for the native task notification. After the elapsed heartbeats, every terminal block points to explicit collection first; recovery comes only after the host has read and acknowledged the result. The files are authoritative:
+## Provider protocol
 
-- `result.md` — the final text. A non-`ok` turn finalized by the runner includes the observed failure, any recovered partial output, and an **After collecting** recovery action; abandoned-job reconciliation creates that recovery result when none exists. Recovery language follows the recorded `promptState`: `accepted` → inspect, then resume; `not_started` → identical re-dispatch is safe; `unknown` → inspect the tree and `raw.log` before acting.
-- `meta.json` — atomically replaced on every update, so a concurrent collector never sees a partial JSON write. It records `status: "running"`, `runnerPid`, `promptState`, and the immediate host-facing `nextAction` as soon as the turn starts, then `providerPid` / `providerPgid` after spawn (a killed runner still leaves enough coordinates to distinguish an orphaned provider from an abandoned job). Terminal metadata makes `nextAction` the explicit collection command and stores any post-collection recovery in `recoveryAction`; after successfully printing a terminal job, collection atomically sets `collectedAt` once and advances `nextAction` to verification/synthesis for `ok` or to `recoveryAction` otherwise. Discovery with `--pending` leaves all three unchanged. Final metadata also records the session id, `resumeFlag`, `takeoverCommand` (`claude --resume <id>` / `codex resume <id>`), `gitBaseline`, timing, and tokens/cost when the provider reports them (`null` = unavailable, never zeroed). Token objects break out the cache and reasoning components where the provider reports them (codex: `cachedInput`, `reasoningOutput`; claude: `cacheRead`, `cacheCreation`) — codex's `input` includes its cached share, so a huge `input` with `cachedInput` close behind is cheap, not alarming.
-- `raw.log` — raw provider output. Read it when a result looks misparsed or a failure needs a postmortem.
+- Claude runs `claude -p --output-format stream-json --verbose`. `stream-json` is the realtime headless format; the runner deliberately omits `--include-partial-messages` so logs carry completed event boundaries rather than token deltas. A final `result` event remains the result/usage envelope.
+- Codex runs `codex exec --json` and streams its JSONL events. The last-message file is retained as a recovery surface.
+- Both stdout streams use UTF-8 decoding with an incremental line buffer, including a final unterminated JSON record. JSON fragments, a split multi-byte code point, and non-JSON noise do not corrupt later events.
+- Claude `system/init` proves process initialization, not prompt acceptance. Assistant/user/stream events or a terminal success/budget result prove semantic activity. On interruption/timeout, the runner can also recover same-turn evidence from the exact Claude session transcript, but ignores transcript rows older than this turn's `startedAt`.
+- An authoritative Claude `result` or Codex `turn.completed` / `turn.failed` fixes the provider outcome. If the hard cap fires while the CLI or a residual descendant is still draining, the runtime still stops the process tree but publishes that already-complete outcome instead of downgrading it to a timeout.
 
-When collection finds `status: "running"` but `runnerPid` is dead, it checks the provider process group before suggesting an action. PID probes are best-effort because an OS can reuse a PID; “alive” means a process currently holds the recorded id, so the host still inspects before acting:
+## Output is a caller interface
 
-- provider group alive → **orphaned**: observe or stop that process group; never resume or re-dispatch concurrently;
-- runner and provider group dead → **abandoned**: explicit collection finalizes that status and recovery metadata, creating `result.md` when none exists; the host then inspects the recorded work and follows `promptState`;
-- provider-group state unavailable → **unknown**: inspect the tree and `raw.log`; do not assume the provider stopped.
+The runner prints a small startup coordinate block:
+
+```text
+out-dir: ...
+provider: claude · model (provider default) · effort (provider default) · hard cap 30m
+watch: tail -f '.../progress.log' '.../raw.log'
+raw: .../raw.log
+stderr: .../stderr.log
+session: ...
+takeover-after-terminal: claude --resume ...
+next: return now; wait for the native background-task notification, then collect this job
+```
+
+`baseline:` appears when set. A fresh Codex `session:` and `takeover-after-terminal:` appear when its first `thread.started` event supplies the id. Copy these lines as facts: `(provider default)` means no override was passed, not that the runner resolved the provider's configuration. Manual takeover is only safe after terminal state.
+
+At terminal state stdout prints `status:`, `result:`, `meta:`, `session:`, `takeover:`, and one `next:` collection command. The durable files are authoritative:
+
+- `prompt.md` — the exact dispatched prompt.
+- `progress.log` — runner-owned semantic progress. It records lifecycle milestones (`starting`, provider initialization/retry, `accepted`, `running` heartbeat, stopping, terminal), elapsed time, provider-process observation, prompt state, and event counts. A 30-second heartbeat makes runner/process liveness visible while the provider is quiet without pretending silence proves health or contaminating provider output.
+- `raw.log` — **provider stdout only**: Claude stream-json or Codex JSONL, preserved verbatim through the UTF-8 stream decoder. It contains no runner headers, heartbeats, or stderr.
+- `stderr.log` — provider stderr only.
+- `result.md` — final provider text, or the observed failure plus any recovered partial output. It does not duplicate recovery instructions.
+- `meta.json` — atomically replaced state and the single machine-readable source of lifecycle/recovery truth: status, prompt state/evidence, `resultKind` (`final`, `partial`, `none`), deadline/timing, runner/provider PIDs, session/resume/takeover coordinates, log paths/watch command, provider event/activity observations, tokens/cost, `nextAction`, `recoveryAction`, and `collectedAt`. `resumeFlag` remains the session-only fragment; `resumeArgs` adds the current `--timeout-min` so a recovery turn does not silently fall back to the engine default. A fresh Codex lock collision retains `sessionId` only as diagnostic identity, records `sessionLockConflict`, and suppresses resume/takeover coordinates everywhere.
+
+`collect.mjs` prints the metadata summary, optional git delta, and `result.md` as one block. On first terminal collection it stamps `collectedAt` and advances `nextAction`: success goes to the invoking skill's verify/judge/synthesize step; failure goes to `recoveryAction`. This keeps the proven next action in one place instead of making the host reconcile prose in multiple files.
+
+## Recovery invariant
+
+Never redispatch merely because output was quiet.
+
+- `promptState: accepted` — inspect recovered output, `progress.log`, `stderr.log`, and the working tree; continue the same session with the recorded `--resume … --timeout-min …` fragment. Re-sending the original prompt may duplicate work.
+- `promptState: not_started` — the provider did not start; one identical retry is safe.
+- `promptState: unknown` — absence of output is not proof of no work. Inspect `progress.log`, `raw.log`, `stderr.log`, provider state, and the tree. Redispatch only with positive evidence that work never began; otherwise resume the recorded session.
+
+When collection finds `status: running` but the recorded runner is dead, it checks the provider process group:
+
+- provider alive → `orphaned`: wait for or stop it; never resume/redispatch concurrently;
+- runner and provider dead → `abandoned`: collection reconciles terminal metadata/result, then applies the prompt-state invariant;
+- liveness unavailable → `unknown`: inspect; do not assume it stopped.
+
+PID probes are best-effort because operating systems can reuse IDs.
 
 ## Status → next move
 
 | Status | Exit | Meaning | Next move |
-|---|---|---|---|
-| `ok` | 0 | Final text in `result.md` | Collect first, then use the result in the invoking skill's verification, judgment, or synthesis step. |
-| `failed` | 1 | The provider reported or exited with an error; recovered output is preserved in `result.md` | Collect first, then follow `recoveryAction`; inspect partial output and the working tree before continuing the session. |
-| `timeout` | 4 | The wall-clock cap stopped the provider process tree | Collect first, then follow the `recoveryAction` for its recorded `promptState`; partial work may be on disk. |
-| `interrupted` | 5 | The runner received a termination signal and stopped the provider process tree | Collect first, then follow the `recoveryAction` for its recorded `promptState`; partial work may be on disk. |
-| `infra` | 2 | The runner failed at spawn, parsing, or provider-protocol handling | Collect first. Retry unchanged only when `recoveryAction` says the prompt was not accepted; otherwise inspect the tree and `raw.log`, then resume if a session id exists. |
-| `abandoned` | — | Collection proved that a runner died without a terminal result and its provider group is gone | Inspect the recovered result and working tree, then follow `recoveryAction`; never infer that no work occurred. |
-| `usage` | 3 | Bad flags, or the session already has a live turn (lock held); the message names the fix | Fix the flag, or wait for / watch the live turn. |
+|---|---:|---|---|
+| `ok` | 0 | Final text is in `result.md`. | Collect, then verify/judge/synthesize. |
+| `failed` | 1 | Provider reported or exited with an error; partial output may be present. | Collect, then follow `recoveryAction`. |
+| `infra` | 2 | Spawn, protocol, or unexpected-signal failure. | Collect. Retry unchanged only when evidence says `not_started`; otherwise inspect/resume. |
+| `usage` | 3 | Bad flags or a session-lock conflict. | Fix the named input. For a live owner, wait; for a dead owner, collect and inspect the recorded job before removing the stale lock. |
+| `timeout` | 4 | Hard wall-clock cap stopped the provider process tree. | Collect; a timeout is not a hang diagnosis. Follow prompt-state recovery. |
+| `interrupted` | 5 | Host signal stopped the provider process tree. | Collect, then follow prompt-state recovery. |
+| `abandoned` | — | Collection proved the runner/provider ended without terminal publication. | Inspect reconciled output/tree, then follow `recoveryAction`. |
 
-## Tests
+## Tests and CLI facts
 
-`node --test ~/.claude/skills/sidekick-runtime/tests/runtime.test.mjs` runs isolated fake `codex` and `claude` executables through the public runtime. It covers success, provider failure with partial output, spawn failure, stdin closure, atomic metadata, timeout/interruption process-tree cleanup, residual descendants, stale reconciliation, and pending collection without invoking or billing a real model.
+```sh
+node --test ~/.claude/skills/sidekick-runtime/tests/runtime.test.mjs
+```
 
-## Billing
+The isolated fake-provider suite exercises both public entry points without billing a model: streaming success, a heartbeat during semantic silence, fragmented JSON and UTF-8, provider failure/partial recovery, stderr isolation, spawn/stdin failures, atomic metadata, live/stale session-lock safety, hard-cap/result cleanup races, timeouts/interruption and process-tree cleanup, same-turn transcript recovery, legacy resume-cap preservation, stale reconciliation, and pending discovery.
 
-Both `codex exec` and headless claude (`claude -p`) bill their flat subscriptions. `--max-budget-usd` (claude-only) is retained as an optional per-turn spend cap for future use — the subscription doesn't require it.
+Argv facts verified against Claude Code 2.1.207 and codex-cli 0.144.1. Re-check local `--help` after upgrades before blaming a prompt or parser.
 
-Argv facts verified against claude 2.1.206 / codex 0.144.1. After a CLI upgrade, an odd failure means re-checking `--help` before blaming the prompt.
+Both `codex exec` and headless Claude bill their flat subscriptions. `--max-budget-usd` remains an optional Claude-only per-turn cap.

@@ -1,6 +1,23 @@
 # ~/.config/zsh/git.zsh
 # Git utility functions
 
+# lazygit reads its config from this repo-managed file (stow: lazygit package)
+# via LG_CONFIG_FILE, while its runtime state.yml stays in lazygit's default OS
+# config dir — never in this repo. See lazygit/.config/lazygit/config.yml.
+export LG_CONFIG_FILE="$HOME/.config/lazygit/config.yml"
+
+# delta pages through less; force -FRX (git's own default) so a short diff
+# renders inline and STAYS on screen instead of vanishing when less uses the
+# alternate screen and exits. -F quit-if-one-screen, -R raw color, -X no
+# term init (keep output). Scoped to delta via DELTA_PAGER, so $LESS is untouched.
+export DELTA_PAGER='less -FRX'
+
+# difftastic — AST-aware structural diff on demand. difft owns the terminal
+# (--no-pager bypasses the delta pager); DFT_BACKGROUND (set in theme.zsh)
+# keeps its colors matched to $TERMINAL_THEME.
+gdft()    { emulate -L zsh; GIT_EXTERNAL_DIFF=difft git --no-pager diff "$@"; }
+gdftlog() { emulate -L zsh; GIT_EXTERNAL_DIFF=difft git --no-pager log -p --ext-diff "$@"; }
+
 # --------------------------------------------------------------------
 # gitclean - Delete local branches whose upstream has been deleted
 # --------------------------------------------------------------------
