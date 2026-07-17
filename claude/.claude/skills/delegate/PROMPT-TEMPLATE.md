@@ -74,7 +74,9 @@ report instead of editing.»
 
 1. **What & why** — one paragraph.
 2. **Change map** — every file touched → one line on what changed, grouped by commit.
-3. **Key decisions** — judgment calls the spec left to you, each with a one-line rationale.
+3. **Key decisions** — judgment calls the spec left to you, each with a one-line
+   rationale — especially structural ones: a module boundary you drew, a
+   foundation you reshaped first or deliberately built on as-is.
 4. **Deviations from the spec** — each with its reason (an empty section must say "none").
 5. **Flagged items** — anything underspecified or wrong you stopped on rather than guessed past.
 6. **Test results** — every command you ran and its outcome, plus an account of

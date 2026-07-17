@@ -13,6 +13,16 @@ plain terms, and the one or two facts about its state that the questions below
 depend on. The voice has none of your conversation — this paragraph is all the
 orientation it gets.»
 
+## Posture — first principles, grounded
+
+Reason from first principles, grounded in the code you read — an analysis that
+doesn't cite the files it stands on is guessing. Name the real problem in your
+own words before answering the stated one; the question as asked is sometimes
+a symptom. Then judge any direction by how fully it solves that root problem
+on a clean structural footing, not by how little it disturbs: prefer the shape
+that makes the problem disappear over the patch that quiets it. A structural
+claim needs the code that proves it and the cost it carries.
+
 <!-- MODE: design — the voice designs a solution unanchored.
      Blindness is the point: your and the user's current proposal stays OUT of
      this brief, so the voice designs instead of critiquing what it was handed. -->

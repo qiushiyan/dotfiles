@@ -88,7 +88,7 @@ The user may adjust scope, skip docs, or add areas you missed.
 
 ## Step 5 — Update the docs
 
-Write the updates from your confirmed plan, applying the **Documentation standards** below. Two rules carry this step — apply them as defined there: **consolidation** (every doc you touch gets tighter, not just longer) and **distillation** (a shipped spec's surviving decisions fold into the durable doc, then the spec is pruned). When the change alters the system's shape, also update the structure map / file index and any always-loaded mental-model file.
+Write the updates from your confirmed plan, applying the **Documentation standards** below. Two rules carry this step — apply them as defined there: **consolidation** (every doc you touch gets tighter, not just longer) and **distillation** (a shipped spec's surviving decisions fold into the durable doc, then the spec is pruned). When the change alters the system's shape, also update the structure map / file index and any always-loaded mental-model file — but index entries are earned, not automatic (see the standards below).
 
 ## Step 6 — Verify
 
@@ -166,6 +166,7 @@ The reader is a senior engineer who will read the code. Re-listing what the code
 
 - **Don't enumerate exhaustively.** List the interfaces, modules, or fields a reader *must* grasp to hold the mental model; let the rest live in the code or get one grouped mention. A complete catalogue is the code's job.
 - **A table row is earned, not automatic.** A new function or type is not a reason for a new row — fold a secondary change into an existing entry; add a row only when a reader needs that item to navigate.
+- **The same bar governs doc indexes and structure maps.** A new doc doesn't auto-earn an entry in a README map or reading list — those are curated paths for navigating an area, not registries. A specialized deep-dive doc is linked from its owning subsystem doc and stays out of the map.
 - **No live counts.** "Seven handlers", "the five rules" — a cardinal number is a maintenance tax that silently rots (and drifts: one doc says seven while another says five), and a reader never navigates by it. Name the few that matter; the count is the code's to know.
 - **Draw a flow, don't narrate it.** A relationship or sequence reads better as an indented tree or an arrow chain (`request → middleware → handler`) than threaded through a long sentence.
 
