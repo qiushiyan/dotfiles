@@ -11,14 +11,9 @@ local border = {
 
 return {
   {
-    "R-nvim/R.nvim",
-    lazy = false,
-  },
-  {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
       opts.inlay_hints = { enabled = false }
-      opts.servers.pyright = {}
       opts.filetype_opts = {
         typescriptreact = {
           spell = true,
@@ -83,7 +78,7 @@ return {
         "gR",
         function()
           local word = vim.fn.expand("<cword>")
-          require("fzf-lua").lsp_document_symbols({ query = word })
+          Snacks.picker.lsp_symbols({ pattern = word })
         end,
         desc = "References (current buffer)",
         nowait = true,
@@ -101,15 +96,6 @@ return {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        vtsls = {
-          keys = {
-            {
-              "<leader>cu",
-              LazyVim.lsp.action["source.removeUnused.ts"],
-              desc = "Remove unused imports",
-            },
-          },
-        },
         harper_ls = {
           enabled = true,
           filetypes = { "markdown" },

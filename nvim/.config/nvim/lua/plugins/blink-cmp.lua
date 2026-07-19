@@ -1,9 +1,8 @@
 -- disable buffer provider
 -- start with ; to trigger snippets
 -- alt + number to select nth item
--- copilot at the bottom
 
--- NOTE: Specify the trigger character(s) used for luasnip
+-- NOTE: Specify the trigger character(s) used for snippets
 local trigger_text = ";"
 return {
   "saghen/blink.cmp",
@@ -30,7 +29,7 @@ return {
     },
     enabled = function()
       local filetype = vim.bo[0].filetype
-      if filetype == "TelescopePrompt" or filetype == "minifiles" or filetype == "snacks_picker_input" then
+      if filetype == "minifiles" or filetype == "snacks_picker_input" then
         return false
       end
       return true
@@ -39,35 +38,14 @@ return {
       use_nvim_cmp_as_default = true,
       nerd_font_variant = "mono",
     },
-    snippets = {
-      preset = "luasnip",
-      expand = function(snippet)
-        require("luasnip").lsp_expand(snippet)
-      end,
-      active = function(filter)
-        if filter and filter.direction then
-          return require("luasnip").jumpable(filter.direction)
-        end
-        return require("luasnip").in_snippet()
-      end,
-      jump = function(direction)
-        require("luasnip").jump(direction)
-      end,
-    },
+    -- snippets: blink's default preset (vim.snippet) with the built-in snippets
+    -- source, which reads vscode-format snippets from ~/.config/nvim/snippets.
     sources = {
       providers = {
         lsp = {
           name = "lsp",
           module = "blink.cmp.sources.lsp",
           score_offset = 100, -- the higher the number, the higher the priority
-        },
-        -- Copilot's name/module/async are configured by LazyVim's ai.copilot
-        -- extra (vim.g.ai_cmp defaults to true), which sets score_offset = 100 to
-        -- float it to the top. Deep-merge lets us override just the score so
-        -- Copilot ranks at the bottom -- below path (3), snippets (85), lsp (100).
-        -- Lower further (e.g. negative) to push it down even harder.
-        copilot = {
-          score_offset = 0,
         },
         buffer = {
           name = "Buffer",

@@ -11,6 +11,9 @@ How file finding, grep, and the file explorer are wired in this dotfiles repo.
 | `<leader>sw` | **fff.nvim** | Grep word under cursor |
 | `<leader>sz` | **fff.nvim** | Fuzzy-mode grep |
 | `<leader>,` | snacks.picker | Buffer switcher |
+| `<leader>fr` | snacks.picker | Recent files, cross-project (incl. current session) |
+| `<leader>fR` | snacks.picker | Recent files, cwd only |
+| `<leader>fp` | snacks.picker | Find plugin file |
 | `<leader>gl` | snacks.picker | Git log |
 | `<M-k>` | snacks.picker | Keymap search |
 | `<leader>e` | mini.files | File explorer (cwd) |
@@ -24,7 +27,7 @@ Three plugins, three jobs. No single tool owns everything.
 - **snacks.picker** — folke's picker, still installed because it has well-built buffer / git-log / keymap pickers and we have no reason to replace those. See `plugins/snacks.lua`.
 - **mini.files** — the file explorer. Separate concern from the picker; fff doesn't do tree-style navigation. See `plugins/file-explorer.lua`.
 
-`fzf-lua` is also installed as a LazyVim transitive default. Nothing in our config binds to it directly, but it stays loaded as a fallback that other LazyVim features might reach for.
+snacks.picker is the only general-purpose picker installed. Besides the keys above, the `gR` buffer symbol search in `plugins/lsp.lua` goes through it, and `<leader>fr`/`<leader>fR` are LazyVim's default snacks bindings — the recent-files finder merges current-session buffers with vim's oldfiles, so files from the running session appear too. fff is project-scoped (it ranks by frecency but only indexes the cwd tree), so cross-project recents belong to snacks.
 
 ## How keys resolve when plugins overlap
 

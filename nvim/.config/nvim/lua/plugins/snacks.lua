@@ -58,6 +58,13 @@ return {
       end,
       desc = "Keymaps",
     },
+    {
+      "<leader>fp",
+      function()
+        Snacks.picker.files({ cwd = require("lazy.core.config").options.root })
+      end,
+      desc = "Find Plugin File",
+    },
   },
   ---@module "snacks"
   ---@type snacks.Config

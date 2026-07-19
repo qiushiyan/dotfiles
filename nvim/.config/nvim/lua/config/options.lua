@@ -12,8 +12,10 @@ vim.opt.swapfile = false
 -- always show markdown symbols (backticks, stars, etc)
 vim.opt.conceallevel = 0
 
-vim.g.lazyvim_python_lsp = "pyright"
-vim.g.lazyvim_python_ruff = "ruff"
+-- TypeScript LSP: tsgo (typescript-go native port; global install via pnpm,
+-- @typescript/native-preview). LazyVim's typescript extra wires it up and
+-- disables vtsls/tsserver.
+vim.g.lazyvim_ts_lsp = "tsgo"
 
 local paths = require("config.paths")
 vim.g.python3_host_prog = paths.python

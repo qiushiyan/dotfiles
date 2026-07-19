@@ -14,10 +14,19 @@ vim.keymap.set("i", "<C-c>", '<ESC>"+yi', { desc = "Copy line to system clipboar
 vim.keymap.set("n", "<C-x>", '"+dd', { desc = "Cut line to system clipboard" })
 vim.keymap.set("v", "<C-x>", '"+x', { desc = "Cut selection to system clipboard" })
 vim.keymap.set("i", "<C-x>", '<ESC>"+dda', { desc = "Cut line to system clipboard" })
--- Paste (Ctrl+V)
-vim.keymap.set("n", "<C-v>", '"+p', { desc = "Paste from system clipboard" })
-vim.keymap.set("v", "<C-v>", '"+p', { desc = "Paste from system clipboard" })
-vim.keymap.set("i", "<C-v>", '<ESC>"+pa', { desc = "Paste from system clipboard" })
+-- Paste (Ctrl+V): image on the clipboard goes through img-clip, text pastes as before
+local function image_aware_paste(image_keys, fallback)
+  return function()
+    local ok, clipboard = pcall(require, "img-clip.clipboard")
+    if ok and clipboard.content_is_image() then
+      return image_keys
+    end
+    return fallback
+  end
+end
+vim.keymap.set("n", "<C-v>", image_aware_paste("<Cmd>PasteImage<CR>", '"+p'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
+vim.keymap.set("v", "<C-v>", image_aware_paste("<Esc><Cmd>PasteImage<CR>", '"+p'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
+vim.keymap.set("i", "<C-v>", image_aware_paste("<Cmd>PasteImage<CR>", '<ESC>"+pa'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
 -- Undo (Ctrl+Z)
 vim.keymap.set("i", "<C-z>", "<ESC>ui", { desc = "Undo last change" })
 vim.keymap.set("n", "<C-z>", "u", { desc = "Undo last change" })
@@ -25,6 +34,11 @@ vim.keymap.set("v", "<C-z>", "<ESC>u", { desc = "Undo last change" })
 
 -- Save
 vim.keymap.set("n", "<C-S-s>", "<cmd>wall<CR>", { desc = "Save all buffers" })
+
+-- Delete buffer without closing the window (was bufdelete.nvim; snacks has the same)
+vim.keymap.set("n", "Q", function()
+  Snacks.bufdelete()
+end, { desc = "Delete buffer" })
 
 -- Move lines up and down
 -- NOTE: for the option key to work in iterm2, see https://www.redait.com/r/zellij/comments/13twru4/if_you_have_problems_with_alt_option_key_on_macos/
