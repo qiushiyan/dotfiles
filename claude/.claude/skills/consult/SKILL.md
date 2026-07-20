@@ -33,6 +33,10 @@ Engine: `node ~/.claude/skills/sidekick-runtime/turn.mjs`. [ENGINE.md](../sideki
 
 4. **Analyze critically**, point by point: valid → adopt it; wrong → say why (missing context, wrong optimization target, or technically incorrect). A fundamental disagreement you cannot resolve → present both positions to the user for judgment; never silently override the voice or silently adopt its pivot.
 
+   Adoption has a second half when the point names a trap the implementation could fall into — an edge case, a failure path, a contract that invites misuse. There is no code to pin it against yet, so pin it in the spec's test plan: add or sharpen the planned case that would catch exactly that trap, starting the plan if the spec lacks one. Prose absorbs a point and fades by implementation time; a planned case is what the eventual suite gets held against. Points with nothing executable behind them — naming, structure, scope, docs — are adopted as prose alone.
+
+   Done when every point carries a disposition: adopted (with its planned case where the trap was executable), rebutted with the reason, or escalated to the user for judgment.
+
 5. **Round 2, when depth warrants it**: send the host position or updated proposal into the **same session** (`--resume <sessionId from meta.json> --timeout-min 30`) for critique-and-confirm. The voice keeps its round-1 context; a fresh session would restart the exercise from zero.
 
 6. **Synthesize** for the user: where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and any unresolved judgment calls.

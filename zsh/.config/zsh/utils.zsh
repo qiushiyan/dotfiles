@@ -216,6 +216,12 @@ EOF
 # x - Claude with skip permissions
 # --------------------------------------------------------------------
 x() {
+  # Claude Code ignores TMPDIR: its temp base is CLAUDE_CODE_TMPDIR or a
+  # hardcoded /tmp, with claude-<uid>/ appended (verified in the 2.1.215
+  # binary). Uncomment to make Ctrl+G prompt files (and all other Claude
+  # temp files — child-process caches included) land in ./.tmp instead;
+  # cleanup becomes manual, so it stays off by default.
+  # CLAUDE_CODE_TMPDIR="$PWD/.tmp" \
   claude --dangerously-skip-permissions "$@"
 }
 

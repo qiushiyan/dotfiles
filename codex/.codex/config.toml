@@ -16,6 +16,9 @@ notify = ["/Users/qiushi/.codex/computer-use/Codex Computer Use.app/Contents/Sha
 # Keep non-Node tool paths available in Codex command shells. The active
 # nvm-managed Node toolchain is resolved dynamically by zsh/.zshenv.
 PATH = "/Users/qiushi/google-cloud-sdk/bin:/Users/qiushi/.config/tmux/plugins/tmuxifier/bin:/Users/qiushi/.wasmtime/bin:/Users/qiushi/.bun/bin:/Users/qiushi/bin:/Users/qiushi/bin/elixir-ls:/Users/qiushi/.local/bin:/Users/qiushi/.mix/escripts:/opt/homebrew/opt/postgresql@16/bin:/opt/homebrew/opt/openjdk@11/bin:/opt/homebrew/opt/node@16/bin:/usr/local/bin:/Users/qiushi/Library/Android/sdk/platform-tools:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/qiushi/.cargo/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Codex.app/Contents/Resources"
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "461c4ba94b821ec805da79c8e8138fe510b1b3358609fc93da47387a2cf3fbf3,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/qiushi/.codex"
 
 [projects."/Users/qiushi"]
 trust_level = "trusted"
@@ -138,14 +141,14 @@ NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_n
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/qiushi/.codex"
 CODEX_HOME = "/Users/qiushi/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "1491199f46178eb038259aaea144492b8a8ade32bba5d2b4843c94936be551bb,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "461c4ba94b821ec805da79c8e8138fe510b1b3358609fc93da47387a2cf3fbf3,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
 NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.707.41301"
-SKY_CUA_SERVICE_PATH = "/Users/qiushi/.codex/plugins/cache/openai-bundled/computer-use/1.0.1000366/Codex Computer Use.app"
+BROWSER_USE_CODEX_APP_VERSION = "26.715.31925"
+SKY_CUA_SERVICE_PATH = "/Users/qiushi/.codex/plugins/cache/openai-bundled/computer-use/1.0.1000451/Codex Computer Use.app"
 CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
 
 [mcp_servers.computer-use]
@@ -167,7 +170,7 @@ hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
 
 [marketplaces.openai-bundled]
-last_updated = "2026-07-13T07:59:12Z"
+last_updated = "2026-07-20T04:49:07Z"
 source_type = "local"
 source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
 

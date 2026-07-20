@@ -22,3 +22,6 @@ secrets-manifest.txt
 # Universally-gitignored dependency/cache dirs
 node_modules/
 __pycache__/
+
+# Project-local temp dir for Claude Code (TMPDIR shadow in the `x` function)
+.tmp/
