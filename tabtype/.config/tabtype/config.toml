@@ -24,6 +24,18 @@ Their analysis below:
 
 $0'''
 
+[[snippets]]
+key = "step-back"
+expand = '''
+Before you commit to that first take, step back and pressure-test it. Treat it as a hypothesis, not a conclusion — the point is to catch a framing that's subtly off before it costs a build, so try to break it rather than defend it. Still analysis, no code yet.
+
+- **Reground where you're guessing.** You've read some of the code; wherever your take rests on inference rather than something you actually read, go read it — and cite what confirms or dents the picture.
+- **Restate the real problem in your own words** — the underlying goal, not the symptom as first framed. Push back if my framing or your own first take is off, and follow the reframe if it moves.
+- **Zoom out to the structure.** Is this a local change the design absorbs cleanly, or is the structure itself in the way? When the foundation fights the change, preparatory refactoring (*make the change easy, then make the easy change*) beats another patch.
+- **Weigh a genuinely different approach** than your first, and keep the first only if it still wins on solving the root problem — not on least disturbance.
+
+Back a "structurally wrong" call with code and name its cost; don't manufacture a rewrite for what merely looks imperfect. Where the direction is a real judgment call, say so rather than force a verdict.'''
+
 # ── Spec stage ────────────────────────────────────────
 
 [[snippets]]
@@ -641,6 +653,61 @@ The committed artifacts survive on disk — cite their paths rather than restati
 '''
 
 [[snippets]]
+key = "generate-compact"
+expand = '''
+Write me the compaction prompt for this session — the instruction I'll send next to run the compaction. You're writing the *instruction*, not the summary: spell out what this particular compaction must preserve and drop, so the pass that runs it leaves the handoff I'd want if I picked this task back up cold in a day or two.
+
+You're holding the whole session, so tailor it to this one — point at the actual threads, don't emit a generic template.
+
+**Preserve:**
+- **The goal** — what this work is for.
+- **Where the branch stands** — what's committed and pushed, the branch and its base, plus anything uncommitted or mid-edit. No branch work yet? Say so rather than invent it.
+- **The decisions that stuck, and why** — the conclusion, not the debate that reached it.
+- **The anchors to re-ground from** — load-bearing files and symbols, the commands to run, the test state. Point at the code, don't restate it — I'll reread it.
+- **The traps** — invariants to hold, and things that look wrong but are deliberate.
+- **What's next** — the remaining work on this branch, and separately anything parked for a follow-up (deferred by choice, not forgotten). Nothing parked? Say so.
+
+**Drop** the journey: dead ends, superseded drafts, raw tool output, the round-by-round back-and-forth — cite a path instead of preserving an artifact's contents.
+
+Name the specific threads where you can — "keep why we went with X over Y", "keep the gotcha about Z" — so the compaction can't quietly drop them. It's a brief, pointers not the handoff written out — but don't skimp on the branch state and the next steps, since that's what I actually pick up from.
+
+Start it with `/compact ` so I can paste it straight back.'''
+
+[[snippets]]
+key = "brief-for-rewind"
+expand = '''
+We've spent too much context getting here, so I'm rewinding this conversation back to $0 — chat history only. The working tree, the commits, and anything already deployed all stay exactly as they are.
+
+Write the brief that crosses that gap. It's the only thing carrying over, and it picks up from that point — so cover just the delta since then, and make it worth far more than the context it replaces.
+
+Write it as me, first person. No preamble, no header, no mention of the rewind — it starts on the first substantive sentence so I can paste it straight in. A few tight paragraphs, 500–800 words of prose. No code blocks, no pasted tool output.
+
+**Cover:**
+- **The end state, not the path.** What's true now, not how we arrived at it. Fold every revision into the description of what stands, and never mention that a round happened.
+- **What cost us the most to learn** — root causes, constraints we discovered, traps, things that look wrong but are deliberate. This is the part that earns its keep: the diff shows what the code does, but only you can say where the bodies are buried.
+- **A durable anchor for every claim** — branch, commit range, PR numbers, the load-bearing file paths, test and deploy evidence. Anchors are what make the brief verifiable rather than merely assertive.
+- **What's parked** — decisions I deferred and open questions that are mine to make. Say plainly they're not to be acted on; if nothing's parked, say so.
+- **Two to four cheap, falsifiable checks** that confirm the state is what I claim, each with its recovery step if it fails.
+- **The remaining work**, in order.'''
+
+[[snippets]]
+key = "resume-from-brief"
+expand = '''
+I've done a chunk of work since we last talked — here's a summary to catch you up.
+
+Take it as given: it's committed and working. Read it for what it changes about the plan, not as a set of claims to verify.
+
+Do get oriented before you touch anything — read the diff and the files I name below, so you're working from the real implementation rather than from my summary. A focused pass, not a survey.
+
+Run the checks I list, and only those. If one fails, stop and tell me rather than starting a fix. Anything I've marked parked is mine to decide.
+
+Then pick up the first item of remaining work.
+
+---
+
+$0'''
+
+[[snippets]]
 key = "list-assumptions"
 expand = '''
 List every non-trivial assumption you're making — about the data, system state, my actual intent, failure modes, or what "done" looks like.
@@ -694,7 +761,9 @@ Skip this for the repo's own code and stable language/runtime facts — read tho
 [[snippets]]
 key = "handle-review"
 expand = '''
-Take the review feedback for what it's worth: fix what's right, drop what isn't, and flag what isn't yours to decide. Reviewers overlap and can be confidently wrong, and comments often trail the latest commits — so weigh each point against the current code, not the reviewer's confidence. Where a point lands, go for the clean, integrated fix (yours may well be better than the one suggested); small genuine improvements to quality or readability are worth doing on the spot, not deferring. Where it doesn't — stale, mistaken, out of scope for this session — a quick word on why is enough. And where a comment is really about the product (intended behavior, scope, UX) rather than the code, set it aside and bring it to me: that call is mine, though technical disagreements are still yours to settle. Wrap up with a quick rundown of what got fixed, dropped, and flagged.'''
+Take the review feedback for what it's worth: fix what's right, drop what isn't, and flag what isn't yours to decide. Reviewers overlap and can be confidently wrong, and comments often trail the latest commits — so verify each point against the current code, not the reviewer's confidence. For a claim of wrong behavior, rereading isn't verification — you'd retrace the same mental model that wrote the bug. Pin it with a test before any fix: red for the claimed reason confirms the finding and becomes the regression test the fix must green; a test that genuinely exercises the cited path and stays green is the strongest rebuttal. Points with nothing executable to pin — structure, docs, style — stay read-verified.
+
+Where a point lands, go for the clean, integrated fix, designed from the finding rather than from the red test (yours may well be better than the one suggested); small genuine improvements to quality or readability are worth doing on the spot. A confirmed bug also indicts the suite that sat green over it — decide whether the pinning test filled a coverage gap or should replace a weak test, and leave the suite stronger than the review found it. Where a point doesn't land — stale, mistaken, out of scope for this session — a quick word on why is enough. And where a comment is really about the product (intended behavior, scope, UX) rather than the code, set it aside and bring it to me: that call is mine, though technical disagreements are still yours to settle. Wrap up with a quick rundown of what got fixed, dropped, and flagged — and how the tests changed.'''
 
 
 [settings]

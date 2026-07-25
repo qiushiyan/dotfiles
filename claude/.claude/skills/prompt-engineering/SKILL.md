@@ -75,17 +75,20 @@ Dial back `CRITICAL:`, `you MUST`, ALL-CAPS, "exactly once." Modern models are h
 - Write **strong heuristics, not brittle if-else logic, and not vague platitudes.** Encode the expert _strategy_; leave the model judgment room where you don't actually care about the specifics. "Think carefully about whether the loop has converged before continuing" beats a hand-authored decision tree — and survives cases the tree didn't foresee.
 - **Prefer general instructions over prescriptive step lists.** Use numbered steps only when order or completeness genuinely matters.
 
-### Reinforcement — examples (few-shot)
+### Reinforcement — examples
 
 Examples are the highest-leverage tool for tone, format, and judgment that rules alone struggle to pin down — the pictures worth a thousand words.
 
+**Shown beats said.** A model imitates what it's shown more strongly than it follows what it's told — when prose and a nearby example disagree, the example usually wins. That makes every example an instruction, and an unvetted one an instruction you never meant to give. When output ignores a rule, audit the examples in reach before strengthening the rule.
+
 - Wrap them in `<example>` / `<examples>` tags so the model distinguishes them from instructions.
 - Make them **relevant** (mirror the real use case) and **diverse** (cover edge cases; vary enough that the model doesn't overfit to one surface pattern).
+- **Offer examples at more than one size.** A complete worked example is the strongest teacher but fires only when the need matches it; smaller composable pieces — a section, a pattern, one call done well — cover the needs no full example anticipated. A corpus spanning sizes beats more examples at one size.
 - A handful is the sweet spot — enough to show the pattern, not so many they dominate the prompt or cause overfitting.
 - **Anti-examples displace; positive examples teach.** Include an avoid-case (`type="avoid"`) where the model would otherwise reproduce the generic default you're displacing — but the positive cases carry the pattern, so lead with the target behavior and judge the set as a whole by what it teaches.
-- **A code sample inside a prompt is code.** It ships bugs like any other source, and it's typically the one snippet nothing type-checks or executes. Wire prompt-embedded samples into the same checks as the codebase, or generate them from a source that is checked.
+- **A code sample inside a prompt is code.** It ships bugs like any other source, and it's typically the one snippet nothing type-checks or executes. Wire prompt-embedded samples into the same checks as the codebase, or generate them from a source that is checked. And correctness is only half the bar: the model reproduces a sample's idioms wholesale, so a correct-but-sloppy example teaches sloppiness. Hold examples to the standard you want reproduced — when several authors contribute them, write that standard down as a rubric so one bar holds.
 
-> Reasoning models frequently need few or no examples — reach for them when rules aren't landing the judgment, not by default.
+> Reasoning models frequently need few or no examples for _judgment_ — reach for them when rules aren't landing, not by default. Style-bound generative output (code in a house system, copy in a house voice) is the standing exception: there quality tracks the examples the model can see far more than the rules it's given, and the example set is the real spec.
 
 ### Reinforcement — echoes
 
@@ -112,6 +115,7 @@ What the model knows this turn. Instructions tell it how to behave and tools say
 - **Treat the window as a finite budget.** Aim for the smallest set of high-signal tokens that does the job. Model quality degrades as the window fills — measurably, and often well before the advertised limit (_context rot_) — so padding "just in case" actively hurts. More context is not safer context.
 - **Load just-in-time.** Hold lightweight references — file paths, IDs, queries — and pull full content at runtime via tools, instead of pre-loading everything you might need. Metadata (names, directory structure, timestamps) is high-signal navigation in its own right.
 - **Disclose progressively.** Load in tiers: a lightweight menu or index first, full detail only when the task matches it. (Same shape as a phase-scoped tool menu, or the `note` in a tool result — show what's relevant now, keep identifiers for the rest.)
+- **What retrieval returns, the model will imitate.** Fetched artifacts — templates, neighboring code, prior outputs — land as examples, not just information (shown beats said). Curating the corpus retrieval draws from is context engineering: a sloppy artifact surfaced this turn is a style rule you never wrote.
 - **Keep the prefix stable.** Placement inside the window follows the same edge rule as any prompt ([Form — structure and placement](#form--structure-and-placement)); the window-level addition is the cache: keep the prompt _prefix_ stable and let variable, per-request content ride at the end, so the cache hits the static portion and you don't pay to re-read it every turn.
 - **Externalize state; compact at the boundary.** For work that spans many turns or survives compaction, keep state in durable artifacts _outside_ the window — a plan/todo file, structured JSON for status, git for checkpoints — and read enough back on a fresh window to continue. As the window fills, summarize and reinitialize: preserve decisions, open problems, and load-bearing detail; drop redundant tool output. Tell the agent its context is managed automatically so it doesn't wrap up early to save budget.
 
@@ -154,6 +158,7 @@ What the model can do. The through-line: **everything the agent sees through a t
 ### Return meaningful context
 
 - Prefer **semantic, human-legible fields** over opaque identifiers — `name`, `file_type`, not `uuid`, `mime_type`. Semantic content informs the model's next action; opaque IDs don't, and resolving IDs to names measurably reduces hallucination.
+- **Meet the model's vocabulary.** A retrieval tool that matches only your names fails silently — the agent asks for analytics, the artifact is filed under dashboard, and the miss reads as absence. Expand synonyms, forgive near-misses, and index artifacts by what they contain, not just what they're titled. The familiar-term test's tooling complement: rename what you can; make retrieval absorb the gap where you can't.
 - **Assert only what this layer observed** — in success as much as in error. "All items validated" is an overclaim when validation happens in another layer or fails open; say what verifiably happened here — accepted, submitted, written — and no more. A result that claims more than its layer can see teaches the model to skip verification it still needs.
 - **Be token-efficient.** Pagination, filtering, truncation, sensible defaults. Return what the model needs to act on, not everything the backend has. Route bulky data the model needn't read around the model, not through it.
 - **Progressive disclosure.** Offer a verbosity control (`concise | detailed`), or return identifiers and load full bodies on demand — so the result surface stays focused.
@@ -178,6 +183,8 @@ Three constraints keep prescriptions honest:
 The highest-leverage tool-design pattern. When a result changes what the agent should do next, **the result text says so explicitly, with the reason** — a "mini-context" that steers the model down the intended path at exactly the moment it matters:
 
 > The user is away, so your question is queued and the run is pausing. End your turn with a one-line status — anything you do past this point happens without the answer you just asked for. The run resumes when they reply.
+
+When the result recommends a move, calibrate it to the result's strength — a strong match earns "start from this," a weak one "treat it as a reference and compose the rest." A recommendation that overstates its confidence is unearned certainty on the success path.
 
 Two specialized variants:
 
@@ -213,6 +220,7 @@ Then scan for these defects. Each maps to a principle above; the fix is in paren
 - **Everything in the system prompt** — moment-specific behavior crammed into the always-on prompt. (Move it to a tool-result nudge that fires at the moment.)
 - **Accidental duplication across surfaces** — the same rule accreted in the system prompt, a tool description, and a result, no copy able to say why it exists. (One home per behavior; keep only deliberate echoes.)
 - **Conflicting rules with no precedence** — two instructions that can collide, left for the model to reconcile; the winner is arbitrary, often just whichever came last. (Decide the precedence yourself: state the rule once with its exception folded in.)
+- **Rule–example conflict** — prose commands one thing while an example beside it (or an artifact retrieval serves up) shows another; the model follows the shown thing. (Shown beats said: fix the example first, then see whether the rule is still needed.)
 - **Config-conditional prose** — rendered instructions that branch on modes the model can't see ("if the posture is X, …; otherwise …"). (Branch in the composer; a dedicated fragment per value.)
 - **Unearned certainty** — a success line or recovery prescription asserting what the emitting layer can't verify ("all inputs validated"; "never processed — retry"), licensing skipped verification or destructive re-work. (Assert what provably happened at this layer; prescribe only the action that's safe under it.)
 - **Volatile facts in durable prompts** — live lists, counts, sizes, version numbers hardcoded into a prompt that outlives them; they rot silently. (Derive at render time, point at a source the model can read, or cut.)

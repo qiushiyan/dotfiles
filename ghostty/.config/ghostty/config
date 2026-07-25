@@ -18,7 +18,7 @@ adjust-cell-width = -2%
 adjust-cell-height = 15%
 
 # font-size = 24
-# font-family = IosevkaTerm Nerd Font
+font-family = IosevkaTerm Nerd Font
 # font-thicken = true
 # adjust-cell-height = 20%
 # adjust-cell-width = -2%
