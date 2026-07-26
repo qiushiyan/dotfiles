@@ -1,6 +1,6 @@
 # Dispatching envoy turns
 
-`envoy` runs one headless AI-session **turn** — a fresh `claude` or `codex` session — and returns it as files, `result.md` being the return value. Mechanics, flags, and recovery semantics: `envoy -h`.
+`envoy` runs a headless AI-session **turn** — a fresh `claude` or `codex` session — and returns it as files, `result.md` being the return value. `envoy turn` runs one; `envoy fan` runs one per model on the same brief and supervises them as a single job. Mechanics, flags, and recovery semantics: `envoy -h`.
 
 A turn starts **cold**: it has none of this conversation. Everything it needs lives in the prompt file.
 
@@ -9,6 +9,9 @@ A turn starts **cold**: it has none of this conversation. Everything it needs li
 ```sh
 # 1. dispatch — always exactly one Bash run_in_background task
 envoy turn --provider codex --prompt-file <brief> --timeout-min 30 --label consult
+
+# ...or, for the same brief on several models, still exactly one task
+envoy fan --prompt-file <brief> --with codex --with claude:opus --timeout-min 30 --label consult
 
 # 2. relay the coordinate block it prints (out-dir, provider, session, watch, next), then return
 
@@ -30,6 +33,12 @@ envoy turn --provider claude --model opus --prompt-file brief.md --timeout-min 6
 # effort, when the user names one
 envoy turn --provider codex --effort xhigh --prompt-file brief.md --timeout-min 60
 
+# one brief, two model families — one background task, one collect
+envoy fan --prompt-file brief.md --with codex --with claude:opus --timeout-min 30 --label consult
+
+# a fan-out member is provider[:model[:effort]] — two models of one family
+envoy fan --prompt-file brief.md --with claude:opus:high --with claude:sonnet --timeout-min 30
+
 # a turn that writes code, anchored for the review diff
 envoy turn --provider codex --allow-write --baseline "$(git rev-parse HEAD)" \
   --prompt-file prompt.md --timeout-min 180 --label delegate
@@ -48,6 +57,7 @@ envoy pending
 
 - **Cross-family by default.** codex, because the host is usually claude, and a different model family is the independence being bought. A claude turn runs only on a model the user named.
 - **No model substitution.** Omitting `--model`/`--effort` hands the choice to the user's provider config; relay `(provider default)` literally rather than guessing what ran.
-- **One brief per turn.** Parallel turns get the same brief and never each other's output — that is what keeps their takes independent.
+- **One brief, however many models.** Several takes on one question is a single `envoy fan`, never several dispatches: one task to wait on, one collect, and the members still never see each other's output — that is what keeps their takes independent. Different briefs mean different turns.
 - **A non-`ok` status is a fork in the road, not a failure to retry.** Collect it and do what its `next:` line says: envoy knows whether the provider accepted the prompt, which is what separates a safe retry from duplicated work.
-- **Read-only is a prompt convention.** Without `--allow-write` the turn cannot edit, but "analyse only, change nothing" still belongs in the brief.
+- **A fan-out's members are independent turns.** Exit `6 partial` means some returned a result and some did not — act member by member from each section's own `next:` line. One member's outcome licenses nothing about another, and there is no group-wide retry or resume.
+- **Read-only is a prompt convention.** Without `--allow-write` the turn cannot edit, but "analyse only, change nothing" still belongs in the brief. Fan-outs are read-only outright (members share one tree); parallel work that writes means a worktree and a separate turn each.

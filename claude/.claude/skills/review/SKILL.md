@@ -31,7 +31,14 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
      --timeout-min 60 --label review
    ```
 
-   `--baseline` makes collection print the reviewed range alongside the findings. More reviewers only when asked. Relay the coordinate block, then return — a small, self-contained task while it runs is fair game, as long as it stays clear of the code under review.
+   `--baseline` makes collection print the reviewed range alongside the findings. More reviewers only when the user asks — then it is one fan-out:
+
+   ```sh
+   envoy fan --prompt-file <brief> --baseline <base-sha> \
+     --with codex --with claude:opus --timeout-min 60 --label review
+   ```
+
+   The judge pass below then runs over the union of their findings, and agreement between reviewers earns no weight: you verify each finding against the code either way. Relay the coordinate block, then return — a small, self-contained task while it runs is fair game, as long as it stays clear of the code under review.
 
 5. **Judge pass on collection.** `envoy collect <out-dir>` prints the findings. Verify every finding against the actual code — read the cited lines, retrace the claimed failure path — before accepting it: reviewers state hallucinated issues with the same confidence as real ones.
 

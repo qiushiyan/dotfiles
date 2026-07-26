@@ -170,7 +170,7 @@ hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
 
 [marketplaces.openai-bundled]
-last_updated = "2026-07-22T10:15:11Z"
+last_updated = "2026-07-26T10:45:18Z"
 source_type = "local"
 source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
 

@@ -25,11 +25,19 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
    envoy turn --provider codex --prompt-file <brief> --timeout-min 30 --label consult
    ```
 
-   More voices only when asked. Relay the coordinate block, then return.
+   More voices only when the user asks for them — and then as one fan-out, not several dispatches: the same brief goes to every voice, and one task finishes once:
 
-3. **Collect** each voice on its task-completion notification — `envoy collect <out-dir>` prints the status block and `result.md` together. Done when every dispatched voice is collected or explicitly accounted for.
+   ```sh
+   envoy fan --prompt-file <brief> --with codex --with claude:opus --timeout-min 30 --label consult
+   ```
+
+   Relay the coordinate block, then return.
+
+3. **Collect** on the task-completion notification — `envoy collect <out-dir>` prints the status block and `result.md`; for a fan-out it prints every voice in one block, split by model. Done when every dispatched voice is collected or explicitly accounted for — a `partial` fan-out means one voice returned nothing, and that voice's section says what to do about it.
 
 4. **Analyze critically**, point by point: valid → adopt it; wrong → say why (missing context, wrong optimization target, or technically incorrect). A fundamental disagreement you cannot resolve → present both positions to the user for judgment; silently deferring to the voice and silently overriding it are equal failures.
+
+   With several voices, judge each point on its merits before you look at who said it: two voices agreeing is not evidence — they may share a blind spot or the brief's own framing — and a point only one voice raised can be the most valuable thing in the round. Where they genuinely conflict, that fork is the finding; carry it to the user as one.
 
    Adoption has a second half when the point names a trap the implementation could fall into — an edge case, a failure path, a contract that invites misuse. There is no code to pin it against yet, so pin it in the spec's test plan: add or sharpen the planned case that would catch exactly that trap, starting the plan if the spec lacks one. Prose absorbs a point and fades by implementation time; a planned case is what the eventual suite gets held against. Points with nothing executable behind them — naming, structure, scope, docs — are adopted as prose alone.
 
