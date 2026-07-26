@@ -1,6 +1,6 @@
 # Lessons
 
-Adapted, owned reference docs that prompt snippets read at design time. **These are not Claude Code skills** — they're forked from [mattpocock/skills](https://github.com/mattpocock/skills), consolidated, headless-tuned (no HTML/interactive scaffolding), and tailored to this workflow. The snippets in `~/dotfiles/tabtype` and `~/dev/duet` point here.
+Adapted, owned reference docs that prompt snippets read at design and review time. **These are not Claude Code skills** — they're forked from [mattpocock/skills](https://github.com/mattpocock/skills), consolidated, headless-tuned (no HTML/interactive scaffolding), and tailored to this workflow. The snippets in `~/dotfiles/tabtype`, `~/dev/greenflag`, and the dispatch-skill briefs (`~/dotfiles/claude`) point here.
 
 ## Consumption contract
 
@@ -24,12 +24,13 @@ The order a planning model should read these, with gates. The snippet's include 
 | 6 | [`codebase-design/deepening.md`](codebase-design/deepening.md) | Deepen an existing cluster of shallow modules | **only when restructuring** |
 | 7 | [`codebase-design/design-it-twice.md`](codebase-design/design-it-twice.md) | Explore alternative interfaces | **only when the interface is uncertain** |
 
-Each doc opens with a **"## The bar"** section (skimmable imperatives — the review lens), then expands into depth (the planning read).
+Each doc opens with a **"## The bar"** section (skimmable imperatives), then expands into depth (the planning read).
 
 ## Topics
 
 - [`codebase-design/`](codebase-design/README.md) — module design vocabulary and structural patterns.
 - [`testing/`](testing/README.md) — test discipline, mocking strategy, Vitest reference.
+- [`collaboration/`](collaboration/README.md) — cross-agent working discipline: the review-lens stance for judging another engineer's change.
 
 ## Staying in sync with upstream
 

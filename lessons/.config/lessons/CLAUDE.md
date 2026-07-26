@@ -1,7 +1,7 @@
 # Lessons — and how they relate to Claude Code skills
 
 This directory holds **lessons**: personally adapted, consolidated reference docs
-on engineering methodology (module design + test discipline). They were derived
+on engineering methodology (module design, test discipline, cross-agent review). They were derived
 from Claude Code skills but are **not** skills themselves. This file explains the
 distinction and how to keep it; `README.md` is the consumption contract and
 reading roadmap.
@@ -19,6 +19,14 @@ A lesson is the *consolidated, owned* form of a methodology I want a snippet to
 hand an agent: forked from the original skills, then merged into one home per
 concept so a snippet cites a short, stable reading arc instead of a sprawl of
 skill files. The snippets carry the arc; the lessons carry the depth.
+
+The `collaboration/` topic has a second origin: lessons distilled from the twin
+prompts of the two harness product lines (greenflag and the dispatch skills)
+rather than from upstream skills. `SYNTHESIS.md` (top-level, maintainer-only —
+never vendored, never read by an agent) records that comparison: the shared
+moves, their extraction queue, and the asymmetries between the two products
+that must never be "fixed" toward each other. Read it before editing either
+side's review/consult/delegate-shaped prompts.
 
 ## Adapting a skill into a lesson
 
@@ -82,14 +90,16 @@ are retired. The pristine upstream is pinned in `.upstream/` as the diff baselin
 
 - `~/dotfiles/tabtype` — snippets cite these paths **literally** (tabtype has no
   token expansion).
-- `~/dev/duet` — vendors a frozen snapshot into `duet/lessons/` and cites it
+- `~/dev/greenflag` — vendors a frozen snapshot into `greenflag/lessons/` and cites it
   through a `{{lessons_dir}}` token, so it ships self-contained in the package.
+- `~/dotfiles/claude` — the dispatch-skill briefs (`review`, `consult`,
+  `delegate`) cite these paths literally; the dispatched voice reads them live.
 
-Both are kept in sync by hand: edit a lesson here, then re-paste (tabtype) or
-`pnpm vendor-lessons` (duet).
+All are kept in sync by hand: edit a lesson here, then re-paste (tabtype) or
+`pnpm vendor-lessons` (greenflag); the skill briefs read the live files.
 
 **A new lesson needs a citation, not just a copy.** Vendoring ships the file;
 only a snippet citing its path makes an agent read it. Adding one means: the
 roadmap table in `README.md`, the topic `README.md`, and every snippet that
-should hand it over (duet: the `{{lessons_dir}}` lines across `snippets/*.toml`,
+should hand it over (greenflag: the `{{lessons_dir}}` lines across `snippets/*.toml`,
 where the makers read it deeply and the reviewers skim its bar as a lens).
