@@ -97,10 +97,30 @@ else
     PERCENT_USED=0
 fi
 
-# Display path: workspace projects show as bare repo name; other paths
-# under $HOME abbreviate to ~/...; everything else stays as-is.
-DISPLAY_DIR="${CURRENT_DIR/#$HOME\/workspace\//}"
+# Display path. Linked worktrees (gwt / prefix-W put them at
+# ~/dev/.worktrees/<repo>/<branch>) render as " <main-checkout>": the raw path's
+# grouping key is the main checkout's basename (often an unhelpful "main"), and
+# its last segment is the branch — which the branch segment already shows, so the
+# full path would say it twice. Detection is git-common-dir, not path parsing, so
+# branches with slashes (feat/x → nested dirs) and worktrees made outside the
+# convention still resolve. Then: paths under ~/dev show relative to it; other
+# paths under $HOME abbreviate to ~/...; everything else stays as-is.
+DISPLAY_DIR="$CURRENT_DIR"
+WT_MARK=""
+GIT_DIRS=$(git -C "$CURRENT_DIR" rev-parse --path-format=absolute --git-dir --git-common-dir --show-toplevel 2>/dev/null)
+if [ -n "$GIT_DIRS" ]; then
+    { read -r GIT_DIR; read -r GIT_COMMON; read -r TOPLEVEL; } <<< "$GIT_DIRS"
+    if [ -n "$GIT_COMMON" ] && [ -n "$TOPLEVEL" ] && [ "$GIT_DIR" != "$GIT_COMMON" ]; then
+        # Keep any subpath below the worktree root so deeper cwds stay visible.
+        DISPLAY_DIR="${GIT_COMMON%/.git}${CURRENT_DIR#$TOPLEVEL}"
+        # nf-fa-clone (U+F24D): same "linked copy" glyph as ⧉ but drawn at full
+        # cell size — needs a Nerd Font, which every configured terminal font is.
+        WT_MARK=" "
+    fi
+fi
+DISPLAY_DIR="${DISPLAY_DIR/#$HOME\/dev\//}"
 [[ "$DISPLAY_DIR" == "$HOME"* ]] && DISPLAY_DIR="~${DISPLAY_DIR#$HOME}"
+DISPLAY_DIR="${WT_MARK}${DISPLAY_DIR}"
 
 # Semantic context display — numeric percentage, colored by severity.
 # CTX_PLAIN mirrors the visible text (no ANSI) so we can measure width for wrapping.
