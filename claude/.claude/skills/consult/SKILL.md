@@ -43,6 +43,10 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    Done when every point carries a disposition: adopted (with its planned case where the trap was executable), rebutted with the reason, or escalated to the user.
 
-5. **Round 2, when depth warrants it**: send the host position or updated proposal into the same session for critique-and-confirm — the voice keeps its round-1 context, where a fresh session would restart from zero. `envoy collect` prints the resume command.
+5. **Round 2, when depth warrants it**: send the host position or updated proposal into the same session(s) for critique-and-confirm — the voices keep their round-1 context, where a fresh session would restart from zero. One voice: `envoy collect` prints the resume command. A fan-out continues whole — still one task, one collect:
 
-6. **Synthesize** for the user: where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and any unresolved judgment calls.
+   ```sh
+   envoy fan --resume-from <out-dir> --prompt-file round2.md --timeout-min 30 --label consult-r2
+   ```
+
+6. **Synthesize** for the user: where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and any unresolved judgment calls. Name the out-dir in the synthesis: the session stays continuable, and when /review later covers the implementation of this design, its default folds this voice in warm (`--with-from <out-dir>`) beside a cold one.
