@@ -72,6 +72,11 @@ envoy collect --status-only <out-dir>
 
 # after a restart or compaction that may have eaten a notification
 envoy pending
+
+# lost the out-dir? list this project's jobs, newest first, with the dir each
+# one takes — never rebuild a job path from the stamp, which only the dispatch
+# knew. `envoy collect` with no dir also means "this project's newest job".
+envoy jobs
 ```
 
 ## House rules
