@@ -2,6 +2,8 @@
 Brief template for /consult. Copy the body below into a scratchpad file and fill
 every «slot». Keep exactly one of the two MODE blocks and delete the other, along
 with these comments — the voice reads a single coherent brief, never a fork.
+A section with nothing real to say gets deleted, not filled: an empty heading
+invites invented content.
 The fixed lines are distilled from briefs that worked; keep them unless this
 run genuinely contradicts them.
 -->
@@ -75,8 +77,10 @@ and check the shape was *chosen*, not merely first.
 ## Read these, in this order
 
 «Ordered reading list with absolute paths: the artifact(s) under review or the
-relevant code first, then the docs that carry the invariants. The voice reads
-them itself — never restate their content here.»
+relevant code first, then the docs that carry the invariants, then any rulebook
+this session is working under — a house guide, a project doc the user handed
+over — so the voice works to that bar rather than its own defaults. The voice
+reads them itself — never restate their content here.»
 
 ## Concrete questions
 

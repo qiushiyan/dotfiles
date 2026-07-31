@@ -1,6 +1,9 @@
 <!--
 Brief template for /review in fresh-eyes mode. Copy the body below into a
-scratchpad file, fill every «slot», delete these comments.
+scratchpad file, fill every «slot», delete these comments. A section with
+nothing real to say gets deleted, not filled — an empty heading invites
+invented content, and the skeleton is a checklist for you, not a shape the
+brief owes the reviewer.
 
 What this template is for is what it leaves out: the reviewer gets the goal and
 nothing about how the implementation chose to reach it — no spec, no settled
@@ -63,6 +66,17 @@ deferred, unrelated changes sharing the tree), and external constraints the
 code cannot reveal (a deploy fact, a compatibility requirement, a consumer that
 can't change).»
 
+## The standards this work was built to
+
+«The rulebooks the implementer worked under, by absolute path — the guidance
+documents this session read before building (house guides, project docs, style
+rulebooks) — and, where one exists, a sibling module or test file in this repo
+that solves an analogous problem well. Read them before judging: they are the
+bar, and a review applying its own defaults instead grades the work against a
+standard it was never built to. None of this reveals how the change works; a
+document that would belongs in neither list. Nothing to name? Delete the
+section.»
+
 ## Evaluate
 
 - **Does it do the job?** Against the goal above and the expectation you wrote
@@ -70,8 +84,6 @@ can't change).»
 - **The edges a user actually meets** — empty, slow, failed, retried,
   interrupted, concurrent, first-run. What happens then, and is it what a
   reasonable person would expect?
-- **Correctness** — bugs, edge cases, failure modes, in the paths that carry
-  them.
 - **Test quality** — behavior, not internals; survives a plausible refactor;
   follows this repo's test patterns. A test this change made obsolete —
   asserting behavior that's gone, or pinned to internals that moved — is a
