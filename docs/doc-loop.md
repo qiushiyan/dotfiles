@@ -8,8 +8,8 @@ How durable knowledge crosses coding-agent sessions: **the project's docs are th
 /onboarding <topic>          ← first prompt: spine reads + topic-scoped deep dive
   → the session's actual work
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)
-/handoff [next: …]           ← lessons + HANDOFF.md kickstart for the next session
-  → next session's first prompt: /onboarding <topic> — then read HANDOFF.md …
+/handoff [next: …]           ← lessons + a baton in ~/dev/.handoffs, itself the next first prompt
+  → new worktree, pbcopy < the baton, paste — line 1 fires /onboarding <topic>
 ```
 
 `/update-docs` and `/handoff` are separable on purpose: a routine change wants a doc pass with no handoff; a mid-task stop wants a handoff with the doc pass deferred. `/handoff` *contains* the doc pass (it defers to the project's update-docs skill) — never the reverse.
@@ -26,11 +26,12 @@ How durable knowledge crosses coding-agent sessions: **the project's docs are th
 
 Global skills live in `claude/.claude/skills/{update-docs,handoff}/` (this repo); project skills in each repo's `.claude/skills/`. Both globals defer to a project's own skill or `documentation-standards.md` when present.
 
-## The handoff (`/handoff`, HANDOFF.md)
+## The handoff (`/handoff`, `~/dev/.handoffs`)
 
-- **Gate first.** Thread continues → full handoff. Stopped mid-task → baton now, doc pass becomes the next session's first move. Work done and nothing queued → doc pass only, and a stale `HANDOFF.md` gets deleted — a manufactured or stale baton is worse than none. Pass the answer inline to skip the question: `/handoff next: wire the retry path`.
-- **The artifact is `HANDOFF.md` at the worktree root** (the community-convergent location), addressed to the next session's agent: state, lessons and dead-ends with their *why*, first moves (reads, claims to verify, a no-code-first synthesis gate). It opens with a one-line *suggested first prompt*, so starting the next session is a single paste; `@HANDOFF.md` works too. Onboarding skills stay neutral — they never auto-read it.
-- **Kept out of git** via `.git/info/exclude` (local-only; never touches a shared `.gitignore`). Projects with linear roadmaps may also archive dated copies in their records dir.
+- **Gate first.** Thread continues → full handoff. Stopped mid-task → baton now, doc pass becomes the next session's first move. Work done and nothing queued → doc pass only, and a stale baton for the branch gets deleted — a manufactured or stale baton is worse than none. Pass the answer inline to skip the question: `/handoff next: wire the retry path`.
+- **The artifact is `~/dev/.handoffs/<date>-<branch>-handoff.md`** (central, outside every worktree; sibling of `~/dev/.worktrees`), addressed to the next session's agent: state, lessons and dead-ends with their *why*, first moves (reads, claims to verify, a no-code-first synthesis gate).
+- **It *is* the next first prompt, not a document about the work.** The flow is: new worktree → `pbcopy <` the baton → paste. Line 1 is therefore the `/onboarding <topic>` invocation with no title above it; paths stay repo-relative to survive the worktree switch; the text calls itself "this brief" and never tells the agent to read a file — the paste is the delivery. Onboarding skills stay neutral — they never auto-read it.
+- **Lives outside git entirely** — the central folder needs no ignore rules, and its dated filenames double as the archive. Projects with linear roadmaps may still archive copies in their records dir.
 - **Honesty floor:** a session that taught nothing transferable hands off state + next move and nothing else.
 
 ## The doc shape that keeps onboarding cheap

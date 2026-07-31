@@ -88,3 +88,36 @@ tmux-wait-for-text() {
     sleep "$interval"
   done
 }
+
+# --------------------------------------------------------------------
+# Claude context-chip sweep (see tmux.conf "pane borders" block)
+# --------------------------------------------------------------------
+# Claude Code publishes its context-usage % into the pane-local @claude_ctx
+# option via its statusline script; its SessionEnd hook clears it on normal
+# exit. When claude dies without the hook (SIGKILL, crash), the chip and the
+# border row would linger — but the shell prompt coming back IS the signal
+# that the pane's foreground program is gone... unless it's merely SUSPENDED:
+# a stopped job (Ctrl-Z'd claude) keeps its chip, so the sweep skips while
+# one exists. One server-side conditional per prompt: a no-op round-trip when
+# the pane carries no chip; a clear when it does — which also tombstones the
+# recorded session id, so an orphaned statusline subprocess of the dead
+# claude can't republish the chip after this cleanup (see tmux-claude-ctx.sh).
+if [[ -n ${TMUX_PANE:-} ]]; then
+  _claude_ctx_sweep() {
+    # only a suspended CLAUDE job exempts the sweep — matching any stopped
+    # job would let a ^Z'd editor disable hard-kill cleanup here forever.
+    # Anchored to the two launch spellings: `claude …` directly, or the `x`
+    # wrapper function (a function-wrapped command's jobtext is the function
+    # invocation, not the underlying command).
+    local _j
+    for _j in ${(k)jobstates}; do
+      [[ $jobstates[$_j] == suspended* && $jobtexts[$_j] == (claude|x)( *|) ]] && return 0
+    done
+    command tmux if-shell -F -t "$TMUX_PANE" '#{n:@claude_ctx}' \
+      "run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh clear $TMUX_PANE'" \
+      2>/dev/null
+    return 0
+  }
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd _claude_ctx_sweep
+fi

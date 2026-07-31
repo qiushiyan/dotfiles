@@ -24,8 +24,9 @@ This guide is organized around the three things you shape when you build with a 
 
 ## First principles
 
-These five carry the rest. Most specific rules are a corollary of one of them.
+These six carry the rest. Most specific rules are a corollary of one of them.
 
+- **Solve it in code first.** An instruction is a probabilistic lever — followed most runs, at a price in attention every run; code executes every time and costs the window nothing. Asking the model to guarantee what a mechanism could is a category error, so before writing (or strengthening) a rule, walk the ladder: **eliminate** — restructure so the problem can't occur or the step happens by itself (a hook blocks the command, the schema rejects the value, the formatter runs on save); failing that, **inform** — when a real decision remains, compute what the system already knows and place it at the decision point (the date, the branch, the failing test) instead of leaving the model to recall or derive it; only then **instruct**. What's left for prose is what only prose can carry: judgment. The boundary cuts both ways — a rule with no legitimate exceptions belongs to a mechanism, and hard-blocking a genuine judgment call is the same mistake inverted ([warn-once-then-allow](#results-nudge-the-next-step-mini-context)).
 - **Write for the model, not the developer.** The most common defect is developer-facing framing leaking into model-facing text — architecture commentary, mechanism explanations, implementation rationale, and the quieter one: internal names, product concepts, and domain terms that mean something to _you_ but nothing to the model. It needs to know neither _how the system works_ nor _what you call its parts_ — only _what to do_. Read each line and ask: does this help the model act, or does it only land because I built this? Cut plumbing outright; for a term that carries meaning only for you, swap in the plain thing it stands for. (The per-term form of this is the familiar-term test under the cold-reader principle below.)
 - **Explain the why.** A model generalizes from a reason far better than from a bare rule — it will apply the intent to cases you never anticipated. A constraint stated as a bare prohibition invites creative violation; the same constraint stated as a framework _with its motivation_ becomes part of how the model reasons.
 - **Minimal but complete.** Aim for the smallest set of information that fully specifies the behavior you want — nothing accidental, nothing missing. Minimal does not mean short; it means no padding. Over-specification breeds brittleness and overtriggering; under-specification yields generic output.
@@ -42,7 +43,7 @@ How the model should behave. An instruction lands through three stacked levers, 
 - **Substance** — what it says: specific, positive, motivated, at the right altitude.
 - **Reinforcement** — what's shown or repeated: examples and designed echoes.
 
-When a behavior isn't landing, work the stack in order — placement and structure first, then the wording, and only then reinforcement: repetition papers over what a rewrite would cure. Sometimes the fix isn't in this prompt at all but on another surface at the right moment — see [Steer at the right surface](#steer-at-the-right-surface).
+When a behavior isn't landing, work the stack in order — placement and structure first, then the wording, and only then reinforcement: repetition papers over what a rewrite would cure. Sometimes the fix isn't in this prompt at all but on another surface at the right moment — see [Steer at the right surface](#steer-at-the-right-surface) — and sometimes in no prose at all: an exceptionless behavior is bought outright in code ([solve it in code first](#first-principles)).
 
 ### Form — structure and placement
 
@@ -207,7 +208,7 @@ When improving an existing prompt or tool, scope the pass before scanning:
 
 Then scan for these defects. Each maps to a principle above; the fix is in parentheses.
 
-- **Developer-facing framing** — explains how the system works rather than what to do. (Cut, or rewrite as an action.)
+- **Prompted mechanics** — a rule pleading for what code could guarantee: "never push to main" instead of a hook that blocks it, "always run the formatter" instead of one that runs on save, a plea to remember what the harness could inject. It spends attention every turn and still fails probabilistically. (Solve it in code: eliminate the possibility or inject the computed fact; keep prose for the judgment calls.)
 - **Assumed conversational context** — the artifact opens mid-stream: specifics, options, or sub-rules without first naming what the thing _is_ and the system it belongs to, because the author held that in-session and a cold reader won't. The inverse of developer-facing framing — too little identity, not too much mechanism. (Add a one- or two-line "what this is" anchor up front, then go specific.)
 - **Mechanism narration** — "this works by…", "the system will…", "the result arrives as…". (Replace with the action and its trigger.)
 - **Familiar-term leak** — an internal name, product concept, or domain term that's load-bearing in your head but inert to the model; it slips past the developer-facing scan because it's neither _mechanism_ nor _missing identity_ — it's over-supplied vocabulary, a third axis. The recognition rule can't catch it (your own jargon never feels like jargon). (Run the familiar-term test: does it help the model act, or only signal to you? Replace with the domain's own term, or plain language if the field has none.)

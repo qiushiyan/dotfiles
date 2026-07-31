@@ -66,6 +66,7 @@ Modules in `zsh/.config/zsh/`:
 - **Node**: nvm, default `lts/*`, **lazy-loaded** (see lessons).
 - **Secrets**: live in `~/.secrets` (untracked, mode `600`, sourced by `.zshrc`). Tracked config reads them from the environment instead of hardcoding.
 - **`block-dangerous-git.sh`** (Claude Code hook in `claude/.claude/hooks/`) blocks `push` / `reset --hard` / etc. on `main` — pushes to `main` must be run by the user manually, not by Claude.
+- **Claude context chip**: the statusline script pushes context-usage % into the pane-local `@claude_ctx` tmux option; the pane border draws it, and `tmux-claude-ctx.sh` solely owns turning borders off (fed by Claude's `SessionEnd` hook, a zsh `precmd` sweep, and tmux pane-exit/relocation events). One feature across `claude/`, `tmux/`, and `zsh/` — edit any piece with the others in mind (see `tmux/.config/tmux/workflow.md`).
 - **Skills**: Claude Code is a superset of Codex; Codex symlinks into it (see below).
 
 ## Agent Skills: Claude Code ⊇ Codex

@@ -25,6 +25,7 @@ You open the terminal and want to get into something.
 - **`prefix T`** opens the **sesh** picker — fuzzy-find a project, recent dir, or config and jump straight in (creating the session if needed). Inside the picker: `C-a` all · `C-t` tmux sessions · `C-g` configs · `C-x` zoxide dirs · `C-f` find dirs under `~` · `C-d` kill the highlighted session · `Tab`/`S-Tab` move.
 - **`prefix BTab`** flips to the **last session** — the fast toggle between, say, work and a personal project.
 - **`prefix C-f`** jumps to a session by name; **`prefix C-c`** starts a fresh empty one.
+- **`prefix $`** renames the session you're in — do it right after creating an ad-hoc one, so it's findable in `prefix T` later.
 
 At the end of the day, **`prefix d`** detaches — every pane keeps running in the background. Reopen the terminal (or `tmux attach`) and it's exactly as you left it: dev servers still up, agents intact. Done with a project entirely? **`prefix Q`** kills every *other* session, leaving just this one.
 
@@ -32,11 +33,16 @@ At the end of the day, **`prefix d`** detaches — every pane keeps running in t
 
 The picker and status bar are only as useful as your names.
 
-- **`prefix M`** renames the **current session** — do this when a session's default name (`0`, `1`) is meaningless, so `prefix T` reads well.
 - **`prefix m`** renames the **current window**.
-- **Panes** rename via the command prompt instead of a key (you do it rarely): **`prefix :`** then **`rename-pane "label"`** names the current pane, **`unname-pane`** clears it — both tab-complete like native commands. Naming a pane shows the label on its **border**; unnaming removes the border again. To fully reset a pane, use `unname-pane`, *not* `rename-pane ""` (which re-shows an empty border). One catch: the border is per-window, so `unname-pane` clears every label in that window — re-run `rename-pane` on any you want to keep.
+- **`prefix M`** renames the **current pane** in a **popup text field** — same rounded frame as the worktree and move-pane popups, at eye level instead of down in the status line. Type whatever you want; the label is taken verbatim, and the field starts prefilled with your existing label when the pane has one. `Enter` applies, **`Esc` cancels**, and submitting it **empty** (`C-u` wipes the line) resets the pane. Naming a pane shows the label on its **border** and turns the border on for that window; clearing hands the decision to the reconciler, which keeps the row only while some pane in the window still needs it (another label, or a Claude context chip). Naming also **freezes** the title against the program inside the pane — Claude Code otherwise repaints `✳ …` over your label every render — and clearing hands the title back to the app.
+- **`prefix $`** renames the **current session** (tmux's built-in). Do it when a session's default name (`0`, `1`) is meaningless, so `prefix T` reads well — but it's once per session, which is why the custom key went to panes instead.
+- For a pane *other* than the current one, use the command prompt: **`prefix :`** then **`rename-pane "label"`** / **`unname-pane`**, which tab-complete like native commands.
 
 The worktree popup names windows after their branch automatically; rename ad-hoc windows (`prefix m`) so browsing with `prefix C-h`/`C-l` makes sense.
+
+## The Claude context chip
+
+A pane running Claude Code shows the session's **context usage** on the **top-right of its border** (`✳ 37%`), green → yellow (≥50%) → red (≥90%), independent of whatever title sits top-left. Claude's statusline script pushes the number into the pane-local `@claude_ctx` option on every render; the border row appears when a Claude session goes live in the window and drops when nothing needs it anymore (session ends, pane closes, labels cleared). Cleanup is belt-and-suspenders — Claude's `SessionEnd` hook for normal exits, a zsh `precmd` sweep for hard kills (a `C-z`-suspended claude keeps its chip), a `pane-exited` hook for closed panes, and the break/join/move verbs reconciling after a pane relocation — all funneling through `tmux-claude-ctx.sh`, the single owner of turning borders off. A per-pane tombstone keeps a dying session's last in-flight render from resurrecting a chip that cleanup just removed. Mechanics and format gotchas: the "pane borders" block in `tmux.conf`.
 
 ## Starting a new task on its own branch (worktrees)
 
@@ -130,7 +136,7 @@ Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore wh
 | split | `prefix \|` side-by-side · `prefix -` stacked |
 | worktree | `prefix W` → type name → `ctrl-n` |
 
-**Rename** — session `prefix M` · window `prefix m` · pane `prefix :` → `rename-pane "…"` / `unname-pane`
+**Rename** — window `prefix m` · pane `prefix M` popup (`Enter` apply · empty = clear · `Esc` cancel) · session `prefix $`
 
 **Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x` · break/join pane `prefix !` / `prefix @`
 

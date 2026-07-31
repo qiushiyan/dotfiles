@@ -73,8 +73,12 @@ RESET=$'\033[0m'
 
 input=$(cat)
 
-# Single jq call to extract all values
-read -r CURRENT_DIR CONTEXT_SIZE CURRENT_TOKENS <<< "$(echo "$input" | jq -r '
+# Single jq call to extract all values. The directory comes LAST: read splits
+# on whitespace and only the final variable swallows the remainder, so a path
+# with spaces survives intact (dir-first shifted the numbers and corrupted the
+# percentage). session_id (a uuid, no spaces) identifies this Claude session
+# to the tmux chip's tombstone check below.
+read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID CURRENT_DIR <<< "$(echo "$input" | jq -r '
   .context_window as $ctx |
   ($ctx.current_usage // {}) as $usage |
   (if $ctx.current_usage != null then
@@ -82,7 +86,7 @@ read -r CURRENT_DIR CONTEXT_SIZE CURRENT_TOKENS <<< "$(echo "$input" | jq -r '
   else
     $ctx.total_input_tokens + $ctx.total_output_tokens
   end) as $tokens |
-  "\(.workspace.current_dir) \($ctx.context_window_size) \($tokens)"
+  "\($ctx.context_window_size) \($tokens) \(.session_id // "-") \(.workspace.current_dir)"
 ')"
 
 # Validate jq extraction succeeded
@@ -207,4 +211,25 @@ else
         fi
     done
     printf '%s' "${out}${line}"
+fi
+
+# Push the percentage to the tmux pane border (the @claude_ctx chip; drawing,
+# ownership, and teardown live in tmux.conf + tmux-claude-ctx.sh). One tmux
+# round-trip per render, with the whole gate SERVER-side: publish only when
+# the tombstone isn't ours (a statusline subprocess can outlive a killed
+# Claude — a tombstoned session id must not resurrect the chip it just had
+# cleaned up) AND something actually changed — the integer, or the OWNER: a
+# successor session resuming at its predecessor's exact percentage must still
+# record its own sid, or the predecessor's late cleanup would pass its owner
+# check and erase the successor's chip. Unchanged value+owner writes nothing
+# (set-option triggers redraw/layout work even for an unchanged value, and
+# this runs ~3×/sec while streaming). Every accepted write also records the
+# session id and reconciles the window's border in the background — accepted
+# writes are sparse, and the reconcile doubles as passive repair after pane
+# relocation.
+if [ -n "${TMUX_PANE:-}" ] && [ "${SESSION_ID:--}" != "-" ]; then
+    tmux if-shell -F -t "$TMUX_PANE" \
+        "#{&&:#{!=:#{@claude_ctx_dead},$SESSION_ID},#{||:#{!=:#{@claude_ctx},$PERCENT_USED},#{!=:#{@claude_ctx_sid},$SESSION_ID}}}" \
+        "set-option -p -t '$TMUX_PANE' @claude_ctx '$PERCENT_USED' ; set-option -p -t '$TMUX_PANE' @claude_ctx_sid '$SESSION_ID' ; run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh reconcile $TMUX_PANE'" \
+        2>/dev/null || true
 fi

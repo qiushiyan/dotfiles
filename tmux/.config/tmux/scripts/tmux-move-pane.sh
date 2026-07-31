@@ -65,6 +65,9 @@ esac
 # shellcheck disable=SC2086
 if err=$(tmux join-pane $flags -s "$SRC" -t "$SESSION:$DST_WIN" 2>&1); then
   tmux select-window -t "$SESSION:$DST_WIN"   # follow; comment out to stay put
+  # the pane's chip/name markers moved with it; recompute borders on both
+  # ends (TMUX_PANE blanked so reconcile takes its no-target all-window path)
+  TMUX_PANE= bash "$HOME/.config/tmux/scripts/tmux-claude-ctx.sh" reconcile
 else
   die "join-pane failed: ${err:-unknown error}"
 fi
