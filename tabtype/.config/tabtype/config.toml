@@ -634,6 +634,15 @@ Bug just fixed. Before committing, sweep the codebase for other places likely to
 
 **Don't fix yet** — just enumerate. We'll decide what to address.'''
 
+[[snippets]]
+key = "handoff-for-review"
+expand = '''
+/handoff review posture — I'm not merging this branch yet. The next session starts directly on this branch, in this same worktree, to re-review this session's work before any merge: the architecture of what accreted, the module design and what's worth extracting, and why edge cases kept escaping green tests.
+
+Branch-specific focus:
+
+$0'''
+
 # ── Standalone helpers ────────────────────────────────
 
 [[snippets]]
