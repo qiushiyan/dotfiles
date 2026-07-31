@@ -16,7 +16,11 @@ Don't patch a flawed design with another patch, and don't shy from structural ch
 [[snippets]]
 key = "compare-notes"
 expand = '''
-Another engineer analyzed the same problem independently. Compare notes and build the sharper direction — take what's genuinely stronger in their reasoning and combine it with yours, rather than defending your draft or averaging the two. **Update where they're right; hold where they're not**, and say why — don't shift just because they disagree, and **don't split the difference**. Settle a factual disagreement on what the code actually shows, not on who argued it better; where a difference is a real judgment call rather than a matter of fact, surface it as an open choice rather than forcing agreement.
+Another engineer analyzed the same problem independently. Compare notes and build the sharper direction — take what's genuinely stronger in their reasoning and combine it with yours, rather than defending your draft or averaging the two.
+
+**Start at the goal.** If the two of you named a different real problem or a different underlying goal, settle that before anything else: every approach below it is being weighed against a different target, and that disagreement is usually the most valuable thing in the round.
+
+**Update where they're right; hold where they're not**, and say why — don't shift just because they disagree, and **don't split the difference**. Settle a factual disagreement on what the code actually shows, not on who argued it better; where a difference is a real judgment call rather than a matter of fact, surface it as an open choice rather than forcing agreement.
 
 Their analysis below:
 
@@ -437,6 +441,8 @@ key = "review-midpoint"
 expand = '''
 Implementation is **paused mid-way** — only some slices are done; the rest are intentionally not built yet. Review the work so far AND set up the rest to go well. **Read the actual code, not just the status report below.**
 
+Read `~/.config/lessons/collaboration/review-lens.md` first and review in its stance — step back before endorsing a local fix, hold any test you'd request to its additive-bias bar, flag over-building.
+
 Two jobs:
 
 **1. Review what's done.**
@@ -521,29 +527,20 @@ This is a guided map, **not a self-review** — don't grade your own work ("corr
 [[snippets]]
 key = "review-implementation"
 expand = '''
-Code-review my implementation. **Read the actual code, not just commit messages.**
+Code-review my implementation.
 
-**Lens:**
-- **Step back before judging locally.** The default reviewer failure is tactical: accept the implementation's framing and optimize inside it, converging on a local optimum — the adjusted argument, the patched conditional. First ask whether reshaping the design dissolves the problem: a new module or helper, a shared component extracted, a function redesigned around a different contract, modules wired differently. The local patch is the fallback, not the finding.
-- Implementation is fair game across the board — correctness, structure, test quality, performance, readability, edge cases, pattern consistency.
-- Plan ↔ code mismatches → flag silent deviations (missing planned tests, missing helpers, scope creep).
-- Spec/plan are settled — **don't relitigate approved decisions**. If a fundamental issue only surfaces from the code, say so explicitly; don't smuggle it in as a "small fix."
+Read `~/.config/lessons/collaboration/review-lens.md` first and review in its stance — you are making the calls it governs: step back before endorsing a local fix, hold any test you'd request to its additive-bias bar, flag over-building, and grade the code rather than the account of it. For structural findings, read `~/.config/lessons/codebase-design/deep-modules.md` and write them in its vocabulary; when the change restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md` decides whether a seam earns a port, and replace-don't-layer for the moved tests.
 
-**Evaluate:**
+**This run's lens** — everything is fair game; these are where it's most likely to hurt:
 
-- **Correctness** — bugs, edge cases, failure modes.
-- **Solves the problem** — does the implementation actually solve the spec's problem, not just pass its own tests?
-- **Test quality** — right altitude (behavior, not internals), covers planned cases + obvious additions, survives plausible refactors, uses project patterns. Flag the tests that add churn without signal: tests of *shape* (signatures, data structures) that pass when behavior breaks, tests pinning wording or constants no caller depends on, and a second test re-proving what an existing one already owns. A test worth deleting is a finding, not a nit — coverage is feedback, never the goal.
-- **UX & performance** — user-facing impact, performance characteristics.
-- **Structural quality — be ambitious, not just local.** Read `~/.config/lessons/codebase-design/deep-modules.md` before judging structure: its bar (depth, seams, the deletion test, illegal states) is the lens, and its vocabulary is the language structural findings are written in. When the change restructures an existing cluster, also read `~/.config/lessons/codebase-design/deepening.md` — whether a seam earns a port, and replace-don't-layer for the moved tests. The reshape that makes a concept disappear — a branch, a mode, a helper layer — outranks the one that tidies it. Two axes the lessons don't carry:
-    - **Seam cleanliness:** casts, `any`, `unknown`, optionality papering over unclear invariants — push for an explicit contract.
-    - **Preparatory refactoring** (when the diff includes one): behavior-preserving and proportionate — sized to this change, not a rewrite smuggled in alongside it.
-- **Right-sizing — over-building is the likelier failure:** defensive branches for states that can't occur, fallbacks the invariants already rule out, speculative features or config beyond the spec, abstractions pulled out before the pattern is real. Prefer making a bad state unrepresentable (a type, constructor, or enum) or validating at one boundary over more handling — and don't reflexively ask for more handling; that reflex is the slop we're avoiding.
+- **Solves the problem** — does the implementation solve the spec's problem for the person using it, or just pass its own tests?
+- **Test quality** — right altitude (behavior, not internals), covers planned cases + obvious additions, survives plausible refactors, uses project patterns. Tests that add churn without signal are findings too: tests of *shape* (signatures, data structures) that pass when behavior breaks, tests pinning wording or constants no caller depends on, a second test re-proving what an existing one already owns.
+- **Plan ↔ code mismatches** — silent deviations: missing planned tests, missing helpers, scope creep.
+- **Spec/plan are settled** — don't relitigate approved decisions. If a fundamental issue only surfaces from the code, say so explicitly; don't smuggle it in as a "small fix."
 
 **Per issue:**
 - Severity: **critical** (blocks merge) / **moderate** (fix before merge) / **minor** (nice-to-have).
 - Concrete fix with file/function references and enough detail to act on.
-- No "this could be cleaner" without a concrete alternative, and no "add a test here" without the bug it would catch — asking for coverage is the cheapest finding to make and the one you pay for later, so check nothing already covers it.
 
 **Approval bar:** don't pass because it works. Structural regressions and missed reshapes are presumptive blockers — flag as **critical**, not minor.
 

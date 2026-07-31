@@ -54,7 +54,7 @@ When the work is large, I manually pause the implementer at a commit partway thr
 
 19. **`implementation-handoff`** → implementer. With the work finished, the implementer writes a structured handoff: what changed and why, a change map with the load-bearing files marked, key decisions and tradeoffs, deviations from the plan, test coverage, and — critically — where the reviewer should look hardest. It orients the review and shifts the framing to the person who knows the code best. Supersedes the bare `commits-summary` as the review's context block.
 
-20. **`review-implementation`** → reviewer. Round-1 code review. Paste the handoff at `$0` for context. The reviewer evaluates correctness, test quality, plan deviation, structural quality, and whether the implementation actually solves the spec's problem.
+20. **`review-implementation`** → reviewer. Round-1 code review. Paste the handoff at `$0` for context. The reviewer reads the review lens (`~/.config/lessons/collaboration/review-lens.md`) for its stance — step back before the local fix, the additive-bias bar on requested tests, over-building, grade the code not the account of it — and the snippet adds only this run's lens: solves-the-problem, test quality, plan deviation, and the settled-spec fence.
 
 21. **`respond-review`** → implementer. Paste reviewer feedback at `$0`. The implementer analyzes each point first — **no code changes yet**. The analysis-first gate matters here because code changes are expensive.
 
