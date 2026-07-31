@@ -69,13 +69,10 @@ can't change).»
 ## The standards this work was built to
 
 «The rulebooks the implementer worked under, by absolute path — the guidance
-documents this session read before building (house guides, project docs, style
-rulebooks) — and, where one exists, a sibling module or test file in this repo
-that solves an analogous problem well. Read them before judging: they are the
-bar, and a review applying its own defaults instead grades the work against a
-standard it was never built to. None of this reveals how the change works; a
-document that would belongs in neither list. Nothing to name? Delete the
-section.»
+documents this session read before building — plus, where one exists, a sibling
+module or test in this repo that solves an analogous problem well. Nothing here
+may reveal how the change works; a document that would belongs in neither list.
+Nothing to name? Delete the section.»
 
 ## Evaluate
 
@@ -88,12 +85,11 @@ section.»
   follows this repo's test patterns. A test this change made obsolete —
   asserting behavior that's gone, or pinned to internals that moved — is a
   finding too.
-- **Structural quality.** Read `~/.config/lessons/codebase-design/deep-modules.md`
-  before judging structure: its bar (depth, seams, the deletion test, illegal
-  states) is the lens, and its vocabulary is the language structural findings
-  are written in. When the change restructures an existing cluster, also read
-  `~/.config/lessons/codebase-design/deepening.md` — whether a seam earns a
-  port, and replace-don't-layer for the moved tests.
+- **Structural quality** — read `~/.config/lessons/codebase-design/deep-modules.md`
+  for the bar, and write structural findings in its vocabulary. When the change
+  restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md`
+  decides whether a seam earns a port, and replace-don't-layer for the moved
+  tests.
 
 ## Do not flag
 

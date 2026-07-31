@@ -54,9 +54,8 @@ settled items:
 «Ordered reading list with absolute paths: the spec/plan first — it is the
 authority on WHAT this change should do (no spec? state the goal here
 instead) — then any rulebook the implementer worked under (a house guide, a
-project doc, a rubric this session read before building — the reviewer judges
-by that bar, not its own defaults), then the repo's mental-model docs, then the
-load-bearing changed files. The reviewer reads them itself — never restate
+project doc, a rubric this session read before building), then the repo's
+mental-model docs, then the load-bearing changed files. The reviewer reads them itself — never restate
 their content.»
 
 ## Evaluate
@@ -64,7 +63,7 @@ their content.»
 - **Solves the problem** — does the implementation solve the spec's problem for the person using it, or just pass its own tests?
 - **Silent deviations** — planned tests that never appeared, promised helpers that don't exist, scope creep past the spec.
 - **Test quality** — right altitude (behavior, not internals); covers the planned cases plus the obvious additions; survives plausible refactors; follows project test patterns. Weigh what the change did to the tests already there: a behavior it removed or reshaped can leave an existing test asserting something gone, now redundant, or pinned to internals that moved — flag those for deletion or rewrite, not silent survival.
-- **Structural quality.** Read `~/.config/lessons/codebase-design/deep-modules.md` before judging structure: its bar (depth, seams, the deletion test, illegal states) is the lens, and its vocabulary is the language structural findings are written in. When the change restructures an existing cluster, also read `~/.config/lessons/codebase-design/deepening.md` — whether a seam earns a port, and replace-don't-layer for the moved tests.
+- **Structural quality** — read `~/.config/lessons/codebase-design/deep-modules.md` for the bar, and write structural findings in its vocabulary. When the change restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md` decides whether a seam earns a port, and replace-don't-layer for the moved tests.
 
 ## Do not flag
 
