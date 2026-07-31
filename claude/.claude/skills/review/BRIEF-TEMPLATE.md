@@ -1,8 +1,14 @@
 <!--
-Brief template for /review. Copy the body below into a scratchpad file and
-fill every «slot», deleting these comments — the reviewer reads a single
-coherent brief. The fixed lines are distilled from review prompts that worked;
-keep them unless this run genuinely contradicts them.
+Brief template for /review in spec-anchored mode: the direction is settled, and
+the review hunts defects in its execution. Copy the body below into a scratchpad
+file and fill every «slot», deleting these comments — the reviewer reads a
+single coherent brief. The fixed lines are distilled from review prompts that
+worked; keep them unless this run genuinely contradicts them.
+
+When nothing outside the implementation has ever judged this design, the fence
+below has nothing behind it — use FRESH-EYES-BRIEF.md instead. Don't blend the
+two: a brief that asks for first-principles judgment and also hands over the
+settled design gets neither.
 -->
 
 # Review: «one-line description of the change»
@@ -24,6 +30,9 @@ decisions fenced below.
 
 - Branch `«branch»`, commits `«base-sha»..HEAD` — start from
   `git log «base-sha»..HEAD --stat`.
+- Judge the code, not an account of it: the spec, the commit messages, and the
+  report below say what was intended; only the code says what happens. Where
+  they disagree the code wins, and the disagreement is a finding.
 - Review only — do not change any code.
 
 ## The foundation — decided, not up for relitigation

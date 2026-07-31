@@ -25,11 +25,21 @@ claim needs the code that proves it and the cost it carries.
 
 <!-- MODE: design — the voice designs a solution unanchored.
      Blindness is the point: your and the user's current proposal stays OUT of
-     this brief, so the voice designs instead of critiquing what it was handed. -->
+     this brief, so the voice designs instead of critiquing what it was handed.
+     It leaks through the framing faster than through prose — see the questions
+     slot below. -->
 ## The problem
 
-«The problem, its constraints, and what a good solution must satisfy — stated
-without revealing the direction you currently favor.»
+«What is wrong or missing today; what the user wants to be true once this
+works, in their terms — the outcome, not a mechanism; and the constraints any
+solution has to satisfy. Reveal no direction you favor: not here, not in the
+questions.»
+
+Before you design, state in two or three sentences what you take the goal to be
+and what would count as solving it. If that differs from the framing above, say
+so and design against the goal you would defend — the framing is one session's
+read of the problem, and a goal that was wrong is the most expensive thing to
+discover late.
 
 ## The design bar
 
@@ -72,7 +82,13 @@ them itself — never restate their content here.»
 
 «Numbered, specific probes — each answerable from the reading list. Name the
 places you already suspect are weakest; a voice pointed at a seam digs deeper
-than one asked to "review everything".»
+than one asked to "review everything".
+
+Design mode: probes about the problem, never a menu of options you authored. A
+question shaped "A or B?" has already made the design decision and leaves the
+voice only the picking; ask what should happen, and let it name the options.
+The brief is blind when the voice could not infer your preferred answer from
+the questions you asked.»
 
 ## Output
 
