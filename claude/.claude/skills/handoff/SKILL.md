@@ -95,7 +95,6 @@ Done when the baton passes the cold-paste test: the invocation sits on line 1, e
 Run `pbcopy < ~/dev/.handoffs/<file>`, then show the user, together:
 
 - the path (their re-copy command),
-- the file's first line,
 - a two-line summary of what the baton carries,
 - and a suggested branch for the next session — named for the baton's goal,
   not for today's branch, in this repo's own style (`git branch --show-current`
