@@ -121,7 +121,8 @@ done
 # The launcher to advertise for an account. Mirrors _claude_gen_launchers in
 # claude.zsh: x-<email> always exists; the short x-<local-part> alias exists
 # only when the local part is unique among accounts and isn't the primary's
-# name — keep the two rules in sync.
+# name or a reserved utility name (x-usage etc.) — keep the rules and the
+# reserved list in sync.
 xcmd_for() {  # $1 = dir ("" = primary)
   if [[ -z "$1" ]]; then
     echo "x-$PRIMARY_NAME"
@@ -129,6 +130,9 @@ xcmd_for() {  # $1 = dir ("" = primary)
   fi
   local email=${1##*/} lp n=0 d e
   lp=${email%%@*}
+  case "$lp" in
+    usage|account|account-add) echo "x-$email"; return ;;
+  esac
   for d in "${dirs[@]}"; do
     [[ -z "$d" ]] && continue
     e=${d##*/}

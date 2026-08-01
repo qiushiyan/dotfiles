@@ -9,10 +9,10 @@ switching by launcher instead of `/login` juggling — and how the cross-account
 - **`x`** — Claude with permissions bypassed, on the *last explicitly chosen*
   account. **`x-<name>`** (`x-qiushi`, `x-yan`, …) chooses an account and
   sticks, so the next bare `x` stays there.
-- **`claude-usage`** — every account's 5-hour / weekly limit bars in one view;
-  `← x` marks where bare `x` currently points.
-- **`claude-account-add <email>`**, then that account's `x-<name>` and
-  `/login` — onboard a new subscription.
+- **`claude-usage`** (alias **`x-usage`**) — every account's 5-hour / weekly
+  limit bars in one view; `← x` marks where bare `x` currently points.
+- **`claude-account-add <email>`** (alias **`x-account-add`**), then that
+  account's `x-<name>` and `/login` — onboard a new subscription.
 - Pieces: launchers in `zsh/.config/zsh/claude.zsh`, dashboard in
   `scripts/.local/bin/claude-usage`.
 
@@ -60,8 +60,8 @@ Everything derives from that tree:
 - **Reorder the board**: edit `~/.claude-accounts/.order`. The primary is
   always first; a new account needs no entry (it appends alphabetically
   until promoted).
-- **Prompted (no bypass) session**: `claude-account <name|email>`; it moves
-  the `x` target too.
+- **Prompted (no bypass) session**: `claude-account <name|email>` (alias
+  `x-account`); it moves the `x` target too.
 - **New subscription**: `claude-account-add <email>` seeds the dir and names
   the launcher; `/login` on its first launch binds the account.
 - **Stale token** on a rarely-used account: the dashboard says so — run that
@@ -105,7 +105,8 @@ broke.
   in both `claude.zsh` and `claude-usage` — keep them in sync.
 - The launcher-advertising rule (short alias vs full email) also lives twice:
   `_claude_gen_launchers` in `claude.zsh` and `xcmd_for` in `claude-usage` —
-  keep those in sync too.
+  keep those in sync too, including the reserved local parts (`usage`,
+  `account`, `account-add`) that x-* utilities claim ahead of any account.
 - Bypass-everything, if ever wanted, belongs in `settings.json`
   (`"permissions": { "defaultMode": "bypassPermissions" }`), not in wrappers
   around the `claude` command. PreToolUse hooks still fire and block in

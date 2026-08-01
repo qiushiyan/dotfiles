@@ -6,7 +6,7 @@ Several Claude Code subscriptions coexist on this machine, each with its own
 login. When the user asks about usage limits or quota, or wants to switch or
 add an account:
 
-- Run `claude-usage` to answer usage questions — it prints every account's
+- Run `claude-usage` (alias `x-usage`) to answer usage questions — it prints every account's
   5-hour/weekly limit bars, each account's launcher command, and which
   account bare `x` currently targets. After a Claude Code update, or when the
   dashboard misbehaves, `claude-usage --check` verifies the machinery.

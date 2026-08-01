@@ -22,10 +22,13 @@
 #   x-<email>             a specific account, permissions bypassed —
 #                         generated at shell init from the dirs; when the
 #                         local part is unique (and isn't the primary's
-#                         name) a short alias exists too (x-yan, …)
-#   claude-account <name|email> [args...]   prompted (no bypass) session;
-#                                           also makes that account current
-#   claude-account-add <email>              seed a new account dir, then /login
+#                         name or a reserved word) a short alias exists
+#                         too (x-yan, …)
+#   x-usage               ≡ claude-usage (the dashboard; --check works too)
+#   x-account             ≡ claude-account <name|email> [args...] — prompted
+#                         (no bypass) session; also makes it current
+#   x-account-add         ≡ claude-account-add <email> — seed a new account
+#                         dir, then /login
 #
 # To bypass permissions on every invocation instead — plain `claude`
 # included — set  "permissions": { "defaultMode": "bypassPermissions" }  in
@@ -35,6 +38,9 @@
 typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
 typeset -g CLAUDE_ACCOUNT_STATE="$CLAUDE_ACCOUNTS_ROOT/.current"
 typeset -g CLAUDE_PRIMARY_NAME="qiushi"   # x-qiushi ≡ default ~/.claude
+# Local parts that never get a short launcher alias: x-<these> are utilities.
+# claude-usage's xcmd_for mirrors this list — keep the two in sync.
+typeset -ga CLAUDE_X_RESERVED=(usage account account-add)
 
 # Fill a fresh account dir with symlinks to the tracked claude config.
 _claude_account_seed() {
@@ -67,12 +73,18 @@ _claude_selector() {
   emulate -L zsh
   local email="$1"
   local name="${email%%@*}"   # separate `local`: zsh expands a typeset's words before any assignment lands
-  if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]] && (( ${+functions[x-$name]} )); then
+  if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]] \
+       && (( ! ${CLAUDE_X_RESERVED[(Ie)$name]} )) && (( ${+functions[x-$name]} )); then
     print -r -- "x-$name"
   else
     print -r -- "x-$email"
   fi
 }
+
+# x-* names for the whole toolkit, so one prefix reaches everything.
+x-usage()       { claude-usage "$@" }
+x-account()     { claude-account "$@" }
+x-account-add() { claude-account-add "$@" }
 
 # Record the account bare `x` should target from now on.
 _claude_remember() {
@@ -160,7 +172,7 @@ _claude_gen_launchers() {
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
     email="${d:t}" name="${email%%@*}"
     functions[x-$email]="_claude_remember ${(q)email}; _claude_launch ${(q)d} --dangerously-skip-permissions \"\$@\""
-    if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]]; then
+    if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]] && (( ! ${CLAUDE_X_RESERVED[(Ie)$name]} )); then
       if (( count[$name] == 1 )); then
         functions[x-$name]="x-${(q)email} \"\$@\""
       else
