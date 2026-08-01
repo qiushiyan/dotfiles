@@ -1,0 +1,286 @@
+#!/usr/bin/env bash
+# claude-usage — Claude Code's /usage view, outside Claude Code, across accounts.
+# System model and use patterns: docs/claude-accounts.md.
+#
+# Data source: the (undocumented) endpoint the /usage screen itself calls:
+#   GET https://api.anthropic.com/api/oauth/usage   (OAuth Bearer token)
+# The token comes from the macOS Keychain, where Claude Code keeps one item
+# per config dir:
+#   default ~/.claude        → service "Claude Code-credentials"
+#   CLAUDE_CONFIG_DIR=<dir>  → service "Claude Code-credentials-<hash8>"
+# where <hash8> = first 8 hex chars of sha256(<dir>) — matches the service-name
+# code in the Claude Code binary (verified on v2.1.220). This is what makes
+# multiple simultaneous logins possible: each config dir is its own login.
+#
+# Accounts are discovered, not configured: the default ~/.claude plus every
+# dir under ~/.claude-accounts/<email>/ (seeded by claude-account-add and
+# launched by x-<name>, both in ~/.config/zsh/claude.zsh). Each account is
+# labeled with the email its .claude.json reports as actually logged in,
+# falling back to the dir name before first login.
+#
+# Read-only by design: tokens are never refreshed or written here. If one has
+# expired, opening any Claude Code session on that account refreshes it.
+# The endpoint is undocumented — parse defensively, expect it to change.
+#
+# `claude-usage --check` verifies every reverse-engineered assumption still
+# holds (Keychain naming, blob/.claude.json shapes, API contract) — run it
+# after a Claude Code update if the dashboard misbehaves.
+
+set -euo pipefail
+
+# Keep these three in sync with ~/.config/zsh/claude.zsh.
+ACCOUNTS_ROOT="$HOME/.claude-accounts"
+STATE="$ACCOUNTS_ROOT/.current"
+PRIMARY_NAME="qiushi"
+
+URL="https://api.anthropic.com/api/oauth/usage"
+BARW=20
+
+# The account bare `x` targets (email, or PRIMARY_NAME for ~/.claude).
+CURRENT=$(cat "$STATE" 2>/dev/null) || CURRENT=""
+[[ -z "$CURRENT" ]] && CURRENT="$PRIMARY_NAME"
+
+command -v jq >/dev/null || { echo "claude-usage: jq is required" >&2; exit 1; }
+
+if [[ -t 1 ]]; then
+  BOLD=$'\e[1m'; DIM=$'\e[2m'; RED=$'\e[31m'; YEL=$'\e[33m'; GRN=$'\e[32m'; RST=$'\e[0m'
+else
+  BOLD=""; DIM=""; RED=""; YEL=""; GRN=""; RST=""
+fi
+
+service_name() {  # $1 = config dir ("" = default)
+  local base="Claude Code-credentials"
+  if [[ -z "$1" ]]; then
+    echo "$base"
+  else
+    echo "$base-$(printf %s "$1" | shasum -a 256 | cut -c1-8)"
+  fi
+}
+
+# Verify the assumptions this script reverse-engineered from Claude Code.
+# Each FAIL means Claude Code likely changed a format on update.
+run_check() {
+  local fails=0 ok
+  chk() {  # $1 = 0 ok / else fail, $2 = label, $3 = hint on fail
+    if [[ "$1" == "0" ]]; then
+      printf '%s ok %s  %s\n' "$GRN" "$RST" "$2"
+    else
+      printf '%sFAIL%s  %s%s\n' "$RED" "$RST" "$2" "${3:+ — $3}"
+      fails=$(( fails + 1 ))
+    fi
+  }
+
+  # Keychain items exist under the predicted service names — the empirical
+  # proof that the per-config-dir naming scheme still holds.
+  ok=0; security find-generic-password -s "$(service_name "")" -a "$USER" >/dev/null 2>&1 || ok=1
+  chk $ok "keychain: primary item ($(service_name ""))" "not logged in, or naming scheme changed"
+  local d b
+  for d in "$ACCOUNTS_ROOT"/*/; do
+    [[ -d "$d" ]] || continue
+    d=${d%/}; b=${d##*/}
+    [[ -f "$d/.claude.json" ]] || continue   # never logged in — nothing to verify
+    ok=0; security find-generic-password -s "$(service_name "$d")" -a "$USER" >/dev/null 2>&1 || ok=1
+    chk $ok "keychain: hashed item for $b" "login exists but item name doesn't match sha256(dir) scheme"
+  done
+
+  # Credential blob shape (primary's blob stands in for all).
+  local blob
+  blob=$(security find-generic-password -s "$(service_name "")" -a "$USER" -w 2>/dev/null) || blob=""
+  ok=1
+  { [[ -n "$blob" ]] && jq -e '.claudeAiOauth
+      | (.accessToken | type == "string" and length > 0)
+        and (.expiresAt | type == "number")' <<<"$blob" >/dev/null 2>&1 && ok=0; } || true
+  chk $ok "blob: .claudeAiOauth.accessToken/.expiresAt shape"
+
+  # .claude.json still records the logged-in email (dashboard labels).
+  ok=1
+  { jq -e '.oauthAccount.emailAddress | type == "string"' "$HOME/.claude.json" >/dev/null 2>&1 && ok=0; } || true
+  chk $ok "claude.json: .oauthAccount.emailAddress present"
+
+  # The installed binary still references the endpoint this script calls.
+  local bin
+  bin=$(readlink -f "$(command -v claude)" 2>/dev/null) || bin=""
+  ok=1
+  { [[ -n "$bin" ]] && grep -aq "api/oauth/usage" "$bin" 2>/dev/null && ok=0; } || true
+  chk $ok "binary: api/oauth/usage present (${bin##*/})" "endpoint may have moved"
+
+  # Live API contract: 200, and limits[] entries carry what render needs.
+  local token resp code body
+  token=$(jq -r '.claudeAiOauth.accessToken // empty' <<<"$blob")
+  ok=1
+  if [[ -n "$token" ]]; then
+    resp=$(curl -sS --max-time 10 -w $'\n%{http_code}' "$URL" -H "Authorization: Bearer $token") || resp=""
+    code=${resp##*$'\n'}; body=${resp%$'\n'*}
+    { [[ "$code" == "200" ]] && jq -e '(.limits | type == "array")
+        and all(.limits[]; (.kind | type == "string")
+                           and (.percent | type == "number")
+                           and has("resets_at"))' <<<"$body" >/dev/null 2>&1 && ok=0; } || true
+  fi
+  chk $ok "api: oauth/usage → 200 with limits[] (kind/percent/resets_at)" "HTTP ${code:-n/a} — token expired, or response shape drifted"
+
+  echo
+  if (( fails )); then
+    echo "$fails check(s) failed — Claude Code likely changed a format; see docs/claude-accounts.md"
+    exit 1
+  fi
+  echo "all checks passed"
+  exit 0
+}
+
+if [[ "${1:-}" == "--check" ]]; then
+  run_check
+fi
+
+# One limit row: "  <label>  [██████░░...]  56%  resets Wed 18:00 (in 4d 20h)"
+render_row() {  # $1 label, $2 percent, $3 reset epoch (0 = unknown), $4 severity
+  local label="$1" pct="$2" reset="$3" sev="$4" now filled color when rem
+  now=$(date +%s)
+
+  color=$GRN
+  (( pct >= 50 )) && color=$YEL
+  (( pct >= 80 )) && color=$RED
+  [[ "$sev" != "normal" ]] && color=$RED
+
+  filled=$(( (pct * BARW + 50) / 100 ))
+  (( filled > BARW )) && filled=$BARW
+  (( filled < 0 )) && filled=0
+  local bar
+  bar=$(printf '%*s' "$filled" '' | tr ' ' '█')$(printf '%*s' $((BARW - filled)) '' | tr ' ' '░')
+
+  if (( reset == 0 )); then
+    when="resets ?"
+  else
+    rem=$(( reset - now ))
+    if (( rem <= 0 )); then
+      when="resetting…"
+    else
+      local d=$(( rem / 86400 )) h=$(( rem % 86400 / 3600 )) m=$(( rem % 3600 / 60 )) in
+      if   (( d > 0 )); then in="${d}d ${h}h"
+      elif (( h > 0 )); then in="${h}h ${m}m"
+      else                   in="${m}m"
+      fi
+      if (( rem < 86400 )); then
+        when="resets $(date -r "$reset" '+%H:%M') (in $in)"
+      else
+        when="resets $(date -r "$reset" '+%a %H:%M') (in $in)"
+      fi
+    fi
+  fi
+
+  printf '  %-16s %s[%s]%s %3d%%  %s%s%s\n' "$label" "$color" "$bar" "$RST" "$pct" "$DIM" "$when" "$RST"
+}
+
+show_account() {  # $1 = config dir ("" = default ~/.claude)
+  local dir="$1" svc blob meta email label name plan tier
+  svc=$(service_name "$dir")
+
+  # Label: the email the dir's .claude.json says is logged in; before first
+  # login, the dir name (which is the intended email by convention).
+  if [[ -z "$dir" ]]; then
+    meta="$HOME/.claude.json"
+    name="primary"
+  else
+    meta="$dir/.claude.json"
+    name="${dir##*/}"
+  fi
+  email=$(jq -r '.oauthAccount.emailAddress // empty' "$meta" 2>/dev/null) || email=""
+  label=${email:-$name}
+  # A dir whose login doesn't match its name means /login picked the wrong
+  # account in that session — surface it instead of hiding it.
+  if [[ -n "$dir" && -n "$email" && "$email" != "$name" ]]; then
+    label="$email ${RED}(dir says $name!)${RST}"
+  fi
+
+  # The launcher for this account, and whether bare `x` targets it now.
+  local xcmd mark=""
+  if [[ -z "$dir" ]]; then
+    xcmd="x-$PRIMARY_NAME"
+    [[ "$CURRENT" == "$PRIMARY_NAME" ]] && mark="  ${BOLD}← x${RST}"
+  else
+    xcmd="x-${name%%@*}"
+    [[ "$CURRENT" == "$name" ]] && mark="  ${BOLD}← x${RST}"
+  fi
+
+  blob=$(security find-generic-password -s "$svc" -a "$USER" -w 2>/dev/null) || blob=""
+  # Linux / keychain-unavailable fallback: Claude Code writes this file instead.
+  [[ -z "$blob" && -n "$dir" && -f "$dir/.credentials.json" ]] && blob=$(cat "$dir/.credentials.json")
+
+  if [[ -z "$blob" ]]; then
+    printf '%s%s%s  %s%s%s%s\n' "$BOLD" "$label" "$RST" "$DIM" "$xcmd" "$RST" "$mark"
+    printf '  %snot logged in — run %s and /login%s\n' "$DIM" "$xcmd" "$RST"
+    return
+  fi
+
+  local token expires_ms now_ms
+  token=$(jq -r '.claudeAiOauth.accessToken // empty' <<<"$blob")
+  expires_ms=$(jq -r '.claudeAiOauth.expiresAt // 0' <<<"$blob")
+  plan=$(jq -r '.claudeAiOauth.subscriptionType // "?"' <<<"$blob")
+  tier=$(jq -r '.claudeAiOauth.rateLimitTier // empty' <<<"$blob")
+  # "default_claude_max_20x" → "max 20x"; fall back to subscriptionType.
+  if [[ -n "$tier" ]]; then
+    plan=${tier#default_claude_}
+    plan=${plan//_/ }
+  fi
+  printf '%s%s%s %s(%s · %s)%s%s\n' "$BOLD" "$label" "$RST" "$DIM" "$plan" "$xcmd" "$RST" "$mark"
+
+  now_ms=$(( $(date +%s) * 1000 ))
+  if [[ -z "$token" ]] || (( expires_ms > 0 && expires_ms < now_ms )); then
+    printf '  %stoken expired — run %s to refresh it%s\n' "$DIM" "$xcmd" "$RST"
+    return
+  fi
+
+  local resp code body
+  resp=$(curl -sS --max-time 10 -w $'\n%{http_code}' "$URL" -H "Authorization: Bearer $token") || {
+    printf '  %sfetch failed (network?)%s\n' "$DIM" "$RST"
+    return
+  }
+  code=${resp##*$'\n'}
+  body=${resp%$'\n'*}
+  if [[ "$code" != "200" ]]; then
+    printf '  %sHTTP %s from usage endpoint%s\n' "$DIM" "$code" "$RST"
+    return
+  fi
+
+  # Prefer the `limits` array (what /usage renders); fall back to the legacy
+  # five_hour field for accounts where `limits` comes back empty.
+  local rows
+  rows=$(jq -r '
+    (.limits // []) as $l
+    | (if ($l | length) > 0 then $l
+       else [ .five_hour // empty
+              | { kind: "session", percent: (.utilization // 0),
+                  resets_at, severity: "normal", scope: null } ]
+       end)
+    | .[]
+    | [ (if .kind == "session" then "5h session"
+         elif (.scope.model.display_name // "") != "" then .scope.model.display_name + " (7d)"
+         elif .group == "weekly" then "All models (7d)"
+         else (.group // .kind) end),
+        (.percent // 0 | round),
+        ((.resets_at // "") | sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z")
+                            | (try fromdateiso8601 catch 0)),
+        (.severity // "normal")
+      ] | @tsv' <<<"$body")
+
+  if [[ -z "$rows" ]]; then
+    printf '  %sno limits reported%s\n' "$DIM" "$RST"
+    return
+  fi
+
+  local l p r s
+  while IFS=$'\t' read -r l p r s; do
+    render_row "$l" "$p" "$r" "$s"
+  done <<<"$rows"
+}
+
+dirs=("")
+for d in "$ACCOUNTS_ROOT"/*/; do
+  [[ -d "$d" ]] && dirs+=("${d%/}")
+done
+
+first=1
+for dir in "${dirs[@]}"; do
+  (( first )) || echo
+  first=0
+  show_account "$dir"
+done
