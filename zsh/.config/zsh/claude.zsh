@@ -6,6 +6,7 @@
 #   ~/.claude                      primary (qiushi@planlab.ai)
 #   ~/.claude-accounts/<email>/    one dir per extra subscription
 #   ~/.claude-accounts/.current    which account bare `x` targets
+#   ~/.claude-accounts/.order      dashboard display order (optional)
 #
 # A distinct CLAUDE_CONFIG_DIR gives a session its own Keychain login (the
 # credentials service name is suffixed with sha256(dir)[0:8]), so /login on
@@ -18,9 +19,10 @@
 #
 #   x                     permissions bypassed, on the *last explicitly
 #                         chosen* account — x-<name> chooses and sticks
-#   x-<name>              a specific account, permissions bypassed; <name>
-#                         is the email's local part (x-yan, …), generated
-#                         at shell init from the dirs
+#   x-<email>             a specific account, permissions bypassed —
+#                         generated at shell init from the dirs; when the
+#                         local part is unique (and isn't the primary's
+#                         name) a short alias exists too (x-yan, …)
 #   claude-account <name|email> [args...]   prompted (no bypass) session;
 #                                           also makes that account current
 #   claude-account-add <email>              seed a new account dir, then /login
@@ -44,16 +46,32 @@ _claude_account_seed() {
   done
 }
 
-# Resolve <name|email> to an account dir; prints "" for the primary.
+# Resolve <name|email> to an account dir; prints "" for the primary. A local
+# part shared by several accounts resolves to none of them — use the email.
 _claude_account_dir() {
   emulate -L zsh
   local q="$1" d
+  local -a hits
   [[ -z "$q" || "$q" == "$CLAUDE_PRIMARY_NAME" ]] && { print -r -- ""; return 0 }
   [[ -d "$CLAUDE_ACCOUNTS_ROOT/$q" ]] && { print -r -- "$CLAUDE_ACCOUNTS_ROOT/$q"; return 0 }
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
-    [[ "${${d:t}%%@*}" == "$q" ]] && { print -r -- "$d"; return 0 }
+    [[ "${${d:t}%%@*}" == "$q" ]] && hits+=("$d")
   done
+  (( ${#hits} == 1 )) && { print -r -- "${hits[1]}"; return 0 }
   return 1
+}
+
+# The launcher to advertise for <email> — the short alias when it exists,
+# else the guaranteed full-email selector.
+_claude_selector() {
+  emulate -L zsh
+  local email="$1"
+  local name="${email%%@*}"   # separate `local`: zsh expands a typeset's words before any assignment lands
+  if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]] && (( ${+functions[x-$name]} )); then
+    print -r -- "x-$name"
+  else
+    print -r -- "x-$email"
+  fi
 }
 
 # Record the account bare `x` should target from now on.
@@ -121,28 +139,36 @@ claude-account-add() {
   _claude_account_seed "$dir"
   _claude_gen_launchers
   echo "seeded $dir"
-  echo "next: x-${1%%@*} → /login as $1"
+  echo "next: $(_claude_selector "$1") → /login as $1"
 }
 
-# Generate x-<name> for every account dir (plus x-<primary>). Each records
-# itself as the target of bare `x`, then launches. Runs at every shell init:
-# one glob, no subprocess — startup-perf safe. Local-part collisions switch
-# to full-email names so a short name can never launch the wrong account
-# with permissions bypassed.
+# Generate launchers for every account dir. Each records itself as the
+# target of bare `x`, then launches. x-<email> always exists and is the
+# guaranteed identity; a short x-<local-part> alias is added only when the
+# local part is unique among accounts and isn't the primary's name, so a
+# short name can never launch the wrong account with permissions bypassed.
+# Runs at every shell init: one glob, no subprocess — startup-perf safe.
+# claude-usage's xcmd_for mirrors this rule — keep the two in sync.
 _claude_gen_launchers() {
   emulate -L zsh
   local d email name
-  local -A seen   # local part → email
+  local -A count   # local part → number of accounts claiming it
+  for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
+    name="${${d:t}%%@*}"
+    count[$name]=$(( ${count[$name]:-0} + 1 ))
+  done
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
     email="${d:t}" name="${email%%@*}"
-    if [[ -n "${seen[$name]}" && "${seen[$name]}" != "$email" ]]; then
-      functions[x-${seen[$name]}]="_claude_remember ${(q)${seen[$name]}}; _claude_launch ${(q)CLAUDE_ACCOUNTS_ROOT}/${(q)${seen[$name]}} --dangerously-skip-permissions \"\$@\""
-      unfunction "x-$name" 2>/dev/null
-      name="$email"
-    else
-      seen[$name]="$email"
+    functions[x-$email]="_claude_remember ${(q)email}; _claude_launch ${(q)d} --dangerously-skip-permissions \"\$@\""
+    if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]]; then
+      if (( count[$name] == 1 )); then
+        functions[x-$name]="x-${(q)email} \"\$@\""
+      else
+        # a newly added account made this local part ambiguous — drop the
+        # stale alias rather than let it point at either account
+        unfunction "x-$name" 2>/dev/null || true
+      fi
     fi
-    functions[x-$name]="_claude_remember ${(q)email}; _claude_launch ${(q)d} --dangerously-skip-permissions \"\$@\""
   done
   functions[x-$CLAUDE_PRIMARY_NAME]="_claude_remember $CLAUDE_PRIMARY_NAME; _claude_launch \"\" --dangerously-skip-permissions \"\$@\""
 }

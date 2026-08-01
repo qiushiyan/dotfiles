@@ -27,6 +27,8 @@ There is no account list anywhere. The dirs are the registry:
     settings.json, skills, …    symlinks → claude/.claude  (config: shared)
     .claude.json, history, …    real files                 (runtime: per-account)
   .current                    which account bare `x` targets
+  .order                      dashboard display order (optional, one email
+                              per line; unlisted accounts follow A–Z)
 ```
 
 Everything derives from that tree:
@@ -41,18 +43,23 @@ Everything derives from that tree:
   config edit lands everywhere. Only runtime state (login, history, sessions)
   is per-account.
 - **Discovery.** `claude.zsh` globs the dirs at shell init and generates the
-  `x-<name>` functions (email local part; collisions fall back to full-email
-  names). `claude-usage` globs the same dirs — the two can't drift. Dashboard
-  labels come from the email each dir's `.claude.json` *actually* logged in
-  as, with a red warning when that mismatches the dir name (i.e. `/login`
-  picked the wrong account); the plan tag comes from the Keychain blob's
-  `rateLimitTier`.
+  launchers: `x-<email>` always exists and is the guaranteed identity; a
+  short `x-<local-part>` alias (`x-yan`) is added only when the local part is
+  unique and isn't the primary's name, so a short name can never hit the
+  wrong account. `claude-usage` globs the same dirs — the two can't drift.
+  Dashboard labels come from the email each dir's `.claude.json` *actually*
+  logged in as, with a red warning when that mismatches the dir name (i.e.
+  `/login` picked the wrong account); the plan tag comes from the Keychain
+  blob's `rateLimitTier`.
 
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
 - **Out of quota**: `claude-usage`, pick an account with headroom, launch it
   once by name (`x-yan`) — bare `x` follows from then on.
+- **Reorder the board**: edit `~/.claude-accounts/.order`. The primary is
+  always first; a new account needs no entry (it appends alphabetically
+  until promoted).
 - **Prompted (no bypass) session**: `claude-account <name|email>`; it moves
   the `x` target too.
 - **New subscription**: `claude-account-add <email>` seeds the dir and names
@@ -71,15 +78,22 @@ Everything derives from that tree:
 `GET api.anthropic.com/api/oauth/usage` with each account's Bearer token from
 the Keychain — and renders whatever the response's `limits` array contains
 (accounts genuinely differ: some report an all-models weekly limit, some only
-a model-scoped one). The endpoint is **undocumented**: parse defensively and
-expect its shape to drift, as it already has once (legacy `five_hour` /
-`seven_day` fields giving way to `limits`).
+a model-scoped one). Fetches run in parallel and accounts fail independently:
+a bad credential or drifted response marks that one account while the rest
+still render. The endpoint is **undocumented**: the shape has drifted once
+already (legacy `five_hour` / `seven_day` fields giving way to `limits`).
 
-**`claude-usage --check`** verifies every reverse-engineered assumption in one
-shot — Keychain item naming, credential blob shape, `.claude.json` shape, the
-endpoint string in the installed binary, and the live response contract. Run
-it after a Claude Code update, or whenever the dashboard misbehaves; a FAIL
-line names which assumption broke.
+The script parses credentials and responses through exactly two jq programs
+(`BLOB_JQ`, `LIMITS_JQ`), tolerant by design — a weird field degrades to
+`0` / `resets ?` rather than aborting. **`claude-usage --check`** layers the
+strict side on those same parsers: for every logged-in account it asserts the
+Keychain item under the predicted name, the blob contract, HTTP 200 with ≥ 1
+parseable limit row, and that reset timestamps still parse; it also greps the
+installed binary for the endpoint/config-dir/credential seams. Because the
+checker asserts through the parsers the dashboard renders with, it cannot
+drift from what rendering actually needs. Run it after a Claude Code update,
+or whenever the dashboard misbehaves; a FAIL line names which assumption
+broke.
 
 ## Invariants
 
@@ -89,6 +103,9 @@ line names which assumption broke.
   and its default-named Keychain item for no benefit.
 - `ACCOUNTS_ROOT`, `PRIMARY_NAME`, and the `.current` state file are declared
   in both `claude.zsh` and `claude-usage` — keep them in sync.
+- The launcher-advertising rule (short alias vs full email) also lives twice:
+  `_claude_gen_launchers` in `claude.zsh` and `xcmd_for` in `claude-usage` —
+  keep those in sync too.
 - Bypass-everything, if ever wanted, belongs in `settings.json`
   (`"permissions": { "defaultMode": "bypassPermissions" }`), not in wrappers
   around the `claude` command. PreToolUse hooks still fire and block in
