@@ -84,16 +84,17 @@ still render. The endpoint is **undocumented**: the shape has drifted once
 already (legacy `five_hour` / `seven_day` fields giving way to `limits`).
 
 The script parses credentials and responses through exactly two jq programs
-(`BLOB_JQ`, `LIMITS_JQ`), tolerant by design — a weird field degrades to
-`0` / `resets ?` rather than aborting. **`claude-usage --check`** layers the
-strict side on those same parsers: for every logged-in account it asserts the
-Keychain item under the predicted name, the blob contract, HTTP 200 with ≥ 1
-parseable limit row, and that reset timestamps still parse; it also greps the
-installed binary for the endpoint/config-dir/credential seams. Because the
-checker asserts through the parsers the dashboard renders with, it cannot
-drift from what rendering actually needs. Run it after a Claude Code update,
-or whenever the dashboard misbehaves; a FAIL line names which assumption
-broke.
+(`BLOB_JQ`, `LIMITS_JQ`), tolerant by design — a malformed field degrades to
+`0` / `resets ?` rather than aborting, and the parser tags each degraded
+field, distinguishing a legitimately absent timestamp (untouched window) from
+a present value that stopped parsing. **`claude-usage --check`** layers the
+strict side on those same parsers: per logged-in account it asserts the
+Keychain item under the predicted name, the blob contract, and HTTP 200 with
+≥ 1 limit row and no malformed fields; it also greps the installed binary for
+the endpoint/config-dir/credential seams. Checker and renderer share the
+parsers, so shape drift the renderer papers over with `0%` bars or `resets ?`
+still fails the check. Run it after a Claude Code update, or whenever the
+dashboard misbehaves; a FAIL line names which assumption broke.
 
 ## Invariants
 

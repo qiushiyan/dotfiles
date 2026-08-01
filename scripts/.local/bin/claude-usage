@@ -74,9 +74,12 @@ BLOB_JQ='.claudeAiOauth
   | @tsv'
 
 # The single response contract: one "label \t percent \t reset-epoch \t
-# severity" row per limit. Tolerant on purpose — a weird field degrades to
-# 0 / "?" instead of aborting the account; --check layers strict assertions
-# (row count, parseable timestamps) on this same parser's output.
+# severity \t pct-state \t reset-state" row per limit. Rendering is tolerant
+# on purpose — a malformed field degrades to 0 / "resets ?" instead of
+# aborting the account — and the two trailing state fields say whether that
+# happened: pct-state is ok|bad; reset-state is ok|none|bad, where "none" is
+# a legitimately absent timestamp (untouched window) and "bad" is a present
+# value that no longer parses. --check fails any account with a "bad".
 LIMITS_JQ='(.limits // []) as $l
   | (if ($l | type) == "array" and ($l | length) > 0 then $l
      else [ .five_hour // empty
@@ -85,14 +88,21 @@ LIMITS_JQ='(.limits // []) as $l
      end)
   | .[]
   | ((try .scope.model.display_name catch null) // "" | tostring) as $model
+  | (try ((.percent // null) | tonumber | round) catch null) as $pct
+  | ((.resets_at // null)
+     | if . == null or . == "" then 0
+       else (tostring | sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z")
+             | (try fromdateiso8601 catch -1))
+       end) as $epoch
   | [ (if .kind == "session" then "5h session"
        elif $model != "" then $model + " (7d)"
        elif .group == "weekly" then "All models (7d)"
        else ((.group // .kind // "?") | tostring) end),
-      (try ((.percent // 0) | tonumber | round) catch 0),
-      ((.resets_at // "" | tostring) | sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z")
-                          | (try fromdateiso8601 catch 0)),
-      ((.severity // "normal") | tostring)
+      ($pct // 0),
+      (if $epoch > 0 then $epoch else 0 end),
+      ((.severity // "normal") | tostring),
+      (if $pct == null then "bad" else "ok" end),
+      (if $epoch == -1 then "bad" elif $epoch == 0 then "none" else "ok" end)
     ] | @tsv'
 
 # -------------------------------------------------------------- discovery --
@@ -105,7 +115,7 @@ _have_dir() {
 }
 
 if [[ -f "$ORDER_FILE" ]]; then
-  while IFS= read -r line; do
+  while IFS= read -r line || [[ -n "$line" ]]; do
     line=${line%%#*}; line=${line//[[:space:]]/}
     [[ -z "$line" ]] && continue
     d="$ACCOUNTS_ROOT/$line"
@@ -173,14 +183,18 @@ run_check() {
   # credential blob parses through the same contract the dashboard uses.
   # (Items were written by past logins — this proves the naming derivation
   # matches what Claude Code created, not what a future binary will do;
-  # the seam greps above cover the binary side.)
-  local dir b blob creds token expires_ms
-  local any_epoch=0 now_ms
+  # the seam greps above cover the binary side.) Fetches launch in parallel
+  # and are validated after the join, so a dead network costs one timeout,
+  # not one per account.
+  local dir b blob creds token expires_ms now_ms i=0
+  local cnames=() cfetch=() creasons=()
   now_ms=$(( $(date +%s) * 1000 ))
   for dir in "${dirs[@]}"; do
     b=${dir:+${dir##*/}}; b=${b:-primary}
+    cnames[$i]="$b"; cfetch[$i]=0; creasons[$i]=""
     if [[ -n "$dir" && ! -f "$dir/.claude.json" ]]; then
-      continue   # never logged in — nothing to verify
+      cfetch[$i]=-1   # never logged in — nothing to verify
+      i=$(( i + 1 )); continue
     fi
     ok=0; security find-generic-password -s "$(service_name "$dir")" -a "$USER" >/dev/null 2>&1 || ok=1
     chk $ok "keychain[$b]: item under predicted name" "not logged in, or naming scheme changed"
@@ -192,28 +206,47 @@ run_check() {
     ok=1; [[ -n "$token" ]] && ok=0
     chk $ok "blob[$b]: parses via shared contract (accessToken present)"
 
-    # Live contract, through the same parser rendering uses.
     if [[ -n "$token" ]] && ! { [[ "$expires_ms" =~ ^[0-9]+$ ]] && (( expires_ms > 0 && expires_ms < now_ms )); }; then
-      local resp code body rows nrows
-      resp=$(curl -sS --max-time "$CURL_TIMEOUT" -w $'\n%{http_code}' "$URL" -H "Authorization: Bearer $token" 2>/dev/null) || resp=""
-      code=${resp##*$'\n'}; body=${resp%$'\n'*}
-      rows=""; { [[ "$code" == "200" ]] && rows=$(jq -r "$LIMITS_JQ" <<<"$body" 2>/dev/null); } || rows=""
-      nrows=0; [[ -n "$rows" ]] && nrows=$(wc -l <<<"$rows" | tr -d ' ')
-      ok=1; (( nrows >= 1 )) && ok=0
-      chk $ok "api[$b]: HTTP ${code:-n/a}, $nrows row(s) via shared parser"
-      local _l _p _r _s
-      while IFS=$'\t' read -r _l _p _r _s; do
-        [[ "$_r" =~ ^[0-9]+$ ]] && (( _r > 0 )) && any_epoch=1
-      done <<<"$rows"
+      cfetch[$i]=1
+      curl -sS --max-time "$CURL_TIMEOUT" -w $'\n%{http_code}' "$URL" \
+           -H "Authorization: Bearer $token" > "$TMP/chk.$i" 2>/dev/null &
     else
-      chk 1 "api[$b]: skipped" "token missing or expired — run $(xcmd_for "$dir") first"
+      creasons[$i]="token missing or expired — run $(xcmd_for "$dir") first"
     fi
+    i=$(( i + 1 ))
   done
+  wait
 
-  # If no reset timestamp parsed anywhere, the timestamp format drifted even
-  # though the tolerant parser kept rendering (it would show "resets ?").
-  ok=1; (( any_epoch )) && ok=0
-  chk $ok "timestamps: at least one resets_at parsed to an epoch" "resets_at format drifted"
+  # Live contract, through the same parser rendering uses: 200, ≥1 row, and
+  # every row's percent/timestamp well-formed. A "bad" state means a value is
+  # present but no longer parses — shape drift the tolerant renderer would
+  # hide behind 0% / "resets ?"; a null timestamp on an untouched window is
+  # "none" and passes.
+  local resp code body rows nrows nbad hint
+  i=0
+  for dir in "${dirs[@]}"; do
+    b=${cnames[$i]}
+    if [[ "${cfetch[$i]}" == "-1" ]]; then
+      i=$(( i + 1 )); continue
+    fi
+    if [[ "${cfetch[$i]}" == "0" ]]; then
+      chk 1 "api[$b]: skipped" "${creasons[$i]}"
+      i=$(( i + 1 )); continue
+    fi
+    resp=$(cat "$TMP/chk.$i" 2>/dev/null) || resp=""
+    code=${resp##*$'\n'}; body=${resp%$'\n'*}
+    rows=""; { [[ "$code" == "200" ]] && rows=$(jq -r "$LIMITS_JQ" <<<"$body" 2>/dev/null); } || rows=""
+    nrows=0; [[ -n "$rows" ]] && nrows=$(wc -l <<<"$rows" | tr -d ' ')
+    nbad=$(awk -F'\t' '$5 == "bad" || $6 == "bad" { n++ } END { print n + 0 }' <<<"$rows")
+    hint=""
+    if [[ "$code" != "200" ]]; then hint="non-200 — endpoint or auth drifted"
+    elif (( nrows == 0 )); then hint="response unparseable or no limits — shape drifted"
+    elif (( nbad > 0 )); then hint="$nbad malformed field(s) — shape drifted"
+    fi
+    ok=1; [[ "$code" == "200" ]] && (( nrows >= 1 && nbad == 0 )) && ok=0
+    chk $ok "api[$b]: HTTP ${code:-n/a}, $nrows row(s), fields well-formed" "$hint"
+    i=$(( i + 1 ))
+  done
 
   # .claude.json still records the logged-in email (dashboard labels).
   ok=1
@@ -228,6 +261,9 @@ run_check() {
   echo "all checks passed"
   exit 0
 }
+
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
 
 case "${1:-}" in
   --check) run_check ;;
@@ -278,9 +314,6 @@ render_row() {  # $1 label, $2 percent, $3 reset epoch (0 = unknown), $4 severit
 # Phase 1 walks accounts, resolves labels/credentials, and launches all usage
 # fetches in parallel; phase 2 waits; phase 3 renders in order. Any per-account
 # problem becomes a status rendered for that account alone.
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
-
 labels=(); plans=(); xcmds=(); marks=(); statuses=()
 now_ms=$(( $(date +%s) * 1000 ))
 
@@ -385,7 +418,7 @@ render_account() {  # $1 = index
   fi
 
   local l p r s
-  while IFS=$'\t' read -r l p r s; do
+  while IFS=$'\t' read -r l p r s _; do
     [[ "$p" =~ ^-?[0-9]+$ ]] || p=0
     [[ "$r" =~ ^[0-9]+$ ]] || r=0
     render_row "$l" "$p" "$r" "$s"
