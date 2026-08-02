@@ -10,7 +10,7 @@ Distilled, provider-agnostic guidance for two jobs that share one rulebook:
 1. **Writing** a new prompt, instruction block, or tool definition.
 2. **Improving** an existing one.
 
-The principles are the same either way. When writing, use them as a design guide. When improving, use them as a defect lens — read the target against the principles and the [Common defects](#common-defects-the-improvement-lens) list, then propose each change _with the reason it helps_. The [Before → after](#before--after) section shows the move on concrete examples. There is no hard line between the two jobs; improving is just writing with a draft already in front of you.
+The principles are the same either way. When writing, use them as a design guide. When improving, use them as a defect lens — read the target against the principles and the [Common defects](#common-defects-the-improvement-lens) list, then propose each change _with the reason it helps_. [`references/before-after.md`](references/before-after.md) shows the move on concrete worked examples. There is no hard line between the two jobs; improving is just writing with a draft already in front of you — and the lens is the writing job's exit check: before reporting done on model-facing text you wrote or changed, run your own changes through the review pass. A defect is cheapest the turn it's written; caught a session later, it has already steered an agent.
 
 **The reader of every word you write is the model.** Optimize for how a model reads, not for how a human documents a system.
 
@@ -200,17 +200,20 @@ Tool ergonomics can't be fully predicted up front because agents are non-determi
 
 ## Common defects (the improvement lens)
 
-When improving an existing prompt or tool, scope the pass before scanning:
+A review pass has a shape; run it in order rather than free-scanning:
 
-- **Inventory the model-facing surfaces first** — prompts, tool descriptions, results, errors, skill and agent files. Code comments, test names, log lines, and UI copy are human-facing: out of scope, however untidy.
-- **Sweep for stale text.** After a behavior change, the highest-yield defect is usually not in the text you were pointed at but in the surfaces that still _describe the old behavior_ — a skill or fragment teaching what the system no longer does.
-- **Know which artifacts are templates.** A rendered prompt should be concrete; a template that covers many instances is deliberately hedged ("the feature added or bug fixed"), and the hedge is load-bearing — concreteness happens when it's filled in, and "fixing" a hedge into one instance's specifics breaks every other instance.
+1. **Inventory the model-facing surfaces** — prompts, tool descriptions, results, errors, skill and agent files. Code comments, test names, log lines, and UI copy are human-facing: out of scope, however untidy. While inventorying, mark which artifacts are **templates**: a rendered prompt should be concrete, but a template covering many instances is deliberately hedged ("the feature added or bug fixed"), and the hedge is load-bearing — concreteness happens at fill-in time, and "fixing" a hedge into one instance's specifics breaks every other instance.
+2. **Sweep for stale text.** After a behavior change, the highest-yield defect is usually not in the text you were pointed at but in the surfaces that still _describe the old behavior_ — a skill or fragment teaching what the system no longer does.
+3. **Read each surface against the defect list below.** Report every finding as the defect's name plus the concrete fix — a named defect is checkable; "this could be clearer" is not.
+4. **Verify, don't just edit.** Run whatever pins the surfaces you touched — prompt-text tests, rendering snapshots, the suite. And **pin load-bearing truth claims with tests**: when prompt or result text asserts a fact about system behavior ("only sets the comparison reference", "accepted by the host"), a test should assert the text says exactly that and no more — a truthfulness fix without a pin drifts back.
+5. **Report the deliberate keeps.** Anything that looks like a defect but survives on purpose — a sanctioned echo, a load-bearing hedge, an earned `never` — gets named with its reason, so the next pass doesn't "fix" it.
 
-Then scan for these defects. Each maps to a principle above; the fix is in parentheses.
+The defect list. Each maps to a principle above; the fix is in parentheses.
 
 - **Prompted mechanics** — a rule pleading for what code could guarantee: "never push to main" instead of a hook that blocks it, "always run the formatter" instead of one that runs on save, a plea to remember what the harness could inject. It spends attention every turn and still fails probabilistically. (Solve it in code: eliminate the possibility or inject the computed fact; keep prose for the judgment calls.)
 - **Assumed conversational context** — the artifact opens mid-stream: specifics, options, or sub-rules without first naming what the thing _is_ and the system it belongs to, because the author held that in-session and a cold reader won't. The inverse of developer-facing framing — too little identity, not too much mechanism. (Add a one- or two-line "what this is" anchor up front, then go specific.)
 - **Mechanism narration** — "this works by…", "the system will…", "the result arrives as…". (Replace with the action and its trigger.)
+- **Incident narration in durable surfaces** — a rule still teaching from the case that motivated it: session details, ticket numbers, the specific user who hit it. The incident is evidence for _you_; the model needs the generalized reason. (State the rule with its general why; the case file belongs in the project's records, not the prompt.)
 - **Familiar-term leak** — an internal name, product concept, or domain term that's load-bearing in your head but inert to the model; it slips past the developer-facing scan because it's neither _mechanism_ nor _missing identity_ — it's over-supplied vocabulary, a third axis. The recognition rule can't catch it (your own jargon never feels like jargon). (Run the familiar-term test: does it help the model act, or only signal to you? Replace with the domain's own term, or plain language if the field has none.)
 - **Generic directives** — "be helpful," "stay responsive." (Replace with trigger + action + skip, or cut.)
 - **Negation as the main lever** — a pile of "do not" rules. (Reframe as the positive path; keep "never" only for hard safety.)
@@ -231,136 +234,7 @@ Then scan for these defects. Each maps to a principle above; the fix is in paren
 
 ## Before → after
 
-Four worked examples of improving something that already exists — one per pillar, plus an error. Each "why" maps back to a principle above; the point is the _move_, not the specific wording.
-
-### 1. A behavioral instruction block (prompt)
-
-**Before**
-
-```
-You are a helpful assistant. Stay responsive and always be proactive.
-CRITICAL: You MUST NEVER answer technical questions yourself — that's the
-worker's job. The way this works: each worker runs in its own background
-session spawned over RPC, and results arrive as follow-up messages on the
-event bus, so don't block waiting on them. (A worker turn can take several
-minutes.)
-```
-
-**After**
-
-```
-<role>
-You route work between the user and specialist workers. You don't do the
-technical work yourself.
-</role>
-
-When a technical question comes up, hand it to the relevant worker instead of
-answering it — your own answer would skip the user's review and shape the work
-invisibly.
-
-A worker turn takes several minutes, so send one complete, well-formed request
-rather than a stream of small ones, and keep making progress elsewhere while it
-runs — pick up the result when it arrives.
-
-Ask the user only when the decision is theirs (direction, priorities) and you
-can name the specific choice that depends on the answer.
-```
-
-**Why**
-
-- **Cut vs. transform — the move worth seeing.** Developer-facing framing isn't always deletable; often it _hides_ a fact the model needs. "spawned over RPC… on the event bus" is pure plumbing — _cut_ it; the model learns that from using the tools, not from prose. But "a worker turn can take several minutes" is a real fact wearing an implementation-detail costume — _transform_ it into context the model acts on: send one complete request, and work elsewhere meanwhile (which also gives "don't block" its positive form). The skill is to tell those two apart, not to strip every line that mentions the system.
-- `CRITICAL: MUST NEVER` → a plain framework _with its reason_ ("would skip the user's review and shape the work invisibly"). The model now applies the intent to cases the rule never enumerated, and the de-escalated tone stops it overtriggering.
-- "stay responsive / always be proactive" → a concrete _trigger + action + skip_ — ask only when the decision is theirs _and_ you can name the choice.
-
-### 2. A bloated window (context)
-
-**Before**
-
-```
-System prompt (rebuilt and re-sent every turn, ~8k tokens):
-  <role>…</role>
-  <api_reference> …all 12 endpoint docs, in full… </api_reference>
-  <style_guide> …the entire style guide… </style_guide>
-  <decision_log> …every past decision… </decision_log>
-  Always follow the style guide. Follow the style guide when writing copy.
-```
-
-**After**
-
-```
-System prompt (small, stable across turns):
-  <role>…</role>
-  Rules that apply every turn: …the three that always matter…
-  Reference: API docs live in `docs/api/`, the style guide in `docs/style.md`.
-  Read the one you need with read_doc(path) before you rely on it.
-
-// plus a tool
-read_doc(path) → returns the requested doc.
-```
-
-**Why**
-
-- The 8k prompt pays for all 12 docs and the full log on _every_ call regardless of relevance, and a near-full window degrades (_context rot_). Keep the prefix small and stable so the cache hits and attention stays sharp.
-- _Just-in-time_: hold lightweight references (paths) plus a tool to load the one doc the task actually needs.
-- _Progressive disclosure_: an index up front, full content only on match.
-- Cut the duplicated "follow the style guide" line — an accidental copy, not a deliberate echo.
-
-### 3. A tool, end to end (tool)
-
-**Before**
-
-```js
-{ name: "search",
-  description: "Search the database.",
-  parameters: { q: { type: "string" } } }
-
-// result
-[{ "id": "8f3a2c…", "mime": "text/markdown" }, …]
-```
-
-**After**
-
-```js
-{ name: "docs_search",
-  description: "Full-text search over the team's design docs. Matches `query` \
-    against title and body — use plain keywords, not boolean operators. \
-    Returns the most relevant docs first.",
-  parameters: {
-    query: { type: "string", description: "Keywords to match against doc title and body." },
-    limit: { type: "integer", default: 5, description: "Max docs to return." } } }
-
-// result
-{ "results": [{ "title": "Auth design", "path": "docs/auth.md", "snippet": "…JWT rotation…" }],
-  "note": "5 of 23 matches shown. If none fit, narrow the query and search again \
-           rather than raising the limit." }
-```
-
-**Why**
-
-- Vague `search` → namespaced `docs_search`; `q` → `query` with a description — _unambiguous names_, and the description _surfaces the implicit_ (keywords-not-boolean, relevance order) that the model can't otherwise know.
-- Added `limit` with a default — _token-efficient_ by construction.
-- Opaque `id`/`mime` → _semantic returns_ (`title`, `path`, `snippet`) the model can act on directly.
-- The `note` is _mini-context_: it nudges the next step (narrow and re-search, not raise the limit) with the reason, exactly when the model is deciding what to do after a thin result.
-
-### 4. An error result (tool)
-
-**Before**
-
-```
-Error: validation_failed (code 422)
-```
-
-**After**
-
-```
-Couldn't create the event: `start` ("2026-13-02") isn't a valid date — month
-must be 01–12. Fix the month and retry; the rest of the call was fine.
-```
-
-**Why**
-
-- An opaque code → an error that _prescribes the recovery path_: what was wrong, the specific fix, and that nothing else needs to change — so the model doesn't improvise recovery or retry the identical bad call.
-- It lands in the result text the model actually reads, which is what makes self-correction possible at all.
+The worked examples — a behavioral instruction block rewritten, a bloated window slimmed, a tool redesigned end to end, an error result made prescriptive — live in [`references/before-after.md`](references/before-after.md). Load it when writing a surface from scratch, or when a defect is named but the fix isn't obvious; for a routine review pass the defect list above is enough.
 
 ---
 
