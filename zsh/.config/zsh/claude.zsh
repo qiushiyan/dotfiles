@@ -70,6 +70,10 @@ _claude_account_seed() {
 _claude_link_projects() {
   emulate -L zsh
   local dir="$1" canon="$HOME/.claude/projects" link="$1/projects"
+  if [[ -h "$canon" || ( -e "$canon" && ! -d "$canon" ) ]]; then
+    print -u2 "claude accounts: $canon must be a real directory — the canonical session store cannot itself be a link"
+    return 1
+  fi
   mkdir -p "$canon" || return 1
   if [[ -h "$link" ]]; then
     [[ "$link" -ef "$canon" ]] && return 0
@@ -141,6 +145,11 @@ _claude_launch() {
   else
     if [[ ! -d "$dir" ]]; then
       _claude_account_seed "$dir" || { print -u2 "claude accounts: seeding $dir failed — not launching"; return 1 }
+    else
+      # Re-verify the shared-sessions topology on every launch, not only at
+      # seed time — a projects link replaced by a real directory would
+      # fragment session history silently. Correct link costs one -ef check.
+      _claude_link_projects "$dir" || { print -u2 "claude accounts: $dir violates the shared-sessions topology — not launching"; return 1 }
     fi
     CLAUDE_CONFIG_DIR="$dir" command claude "$@"
   fi
@@ -183,7 +192,10 @@ claude-account-add() {
     echo "claude-account-add: $dir already exists" >&2
     return 1
   fi
-  _claude_account_seed "$dir"
+  if ! _claude_account_seed "$dir"; then
+    echo "claude-account-add: seeding $dir failed — inspect and remove it before retrying" >&2
+    return 1
+  fi
   _claude_gen_launchers
   echo "seeded $dir"
   echo "next: $(_claude_selector "$1") → /login as $1"

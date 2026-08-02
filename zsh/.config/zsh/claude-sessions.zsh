@@ -37,6 +37,10 @@ claude-sessions-migrate() {
   local canon="$HOME/.claude/projects"
   local root="${CLAUDE_ACCOUNTS_ROOT:-$HOME/.claude-accounts}"
   local dry=0
+  if (( $# > 1 )) || [[ -n "${1:-}" && "$1" != --dry-run ]]; then
+    print -u2 -r -- "usage: claude-sessions-migrate [--dry-run]"
+    return 2
+  fi
   [[ "${1:-}" == --dry-run ]] && dry=1
 
   local -a sources link_only
@@ -83,15 +87,18 @@ claude-sessions-migrate() {
     done
   fi
 
-  mkdir -p "$canon"
+  setopt local_traps
   local work; work=$(mktemp -d "${TMPDIR:-/tmp}/claude-sessions-migrate.XXXXXX")
-  local manifest="$work/manifest"   # lines: hash|account-dir|relpath
-  : >"$manifest"
+  trap "rm -rf ${(q)work}" EXIT
+  local inventory="$work/inventory"   # hash|action|account-dir|relpath, action: copy|dedupe
+  : >"$inventory"
 
   # Scan + conflict detection. Collisions must be byte-identical — across
   # sources, and against the canonical tree — for every relative path, not
   # just top-level transcripts (a session's closure includes its <uuid>/
   # subdir and project memory/ files). Anything divergent aborts the run.
+  # Every file lands in the inventory, dedupes included: the inventory is
+  # the complete pre-copy truth the pre-swap rescan verifies against.
   local -A seen          # relpath -> "hash|account-dir"
   local -a conflicts uuids
   local f rel h ch prev n_copy=0 n_dedupe=0 n_index=0
@@ -107,6 +114,7 @@ claude-sessions-migrate() {
       if [[ -n "${seen[$rel]:-}" ]]; then
         prev="${seen[$rel]%%|*}"
         if [[ "$prev" == "$h" ]]; then
+          print -r -- "$h|dedupe|$d|$rel" >>"$inventory"
           (( n_dedupe++ )) || true
         else
           conflicts+=("$rel: ${seen[$rel]#*|} vs $d")
@@ -117,13 +125,14 @@ claude-sessions-migrate() {
       if [[ -e "$canon/$rel" ]]; then
         ch=$(_claude_sessions_hash "$canon/$rel")
         if [[ "$ch" == "$h" ]]; then
+          print -r -- "$h|dedupe|$d|$rel" >>"$inventory"
           (( n_dedupe++ )) || true
         else
           conflicts+=("$rel: $d vs canonical")
         fi
         continue
       fi
-      print -r -- "$h|$d|$rel" >>"$manifest"
+      print -r -- "$h|copy|$d|$rel" >>"$inventory"
       (( n_copy++ )) || true
       if [[ "$rel" == */*.jsonl && "${rel:h}" != */* ]]; then
         uuids+=("${${rel:t}%.jsonl}")
@@ -143,39 +152,103 @@ claude-sessions-migrate() {
     return 0
   fi
 
-  # Copy (ditto preserves permissions, times, xattrs), then prove no source
-  # moved underneath us and the canonical bytes match the manifest before
-  # any symlink swap. Abort here and nothing is lost: sources untouched,
-  # canonical merely holds verified copies.
-  local acct
-  while IFS='|' read -r h acct rel; do
+  # Copy (ditto preserves permissions, times, xattrs). Abort anywhere up to
+  # the swap and nothing is lost: sources untouched, canonical merely holds
+  # verified copies.
+  mkdir -p "$canon"
+  local act acct
+  while IFS='|' read -r h act acct rel; do
+    [[ "$act" == copy ]] || continue
     mkdir -p "$canon/${rel:h}"
     ditto "$acct/projects/$rel" "$canon/$rel"
-  done <"$manifest"
+  done <"$inventory"
 
-  while IFS='|' read -r h acct rel; do
-    if [[ "$(_claude_sessions_hash "$acct/projects/$rel")" != "$h" ]]; then
-      print -u2 -r -- "FAIL $acct/projects/$rel changed during migration — a session was live; nothing swapped, re-run when quiet"
+  # Re-walk every source in full against the inventory — dedupes included.
+  # A file that changed, appeared, or vanished since the scan is a writer
+  # the process gate missed; the swap would strand its turns in the backup.
+  local -A want found
+  local key
+  while IFS='|' read -r h act acct rel; do
+    key="$acct|$rel"
+    want[$key]="$h"
+  done <"$inventory"
+  for d in "${sources[@]}"; do
+    local src2="$d/projects"
+    for f in "$src2"/**/*(.DN); do
+      rel="${f#$src2/}"
+      [[ "${rel:t}" == sessions-index.json ]] && continue
+      key="$d|$rel"
+      found[$key]=1
+      if [[ -z "${want[$key]:-}" ]]; then
+        print -u2 -r -- "FAIL new file appeared during migration: $f — a session was live; nothing swapped, re-run when quiet"
+        return 1
+      fi
+      if [[ "$(_claude_sessions_hash "$f")" != "${want[$key]}" ]]; then
+        print -u2 -r -- "FAIL $f changed during migration — a session was live; nothing swapped, re-run when quiet"
+        return 1
+      fi
+    done
+  done
+  for key in "${(k)want[@]}"; do
+    if [[ -z "${found[$key]:-}" ]]; then
+      print -u2 -r -- "FAIL ${key%%|*}/projects/${key#*|} vanished during migration — nothing swapped"
       return 1
     fi
+  done
+  while IFS='|' read -r h act acct rel; do
+    [[ "$act" == copy ]] || continue
     if [[ "$(_claude_sessions_hash "$canon/$rel")" != "$h" ]]; then
       print -u2 -r -- "FAIL canonical copy of $rel does not match its source — nothing swapped"
       return 1
     fi
-  done <"$manifest"
+  done <"$inventory"
 
+  # Cross-directory renames cannot be atomic as a set, so all-or-nothing is
+  # provided by unwinding every completed swap if any later one fails.
   local ts; ts=$(date +%Y%m%d-%H%M%S)
+  local -a swapped linked
+  local swap_err=""
   for d in "${sources[@]}"; do
-    mv "$d/projects" "$d/projects.pre-share.$ts"
-    ln -s "$canon" "$d/projects"
+    if mv "$d/projects" "$d/projects.pre-share.$ts" && ln -s "$canon" "$d/projects"; then
+      swapped+=("$d")
+    else
+      swap_err="$d"
+      break
+    fi
+  done
+  if [[ -z "$swap_err" ]]; then
+    for d in "${link_only[@]}"; do
+      if ln -s "$canon" "$d/projects"; then
+        linked+=("$d")
+      else
+        swap_err="$d"
+        break
+      fi
+    done
+  fi
+  if [[ -n "$swap_err" ]]; then
+    print -u2 -r -- "FAIL swapping $swap_err — restoring every account to its pre-migration state"
+    if [[ -e "$swap_err/projects.pre-share.$ts" && ! -e "$swap_err/projects" && ! -h "$swap_err/projects" ]]; then
+      command mv "$swap_err/projects.pre-share.$ts" "$swap_err/projects"
+    fi
+    for d in "${linked[@]}"; do command rm -f "$d/projects"; done
+    for d in "${swapped[@]}"; do
+      command rm -f "$d/projects"
+      command mv "$d/projects.pre-share.$ts" "$d/projects"
+    done
+    return 1
+  fi
+  for d in "${swapped[@]}"; do
     print -r -- "shared: $d (backup: $d/projects.pre-share.$ts)"
   done
-  for d in "${link_only[@]}"; do
-    ln -s "$canon" "$d/projects"
+  for d in "${linked[@]}"; do
     print -r -- "shared: $d (no sessions to migrate)"
   done
 
-  _claude_sessions_reindex "$ts" "${uuids[@]}"
+  if ! _claude_sessions_reindex "$ts" "${uuids[@]}"; then
+    print -u2 -r -- "obelisk verification failed — the topology swap itself is complete; fix obelisk, then re-run claude-sessions-check"
+    return 1
+  fi
 
   print -r -- "done — verify with: claude-sessions-check --canary"
   print -r -- "backups can be deleted once the check passes and the picker shows the migrated sessions"
@@ -187,50 +260,80 @@ claude-sessions-migrate() {
 # layer untouched (count + content checksum, not count alone).
 _claude_sessions_reindex() {
   emulate -L zsh
-  setopt local_options pipe_fail no_unset
+  setopt local_options local_traps pipe_fail err_return no_unset
   local ts="$1"; shift
   local -a uuids; uuids=("$@")
   local db="$HOME/.obelisk/obelisk.sqlite"
+  local canon="$HOME/.claude/projects"
 
   if [[ ! -f "$db" ]] || ! command -v obelisk >/dev/null || ! command -v sqlite3 >/dev/null; then
     print -r -- "obelisk: not set up here — skipping reindex"
     return 0
   fi
 
-  cp "$db" "$db.pre-share.$ts"
+  local work; work=$(mktemp -d "${TMPDIR:-/tmp}/claude-sessions-reindex.XXXXXX")
+  trap "rm -rf ${(q)work}" EXIT
+
+  # Snapshot through SQLite itself — a raw cp of a WAL-mode database can
+  # capture a torn copy mid-transaction.
+  sqlite3 "$db" ".backup '$db.pre-share.$ts'"
+
+  # The full pre-state, because the assertions below must prove nothing was
+  # LOST, not merely that the expected additions arrived — for every
+  # transcript retention already pruned, the index row is the last record
+  # in existence.
+  sqlite3 "$db" "SELECT id FROM sessions ORDER BY id;" >"$work/pre-ids"
   local mem_before mem_after
   mem_before=$(sqlite3 "$db" "SELECT COUNT(*) FROM memories;")$'\n'$(sqlite3 "$db" "SELECT * FROM memories ORDER BY 1;" | shasum -a 256)
 
-  # Incremental on purpose — never `obelisk --build`: a force rebuild mirrors
-  # only the files that exist right now, and for every transcript retention
-  # already pruned, the index row is the last record there is. Any ordinary
-  # obelisk command picks up new files incrementally and keeps those rows.
+  # Incremental on purpose — never `obelisk --build`: a force rebuild
+  # mirrors only the files on disk. The probe's exit status proves nothing
+  # (a skipped build still exits 0); the assertions below are the evidence
+  # that indexing actually happened.
   if ! obelisk --search "__claude_sessions_migrate__" >/dev/null; then
     print -u2 -r -- "obelisk: incremental index failed — snapshot kept at $db.pre-share.$ts"
     return 1
   fi
 
+  sqlite3 "$db" "SELECT id FROM sessions ORDER BY id;" >"$work/post-ids"
+  local lost
+  lost=$(comm -23 "$work/pre-ids" "$work/post-ids")
+  if [[ -n "$lost" ]]; then
+    print -u2 -r -- "obelisk: FAIL $(print -r -- "$lost" | wc -l | tr -d ' ') pre-existing session(s) vanished from the index — restore $db.pre-share.$ts and investigate"
+    return 1
+  fi
+
   mem_after=$(sqlite3 "$db" "SELECT COUNT(*) FROM memories;")$'\n'$(sqlite3 "$db" "SELECT * FROM memories ORDER BY 1;" | shasum -a 256)
   if [[ "$mem_before" != "$mem_after" ]]; then
-    print -u2 -r -- "obelisk: FAIL memories changed across rebuild — restore from $db.pre-share.$ts and investigate"
+    print -u2 -r -- "obelisk: FAIL memories changed across reindex — restore from $db.pre-share.$ts and investigate"
     return 1
   fi
 
   local stale
   stale=$(sqlite3 "$db" "SELECT COUNT(*) FROM sessions WHERE jsonl_path LIKE '%.claude-accounts%';")
   if [[ "$stale" != 0 ]]; then
-    print -u2 -r -- "obelisk: FAIL $stale session(s) still point into ~/.claude-accounts after rebuild"
+    print -u2 -r -- "obelisk: FAIL $stale session(s) still point into ~/.claude-accounts after reindex"
     return 1
   fi
 
-  local u missing=0
+  # Every migrated transcript with content must now be indexed; absence
+  # means the index pass silently no-opped (skipped build, live daemon) —
+  # only genuinely empty transcripts may be skipped.
+  local u n_empty=0 bad=0
+  local -a hit
   for u in "${uuids[@]}"; do
     if [[ "$(sqlite3 "$db" "SELECT COUNT(*) FROM sessions WHERE id='$u';")" == 0 ]]; then
-      print -r -- "obelisk: note — migrated session $u not in index (empty/unparseable transcripts are skipped by design)"
-      (( missing++ )) || true
+      hit=("$canon"/**/"$u.jsonl"(N))
+      if (( ${#hit} )) && [[ -s "${hit[1]}" ]]; then
+        print -u2 -r -- "obelisk: FAIL migrated session $u has content but is not indexed — the index pass did not run"
+        (( bad++ )) || true
+      else
+        (( n_empty++ )) || true
+      fi
     fi
   done
-  print -r -- "obelisk: reindexed — memories intact, no stale paths, $(( ${#uuids} - missing ))/${#uuids} migrated sessions indexed"
+  (( bad == 0 )) || return 1
+  print -r -- "obelisk: reindexed — nothing lost, memories intact, no stale paths, $(( ${#uuids} - n_empty ))/${#uuids} migrated sessions indexed"
 }
 
 # Drift verification for the shared-sessions topology. Exit: 0 PASS,
@@ -244,6 +347,10 @@ claude-sessions-check() {
   local tracked="$HOME/dotfiles/claude/.claude/settings.json"
   local expected_cleanup=365
   local canary=0 fails=0
+  if (( $# > 1 )) || [[ -n "${1:-}" && "$1" != --canary ]]; then
+    print -u2 -r -- "usage: claude-sessions-check [--canary]"
+    return 2
+  fi
   [[ "${1:-}" == --canary ]] && canary=1
 
   _cs_fail() { print -r -- "FAIL $1"; (( fails++ )) || true }
@@ -311,7 +418,13 @@ claude-sessions-check() {
   local uuid; uuid=$(uuidgen | tr '[:upper:]' '[:lower:]')
 
   print -r -- "canary: creating session $uuid under ${acct:t} in $cwd"
-  ( cd "$cwd" && CLAUDE_CONFIG_DIR="$acct" command claude -p --session-id "$uuid" "Reply with exactly: canary-one" >/dev/null )
+  # A failed claude invocation is inability to test — login, quota, or
+  # transport — never evidence of drift: INCONCLUSIVE, not FAIL.
+  if ! ( cd "$cwd" && CLAUDE_CONFIG_DIR="$acct" command claude -p --session-id "$uuid" "Reply with exactly: canary-one" >/dev/null ); then
+    print -r -- "canary: create request failed (login/quota/transport — could not test)"
+    print -r -- "verdict: INCONCLUSIVE"
+    return 2
+  fi
 
   local -a hits; hits=("$canon"/**/"$uuid.jsonl"(N))
   if (( ${#hits} != 1 )); then
@@ -323,7 +436,11 @@ claude-sessions-check() {
   size1=$(stat -f %z "$file")
 
   print -r -- "canary: resuming $uuid under the primary account"
-  ( cd "$cwd" && command claude -p --resume "$uuid" "Reply with exactly: canary-two" >/dev/null )
+  if ! ( cd "$cwd" && command claude -p --resume "$uuid" "Reply with exactly: canary-two" >/dev/null ); then
+    print -r -- "canary: resume request failed (login/quota/transport — could not test)"
+    print -r -- "verdict: INCONCLUSIVE"
+    return 2
+  fi
 
   size2=$(stat -f %z "$file")
   local -a strays; strays=("$root"/*/projects.pre-share.*/**/"$uuid.jsonl"(N))
