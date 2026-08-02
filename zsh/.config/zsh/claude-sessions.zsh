@@ -181,10 +181,10 @@ claude-sessions-migrate() {
   print -r -- "backups can be deleted once the check passes and the picker shows the migrated sessions"
 }
 
-# Rebuild obelisk's index over the now-shared tree and verify it, because
-# its CLI prints success unconditionally: stale per-account paths must be
-# gone, migrated sessions present, and the memories layer untouched
-# (count + content checksum, not count alone).
+# Fold the now-shared tree into obelisk's index and verify it directly —
+# the CLI's own output is not trusted: no session may point into the old
+# per-account roots, migrated sessions must be present, and the memories
+# layer untouched (count + content checksum, not count alone).
 _claude_sessions_reindex() {
   emulate -L zsh
   setopt local_options pipe_fail no_unset
@@ -201,8 +201,12 @@ _claude_sessions_reindex() {
   local mem_before mem_after
   mem_before=$(sqlite3 "$db" "SELECT COUNT(*) FROM memories;")$'\n'$(sqlite3 "$db" "SELECT * FROM memories ORDER BY 1;" | shasum -a 256)
 
-  if ! obelisk --build >/dev/null; then
-    print -u2 -r -- "obelisk: --build failed — index snapshot kept at $db.pre-share.$ts"
+  # Incremental on purpose — never `obelisk --build`: a force rebuild mirrors
+  # only the files that exist right now, and for every transcript retention
+  # already pruned, the index row is the last record there is. Any ordinary
+  # obelisk command picks up new files incrementally and keeps those rows.
+  if ! obelisk --search "__claude_sessions_migrate__" >/dev/null; then
+    print -u2 -r -- "obelisk: incremental index failed — snapshot kept at $db.pre-share.$ts"
     return 1
   fi
 
