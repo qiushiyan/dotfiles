@@ -49,13 +49,14 @@
 #                       the source (stray border) and the destination (hidden
 #                       chip) need repair — only an all-window pass reaches a
 #                       destination whose border is still off. The no-target
-#                       callers — the pane-exited hook, the prefix-!/@
-#                       bindings, and the move-pane popup script — pass NO
+#                       callers — the pane-exited hook, pane mode's push /
+#                       mark-move / break verbs (tmux-pane-relocate.sh), and
+#                       both ends of a float (tmux-float-pane.sh) — pass NO
 #                       #{...} context on purpose: hook-time ids race pane
 #                       teardown and can RE-RESOLVE to a surviving pane — a
 #                       mis-target that wrongly strips borders; a sweep of
-#                       settled state cannot. (tmux 3.6 has no
-#                       after-break/join-pane hooks, hence binding-level.)
+#                       settled state cannot. (tmux still has no
+#                       after-break/join-pane hooks, hence caller-level.)
 #
 # "Named" is detected via allow-set-title==0: the rename-pane alias sets the
 # pane-local option off (that's what freezes the label against OSC repaints,

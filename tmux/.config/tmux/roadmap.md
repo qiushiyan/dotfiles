@@ -86,19 +86,29 @@ framing has inverted.)
 
 **Effort:** small (install + config).
 
-### Floating scratch terminal
+### Floating scratch terminal  (partly superseded — see notes)
 
 **What:** one key toggles a *persistent* floating shell (history + cwd preserved)
 for quick `git` / `gh` / `ls`; another dismisses it. Your layout never moves.
 
 **Why:** the ad-hoc "5th pane" becomes a popup — less clutter, no layout churn.
 
-**Mechanism:** `display-popup` attached to a dedicated hidden session so it
-survives toggles (hand-rolled, ~10 lines, or the `omerxx/tmux-floax` plugin).
+**Status:** two things landed that change this item.
 
-**Depends on:** nothing.
+- **tmux 3.7's native floating panes** (`prefix *` → `new-pane`) already give a
+  non-modal floating shell for free. That covers the "quick `git`/`gh`" case
+  without writing anything; what it does *not* give is **persistence** across
+  toggles, which was the point of the original item.
+- **`prefix z` floating zoom** (`scripts/float-pane.md`) built the holder-session
+  + container machinery. The remaining work is a *second caller* of
+  `open_container()` pointed at a persistent scratch session instead of a
+  relocated pane.
 
-**Effort:** tiny.
+**Do not** share the float's holder state machine for this — it exists to
+relocate a tiled pane and restore a source layout, and a scratch terminal has
+neither. Share only the container adapter.
+
+**Effort:** small.
 
 ---
 

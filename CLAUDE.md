@@ -21,7 +21,18 @@ make brew       # install Homebrew packages from Brewfile
 make brew-dump  # update Brewfile from current Homebrew state
 ```
 
-There is no build or test suite — this is configuration. To bring an existing config file under management, use the `dotadd` zsh function (it moves the file into the correct package and stows it).
+Mostly configuration, so there is no build. The one test suite is
+`tmux/.config/tmux/scripts/tests/test-pane-control.sh` — 44 cases for the pane
+control plane (floating zoom + pane mode), run with `bash
+tmux/.config/tmux/scripts/tests/test-pane-control.sh [T5 T14 ...]`. It builds
+throwaway tmux servers on their own sockets and never touches a live one.
+**Anything driving tmux from a script must run with `$TMUX` pointed at the test
+socket** — the scripts resolve the server through it, and without it they fall
+through to the default socket (the user's real server), where the test's pane
+ids don't exist, so every call silently no-ops and the assertions pass for the
+wrong reason.
+
+To bring an existing config file under management, use the `dotadd` zsh function (it moves the file into the correct package and stows it).
 
 ## Stow Package Layout
 
@@ -67,6 +78,7 @@ Modules in `zsh/.config/zsh/`:
 - **Secrets**: live in `~/.secrets` (untracked, mode `600`, sourced by `.zshrc`). Tracked config reads them from the environment instead of hardcoding.
 - **`block-dangerous-git.sh`** (Claude Code hook in `claude/.claude/hooks/`) blocks `push` / `reset --hard` / etc. on `main` — pushes to `main` must be run by the user manually, not by Claude.
 - **Claude context chip**: the statusline script pushes context-usage % into the pane-local `@claude_ctx` tmux option; the pane border draws it, and `tmux-claude-ctx.sh` solely owns turning borders off (fed by Claude's `SessionEnd` hook, a zsh `precmd` sweep, and tmux pane-exit/relocation events). One feature across `claude/`, `tmux/`, and `zsh/` — edit any piece with the others in mind (see `tmux/.config/tmux/workflow.md`).
+- **tmux pane control** (needs **tmux 3.7b+**): `prefix z` floats the current pane into an overlay instead of zooming it (the window stays visible and live behind); `prefix p` is a sticky key table holding every pane-moving verb. Spans `tmux.conf` (the `panes`/`float-root`/`float-prefix` key tables, the `status-format[1]` hint), `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, and `tmux-resurrect-save.sh`. Retired `prefix !`/`@`/`<`/`>`/`P` and deleted `tmux-move-pane.sh`. Design, failure paths, and the tmux gotchas that cost real debugging: `tmux/.config/tmux/scripts/float-pane.md` — **read it before touching any of those files.**
 - **Claude accounts**: several subscriptions coexist — `~/.claude` is the primary; each extra account is `~/.claude-accounts/<email>/` with its own Keychain login. Launchers (`x`, `x-<name>`) in `zsh/.config/zsh/claude.zsh`; the cross-account `/usage` dashboard + account picker is **headroom**, a Go CLI in `~/dev/headroom` (installed to `~/.local/bin/headroom`; `x-usage`/`x-select` are thin wrappers — if they misbehave, edit the engine there). Account dirs are runtime, never in the repo (see `docs/claude-accounts.md`).
 - **Skills**: Claude Code is a superset of Codex; Codex symlinks into it (see below).
 

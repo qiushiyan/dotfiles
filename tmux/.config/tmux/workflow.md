@@ -74,9 +74,36 @@ A typical task window: agent on one side, dev server on the other, a scratch she
 
 - **Split:** **`prefix |`** side by side, **`prefix -`** stacked — both open in the current pane's directory.
 - **Move between panes:** `prefix h/j/k/l`, or **`Ctrl+h/j/k/l` with no prefix** (these also hop in and out of Neovim splits seamlessly).
-- **Focus one:** **`prefix z`** zooms the current pane fullscreen; `prefix z` again restores the layout.
-- **Resize:** `prefix H/J/K/L`. **Swap:** `prefix >` / `prefix <`.
-- **Reshape:** `prefix !` breaks a pane out into its own (hidden) window; `prefix @` joins that hidden pane back. **Close:** just exit its shell (`C-d`); `prefix X` force-kills a stuck pane.
+- **Focus one:** **`prefix z`** maximizes the pane into a **floating overlay** — the rest of the window stays visible *and live* behind it, so a build or another agent keeps scrolling while you read. `prefix z` again puts it back exactly where it was. (Stock fullscreen zoom is still on `prefix Z`.)
+- **Rearrange:** **`prefix p`** — see below. **Close:** just exit its shell (`C-d`); `prefix X` force-kills a stuck pane.
+
+### Rearranging panes (`prefix p`)
+
+One key instead of five you can't remember. `prefix p` enters a **sticky** mode
+— it stays until you leave, so you nudge, look, nudge again — and the row under
+the status bar turns into the cheat sheet while you're in it. Any unbound key
+drops you out, so you can't get stuck.
+
+The one rule for `h/j/k/l`: **push the pane that way — if something's there,
+trade places; if nothing is, become the wall.** So in a stacked split, `l` on
+the bottom pane makes it the full-height right-hand column; side by side, `h`
+on the right pane swaps the two. Same key, both behaviours, nothing to
+remember.
+
+| In pane mode | |
+|--|--|
+| `h/j/k/l` | push the pane (swap, or move to that edge) |
+| `H/J/K/L` | resize · arrow keys move the *cursor* between panes |
+| `m` / `M` | mark a pane / move this pane to the mark — works across windows and sessions |
+| `u` | undo the last move · `e` spread evenly · `Space` toggle row/column |
+| `z` | float it · `b` break it into its own window |
+| `Esc` | done |
+
+**Inside a float** only `prefix z` (close) and `prefix d` work — the rest of the
+prefix keys are deliberately switched off so a stray `prefix x` can't kill
+something behind the overlay.
+
+Design notes and failure handling: `scripts/float-pane.md`.
 
 ## Knowing when a background agent is done (agent-done dots)
 
@@ -115,6 +142,8 @@ A vendored, flash.nvim-style tool in `scripts/easyjump/` (see its `DESIGN.md`) �
 
 Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore when the tmux server starts — so a reboot doesn't lose your workspace. Manual control: **`prefix C-s`** to save now, **`prefix C-r`** to restore.
 
+Saves go through a small wrapper that first puts any floated pane (`prefix z`) back in its window — a snapshot taken mid-float couldn't be reconnected on restore, since the pane and the window it belongs to would be saved as unrelated things.
+
 ---
 
 ## Cheat sheet (by operation)
@@ -138,9 +167,9 @@ Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore wh
 
 **Rename** — window `prefix m` · pane `prefix M` popup (`Enter` apply · empty = clear · `Esc` cancel) · session `prefix $`
 
-**Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x` · break/join pane `prefix !` / `prefix @`
+**Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x`
 
-**Reorder / resize / zoom** — windows `Shift-Left`/`Shift-Right` · panes `prefix >`/`prefix <` · resize `prefix H/J/K/L` · zoom `prefix z`
+**Reorder / resize / zoom** — windows `Shift-Left`/`Shift-Right` · float a pane `prefix z` (stock zoom `prefix Z`) · everything else about panes lives in **`prefix p`** pane mode: `hjkl` push · `HJKL` resize · `m`/`M` mark-and-move · `u` undo · `b` break out · `Esc` done
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom · `Esc` clear selection (stays in copy mode) · `q` or double-`Esc` exit
 
