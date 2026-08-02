@@ -1,14 +1,14 @@
 ---
 name: handoff
-description: Wrap up a session into a baton for the next one — an optional doc pass, the session's transferable lessons, and a dated handoff file in ~/dev/.handoffs that *is* the next session's first prompt, ready to paste into a fresh worktree — or back into this one, in review posture, when the branch isn't ready to merge.
+description: Wrap up a session into a baton for the next one — an optional doc pass, the session's transferable lessons, and a handoff file named for the next session's branch that *is* its first prompt, ready to paste into a fresh worktree — or back into this one, in review posture, when the branch isn't ready to merge.
 disable-model-invocation: true
 argument-hint: [optional: the next session's goal, e.g. "next: wire the retry path", "review posture: not merging yet" — or "nothing queued"]
-allowed-tools: Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git branch:*), Bash(git merge-base:*), Bash(git worktree list:*), Bash(date:*), Bash(mkdir:*), Bash(pbcopy:*), Read, Write, Edit, Glob, Grep, Agent
+allowed-tools: Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git branch:*), Bash(git merge-base:*), Bash(git worktree list:*), Bash(bash ~/.claude/skills/handoff/handoff-path.sh:*), Bash(date:*), Bash(pbcopy:*), Read, Write, Edit, Glob, Grep, Agent
 ---
 
 # Hand off the session
 
-You're ending a working session. The docs keep the project's durable mental model, but what only this session holds — where the work stopped, the dead-ends, the next move — evaporates when it closes. This skill writes that baton: a handoff file in the central `~/dev/.handoffs/` folder.
+You're ending a working session. The docs keep the project's durable mental model, but what only this session holds — where the work stopped, the dead-ends, the next move — evaporates when it closes. This skill writes that baton: a handoff file under `~/dev/.handoffs/`, filed by project and named for where the work is going next.
 
 **The file is a prompt, not a report.** The next session starts in a *fresh worktree* — or, in review posture, right back in this one. The user pastes this file's contents as that session's opening message — so every line you write is read as an instruction addressed to the agent receiving it.
 
@@ -21,7 +21,7 @@ A manufactured handoff sends the next session down a road nobody planned. `$ARGU
 - **Thread continues** — work unfinished, or a known next milestone → full handoff: steps 2–5.
 - **Stopped mid-task** — context or time ran out before the work landed → the baton is the most valuable thing you can leave. Run steps 3–5 now and fold the doc pass into the baton's first moves.
 - **Done but not trusted** — the work is "complete" but the user's verdict is that it doesn't merge yet — edge cases kept surfacing after earlier "done" claims — and the next session re-reviews this branch's work before any merge → full handoff: steps 2–5 in **review posture** (step 4 defines it).
-- **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 alone; and if `~/dev/.handoffs/` holds an earlier baton for this branch, propose deleting it — a stale baton is worse than none.
+- **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 alone. Step 4 names each baton for the branch it sends the next session to, so landing that branch spends the baton that spawned this one — find it with `handoff-path.sh "$(git branch --show-current)"` (step 4) and propose deleting it. A stale baton is worse than none.
 
 Review posture is entered on the user's verdict — `$ARGUMENTS` or the session saying the branch isn't ready — never on your own read of the work. A clean ending with a natural next goal is a forward handoff: write it, no question. When the ending shows the *done but not trusted* signature but the verdict was never spoken — a large or bumpy branch, bugs found after green claims, no merge decision stated — settle the gate with one question: *merging this and moving on, or holding it for a review session?*
 
@@ -46,7 +46,19 @@ Done when every kept lesson carries why you believe it and how sure you are — 
 
 ## 4 — Write the baton
 
-To `~/dev/.handoffs/<date>-<branch>-handoff.md` — date from `date +%F`, branch from `git branch --show-current` with any `/` replaced by `-`; `mkdir -p` the folder first, and overwrite a same-named file. The first line is the invocation the paste fires; everything under it is context riding along with it:
+The helper prints the file to write and creates its folder — batons are grouped by project:
+
+```sh
+bash ~/.claude/skills/handoff/handoff-path.sh <slug>
+```
+
+**`<slug>` is the branch the next session will work on**, not the one this session worked on. Today's branch is merged or nearly so, so a baton named for it is filed under work that's already over — and the next worktree's name, the one thing you'd have to open the file to find, stays hidden. Named forward, the filename is already the argument step 5 hands over: one token for the baton, the branch, and the worktree.
+
+Write it as you'd write the branch — the repo's convention (`git branch`, `git worktree list`), lowercase kebab, 2–4 words, naming the outcome the next session is heading for: `retry-backoff-ceiling`, `pty-harness`, `steer-render-split`. Today's branch plus a suffix (`-followup`, `-part-2`, a trailing date) names the road behind instead, and a worktree's name is the first thing its session reads.
+
+A same-named file is an earlier baton for this same goal — overwrite it. Two *live* batons colliding means one slug is too vague; sharpen it.
+
+The first line is the invocation the paste fires; everything under it is context riding along with it:
 
 ```markdown
 /<onboarding-skill> <the next session's goal in a phrase, with its 2–3 strands>
@@ -83,29 +95,30 @@ Point rather than pre-chew — a baton that hands the next session answers inste
 
 **Review posture** (the gate's *done but not trusted* ending) hands the branch to its reviewer, not its continuer. Same file, same rules, four deltas:
 
-- The opening paragraph pins the next session to **this same branch in this same worktree** — the branch merges only after the review passes, so no new branch or worktree gets created. Worktree-local artifacts (gitignored scripts, scratch harnesses) are citable here: the next session can reach them.
+- The slug is `review-<this-branch>` — what's ahead is a verdict on this branch, not a new worktree, so the filename names the review instead of a destination. The opening paragraph pins the next session to **this same branch in this same worktree** — the branch merges only after the review passes, so no new branch or worktree gets created. Worktree-local artifacts (gitignored scripts, scratch harnesses) are citable here: the next session can reach them.
 - A posture block sits right under it, naming why trust broke — the concrete edge cases and bugs the user found after earlier "done" claims — and setting the stance: the next session treats each conclusion, this brief's included, as a claim to re-verify, and reads the accreted fixes adversarially — assume they hide more seams.
 - "Where things stand" carries the **review surface**: the mechanisms and workarounds this branch accreted, one line each, mechanism → home file — the shape to review, not re-derive. Verification state is claims, not facts: suite numbers come with "re-run before trusting".
 - Line 1's goal names the review; unless `$ARGUMENTS` sets its own agenda, it carries the standing one — does the accretion compose or hide seams; what to extract and where the seams go; why the suite stayed green over the escaped edge cases, and the harness that would catch that class. First moves offers the user `/review` — a cold dispatched read to ride beside the session's own.
 
-Done when the baton passes the cold-paste test: the invocation sits on line 1, every pointer resolves from inside the receiving worktree, and nothing in it depends on this session or this file existing.
+Done when the baton passes the cold-paste test: its filename works as the next worktree's name, the invocation sits on line 1, every pointer resolves from inside the receiving worktree, and nothing in it depends on this session or this file existing.
 
 ## 5 — Close
 
-Run `pbcopy < ~/dev/.handoffs/<file>`, then show the user, together:
+Run `pbcopy <` the path step 4 wrote, then show the user, together:
 
 - the path (their re-copy command),
 - a two-line summary of what the baton carries,
-- and a suggested branch for the next session — named for the baton's goal,
-  not for today's branch, in this repo's own style (`git branch --show-current`
-  and `git worktree list` show the convention) — as the ready command the user
-  runs before pasting:
+- and the ready command they run before pasting. The branch is not a fresh
+  suggestion to invent here — step 4 already chose it, and it is the slug:
 
   ```sh
-  git worktree add <worktrees-path>/<suggested-branch> -b <suggested-branch>
+  gwt <slug> <base>
   ```
 
-  In review posture there is no branch to suggest — the next session opens in
+  `gwt` places the worktree, seeds its gitignored files, and cds there — so no
+  worktree path gets hardcoded here.
+
+  In review posture there is no branch to create — the next session opens in
   this same worktree, so the ready command is the paste alone.
 
 Handed off means: one paste, next session running.
