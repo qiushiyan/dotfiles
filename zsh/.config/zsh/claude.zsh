@@ -12,8 +12,11 @@
 # credentials service name is suffixed with sha256(dir)[0:8]), so /login on
 # one account never touches another and all tokens coexist. Account dirs are
 # seeded with symlinks to the tracked config in dotfiles/claude/.claude —
-# settings, skills, hooks, rules stay shared; login, history and sessions
-# stay per-account. The headroom CLI (~/dev/headroom, installed to
+# settings, skills, hooks, rules stay shared; login and prompt history stay
+# per-account. Session transcripts are machine-global: every account's
+# projects/ symlinks to ~/.claude/projects (see _claude_link_projects and
+# claude-sessions.zsh), so the resume picker sees every session regardless
+# of account. The headroom CLI (~/dev/headroom, installed to
 # ~/.local/bin/headroom) discovers the same dirs and renders /usage for
 # every account, each labeled by the email its .claude.json reports as
 # actually logged in; x-usage and x-select below are thin wrappers over it.
@@ -55,6 +58,28 @@ _claude_account_seed() {
   for item in "$pkg"/*(DN); do
     ln -s "$item" "$dir/${item:t}"
   done
+  _claude_link_projects "$dir"
+}
+
+# Session transcripts are machine-global: every account's projects/ is a
+# symlink to the primary's store, so any account's session picker sees every
+# session and resume appends to the one canonical file. Strict on purpose —
+# never ln -sf: a real directory here holds unmigrated sessions
+# (claude-sessions-migrate moves them), and silently shadowing it would strand
+# history. Identity is checked by inode (-ef), not readlink text.
+_claude_link_projects() {
+  emulate -L zsh
+  local dir="$1" canon="$HOME/.claude/projects" link="$1/projects"
+  mkdir -p "$canon" || return 1
+  if [[ -h "$link" ]]; then
+    [[ "$link" -ef "$canon" ]] && return 0
+    print -u2 "claude accounts: $link is a symlink but does not resolve to $canon — fix it by hand"
+    return 1
+  elif [[ -e "$link" ]]; then
+    print -u2 "claude accounts: $link is a real directory (unmigrated sessions?) — run claude-sessions-migrate"
+    return 1
+  fi
+  ln -s "$canon" "$link"
 }
 
 # Resolve <name|email> to an account dir; prints "" for the primary. A local
@@ -114,7 +139,9 @@ _claude_launch() {
   if [[ -z "$dir" ]]; then
     command claude "$@"
   else
-    [[ -d "$dir" ]] || _claude_account_seed "$dir"
+    if [[ ! -d "$dir" ]]; then
+      _claude_account_seed "$dir" || { print -u2 "claude accounts: seeding $dir failed — not launching"; return 1 }
+    fi
     CLAUDE_CONFIG_DIR="$dir" command claude "$@"
   fi
 }
