@@ -65,9 +65,13 @@ envoy fan --prompt-file review-brief.md --with-from <consult-out-dir> --with cla
 # rare: a supplement for an already-dispatched job ("forgot to mention X")
 envoy steer --prompt-file supplement.md <out-dir>   # out-dir omitted = newest job
 
-# a big collect, trimmed: payload alone (a non-ok job prints its full block
-# instead), or coordinates alone (stamps nothing — the result stays owed)
+# the payload alone (a non-ok job prints its full block instead — its status
+# IS the result then)
 envoy collect --result-only <out-dir>
+
+# everything but the payload: settings, tokens, prompt state, log paths — the
+# diagnostics an ok job's own block holds back. Stamps nothing, so the result
+# stays owed.
 envoy collect --status-only <out-dir>
 
 # after a restart or compaction that may have eaten a notification
