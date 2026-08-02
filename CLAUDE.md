@@ -21,9 +21,11 @@ make brew       # install Homebrew packages from Brewfile
 make brew-dump  # update Brewfile from current Homebrew state
 ```
 
-Mostly configuration, so there is no build. The one test suite covers the tmux
-pane control plane — `bash tmux/.config/tmux/scripts/tests/test-pane-control.sh
-[T5 T14 …]`, building throwaway tmux servers on their own sockets.
+Mostly configuration, so there is no build. Two test suites: the tmux pane
+control plane — `bash tmux/.config/tmux/scripts/tests/test-pane-control.sh
+[T5 T14 …]`, building throwaway tmux servers on their own sockets — and handoff
+baton path resolution, `bash
+claude/.claude/skills/handoff/handoff-path.test.sh [T3 T7 …]`.
 
 **A test that escapes its sandbox corrupts live state**, and both escape routes
 are silent — a new case has to close them:
@@ -35,7 +37,10 @@ are silent — a new case has to close them:
 - Redirect shared state *outside* tmux. resurrect's save directory is one path
   for all servers unless `@resurrect-dir` is set, so a test reaching the real
   `save.sh` overwrites the user's session snapshot; `fresh()` sandboxes it and
-  T21 guards it. Global patterns like `pkill` need the same care.
+  T21 guards it. `handoff-path.sh` creates directories under `$HOME`, so its
+  suite overrides `HOME` and T11 guards the real baton store — ad-hoc
+  verification that skips the override scatters folders into it for real.
+  Global patterns like `pkill` need the same care.
 
 To bring an existing config file under management, use the `dotadd` zsh function (it moves the file into the correct package and stows it).
 

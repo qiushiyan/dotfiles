@@ -21,7 +21,7 @@ A manufactured handoff sends the next session down a road nobody planned. `$ARGU
 - **Thread continues** — work unfinished, or a known next milestone → full handoff: steps 2–5.
 - **Stopped mid-task** — context or time ran out before the work landed → the baton is the most valuable thing you can leave. Run steps 3–5 now and fold the doc pass into the baton's first moves.
 - **Done but not trusted** — the work is "complete" but the user's verdict is that it doesn't merge yet — edge cases kept surfacing after earlier "done" claims — and the next session re-reviews this branch's work before any merge → full handoff: steps 2–5 in **review posture** (step 4 defines it).
-- **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 alone. Step 4 names each baton for the branch it sends the next session to, so landing that branch spends the baton that spawned this one — find it with `handoff-path.sh "$(git branch --show-current)"` (step 4) and propose deleting it. A stale baton is worse than none.
+- **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 alone. Step 4 names each baton for what it sends the next session to, so landing this branch spends the baton that spawned it: check both names the convention can produce for the branch you're on — `<branch>` and, when that session was a review, `review-<branch>` — and propose deleting whichever exists. A stale baton is worse than none.
 
 Review posture is entered on the user's verdict — `$ARGUMENTS` or the session saying the branch isn't ready — never on your own read of the work. A clean ending with a natural next goal is a forward handoff: write it, no question. When the ending shows the *done but not trusted* signature but the verdict was never spoken — a large or bumpy branch, bugs found after green claims, no merge decision stated — settle the gate with one question: *merging this and moving on, or holding it for a review session?*
 
@@ -54,7 +54,7 @@ bash ~/.claude/skills/handoff/handoff-path.sh <slug>
 
 **`<slug>` is the branch the next session will work on**, not the one this session worked on. Today's branch is merged or nearly so, so a baton named for it is filed under work that's already over — and the next worktree's name, the one thing you'd have to open the file to find, stays hidden. Named forward, the filename is already the argument step 5 hands over: one token for the baton, the branch, and the worktree.
 
-Write it as you'd write the branch — the repo's convention (`git branch`, `git worktree list`), lowercase kebab, 2–4 words, naming the outcome the next session is heading for: `retry-backoff-ceiling`, `pty-harness`, `steer-render-split`. Today's branch plus a suffix (`-followup`, `-part-2`, a trailing date) names the road behind instead, and a worktree's name is the first thing its session reads.
+Write it as you'd write the branch, because it is the branch. The repo's own convention (`git branch`, `git worktree list`) sets the shape — including a `feat/`-style prefix where that's the convention, which nests the baton exactly as it nests the worktree — and within that: lowercase kebab, 2–4 words, naming the outcome the next session is heading for. `retry-backoff-ceiling`, `pty-harness`, `steer-render-split`. Today's branch plus a suffix (`-followup`, `-part-2`, a trailing date) names the road behind instead, and a worktree's name is the first thing its session reads.
 
 A same-named file is an earlier baton for this same goal — overwrite it. Two *live* batons colliding means one slug is too vague; sharpen it.
 
@@ -100,7 +100,7 @@ Point rather than pre-chew — a baton that hands the next session answers inste
 - "Where things stand" carries the **review surface**: the mechanisms and workarounds this branch accreted, one line each, mechanism → home file — the shape to review, not re-derive. Verification state is claims, not facts: suite numbers come with "re-run before trusting".
 - Line 1's goal names the review; unless `$ARGUMENTS` sets its own agenda, it carries the standing one — does the accretion compose or hide seams; what to extract and where the seams go; why the suite stayed green over the escaped edge cases, and the harness that would catch that class. First moves offers the user `/review` — a cold dispatched read to ride beside the session's own.
 
-Done when the baton passes the cold-paste test: its filename works as the next worktree's name, the invocation sits on line 1, every pointer resolves from inside the receiving worktree, and nothing in it depends on this session or this file existing.
+Done when the baton passes the cold-paste test: the invocation sits on line 1, every pointer resolves from inside the receiving worktree, nothing in it depends on this session or this file existing, and the filename names where the next session goes — the worktree to create, or the review to run when the posture is review.
 
 ## 5 — Close
 
