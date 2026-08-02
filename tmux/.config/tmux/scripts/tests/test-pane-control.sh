@@ -23,8 +23,16 @@ SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/pane-control-test.XXXXXX")
 SANDBOX_RESURRECT="$SANDBOX/resurrect"
 mkdir -p "$SANDBOX_RESURRECT"
 
-# The real save directory — asserted untouched by T21, never written to.
-REAL_RESURRECT="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
+# The real save directory — asserted untouched by T21, never written to. Mirror
+# resurrect's own selection: it prefers the legacy ~/.tmux/resurrect whenever
+# that directory exists and only falls back to XDG. Hardcoding XDG would make the
+# isolation guard watch a directory the plugin isn't using, and pass on a machine
+# with the legacy layout while the real one was being written.
+if [ -d "$HOME/.tmux/resurrect" ]; then
+    REAL_RESURRECT="$HOME/.tmux/resurrect"
+else
+    REAL_RESURRECT="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
+fi
 
 cleanup() {
     T kill-server 2>/dev/null; O kill-server 2>/dev/null
@@ -56,6 +64,11 @@ fresh() {
 # production grace window; the grace itself is exercised by T1 needing the
 # holder to age past it before the sweep will touch it.
 R() { TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 bash "$@"; }
+
+# Float WITHOUT presenting it — the state a container that died instantly would
+# leave. The recovery cases are about exactly that window, and a real toggle now
+# (correctly) rolls back when presentation fails, so it cannot be observed via R.
+RS() { TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 FLOAT_SKIP_CONTAINER=1 bash "$@"; }
 tiled() { T list-panes -t "$1" -f '#{==:#{pane_floating_flag},0}' -F '#{pane_id}' 2>/dev/null | tr '\n' ' '; }
 layout() { T display-message -p -t "$1" '#{window_layout}' 2>/dev/null; }
 
@@ -74,7 +87,7 @@ t5() {
     T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
     before_o=$(tiled "$W"); before_l=$(layout "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
-    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &   # container blocks; run detached
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &   # container blocks; run detached
     sleep 2
     # assert the float ACTUALLY happened — otherwise "restored exactly" is
     # trivially true and the case is a false green
@@ -95,7 +108,7 @@ t1() {
     T split-window -v -t "$W"; sleep 0.3
     before=$(tiled "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
-    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
     sleep 2
     holders=$(T list-sessions -F '#{session_name}' | grep -c '^_float_' || true)
     [ "$holders" -ge 1 ] && ok "T1 pane is in a holder while floated" \
@@ -124,7 +137,7 @@ t2() {
     fresh; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
     sleep 2
     T split-window -h -t "$W"; sleep 0.3     # source window changed under us
     n_before=$(tiled "$W" | wc -w | tr -d ' ')
@@ -147,8 +160,8 @@ t4() {
     T split-window -v -t "$W2"; sleep 0.3
     b1=$(tiled "$W1"); b2=$(tiled "$W2")
     P1=$(T display -p -t "$W1" '#{pane_id}'); P2=$(T display -p -t "$W2" '#{pane_id}')
-    R "$FLOAT" toggle "$P1" >/dev/null 2>&1 &
-    R "$FLOAT" toggle "$P2" >/dev/null 2>&1 &
+    RS "$FLOAT" toggle "$P1" >/dev/null 2>&1 &
+    RS "$FLOAT" toggle "$P2" >/dev/null 2>&1 &
     sleep 2.5
     check "T4 two holders exist at once" \
         "$(T list-sessions -F '#{session_name}' | grep -c '^_float_' || true)" "2"
@@ -166,7 +179,7 @@ t3() {
     fresh; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
     sleep 2
     # prepare-save is what the wrapper runs before handing off to resurrect
     R "$FLOAT" prepare-save >/dev/null 2>&1
@@ -282,7 +295,7 @@ t9() {
     fresh; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
     sleep 2
     holder=$(T list-sessions -F '#{session_name}' | grep '^_float_' | head -1)
     if [ -z "$holder" ]; then no "T9 holder exists" "none"; R "$FLOAT" restore "$P" >/dev/null 2>&1; return; fi
@@ -408,7 +421,7 @@ t15() {
     T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
     before_o=$(tiled "$W"); before_l=$(layout "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
-    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
     sleep 2
     R "$FLOAT" restore "$P" >/dev/null 2>&1 &
     R "$FLOAT" restore "$P" >/dev/null 2>&1 &
@@ -472,9 +485,9 @@ t17() {
     # exists, so this can't silently go back to invoking the real save.
     check "T17 wrapper honours the RESURRECT_SAVE seam" \
         "$(grep -c 'RESURRECT_SAVE' "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh")" "1"
-    marker=/tmp/pc-real-save-$$; rm -f "$marker"
-    printf '#!/bin/sh\ntouch %s\n' "$marker" > /tmp/pc-fake-save-$$.sh
-    chmod +x /tmp/pc-fake-save-$$.sh
+    marker="$SANDBOX/real-save-ran"; rm -f "$marker"
+    printf '#!/bin/sh\ntouch %s\n' "$marker" > "$SANDBOX/fake-save.sh"
+    chmod +x "$SANDBOX/fake-save.sh"
     # A float that genuinely cannot be normalised: another restorer holds a
     # FRESH claim, so restore defers to it and prepare-save times out. (An
     # unreachable source window is NOT stuck — recovery surfaces it into a
@@ -488,11 +501,11 @@ t17() {
     T set -p -t "$P2" @fl_holder _float_stuck2
     T set -p -t "$P2" @fl_src_sess "gone"; T set -p -t "$P2" @fl_src_win "@998"
     T set -p -t "$P2" @fl_claim "99999:$(date +%s)"
-    TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 RESURRECT_SAVE=/tmp/pc-fake-save-$$.sh \
+    TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 RESURRECT_SAVE="$SANDBOX/fake-save.sh" \
         bash "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh" quiet >/dev/null 2>&1
     check "T17 wrapper does not run the real save when a float is stuck" \
         "$([ -e "$marker" ] && echo ran || echo aborted)" "aborted"
-    rm -f /tmp/pc-fake-save-$$.sh "$marker"
+    rm -f "$SANDBOX/fake-save.sh" "$marker"
 }
 
 # ---------------------------------------------------------------------------
@@ -568,7 +581,7 @@ t19() {
     fresh; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
     sleep 2
     T kill-window -t "$W" 2>/dev/null       # destroy the source
     T kill-session -t t 2>/dev/null
@@ -651,10 +664,89 @@ t21() {
     check "T21 the real 'last' pointer is untouched" "$after_last" "$before_last"
 }
 
+# ---------------------------------------------------------------------------
+# T22 — the STALE-claim path must be as serialized as the fresh one. A fresh
+# claim uses set-option -o (atomic), but expiring one and overwriting it is a
+# plain write: every contender that sees the same expired claim takes it and
+# proceeds, putting two restorers back on the corruption path T15 closed.
+# ---------------------------------------------------------------------------
+t22() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
+    before_o=$(tiled "$W"); before_l=$(layout "$W")
+    P=$(T display -p -t "$W" '#{pane_id}')
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    sleep 2
+    # age the claim past the TTL so both restorers take the steal branch
+    T set -p -t "$P" @fl_claim "99999:1"
+    R "$FLOAT" restore "$P" >/dev/null 2>&1 &
+    R "$FLOAT" restore "$P" >/dev/null 2>&1 &
+    wait 2>/dev/null; sleep 0.8
+    check "T22 stale-claim contention keeps pane order" "$(tiled "$W")" "$before_o"
+    check "T22 stale-claim contention keeps layout"     "$(layout "$W")" "$before_l"
+}
+
+# ---------------------------------------------------------------------------
+# T23 — a float interrupted DURING publication, before the pane has moved.
+# The pane is still in its own window, so nothing in a holder enumerates it;
+# if a phase is set with no metadata the pane is wedged — `toggle` treats any
+# phase as "already floated" and no-ops forever.
+# ---------------------------------------------------------------------------
+t23() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    before_o=$(tiled "$W")
+    P=$(T display -p -t "$W" '#{pane_id}')
+
+    # hand-build the interrupted state: holder created and marked, phase set,
+    # pane never moved
+    # exactly what float_pane leaves behind if it dies right after the phase
+    # write: holder made and marked with the pane it is for, pane linked back
+    # and carrying the phase, but break-pane never ran
+    T new-session -d -s _float_interrupted
+    T set -t _float_interrupted @fl_holder_nonce "interrupted"
+    T set -t _float_interrupted @fl_pane "$P"
+    T set -p -t "$P" @fl_phase preparing
+    T set -p -t "$P" @fl_holder _float_interrupted
+    sleep 0.3
+
+    R "$FLOAT" sweep >/dev/null 2>&1; sleep 1.5
+
+    check "T23 pane never left its window"     "$(tiled "$W")" "$before_o"
+    check "T23 rollback cleared the stuck phase" \
+        "$(T show -pqv -t "$P" @fl_phase)" ""
+    check "T23 no junk recovery session"       \
+        "$(T list-sessions -F '#{session_name}' | grep -c '^recovered-\|^_float_' || true)" "0"
+
+    # and the pane must still be floatable afterwards
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    sleep 2
+    check "T23 float works again after rollback" \
+        "$(tiled "$W" | grep -c "$P" || true)" "0"
+    R "$FLOAT" restore "$P" >/dev/null 2>&1; sleep 0.5
+}
+
+# T24 — a container that fails to open must not strand the pane outside its
+# window. An invalid @float_border makes display-popup fail.
+t24() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    before_o=$(tiled "$W")
+    P=$(T display -p -t "$W" '#{pane_id}')
+    T set -g @float_border "definitely-invalid"
+    R "$FLOAT" toggle "$P" >/dev/null 2>&1
+    sleep 2
+    check "T24 failed container leaves the pane at home" "$(tiled "$W")" "$before_o"
+    check "T24 failed container leaves no holder" \
+        "$(T list-sessions -F '#{session_name}' | grep -c '^_float_' || true)" "0"
+    check "T24 failed container leaves no stuck phase" \
+        "$(T show -pqv -t "$P" @fl_phase)" ""
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
 for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t8 t9 t10 t11 t14 \
-         t15 t16 t17 t18 t18b t18c t19 t20 t21; do
+         t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

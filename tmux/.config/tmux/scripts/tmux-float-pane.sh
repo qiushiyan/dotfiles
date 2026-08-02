@@ -32,7 +32,9 @@
 # rename-pane popups stash context in GLOBAL env vars; that idiom races when
 # two clients act at once, which is why nothing here uses it.)
 #
-#   @fl_phase   floating | restoring   — presence means "this pane is floated"
+#   @fl_phase   preparing | floating | restoring — presence means the pane is
+#               mid-float. `preparing` is written LAST during setup, so an
+#               interrupted publication leaves no phase at all.
 #   @fl_nonce   unique id; also marks the holder session (@fl_holder_nonce)
 #   @fl_holder  holder session name
 #   @fl_src_*   where it came from: session, window id, window index+name
@@ -95,6 +97,14 @@ set_pane_opt() { tmux set -p -t "$1" "$2" "$3" 2>/dev/null; }
 unset_pane_opt() { tmux set -p -u -t "$1" "$2" 2>/dev/null; }
 
 pane_exists()  { tmux display-message -p -t "$1" '#{pane_id}' >/dev/null 2>&1; }
+
+# Is this pane currently sitting inside a session we marked as a holder? That,
+# not the recorded metadata, is what says whether a float's move happened.
+pane_in_holder() {
+    local s
+    s=$(tmux display-message -p -t "$1" '#{session_name}' 2>/dev/null) || return 1
+    [ -n "$s" ] && [ -n "$(tmux show -qv -t "$s" @fl_holder_nonce 2>/dev/null)" ]
+}
 win_exists()   { tmux display-message -p -t "$1" '#{window_id}' >/dev/null 2>&1; }
 sess_exists()  { tmux has-session -t "=$1" 2>/dev/null; }
 
@@ -170,9 +180,16 @@ open_container() {
     local holder="$1" pane="$2" client="$3" sock
     sock=$(tmux display-message -p '#{socket_path}' 2>/dev/null)
 
+    # Validate the override — display-popup rejects an unknown value outright,
+    # which would fail the whole presentation over a typo.
     local border
     border=$(tmux show -gqv @float_border 2>/dev/null)
-    [ -n "$border" ] || border="$FLOAT_BORDER_DEFAULT"
+    case "$border" in
+        single|rounded|double|heavy|simple|padded|none) ;;
+        "") border="$FLOAT_BORDER_DEFAULT" ;;
+        *)  msg "float: ignoring invalid @float_border '$border'"
+            border="$FLOAT_BORDER_DEFAULT" ;;
+    esac
 
     # Title the float after what is IN it — the pane's label if it has one, else
     # the running command. (It used to show the holder's nonce, a pid-epoch pair
@@ -242,15 +259,22 @@ float_pane() {
     local placeholder
     placeholder=$(tmux display-message -p -t "$holder" '#{window_id}')
 
-    # PUBLISH RECOVERY STATE BEFORE THE DESTRUCTIVE MOVE. The pane leaving its
-    # window and the metadata describing where it came from must not be
-    # separated by a window in which the process can die: a marked holder
-    # containing a live pane with no @fl_* is unrecoverable — the sweep finds
-    # the pane but restore has nothing to act on, so it sits invisible in an
-    # internal session. Writing first means the worst intermediate state is a
-    # pane that still has its metadata, which recovery can always resolve —
-    # either forward (it moved) or backward (it did not).
-    set_pane_opt "$pane" @fl_phase   preparing
+    # PUBLISH RECOVERY STATE BEFORE THE DESTRUCTIVE MOVE, AND THE PHASE LAST.
+    # The pane leaving its window and the metadata describing where it came from
+    # must not be separated by a window in which the process can die: a marked
+    # holder containing a live pane with no @fl_* is unrecoverable.
+    #
+    # Order within the publication matters just as much. @fl_phase is what marks
+    # a pane as "in a float", and `toggle` refuses any pane that has one — so a
+    # phase written BEFORE the metadata means a death mid-publication leaves the
+    # pane at home, wedged, and unfloatable forever. Writing the phase last makes
+    # the only interrupted state a pane carrying stray metadata and no phase,
+    # which is inert: the next float overwrites it.
+    #
+    # The holder records the pane it is for, so recovery can find a pane that
+    # never moved — nothing else enumerates it, since it is still in its own
+    # window rather than in the holder.
+    tmux set -t "$holder" @fl_pane "$pane" 2>/dev/null
     set_pane_opt "$pane" @fl_nonce   "$nonce"
     set_pane_opt "$pane" @fl_holder  "$holder"
     set_pane_opt "$pane" @fl_src_sess "$sess"
@@ -260,6 +284,7 @@ float_pane() {
     set_pane_opt "$pane" @fl_order   "$order"
     set_pane_opt "$pane" @fl_layout  "$layout"
     set_pane_opt "$pane" @fl_active  "$active"
+    set_pane_opt "$pane" @fl_phase   preparing      # last — see above
 
     if ! tmux break-pane -d -s "$pane" -t "$holder:" 2>/dev/null; then
         clear_state "$pane"
@@ -284,7 +309,20 @@ float_pane() {
     set_pane_opt "$pane" @fl_phase floating
 
     reconcile
+
+    # Testing seam: stop with the float staged but never presented — the state a
+    # container that died on the spot would leave, which is what the recovery
+    # paths exist for and cannot otherwise be observed.
+    [ -n "${FLOAT_SKIP_CONTAINER:-}" ] && return 0
+
     open_container "$holder" "$pane" "$client"
+
+    # Presentation can fail — a bad @float_border, no client to draw on — and a
+    # float whose container never opened would otherwise leave the pane sitting
+    # in an unattached holder, off screen, with a live phase. Restoring
+    # unconditionally covers that: on the normal path the container's own shell
+    # has already restored, and restore is idempotent, so this is a no-op.
+    restore_pane "$pane"
 }
 
 # --- restore ------------------------------------------------------------------
@@ -310,15 +348,23 @@ restore_pane() {
     # A claim outlives a restorer killed mid-flight, so it carries a timestamp
     # and is stealable after FLOAT_CLAIM_TTL — otherwise one crash would wedge
     # the pane in its holder permanently.
-    local now claim claim_at
-    now=$(date +%s)
-    if ! tmux set -p -t "$pane" -o @fl_claim "$$:$now" 2>/dev/null; then
+    local now mine claim claim_at
+    now=$(date +%s); mine="$$:$now"
+    if ! tmux set -p -t "$pane" -o @fl_claim "$mine" 2>/dev/null; then
         claim=$(pane_opt "$pane" @fl_claim)
         claim_at=${claim##*:}
         if [ -n "$claim_at" ] && [ $((now - claim_at)) -lt "$FLOAT_CLAIM_TTL" ]; then
             return 0                     # a live restorer owns this pane
         fi
-        set_pane_opt "$pane" @fl_claim "$$:$now"   # stale — take it over
+        # STEALING MUST BE AS SERIALIZED AS CLAIMING. A plain overwrite here let
+        # every contender that saw the same expired claim take it and proceed,
+        # putting two restorers straight back on the corruption path the atomic
+        # claim closed. Compare-and-set instead: `if-shell -F` evaluates the
+        # condition and queues the set as one unit on the server's command
+        # queue, so only the contender whose value survives may continue.
+        tmux if-shell -F -t "$pane" "#{==:#{@fl_claim},$claim}" \
+            "set-option -p -t '$pane' @fl_claim '$mine'" 2>/dev/null
+        [ "$(pane_opt "$pane" @fl_claim)" = "$mine" ] || return 0
     fi
 
     # Re-read after winning: the state may have been rewritten between our
@@ -328,19 +374,26 @@ restore_pane() {
     set_pane_opt "$pane" @fl_phase restoring
 
     # `preparing` means we died between publishing state and completing the
-    # move, so the pane may never have left. If it is still in its source
-    # window there is nothing to restore — just drop the unused holder.
-    if [ "$phase" = preparing ]; then
-        local cur_win; cur_win=$(tmux display-message -p -t "$pane" '#{window_id}' 2>/dev/null)
-        if [ -n "$cur_win" ] && [ "$cur_win" = "$(pane_opt "$pane" @fl_src_win)" ]; then
-            local h; h=$(pane_opt "$pane" @fl_holder)
-            [ -n "$h" ] && sess_exists "$h" && \
-                [ -z "$(tmux list-panes -s -t "=$h" -F '#{pane_id}' 2>/dev/null)" ] && \
-                tmux kill-session -t "=$h" 2>/dev/null
-            clear_state "$pane"
-            reconcile
-            return 0
+    # move. Whether the pane actually left is decided by where it is NOW, not by
+    # what we recorded — a pane interrupted before its metadata was written has
+    # no recorded source window to compare against, and treating that as "moved"
+    # sends it down the degraded path, which manufactures a junk recovery
+    # session and leaves the pane wedged. A pane outside any marked holder never
+    # moved: roll the whole thing back.
+    if [ "$phase" = preparing ] && ! pane_in_holder "$pane"; then
+        # The holder exists only to receive this pane. If the pane never made it
+        # in, the holder's whole content is the placeholder shell we spawned, so
+        # drop it rather than leaving it to be surfaced as a junk `recovered-*`
+        # session — waiting for it to be *empty* never fires, since the
+        # placeholder is only killed after a successful break-pane.
+        local h; h=$(pane_opt "$pane" @fl_holder)
+        if [ -n "$h" ] && sess_exists "$h" && \
+           [ -n "$(tmux show -qv -t "$h" @fl_holder_nonce 2>/dev/null)" ]; then
+            tmux kill-session -t "=$h" 2>/dev/null
         fi
+        clear_state "$pane"
+        reconcile
+        return 0
     fi
 
     local holder src_sess src_win order layout active exp_order exp_layout
@@ -492,6 +545,18 @@ stranded_panes() {
         [ $((now - ${created:-0})) -lt "$FLOAT_GRACE_SECS" ] && continue  # in flight
         tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null
     done < <(tmux list-sessions -F '#{session_name} #{session_attached} #{session_created}' 2>/dev/null)
+
+    # ...plus any pane carrying a phase while sitting OUTSIDE a holder. That is
+    # a float interrupted before its move completed: the pane is still in its
+    # own window, so no holder enumerates it, yet the phase makes `toggle`
+    # refuse it — leave it and the float is wedged for that pane forever.
+    # Scanning panes directly rather than trusting a marker on the holder means
+    # this holds however the interruption left the holder.
+    local p ph
+    while IFS=' ' read -r p ph; do
+        [ -n "${ph:-}" ] || continue
+        pane_in_holder "$p" || printf '%s\n' "$p"
+    done < <(tmux list-panes -a -F '#{pane_id} #{@fl_phase}' 2>/dev/null)
 }
 
 # Every floated pane, live containers included — the save path must normalise
@@ -550,6 +615,17 @@ surface_orphan_holders() {
             [ -n "$(pane_opt "$p" @fl_phase)" ] && { has_state=1; break; }
         done < <(tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null)
         [ -n "$has_state" ] && continue
+
+        # A holder that never received the pane it was made for holds nothing
+        # but the placeholder shell we spawned. Surfacing that as a `recovered-*`
+        # session would manufacture junk out of a cleanup; drop it instead.
+        local owned; owned=$(tmux show -qv -t "$s" @fl_pane 2>/dev/null)
+        if [ -n "$owned" ] && ! printf '%s\n' \
+             "$(tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null)" \
+             | grep -qx "$owned"; then
+            tmux kill-session -t "=$s" 2>/dev/null
+            continue
+        fi
         [ -z "$(tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null)" ] && {
             tmux kill-session -t "=$s" 2>/dev/null; continue; }
         container_release_keys "$s"

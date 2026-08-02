@@ -28,7 +28,7 @@
 # neighbour swap changes pane IDENTITY without changing geometry, so -o cannot
 # reverse a push — and replaying a layout string has the same identity blindness
 # (the string addresses panes by index order). The journal below records the
-# ordered pane ids AND the layout before every mutation, which is the only pair
+# ordered pane ids AND the layout before every push, which is the only pair
 # that reconstructs a move.
 #
 # Native floating panes (tmux 3.7 `prefix *`) are rejected: they cannot be

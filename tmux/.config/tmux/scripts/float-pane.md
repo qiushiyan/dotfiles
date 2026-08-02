@@ -101,23 +101,37 @@ once — nothing here does that.
 
 ### Two transaction rules
 
-**Publish recovery state before the destructive move.** The pane leaving its
-window and the metadata saying where it came from must not be separated by a
-window in which the process can die — a marked holder containing a live pane with
-no `@fl_*` is unrecoverable, and the pane sits invisible in an internal session.
-`@fl_phase preparing` plus the full source snapshot are written *before*
-`break-pane`; the expected-post-break snapshot and `floating` follow it. Recovery
-then distinguishes "never moved" (drop the unused holder) from "already moved"
-(restore from the snapshot).
+**Publish recovery state before the destructive move — and the phase last.** The
+pane leaving its window and the metadata saying where it came from must not be
+separated by a window in which the process can die: a marked holder containing a
+live pane with no `@fl_*` is unrecoverable, and the pane sits invisible in an
+internal session.
 
-**Claim the restore atomically.** `set-option -o` is set-if-absent: it fails with
-`already set: …` and preserves the existing value. Overwriting `@fl_phase` is
-*not* a lock — every caller seeing any phase proceeds, so two restorers run the
-same join + permutation + layout replay and corrupt the result (`%0 %1 %2` comes
-back `%0 %2 %1`). That path is directly reachable: `prepare_save` dismisses the
-container, waking its restore, then restores itself. The claim carries a
-timestamp and is stealable after `FLOAT_CLAIM_TTL`, so a restorer killed
-mid-flight cannot wedge the pane forever.
+Order *within* the publication matters just as much. `@fl_phase` is what marks a
+pane as mid-float, and `toggle` refuses any pane that has one — so a phase
+written before the metadata means a death mid-publication leaves the pane at
+home, wedged, and unfloatable forever. Writing it last makes the only interrupted
+state a pane carrying stray metadata and no phase, which is inert.
+
+Recovery decides "moved" or "not" from **where the pane is now**, not from what
+was recorded: a pane outside any marked holder never moved, so the whole thing
+rolls back and the holder — whose only content is the placeholder shell — is
+dropped rather than surfaced as a junk `recovered-*` session.
+
+**Claim the restore atomically, including the steal.** `set-option -o` is
+set-if-absent: it fails with `already set: …` and preserves the existing value.
+Overwriting `@fl_phase` is *not* a lock — every caller seeing any phase proceeds,
+so two restorers run the same join + permutation + layout replay and corrupt the
+result (`%0 %1 %2` comes back `%0 %2 %1`). That path is directly reachable:
+`prepare_save` dismisses the container, waking its restore, then restores itself.
+
+The claim carries a timestamp and is stealable after `FLOAT_CLAIM_TTL` so a
+restorer killed mid-flight cannot wedge the pane forever — but **the steal has to
+be serialized too**. A plain overwrite let every contender that saw the same
+expired claim take it and proceed, straight back onto the corruption path. It is
+a compare-and-set: `if-shell -F` evaluates "is the claim still exactly the stale
+value I saw" and queues the write as one unit on the server's command queue, and
+the winner is whoever's value survives a re-read.
 
 ### Restore is optimistic, not a replay
 
@@ -141,10 +155,23 @@ The pane is **never** killed to satisfy cleanup.
 ### Failure paths
 
 `restore` is idempotent, and the container's own shell calls it on every ordinary
-exit (`prefix z`, `prefix d`, the client being killed). The backstop for a
-SIGKILL'd container is a **sweep on `client-attached`**; `surface_orphan_holders`
-is the last resort, turning a marked holder whose panes carry no state at all
-into a normal `recovered-*` session rather than leaving it hidden.
+exit (`prefix z`, `prefix d`, the client being killed). Presentation can also
+fail outright — a bad `@float_border`, no client to draw on — so `float_pane`
+restores after `open_container` returns; otherwise a float whose container never
+opened would leave the pane in an unattached holder, off screen, with a live
+phase.
+
+The backstop for a SIGKILL'd container is a **sweep on `client-attached`**;
+`surface_orphan_holders` is the last resort, turning a marked holder whose panes
+carry no state at all into a normal `recovered-*` session rather than leaving it
+hidden.
+
+The sweep enumerates two things, not one: panes inside marked holders, **and any
+pane carrying a phase while sitting outside one**. The second is a float
+interrupted before its move completed — still in its own window, so no holder
+lists it, yet phased so `toggle` refuses it. Scanning panes directly rather than
+trusting a marker on the holder means this holds however the interruption left
+things.
 
 Two things the sweep must get right:
 
