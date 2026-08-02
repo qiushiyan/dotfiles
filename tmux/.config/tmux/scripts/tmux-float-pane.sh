@@ -70,6 +70,16 @@ FLOAT_H="${FLOAT_H:-90%}"
 # Only reached when a restorer died mid-flight.
 FLOAT_CLAIM_TTL="${FLOAT_CLAIM_TTL:-30}"
 
+# Border weight for the float specifically. The global popup-border-lines is
+# `rounded` and stays that way for the worktree/rename popups — those are
+# transient dialogs, while the float is a pane you sit and work in, so it earns
+# a heavier edge to separate it from the live window showing through behind it.
+# Values: single / rounded / double / heavy / simple / padded / none. `padded`
+# is a solid space-drawn band rather than a line — thicker still, if you want
+# the float to read as a slab; it takes its colour from popup-border-style's bg.
+#   tmux set -g @float_border double
+FLOAT_BORDER_DEFAULT=heavy
+
 msg() { tmux display-message "$*" 2>/dev/null || true; }
 
 # --- small helpers over tmux state -------------------------------------------
@@ -160,7 +170,20 @@ open_container() {
     local holder="$1" pane="$2" client="$3" sock
     sock=$(tmux display-message -p '#{socket_path}' 2>/dev/null)
 
-    local args=(-E -w "$FLOAT_W" -h "$FLOAT_H" -T " ${holder#_float_} ")
+    local border
+    border=$(tmux show -gqv @float_border 2>/dev/null)
+    [ -n "$border" ] || border="$FLOAT_BORDER_DEFAULT"
+
+    # Title the float after what is IN it — the pane's label if it has one, else
+    # the running command. (It used to show the holder's nonce, a pid-epoch pair
+    # that told the user nothing.) Same rule as pane-border-format: a title
+    # equal to the hostname is tmux's unset default, not a real label.
+    local title
+    title=$(tmux display-message -p -t "$pane" \
+        '#{?#{==:#{pane_title},#{host}},#{pane_current_command},#{pane_title}}' 2>/dev/null)
+    [ -n "$title" ] || title="zoom"
+
+    local args=(-E -w "$FLOAT_W" -h "$FLOAT_H" -b "$border" -T " $title ")
     [ -n "$client" ] && args+=(-c "$client")
 
     # display-popup BLOCKS its issuing command until dismissed, which is why

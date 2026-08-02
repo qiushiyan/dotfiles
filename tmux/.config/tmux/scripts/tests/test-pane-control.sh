@@ -565,10 +565,43 @@ t19() {
         "$(T show -Aqv -t "$rs" key-table)" "root"
 }
 
+# ---------------------------------------------------------------------------
+# T20 — the float's frame, asserted on what the client actually DREW. The outer
+# pane's capture is the inner client's rendering, popup border glyphs included,
+# so this is the one case that checks something visual rather than tmux state.
+# ---------------------------------------------------------------------------
+t20() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    P=$(T display -p -t "$W" '#{pane_id}')
+    T select-pane -t "$P" -T "notes"          # a named pane, to check the title
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 120 -y 36
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T20 client attached" "no client"; return; fi
+    T select-pane -t "$P"
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z; sleep 3
+
+    cap=$(O capture-pane -p -t o)
+    check "T20 float draws a heavy border" \
+        "$(printf '%s' "$cap" | grep -cm1 '[┏┓┗┛━┃]' || true)" "1"
+    check "T20 float does not draw the global rounded border" \
+        "$(printf '%s' "$cap" | grep -cm1 '[╭╮╰╯]' || true)" "0"
+    check "T20 title names the pane, not the holder nonce" \
+        "$(printf '%s' "$cap" | grep -cm1 'notes' || true)" "1"
+
+    # and the other popups in this config keep the global rounded frame
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z; sleep 2
+    check "T20 global popup-border-lines untouched" \
+        "$(T show -gv popup-border-lines)" "rounded"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
 for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t8 t9 t10 t11 t14 \
-         t15 t16 t17 t18 t18b t18c t19; do
+         t15 t16 t17 t18 t18b t18c t19 t20; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

@@ -22,7 +22,7 @@ make brew-dump  # update Brewfile from current Homebrew state
 ```
 
 Mostly configuration, so there is no build. The one test suite is
-`tmux/.config/tmux/scripts/tests/test-pane-control.sh` — 61 assertions across 22 cases for the pane
+`tmux/.config/tmux/scripts/tests/test-pane-control.sh` — 65 assertions across 23 cases for the pane
 control plane (floating zoom + pane mode), run with `bash
 tmux/.config/tmux/scripts/tests/test-pane-control.sh [T5 T14 ...]`. It builds
 throwaway tmux servers on their own sockets and never touches a live one.

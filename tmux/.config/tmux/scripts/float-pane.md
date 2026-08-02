@@ -8,8 +8,8 @@ Two features, one control plane for moving panes around:
 - **`prefix p`** — a sticky "pane mode" key table holding every pane-moving verb
   behind one key. `tmux-pane-relocate.sh` + the `panes` table in `tmux.conf`.
 
-Requires **tmux 3.7b+**. Tests: `scripts/tests/test-pane-control.sh` — 61
-assertions across 22 cases, on throwaway sockets; it never touches a live
+Requires **tmux 3.7b+**. Tests: `scripts/tests/test-pane-control.sh` — 65
+assertions across 23 cases, on throwaway sockets; it never touches a live
 server, and anything it kills is matched against its own socket path first.
 
 ---
@@ -49,6 +49,20 @@ Migrating to a native floating pane means rewriting **those four**, not one
 line. An earlier version of this doc claimed the swap was a single function
 body; that was untrue — the key-surface staging, the nested-attach lifecycle,
 and dismissal are all container-specific, and a review caught the claim.
+
+### Its frame
+
+The float draws a **heavy** border while the global `popup-border-lines` stays
+`rounded` for the worktree and rename popups. Those are transient dialogs; the
+float is a pane you sit and work in, so it earns a heavier edge to separate it
+from the live window showing through behind it. Override with
+`tmux set -g @float_border <single|rounded|double|heavy|simple|padded|none>` —
+`padded` is a solid space-drawn band rather than a line, thicker still, coloured
+from `popup-border-style`'s background.
+
+The title is the pane's own label, falling back to its running command. It used
+to be the holder's `pid-epoch` nonce, which told the user nothing and got more
+prominent the heavier the border became.
 
 ## Restore is optimistic, not a replay
 
