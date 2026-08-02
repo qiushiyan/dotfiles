@@ -2,13 +2,52 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What This Is
+## What this is
 
-A **GNU Stow-managed dotfiles repository**. Each top-level directory is a Stow package whose contents mirror a path under `$HOME` — e.g. `zsh/.zshrc` → `~/.zshrc`, `nvim/.config/nvim/` → `~/.config/nvim/` — except `docs/` (repo-only documentation) and `vpn-private/` (gitignored local backup), both filtered out of `PACKAGES` in the Makefile and never symlinked. Files in the real packages are **symlinked, not copied: editing anything here changes the user's live system immediately.** The `claude/` package holds the user's global Claude Code config — `settings.json`, `hooks/`, `skills/`, `agents/`, `commands/`, `rules/`, `CLAUDE.md`.
+A **GNU Stow-managed dotfiles repository**. Each top-level directory is a Stow
+package whose contents mirror a path under `$HOME` — `zsh/.zshrc` → `~/.zshrc`,
+`nvim/.config/nvim/` → `~/.config/nvim/`. Files are **symlinked, not copied:
+editing anything here changes the user's live system immediately.** `docs/`
+(repo-only documentation) and `vpn-private/` (gitignored local backup) are
+filtered out of `PACKAGES` in the Makefile and never symlinked.
 
-**`~/.claude` and `~/.codex` are real directories, not folded symlinks.** Only the tracked config items are symlinked in from their packages (per-item folding); everything the apps write at runtime — Claude's `history.jsonl`, `sessions/`, `projects/`, `telemetry/`; Codex's sqlite DBs, `sessions/`, the `auth.json` secret, caches — stays in the real `~/dir` and never enters this repo. `make install`/`restow` `mkdir -p` these first to preserve it (see `REAL_DIRS` in the Makefile); both `.gitignore` blocks allow-list only config as defense-in-depth. **Do not** let either become a single symlink to its package, or all that runtime state (and `~/.codex/auth.json`) lands in this public repo.
+This repo is **public** — never commit credentials. Secrets live in `~/.secrets`
+(untracked, mode `600`, sourced by `.zshrc`); tracked config reads them from the
+environment instead of hardcoding.
 
-This repo is **public** — never commit credentials (see Secrets below).
+## Red lines
+
+Three ways to wreck live state from inside this repo. None of them raise an
+error at the time.
+
+**1. `~/.claude` and `~/.codex` must stay real directories, never folded
+symlinks.** Only tracked config items are symlinked in from their packages
+(per-item folding); everything the apps write at runtime — Claude's
+`history.jsonl`, `sessions/`, `projects/`, `telemetry/`; Codex's sqlite DBs,
+`sessions/`, the `auth.json` secret, caches — stays in the real `~/` directory
+and never enters this repo. `make install`/`restow` `mkdir -p` them first to
+preserve this (`REAL_DIRS` in the Makefile), and both `.gitignore` blocks
+allow-list only config as defense-in-depth. Let either become a single symlink
+to its package and all that runtime state, `~/.codex/auth.json` included, lands
+in this public repo.
+
+**2. Never write to `claude/.claude/CLAUDE.md` — it is empty, and stays empty.**
+It reads like a project-local memory file describing this repo's `claude/`
+package. It is not. It stows to `~/.claude/CLAUDE.md`, the **global** user
+memory, which is prepended to every request in _every_ project on this machine.
+Notes about this repo's layout, or about how Claude is configured here, become
+permanent context for unrelated work everywhere. To document Claude
+configuration, write an ordinary doc under `docs/` and link it from the map
+below.
+
+The same hazard exists at any package root, since `<pkg>/CLAUDE.md` stows to
+`~/CLAUDE.md`: `tabtype/CLAUDE.md` is package-local guidance kept out of `$HOME`
+by an entry in `tabtype/.stow-local-ignore`. Package-local guidance needs that
+ignore entry; the global memory file needs to stay empty.
+
+**3. A test that escapes its sandbox corrupts live state.** Both escape routes
+are silent, and a green suite that tested nothing looks identical to a passing
+one — read `docs/testing.md` before adding a case.
 
 ## Commands
 
@@ -21,107 +60,91 @@ make brew       # install Homebrew packages from Brewfile
 make brew-dump  # update Brewfile from current Homebrew state
 ```
 
-Mostly configuration, so there is no build. Two test suites: the tmux pane
-control plane — `bash tmux/.config/tmux/scripts/tests/test-pane-control.sh
-[T5 T14 …]`, building throwaway tmux servers on their own sockets — and handoff
-baton path resolution, `bash
-claude/.claude/skills/handoff/handoff-path.test.sh [T3 T7 …]`.
+This is configuration, so there is no build. Tests: `docs/testing.md`.
 
-**A test that escapes its sandbox corrupts live state**, and both escape routes
-are silent — a new case has to close them:
+To bring an existing config file under management, use the `dotadd` zsh function
+— it moves the file into the correct package and stows it.
 
-- Drive tmux only with `$TMUX` pointed at the test socket (the `R()` helper).
-  Otherwise calls fall through to the default socket — the real server — where
-  the test's pane ids don't exist, so everything no-ops and assertions pass for
-  the wrong reason.
-- Redirect shared state *outside* tmux. resurrect's save directory is one path
-  for all servers unless `@resurrect-dir` is set, so a test reaching the real
-  `save.sh` overwrites the user's session snapshot; `fresh()` sandboxes it and
-  T21 guards it. `handoff-path.sh` creates directories under `$HOME`, so its
-  suite overrides `HOME` and T11 guards the real baton store — ad-hoc
-  verification that skips the override scatters folders into it for real.
-  Global patterns like `pkill` need the same care.
+## Package layout
 
-To bring an existing config file under management, use the `dotadd` zsh function (it moves the file into the correct package and stows it).
+A package's internal tree _is_ its map of `$HOME`, so `make list` plus the
+directory itself answers most questions. The ones whose contents aren't obvious
+from the name:
 
-## Stow Package Layout
+```
+claude/    ~/.claude/           settings.json, hooks, skills, agents, commands, rules
+codex/     ~/.codex/            Codex CLI config; its skills symlink into claude/
+zsh/       ~/.zshrc, ~/.zshenv, ~/.config/zsh/
+tmux/      ~/.config/tmux/      tmux 3.7b — scripts, plugins, design docs
+nvim/      ~/.config/nvim/      LazyVim-based
+lessons/   ~/.config/lessons/   engineering reference docs that prompts read — not skills
+scripts/   ~/.local/bin/, ~/Library/LaunchAgents/
+```
 
-Each directory's contents mirror the target path relative to `$HOME`:
+The rest — `git/`, `ghostty/`, `ohmyposh/`, `zed/`, `k9s/`, `lazygit/`,
+`karabiner/`, `ssh/`, `raycast/`, `tabtype/` — is one tool's config at its
+conventional path.
 
-| Package | Symlinks to | Purpose |
-|---------|------------|---------|
-| `zsh/` | `~/.zshrc`, `~/.zshenv`, `~/.config/zsh/` | Shell config, aliases, functions |
-| `git/` | `~/.gitconfig`, `~/.config/git/ignore` | Git config with conditional includes |
-| `nvim/` | `~/.config/nvim/` | Neovim (LazyVim-based) |
-| `ghostty/`, `tmux/` | `~/.config/{ghostty,tmux}/` | Terminal + multiplexer (tmux **3.7b**) |
-| `claude/` | `~/.claude/` | Claude Code settings, skills, hooks |
-| `codex/` | `~/.codex/` | Codex CLI config |
-| `ohmyposh/` | `~/.config/ohmyposh/` | Prompt theme |
-| `zed/`, `k9s/`, `karabiner/`, `ssh/`, `raycast/` | resp. paths | Editor, k8s TUI, key remap, SSH, automation |
+## Conventions
 
-`make list` shows the full set.
+- **Theme**: `$TERMINAL_THEME` (from `~/.config/terminal-theme`, default
+  `flexoki_light`; also `catppuccin_mocha`) drives the Claude statusline, Oh My
+  Posh prompt, `ls`/completion colors, and the Neovim colorscheme.
+  Ghostty/tmux/k9s are themed per-tool. See `docs/theming.md`.
+- **Editor**: Neovim (LazyVim-based); vim keybindings everywhere, `set -o vi`.
+- **Shell**: three startup files with a load-bearing order, nvm lazy-loaded,
+  `python` and `make` are functions rather than aliases. Read `docs/zsh.md`
+  before editing anything under `zsh/`.
+- **`block-dangerous-git.sh`** (hook in `claude/.claude/hooks/`) blocks `push`,
+  `reset --hard`, and similar on `main`. Pushes to `main` are the user's to run
+  manually, not Claude's.
+- **Development**: this is personal configuration — commit directly on `main`
+  and don't create feature branches unless asked.
 
-## Zsh Architecture
+## Features that span packages
 
-Three startup files, each for a different shell type — know which one a change belongs in:
+Each of these is one feature implemented across several packages at once;
+changing one piece without the others breaks it.
 
-- **`.zshenv`** — *every* zsh invocation (incl. scripts, `ssh host cmd`). Sets `typeset -U path`, sources `toolchain.zsh`, then sources every `~/.config/zsh/*.zsh` so functions/aliases exist everywhere.
-- **`.zprofile`** — login shells only. Homebrew + OrbStack `shellenv`.
-- **`.zshrc`** — interactive shells only. oh-my-zsh, syntax highlighting, completions, Oh My Posh prompt, fzf/zoxide, the lazy `nvm` stub.
+- **Claude context chip** — the statusline script pushes context-usage % into the
+  pane-local `@claude_ctx` tmux option, the pane border draws it, and
+  `tmux-claude-ctx.sh` is the sole owner of turning borders off (fed by Claude's
+  `SessionEnd` hook, a zsh `precmd` sweep, and tmux pane-exit/relocation
+  events). Spans `claude/`, `tmux/`, `zsh/` → `tmux/.config/tmux/workflow.md`.
+- **tmux pane control** — `prefix z` floats a pane into an overlay rather than
+  zooming it; `prefix p` holds the pane-moving verbs in a sticky key table. A
+  floated pane is genuinely relocated into a holder session, so its recovery,
+  its restricted key surface, and the resurrect save wrapper are all
+  load-bearing. **Read `tmux/.config/tmux/scripts/float-pane.md` before editing
+  `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, or the pane/float key tables in
+  `tmux.conf`.**
+- **Claude accounts** — several subscriptions coexist: `~/.claude` is primary,
+  each extra is `~/.claude-accounts/<email>/` with its own Keychain login.
+  Launchers (`x`, `x-<name>`) live in `zsh/.config/zsh/claude.zsh`, but the
+  cross-account `/usage` dashboard and account picker are **headroom**, a Go CLI
+  in `~/dev/headroom` — `x-usage`/`x-select` are thin wrappers, so fix the
+  engine there. Account dirs are runtime state, never in this repo →
+  `docs/claude-accounts.md`.
+- **Agent skills** — Claude Code is a superset of Codex, which symlinks into it.
+  Adding, forking, or disabling a skill has several traps that fail silently →
+  `docs/agent-skills.md`.
 
-They load in the order `.zshenv` → `.zprofile` → `.zshrc`. The order matters: `.zprofile`'s Homebrew `shellenv` runs *after* `toolchain.zsh`, so `.zshrc` re-asserts `$NVM_BIN` to keep nvm's Node ahead of any Homebrew `node`.
+## Where to read more
 
-Modules in `zsh/.config/zsh/`:
-
-- `toolchain.zsh` — cheap PATH setup (default Node via nvm, no subprocess) for non-interactive shells; sourced first by `.zshenv`.
-- `aliases.zsh`, `git.zsh`, `nav.zsh`, `utils.zsh` — aliases and helper functions (`gitclean`, `loc`, `ccclean`, `n`, `take`, `dotadd`, …).
-- `theme.zsh` — the `$TERMINAL_THEME` switch.
-- `xcode.zsh`, `tmux-utils.zsh`, `proxy.zsh`, `gws.zsh` — domain-specific helpers.
-
-## Key Conventions
-
-- **Theme**: `$TERMINAL_THEME` (from `~/.config/terminal-theme`, default `flexoki_light`; also `catppuccin_mocha`) drives the Claude Code statusline, Oh My Posh prompt, `ls`/completion colors, and the Neovim colorscheme. Ghostty/tmux/k9s themes are set per-tool.
-- **Editor**: Neovim (LazyVim-based); vim keybindings everywhere, `set -o vi` in zsh.
-- **Package manager**: pnpm preferred over npm.
-- **Python**: `python` is a *function* → `command python3` (Homebrew's), so virtualenvs still win — not an alias (see lessons).
-- **Node**: nvm, default `lts/*`, **lazy-loaded** (see lessons).
-- **Secrets**: live in `~/.secrets` (untracked, mode `600`, sourced by `.zshrc`). Tracked config reads them from the environment instead of hardcoding.
-- **`block-dangerous-git.sh`** (Claude Code hook in `claude/.claude/hooks/`) blocks `push` / `reset --hard` / etc. on `main` — pushes to `main` must be run by the user manually, not by Claude.
-- **Claude context chip**: the statusline script pushes context-usage % into the pane-local `@claude_ctx` tmux option; the pane border draws it, and `tmux-claude-ctx.sh` solely owns turning borders off (fed by Claude's `SessionEnd` hook, a zsh `precmd` sweep, and tmux pane-exit/relocation events). One feature across `claude/`, `tmux/`, and `zsh/` — edit any piece with the others in mind (see `tmux/.config/tmux/workflow.md`).
-- **tmux pane control**: `prefix z` floats a pane into an overlay rather than zooming it, and `prefix p` holds the pane-moving verbs in a sticky key table. A floated pane is genuinely relocated into a holder session, so its recovery, its restricted key surface, and the resurrect save wrapper are all load-bearing — `tmux/.config/tmux/scripts/float-pane.md` carries the design and the tmux traps. **Read it before editing `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, or the pane/float key tables in `tmux.conf`.**
-- **Claude accounts**: several subscriptions coexist — `~/.claude` is the primary; each extra account is `~/.claude-accounts/<email>/` with its own Keychain login. Launchers (`x`, `x-<name>`) in `zsh/.config/zsh/claude.zsh`; the cross-account `/usage` dashboard + account picker is **headroom**, a Go CLI in `~/dev/headroom` (installed to `~/.local/bin/headroom`; `x-usage`/`x-select` are thin wrappers — if they misbehave, edit the engine there). Account dirs are runtime, never in the repo (see `docs/claude-accounts.md`).
-- **Skills**: Claude Code is a superset of Codex; Codex symlinks into it (see below).
-
-## Agent Skills: Claude Code ⊇ Codex
-
-**The invariant: every skill Codex has, Claude Code has — never the reverse.** The only permitted exception is a skill *about* Codex itself (`keep-codex-fast`), which lives as a real dir in the codex package. A Claude-only skill is simply one with no Codex symlink.
-
-| Path | What |
-|------|------|
-| `claude/.claude/skills/<name>/` | **source of truth** — real directories |
-| `codex/.codex/skills/<name>` | relative symlink → `../../../claude/.claude/skills/<name>` |
-| `codex/.codex/skills/keep-codex-fast/` | real dir — the declared Codex-only exception |
-| `~/.agents/skills/` | the `skills` CLI's store — keep it **empty** |
-
-Audit: every entry under `codex/.codex/skills/` must be a symlink into `claude/.claude/skills/`, or a declared Codex-only skill. Any other real dir is a bug.
-
-- **Why the links must stay inside the repo.** `~/.claude/skills` and `~/.codex/skills` are stow symlinks *into this repo*, so the kernel resolves a skill's relative symlink from its **real** repo location, not from `$HOME`. A link like `../../.agents/skills/X` therefore resolves to `dotfiles/claude/.agents/X` and dangles — this silently broke several skills. Both ends of the Codex links live in the repo, so they resolve correctly and survive stow, and being git-tracked they make "which skills Codex gets" versioned.
-- **Always install with `--copy`**: `npx skills add <owner/repo@skill> -g -a claude-code --copy -y`. It writes a real dir straight into `claude/.claude/skills/`, leaves the CLI store empty, and still records a lockfile entry so `skills update` keeps working. Without `--copy` the CLI creates exactly the `../../.agents/skills/X` links that can never resolve here. Never pass `-a codex` — that makes a divergent copy; symlink instead.
-- **`skills remove` is all-or-nothing.** It deletes the store dir, the lockfile entry, *and* every agent copy. There is no prune-only command, so never reach for it just to "clean the store".
-- **Invocation control belongs in the skill's frontmatter.** `disable-model-invocation: true` → user-invoked only, and the description leaves the model's context. `user-invocable: false` is the inverse (Claude-only). Both are documented and verified working.
-- **`skillOverrides` in `settings.json` does nothing** — verified on v2.1.205: an `"on"` override failed to re-enable a skill, while frontmatter worked. It is undocumented with open upstream bugs. Do not use it.
-- **Never put a skill in `permissions.deny`.** Deny gates *execution*, not visibility: the description still costs context, the model still tries and gets blocked, and you lose your own `/skill` invocation too. Deny is for tools (e.g. `NotebookEdit`), not skills.
-- **Forking a CLI-managed skill gets clobbered by `skills update`.** `writing-great-skills` has upstream's `disable-model-invocation: true` deliberately removed so the model can auto-invoke it. After any update, delete the line again or `git checkout -- claude/.claude/skills/writing-great-skills/SKILL.md`.
-- **`~/.agents/.skill-lock.json` is not in this repo**, so CLI tracking does not survive to a new machine — `make install` won't restore it.
-
-## Zsh Setup: Lessons Learned
-
-Hard-won during a startup-perf + robustness pass — read before editing the zsh config:
-
-- **Reload with `exec zsh`, never `source ~/.zshrc`.** Re-sourcing only *adds* state; it can't drop deleted aliases/functions/exports or fix stale in-memory state. `zshreload` is aliased to `exec zsh -l`.
-- **`.zshenv` must exit 0.** A non-zero last statement silently breaks `source ~/.zshenv && …` chains. Keep the final line a clean `if`, not a short-circuiting `&&`.
-- **nvm is lazy-loaded.** Eagerly sourcing `nvm.sh` costs ~230 ms/shell. `toolchain.zsh` already puts the default Node on PATH cheaply; an `nvm()` stub in `.zshrc` loads the real nvm on first call. Don't reinstate eager `source nvm.sh`.
-- **`typeset -U path`** (in `.zshenv`) keeps `$PATH` duplicate-free no matter how often config is sourced.
-- **Functions, not aliases, for real command names.** Aliases resolve before `$PATH`, so `alias python=…` shadows virtualenvs; `python` and `make` are functions for this reason. Start non-trivial functions with `emulate -L zsh` so ambient options can't change their behavior.
-- **Completions register late.** `compdef` exists only after oh-my-zsh runs `compinit`. `git.zsh` is sourced once (by `.zshenv`); `.zshrc` calls `_git_zsh_register_completions` afterward — don't re-source whole files just to register completions.
-- **Measure, don't guess.** Profile with `zmodload zsh/zprof`; verify a perf change with an *interleaved* A/B benchmark (`git stash` the change, time both back-to-back, repeat) — not before/after numbers taken minutes apart. This pass took startup ~530 ms → ~160 ms.
+```
+docs/
+  zsh.md                  shell architecture, module map, perf lessons
+  agent-skills.md         the Claude ⊇ Codex skill layout and its traps
+  testing.md              the two suites and their sandbox rules
+  claude-accounts.md      multi-account setup
+  theming.md              the $TERMINAL_THEME switch
+  doc-loop.md             how onboarding / update-docs / handoff fit together
+  MIGRATION.md            new-machine setup
+  ctrl-d-guard.md · claude-prompt-completion.md
+  neovim-file-picker.md · neovim-image-handling.md
+  mobile-terminal-access.md
+tmux/.config/tmux/
+  workflow.md             how the tmux setup is meant to be used day to day
+  roadmap.md              index of the tmux design docs
+  scripts/                float-pane.md · worktree.md · agent-notify.md
+```
