@@ -38,6 +38,31 @@ strip_noise() {
 
 SCAN=$(strip_noise "$COMMAND")
 
+# Matches a real remote push — `git push`, plus global-option forms like
+# `git -C <path> push` / `git --work-tree=<path> push` that would otherwise
+# slip past a bare "git push" pattern. Does not match `git stash push`.
+PUSH_RE='(^|[^a-zA-Z0-9_])git([[:space:]]+(-C|--work-tree|--git-dir|-c)([[:space:]]+|=)[^[:space:]]+)*[[:space:]]+push([^a-zA-Z0-9_]|$)'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The branch check must look at the repo the push actually targets, not the
+# hook's own cwd: hooks run at the session root, so `cd /other/repo && git
+# push` used to be judged by the session repo's branch. Honor the command's
+# last `cd <path>` and any `git -C <path>`; fall back to the hook's cwd.
+# Accident prevention, not a sandbox: an unresolvable path just falls back.
+# ─────────────────────────────────────────────────────────────────────────────
+effective_git_dir() {
+  local dir="$PWD" arg
+  arg=$(printf '%s\n' "$COMMAND" \
+    | grep -oE "(^|[;&|][[:space:]]*)cd[[:space:]]+(\"[^\"]+\"|'[^']+'|[^;&|[:space:]]+)" \
+    | tail -1 | sed -E "s/^.*cd[[:space:]]+//; s/^[\"']//; s/[\"']\$//")
+  [ -n "$arg" ] && [ -d "$arg" ] && dir="$arg"
+  arg=$(printf '%s\n' "$COMMAND" \
+    | grep -oE "git[[:space:]]+-C[[:space:]]+(\"[^\"]+\"|'[^']+'|[^[:space:]]+)" \
+    | tail -1 | sed -E "s/^git[[:space:]]+-C[[:space:]]+//; s/^[\"']//; s/[\"']\$//")
+  [ -n "$arg" ] && [ -d "$arg" ] && dir="$arg"
+  printf '%s' "$dir"
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier 1: Always-blocked git push variants — no env-var bypass.
 # Force pushes, deletes, and mirror pushes can wipe history or destroy
@@ -68,12 +93,13 @@ done
 # Even when pushes are otherwise allowed, pushing the trunk warrants a fresh
 # manual decision by the user.
 # ─────────────────────────────────────────────────────────────────────────────
-if echo "$SCAN" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
-  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+if echo "$SCAN" | grep -qE "$PUSH_RE"; then
+  PUSH_DIR=$(effective_git_dir)
+  CURRENT_BRANCH=$(git -C "$PUSH_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
   for b in $PROTECTED_BRANCHES; do
     if [ "$CURRENT_BRANCH" = "$b" ]; then
       cat >&2 <<EOF
-BLOCKED: current branch is '$CURRENT_BRANCH' (protected).
+BLOCKED: the push targets '$PUSH_DIR', whose branch '$CURRENT_BRANCH' is protected.
 
 Pushes from protected branches ($PROTECTED_BRANCHES) cannot be bypassed by
 CLAUDE_ALLOW_PUSH. The user must run these manually.
