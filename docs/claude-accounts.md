@@ -1,20 +1,35 @@
 # Multiple Claude Code accounts
 
 How several Claude subscriptions live on one laptop with simultaneous logins —
-switching by launcher instead of `/login` juggling — and how the cross-account
-`/usage` dashboard works.
+switching by launcher instead of `/login` juggling — and where each piece
+lives.
 
 ## TL;DR
 
 - **`x`** — Claude with permissions bypassed, on the *last explicitly chosen*
   account. **`x-<name>`** (`x-qiushi`, `x-yan`, …) chooses an account and
   sticks, so the next bare `x` stays there.
-- **`claude-usage`** (alias **`x-usage`**) — every account's 5-hour / weekly
-  limit bars in one view; `← x` marks where bare `x` currently points.
+- **`x-usage`** — every account's 5-hour / weekly limit bars in one view;
+  `← x` marks where bare `x` currently points. `x-usage check` verifies the
+  machinery after a Claude Code update.
+- **`x-select`** — interactive picker: choose an account off the live usage
+  board, stick like `x-<name>` does, then launch on it.
 - **`claude-account-add <email>`** (alias **`x-account-add`**), then that
   account's `x-<name>` and `/login` — onboard a new subscription.
-- Pieces: launchers in `zsh/.config/zsh/claude.zsh`, dashboard in
-  `scripts/.local/bin/claude-usage`.
+- Pieces: launchers in `zsh/.config/zsh/claude.zsh` (this repo); the
+  dashboard/picker engine is **headroom**, a separate Go project (see below).
+
+## The engine: headroom
+
+This is where the underlying engine lives: **`~/dev/headroom`** — a
+standalone Go CLI installed to `~/.local/bin/headroom` via its
+`make install`. The dashboard (`headroom`), the interactive picker
+(`headroom select`), and the self-check (`headroom check`) are all engine
+features; `x-usage` and `x-select` are one-line zsh wrappers over them. If a
+wrapper misbehaves, the fix is almost certainly in the engine — its mental
+model, the reverse-engineered vendor contracts (Keychain service naming, the
+OAuth usage endpoint, response-drift handling), and its verification story
+live in `~/dev/headroom/DESIGN.md`, not here.
 
 ## Model — the filesystem is the registry
 
@@ -34,10 +49,9 @@ There is no account list anywhere. The dirs are the registry:
 Everything derives from that tree:
 
 - **Isolation.** Claude Code honors `CLAUDE_CONFIG_DIR`, and — the load-bearing
-  fact — keys its macOS Keychain credentials *per config dir*: service
-  `Claude Code-credentials` for the default dir, plus `-<sha256(dir)[0:8]>` for
-  any other (verified against the binary, v2.1.220). So every dir is an
-  independent login; `/login` in one session can never clobber another.
+  fact — keys its macOS Keychain credentials *per config dir*, so every dir is
+  an independent login and `/login` in one session can never clobber another.
+  (Details of the service-name derivation: headroom's DESIGN.md.)
 - **Sharing.** Account dirs are seeded with symlinks into the repo's
   `claude/.claude`, so all accounts run identical settings/skills/hooks and a
   config edit lands everywhere. Only runtime state (login, history, sessions)
@@ -46,17 +60,17 @@ Everything derives from that tree:
   launchers: `x-<email>` always exists and is the guaranteed identity; a
   short `x-<local-part>` alias (`x-yan`) is added only when the local part is
   unique and isn't the primary's name, so a short name can never hit the
-  wrong account. `claude-usage` globs the same dirs — the two can't drift.
+  wrong account. headroom discovers the same dirs — the two can't drift.
   Dashboard labels come from the email each dir's `.claude.json` *actually*
   logged in as, with a red warning when that mismatches the dir name (i.e.
-  `/login` picked the wrong account); the plan tag comes from the Keychain
-  blob's `rateLimitTier`.
+  `/login` picked the wrong account).
 
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
-- **Out of quota**: `claude-usage`, pick an account with headroom, launch it
-  once by name (`x-yan`) — bare `x` follows from then on.
+- **Out of quota**: `x-select` — pick an account with headroom off the live
+  board; bare `x` follows from then on. (Or `x-usage` to look, then an
+  `x-<name>` by hand.)
 - **Reorder the board**: edit `~/.claude-accounts/.order`. The primary is
   always first; a new account needs no entry (it appends alphabetically
   until promoted).
@@ -65,36 +79,14 @@ Everything derives from that tree:
 - **New subscription**: `claude-account-add <email>` seeds the dir and names
   the launcher; `/login` on its first launch binds the account.
 - **Stale token** on a rarely-used account: the dashboard says so — run that
-  account's `x-<name>` once. The dashboard itself is read-only and never
-  writes the Keychain; only Claude Code refreshes tokens.
+  account's `x-<name>` once. Only Claude Code refreshes tokens; the engine is
+  read-only (its single write is `.current`).
+- **After a Claude Code update**, or when the dashboard misbehaves:
+  `x-usage check` — a FAIL line names which reverse-engineered assumption
+  broke.
 - **Logged into the wrong account in a dir**: the dashboard's red
   `(dir says …!)` warning catches it. Cleanest fix: `/login` again in that
-  dir's session with the right account (the misplaced login can be relocated
-  by moving its Keychain item + runtime files, but a re-login is simpler).
-
-## Data source
-
-`claude-usage` calls the endpoint Claude Code's own `/usage` screen uses —
-`GET api.anthropic.com/api/oauth/usage` with each account's Bearer token from
-the Keychain — and renders whatever the response's `limits` array contains
-(accounts genuinely differ: some report an all-models weekly limit, some only
-a model-scoped one). Fetches run in parallel and accounts fail independently:
-a bad credential or drifted response marks that one account while the rest
-still render. The endpoint is **undocumented**: the shape has drifted once
-already (legacy `five_hour` / `seven_day` fields giving way to `limits`).
-
-The script parses credentials and responses through exactly two jq programs
-(`BLOB_JQ`, `LIMITS_JQ`), tolerant by design — a malformed field degrades to
-`0` / `resets ?` rather than aborting, and the parser tags each degraded
-field, distinguishing a legitimately absent timestamp (untouched window) from
-a present value that stopped parsing. **`claude-usage --check`** layers the
-strict side on those same parsers: per logged-in account it asserts the
-Keychain item under the predicted name, the blob contract, and HTTP 200 with
-≥ 1 limit row and no malformed fields; it also greps the installed binary for
-the endpoint/config-dir/credential seams. Checker and renderer share the
-parsers, so shape drift the renderer papers over with `0%` bars or `resets ?`
-still fails the check. Run it after a Claude Code update, or whenever the
-dashboard misbehaves; a FAIL line names which assumption broke.
+  dir's session with the right account.
 
 ## Invariants
 
@@ -102,12 +94,13 @@ dashboard misbehaves; a FAIL line names which assumption broke.
   them point *into* the repo.
 - The primary stays in `~/.claude`. Relocating it would orphan its history
   and its default-named Keychain item for no benefit.
+- The launcher-advertising rule lives twice: `_claude_gen_launchers` in
+  `claude.zsh` and `accounts.Launcher` in headroom — keep them in sync,
+  including the reserved local parts (`usage`, `account`, `account-add`,
+  `select`) that x-* utilities claim ahead of any account.
 - `ACCOUNTS_ROOT`, `PRIMARY_NAME`, and the `.current` state file are declared
-  in both `claude.zsh` and `claude-usage` — keep them in sync.
-- The launcher-advertising rule (short alias vs full email) also lives twice:
-  `_claude_gen_launchers` in `claude.zsh` and `xcmd_for` in `claude-usage` —
-  keep those in sync too, including the reserved local parts (`usage`,
-  `account`, `account-add`) that x-* utilities claim ahead of any account.
+  in `claude.zsh` and in headroom's config defaults — keep those in sync too
+  (headroom side is overridable via `HEADROOM_*` env vars).
 - Bypass-everything, if ever wanted, belongs in `settings.json`
   (`"permissions": { "defaultMode": "bypassPermissions" }`), not in wrappers
   around the `claude` command. PreToolUse hooks still fire and block in

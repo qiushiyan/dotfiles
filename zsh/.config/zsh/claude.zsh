@@ -13,9 +13,10 @@
 # one account never touches another and all tokens coexist. Account dirs are
 # seeded with symlinks to the tracked config in dotfiles/claude/.claude —
 # settings, skills, hooks, rules stay shared; login, history and sessions
-# stay per-account. scripts/.local/bin/claude-usage discovers the same dirs
-# and renders /usage for every account, each labeled by the email its
-# .claude.json reports as actually logged in.
+# stay per-account. The headroom CLI (~/dev/headroom, installed to
+# ~/.local/bin/headroom) discovers the same dirs and renders /usage for
+# every account, each labeled by the email its .claude.json reports as
+# actually logged in; x-usage and x-select below are thin wrappers over it.
 #
 #   x                     permissions bypassed, on the *last explicitly
 #                         chosen* account — x-<name> chooses and sticks
@@ -24,7 +25,11 @@
 #                         local part is unique (and isn't the primary's
 #                         name or a reserved word) a short alias exists
 #                         too (x-yan, …)
-#   x-usage               ≡ claude-usage (the dashboard; --check works too)
+#   x-usage               ≡ headroom (the dashboard; `x-usage check`
+#                         verifies the machinery after a Claude Code update)
+#   x-select              interactive picker (headroom select): choose an
+#                         account off the live usage board, stick like
+#                         x-<name> does, then launch on it
 #   x-account             ≡ claude-account <name|email> [args...] — prompted
 #                         (no bypass) session; also makes it current
 #   x-account-add         ≡ claude-account-add <email> — seed a new account
@@ -39,8 +44,8 @@ typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
 typeset -g CLAUDE_ACCOUNT_STATE="$CLAUDE_ACCOUNTS_ROOT/.current"
 typeset -g CLAUDE_PRIMARY_NAME="qiushi"   # x-qiushi ≡ default ~/.claude
 # Local parts that never get a short launcher alias: x-<these> are utilities.
-# claude-usage's xcmd_for mirrors this list — keep the two in sync.
-typeset -ga CLAUDE_X_RESERVED=(usage account account-add)
+# headroom's accounts.Launcher mirrors this list — keep the two in sync.
+typeset -ga CLAUDE_X_RESERVED=(usage account account-add select)
 
 # Fill a fresh account dir with symlinks to the tracked claude config.
 _claude_account_seed() {
@@ -82,9 +87,12 @@ _claude_selector() {
 }
 
 # x-* names for the whole toolkit, so one prefix reaches everything.
-x-usage()       { claude-usage "$@" }
+x-usage()       { headroom "$@" }
 x-account()     { claude-account "$@" }
 x-account-add() { claude-account-add "$@" }
+# Interactive picker (headroom, ~/dev/headroom): choose an account off the
+# live usage board, stick like x-<name> does, then launch on it.
+x-select()      { headroom select && x "$@" }
 
 # Record the account bare `x` should target from now on.
 _claude_remember() {
@@ -160,7 +168,7 @@ claude-account-add() {
 # local part is unique among accounts and isn't the primary's name, so a
 # short name can never launch the wrong account with permissions bypassed.
 # Runs at every shell init: one glob, no subprocess — startup-perf safe.
-# claude-usage's xcmd_for mirrors this rule — keep the two in sync.
+# headroom's accounts.Launcher mirrors this rule — keep the two in sync.
 _claude_gen_launchers() {
   emulate -L zsh
   local d email name
