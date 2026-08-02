@@ -23,9 +23,10 @@ lives.
 
 This is where the underlying engine lives: **`~/dev/headroom`** — a
 standalone Go CLI installed to `~/.local/bin/headroom` via its
-`make install`. The dashboard (`headroom`), the interactive picker
-(`headroom select`), and the self-check (`headroom check`) are all engine
-features; `x-usage` and `x-select` are one-line zsh wrappers over them. If a
+`make install`. The dashboard (`headroom`, with `--json` and `watch` forms),
+the interactive picker (`headroom select`), and the self-check
+(`headroom check`) are all engine features; `x-usage` and `x-select` are
+one-line zsh wrappers over them. If a
 wrapper misbehaves, the fix is almost certainly in the engine — its mental
 model, the reverse-engineered vendor contracts (Keychain service naming, the
 OAuth usage endpoint, response-drift handling), and its verification story
