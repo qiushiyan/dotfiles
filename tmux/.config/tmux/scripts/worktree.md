@@ -284,10 +284,9 @@ The workflow this serves:
   a blocking `sleep` in the script. Any new post-creation step should follow
   the same pattern (visible, non-blocking, toggleable) and join the chain
   rather than adding a second send-keys.
-- **Version + reload mechanics.** Needs tmux 3.2+ (`display-popup`); 3.3+ for
-  `-e`. Because the script is stow-symlinked, **edits to it are live
-  immediately**, but edits to the **binding** in `tmux.conf` need a config reload
-  (`prefix r`).
+- **Reload mechanics.** Because the script is stow-symlinked, **edits to it are
+  live immediately**, but edits to the **binding** in `tmux.conf` need a config
+  reload (`prefix r`). (The repo's tmux version is pinned once, in `CLAUDE.md`.)
 - **The *popup* can't run headlessly, but the script can.** `display-popup`
   needs an attached client — but the script itself runs fine in a pane of a
   *detached* scratch server (`tmux -L <socket>`): a pane has a pty regardless

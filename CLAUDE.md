@@ -21,26 +21,21 @@ make brew       # install Homebrew packages from Brewfile
 make brew-dump  # update Brewfile from current Homebrew state
 ```
 
-Mostly configuration, so there is no build. The one test suite is
-`tmux/.config/tmux/scripts/tests/test-pane-control.sh` — 69 assertions across 24 cases for the pane
-control plane (floating zoom + pane mode), run with `bash
-tmux/.config/tmux/scripts/tests/test-pane-control.sh [T5 T14 ...]`. It builds
-throwaway tmux servers on their own sockets and never touches a live one.
+Mostly configuration, so there is no build. The one test suite covers the tmux
+pane control plane — `bash tmux/.config/tmux/scripts/tests/test-pane-control.sh
+[T5 T14 …]`, building throwaway tmux servers on their own sockets.
 
-Two isolation rules, both learned the hard way — a new case must honour them:
+**A test that escapes its sandbox corrupts live state**, and both escape routes
+are silent — a new case has to close them:
 
-- **Anything driving tmux from a script must run with `$TMUX` pointed at the
-  test socket** (the `R()` helper does this). The scripts resolve the server
-  through it, and without it they fall through to the default socket — the
-  user's real server — where the test's pane ids don't exist, so every call
-  silently no-ops and the assertions pass for the wrong reason.
-- **State outside tmux is shared and must be redirected.** resurrect resolves
-  its save directory per-server from `@resurrect-dir` but defaults to one
-  shared path, so a test reaching the real `save.sh` wrote a snapshot of a
-  throwaway server into the user's save dir and repointed `last` at it — the
-  next restore would have brought back test junk. `fresh()` points every test
-  server at a temp sandbox; T21 asserts the real directory is untouched.
-  Anything else global (`pkill` patterns included) needs the same treatment.
+- Drive tmux only with `$TMUX` pointed at the test socket (the `R()` helper).
+  Otherwise calls fall through to the default socket — the real server — where
+  the test's pane ids don't exist, so everything no-ops and assertions pass for
+  the wrong reason.
+- Redirect shared state *outside* tmux. resurrect's save directory is one path
+  for all servers unless `@resurrect-dir` is set, so a test reaching the real
+  `save.sh` overwrites the user's session snapshot; `fresh()` sandboxes it and
+  T21 guards it. Global patterns like `pkill` need the same care.
 
 To bring an existing config file under management, use the `dotadd` zsh function (it moves the file into the correct package and stows it).
 
@@ -53,7 +48,7 @@ Each directory's contents mirror the target path relative to `$HOME`:
 | `zsh/` | `~/.zshrc`, `~/.zshenv`, `~/.config/zsh/` | Shell config, aliases, functions |
 | `git/` | `~/.gitconfig`, `~/.config/git/ignore` | Git config with conditional includes |
 | `nvim/` | `~/.config/nvim/` | Neovim (LazyVim-based) |
-| `ghostty/`, `tmux/` | `~/.config/{ghostty,tmux}/` | Terminal + multiplexer |
+| `ghostty/`, `tmux/` | `~/.config/{ghostty,tmux}/` | Terminal + multiplexer (tmux **3.7b**) |
 | `claude/` | `~/.claude/` | Claude Code settings, skills, hooks |
 | `codex/` | `~/.codex/` | Codex CLI config |
 | `ohmyposh/` | `~/.config/ohmyposh/` | Prompt theme |
@@ -88,7 +83,7 @@ Modules in `zsh/.config/zsh/`:
 - **Secrets**: live in `~/.secrets` (untracked, mode `600`, sourced by `.zshrc`). Tracked config reads them from the environment instead of hardcoding.
 - **`block-dangerous-git.sh`** (Claude Code hook in `claude/.claude/hooks/`) blocks `push` / `reset --hard` / etc. on `main` — pushes to `main` must be run by the user manually, not by Claude.
 - **Claude context chip**: the statusline script pushes context-usage % into the pane-local `@claude_ctx` tmux option; the pane border draws it, and `tmux-claude-ctx.sh` solely owns turning borders off (fed by Claude's `SessionEnd` hook, a zsh `precmd` sweep, and tmux pane-exit/relocation events). One feature across `claude/`, `tmux/`, and `zsh/` — edit any piece with the others in mind (see `tmux/.config/tmux/workflow.md`).
-- **tmux pane control** (needs **tmux 3.7b+**): `prefix z` floats the current pane into an overlay instead of zooming it (the window stays visible and live behind); `prefix p` is a sticky key table holding every pane-moving verb. Spans `tmux.conf` (the `panes`/`float-root`/`float-prefix` key tables, the `status-format[1]` hint), `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, and `tmux-resurrect-save.sh`. Retired `prefix !`/`@`/`<`/`>`/`P` and deleted `tmux-move-pane.sh`. Design, failure paths, and the tmux gotchas that cost real debugging: `tmux/.config/tmux/scripts/float-pane.md` — **read it before touching any of those files.**
+- **tmux pane control**: `prefix z` floats a pane into an overlay rather than zooming it, and `prefix p` holds the pane-moving verbs in a sticky key table. A floated pane is genuinely relocated into a holder session, so its recovery, its restricted key surface, and the resurrect save wrapper are all load-bearing — `tmux/.config/tmux/scripts/float-pane.md` carries the design and the tmux traps. **Read it before editing `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, or the pane/float key tables in `tmux.conf`.**
 - **Claude accounts**: several subscriptions coexist — `~/.claude` is the primary; each extra account is `~/.claude-accounts/<email>/` with its own Keychain login. Launchers (`x`, `x-<name>`) in `zsh/.config/zsh/claude.zsh`; the cross-account `/usage` dashboard + account picker is **headroom**, a Go CLI in `~/dev/headroom` (installed to `~/.local/bin/headroom`; `x-usage`/`x-select` are thin wrappers — if they misbehave, edit the engine there). Account dirs are runtime, never in the repo (see `docs/claude-accounts.md`).
 - **Skills**: Claude Code is a superset of Codex; Codex symlinks into it (see below).
 

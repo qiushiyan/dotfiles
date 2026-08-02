@@ -34,7 +34,7 @@ At the end of the day, **`prefix d`** detaches — every pane keeps running in t
 The picker and status bar are only as useful as your names.
 
 - **`prefix m`** renames the **current window**.
-- **`prefix M`** renames the **current pane** in a **popup text field** — same rounded frame as the worktree and move-pane popups, at eye level instead of down in the status line. Type whatever you want; the label is taken verbatim, and the field starts prefilled with your existing label when the pane has one. `Enter` applies, **`Esc` cancels**, and submitting it **empty** (`C-u` wipes the line) resets the pane. Naming a pane shows the label on its **border** and turns the border on for that window; clearing hands the decision to the reconciler, which keeps the row only while some pane in the window still needs it (another label, or a Claude context chip). Naming also **freezes** the title against the program inside the pane — Claude Code otherwise repaints `✳ …` over your label every render — and clearing hands the title back to the app.
+- **`prefix M`** renames the **current pane** in a **popup text field** — same rounded frame as the worktree popup, at eye level instead of down in the status line. Type whatever you want; the label is taken verbatim, and the field starts prefilled with your existing label when the pane has one. `Enter` applies, **`Esc` cancels**, and submitting it **empty** (`C-u` wipes the line) resets the pane. Naming a pane shows the label on its **border** and turns the border on for that window; clearing hands the decision to the reconciler, which keeps the row only while some pane in the window still needs it (another label, or a Claude context chip). Naming also **freezes** the title against the program inside the pane — Claude Code otherwise repaints `✳ …` over your label every render — and clearing hands the title back to the app.
 - **`prefix $`** renames the **current session** (tmux's built-in). Do it when a session's default name (`0`, `1`) is meaningless, so `prefix T` reads well — but it's once per session, which is why the custom key went to panes instead.
 - For a pane *other* than the current one, use the command prompt: **`prefix :`** then **`rename-pane "label"`** / **`unname-pane`**, which tab-complete like native commands.
 
@@ -169,7 +169,7 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 
 **Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x`
 
-**Reorder / resize / zoom** — windows `Shift-Left`/`Shift-Right` · float a pane `prefix z` (stock zoom `prefix Z`) · everything else about panes lives in **`prefix p`** pane mode: `hjkl` push · `HJKL` resize · `m`/`M` mark-and-move · `u` undo push · `b` break out · `Esc` done
+**Reorder** — windows `Shift-Left`/`Shift-Right` · panes: float `prefix z` (stock zoom `prefix Z`), everything else in **`prefix p`** pane mode (table above)
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom · `Esc` clear selection (stays in copy mode) · `q` or double-`Esc` exit
 

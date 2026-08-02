@@ -1,71 +1,34 @@
-# tmux: high-value features not yet built
+# tmux: features not yet built
 
-A backlog of tmux improvements we've discussed and agreed are worth building,
-with enough notes to pick any one up later. Two buckets: features that **extend
-the worktree popup**, and **standalone** one-offs.
+A backlog of tmux improvements worth building, with enough notes to pick any one
+up later. Shipped items live in the docs that own them, not here — this file is
+only what is still open:
 
-Already in place (for context): the **worktree popup** (`prefix W`, see
-`scripts/worktree.md`) and **sesh** session switching (`prefix T`). The
-"worktree sessionizer" idea from early brainstorming merged into the worktree
-popup — it is not a separate item.
-
----
-
-## A. Builds on the worktree popup
-
-### ✅ Agent-done notifications  (built — Claude wired, Codex pending)
-
-**Status:** the in-tmux UI (window dot + `◷ N` badge) and the Claude Code
-`Stop`/`Notification` hooks are implemented and verified — see
-`scripts/agent-notify.md`. Still open: wiring **Codex** (its single `notify` slot
-in `config.toml` is occupied by the Computer Use app, so adding ours means a
-wrapper that calls ours then execs the original — needs a decision before doing).
-
-**What:** be told when a coding-agent pane (Claude Code / Codex) finishes or is
-waiting for input, instead of tabbing between panes to check.
-
-**Why:** the #1 friction when running 3–4 agents in parallel — you stop
-babysitting and only look when a pane actually wants you.
-
-**Mechanism — two layers:**
-
-- *Universal, heuristic.* tmux `monitor-silence` flags a window when its active
-  pane produces no output for N seconds; bridge the flag to a macOS notification
-  via `set-hook -g alert-silence '…'` calling `terminal-notifier`/`osascript`
-  (or the `tmux-notify` plugin). Works for any long task (builds, tests, agents)
-  with zero per-agent setup — but can't distinguish "done" from "paused".
-- *Agent-native, precise.* Hook the agent's own completion event:
-  - **Claude Code** — a `Stop` hook (agent finished) and `Notification` hook
-    (needs attention / waiting) in `settings.json`; each runs a shell command.
-  - **Codex** — `notify` in `config.toml`, an external program invoked on
-    `agent-turn-complete` with a JSON payload.
-  - Different per agent, but exact.
-
-**Ties to worktree:** fires on the agent pane inside a worktree window, so the
-alert can name *which* worktree wants attention.
-
-**Effort:** small (universal silence flag) → medium (agent-native hooks + routing
-which worktree/window the alert refers to).
-
-### ✅ gh PR picker  (built — `ctrl-p` inside the worktree popup)
-
-**Status:** implemented as a second fzf screen inside `prefix W` (per the
-"one key, one surface" guideline — no new global binding): `ctrl-p` lists open
-PRs with a `gh pr view` preview; `enter` fetches `refs/pull/<n>/head` into a
-local branch (fork PRs work too) and reuses the worktree-create path (window,
-file seed, install + agent); `ctrl-o` opens the PR in the browser; `esc` goes
-back to the worktree list. See `scripts/worktree.md`.
-
-**What:** a popup listing open PRs (`gh pr list`) with a preview; pick one to open
-in the browser or **check it out into a fresh worktree**.
-
-**Why:** you live in git/gh; reviewing a PR is currently several manual commands.
+```
+scripts/worktree.md      the worktree popup (prefix W) + the gh PR picker
+scripts/agent-notify.md  agent-done dots and the ◷ badge
+scripts/float-pane.md    floating zoom (prefix z) + pane mode (prefix p)
+workflow.md              how all of it is meant to be used
+```
 
 ---
 
-## B. Standalone one-offs
+## Codex agent-done wiring
 
-### Hint copy (tmux-fingers)
+**What:** the agent-done dot and `◷ N` badge fire for Claude Code but not Codex,
+so a Codex pane finishing goes unnoticed.
+
+**Why it is still open:** Codex has a single `notify` slot in `config.toml` and
+it is already occupied by the Computer Use app. Wiring ours means a wrapper that
+calls ours then execs the original — that needs a decision before doing, not just
+implementation time.
+
+**Mechanism:** Codex invokes `notify` on `agent-turn-complete` with a JSON
+payload; the receiving end already exists (`scripts/tmux-agent-done.sh`).
+
+**Effort:** small, once the wrapper question is settled.
+
+## Hint copy (tmux-fingers)
 
 **What:** press a key and every file path / git SHA / URL / `line:col` on screen
 gets a letter label; type it to copy. A generalization of the existing `prefix u`
@@ -82,31 +45,23 @@ regexes and keys. (Chosen over the once-default `fcsonline/tmux-thumbs`: as of
 stale, and carries 8 open issues vs 48 — the "thumbs = the modern Rust rewrite"
 framing has inverted.)
 
-**Depends on:** nothing.
-
 **Effort:** small (install + config).
 
-### Floating scratch terminal  (partly superseded — see notes)
+## Persistent floating scratch terminal
 
 **What:** one key toggles a *persistent* floating shell (history + cwd preserved)
 for quick `git` / `gh` / `ls`; another dismisses it. Your layout never moves.
 
-**Why:** the ad-hoc "5th pane" becomes a popup — less clutter, no layout churn.
+**What already covers part of it:** tmux 3.7's native floating panes
+(`prefix *` → `new-pane`) give a non-modal floating shell for free. That handles
+the quick-command case; what it does not give is **persistence** across toggles,
+which was the point of the original item.
 
-**Status:** two things landed that change this item.
-
-- **tmux 3.7's native floating panes** (`prefix *` → `new-pane`) already give a
-  non-modal floating shell for free. That covers the "quick `git`/`gh`" case
-  without writing anything; what it does *not* give is **persistence** across
-  toggles, which was the point of the original item.
-- **`prefix z` floating zoom** (`scripts/float-pane.md`) built the holder-session
-  + container machinery. The remaining work is a *second caller* of
-  `open_container()` pointed at a persistent scratch session instead of a
-  relocated pane.
-
-**Do not** share the float's holder state machine for this — it exists to
+**Mechanism:** a second caller of the float's container adapter
+(`scripts/float-pane.md`), pointed at a persistent scratch session instead of a
+relocated pane. Share only the adapter — the holder state machine exists to
 relocate a tiled pane and restore a source layout, and a scratch terminal has
-neither. Share only the container adapter.
+neither.
 
 **Effort:** small.
 
@@ -114,8 +69,8 @@ neither. Share only the container adapter.
 
 ## Notes
 
-- Items in **A** should follow the worktree popup's design guidelines
+- Items that extend the worktree popup should follow its design guidelines
   (`scripts/worktree.md`): one surface per concept, lean on built-in safety, pass
   tmux context (session, path) in as args rather than inferring it.
-- For **B** and any pane-driving automation, `tmux-scripting.md` already documents
-  `send-keys` / `capture-pane` / `tmux-wait-for-text`.
+- For pane-driving automation, `tmux-scripting.md` documents `send-keys` /
+  `capture-pane` / `tmux-wait-for-text`.
