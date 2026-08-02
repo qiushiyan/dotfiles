@@ -22,10 +22,18 @@
 set -uo pipefail
 
 FLOAT="$HOME/.config/tmux/scripts/tmux-float-pane.sh"
-REAL="$HOME/.config/tmux/plugins/tmux-resurrect/scripts/save.sh"
+# Overridable so the test suite can prove the abort path without running the
+# real save; production never sets it.
+REAL="${RESURRECT_SAVE:-$HOME/.config/tmux/plugins/tmux-resurrect/scripts/save.sh}"
 
+# FAIL CLOSED. If a float cannot be normalised, do NOT save: resurrect
+# overwrites the previous snapshot, so saving now would trade a good save for
+# one that records the floated pane and its window as unrelated things. Skipping
+# keeps the last good save, and prepare-save has already told the user why.
 if [ -f "$FLOAT" ]; then
-    bash "$FLOAT" prepare-save >/dev/null 2>&1 || true
+    if ! bash "$FLOAT" prepare-save; then
+        exit 1
+    fi
 fi
 
 exec "$REAL" "$@"

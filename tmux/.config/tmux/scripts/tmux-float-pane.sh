@@ -66,6 +66,10 @@ CLAUDE_CTX="$HOME/.config/tmux/scripts/tmux-claude-ctx.sh"
 FLOAT_W="${FLOAT_W:-90%}"
 FLOAT_H="${FLOAT_H:-90%}"
 
+# How long a restore claim is honoured before another restorer may steal it.
+# Only reached when a restorer died mid-flight.
+FLOAT_CLAIM_TTL="${FLOAT_CLAIM_TTL:-30}"
+
 msg() { tmux display-message "$*" 2>/dev/null || true; }
 
 # --- small helpers over tmux state -------------------------------------------
@@ -106,13 +110,52 @@ apply_order_and_layout() {
 
 # --- float --------------------------------------------------------------------
 
-# The container seam. Everything above is container-agnostic; this function is
-# the ONLY place that knows how the holder session is put on screen. Today:
-# a popup running a nested attach (`TMUX=` is required — tmux refuses to nest
-# an attach otherwise). When tmux can adopt an existing pane into a native
-# floating pane (tmux/tmux#5135, slated 3.8), swapping the body of this
-# function for `new-pane` is the whole migration — a native float is non-modal,
-# so the background would stay interactive too, not merely visible.
+# --- the container adapter ----------------------------------------------------
+# Together these are the only code that knows the holder is shown by a popup
+# running a nested attach; everything else here is container-agnostic. Migrating
+# to a native floating pane (tmux/tmux#5135, slated 3.8) means rewriting THESE,
+# not one line — an earlier comment claimed the swap was a single function,
+# which was untrue: staging the key surface, the in-container lifecycle, and
+# dismissal are container-specific too.
+#
+#   container_restrict_keys / container_release_keys  stage & unstage the holder
+#   open_container                                    put it on screen
+#   container_dismiss                                 take it off screen
+#   the `container` verb (bottom)                     attach, then restore
+
+# The nested client would otherwise inherit this config's whole prefix surface
+# and drive it against the holder. BOTH halves are required:
+#   key-table float-root  — the client's root table inside the float
+#   prefix/prefix2 None   — without this tmux intercepts the prefix key ITSELF
+#                           and jumps straight to the built-in `prefix` table,
+#                           bypassing a custom root table entirely (verified:
+#                           #{client_key_table} read `prefix`, not
+#                           `float-prefix`). With no prefix to intercept the
+#                           C-b/C-a bindings in float-root fire, so `prefix z`
+#                           still means "close the float".
+container_restrict_keys() {
+    local holder="$1"
+    tmux set -t "$holder" key-table float-root 2>/dev/null
+    tmux set -t "$holder" prefix  None 2>/dev/null
+    tmux set -t "$holder" prefix2 None 2>/dev/null
+}
+
+# Undo the above. Needed whenever a holder is surfaced to the user as a recovery
+# session: it has to behave like a normal session, or the configured prefixes
+# are dead in it.
+container_release_keys() {
+    local holder="$1" o
+    for o in key-table prefix prefix2 status; do
+        tmux set -t "$holder" -u "$o" 2>/dev/null
+    done
+}
+
+# Detaching the nested client ends the blocking attach inside the container,
+# which is what triggers that container's own restore.
+container_dismiss() {
+    tmux detach-client -s "=$1" 2>/dev/null || true
+}
+
 open_container() {
     local holder="$1" pane="$2" client="$3" sock
     sock=$(tmux display-message -p '#{socket_path}' 2>/dev/null)
@@ -172,25 +215,31 @@ float_pane() {
         msg "float: could not create holder session"; return 1; }
     tmux set -t "$holder" @fl_holder_nonce "$nonce" 2>/dev/null
     tmux set -t "$holder" status off 2>/dev/null
-    # Restricted key surface. BOTH halves are required:
-    #   key-table float-root  — the client's root table inside the float
-    #   prefix/prefix2 None   — without this tmux intercepts the prefix key
-    #                           ITSELF and jumps straight to the built-in
-    #                           `prefix` table, so a custom root table is
-    #                           bypassed and this config's full destructive
-    #                           surface stays live inside the float (verified:
-    #                           #{client_key_table} read `prefix`, not
-    #                           `float-prefix`). With no prefix to intercept,
-    #                           the C-b/C-a bindings in float-root fire, and
-    #                           `prefix z` still means "close the float".
-    tmux set -t "$holder" key-table float-root 2>/dev/null
-    tmux set -t "$holder" prefix None 2>/dev/null
-    tmux set -t "$holder" prefix2 None 2>/dev/null
-
+    container_restrict_keys "$holder"
     local placeholder
     placeholder=$(tmux display-message -p -t "$holder" '#{window_id}')
 
+    # PUBLISH RECOVERY STATE BEFORE THE DESTRUCTIVE MOVE. The pane leaving its
+    # window and the metadata describing where it came from must not be
+    # separated by a window in which the process can die: a marked holder
+    # containing a live pane with no @fl_* is unrecoverable — the sweep finds
+    # the pane but restore has nothing to act on, so it sits invisible in an
+    # internal session. Writing first means the worst intermediate state is a
+    # pane that still has its metadata, which recovery can always resolve —
+    # either forward (it moved) or backward (it did not).
+    set_pane_opt "$pane" @fl_phase   preparing
+    set_pane_opt "$pane" @fl_nonce   "$nonce"
+    set_pane_opt "$pane" @fl_holder  "$holder"
+    set_pane_opt "$pane" @fl_src_sess "$sess"
+    set_pane_opt "$pane" @fl_src_win  "$win"
+    set_pane_opt "$pane" @fl_src_idx  "$win_idx"
+    set_pane_opt "$pane" @fl_src_name "$win_name"
+    set_pane_opt "$pane" @fl_order   "$order"
+    set_pane_opt "$pane" @fl_layout  "$layout"
+    set_pane_opt "$pane" @fl_active  "$active"
+
     if ! tmux break-pane -d -s "$pane" -t "$holder:" 2>/dev/null; then
+        clear_state "$pane"
         tmux kill-session -t "=$holder" 2>/dev/null
         msg "float: break-pane failed"; return 1
     fi
@@ -202,17 +251,9 @@ float_pane() {
     fwin=$(tmux display-message -p -t "$pane" '#{window_id}')
     tmux select-window -t "$fwin" 2>/dev/null
 
-    # Record what we expect the source window to look like while floated. On
-    # restore, this is what tells us whether anyone else touched it.
-    set_pane_opt "$pane" @fl_nonce   "$nonce"
-    set_pane_opt "$pane" @fl_holder  "$holder"
-    set_pane_opt "$pane" @fl_src_sess "$sess"
-    set_pane_opt "$pane" @fl_src_win  "$win"
-    set_pane_opt "$pane" @fl_src_idx  "$win_idx"
-    set_pane_opt "$pane" @fl_src_name "$win_name"
-    set_pane_opt "$pane" @fl_order   "$order"
-    set_pane_opt "$pane" @fl_layout  "$layout"
-    set_pane_opt "$pane" @fl_active  "$active"
+    # What we expect the source window to look like while floated — the
+    # optimistic-concurrency check on restore. Only meaningful now that the
+    # move has actually happened, hence after the break.
     if win_exists "$win"; then
         set_pane_opt "$pane" @fl_exp_order  "$(tiled_panes "$win" | tr '\n' ' ')"
         set_pane_opt "$pane" @fl_exp_layout "$(tmux display-message -p -t "$win" '#{window_layout}')"
@@ -234,12 +275,50 @@ restore_pane() {
     local phase; phase=$(pane_opt "$pane" @fl_phase)
     [ -n "$phase" ] || return 0          # not floated (or already restored)
 
-    # Claim it. tmux user options have no compare-and-set, so this is
-    # last-writer-wins rather than a true atomic claim: it narrows the window
-    # between two racing restorers, it does not close it. Both racers converge
-    # on the same end state anyway — restore is idempotent — so the worst case
-    # is duplicated work, not a lost pane.
+    # CLAIM IT ATOMICALLY. `set-option -o` is set-if-absent: it fails (rc≠0,
+    # "already set: …") and leaves the existing value alone, which is exactly
+    # the compare-and-set this needs. Overwriting @fl_phase instead was NOT a
+    # lock — every caller that saw any phase proceeded, so two restorers ran
+    # the same join-pane + permutation + layout replay and reliably corrupted
+    # the result (a 3-pane window came back as %0 %2 %1). That path is directly
+    # reachable: prepare_save detaches the container, waking its restore, and
+    # then calls restore itself.
+    #
+    # A claim outlives a restorer killed mid-flight, so it carries a timestamp
+    # and is stealable after FLOAT_CLAIM_TTL — otherwise one crash would wedge
+    # the pane in its holder permanently.
+    local now claim claim_at
+    now=$(date +%s)
+    if ! tmux set -p -t "$pane" -o @fl_claim "$$:$now" 2>/dev/null; then
+        claim=$(pane_opt "$pane" @fl_claim)
+        claim_at=${claim##*:}
+        if [ -n "$claim_at" ] && [ $((now - claim_at)) -lt "$FLOAT_CLAIM_TTL" ]; then
+            return 0                     # a live restorer owns this pane
+        fi
+        set_pane_opt "$pane" @fl_claim "$$:$now"   # stale — take it over
+    fi
+
+    # Re-read after winning: the state may have been rewritten between our
+    # first look and the claim.
+    phase=$(pane_opt "$pane" @fl_phase)
+    [ -n "$phase" ] || { unset_pane_opt "$pane" @fl_claim; return 0; }
     set_pane_opt "$pane" @fl_phase restoring
+
+    # `preparing` means we died between publishing state and completing the
+    # move, so the pane may never have left. If it is still in its source
+    # window there is nothing to restore — just drop the unused holder.
+    if [ "$phase" = preparing ]; then
+        local cur_win; cur_win=$(tmux display-message -p -t "$pane" '#{window_id}' 2>/dev/null)
+        if [ -n "$cur_win" ] && [ "$cur_win" = "$(pane_opt "$pane" @fl_src_win)" ]; then
+            local h; h=$(pane_opt "$pane" @fl_holder)
+            [ -n "$h" ] && sess_exists "$h" && \
+                [ -z "$(tmux list-panes -s -t "=$h" -F '#{pane_id}' 2>/dev/null)" ] && \
+                tmux kill-session -t "=$h" 2>/dev/null
+            clear_state "$pane"
+            reconcile
+            return 0
+        fi
+    fi
 
     local holder src_sess src_win order layout active exp_order exp_layout
     holder=$(pane_opt "$pane" @fl_holder)
@@ -308,9 +387,7 @@ restore_pane() {
         # a live process the user cares about. Surface the holder instead, so
         # the pane is reachable rather than hidden in an internal session.
         if [ -n "$holder" ] && sess_exists "$holder"; then
-            tmux set -t "$holder" -u key-table 2>/dev/null
-            tmux set -t "$holder" -u prefix 2>/dev/null
-            tmux set -t "$holder" -u status 2>/dev/null
+            container_release_keys "$holder"
             tmux set -t "$holder" -u @fl_holder_nonce 2>/dev/null
             tmux rename-session -t "=$holder" "recovered-${holder#_float_}" 2>/dev/null
         fi
@@ -345,7 +422,7 @@ clear_state() {
     local pane="$1" o
     for o in @fl_phase @fl_nonce @fl_holder @fl_src_sess @fl_src_win \
              @fl_src_idx @fl_src_name @fl_order @fl_layout @fl_active \
-             @fl_exp_order @fl_exp_layout; do
+             @fl_exp_order @fl_exp_layout @fl_claim; do
         unset_pane_opt "$pane" "$o"
     done
 }
@@ -430,6 +507,33 @@ sweep() {
             [ -n "$p" ] && restore_pane "$p"
         done < <(stranded_panes)
     fi
+    surface_orphan_holders
+    return 0
+}
+
+# Last-resort safety net: a marked holder whose panes carry no @fl_* state.
+# The ordering fix in float_pane means this can no longer be produced here, but
+# it can still arrive from an older build, a partially-restored server, or a
+# hand-edited session — and the failure mode is the worst one available: a live
+# pane the user cares about, alive and invisible in an internal session. Make it
+# a normal, reachable session rather than leaving it hidden.
+surface_orphan_holders() {
+    local s p has_state
+    while IFS= read -r s; do
+        [ -n "$s" ] || continue
+        [ "$(tmux display-message -p -t "$s" '#{session_attached}' 2>/dev/null)" != 0 ] && continue
+        has_state=""
+        while IFS= read -r p; do
+            [ -n "$(pane_opt "$p" @fl_phase)" ] && { has_state=1; break; }
+        done < <(tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null)
+        [ -n "$has_state" ] && continue
+        [ -z "$(tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null)" ] && {
+            tmux kill-session -t "=$s" 2>/dev/null; continue; }
+        container_release_keys "$s"
+        tmux set -t "$s" -u @fl_holder_nonce 2>/dev/null
+        tmux rename-session -t "=$s" "recovered-${s#_float_}" 2>/dev/null
+    done < <(holder_sessions)
+    reconcile
     return 0
 }
 
@@ -437,13 +541,17 @@ sweep() {
 # source window WITHOUT the pane plus a `_float_*` session holding it, and
 # resurrect does not persist pane user options — so the two halves could never
 # be reconnected after a restart. Normalise first, then let the save proceed.
+# FAILS CLOSED. Returning success with a float still outstanding is the one
+# outcome that must not happen: resurrect overwrites the previous snapshot, so
+# saving here would replace a good save with one whose pane and window are
+# recorded as unrelated things. Aborting keeps the last good save instead.
 prepare_save() {
     local i=0 s p
     # Close any live container first, so its client goes away with the popup
     # instead of being re-homed onto another session when the holder dies
     # (detach-on-destroy is off here).
     while IFS= read -r s; do
-        [ -n "$s" ] && tmux detach-client -s "=$s" 2>/dev/null
+        [ -n "$s" ] && container_dismiss "$s"
     done < <(holder_sessions)
     while IFS= read -r p; do
         [ -n "$p" ] && restore_pane "$p"
@@ -453,7 +561,9 @@ prepare_save() {
         sleep 0.1
         i=$((i + 1))
     done
-    return 0
+    [ -z "$(all_float_panes)" ] && return 0
+    msg "resurrect save skipped — a floated pane could not be restored"
+    return 1
 }
 
 # --- entry --------------------------------------------------------------------

@@ -95,7 +95,7 @@ remember.
 | `h/j/k/l` | push the pane (swap, or move to that edge) |
 | `H/J/K/L` | resize · arrow keys move the *cursor* between panes |
 | `m` / `M` | mark a pane / move this pane to the mark — works across windows and sessions |
-| `u` | undo the last move · `e` spread evenly · `Space` toggle row/column |
+| `u` | undo the last push · `e` spread evenly · `Space` toggle row/column |
 | `z` | float it · `b` break it into its own window |
 | `Esc` | done |
 
@@ -169,7 +169,7 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 
 **Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x`
 
-**Reorder / resize / zoom** — windows `Shift-Left`/`Shift-Right` · float a pane `prefix z` (stock zoom `prefix Z`) · everything else about panes lives in **`prefix p`** pane mode: `hjkl` push · `HJKL` resize · `m`/`M` mark-and-move · `u` undo · `b` break out · `Esc` done
+**Reorder / resize / zoom** — windows `Shift-Left`/`Shift-Right` · float a pane `prefix z` (stock zoom `prefix Z`) · everything else about panes lives in **`prefix p`** pane mode: `hjkl` push · `HJKL` resize · `m`/`M` mark-and-move · `u` undo push · `b` break out · `Esc` done
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom · `Esc` clear selection (stays in copy mode) · `q` or double-`Esc` exit
 

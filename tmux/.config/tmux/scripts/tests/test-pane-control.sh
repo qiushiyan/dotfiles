@@ -81,7 +81,15 @@ t1() {
     holders=$(T list-sessions -F '#{session_name}' | grep -c '^_float_' || true)
     [ "$holders" -ge 1 ] && ok "T1 pane is in a holder while floated" \
         || no "T1 pane is in a holder while floated" "no _float_ session found"
-    pkill -9 -f "tmux-float-pane.sh container" 2>/dev/null
+    # Kill ONLY this test's container. An unscoped `pkill -f
+    # "tmux-float-pane.sh container"` matches every such process on the machine
+    # — including one serving the user's real tmux server — so match on this
+    # test's own socket path, which the container's argv carries.
+    for pid in $(pgrep -f "tmux-float-pane.sh container" 2>/dev/null); do
+        if ps -o command= -p "$pid" 2>/dev/null | grep -qF "$SOCKPATH"; then
+            kill -9 "$pid" 2>/dev/null
+        fi
+    done
     sleep 0.5
     R "$FLOAT" sweep >/dev/null 2>&1
     sleep 0.5
@@ -371,9 +379,196 @@ t14() {
         "$(T display -p -t "$C" '#{session_name}' 2>/dev/null)" "t"
 }
 
+# ---------------------------------------------------------------------------
+# T15 — two restorers must not corrupt the pane order. prepare_save reaches
+# this directly: it detaches the container (waking the container's own restore)
+# and then calls restore itself.
+# ---------------------------------------------------------------------------
+t15() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
+    before_o=$(tiled "$W"); before_l=$(layout "$W")
+    P=$(T display -p -t "$W" '#{pane_id}')
+    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    sleep 2
+    R "$FLOAT" restore "$P" >/dev/null 2>&1 &
+    R "$FLOAT" restore "$P" >/dev/null 2>&1 &
+    wait 2>/dev/null; sleep 0.6
+    check "T15 concurrent restores keep pane order" "$(tiled "$W")" "$before_o"
+    check "T15 concurrent restores keep layout"     "$(layout "$W")" "$before_l"
+}
+
+# ---------------------------------------------------------------------------
+# T16 — a marked holder must never hold a live pane without enough state to
+# recover it. Reproduces the window between break-pane and publishing @fl_*.
+# ---------------------------------------------------------------------------
+t16() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    P=$(T display -p -t "$W" '#{pane_id}')
+    # hand-build the intermediate state: marked holder, pane moved in, no @fl_*
+    T new-session -d -s _float_partial
+    T set -t _float_partial @fl_holder_nonce "partial"
+    PLACE=$(T display -p -t _float_partial '#{window_id}')
+    T break-pane -d -s "$P" -t '_float_partial:'; T kill-window -t "$PLACE"
+    sleep 0.3
+    R "$FLOAT" sweep >/dev/null 2>&1; sleep 1.5
+    reachable=$(T list-panes -a -F '#{pane_id}' | grep -c "$P" || true)
+    hidden=$(T list-sessions -F '#{session_name}' | grep -c '^_float_' || true)
+    check "T16 pane from a metadata-less holder is not lost" "$reachable" "1"
+    check "T16 it is surfaced, not left in an internal holder" "$hidden" "0"
+}
+
+# ---------------------------------------------------------------------------
+# T17 — normalization must fail closed: if a float survives, prepare-save
+# reports failure and the wrapper must NOT hand off to the real save.
+# ---------------------------------------------------------------------------
+t17() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    P=$(T display -p -t "$W" '#{pane_id}')
+    # a holder that cannot be restored: source window killed, session gone too
+    T new-session -d -s _float_stuck
+    T set -t _float_stuck @fl_holder_nonce stuck
+    PLACE=$(T display -p -t _float_stuck '#{window_id}')
+    T break-pane -d -s "$P" -t '_float_stuck:'; T kill-window -t "$PLACE"
+    T set -p -t "$P" @fl_phase floating
+    T set -p -t "$P" @fl_holder _float_stuck
+    T set -p -t "$P" @fl_src_sess "gone-session"
+    T set -p -t "$P" @fl_src_win  "@999"
+    sleep 0.3
+    R "$FLOAT" prepare-save >/dev/null 2>&1; rc=$?
+    # After a successful surface-to-recovery there is no marked holder left, so
+    # prepare-save may legitimately succeed; what must never happen is success
+    # while a marked holder still holds the pane. Count holders with tmux
+    # directly — an earlier version asked the script for a verb it doesn't have,
+    # which printed usage, counted zero, and passed for the wrong reason.
+    left=$(T list-sessions -F '#{session_name}' 2>/dev/null | grep -c '^_float_' || true)
+    check "T17 prepare-save never reports success with a holder surviving" \
+        "$([ "$rc" -ne 0 ] || [ "$left" = 0 ] && echo ok)" "ok"
+
+    # and the wrapper must abort rather than exec the real save
+    # The fake save must actually be reachable, or "aborted" proves nothing —
+    # the wrapper honours RESURRECT_SAVE for exactly this. Guard that the seam
+    # exists, so this can't silently go back to invoking the real save.
+    check "T17 wrapper honours the RESURRECT_SAVE seam" \
+        "$(grep -c 'RESURRECT_SAVE' "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh")" "1"
+    marker=/tmp/pc-real-save-$$; rm -f "$marker"
+    printf '#!/bin/sh\ntouch %s\n' "$marker" > /tmp/pc-fake-save-$$.sh
+    chmod +x /tmp/pc-fake-save-$$.sh
+    # A float that genuinely cannot be normalised: another restorer holds a
+    # FRESH claim, so restore defers to it and prepare-save times out. (An
+    # unreachable source window is NOT stuck — recovery surfaces it into a
+    # visible session, after which saving is correct and must proceed.)
+    T new-session -d -s _float_stuck2
+    T set -t _float_stuck2 @fl_holder_nonce stuck2
+    P2=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
+    PL2=$(T display -p -t _float_stuck2 '#{window_id}')
+    T break-pane -d -s "$P2" -t '_float_stuck2:'; T kill-window -t "$PL2"
+    T set -p -t "$P2" @fl_phase floating
+    T set -p -t "$P2" @fl_holder _float_stuck2
+    T set -p -t "$P2" @fl_src_sess "gone"; T set -p -t "$P2" @fl_src_win "@998"
+    T set -p -t "$P2" @fl_claim "99999:$(date +%s)"
+    TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 RESURRECT_SAVE=/tmp/pc-fake-save-$$.sh \
+        bash "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh" quiet >/dev/null 2>&1
+    check "T17 wrapper does not run the real save when a float is stuck" \
+        "$([ -e "$marker" ] && echo ran || echo aborted)" "aborted"
+    rm -f /tmp/pc-fake-save-$$.sh "$marker"
+}
+
+# ---------------------------------------------------------------------------
+# T18 — undo. Completely uncovered before this review.
+# ---------------------------------------------------------------------------
+t18() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; sleep 0.3
+    before_o=$(tiled "$W")
+    right=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
+    R "$RELOC" push left "$right" >/dev/null 2>&1; sleep 0.4
+    swapped=$(tiled "$W")
+    check "T18 push swapped"                "$([ "$swapped" != "$before_o" ] && echo yes)" "yes"
+    R "$RELOC" undo "$W" >/dev/null 2>&1; sleep 0.4
+    check "T18 undo restores the pane order" "$(tiled "$W")" "$before_o"
+
+    # edge relocation undo
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    before_l=$(layout "$W"); bottom=$(T display -p -t "$W" '#{pane_id}')
+    R "$RELOC" push right "$bottom" >/dev/null 2>&1; sleep 0.4
+    R "$RELOC" undo "$W" >/dev/null 2>&1; sleep 0.4
+    check "T18 undo restores an edge relocation" "$(layout "$W")" "$before_l"
+}
+
+# T18b — rapid pushes in the sticky mode must not lose journal entries. This
+# has to be CLIENT-driven: the serialization being tested is tmux's command
+# queue, which only applies to keys going through bindings. Invoking the script
+# twice in parallel from a shell bypasses the queue entirely and tests a path
+# no user can reach.
+t18b() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; sleep 0.3
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T18b client attached" "no client"; return; fi
+    T select-pane -t "$(T list-panes -t "$W" -F '#{pane_id}' | head -1)"
+    o0=$(tiled "$W")
+
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5
+    # two mutating pushes back to back, no pause between them
+    O send-keys -t o l; O send-keys -t o h; sleep 1.5
+
+    recs=$(T show -wqv -t "$W" @pane_journal | grep -c . || true)
+    check "T18b both rapid pushes recorded a journal entry" "$recs" "2"
+    R "$RELOC" undo "$W" >/dev/null 2>&1; sleep 0.3
+    R "$RELOC" undo "$W" >/dev/null 2>&1; sleep 0.3
+    check "T18b undoing both returns the original order" "$(tiled "$W")" "$o0"
+}
+
+# T18c — a stale journal record must be refused, not half-applied.
+t18c() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; sleep 0.3
+    right=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
+    R "$RELOC" push left "$right" >/dev/null 2>&1; sleep 0.4
+    after_push=$(tiled "$W")
+    T split-window -v -t "$W"; sleep 0.4      # pane set changed since the record
+    before_undo=$(tiled "$W")
+    R "$RELOC" undo "$W" >/dev/null 2>&1; sleep 0.4
+    check "T18c stale record is refused (no partial mutation)" \
+        "$(tiled "$W")" "$before_undo"
+    check "T18c refused record is retained" \
+        "$(T show -wqv -t "$W" @pane_journal | grep -c . || true)" "1"
+}
+
+# T19 — a surfaced recovery session must be usable: the prefix keys the holder
+# disabled have to come back, or the user's C-a is dead in it.
+t19() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    P=$(T display -p -t "$W" '#{pane_id}')
+    R "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    sleep 2
+    T kill-window -t "$W" 2>/dev/null       # destroy the source
+    T kill-session -t t 2>/dev/null
+    sleep 0.3
+    R "$FLOAT" restore "$P" >/dev/null 2>&1; sleep 0.8
+    rs=$(T list-sessions -F '#{session_name}' | grep '^recovered-' | head -1)
+    if [ -z "$rs" ]; then no "T19 recovery session created" "none"; return; fi
+    # -A folds in the inherited global; without it an unset (correct) session
+    # option reads back empty and looks like a failure.
+    check "T19 recovered session restores prefix"  "$(T show -Aqv -t "$rs" prefix)"  "C-b"
+    check "T19 recovered session restores prefix2" "$(T show -Aqv -t "$rs" prefix2)" "C-a"
+    check "T19 recovered session has a normal key table" \
+        "$(T show -Aqv -t "$rs" key-table)" "root"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
-for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t8 t9 t10 t11 t14; do
+for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t8 t9 t10 t11 t14 \
+         t15 t16 t17 t18 t18b t18c t19; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

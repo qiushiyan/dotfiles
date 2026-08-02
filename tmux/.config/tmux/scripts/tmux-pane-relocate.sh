@@ -9,7 +9,13 @@
 #
 #   push <left|right|up|down> [pane]   the rule above
 #   marked [pane]                      move the pane to the marked pane
-#   undo [window]                      pop the move journal
+#   undo [window]                      undo the last PUSH in this window
+#
+# `undo` is deliberately scoped to pushes. `marked` is not journalled: a
+# cross-window move can destroy the window an undo record would live on, and
+# the (pane order, layout) record cannot describe a move between two windows.
+# Recording it properly means a cross-window move transaction — a much larger
+# feature than this mode needs, and one nothing has asked for.
 #
 # WHY THE EDGE GUARD IS MANDATORY, NOT A REFINEMENT. tmux's directional targets
 # WRAP: with two side-by-side panes, `{left-of}` from the LEFTMOST pane resolves
@@ -63,6 +69,20 @@ journal_pop() {
     rest=$(printf '%s' "$cur" | tail -n +2)
     order=${rec%%	*}
     layout=${rec#*	}
+
+    # VALIDATE BEFORE CONSUMING. A push neither adds nor removes panes, so the
+    # record only applies while the window still holds exactly the same set. If
+    # a pane has since died or been split, replaying it would half-apply — swap
+    # some panes, skip the missing ones, then silently ignore a failed layout —
+    # and the record would be gone either way. Refuse and keep it instead.
+    local now_set rec_set
+    now_set=$(tiled_panes "$win" | sort | tr '\n' ' ')
+    rec_set=$(printf '%s\n' $order | sort | tr '\n' ' ')
+    if [ "$now_set" != "$rec_set" ]; then
+        msg "pane: can't undo — the panes changed since that move"
+        return 0
+    fi
+
     tmux set -w -t "$win" @pane_journal "$rest" 2>/dev/null
 
     for want in $order; do

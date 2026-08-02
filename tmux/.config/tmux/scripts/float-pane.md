@@ -8,8 +8,9 @@ Two features, one control plane for moving panes around:
 - **`prefix p`** — a sticky "pane mode" key table holding every pane-moving verb
   behind one key. `tmux-pane-relocate.sh` + the `panes` table in `tmux.conf`.
 
-Requires **tmux 3.7b+**. Tests: `scripts/tests/test-pane-control.sh` (44 cases,
-runs on throwaway sockets — it never touches a live server).
+Requires **tmux 3.7b+**. Tests: `scripts/tests/test-pane-control.sh` — 61
+assertions across 22 cases, on throwaway sockets; it never touches a live
+server, and anything it kills is matched against its own socket path first.
 
 ---
 
@@ -37,13 +38,17 @@ behind a popup was measured rendering 83 updates live. Only the region the
 container physically covers is clipped. That is the whole point of this over
 `resize-pane -Z`.
 
-### The container seam
+### The container adapter
 
-`open_container()` is the only function that knows how the holder gets on
-screen. When tmux can adopt an existing pane into a native floating pane,
-swapping that function's body for `new-pane` is the entire migration — and a
-native float is non-modal, so the background would become interactive, not
-merely visible.
+Four functions know the holder is shown by a popup running a nested attach:
+`container_restrict_keys` / `container_release_keys` (staging), `open_container`
+(presentation), `container_dismiss` (dismissal), and the `container` verb (the
+in-container lifecycle). Everything else is container-agnostic.
+
+Migrating to a native floating pane means rewriting **those four**, not one
+line. An earlier version of this doc claimed the swap was a single function
+body; that was untrue — the key-surface staging, the nested-attach lifecycle,
+and dismissal are all container-specific, and a review caught the claim.
 
 ## Restore is optimistic, not a replay
 
@@ -73,11 +78,37 @@ the pane and two panes can be floated at once without colliding. The older
 `prefix P` / rename-pane popups stash context in *global* env vars, which races
 when two clients act at once — nothing here does that.
 
+## The two transaction rules
+
+**Publish recovery state before the destructive move.** The pane leaving its
+window and the metadata saying where it came from must not be separated by a
+window in which the process can die — a marked holder containing a live pane
+with no `@fl_*` is unrecoverable, and the pane sits invisible in an internal
+session. So `@fl_phase preparing` plus the full source snapshot are written
+*before* `break-pane`; the expected-post-break snapshot and `floating` follow
+it. Recovery then distinguishes "never moved" (drop the unused holder) from
+"already moved" (restore from the snapshot).
+
+**Claim the restore atomically.** `set-option -o` is set-if-absent: it fails
+with `already set: …` and preserves the existing value. Overwriting `@fl_phase`
+was *not* a lock — every caller that saw any phase proceeded, so two restorers
+ran the same join + permutation + layout replay and reliably corrupted the
+result (`%0 %1 %2` came back `%0 %2 %1`). That path is directly reachable:
+`prepare_save` dismisses the container, waking its restore, then restores itself.
+The claim carries a timestamp and is stealable after `FLOAT_CLAIM_TTL`, so a
+restorer killed mid-flight cannot wedge the pane forever.
+
+(An earlier comment here asserted tmux user options have no compare-and-set.
+That was simply wrong.)
+
 ## Failure paths
 
 `restore` is idempotent, and the container's own shell calls it on every
 ordinary exit (`prefix z`, `prefix d`, the client being killed). The backstop
-for a SIGKILL'd container is a **sweep on `client-attached`**.
+for a SIGKILL'd container is a **sweep on `client-attached`**, and
+`surface_orphan_holders` is the last resort: a marked holder whose panes carry
+no state at all (an older build, a partially restored server) is turned into a
+normal `recovered-*` session rather than left hidden.
 
 Two things the sweep must get right, both found by tests:
 
@@ -109,6 +140,11 @@ because resurrect binds it straight to its own `save.sh`, bypassing the option.
 
 Both re-applied **after tpm**, since `resurrect.tmux` sets the option with `-gq`
 on every load.
+
+**It fails closed.** If a float cannot be normalised, `prepare-save` returns
+non-zero and the wrapper does *not* hand off. Resurrect overwrites the previous
+snapshot, so saving anyway would trade a good save for a broken one; skipping
+keeps the last good save, and the user gets a message saying why.
 
 ## The float's key surface
 
@@ -148,7 +184,26 @@ re-running the relocation churns pane order for no visible change.
 `-o` undoes the last *geometry* change, but a swap changes pane **identity** at
 identical geometry, so it cannot reverse a push — and replaying a layout string
 has the same identity blindness. `u` pops a per-window journal of
-`(ordered pane ids, layout)` pairs recorded before every mutation.
+`(ordered pane ids, layout)` pairs.
+
+**Its scope is pushes only.** `m`/`M` and `b` are not journalled: a cross-window
+move can destroy the very window an undo record would live on, and the record
+shape cannot describe a move between two windows. Doing it properly means a
+cross-window move transaction, which is a much larger feature than this mode
+needs.
+
+The record is **validated before it is consumed** — a push neither adds nor
+removes panes, so it only applies while the window holds exactly the same set.
+If a pane has since died or been split, `u` refuses and keeps the record;
+replaying it would swap some panes, skip the missing ones, ignore a failed
+layout, and discard the record either way.
+
+The relocation bindings deliberately use `run-shell` **without `-b`**. The mode
+re-enters its table immediately, so ordinary fast repeats launch overlapping
+scripts, and the journal's read-modify-write then loses entries — two
+concurrent pushes reliably recorded one. Plain `run-shell` puts them on tmux's
+command queue, which serializes them. Float keeps `-b`, since its popup blocks
+by design.
 
 ### Mark and move
 
