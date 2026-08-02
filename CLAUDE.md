@@ -22,15 +22,25 @@ make brew-dump  # update Brewfile from current Homebrew state
 ```
 
 Mostly configuration, so there is no build. The one test suite is
-`tmux/.config/tmux/scripts/tests/test-pane-control.sh` — 65 assertions across 23 cases for the pane
+`tmux/.config/tmux/scripts/tests/test-pane-control.sh` — 69 assertions across 24 cases for the pane
 control plane (floating zoom + pane mode), run with `bash
 tmux/.config/tmux/scripts/tests/test-pane-control.sh [T5 T14 ...]`. It builds
 throwaway tmux servers on their own sockets and never touches a live one.
-**Anything driving tmux from a script must run with `$TMUX` pointed at the test
-socket** — the scripts resolve the server through it, and without it they fall
-through to the default socket (the user's real server), where the test's pane
-ids don't exist, so every call silently no-ops and the assertions pass for the
-wrong reason.
+
+Two isolation rules, both learned the hard way — a new case must honour them:
+
+- **Anything driving tmux from a script must run with `$TMUX` pointed at the
+  test socket** (the `R()` helper does this). The scripts resolve the server
+  through it, and without it they fall through to the default socket — the
+  user's real server — where the test's pane ids don't exist, so every call
+  silently no-ops and the assertions pass for the wrong reason.
+- **State outside tmux is shared and must be redirected.** resurrect resolves
+  its save directory per-server from `@resurrect-dir` but defaults to one
+  shared path, so a test reaching the real `save.sh` wrote a snapshot of a
+  throwaway server into the user's save dir and repointed `last` at it — the
+  next restore would have brought back test junk. `fresh()` points every test
+  server at a temp sandbox; T21 asserts the real directory is untouched.
+  Anything else global (`pkill` patterns included) needs the same treatment.
 
 To bring an existing config file under management, use the `dotadd` zsh function (it moves the file into the correct package and stows it).
 

@@ -9,8 +9,11 @@ Two features, one control plane for moving panes around:
   behind one key. `tmux-pane-relocate.sh` + the `panes` table in `tmux.conf`.
 
 Requires **tmux 3.7b+**. Tests: `scripts/tests/test-pane-control.sh` — 65
-assertions across 23 cases, on throwaway sockets; it never touches a live
-server, and anything it kills is matched against its own socket path first.
+assertions across 24 cases, on throwaway sockets; it never touches a live
+server, anything it kills is matched against its own socket path first, and
+every server it builds has `@resurrect-dir` pointed at a temp sandbox so a save
+can never reach your real one (T21 asserts exactly that, running the real save
+path).
 
 ---
 

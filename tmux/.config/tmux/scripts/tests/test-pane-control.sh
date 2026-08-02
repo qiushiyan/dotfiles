@@ -18,7 +18,18 @@ PASS=0; FAIL=0; FAILED=""
 T() { tmux -L "$SOCK" "$@"; }
 O() { tmux -L "$OUTER" "$@"; }
 
-cleanup() { T kill-server 2>/dev/null; O kill-server 2>/dev/null; }
+# Everything this suite writes goes under one temp root, removed on exit.
+SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/pane-control-test.XXXXXX")
+SANDBOX_RESURRECT="$SANDBOX/resurrect"
+mkdir -p "$SANDBOX_RESURRECT"
+
+# The real save directory — asserted untouched by T21, never written to.
+REAL_RESURRECT="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
+
+cleanup() {
+    T kill-server 2>/dev/null; O kill-server 2>/dev/null
+    [ -n "${SANDBOX:-}" ] && rm -rf "$SANDBOX"
+}
 trap cleanup EXIT
 
 fresh() {
@@ -26,6 +37,14 @@ fresh() {
     T -f "$CONF" new-session -d -s t -x 200 -y 50 2>/dev/null
     sleep 0.5
     SOCKPATH=$(T display -p '#{socket_path}')
+    # REDIRECT RESURRECT. resurrect resolves its save directory from
+    # @resurrect-dir on whichever server it is inspecting, but the DEFAULT is a
+    # single shared path — so a test that reaches the real save.sh writes a
+    # snapshot of a throwaway server into the user's save dir and repoints
+    # `last` at it. That happened: a two-pane test server became the newest
+    # save, and the next restore would have brought back test junk instead of
+    # the user's real sessions. Point every test server somewhere disposable.
+    T set -g @resurrect-dir "$SANDBOX_RESURRECT" 2>/dev/null
 }
 
 # Run a script against THE TEST SERVER. The scripts resolve tmux through $TMUX
@@ -598,10 +617,44 @@ t20() {
         "$(T show -gv popup-border-lines)" "rounded"
 }
 
+# ---------------------------------------------------------------------------
+# T21 — the suite must never write into the user's real resurrect directory.
+# Regression test for a real incident: an earlier version of T17 invoked the
+# real save.sh, which wrote a snapshot of a throwaway two-pane server into
+# ~/.local/share/tmux/resurrect and repointed `last` at it. Restoring after
+# that would have produced test junk instead of the user's sessions.
+# This case deliberately runs the REAL save path — no RESURRECT_SAVE fake — so
+# it proves the redirection holds where it actually matters.
+# ---------------------------------------------------------------------------
+t21() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+
+    check "T21 test server points at the sandbox" \
+        "$(T show -gv @resurrect-dir)" "$SANDBOX_RESURRECT"
+
+    local before_last before_count after_last after_count sandbox_before sandbox_after
+    before_last=$(readlink "$REAL_RESURRECT/last" 2>/dev/null || echo none)
+    before_count=$(ls -1 "$REAL_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
+    sandbox_before=$(ls -1 "$SANDBOX_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
+
+    R "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh" quiet >/dev/null 2>&1
+    sleep 1
+
+    sandbox_after=$(ls -1 "$SANDBOX_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
+    after_last=$(readlink "$REAL_RESURRECT/last" 2>/dev/null || echo none)
+    after_count=$(ls -1 "$REAL_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
+
+    check "T21 the save landed in the sandbox" \
+        "$([ "$sandbox_after" -gt "$sandbox_before" ] && echo yes)" "yes"
+    check "T21 the real save dir gained no files" "$after_count" "$before_count"
+    check "T21 the real 'last' pointer is untouched" "$after_last" "$before_last"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
 for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t8 t9 t10 t11 t14 \
-         t15 t16 t17 t18 t18b t18c t19 t20; do
+         t15 t16 t17 t18 t18b t18c t19 t20 t21; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done
