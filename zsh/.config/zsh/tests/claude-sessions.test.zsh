@@ -33,20 +33,34 @@ t() {
 }
 
 # Fresh sandbox: fake HOME with tracked dotfiles settings, quiet pgrep/lsof,
-# a claude stub that records invocations. Sets SB and H, and pins the
-# accounts root to the sandbox — the invoking shell's .zshenv may have
-# sourced the real claude.zsh, whose typeset -g would otherwise leak the
-# real accounts root into tests that only source claude-sessions.zsh.
+# a claude stub that records its invocation *and* the CLAUDE_CONFIG_DIR it
+# received — the launcher tests assert routing, and the environment is the
+# routing. Sets SB and H, and pins the accounts root to the sandbox — the
+# invoking shell's .zshenv may have sourced the real claude.zsh, whose
+# typeset -g would otherwise leak the real accounts root into tests that only
+# source claude-sessions.zsh.
+#
+# The launcher tests run the *real* headroom binary (launch routing lives
+# there now; stubbing it would test a stub): $HOME re-points its discovery
+# and state into the sandbox, and the claude it execs is the recording stub
+# on PATH. No real account dir, vendor tree, or Keychain is touched.
 sandbox() {
-  SB=$(mktemp -d "${TMPDIR:-/tmp}/cs-test.XXXXXX")
+  # No trailing slash in the template: TMPDIR carries one on macOS, and the
+  # doubled slash it would put in $H survives zsh string comparison while
+  # headroom's Go paths are lexically cleaned — the preflight would then skip
+  # every dir it should check.
+  SB=$(mktemp -d "${${TMPDIR:-/tmp}%/}/cs-test.XXXXXX")
   H="$SB/home"
   CLAUDE_ACCOUNTS_ROOT="$H/.claude-accounts"
+  # The invoking shell may itself carry the leak the launcher tests are
+  # about; each test states its own environment.
+  unset CLAUDE_CONFIG_DIR
   mkdir -p "$SB/bin" "$H/dotfiles/claude/.claude" "$H/.claude/projects"
   print -r -- '{ "cleanupPeriodDays": 365 }' >"$H/dotfiles/claude/.claude/settings.json"
   print -r -- 'shared config' >"$H/dotfiles/claude/.claude/CLAUDE.md"
   printf '#!/bin/sh\nexit 1\n' >"$SB/bin/pgrep"
   printf '#!/bin/sh\nexit 1\n' >"$SB/bin/lsof"
-  printf '#!/bin/sh\necho "$@" >> %s/claude.log\nexit 0\n' "$SB" >"$SB/bin/claude"
+  printf '#!/bin/sh\necho "cfg=${CLAUDE_CONFIG_DIR-unset} $@" >> %s/claude.log\nexit 0\n' "$SB" >"$SB/bin/claude"
   chmod +x "$SB/bin/pgrep" "$SB/bin/lsof" "$SB/bin/claude"
 }
 
@@ -79,7 +93,7 @@ test_launch_blocks_real_projects_dir() (
   export HOME="$H" PATH="$SB/bin:$PATH"
   source "$CLAUDE_ZSH"
   local rc=0
-  _claude_launch "$H/.claude-accounts/a@x.com" 2>/dev/null || rc=$?
+  _claude_launch "a@x.com" 2>/dev/null || rc=$?
   [[ $rc -ne 0 ]] || { print "launch proceeded against a real projects dir"; return 1 }
   [[ ! -f "$SB/claude.log" ]] || { print "claude was invoked despite the violation"; return 1 }
 )
@@ -90,8 +104,65 @@ test_launch_allows_correct_link() (
   ln -s "$H/.claude/projects" "$H/.claude-accounts/a@x.com/projects"
   export HOME="$H" PATH="$SB/bin:$PATH"
   source "$CLAUDE_ZSH"
-  _claude_launch "$H/.claude-accounts/a@x.com" || { print "launch blocked a correct topology"; return 1 }
-  [[ -f "$SB/claude.log" ]] || { print "claude never ran"; return 1 }
+  _claude_launch "a@x.com" || { print "launch blocked a correct topology"; return 1 }
+  grep -q "cfg=$H/.claude-accounts/a@x.com" "$SB/claude.log" 2>/dev/null \
+    || { print "claude did not receive exactly the account's config dir:"; cat "$SB/claude.log" 2>/dev/null; return 1 }
+)
+
+# The incident this pins: a tmux server started inside a Claude Code session
+# carries that session's CLAUDE_CONFIG_DIR, and a "primary" launch that
+# inherits instead of constructing its environment silently runs on the
+# wrong account. The managed path must strip it.
+test_launch_primary_strips_polluted_env() (
+  sandbox
+  mkdir -p "$H/.claude-accounts/a@x.com"
+  ln -s "$H/.claude/projects" "$H/.claude-accounts/a@x.com/projects"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  export CLAUDE_CONFIG_DIR="$H/.claude-accounts/a@x.com"
+  source "$CLAUDE_ZSH"
+  x || { print "bare x failed"; return 1 }
+  grep -q "cfg=unset" "$SB/claude.log" 2>/dev/null \
+    || { print "primary launch leaked the inherited CLAUDE_CONFIG_DIR:"; cat "$SB/claude.log" 2>/dev/null; return 1 }
+)
+
+# An empty .current is corruption, not a choice: the launch refuses instead
+# of silently becoming "primary, permissions bypassed".
+test_launch_refuses_empty_current() (
+  sandbox
+  mkdir -p "$H/.claude-accounts"
+  : >| "$H/.claude-accounts/.current"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  local rc=0
+  x 2>/dev/null || rc=$?
+  [[ $rc -ne 0 ]] || { print "empty .current launched anyway"; return 1 }
+  [[ ! -f "$SB/claude.log" ]] || { print "claude was invoked on corrupt routing state"; return 1 }
+)
+
+# No headroom, no launch: falling back to bare `claude` would recreate the
+# inherited-environment misroute in exactly the shells most likely to have it.
+test_launch_refuses_without_headroom() (
+  sandbox
+  export HOME="$H" PATH="$SB/bin:/usr/bin:/bin"
+  source "$CLAUDE_ZSH"
+  local rc=0
+  x 2>/dev/null || rc=$?
+  [[ $rc -eq 127 ]] || { print "missing headroom returned rc=$rc, expected 127"; return 1 }
+  [[ ! -f "$SB/claude.log" ]] || { print "claude ran without the managed path"; return 1 }
+)
+
+# A generated launcher records its account and routes to it in one step.
+test_generated_launcher_remembers_and_routes() (
+  sandbox
+  mkdir -p "$H/.claude-accounts/a@x.com"
+  ln -s "$H/.claude/projects" "$H/.claude-accounts/a@x.com/projects"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  x-a@x.com || { print "generated launcher failed"; return 1 }
+  [[ "$(<"$H/.claude-accounts/.current")" == "a@x.com" ]] \
+    || { print ".current not recorded: $(cat "$H/.claude-accounts/.current" 2>/dev/null)"; return 1 }
+  grep -q "cfg=$H/.claude-accounts/a@x.com" "$SB/claude.log" 2>/dev/null \
+    || { print "launcher routed elsewhere:"; cat "$SB/claude.log" 2>/dev/null; return 1 }
 )
 
 test_account_add_fails_when_canonical_is_link() (
@@ -267,6 +338,10 @@ test_check_rejects_unknown_flag() (
 
 t "launch blocks a real per-account projects dir"        test_launch_blocks_real_projects_dir
 t "launch allows the correct shared link"                test_launch_allows_correct_link
+t "primary launch strips an inherited CLAUDE_CONFIG_DIR" test_launch_primary_strips_polluted_env
+t "empty .current refuses instead of primary fallback"   test_launch_refuses_empty_current
+t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_without_headroom
+t "generated launcher remembers and routes in one step"  test_generated_launcher_remembers_and_routes
 t "account-add fails closed on symlinked canonical"      test_account_add_fails_when_canonical_is_link
 t "migrate aborts when a deduplicated source mutates"    test_migrate_aborts_when_dedupe_mutates
 t "migrate aborts when a new source file appears"        test_migrate_aborts_on_new_file

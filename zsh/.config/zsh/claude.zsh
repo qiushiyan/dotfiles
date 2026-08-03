@@ -5,8 +5,13 @@
 # The filesystem is the account registry:
 #   ~/.claude                      primary (qiushi@planlab.ai)
 #   ~/.claude-accounts/<email>/    one dir per extra subscription
-#   ~/.claude-accounts/.current    which account bare `x` targets
-#   ~/.claude-accounts/.order      dashboard display order (optional)
+#   ~/.claude-accounts/.current    which account bare `x` targets — written
+#                                  by headroom (`launch --remember`, the
+#                                  board's enter); nothing here parses it
+#   ~/.claude-accounts/.order      board display order (optional)
+#   ~/.claude-accounts/state.json  headroom's own file — its request ledger,
+#                                  the usage answers it fetched, session
+#                                  re-homes. Nothing here reads or writes it.
 #
 # A distinct CLAUDE_CONFIG_DIR gives a session its own Keychain login (the
 # credentials service name is suffixed with sha256(dir)[0:8]), so /login on
@@ -16,10 +21,15 @@
 # per-account. Session transcripts are machine-global: every account's
 # projects/ symlinks to ~/.claude/projects (see _claude_link_projects and
 # claude-sessions.zsh), so the resume picker sees every session regardless
-# of account. The headroom CLI (~/dev/headroom, installed to
-# ~/.local/bin/headroom) discovers the same dirs and renders /usage for
-# every account, each labeled by the email its .claude.json reports as
-# actually logged in; x-usage and x-select below are thin wrappers over it.
+# of account.
+#
+# Launch routing belongs to headroom (~/dev/headroom, installed to
+# ~/.local/bin/headroom): `headroom launch` validates the account and builds
+# the child environment from that decision alone — every inherited
+# CLAUDE_CONFIG_DIR is stripped, exactly one is set for a non-primary — so a
+# polluted shell (a tmux server started inside a Claude Code session) can
+# never re-route a launch. These wrappers only add what is personal: the
+# shared-sessions topology preflight, seeding, flags, and short aliases.
 #
 #   x                     permissions bypassed, on the *last explicitly
 #                         chosen* account — x-<name> chooses and sticks
@@ -28,15 +38,15 @@
 #                         local part is unique (and isn't the primary's
 #                         name or a reserved word) a short alias exists
 #                         too (x-yan, …)
-#   x-usage               ≡ headroom (the dashboard; `x-usage check`
-#                         verifies the machinery after a Claude Code update)
 #   x-select              session picker (headroom resume): pick any session
 #                         on the machine, resume it in its own project dir
 #                         on the account that last drove it (the cd sticks;
 #                         bare `x`'s target is untouched)
-#   x-accounts / x-acc    account picker (headroom select): choose an
-#                         account off the live usage board, stick like
-#                         x-<name> does, then launch on it
+#   x-accounts / x-acc    account board (headroom accounts): live usage for
+#                         every account, refreshing while it is open; enter
+#                         sticks like x-<name> does, then launches on it
+#   x-check               ≡ headroom check — verifies the reverse-engineered
+#                         machinery after a Claude Code update
 #   x-account             ≡ claude-account <name|email> [args...] — prompted
 #                         (no bypass) session; also makes it current
 #   x-account-add         ≡ claude-account-add <email> — seed a new account
@@ -48,11 +58,11 @@
 # such as block-dangerous-git.sh still fire and block in bypass mode.
 
 typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
-typeset -g CLAUDE_ACCOUNT_STATE="$CLAUDE_ACCOUNTS_ROOT/.current"
 typeset -g CLAUDE_PRIMARY_NAME="qiushi"   # x-qiushi ≡ default ~/.claude
 # Local parts that never get a short launcher alias: x-<these> are utilities.
-# headroom's accounts.Launcher mirrors this list — keep the two in sync.
-typeset -ga CLAUDE_X_RESERVED=(usage account account-add select accounts acc)
+# Purely this file's concern — headroom advertises only the guaranteed
+# x-<email> identities, so there is no naming policy to keep in sync anymore.
+typeset -ga CLAUDE_X_RESERVED=(usage account account-add select accounts acc check)
 
 # Fill a fresh account dir with symlinks to the tracked claude config.
 _claude_account_seed() {
@@ -90,19 +100,36 @@ _claude_link_projects() {
   ln -s "$canon" "$link"
 }
 
-# Resolve <name|email> to an account dir; prints "" for the primary. A local
-# part shared by several accounts resolves to none of them — use the email.
-_claude_account_dir() {
+# Personal preflight for a resolved account dir. Only dirs under the accounts
+# root need it (the primary owns the canonical store), and only the topology
+# check: seeding is claude-account-add's job, and a launcher whose dir
+# vanished should refuse — headroom does — rather than quietly regenerate an
+# empty login.
+_claude_preflight() {
+  emulate -L zsh
+  local dir="$1"
+  [[ "$dir" == "$CLAUDE_ACCOUNTS_ROOT"/* ]] || return 0
+  _claude_link_projects "$dir"
+}
+
+# Expand a personal shorthand to the canonical name headroom knows: the
+# primary's name and full emails pass through, a unique local part becomes
+# its email. Convenience only — headroom revalidates whatever this prints,
+# so an ambiguous or stale shorthand fails there by name instead of routing
+# anywhere.
+_claude_canonical() {
   emulate -L zsh
   local q="$1" d
   local -a hits
-  [[ -z "$q" || "$q" == "$CLAUDE_PRIMARY_NAME" ]] && { print -r -- ""; return 0 }
-  [[ -d "$CLAUDE_ACCOUNTS_ROOT/$q" ]] && { print -r -- "$CLAUDE_ACCOUNTS_ROOT/$q"; return 0 }
+  if [[ -z "$q" || "$q" == "$CLAUDE_PRIMARY_NAME" || -d "$CLAUDE_ACCOUNTS_ROOT/$q" ]]; then
+    print -r -- "$q"
+    return 0
+  fi
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
-    [[ "${${d:t}%%@*}" == "$q" ]] && hits+=("$d")
+    [[ "${${d:t}%%@*}" == "$q" ]] && hits+=("${d:t}")
   done
   (( ${#hits} == 1 )) && { print -r -- "${hits[1]}"; return 0 }
-  return 1
+  print -r -- "$q"
 }
 
 # The launcher to advertise for <email> — the short alias when it exists,
@@ -120,85 +147,98 @@ _claude_selector() {
 }
 
 # x-* names for the whole toolkit, so one prefix reaches everything.
-x-usage()       { headroom "$@" }
 x-account()     { claude-account "$@" }
 x-account-add() { claude-account-add "$@" }
-# Account picker (headroom select): choose an account off the live usage
-# board, stick like x-<name> does, then launch on it.
-x-accounts()    { headroom select && x "$@" }
+x-check()       { headroom check "$@" }
+# Account board (headroom accounts): live usage for every account, refreshing
+# itself while it is open; enter sticks like x-<name> does, then launches on
+# it. Bare `headroom` is the same board, so this is the only wrapper it needs.
+x-accounts()    { headroom accounts && x "$@" }
 x-acc()         { x-accounts "$@" }
 # Session picker (headroom resume): every session on the machine, resumed in
 # its own project dir on the account that last drove it. headroom decides
-# and prints one dir<TAB>id<TAB>config-dir line; this wrapper only cds (the
-# cd sticks) and launches. Deliberately no _claude_remember: resuming a
-# session never moves where bare `x` points — only x-accounts does that.
+# and prints one dir<TAB>id<TAB>account-name line; this wrapper only cds
+# (the cd sticks) and launches through headroom again. Deliberately no
+# --remember: resuming a session never moves where bare `x` points — only
+# x-accounts does that.
 x-select() {
   emulate -L zsh
-  local out dir id cfgdir
+  local out dir id account
   out=$(headroom resume) || return
-  IFS=$'\t' read -r dir id cfgdir <<< "$out"
-  if [[ -z "$dir" || -z "$id" ]]; then
+  IFS=$'\t' read -r dir id account <<< "$out"
+  if [[ -z "$dir" || -z "$id" || -z "$account" ]]; then
     print -u2 "x-select: unexpected decision line from headroom resume"
     return 1
   fi
-  cd -- "$dir" && _claude_launch "$cfgdir" --dangerously-skip-permissions --resume "$id"
+  cd -- "$dir" && _claude_launch "$account" --dangerously-skip-permissions --resume "$id"
 }
 
-# Record the account bare `x` should target from now on.
-_claude_remember() {
-  emulate -L zsh
-  mkdir -p "$CLAUDE_ACCOUNTS_ROOT"
-  print -r -- "$1" >| "$CLAUDE_ACCOUNT_STATE"
-}
-
-# Launch claude against an account dir ("" = primary), seeding on first use.
+# Launch claude through headroom: resolve for the preflight, then `headroom
+# launch` revalidates the name and owns the child environment entirely.
+#
+#   _claude_launch [--remember] <name|""> [claude args...]
+#
+# "" means the recorded choice (.current), which headroom reads strictly —
+# empty, unreadable, or naming a deleted account refuses rather than
+# silently becoming the primary with permissions bypassed.
+#
+# No fallback to bare `claude` when headroom is missing or refuses: a loud
+# stop is recoverable, a silent wrong-account session is not. The unmanaged
+# escape hatch is deliberately explicit —
+#   env -u CLAUDE_CONFIG_DIR claude              # the primary
+#   CLAUDE_CONFIG_DIR=<dir> claude               # a specific account
+# — because in a polluted shell, bare `claude` is exactly the misroute the
+# managed path exists to prevent.
+#
+# On the failure messages: "headroom not found" is this wrapper's to say;
+# every later refusal prints its own reason from headroom. Nothing is added
+# to a nonzero exit after that point — post-exec it is claude's own status
+# and must pass through untouched.
 _claude_launch() {
   emulate -L zsh
-  local dir="$1"; shift
+  local -a remember=()
+  if [[ "${1-}" == "--remember" ]]; then remember=(--remember); shift; fi
+  local sel="$1"; shift
+  if ! command -v headroom >/dev/null 2>&1; then
+    print -u2 "claude accounts: headroom not found (is ~/.local/bin on PATH?) — claude was not started"
+    return 127
+  fi
+  local out name dir
+  if [[ -n "$sel" ]]; then
+    out=$(headroom resolve "$sel") || return
+  else
+    out=$(headroom resolve) || return
+  fi
+  IFS=$'\t' read -r name dir <<< "$out"
+  if [[ -z "$name" || -z "$dir" ]]; then
+    print -u2 "claude accounts: unexpected resolve output from headroom — claude was not started"
+    return 1
+  fi
+  _claude_preflight "$dir" || { print -u2 "claude accounts: $dir violates the shared-sessions topology — not launching"; return 1 }
   # Claude Code ignores TMPDIR: its temp base is CLAUDE_CODE_TMPDIR or a
   # hardcoded /tmp, with claude-<uid>/ appended (verified in the 2.1.215
   # binary). Uncomment to make Ctrl+G prompt files (and all other Claude
   # temp files — child-process caches included) land in ./.tmp instead;
   # cleanup becomes manual, so it stays off by default.
   # CLAUDE_CODE_TMPDIR="$PWD/.tmp" \
-  if [[ -z "$dir" ]]; then
-    command claude "$@"
-  else
-    if [[ ! -d "$dir" ]]; then
-      _claude_account_seed "$dir" || { print -u2 "claude accounts: seeding $dir failed — not launching"; return 1 }
-    else
-      # Re-verify the shared-sessions topology on every launch, not only at
-      # seed time — a projects link replaced by a real directory would
-      # fragment session history silently. Correct link costs one -ef check.
-      _claude_link_projects "$dir" || { print -u2 "claude accounts: $dir violates the shared-sessions topology — not launching"; return 1 }
-    fi
-    CLAUDE_CONFIG_DIR="$dir" command claude "$@"
-  fi
+  headroom launch $remember --account "$name" -- "$@"
 }
 
 # Bypassed permissions on the last explicitly chosen account.
 x() {
   emulate -L zsh
-  local cur="" dir
-  [[ -r "$CLAUDE_ACCOUNT_STATE" ]] && cur=$(<"$CLAUDE_ACCOUNT_STATE")
-  if ! dir=$(_claude_account_dir "$cur"); then
-    print -u2 "x: last account '$cur' no longer exists — using primary"
-    dir=""
-  fi
-  _claude_launch "$dir" --dangerously-skip-permissions "$@"
+  _claude_launch "" --dangerously-skip-permissions "$@"
 }
 
 # Prompted (no bypass) session on any account; sticks like x-<name> does.
 claude-account() {
   emulate -L zsh
-  local dir
-  if ! dir=$(_claude_account_dir "$1"); then
-    echo "claude-account: unknown account '$1' — dirs live in $CLAUDE_ACCOUNTS_ROOT" >&2
+  if [[ -z "${1-}" ]]; then
+    echo "usage: claude-account <name|email> [claude args...]" >&2
     return 1
   fi
-  shift
-  _claude_remember "${${dir:t}:-$CLAUDE_PRIMARY_NAME}"
-  _claude_launch "$dir" "$@"
+  local name; name=$(_claude_canonical "$1"); shift
+  _claude_launch --remember "$name" "$@"
 }
 
 # Seed a dir for a new subscription; /login on first launch binds it.
@@ -222,13 +262,14 @@ claude-account-add() {
   echo "next: $(_claude_selector "$1") → /login as $1"
 }
 
-# Generate launchers for every account dir. Each records itself as the
-# target of bare `x`, then launches. x-<email> always exists and is the
-# guaranteed identity; a short x-<local-part> alias is added only when the
-# local part is unique among accounts and isn't the primary's name, so a
-# short name can never launch the wrong account with permissions bypassed.
+# Generate launchers for every account dir. Each launches through headroom
+# with --remember, so choosing an account and recording it as bare `x`'s
+# target is one step. x-<email> always exists and is the guaranteed
+# identity; a short x-<local-part> alias is added only when the local part
+# is unique among accounts and isn't the primary's name, so a short name can
+# never launch the wrong account with permissions bypassed. Short aliases
+# are this file's convenience alone — headroom advertises the full identity.
 # Runs at every shell init: one glob, no subprocess — startup-perf safe.
-# headroom's accounts.Launcher mirrors this rule — keep the two in sync.
 _claude_gen_launchers() {
   emulate -L zsh
   local d email name
@@ -239,7 +280,7 @@ _claude_gen_launchers() {
   done
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
     email="${d:t}" name="${email%%@*}"
-    functions[x-$email]="_claude_remember ${(q)email}; _claude_launch ${(q)d} --dangerously-skip-permissions \"\$@\""
+    functions[x-$email]="_claude_launch --remember ${(q)email} --dangerously-skip-permissions \"\$@\""
     if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]] && (( ! ${CLAUDE_X_RESERVED[(Ie)$name]} )); then
       if (( count[$name] == 1 )); then
         functions[x-$name]="x-${(q)email} \"\$@\""
@@ -250,6 +291,6 @@ _claude_gen_launchers() {
       fi
     fi
   done
-  functions[x-$CLAUDE_PRIMARY_NAME]="_claude_remember $CLAUDE_PRIMARY_NAME; _claude_launch \"\" --dangerously-skip-permissions \"\$@\""
+  functions[x-$CLAUDE_PRIMARY_NAME]="_claude_launch --remember $CLAUDE_PRIMARY_NAME --dangerously-skip-permissions \"\$@\""
 }
 _claude_gen_launchers
