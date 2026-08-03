@@ -121,8 +121,10 @@ Everything derives from that tree:
 - **New subscription**: `claude-account-add <email>` seeds the dir and names
   the launcher; `/login` on its first launch binds the account.
 - **Stale token** on a rarely-used account: the dashboard says so — run that
-  account's `x-<name>` once. Only Claude Code refreshes tokens; the engine is
-  read-only (its single write is `.current`).
+  account's `x-<name>` once. Only Claude Code refreshes tokens; the engine
+  never touches login or quota state (its own files are `.current`,
+  `.throttle` and `.owners`, and its only vendor-state writes are the
+  session picker's explicit rename/delete).
 - **After a Claude Code update**, or when the dashboard misbehaves:
   `x-usage check` — a FAIL line names which reverse-engineered assumption
   broke. Run `claude-sessions-check` alongside it for the session-sharing
