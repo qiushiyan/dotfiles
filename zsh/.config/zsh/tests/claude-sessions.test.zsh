@@ -18,6 +18,24 @@ CLAUDE_ZSH="$DOT/zsh/.config/zsh/claude.zsh"
 SESSIONS_ZSH="$DOT/zsh/.config/zsh/claude-sessions.zsh"
 typeset -i PASS=0 FAIL=0
 
+# The launcher tests cross the zsh→exec seam into headroom itself, so they
+# must run the binary built from the source under review — whatever headroom
+# happens to be installed on PATH can be newer or staler than the wrappers
+# being tested. Build once per run; override with HEADROOM_TEST_BIN.
+HEADROOM_SRC="${HEADROOM_SRC:-$HOME/dev/headroom}"
+if [[ -z "${HEADROOM_TEST_BIN:-}" ]]; then
+  if [[ -d "$HEADROOM_SRC" ]] && command -v go >/dev/null 2>&1; then
+    HEADROOM_BUILD_DIR=$(mktemp -d "${${TMPDIR:-/tmp}%/}/cs-test-headroom.XXXXXX")
+    HEADROOM_TEST_BIN="$HEADROOM_BUILD_DIR/headroom"
+    (cd "$HEADROOM_SRC" && go build -o "$HEADROOM_TEST_BIN" ./cmd/headroom) || {
+      print -u2 "claude-sessions.test: building headroom from $HEADROOM_SRC failed"; exit 1
+    }
+  else
+    print -u2 "claude-sessions.test: set HEADROOM_TEST_BIN or provide a buildable checkout at $HEADROOM_SRC"
+    exit 1
+  fi
+fi
+
 t() {
   local name="$1"; shift
   local log; log=$(mktemp "${TMPDIR:-/tmp}/cs-test-log.XXXXXX")
@@ -62,6 +80,9 @@ sandbox() {
   printf '#!/bin/sh\nexit 1\n' >"$SB/bin/lsof"
   printf '#!/bin/sh\necho "cfg=${CLAUDE_CONFIG_DIR-unset} $@" >> %s/claude.log\nexit 0\n' "$SB" >"$SB/bin/claude"
   chmod +x "$SB/bin/pgrep" "$SB/bin/lsof" "$SB/bin/claude"
+  # The pinned binary, first on every test's PATH; the missing-headroom test
+  # removes this link to state its own environment.
+  ln -s "$HEADROOM_TEST_BIN" "$SB/bin/headroom"
 }
 
 # An account dir holding one unique transcript and one file identical to a
@@ -143,12 +164,28 @@ test_launch_refuses_empty_current() (
 # inherited-environment misroute in exactly the shells most likely to have it.
 test_launch_refuses_without_headroom() (
   sandbox
+  rm -f "$SB/bin/headroom"
   export HOME="$H" PATH="$SB/bin:/usr/bin:/bin"
   source "$CLAUDE_ZSH"
   local rc=0
   x 2>/dev/null || rc=$?
   [[ $rc -eq 127 ]] || { print "missing headroom returned rc=$rc, expected 127"; return 1 }
   [[ ! -f "$SB/claude.log" ]] || { print "claude ran without the managed path"; return 1 }
+)
+
+# A HEADROOM_* root override must not silently disable the topology
+# preflight: which check applies comes from headroom's own classification of
+# the target, never from the wrapper prefix-matching its own idea of the
+# accounts root against a dir headroom resolved under a different one.
+test_launch_preflight_survives_root_override() (
+  sandbox
+  mkdir -p "$SB/altroot/b@x.com/projects"   # a real dir: topology violation
+  export HOME="$H" PATH="$SB/bin:$PATH" HEADROOM_ACCOUNTS_ROOT="$SB/altroot"
+  source "$CLAUDE_ZSH"
+  local rc=0
+  _claude_launch "b@x.com" 2>/dev/null || rc=$?
+  [[ $rc -ne 0 ]] || { print "override root skipped the topology preflight"; return 1 }
+  [[ ! -f "$SB/claude.log" ]] || { print "claude ran over broken topology"; return 1 }
 )
 
 # A generated launcher records its account and routes to it in one step.
@@ -341,6 +378,7 @@ t "launch allows the correct shared link"                test_launch_allows_corr
 t "primary launch strips an inherited CLAUDE_CONFIG_DIR" test_launch_primary_strips_polluted_env
 t "empty .current refuses instead of primary fallback"   test_launch_refuses_empty_current
 t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_without_headroom
+t "root override cannot skip the topology preflight"     test_launch_preflight_survives_root_override
 t "generated launcher remembers and routes in one step"  test_generated_launcher_remembers_and_routes
 t "account-add fails closed on symlinked canonical"      test_account_add_fails_when_canonical_is_link
 t "migrate aborts when a deduplicated source mutates"    test_migrate_aborts_when_dedupe_mutates
@@ -354,7 +392,7 @@ t "reindex fails when pre-existing sessions are lost"    test_reindex_fails_on_s
 t "canary request failure is INCONCLUSIVE, not FAIL"     test_canary_request_failure_is_inconclusive
 t "check rejects a mistyped flag with usage(2)"          test_check_rejects_unknown_flag
 
-rm -rf "${TMPDIR:-/tmp}"/cs-test.*(N)
+rm -rf "${TMPDIR:-/tmp}"/cs-test.*(N) "${TMPDIR:-/tmp}"/cs-test-headroom.*(N)
 print -r -- "----"
 print -r -- "$PASS passed, $FAIL failed"
 (( FAIL == 0 ))

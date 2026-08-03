@@ -100,18 +100,6 @@ _claude_link_projects() {
   ln -s "$canon" "$link"
 }
 
-# Personal preflight for a resolved account dir. Only dirs under the accounts
-# root need it (the primary owns the canonical store), and only the topology
-# check: seeding is claude-account-add's job, and a launcher whose dir
-# vanished should refuse — headroom does — rather than quietly regenerate an
-# empty login.
-_claude_preflight() {
-  emulate -L zsh
-  local dir="$1"
-  [[ "$dir" == "$CLAUDE_ACCOUNTS_ROOT"/* ]] || return 0
-  _claude_link_projects "$dir"
-}
-
 # Expand a personal shorthand to the canonical name headroom knows: the
 # primary's name and full emails pass through, a unique local part becomes
 # its email. Convenience only — headroom revalidates whatever this prints,
@@ -203,18 +191,27 @@ _claude_launch() {
     print -u2 "claude accounts: headroom not found (is ~/.local/bin on PATH?) — claude was not started"
     return 127
   fi
-  local out name dir
+  local out name dir kind
   if [[ -n "$sel" ]]; then
     out=$(headroom resolve "$sel") || return
   else
     out=$(headroom resolve) || return
   fi
-  IFS=$'\t' read -r name dir <<< "$out"
-  if [[ -z "$name" || -z "$dir" ]]; then
+  IFS=$'\t' read -r name dir kind <<< "$out"
+  if [[ -z "$name" || -z "$dir" || -z "$kind" ]]; then
     print -u2 "claude accounts: unexpected resolve output from headroom — claude was not started"
     return 1
   fi
-  _claude_preflight "$dir" || { print -u2 "claude accounts: $dir violates the shared-sessions topology — not launching"; return 1 }
+  # Topology preflight for extra accounts only — the primary owns the
+  # canonical store. Which case applies comes from headroom's classification,
+  # never from prefix-matching this file's idea of the accounts root: a
+  # HEADROOM_* override moves the real root, and a wrapper comparing paths it
+  # didn't resolve would skip the one check that keeps history unforked.
+  # (Seeding stays claude-account-add's job: a launcher whose dir vanished
+  # should refuse — headroom does — not quietly regenerate an empty login.)
+  if [[ "$kind" == "extra" ]]; then
+    _claude_link_projects "$dir" || { print -u2 "claude accounts: $dir violates the shared-sessions topology — not launching"; return 1 }
+  fi
   # Claude Code ignores TMPDIR: its temp base is CLAUDE_CODE_TMPDIR or a
   # hardcoded /tmp, with claude-<uid>/ appended (verified in the 2.1.215
   # binary). Uncomment to make Ctrl+G prompt files (and all other Claude
