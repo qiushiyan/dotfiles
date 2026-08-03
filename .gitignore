@@ -74,3 +74,5 @@ vpn-private/
 # === Misc tool droppings ===
 .python-version
 .DS_Store
+
+.obelisk/
