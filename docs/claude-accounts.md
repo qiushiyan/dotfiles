@@ -16,12 +16,16 @@ lives.
 - **`x-check`** — ≡ `headroom check`; verifies the machinery after a Claude
   Code update. Bare `headroom` is the usage board itself (`← x` marks where
   bare `x` currently points).
-- **`x-select`** — session picker (`headroom resume`): every session on the
-  machine in one list, project-local (this repo, worktrees included) on
-  top. Enter resumes a session *in its own project dir, on the account that
-  last drove it* — `x-accounts`' choice only steers new sessions. `x`
+- **`x-select`** — session picker (`headroom sessions`): every session on
+  the machine in one list, project-local (this repo, worktrees included) on
+  top. Enter continues a session *in its own project dir, on the account
+  that last drove it* — headroom enters the dir and execs claude itself;
+  the wrapper only cds afterwards from an advisory file, so the cd sticks
+  once the session ends. `x-accounts`' choice only steers new sessions. `x`
   re-homes the selected session to the current account instead; `/` search,
-  `r` rename, `dd` delete, space preview.
+  `r` rename, `dd` delete, space preview. (`headroom resume`, the old
+  decision-line spelling, is a permanent tombstone: if x-select prints a
+  stale-shell message, run `exec zsh`.)
 - **`x-accounts`** (alias **`x-acc`**) — account picker: choose an account
   off the live usage board, stick like `x-<name>` does, then launch on it.
 - **Sessions are machine-global** — the picker (and native `x --resume`)
@@ -41,13 +45,16 @@ lives.
 This is where the underlying engine lives: **`~/dev/headroom`** — a
 standalone Go CLI installed to `~/.local/bin/headroom` via its
 `make install`. The account board (`headroom` / `headroom accounts`, with
-`--json`), the session picker (`headroom resume`, with a `--json` listing),
-launch routing (`headroom launch` validates the account and builds the child
-environment from that decision alone; `headroom resolve` answers
-name / dir / kind for wrapper preflight), and the self-check
-(`headroom check`) are all engine features; `x`, `x-<name>`, `x-acc`,
-`x-select` and `x-check` are thin zsh wrappers over them — preflight, flags
-and short aliases, never `CLAUDE_CONFIG_DIR` or `.current` handling. If a
+`--json`), the session picker (`headroom sessions`, with a `--json`
+listing; it enters the project dir and execs claude itself), launch routing
+(`headroom launch` validates the account, verifies the shared-sessions
+topology, and builds the child environment from that decision alone), and
+the self-check (`headroom check`) are all engine features; `x`, `x-<name>`,
+`x-acc`, `x-select` and `x-check` are thin zsh wrappers over them — flags,
+short aliases and the post-session cd, never `CLAUDE_CONFIG_DIR`,
+`.current`, or any check a launch depends on: a shell function is frozen at
+shell init and lives for weeks, so everything that can misroute lives on
+the binary side, re-resolved from PATH at every keystroke. If a
 wrapper misbehaves, the fix is almost certainly in the engine — its mental
 model, the reverse-engineered vendor contracts (Keychain service naming, the
 OAuth usage endpoint, response-drift handling), and its verification story
@@ -87,9 +94,9 @@ Everything derives from that tree:
   credentials, so they belong to the machine, not the account: every
   account's `projects/` symlinks to the primary's store, the resume picker
   in any account lists every session, and resuming appends to the one
-  canonical file — accounts are auth/quota lanes, never history silos. The
-  launcher re-verifies the link (by inode) on every launch and refuses to
-  start over a broken topology, because a real directory there would fork
+  canonical file — accounts are auth/quota lanes, never history silos. 
+  `headroom launch` re-verifies the link (by inode) on every launch and
+  refuses to start over a broken topology, because a real directory there would fork
   history silently. Per-session extras (`file-history/`, todos,
   `session-env/`) stay account-local: resuming under a different account
   keeps the conversation, not `/rewind` checkpoints. Retention is one
@@ -115,8 +122,8 @@ Everything derives from that tree:
   headroom off the live board; bare `x` follows from then on for *new*
   sessions. (Or bare `headroom` to look, then an `x-<name>` by hand.)
 - **Resume an old conversation**: `x-select` — every session on the
-  machine, this repo's (all worktrees) on top. Enter resumes it in its own
-  project dir on the account that last drove it, so a session keeps its
+  machine, this repo's (all worktrees) on top. Enter continues it in its
+  own project dir on the account that last drove it, so a session keeps its
   account (and its `/rewind` checkpoints) no matter what `x-accounts` did
   since; the cd sticks after the session ends. `x` on a row resumes it on
   the current account instead *and re-homes it* — from then on it lives
@@ -170,12 +177,13 @@ Everything derives from that tree:
   every account's sessions. Index it incrementally, never `obelisk --build`:
   a force rebuild mirrors only files still on disk, and for transcripts
   retention already pruned, the index row is the last record in existence.
-- Launch routing belongs to headroom: wrappers preflight (topology, per
-  headroom resolve's `kind` classification) and delegate to
-  `headroom launch` — they never set `CLAUDE_CONFIG_DIR`, never launch bare
-  `claude`, never parse `.current`. When headroom is missing or refuses,
-  they stop loudly rather than falling back; the unmanaged escape hatch is
-  `env -u CLAUDE_CONFIG_DIR claude` (or the variable set by hand). Short
+- Launch routing belongs to headroom, verification included: wrappers
+  delegate to `headroom launch` / `headroom sessions`, which validate the
+  account and the shared-sessions topology themselves — wrappers never set
+  `CLAUDE_CONFIG_DIR`, never launch bare `claude`, never parse `.current`,
+  and never parse anything headroom prints. When headroom is missing or
+  refuses, they stop loudly rather than falling back; the unmanaged escape
+  hatch is `env -u CLAUDE_CONFIG_DIR claude` (or the variable set by hand). Short
   `x-<local-part>` aliases and the reserved utility names are `claude.zsh`'s
   own concern — headroom advertises only full identities, so there is no
   naming policy to keep in sync.

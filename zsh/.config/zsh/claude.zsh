@@ -24,12 +24,16 @@
 # of account.
 #
 # Launch routing belongs to headroom (~/dev/headroom, installed to
-# ~/.local/bin/headroom): `headroom launch` validates the account and builds
-# the child environment from that decision alone — every inherited
-# CLAUDE_CONFIG_DIR is stripped, exactly one is set for a non-primary — so a
-# polluted shell (a tmux server started inside a Claude Code session) can
-# never re-route a launch. These wrappers only add what is personal: the
-# shared-sessions topology preflight, seeding, flags, and short aliases.
+# ~/.local/bin/headroom): `headroom launch` validates the account, verifies
+# the shared-sessions topology, and builds the child environment from that
+# decision alone — every inherited CLAUDE_CONFIG_DIR is stripped, exactly
+# one is set for a non-primary — so a polluted shell (a tmux server started
+# inside a Claude Code session) can never re-route a launch. These wrappers
+# only add what is personal: seeding, flags, short aliases, and the one
+# thing only a parent shell can do (make a cd stick). The rule behind the
+# split, learned twice: shell functions are frozen at shell init and live
+# for weeks, so nothing that can misroute, mutate, or misparse belongs
+# here — the binary is re-resolved from PATH at every keystroke.
 #
 #   x                     permissions bypassed, on the *last explicitly
 #                         chosen* account — x-<name> chooses and sticks
@@ -38,10 +42,12 @@
 #                         local part is unique (and isn't the primary's
 #                         name or a reserved word) a short alias exists
 #                         too (x-yan, …)
-#   x-select              session picker (headroom resume): pick any session
-#                         on the machine, resume it in its own project dir
-#                         on the account that last drove it (the cd sticks;
-#                         bare `x`'s target is untouched)
+#   x-select              session picker (headroom sessions): pick any
+#                         session on the machine; headroom enters its
+#                         project dir and execs claude on the account that
+#                         last drove it. This wrapper only cds afterwards,
+#                         from the advisory --cd-file (bare `x`'s target is
+#                         untouched)
 #   x-accounts / x-acc    account board (headroom accounts): live usage for
 #                         every account, refreshing while it is open; enter
 #                         sticks like x-<name> does, then launches on it
@@ -143,26 +149,46 @@ x-check()       { headroom check "$@" }
 # it. Bare `headroom` is the same board, so this is the only wrapper it needs.
 x-accounts()    { headroom accounts && x "$@" }
 x-acc()         { x-accounts "$@" }
-# Session picker (headroom resume): every session on the machine, resumed in
-# its own project dir on the account that last drove it. headroom decides
-# and prints one dir<TAB>id<TAB>account-name line; this wrapper only cds
-# (the cd sticks) and launches through headroom again. Deliberately no
-# --remember: resuming a session never moves where bare `x` points — only
-# x-accounts does that.
+# Session picker (headroom sessions): every session on the machine, entered
+# in its own project dir and continued — by exec, inside headroom — on the
+# account that last drove it. Nothing routing-shaped crosses back into this
+# shell; the old decision-line protocol is a tombstone (`headroom resume`
+# exits 2 with a stale-shell message — if you are reading that, exec zsh).
+# The advisory cd file carries exactly one fact: empty means no launch was
+# committed (cancel or refusal — do not cd), non-empty means headroom
+# entered that dir, and the cd then sticks here regardless of how claude
+# exited. mktemp per invocation, never a fixed path: two concurrent shells
+# sharing one file would cd each other. Deliberately no --remember:
+# resuming a session never moves where bare `x` points — only x-accounts
+# does that.
 x-select() {
   emulate -L zsh
-  local out dir id account
-  out=$(headroom resume) || return
-  IFS=$'\t' read -r dir id account <<< "$out"
-  if [[ -z "$dir" || -z "$id" || -z "$account" ]]; then
-    print -u2 "x-select: unexpected decision line from headroom resume"
-    return 1
+  if ! command -v headroom >/dev/null 2>&1; then
+    print -u2 "claude accounts: headroom not found (is ~/.local/bin on PATH?) — claude was not started"
+    return 127
   fi
-  cd -- "$dir" && _claude_launch "$account" --dangerously-skip-permissions --resume "$id"
+  local tmp rc dir
+  tmp=$(mktemp -d "${${TMPDIR:-/tmp}%/}/x-select.XXXXXX") || return
+  headroom sessions --cd-file "$tmp/cwd" -- --dangerously-skip-permissions "$@"
+  rc=$?
+  if [[ -s "$tmp/cwd" ]]; then
+    dir="$(<"$tmp/cwd")"
+    if [[ "$dir" == /* ]]; then
+      cd -- "$dir"
+    else
+      print -u2 "x-select: ignoring malformed cd advice: $dir"
+    fi
+  fi
+  rm -rf "$tmp"
+  return $rc
 }
 
-# Launch claude through headroom: resolve for the preflight, then `headroom
-# launch` revalidates the name and owns the child environment entirely.
+# Launch claude through headroom, which owns the whole decision: name
+# validation, the shared-sessions topology check, and the child environment.
+# This wrapper parses nothing back — the resolve round-trip and the shell-side
+# topology preflight moved into the binary after the 2026-08-03 incident,
+# because a check that lives in a shell function is frozen at shell init and
+# a stale copy is worse than none.
 #
 #   _claude_launch [--remember] <name|""> [claude args...]
 #
@@ -191,34 +217,17 @@ _claude_launch() {
     print -u2 "claude accounts: headroom not found (is ~/.local/bin on PATH?) — claude was not started"
     return 127
   fi
-  local out name dir kind
-  if [[ -n "$sel" ]]; then
-    out=$(headroom resolve "$sel") || return
-  else
-    out=$(headroom resolve) || return
-  fi
-  IFS=$'\t' read -r name dir kind <<< "$out"
-  if [[ -z "$name" || -z "$dir" || -z "$kind" ]]; then
-    print -u2 "claude accounts: unexpected resolve output from headroom — claude was not started"
-    return 1
-  fi
-  # Topology preflight for extra accounts only — the primary owns the
-  # canonical store. Which case applies comes from headroom's classification,
-  # never from prefix-matching this file's idea of the accounts root: a
-  # HEADROOM_* override moves the real root, and a wrapper comparing paths it
-  # didn't resolve would skip the one check that keeps history unforked.
-  # (Seeding stays claude-account-add's job: a launcher whose dir vanished
-  # should refuse — headroom does — not quietly regenerate an empty login.)
-  if [[ "$kind" == "extra" ]]; then
-    _claude_link_projects "$dir" || { print -u2 "claude accounts: $dir violates the shared-sessions topology — not launching"; return 1 }
-  fi
   # Claude Code ignores TMPDIR: its temp base is CLAUDE_CODE_TMPDIR or a
   # hardcoded /tmp, with claude-<uid>/ appended (verified in the 2.1.215
   # binary). Uncomment to make Ctrl+G prompt files (and all other Claude
   # temp files — child-process caches included) land in ./.tmp instead;
   # cleanup becomes manual, so it stays off by default.
   # CLAUDE_CODE_TMPDIR="$PWD/.tmp" \
-  headroom launch $remember --account "$name" -- "$@"
+  if [[ -n "$sel" ]]; then
+    headroom launch $remember --account "$sel" -- "$@"
+  else
+    headroom launch $remember -- "$@"
+  fi
 }
 
 # Bypassed permissions on the last explicitly chosen account.

@@ -214,6 +214,83 @@ test_account_add_fails_when_canonical_is_link() (
   [[ $rc -ne 0 ]] || { print "claude-account-add reported success over a symlinked canonical store"; return 1 }
 )
 
+# --- x-select: the wrapper's whole job is the cd afterwards -------------------
+
+# The advisory cd-file contract, wrapper side: non-empty and absolute means
+# headroom entered that dir, and the cd sticks regardless of how the session
+# exited; the exit status passes through untouched. The stub stands in for
+# headroom because the picker needs a terminal — the binary's own side of the
+# contract is pinned in headroom's pty harness.
+test_x_select_cds_from_advice() (
+  sandbox
+  mkdir -p "$H/proj"
+  rm -f "$SB/bin/headroom" # a symlink to the real binary — never write through it
+  cat >"$SB/bin/headroom" <<EOS
+#!/bin/sh
+[ "\$1" = sessions ] && [ "\$2" = --cd-file ] || exit 9
+printf '%s' "$H/proj" > "\$3"
+exit 7
+EOS
+  chmod +x "$SB/bin/headroom"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  cd "$H"
+  local rc=0
+  x-select || rc=$?
+  [[ $rc -eq 7 ]] || { print "exit status not passed through: rc=$rc, want 7"; return 1 }
+  [[ "$PWD" == "$H/proj" ]] || { print "did not cd to the advised dir: $PWD"; return 1 }
+)
+
+# Empty advice means no launch was committed — cancel or refusal — and the
+# wrapper must stay put.
+test_x_select_stays_put_on_empty_advice() (
+  sandbox
+  rm -f "$SB/bin/headroom"
+  cat >"$SB/bin/headroom" <<'EOS'
+#!/bin/sh
+[ "$1" = sessions ] && [ "$2" = --cd-file ] || exit 9
+: > "$3"
+exit 1
+EOS
+  chmod +x "$SB/bin/headroom"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  cd "$H"
+  local rc=0
+  x-select || rc=$?
+  [[ $rc -eq 1 ]] || { print "exit status not passed through: rc=$rc, want 1"; return 1 }
+  [[ "$PWD" == "$H" ]] || { print "cd'd on empty advice: $PWD"; return 1 }
+)
+
+# The regression that would have caught the 2026-08-03 incident: a frozen
+# old-generation x-select (decision-line protocol, field 3 read as a config
+# dir) driving the *current* binary. `headroom resume` is a tombstone now, so
+# this must fail loudly, create no directory in the cwd, and launch nothing —
+# a stale shell gets told, never misrouted.
+test_stale_wrapper_fails_loudly() (
+  sandbox
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  x-select() {
+    emulate -L zsh
+    local out dir id cfgdir
+    out=$(headroom resume) || return
+    IFS=$'\t' read -r dir id cfgdir <<< "$out"
+    if [[ -z "$dir" || -z "$id" ]]; then
+      print -u2 "x-select: unexpected decision line from headroom resume"
+      return 1
+    fi
+    cd -- "$dir" && _claude_launch "$cfgdir" --dangerously-skip-permissions --resume "$id"
+  }
+  cd "$H"
+  local rc=0
+  x-select 2>/dev/null || rc=$?
+  [[ $rc -eq 2 ]] || { print "stale x-select rc=$rc, want the tombstone's 2"; return 1 }
+  local -a strays=("$H"/*@*(N/))
+  (( ${#strays} == 0 )) || { print "stray account dir created in cwd: $strays"; return 1 }
+  [[ ! -f "$SB/claude.log" ]] || { print "claude ran from a stale wrapper"; return 1 }
+)
+
 # --- migration abort paths ---------------------------------------------------
 
 # A writer that slips the process gate and appends to a deduplicated source
@@ -381,6 +458,9 @@ t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_wit
 t "root override cannot skip the topology preflight"     test_launch_preflight_survives_root_override
 t "generated launcher remembers and routes in one step"  test_generated_launcher_remembers_and_routes
 t "account-add fails closed on symlinked canonical"      test_account_add_fails_when_canonical_is_link
+t "x-select cds from non-empty advice, status through"   test_x_select_cds_from_advice
+t "x-select stays put on empty advice"                   test_x_select_stays_put_on_empty_advice
+t "stale-generation x-select fails loudly, creates none" test_stale_wrapper_fails_loudly
 t "migrate aborts when a deduplicated source mutates"    test_migrate_aborts_when_dedupe_mutates
 t "migrate aborts when a new source file appears"        test_migrate_aborts_on_new_file
 t "migrate rejects a mistyped flag with usage(2)"        test_migrate_rejects_unknown_flag
