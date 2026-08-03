@@ -12,12 +12,21 @@ lives.
 - **`x-usage`** — every account's 5-hour / weekly limit bars in one view;
   `← x` marks where bare `x` currently points. `x-usage check` verifies the
   machinery after a Claude Code update.
-- **`x-select`** — interactive picker: choose an account off the live usage
-  board, stick like `x-<name>` does, then launch on it.
-- **Sessions are machine-global** — `x --resume` from any account lists every
-  session on the machine (`Ctrl+W` all worktrees, `Ctrl+A` all projects);
-  which account recorded a conversation never matters.
-  `claude-sessions-check` verifies the sharing machinery.
+- **`x-select`** — session picker (`headroom resume`): every session on the
+  machine in one list, project-local (this repo, worktrees included) on
+  top. Enter resumes a session *in its own project dir, on the account that
+  last drove it* — `x-accounts`' choice only steers new sessions. `x`
+  re-homes the selected session to the current account instead; `/` search,
+  `r` rename, `dd` delete, space preview.
+- **`x-accounts`** (alias **`x-acc`**) — account picker: choose an account
+  off the live usage board, stick like `x-<name>` does, then launch on it.
+- **Sessions are machine-global** — the picker (and native `x --resume`)
+  from any account lists every session on the machine; which account
+  recorded a conversation never matters for *seeing* it. Which account
+  *resumes* it follows the session's owner: the account that last drove it,
+  re-routable per session with one key. Accounts stay auth/quota lanes,
+  never history silos. `claude-sessions-check` verifies the sharing
+  machinery.
 - **`claude-account-add <email>`** (alias **`x-account-add`**), then that
   account's `x-<name>` and `/login` — onboard a new subscription.
 - Pieces: launchers in `zsh/.config/zsh/claude.zsh` (this repo); the
@@ -28,9 +37,10 @@ lives.
 This is where the underlying engine lives: **`~/dev/headroom`** — a
 standalone Go CLI installed to `~/.local/bin/headroom` via its
 `make install`. The dashboard (`headroom`, with `--json` and `watch` forms),
-the interactive picker (`headroom select`), and the self-check
-(`headroom check`) are all engine features; `x-usage` and `x-select` are
-one-line zsh wrappers over them. If a
+the account picker (`headroom select`), the session picker
+(`headroom resume`, with a `--json` listing), and the self-check
+(`headroom check`) are all engine features; `x-usage`, `x-select` and
+`x-accounts` are thin zsh wrappers over them. If a
 wrapper misbehaves, the fix is almost certainly in the engine — its mental
 model, the reverse-engineered vendor contracts (Keychain service naming, the
 OAuth usage endpoint, response-drift handling), and its verification story
@@ -49,6 +59,8 @@ There is no account list anywhere. The dirs are the registry:
     projects                    symlink → ~/.claude/projects (sessions: shared)
     .claude.json, history, …    real files                  (login: per-account)
   .current                    which account bare `x` targets
+  .owners                     explicit session re-homes (headroom's; see
+                              "Resume an old conversation" below)
   .order                      dashboard display order (optional, one email
                               per line; unlisted accounts follow A–Z)
 ```
@@ -88,11 +100,19 @@ Everything derives from that tree:
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
-- **Out of quota**: `x-select` — pick an account with headroom off the live
-  board; bare `x` follows from then on. (Or `x-usage` to look, then an
-  `x-<name>` by hand.)
-- **Resume an old conversation**: `x --resume` on whatever account has
-  quota — the picker sees every session on the machine.
+- **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
+  headroom off the live board; bare `x` follows from then on for *new*
+  sessions. (Or `x-usage` to look, then an `x-<name>` by hand.)
+- **Resume an old conversation**: `x-select` — every session on the
+  machine, this repo's (all worktrees) on top. Enter resumes it in its own
+  project dir on the account that last drove it, so a session keeps its
+  account (and its `/rewind` checkpoints) no matter what `x-accounts` did
+  since; the cd sticks after the session ends. `x` on a row resumes it on
+  the current account instead *and re-homes it* — from then on it lives
+  there (recorded in `.owners`; also the escape hatch when a session's
+  account was deleted). Rows whose project dir no longer exists say so and
+  refuse — `dd` is the cleanup. Native `x --resume` still works and always
+  uses the current account.
 - **Reorder the board**: edit `~/.claude-accounts/.order`. The primary is
   always first; a new account needs no entry (it appends alphabetically
   until promoted).
@@ -138,7 +158,8 @@ Everything derives from that tree:
 - The launcher-advertising rule lives twice: `_claude_gen_launchers` in
   `claude.zsh` and `accounts.Launcher` in headroom — keep them in sync,
   including the reserved local parts (`usage`, `account`, `account-add`,
-  `select`) that x-* utilities claim ahead of any account.
+  `select`, `accounts`, `acc`) that x-* utilities claim ahead of any
+  account.
 - `ACCOUNTS_ROOT`, `PRIMARY_NAME`, and the `.current` state file are declared
   in `claude.zsh` and in headroom's config defaults — keep those in sync too
   (headroom side is overridable via `HEADROOM_*` env vars).

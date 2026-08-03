@@ -30,7 +30,11 @@
 #                         too (x-yan, …)
 #   x-usage               ≡ headroom (the dashboard; `x-usage check`
 #                         verifies the machinery after a Claude Code update)
-#   x-select              interactive picker (headroom select): choose an
+#   x-select              session picker (headroom resume): pick any session
+#                         on the machine, resume it in its own project dir
+#                         on the account that last drove it (the cd sticks;
+#                         bare `x`'s target is untouched)
+#   x-accounts / x-acc    account picker (headroom select): choose an
 #                         account off the live usage board, stick like
 #                         x-<name> does, then launch on it
 #   x-account             ≡ claude-account <name|email> [args...] — prompted
@@ -48,7 +52,7 @@ typeset -g CLAUDE_ACCOUNT_STATE="$CLAUDE_ACCOUNTS_ROOT/.current"
 typeset -g CLAUDE_PRIMARY_NAME="qiushi"   # x-qiushi ≡ default ~/.claude
 # Local parts that never get a short launcher alias: x-<these> are utilities.
 # headroom's accounts.Launcher mirrors this list — keep the two in sync.
-typeset -ga CLAUDE_X_RESERVED=(usage account account-add select)
+typeset -ga CLAUDE_X_RESERVED=(usage account account-add select accounts acc)
 
 # Fill a fresh account dir with symlinks to the tracked claude config.
 _claude_account_seed() {
@@ -119,9 +123,26 @@ _claude_selector() {
 x-usage()       { headroom "$@" }
 x-account()     { claude-account "$@" }
 x-account-add() { claude-account-add "$@" }
-# Interactive picker (headroom, ~/dev/headroom): choose an account off the
-# live usage board, stick like x-<name> does, then launch on it.
-x-select()      { headroom select && x "$@" }
+# Account picker (headroom select): choose an account off the live usage
+# board, stick like x-<name> does, then launch on it.
+x-accounts()    { headroom select && x "$@" }
+x-acc()         { x-accounts "$@" }
+# Session picker (headroom resume): every session on the machine, resumed in
+# its own project dir on the account that last drove it. headroom decides
+# and prints one dir<TAB>id<TAB>config-dir line; this wrapper only cds (the
+# cd sticks) and launches. Deliberately no _claude_remember: resuming a
+# session never moves where bare `x` points — only x-accounts does that.
+x-select() {
+  emulate -L zsh
+  local out dir id cfgdir
+  out=$(headroom resume) || return
+  IFS=$'\t' read -r dir id cfgdir <<< "$out"
+  if [[ -z "$dir" || -z "$id" ]]; then
+    print -u2 "x-select: unexpected decision line from headroom resume"
+    return 1
+  fi
+  cd -- "$dir" && _claude_launch "$cfgdir" --dangerously-skip-permissions --resume "$id"
+}
 
 # Record the account bare `x` should target from now on.
 _claude_remember() {
