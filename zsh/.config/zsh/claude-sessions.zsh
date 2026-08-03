@@ -43,6 +43,29 @@ claude-sessions-migrate() {
   fi
   [[ "${1:-}" == --dry-run ]] && dry=1
 
+  # One migration at a time: two interleaved runs can each classify and
+  # verify, then race the sequential swaps into a topology one of them
+  # reports as success. mkdir is the atomic take; a crash leaves the dir
+  # behind, and the refusal says exactly what to remove.
+  setopt local_traps
+  local lockdir=""
+  if (( ! dry )); then
+    command mkdir -p -- "$root"
+    if ! command mkdir -- "$root/.migrate.lock" 2>/dev/null; then
+      print -u2 -r -- "FAIL another migration appears to be running — if none is, remove $root/.migrate.lock and re-run"
+      return 1
+    fi
+    lockdir="$root/.migrate.lock"
+  fi
+  local work; work=$(mktemp -d "${TMPDIR:-/tmp}/claude-sessions-migrate.XXXXXX")
+  # Values are baked into the trap at set time — at fire time the
+  # function's locals are already out of scope.
+  local cleanup="command rm -rf -- ${(q)work}"
+  [[ -n "$lockdir" ]] && cleanup+="; command rmdir -- ${(q)lockdir} 2>/dev/null"
+  trap "${cleanup}; :" EXIT
+  local inventory="$work/inventory"   # hash|action|account-dir|relpath, action: copy|dedupe
+  : >"$inventory"
+
   local -a sources link_only
   local d p
   for d in "$root"/*(/N); do
@@ -86,12 +109,6 @@ claude-sessions-migrate() {
       fi
     done
   fi
-
-  setopt local_traps
-  local work; work=$(mktemp -d "${TMPDIR:-/tmp}/claude-sessions-migrate.XXXXXX")
-  trap "rm -rf ${(q)work}" EXIT
-  local inventory="$work/inventory"   # hash|action|account-dir|relpath, action: copy|dedupe
-  : >"$inventory"
 
   # Scan + conflict detection. Collisions must be byte-identical — across
   # sources, and against the canonical tree — for every relative path, not
@@ -227,15 +244,37 @@ claude-sessions-migrate() {
     done
   fi
   if [[ -n "$swap_err" ]]; then
+    # Rollback must run to completion no matter what fails: err_return is
+    # switched off for this block (zsh triggers it inside brace groups on
+    # the left of || when the function itself is called in a tested
+    # context), every step uses plain `if !`, and whatever could not be
+    # restored is named for manual recovery from its backup. This branch
+    # always ends in return 1.
+    unsetopt err_return
     print -u2 -r -- "FAIL swapping $swap_err — restoring every account to its pre-migration state"
+    local -a unrestored
     if [[ -e "$swap_err/projects.pre-share.$ts" && ! -e "$swap_err/projects" && ! -h "$swap_err/projects" ]]; then
-      command mv "$swap_err/projects.pre-share.$ts" "$swap_err/projects"
+      if ! command mv "$swap_err/projects.pre-share.$ts" "$swap_err/projects" 2>/dev/null; then
+        unrestored+=("$swap_err")
+      fi
     fi
-    for d in "${linked[@]}"; do command rm -f "$d/projects"; done
-    for d in "${swapped[@]}"; do
-      command rm -f "$d/projects"
-      command mv "$d/projects.pre-share.$ts" "$d/projects"
+    for d in "${linked[@]}"; do
+      if ! command rm -f "$d/projects" 2>/dev/null; then
+        unrestored+=("$d")
+      fi
     done
+    for d in "${swapped[@]}"; do
+      if ! command rm -f "$d/projects" 2>/dev/null; then
+        unrestored+=("$d")
+        continue
+      fi
+      if ! command mv "$d/projects.pre-share.$ts" "$d/projects" 2>/dev/null; then
+        unrestored+=("$d")
+      fi
+    done
+    if (( ${#unrestored} )); then
+      print -u2 -r -- "FAIL unwind incomplete — restore these by hand from their projects.pre-share.$ts backups: ${unrestored[*]}"
+    fi
     return 1
   fi
   for d in "${swapped[@]}"; do

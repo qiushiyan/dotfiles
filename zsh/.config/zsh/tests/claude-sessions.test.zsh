@@ -154,6 +154,43 @@ test_migrate_rejects_unknown_flag() (
     || { print "the typo executed the real migration"; return 1 }
 )
 
+# A rollback failure mid-unwind must not abandon the remaining accounts:
+# every restoration is attempted and the residue is named. The mv stub
+# breaks b's swap (forcing the unwind) and then breaks a's restore.
+test_migrate_unwind_survives_rollback_failure() (
+  sandbox
+  seed_account a@x.com
+  mkdir -p "$H/.claude-accounts/b@x.com/projects/-projb"
+  print -r -- '{"turn":"b-only"}' >"$H/.claude-accounts/b@x.com/projects/-projb/5555eeee-0000-0000-0000-000000000005.jsonl"
+  printf '#!/bin/sh\ncase "$2" in */b@x.com/projects.pre-share.*) exit 1;; esac\ncase "$1" in */a@x.com/projects.pre-share.*) exit 1;; esac\nexec /bin/mv "$@"\n' >"$SB/bin/mv"
+  chmod +x "$SB/bin/mv"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$SESSIONS_ZSH"
+  local rc=0 out
+  out=$(claude-sessions-migrate 2>&1) || rc=$?
+  [[ $rc -ne 0 ]] || { print "partial swap failure reported success"; return 1 }
+  [[ "$out" == *"unwind incomplete"* && "$out" == *a@x.com* ]] \
+    || { print "unrestored account not named for manual recovery:"; print -r -- "$out"; return 1 }
+  [[ -d "$H/.claude-accounts/b@x.com/projects" && ! -h "$H/.claude-accounts/b@x.com/projects" ]] \
+    || { print "b should have been left untouched by its failed swap"; return 1 }
+  local -a abk; abk=("$H/.claude-accounts/a@x.com"/projects.pre-share.*(N))
+  (( ${#abk} == 1 )) || { print "a's backup missing after failed restore"; return 1 }
+)
+
+# A held lock must refuse a second migration outright.
+test_migrate_refuses_when_locked() (
+  sandbox
+  seed_account a@x.com
+  mkdir -p "$H/.claude-accounts/.migrate.lock"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$SESSIONS_ZSH"
+  local rc=0
+  claude-sessions-migrate >/dev/null 2>&1 || rc=$?
+  [[ $rc -ne 0 ]] || { print "migration ran despite a held lock"; return 1 }
+  [[ -d "$H/.claude-accounts/a@x.com/projects" && ! -h "$H/.claude-accounts/a@x.com/projects" ]] \
+    || { print "locked run still swapped the tree"; return 1 }
+)
+
 test_migrate_happy_path() (
   sandbox
   seed_account a@x.com
@@ -234,6 +271,8 @@ t "account-add fails closed on symlinked canonical"      test_account_add_fails_
 t "migrate aborts when a deduplicated source mutates"    test_migrate_aborts_when_dedupe_mutates
 t "migrate aborts when a new source file appears"        test_migrate_aborts_on_new_file
 t "migrate rejects a mistyped flag with usage(2)"        test_migrate_rejects_unknown_flag
+t "migrate unwind survives a rollback failure"           test_migrate_unwind_survives_rollback_failure
+t "migrate refuses to run under a held lock"             test_migrate_refuses_when_locked
 t "migrate happy path still merges and links"            test_migrate_happy_path
 t "reindex fails when the index pass no-ops"             test_reindex_fails_on_noop
 t "reindex fails when pre-existing sessions are lost"    test_reindex_fails_on_session_loss
