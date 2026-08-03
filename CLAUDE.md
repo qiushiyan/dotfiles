@@ -120,11 +120,13 @@ changing one piece without the others breaks it.
   `tmux.conf`.**
 - **Claude accounts** — several subscriptions coexist: `~/.claude` is primary,
   each extra is `~/.claude-accounts/<email>/` with its own Keychain login.
-  Launchers (`x`, `x-<name>`) live in `zsh/.config/zsh/claude.zsh`, but the
-  cross-account `/usage` dashboard and account picker are **headroom**, a Go CLI
-  in `~/dev/headroom` — `x-usage`/`x-select` are thin wrappers, so fix the
-  engine there. Session transcripts are machine-global (every account's
-  `projects/` symlinks to `~/.claude/projects`, enforced at launch; toolkit in
+  Launchers (`x`, `x-<name>`, `x-acc`, `x-select`) live in
+  `zsh/.config/zsh/claude.zsh` but are thin wrappers over **headroom**, a Go
+  CLI in `~/dev/headroom`, which owns the usage board, the session picker,
+  and launch routing itself (`headroom launch` builds `CLAUDE_CONFIG_DIR`
+  from the validated choice; wrappers never touch it) — so fix the engine
+  there. Session transcripts are machine-global (every account's `projects/`
+  symlinks to `~/.claude/projects`, enforced at launch; toolkit in
   `zsh/.config/zsh/claude-sessions.zsh`). Account dirs are runtime state,
   never in this repo → `docs/claude-accounts.md`.
 - **Agent skills** — Claude Code is a superset of Codex, which symlinks into it.

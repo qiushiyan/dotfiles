@@ -8,17 +8,19 @@ Several Claude Code logins coexist here, one per config dir; the `headroom`
 CLI reads them all. Answer from its output, and hand interactive steps to
 the user as commands to run — launchers start live sessions.
 
-- **Usage / quota**: run `headroom` (alias `x-usage`) — every account's
-  5-hour/weekly limit bars, each account's launcher command, and which
-  account bare `x` currently targets. `headroom --json` for scripting.
-- **Switching**: the user runs that account's launcher (`x-<name>`, shown in
-  the dashboard) or picks interactively with `x-select`; give them the
-  command. Credentials are per-account — `/login` plays no part in
-  switching.
+- **Usage / quota**: run `headroom` — every account's 5-hour/weekly limit
+  bars, each account's launcher command, and which account bare `x`
+  currently targets. `headroom --json` for scripting.
+- **Switching**: the user runs that account's launcher (`x-<name>`, shown on
+  the board) or picks off the live board with `x-acc`; give them the
+  command. Launchers route through `headroom launch`, which validates the
+  account and owns `CLAUDE_CONFIG_DIR`. Credentials are per-account —
+  `/login` plays no part in switching.
 - **Resuming / session history**: sessions are machine-global — every
-  account's `projects/` symlinks to `~/.claude/projects`, so `x --resume`
-  on any account lists every session (`Ctrl+A` = all projects). Which
-  account recorded a conversation never matters; pick the account by quota.
+  account's `projects/` symlinks to `~/.claude/projects`. `x-select` lists
+  every session and resumes each on the account that last drove it; native
+  `x --resume` also sees everything (`Ctrl+A` = all projects) but always
+  uses the current account.
 - **New subscription**: `claude-account-add <email>`, then that account's
   launcher and a one-time `/login`.
 - **Dashboard misbehaving, or after a Claude Code update**: `headroom check`

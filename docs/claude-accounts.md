@@ -8,10 +8,14 @@ lives.
 
 - **`x`** — Claude with permissions bypassed, on the *last explicitly chosen*
   account. **`x-<name>`** (`x-qiushi`, `x-yan`, …) chooses an account and
-  sticks, so the next bare `x` stays there.
-- **`x-usage`** — every account's 5-hour / weekly limit bars in one view;
-  `← x` marks where bare `x` currently points. `x-usage check` verifies the
-  machinery after a Claude Code update.
+  sticks, so the next bare `x` stays there. Every launcher routes through
+  `headroom launch`, which validates the account and owns
+  `CLAUDE_CONFIG_DIR` — an inherited value (a tmux server started inside a
+  Claude session) can never re-route a launch, and corrupt routing state
+  refuses instead of silently becoming the primary.
+- **`x-check`** — ≡ `headroom check`; verifies the machinery after a Claude
+  Code update. Bare `headroom` is the usage board itself (`← x` marks where
+  bare `x` currently points).
 - **`x-select`** — session picker (`headroom resume`): every session on the
   machine in one list, project-local (this repo, worktrees included) on
   top. Enter resumes a session *in its own project dir, on the account that
@@ -36,11 +40,14 @@ lives.
 
 This is where the underlying engine lives: **`~/dev/headroom`** — a
 standalone Go CLI installed to `~/.local/bin/headroom` via its
-`make install`. The dashboard (`headroom`, with `--json` and `watch` forms),
-the account picker (`headroom select`), the session picker
-(`headroom resume`, with a `--json` listing), and the self-check
-(`headroom check`) are all engine features; `x-usage`, `x-select` and
-`x-accounts` are thin zsh wrappers over them. If a
+`make install`. The account board (`headroom` / `headroom accounts`, with
+`--json`), the session picker (`headroom resume`, with a `--json` listing),
+launch routing (`headroom launch` validates the account and builds the child
+environment from that decision alone; `headroom resolve` answers
+name / dir / kind for wrapper preflight), and the self-check
+(`headroom check`) are all engine features; `x`, `x-<name>`, `x-acc`,
+`x-select` and `x-check` are thin zsh wrappers over them — preflight, flags
+and short aliases, never `CLAUDE_CONFIG_DIR` or `.current` handling. If a
 wrapper misbehaves, the fix is almost certainly in the engine — its mental
 model, the reverse-engineered vendor contracts (Keychain service naming, the
 OAuth usage endpoint, response-drift handling), and its verification story
@@ -58,10 +65,11 @@ There is no account list anywhere. The dirs are the registry:
     settings.json, skills, …    symlinks → claude/.claude   (config: shared)
     projects                    symlink → ~/.claude/projects (sessions: shared)
     .claude.json, history, …    real files                  (login: per-account)
-  .current                    which account bare `x` targets
-  .owners                     explicit session re-homes (headroom's; see
-                              "Resume an old conversation" below)
-  .order                      dashboard display order (optional, one email
+  .current                    which account bare `x` targets — headroom's
+                              file alone; wrappers never parse it
+  state.json                  headroom's own file: request ledger, fetched
+                              usage answers, explicit session re-homes
+  .order                      board display order (optional, one email
                               per line; unlisted accounts follow A–Z)
 ```
 
@@ -92,27 +100,30 @@ Everything derives from that tree:
   launchers: `x-<email>` always exists and is the guaranteed identity; a
   short `x-<local-part>` alias (`x-yan`) is added only when the local part is
   unique and isn't the primary's name, so a short name can never hit the
-  wrong account. headroom discovers the same dirs — the two can't drift.
-  Dashboard labels come from the email each dir's `.claude.json` *actually*
-  logged in as, with a red warning when that mismatches the dir name (i.e.
-  `/login` picked the wrong account).
+  wrong account. Short aliases are this repo's convenience alone — headroom
+  advertises only the full identity, and every launcher body just delegates
+  to `headroom launch --account <email>`, which discovers the same dirs and
+  revalidates, so a stale or ambiguous name fails by name instead of routing
+  anywhere. Board labels come from the email each dir's `.claude.json`
+  *actually* logged in as, with a red warning when that mismatches the dir
+  name (i.e. `/login` picked the wrong account).
 
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
 - **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
   headroom off the live board; bare `x` follows from then on for *new*
-  sessions. (Or `x-usage` to look, then an `x-<name>` by hand.)
+  sessions. (Or bare `headroom` to look, then an `x-<name>` by hand.)
 - **Resume an old conversation**: `x-select` — every session on the
   machine, this repo's (all worktrees) on top. Enter resumes it in its own
   project dir on the account that last drove it, so a session keeps its
   account (and its `/rewind` checkpoints) no matter what `x-accounts` did
   since; the cd sticks after the session ends. `x` on a row resumes it on
   the current account instead *and re-homes it* — from then on it lives
-  there (recorded in `.owners`; also the escape hatch when a session's
-  account was deleted). Rows whose project dir no longer exists say so and
-  refuse — `dd` is the cleanup. Native `x --resume` still works and always
-  uses the current account.
+  there (recorded in headroom's `state.json`; also the escape hatch when a
+  session's account was deleted). Rows whose project dir no longer exists
+  say so and refuse — `dd` is the cleanup. Native `x --resume` still works
+  and always uses the current account.
 - **Reorder the board**: edit `~/.claude-accounts/.order`. The primary is
   always first; a new account needs no entry (it appends alphabetically
   until promoted).
@@ -120,13 +131,13 @@ Everything derives from that tree:
   `x-account`); it moves the `x` target too.
 - **New subscription**: `claude-account-add <email>` seeds the dir and names
   the launcher; `/login` on its first launch binds the account.
-- **Stale token** on a rarely-used account: the dashboard says so — run that
+- **Stale token** on a rarely-used account: the board says so — run that
   account's `x-<name>` once. Only Claude Code refreshes tokens; the engine
-  never touches login or quota state (its own files are `.current`,
-  `.throttle` and `.owners`, and its only vendor-state writes are the
-  session picker's explicit rename/delete).
-- **After a Claude Code update**, or when the dashboard misbehaves:
-  `x-usage check` — a FAIL line names which reverse-engineered assumption
+  never touches login or quota state (its own files are `.current` and
+  `state.json`, and its only vendor-state writes are the session picker's
+  explicit rename/delete).
+- **After a Claude Code update**, or when the board misbehaves:
+  `x-check` — a FAIL line names which reverse-engineered assumption
   broke. Run `claude-sessions-check` alongside it for the session-sharing
   machinery; its `--canary` proves cross-account resume end to end but
   spends one request on two accounts.
@@ -151,20 +162,34 @@ Everything derives from that tree:
   (`_claude_link_projects` in `zsh/.config/zsh/claude.zsh`), every launch
   re-checks it, and `claude-sessions-migrate` converts a tree that predates
   the convention. The session toolkit and its sandbox harness live in
-  `zsh/.config/zsh/claude-sessions.zsh` and `zsh/.config/zsh/tests/` — run
-  the harness after touching either file.
+  `zsh/.config/zsh/claude-sessions.zsh` and `zsh/.config/zsh/tests/`; the
+  harness also covers `claude.zsh`'s launchers, building headroom from
+  `~/dev/headroom` so it tests the real wrapper→engine seam — run it after
+  touching any of the three.
 - obelisk (session-history search) indexes `~/.claude/projects` and so sees
   every account's sessions. Index it incrementally, never `obelisk --build`:
   a force rebuild mirrors only files still on disk, and for transcripts
   retention already pruned, the index row is the last record in existence.
-- The launcher-advertising rule lives twice: `_claude_gen_launchers` in
-  `claude.zsh` and `accounts.Launcher` in headroom — keep them in sync,
-  including the reserved local parts (`usage`, `account`, `account-add`,
-  `select`, `accounts`, `acc`) that x-* utilities claim ahead of any
-  account.
-- `ACCOUNTS_ROOT`, `PRIMARY_NAME`, and the `.current` state file are declared
-  in `claude.zsh` and in headroom's config defaults — keep those in sync too
-  (headroom side is overridable via `HEADROOM_*` env vars).
+- Launch routing belongs to headroom: wrappers preflight (topology, per
+  headroom resolve's `kind` classification) and delegate to
+  `headroom launch` — they never set `CLAUDE_CONFIG_DIR`, never launch bare
+  `claude`, never parse `.current`. When headroom is missing or refuses,
+  they stop loudly rather than falling back; the unmanaged escape hatch is
+  `env -u CLAUDE_CONFIG_DIR claude` (or the variable set by hand). Short
+  `x-<local-part>` aliases and the reserved utility names are `claude.zsh`'s
+  own concern — headroom advertises only full identities, so there is no
+  naming policy to keep in sync.
+- `ACCOUNTS_ROOT` and `PRIMARY_NAME` are declared in `claude.zsh` (for
+  launcher generation) and in headroom's config defaults — keep those two in
+  sync. `HEADROOM_*` env overrides re-point headroom only (they exist for
+  its test harnesses); under one, wrapper degradations are loud or absent —
+  a launcher that doesn't exist, a preflight that refuses — never a silent
+  misroute, because the preflight follows headroom's classification.
+- tmux strips `CLAUDE_CONFIG_DIR` from the server's global environment at
+  start (`tmux.conf`): a server started from inside a Claude Code session
+  would otherwise hand every pane that session's account. Managed launches
+  neutralize the variable regardless — this line protects everything
+  *outside* them that still reads it.
 - Bypass-everything, if ever wanted, belongs in `settings.json`
   (`"permissions": { "defaultMode": "bypassPermissions" }`), not in wrappers
   around the `claude` command. PreToolUse hooks still fire and block in
