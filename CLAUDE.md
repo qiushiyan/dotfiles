@@ -123,8 +123,10 @@ changing one piece without the others breaks it.
   Launchers (`x`, `x-<name>`) live in `zsh/.config/zsh/claude.zsh`, but the
   cross-account `/usage` dashboard and account picker are **headroom**, a Go CLI
   in `~/dev/headroom` — `x-usage`/`x-select` are thin wrappers, so fix the
-  engine there. Account dirs are runtime state, never in this repo →
-  `docs/claude-accounts.md`.
+  engine there. Session transcripts are machine-global (every account's
+  `projects/` symlinks to `~/.claude/projects`, enforced at launch; toolkit in
+  `zsh/.config/zsh/claude-sessions.zsh`). Account dirs are runtime state,
+  never in this repo → `docs/claude-accounts.md`.
 - **Agent skills** — Claude Code is a superset of Codex, which symlinks into it.
   Adding, forking, or disabling a skill has several traps that fail silently →
   `docs/agent-skills.md`.
