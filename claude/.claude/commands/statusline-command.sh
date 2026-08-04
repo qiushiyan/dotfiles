@@ -269,7 +269,10 @@ fi
 # tmux-claude-ctx.sh). One tmux round-trip per render, with the whole gate
 # SERVER-side: publish only when the tombstone isn't ours (a statusline
 # subprocess can outlive a killed Claude — a tombstoned session id must not
-# resurrect the chip it just had cleaned up) AND something actually changed —
+# resurrect the chip it just had cleaned up; the barrier holds until the id
+# legitimately starts again, since resume KEEPS the session id — SessionStart
+# discharges it via tmux-claude-ctx.sh activate-session) AND something
+# actually changed —
 # the integer, the MODEL (/model switches mid-session, so it can't be written
 # once and forgotten), or the OWNER: a successor session resuming at its
 # predecessor's exact percentage must still record its own sid, or the

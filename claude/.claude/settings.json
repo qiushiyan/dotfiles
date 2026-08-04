@@ -74,6 +74,17 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.config/tmux/scripts/tmux-claude-ctx.sh activate-session"
+          }
+        ]
+      }
     ]
   },
   "disableRemoteControl": true,

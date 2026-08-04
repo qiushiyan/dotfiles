@@ -23,11 +23,19 @@
 #                      ever fires to backfill a pane published before the
 #                      option existed, since the value is fixed per session.
 #   @claude_ctx_sid    which Claude session published it
-#   @claude_ctx_dead   tombstone: a session id whose publications are refused.
-#                      Closes the hard-kill race — a statusline subprocess can
-#                      outlive its killed Claude and republish AFTER cleanup
-#                      ran; the tombstone makes that late write a no-op while
-#                      letting a NEW session (different id) publish freely.
+#   @claude_ctx_dead   ACTIVATION BARRIER: a session id whose publications
+#                      are refused from teardown until Claude emits a
+#                      matching SessionStart for this pane. Closes the
+#                      hard-kill race — a statusline subprocess can outlive
+#                      its killed Claude and republish AFTER cleanup ran —
+#                      without permanently banning the id: resume KEEPS the
+#                      session id (verified live 2026-08), so "refused
+#                      forever" poisoned the same conversation resumed in
+#                      the same pane. A different id was never blocked.
+#                      Known limit, accepted: after a legitimate discharge,
+#                      an orphan render from the OLD run of the same id is
+#                      indistinguishable from the resumed run — telling them
+#                      apart needs a per-run token the vendor doesn't expose.
 #
 # Cleanup is racy by nature (a dying session's orphans, a successor session,
 # and the sweeps all touch the same pane), so both clear verbs do their
@@ -55,6 +63,20 @@
 #                       switches, where a successor session may already own
 #                       the pane — the owner check keeps the dying session
 #                       from clearing (or worse, tombstoning) its successor.
+#   activate-session [pane]
+#                       SessionStart variant (matcher startup|resume|clear|
+#                       fork — compact continues a live process and is not an
+#                       activation): reads the hook's JSON on stdin and
+#                       discharges the pane's tombstone ONLY when it equals
+#                       its own session id, in one server-side check-and-
+#                       mutate. Exact-match is load-bearing: clearing
+#                       whatever id is recorded would let an unrelated
+#                       session's start re-arm a hard-killed predecessor's
+#                       orphans. Demands nothing else of the pane — dead=A
+#                       beside a live chip=B is a legitimate state (switching
+#                       back to A later) and must still discharge. No
+#                       reconcile: discharge changes nothing visible; the
+#                       session's first accepted render redraws.
 #   reconcile [target]  recompute pane-border-status for the target's window:
 #                       top iff some pane is named or carries a chip, else
 #                       back to inherit (global default off). No target (or a
@@ -153,6 +175,15 @@ case "${1:-}" in
             # no session id in the payload — degrade to the unconditional form
             tmux if-shell -F -t "$pane" '#{n:@claude_ctx}' "$(drop_branch "$pane")" 2>/dev/null
         fi
+        ;;
+    activate-session)
+        pane="${2:-${TMUX_PANE:-}}"
+        [ -n "$pane" ] || exit 0
+        sid=$(jq -r '.session_id // empty' 2>/dev/null) || sid=""
+        [ -n "$sid" ] || exit 0
+        tmux if-shell -F -t "$pane" \
+            "#{==:#{@claude_ctx_dead},$sid}" \
+            "set-option -p -u -t '$pane' @claude_ctx_dead" 2>/dev/null
         ;;
     reconcile)
         target="${2:-${TMUX_PANE:-}}"

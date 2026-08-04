@@ -121,6 +121,14 @@ ends() {
     sleep 0.4
 }
 
+# A SessionStart hook firing for <sid> — the activation that discharges the
+# pane's tombstone, and the ONLY thing that does.
+starts() {
+    printf '{"session_id":"%s","source":"resume"}' "$1" | env HOME="$SANDBOX_HOME" \
+        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" activate-session "$PANE"
+    sleep 0.3
+}
+
 opt()    { T show -pqv -t "$PANE" "$1"; }
 status() { T show -wv -t "$WIN" pane-border-status 2>/dev/null; }
 # What the border actually draws, styles stripped. Only "#[...]" is a style —
@@ -415,9 +423,119 @@ c13() {
     rm -rf "$SANDBOX_HOME/.claude-accounts"
 }
 
+# ---------------------------------------------------------------------------
+# C14 — the tombstone is an activation barrier, not a permanent verdict.
+# Claude KEEPS the session id across --resume, so "refuse this id forever"
+# poisons the same conversation resumed in the same pane hours later — the
+# chip never returns and nothing looks broken (found live, pane %70,
+# 2026-08-04). SessionStart discharges the tombstone; the barrier holds from
+# teardown until exactly that activation.
+# ---------------------------------------------------------------------------
+c14() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
+    ends sid-A
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
+    check "C14 before activation the barrier holds" "$(opt @claude_ctx)" ""
+    starts sid-A
+    check "C14 activation discharged the tombstone" "$(opt @claude_ctx_dead)" ""
+    pub sid-A 'claude-opus-5[1m]' 610000 'yan@planlab.ai'
+    check "C14 the resumed session publishes again"   "$(opt @claude_ctx)"         "61"
+    check "C14 with its model"                        "$(opt @claude_ctx_model)"   "opus-5[1m]"
+    check "C14 and its account"                       "$(opt @claude_ctx_account)" "yan"
+    check "C14 border back up"                        "$(status)"                  "top"
+}
+
+# ---------------------------------------------------------------------------
+# C15 — discharge is EXACT-match. An unrelated session starting in the pane
+# must not clear a predecessor's tombstone: A hard-killed, B starts, an
+# unconditional clear re-arms A's orphan renders — the exact guard C8 exists
+# for, silently deleted. B itself was never blocked (dead=A ≠ B), so it needs
+# no discharge to publish.
+# ---------------------------------------------------------------------------
+c15() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    ends sid-A
+    starts sid-B
+    check "C15 B's start left A's tombstone standing" "$(opt @claude_ctx_dead)" "sid-A"
+    pub sid-A 'claude-opus-5[1m]' 620000
+    check "C15 A's orphan is still refused" "$(opt @claude_ctx)" ""
+    pub sid-B 'claude-fable-5' 200000
+    check "C15 B publishes without any discharge" "$(opt @claude_ctx)" "20"
+}
+
+# ---------------------------------------------------------------------------
+# C16 — switching BACK to a tombstoned conversation while another session
+# owns the pane. dead=A alongside chip=B is a legitimate state; discharge
+# must not demand an empty pane (that precondition would rebuild the C14 bug
+# right here). A's activation removes only dead=A, A's first render takes
+# the owner slot from B, and B's late SessionEnd fails its owner check
+# against A — the C6 rule, unchanged by activation.
+# ---------------------------------------------------------------------------
+c16() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    ends sid-A
+    pub sid-B 'claude-fable-5' 200000
+    check "C16 B owns the pane over A's tombstone" "$(opt @claude_ctx_sid)"  "sid-B"
+    check "C16 A's tombstone still standing"       "$(opt @claude_ctx_dead)" "sid-A"
+    starts sid-A
+    check "C16 activation discharged despite B's chip" "$(opt @claude_ctx_dead)" ""
+    pub sid-A 'claude-opus-5[1m]' 700000
+    check "C16 A took the pane over" "$(opt @claude_ctx_sid)" "sid-A"
+    ends sid-B
+    check "C16 B's late end cannot clear A" "$(opt @claude_ctx)" "70"
+}
+
+# ---------------------------------------------------------------------------
+# C17 — the barrier is pane-local, and it travels with the pane. The same
+# conversation resumed in a DIFFERENT pane publishes freely while the old
+# pane stays tombstoned (ids are machine-global, tombstones are not); and a
+# relocated pane keeps its options, so teardown, the barrier, and its
+# discharge all follow the pane id through a move.
+# ---------------------------------------------------------------------------
+c17() {
+    fresh || return
+    PANE1="$PANE"
+    pub sid-A 'claude-opus-5[1m]' 600000
+    ends sid-A
+    T split-window -t t -d 'sleep 100000' 2>/dev/null
+    PANE=$(T list-panes -t t -F '#{pane_id}' 2>/dev/null | grep -v "^$PANE1$" | head -1)
+    if [ -z "$PANE" ]; then
+        no "C17 harness: no second pane" "split-window produced nothing"; return
+    fi
+    pub sid-A 'claude-opus-5[1m]' 300000
+    check "C17 the same id publishes freely in another pane" "$(opt @claude_ctx)" "30"
+    PANE="$PANE1"
+    check "C17 the old pane stays tombstoned" "$(opt @claude_ctx_dead)" "sid-A"
+    T break-pane -d -s "$PANE1" 2>/dev/null; sleep 0.3
+    check "C17 the barrier moved with the pane" "$(opt @claude_ctx_dead)" "sid-A"
+    starts sid-A
+    check "C17 discharge follows the pane too" "$(opt @claude_ctx_dead)" ""
+    pub sid-A 'claude-opus-5[1m]' 800000
+    check "C17 and the chip returns in the new window" "$(opt @claude_ctx)" "80"
+}
+
+# ---------------------------------------------------------------------------
+# C18 — the wiring is its own assertion: the sandbox can't make the vendor
+# fire hooks, so a suite that only tests the verb passes green with the hook
+# unwired and the whole fix inert in production. Declarative, straight off
+# the repo's settings.json. compact is deliberately NOT an activation — it
+# continues the same live process.
+# ---------------------------------------------------------------------------
+c18() {
+    check "C18 SessionStart is wired to activate-session" \
+        "$(jq -r '(.hooks.SessionStart // [])[0].hooks[0].command // ""' "$REPO/claude/.claude/settings.json")" \
+        "bash ~/.config/tmux/scripts/tmux-claude-ctx.sh activate-session"
+    check "C18 activation fires on real starts, never compact" \
+        "$(jq -r '(.hooks.SessionStart // [])[0].matcher // ""' "$REPO/claude/.claude/settings.json")" \
+        "startup|resume|clear|fork"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done
