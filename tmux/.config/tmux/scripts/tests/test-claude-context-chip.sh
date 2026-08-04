@@ -346,8 +346,8 @@ c10() {
 }
 
 # ---------------------------------------------------------------------------
-# C11 — the chip sheds by priority as the pane narrows: account below 100
-# columns, model below 60, the percentage never. Pure display — the options
+# C11 — the chip sheds by priority as the pane narrows: account below 55
+# columns, model below 40, the percentage never. Pure display — the options
 # underneath must survive every threshold crossing untouched, so widening the
 # pane restores the full chip without a republish. This is the case that
 # fails if a width gate is dropped (labels crowd a narrow pane), inverted, or
@@ -357,10 +357,10 @@ c11() {
     fresh || return
     pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
     check "C11 a wide pane affords all three" "$(border)" " yan opus-5[1m] ✳ 60% "
-    T resize-window -t t -x 80 2>/dev/null; sleep 0.2
-    check "C11 below 100 columns the account yields first" "$(border)" " opus-5[1m] ✳ 60% "
-    T resize-window -t t -x 50 2>/dev/null; sleep 0.2
-    check "C11 below 60 columns the model yields too" "$(border)" " ✳ 60% "
+    T resize-window -t t -x 48 2>/dev/null; sleep 0.2
+    check "C11 below 55 columns the account yields first" "$(border)" " opus-5[1m] ✳ 60% "
+    T resize-window -t t -x 35 2>/dev/null; sleep 0.2
+    check "C11 below 40 columns the model yields too" "$(border)" " ✳ 60% "
     T resize-window -t t -x 200 2>/dev/null; sleep 0.2
     check "C11 widening restores the full chip" "$(border)" " yan opus-5[1m] ✳ 60% "
     check "C11 hiding never touched the options" "$(opt @claude_ctx_account)" "yan"
