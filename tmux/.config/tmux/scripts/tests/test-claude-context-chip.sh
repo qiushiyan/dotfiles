@@ -114,18 +114,21 @@ pub() {
     sleep 0.4   # the accepted branch reconciles the border in the background
 }
 
-# A SessionEnd hook firing for <sid>.
+# A SessionEnd hook firing for <sid>. NO explicit pane argument, matching the
+# production wiring in settings.json exactly: the hooks pass nothing and the
+# verbs resolve the pane from $TMUX_PANE — a helper that also passed the pane
+# would keep these cases green while a broken fallback left production inert.
 ends() {
     printf '{"session_id":"%s"}' "$1" | env HOME="$SANDBOX_HOME" \
-        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" clear-session "$PANE"
+        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" clear-session
     sleep 0.4
 }
 
 # A SessionStart hook firing for <sid> — the activation that discharges the
-# pane's tombstone, and the ONLY thing that does.
+# pane's tombstone, and the ONLY thing that does. Same rule: no pane argument.
 starts() {
     printf '{"session_id":"%s","source":"resume"}' "$1" | env HOME="$SANDBOX_HOME" \
-        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" activate-session "$PANE"
+        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" activate-session
     sleep 0.3
 }
 
@@ -489,28 +492,35 @@ c16() {
 }
 
 # ---------------------------------------------------------------------------
-# C17 — the barrier is pane-local, and it travels with the pane. The same
-# conversation resumed in a DIFFERENT pane publishes freely while the old
-# pane stays tombstoned (ids are machine-global, tombstones are not); and a
-# relocated pane keeps its options, so teardown, the barrier, and its
-# discharge all follow the pane id through a move.
+# C17 — the barrier is pane-local, and it travels with the pane. The move
+# happens BETWEEN publication and teardown — the racy order relocation
+# actually produces — so teardown must find the chip in the pane's NEW
+# window, tombstone it there, and discharge must follow the same pane id.
+# Meanwhile ids are machine-global but tombstones are not: the same
+# conversation resumed in a DIFFERENT pane publishes freely throughout.
+# (The second pane exists before the break because a window's only pane
+# cannot be broken out.)
 # ---------------------------------------------------------------------------
 c17() {
     fresh || return
     PANE1="$PANE"
     pub sid-A 'claude-opus-5[1m]' 600000
-    ends sid-A
     T split-window -t t -d 'sleep 100000' 2>/dev/null
     PANE=$(T list-panes -t t -F '#{pane_id}' 2>/dev/null | grep -v "^$PANE1$" | head -1)
     if [ -z "$PANE" ]; then
         no "C17 harness: no second pane" "split-window produced nothing"; return
     fi
+    T break-pane -d -s "$PANE1" 2>/dev/null; sleep 0.3
+    PANE2="$PANE"; PANE="$PANE1"
+    check "C17 the live chip moved with the pane" "$(opt @claude_ctx)" "60"
+    ends sid-A
+    check "C17 teardown followed the relocated pane" "$(opt @claude_ctx)"      ""
+    check "C17 and tombstoned it there"              "$(opt @claude_ctx_dead)" "sid-A"
+    PANE="$PANE2"
     pub sid-A 'claude-opus-5[1m]' 300000
     check "C17 the same id publishes freely in another pane" "$(opt @claude_ctx)" "30"
     PANE="$PANE1"
-    check "C17 the old pane stays tombstoned" "$(opt @claude_ctx_dead)" "sid-A"
-    T break-pane -d -s "$PANE1" 2>/dev/null; sleep 0.3
-    check "C17 the barrier moved with the pane" "$(opt @claude_ctx_dead)" "sid-A"
+    check "C17 the relocated pane stays tombstoned" "$(opt @claude_ctx_dead)" "sid-A"
     starts sid-A
     check "C17 discharge follows the pane too" "$(opt @claude_ctx_dead)" ""
     pub sid-A 'claude-opus-5[1m]' 800000
@@ -525,12 +535,22 @@ c17() {
 # continues the same live process.
 # ---------------------------------------------------------------------------
 c18() {
-    check "C18 SessionStart is wired to activate-session" \
-        "$(jq -r '(.hooks.SessionStart // [])[0].hooks[0].command // ""' "$REPO/claude/.claude/settings.json")" \
-        "bash ~/.config/tmux/scripts/tmux-claude-ctx.sh activate-session"
-    check "C18 activation fires on real starts, never compact" \
-        "$(jq -r '(.hooks.SessionStart // [])[0].matcher // ""' "$REPO/claude/.claude/settings.json")" \
-        "startup|resume|clear|fork"
+    # Search the entries, don't pin a position: callers depend on "a
+    # SessionStart entry with the right matcher carries the verb", not on
+    # where in the array it sits — a position pin fails on any unrelated
+    # hook added above it while proving nothing more.
+    check "C18 exactly one SessionStart entry wires activate-session on real starts" \
+        "$(jq -r '[(.hooks.SessionStart // [])[]
+                   | select(.matcher == "startup|resume|clear|fork"
+                            and ([.hooks[]?.command]
+                                 | index("bash ~/.config/tmux/scripts/tmux-claude-ctx.sh activate-session")))]
+                  | length' "$REPO/claude/.claude/settings.json")" \
+        "1"
+    check "C18 no SessionStart entry activates on compact" \
+        "$(jq -r '[(.hooks.SessionStart // [])[]
+                   | select((.matcher // "") | test("compact"))]
+                  | length' "$REPO/claude/.claude/settings.json")" \
+        "0"
 }
 
 WANT="${*:-}"
