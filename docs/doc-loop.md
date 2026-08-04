@@ -3,14 +3,19 @@
 How durable knowledge crosses coding-agent sessions: **the project's docs are the
 memory; each session deserializes them at start (onboarding) and serializes what
 it learned at end (update-docs / handoff)**. Sessions are ephemeral; a fresh
-session with a distilled artifact beats a long session with `/compact`. All
-checkpoints are user-triggered by design — the skills never fire themselves.
+session with a distilled artifact beats a long session with `/compact`. Between
+those bookends the work has its own checkpoints, each buying a judgment this
+session cannot make about itself and leaving an artifact the next phase reads.
+All checkpoints are user-triggered by design — the skills never fire themselves.
 
 ## The loop
 
 ```
 /onboarding <topic>          ← first prompt: spine reads + topic-scoped deep dive
-  → the session's actual work
+    /consult                 ← position taken, then fresh voices judge it → the plan
+    /spike                   ← optional: throwaway code settles what the plan rests on
+    …implement…              ← the host builds from the synthesis
+    /review                  ← a cold session judges the committed range → the PR
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)
 /handoff [next: …]           ← lessons + a baton in ~/dev/.handoffs, itself the next first prompt
   → new worktree, pbcopy < the baton, paste — line 1 fires /onboarding <topic>
@@ -20,6 +25,39 @@ checkpoints are user-triggered by design — the skills never fire themselves.
 doc pass with no handoff; a mid-task stop wants a handoff with the doc pass
 deferred. `/handoff` _contains_ the doc pass (it defers to the project's
 update-docs skill) — never the reverse.
+
+## The work loop — consult → build → review
+
+The bookends carry knowledge across sessions; these three carry **independent
+judgment** into one. Their shared invariant: whoever authored a thing never gets
+to be its only judge — of the design (`/consult`) or of the code (`/review`).
+Both dispatch fresh sessions through `envoy`; both make the host verify every
+finding against the code and answer to the user for each verdict, because a
+voice is a peer, not an authority.
+
+- **`/consult`** — before code. The host works the user's answers and new
+  requirements through _first_ and lands on a position it would defend; only then
+  do the voices weigh in. Design mode keeps that position out of the brief so the
+  voices design unanchored; review mode puts it in as the artifact under review.
+  Output: the plan, plus an out-dir that stays continuable.
+- **`/spike`** — optional, only when asked. Throwaway code on a simplified
+  foundation, where the thing under test stays real and everything around it is
+  faked, settling one question the plan leans on that reading cannot answer.
+  Output: a verdict that amends the plan — or kills it, and sends the shape back
+  to `/consult`.
+- **`/review`** — after the range is committed. Fresh-eyes when nothing outside
+  the implementation ever judged the design; spec-anchored when a consult or an
+  approved spec settled it. A consult in this session means the review defaults
+  to a fan-out: that voice warm (`--with-from <out-dir>`, the best judge of
+  follow-through) beside a cold one (the strategic read). Naming the consult
+  out-dir in the synthesis is what keeps that seam available.
+
+Implementation between them is ordinarily the host's, straight from the
+synthesis — `/delegate` is the alternative, and the reason `/review` asks where
+the implementation report came from. Compacting is safest at the phase joins,
+after the plan is written and after the range is committed: the artifact each
+phase leaves is what makes the context it consumed disposable, which is the same
+reason a distilled artifact beats a long session.
 
 ## The commands, by project
 

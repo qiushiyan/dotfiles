@@ -142,7 +142,8 @@ docs/
   testing.md              the two suites and their sandbox rules
   claude-accounts.md      multi-account setup
   theming.md              the $TERMINAL_THEME switch
-  doc-loop.md             how onboarding / update-docs / handoff fit together
+  doc-loop.md             the session loop end to end: onboarding, the
+                          consult → spike → build → review middle, handoff
   MIGRATION.md            new-machine setup
   ctrl-d-guard.md · claude-prompt-completion.md
   neovim-file-picker.md · neovim-image-handling.md
