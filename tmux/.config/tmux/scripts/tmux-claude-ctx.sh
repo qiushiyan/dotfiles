@@ -3,11 +3,15 @@
 # the single owner of pane-border-status teardown.
 #
 # The chip: Claude Code's statusline script publishes its context-usage integer
-# into per-pane user options on every render (compare-and-set, see the tail of
-# ~/.claude/commands/statusline-command.sh); pane-border-format draws it
-# right-aligned on the pane's border (see tmux.conf). Three options per pane:
+# and model id into per-pane user options on every render (compare-and-set, see
+# the tail of ~/.claude/commands/statusline-command.sh); pane-border-format
+# draws them right-aligned on the pane's border (see tmux.conf). Four options
+# per pane:
 #
 #   @claude_ctx        the percentage — presence of a value IS "chip shown"
+#   @claude_ctx_model  the raw model id drawn left of the percentage. Cosmetic
+#                      only: it is never the presence marker, so a pane that
+#                      somehow carries just this one draws nothing.
 #   @claude_ctx_sid    which Claude session published it
 #   @claude_ctx_dead   tombstone: a session id whose publications are refused.
 #                      Closes the hard-kill race — a statusline subprocess can
@@ -113,6 +117,7 @@ drop_branch() {
         printf "set-option -p -F -t '%s' @claude_ctx_dead '#{@claude_ctx_sid}' ; " "$pane"
     fi
     printf "set-option -p -u -t '%s' @claude_ctx ; " "$pane"
+    printf "set-option -p -u -t '%s' @claude_ctx_model ; " "$pane"
     printf "set-option -p -u -t '%s' @claude_ctx_sid ; " "$pane"
     printf "run-shell -b 'bash %s reconcile %s'" "$SELF" "$pane"
 }
