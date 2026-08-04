@@ -113,22 +113,30 @@ MODEL_ID="${MODEL_ID#claude-}"
 # the email's local part while that is UNIQUE among the account dirs, the full
 # email when two lanes claim the same one — claude.zsh's short-alias policy,
 # followed from the same registry (the dirs ARE the account list), because two
-# lanes wearing one label defeats the point of labeling lanes. Scrubbed to the
-# model id's inert charset plus "@" (harmless in both hostile paths — tmux
-# formats only ever trip on # , { } and quotes) because it rides the same two:
-# the tmux format string and the quoted set-option.
+# lanes wearing one label defeats the point of labeling lanes. Everything is
+# scrubbed to the model id's inert charset plus "@" (harmless in both hostile
+# paths — tmux formats only ever trip on # , { } and quotes) because it rides
+# the same two: the tmux format string and the quoted set-option. Uniqueness
+# is judged on the DISPLAYED (scrubbed) form, not the raw dir name: the scrub
+# deletes legal email chars like "+", so alex+work@… and alexwork@… are
+# distinct on disk but identical on the border — labels stay unique up to
+# emails that differ only by scrubbed characters.
 ACCOUNT=""
 case "${CLAUDE_CONFIG_DIR:-}" in
     "$HOME/.claude-accounts"/*)
         ACCOUNT="${CLAUDE_CONFIG_DIR##*/}"
-        ACCT_LOCAL="${ACCOUNT%%@*}"
+        ACCT_LOCAL="${ACCOUNT%%@*}"; ACCT_LOCAL="${ACCT_LOCAL//[^a-zA-Z0-9._-]/}"
         ACCT_CLAIMS=0
         for _acct_dir in "$HOME/.claude-accounts"/*/; do
             _acct_base="${_acct_dir%/}"; _acct_base="${_acct_base##*/}"
-            [ "${_acct_base%%@*}" = "$ACCT_LOCAL" ] && ACCT_CLAIMS=$((ACCT_CLAIMS+1))
+            _acct_base="${_acct_base%%@*}"; _acct_base="${_acct_base//[^a-zA-Z0-9._-]/}"
+            [ "$_acct_base" = "$ACCT_LOCAL" ] && ACCT_CLAIMS=$((ACCT_CLAIMS+1))
         done
-        [ "$ACCT_CLAIMS" -le 1 ] && ACCOUNT="$ACCT_LOCAL"
-        ACCOUNT="${ACCOUNT//[^a-zA-Z0-9._@-]/}"
+        if [ "$ACCT_CLAIMS" -le 1 ]; then
+            ACCOUNT="$ACCT_LOCAL"
+        else
+            ACCOUNT="${ACCOUNT//[^a-zA-Z0-9._@-]/}"
+        fi
         ;;
 esac
 

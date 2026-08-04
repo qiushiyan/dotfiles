@@ -400,6 +400,18 @@ c13() {
     pub sid-B 'claude-fable-5' 600000 'yan@planlab.ai'
     check "C13 a unique local part stays short" \
         "$(opt @claude_ctx_account)" "yan"
+    # Uniqueness must be judged on the DISPLAYED form: the scrub deletes "+",
+    # so these two raw local parts are distinct on disk but identical on the
+    # border. Comparing raw parts calls both unique and draws one label for
+    # two lanes — the exact failure the collision policy exists to prevent.
+    mkdir -p "$SANDBOX_HOME/.claude-accounts/alex+work@one.example" \
+             "$SANDBOX_HOME/.claude-accounts/alexwork@two.example"
+    pub sid-C 'claude-fable-5' 600000 'alex+work@one.example'
+    check "C13 a post-scrub collision keeps its full email" \
+        "$(opt @claude_ctx_account)" "alexwork@one.example"
+    pub sid-D 'claude-fable-5' 600000 'alexwork@two.example'
+    check "C13 both sides of the post-scrub collision stay distinct" \
+        "$(opt @claude_ctx_account)" "alexwork@two.example"
     rm -rf "$SANDBOX_HOME/.claude-accounts"
 }
 
