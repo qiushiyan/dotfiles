@@ -67,6 +67,14 @@ flag it with concrete evidence (code paths, failure scenarios), clearly marked
 1. «settled decision»
 2. «settled decision»
 
+## The proposal under review
+
+«The position you arrived at, stated as a design you would defend rather than a
+menu: the shape you would build, the vocabulary it introduces, and what already
+stands in the working tree versus what remains. The voice's job is to find where
+it breaks. Delete this section when the artifact under review is a file the
+reading list already points at — the artifact is the proposal then.»
+
 ## The design lens
 
 Where the artifact commits a module shape or an interface, skim the `## The
