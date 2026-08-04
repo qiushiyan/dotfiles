@@ -2,11 +2,11 @@
 # tmux-claude-ctx.sh — lifecycle of the Claude context chip (@claude_ctx) and
 # the single owner of pane-border-status teardown.
 #
-# The chip: Claude Code's statusline script publishes its context-usage integer
-# and model id into per-pane user options on every render (compare-and-set, see
-# the tail of ~/.claude/commands/statusline-command.sh); pane-border-format
-# draws them right-aligned on the pane's border (see tmux.conf). Four options
-# per pane:
+# The chip: Claude Code's statusline script publishes its context-usage integer,
+# model id and account lane into per-pane user options on every render
+# (compare-and-set, see the tail of ~/.claude/commands/statusline-command.sh);
+# pane-border-format draws them right-aligned on the pane's border, shedding
+# the cosmetic ones as the pane narrows (see tmux.conf). Five options per pane:
 #
 #   @claude_ctx        the percentage — presence of a value IS "chip shown"
 #   @claude_ctx_model  the model id, minus its "claude-" prefix, drawn left of
@@ -14,6 +14,13 @@
 #                      beside it, not a mirror of the payload. Cosmetic only:
 #                      it is never the presence marker, so a pane that somehow
 #                      carries just this one draws nothing.
+#   @claude_ctx_account
+#                      which account lane the session burns — the email local
+#                      part for a ~/.claude-accounts/ extra, EMPTY for the
+#                      primary, which stays the unmarked lane. Same cosmetic
+#                      standing as the model; fixed per session, so it earns
+#                      no arm in the publish gate (a new account means a new
+#                      session, and the owner arm already accepts that).
 #   @claude_ctx_sid    which Claude session published it
 #   @claude_ctx_dead   tombstone: a session id whose publications are refused.
 #                      Closes the hard-kill race — a statusline subprocess can
@@ -120,6 +127,7 @@ drop_branch() {
     fi
     printf "set-option -p -u -t '%s' @claude_ctx ; " "$pane"
     printf "set-option -p -u -t '%s' @claude_ctx_model ; " "$pane"
+    printf "set-option -p -u -t '%s' @claude_ctx_account ; " "$pane"
     printf "set-option -p -u -t '%s' @claude_ctx_sid ; " "$pane"
     printf "run-shell -b 'bash %s reconcile %s'" "$SELF" "$pane"
 }

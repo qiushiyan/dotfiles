@@ -84,21 +84,32 @@ fresh() {
     T set -g @resurrect-dir "$SANDBOX_RESURRECT" 2>/dev/null
 }
 
-# Publish one statusline render: pub <sid> <model-id|-> <input-tokens>.
+# Publish one statusline render: pub <sid> <model-id|-> <input-tokens> [acct].
 # "-" means a payload carrying no model key at all, which is not the same as an
-# empty one. Everything the scripts touch is pinned to the test server ($TMUX,
-# the socket the scripts resolve tmux through — without it they fall through to
-# the DEFAULT socket, the user's live server, where these pane ids don't exist
-# and every assertion below would pass for the wrong reason) and to the sandbox
-# HOME.
+# empty one. The optional 4th arg is an account DIR NAME (an email): the
+# statusline learns the account from CLAUDE_CONFIG_DIR, not from the payload,
+# so it arrives via env — and when absent it is explicitly UNSET, because this
+# suite itself runs inside a Claude session that carries the real variable;
+# inheriting it would make "the primary is unmarked" pass on a path mismatch
+# instead of on absence. Everything the scripts touch is pinned to the test
+# server ($TMUX, the socket the scripts resolve tmux through — without it they
+# fall through to the DEFAULT socket, the user's live server, where these pane
+# ids don't exist and every assertion below would pass for the wrong reason)
+# and to the sandbox HOME.
 pub() {
-    local sid="$1" model="$2" tokens="$3" payload
+    local sid="$1" model="$2" tokens="$3" acct="${4:-}" payload
     if [ "$model" = "-" ]; then
         payload=$(printf '{"session_id":"%s","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$sid" "$SANDBOX" "$tokens")
     else
         payload=$(printf '{"session_id":"%s","model":{"id":"%s"},"workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$sid" "$model" "$SANDBOX" "$tokens")
     fi
-    printf '%s' "$payload" | env HOME="$SANDBOX_HOME" TERMINAL_THEME=flexoki_light \
+    local -a acct_env
+    if [ -n "$acct" ]; then
+        acct_env=(CLAUDE_CONFIG_DIR="$SANDBOX_HOME/.claude-accounts/$acct")
+    else
+        acct_env=(-u CLAUDE_CONFIG_DIR)
+    fi
+    printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME=flexoki_light \
         TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$STATUSLINE" >/dev/null 2>&1
     sleep 0.4   # the accepted branch reconciles the border in the background
 }
@@ -137,6 +148,7 @@ c1() {
     check "C1 percentage published"   "$(opt @claude_ctx)"       "60"
     check "C1 model published trimmed" "$(opt @claude_ctx_model)" "opus-5[1m]"
     check "C1 owner recorded"         "$(opt @claude_ctx_sid)"    "sid-A"
+    check "C1 primary lane unmarked"  "$(opt @claude_ctx_account)" ""
     check "C1 border row on"          "$(status)"                 "top"
     check "C1 border draws model then percentage" "$(border)" " opus-5[1m] ✳ 60% "
 }
@@ -234,10 +246,12 @@ c6() {
 # ---------------------------------------------------------------------------
 c7() {
     fresh || return
-    pub sid-A 'claude-opus-5[1m]' 600000
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
+    check "C7 account was set before the end" "$(opt @claude_ctx_account)" "yan"
     ends sid-A
     check "C7 percentage unset"       "$(opt @claude_ctx)"       ""
     check "C7 model unset"            "$(opt @claude_ctx_model)" ""
+    check "C7 account unset"          "$(opt @claude_ctx_account)" ""
     check "C7 owner unset"            "$(opt @claude_ctx_sid)"   ""
     check "C7 session tombstoned"     "$(opt @claude_ctx_dead)"  "sid-A"
     check "C7 border row dropped"     "$(status)"                ""
@@ -257,9 +271,10 @@ c8() {
     pub sid-A 'claude-opus-5[1m]' 610000
     check "C8 tombstoned session cannot republish"       "$(opt @claude_ctx)"       ""
     check "C8 tombstoned session cannot republish model" "$(opt @claude_ctx_model)" ""
-    pub sid-B 'claude-fable-5' 200000
+    pub sid-B 'claude-fable-5' 200000 'muji@example.com'
     check "C8 a new session publishes"       "$(opt @claude_ctx)"       "20"
     check "C8 a new session publishes model" "$(opt @claude_ctx_model)" "fable-5"
+    check "C8 a new session brings its own account" "$(opt @claude_ctx_account)" "muji"
     check "C8 border back up"                "$(status)"                "top"
 }
 
@@ -297,9 +312,54 @@ c9() {
             -not -path "$SANDBOX_HOME/.config/tmux/scripts" | wc -l | tr -d ' ')" "0"
 }
 
+# ---------------------------------------------------------------------------
+# C10 — the account lane. It reaches the statusline through CLAUDE_CONFIG_DIR
+# (headroom's launch contract), not the payload: an extra account's email dir
+# becomes its local part, drawn left of the model. A second session on a
+# DIFFERENT account taking over the pane must swap the label with no teardown
+# in between — the gate has no account arm on purpose, so this is the case
+# that fails if that "account is a function of the owner" reasoning ever
+# stops holding. A hostile dir name rides the same two paths as a hostile
+# model id (format string, quoted set-option) and must come out inert.
+# ---------------------------------------------------------------------------
+c10() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
+    check "C10 account published as the local part" "$(opt @claude_ctx_account)" "yan"
+    check "C10 border draws account, model, percentage" "$(border)" " yan opus-5[1m] ✳ 60% "
+    pub sid-B 'claude-fable-5' 500000 "e vil'#[fg=red]@x.com"
+    check "C10 server survived a hostile account" \
+        "$(T list-sessions -F '#{session_name}' 2>/dev/null | head -1)" "t"
+    check "C10 new owner swapped the account without teardown" \
+        "$(opt @claude_ctx_account)" "evilfgred"
+    check "C10 percentage not corrupted" "$(opt @claude_ctx)" "50"
+    check "C10 no style injected on the border" "$(border)" " evilfgred fable-5 ✳ 50% "
+}
+
+# ---------------------------------------------------------------------------
+# C11 — the chip sheds by priority as the pane narrows: account below 100
+# columns, model below 60, the percentage never. Pure display — the options
+# underneath must survive every threshold crossing untouched, so widening the
+# pane restores the full chip without a republish. This is the case that
+# fails if a width gate is dropped (labels crowd a narrow pane), inverted, or
+# written with tmux's STRING comparisons instead of arithmetic e|>=.
+# ---------------------------------------------------------------------------
+c11() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
+    check "C11 a wide pane affords all three" "$(border)" " yan opus-5[1m] ✳ 60% "
+    T resize-window -t t -x 80 2>/dev/null; sleep 0.2
+    check "C11 below 100 columns the account yields first" "$(border)" " opus-5[1m] ✳ 60% "
+    T resize-window -t t -x 50 2>/dev/null; sleep 0.2
+    check "C11 below 60 columns the model yields too" "$(border)" " ✳ 60% "
+    T resize-window -t t -x 200 2>/dev/null; sleep 0.2
+    check "C11 widening restores the full chip" "$(border)" " yan opus-5[1m] ✳ 60% "
+    check "C11 hiding never touched the options" "$(opt @claude_ctx_account)" "yan"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

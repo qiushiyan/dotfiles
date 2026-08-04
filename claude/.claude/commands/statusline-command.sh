@@ -105,6 +105,23 @@ read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID CURRENT_DIR <<< "$(echo 
 [ "$MODEL_ID" = "-" ] && MODEL_ID=""
 MODEL_ID="${MODEL_ID#claude-}"
 
+# Which account lane this session burns, from the env headroom built at launch:
+# extras run under CLAUDE_CONFIG_DIR=~/.claude-accounts/<email>, the PRIMARY by
+# that variable being ABSENT (headroom's contract, docs/claude-accounts.md) —
+# so the primary has no email here to show and stays the unmarked lane: no
+# account segment, zero border width spent on the default case. The label is
+# the email's local part; scrubbed to the same inert charset as the model id
+# because it rides the same two hostile paths (tmux format string, quoted
+# set-option).
+ACCOUNT=""
+case "${CLAUDE_CONFIG_DIR:-}" in
+    "$HOME/.claude-accounts"/*)
+        ACCOUNT="${CLAUDE_CONFIG_DIR##*/}"
+        ACCOUNT="${ACCOUNT%%@*}"
+        ACCOUNT="${ACCOUNT//[^a-zA-Z0-9._-]/}"
+        ;;
+esac
+
 # Validate jq extraction succeeded
 if [ -z "$CURRENT_DIR" ]; then
     echo "statusline: invalid input" >&2
@@ -229,7 +246,7 @@ else
     printf '%s' "${out}${line}"
 fi
 
-# Push the percentage and the model id to the tmux pane border (the @claude_ctx
+# Push the percentage, model id and account lane to the tmux pane border (the @claude_ctx
 # chip; drawing, ownership, and teardown live in tmux.conf +
 # tmux-claude-ctx.sh). One tmux round-trip per render, with the whole gate
 # SERVER-side: publish only when the tombstone isn't ours (a statusline
@@ -239,7 +256,12 @@ fi
 # once and forgotten), or the OWNER: a successor session resuming at its
 # predecessor's exact percentage must still record its own sid, or the
 # predecessor's late cleanup would pass its owner check and erase the
-# successor's chip. An unchanged triple writes nothing (set-option triggers
+# successor's chip. The ACCOUNT rides along on every accepted write but earns
+# no gate arm of its own: it is fixed for the life of a session (headroom sets
+# the env once, at launch), so it can only differ when the session does — and
+# a new session is exactly what the owner arm already accepts (resume mints a
+# new session id, so even a re-homed conversation arrives as a new owner).
+# An unchanged triple writes nothing (set-option triggers
 # redraw/layout work even for an unchanged value, and this runs ~3×/sec while
 # streaming). Every accepted write records all three and reconciles the
 # window's border in the background — accepted writes are sparse, and the
@@ -247,6 +269,6 @@ fi
 if [ -n "${TMUX_PANE:-}" ] && [ "${SESSION_ID:--}" != "-" ]; then
     tmux if-shell -F -t "$TMUX_PANE" \
         "#{&&:#{!=:#{@claude_ctx_dead},$SESSION_ID},#{||:#{!=:#{@claude_ctx},$PERCENT_USED},#{||:#{!=:#{@claude_ctx_sid},$SESSION_ID},#{!=:#{@claude_ctx_model},$MODEL_ID}}}}" \
-        "set-option -p -t '$TMUX_PANE' @claude_ctx '$PERCENT_USED' ; set-option -p -t '$TMUX_PANE' @claude_ctx_sid '$SESSION_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_model '$MODEL_ID' ; run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh reconcile $TMUX_PANE'" \
+        "set-option -p -t '$TMUX_PANE' @claude_ctx '$PERCENT_USED' ; set-option -p -t '$TMUX_PANE' @claude_ctx_sid '$SESSION_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_model '$MODEL_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_account '$ACCOUNT' ; run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh reconcile $TMUX_PANE'" \
         2>/dev/null || true
 fi

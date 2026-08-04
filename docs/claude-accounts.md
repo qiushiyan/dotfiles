@@ -121,6 +121,12 @@ Everything derives from that tree:
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
+- **Which lane is a running session on?** Its tmux pane border says: the
+  context chip (`yan opus-5 ✳ 37%`) leads with the account's email local
+  part, read from the `CLAUDE_CONFIG_DIR` headroom set at launch. The
+  primary shows no account label — it launches with the variable absent, so
+  it is the unmarked lane by construction. Details and the narrow-pane
+  shedding order: `tmux/.config/tmux/workflow.md`.
 - **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
   headroom off the live board, then type `x`; bare `x` targets it from then
   on. For a one-off session on another account without moving `x`, that
