@@ -37,7 +37,7 @@ zsh/.config/zsh/
   aliases.zsh
   git.zsh          # aliases + the deferred completion registration
   nav.zsh
-  utils.zsh        # gitclean, loc, ccclean, n, take, dotadd, …
+  utils.zsh        # gitclean, loc, n, take, dotadd, …
   theme.zsh        # the $TERMINAL_THEME switch
   claude.zsh       # multi-account launchers (x, x-<name>) — see claude-accounts.md
   claude-sessions.zsh  # shared session store: migration + drift check (tests/ has its harness)
