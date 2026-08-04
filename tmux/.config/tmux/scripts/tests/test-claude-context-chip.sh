@@ -317,9 +317,7 @@ c9() {
 # (headroom's launch contract), not the payload: an extra account's email dir
 # becomes its local part, drawn left of the model. A second session on a
 # DIFFERENT account taking over the pane must swap the label with no teardown
-# in between — the gate has no account arm on purpose, so this is the case
-# that fails if that "account is a function of the owner" reasoning ever
-# stops holding. A hostile dir name rides the same two paths as a hostile
+# in between. A hostile dir name rides the same two paths as a hostile
 # model id (format string, quoted set-option) and must come out inert.
 # ---------------------------------------------------------------------------
 c10() {
@@ -357,9 +355,57 @@ c11() {
     check "C11 hiding never touched the options" "$(opt @claude_ctx_account)" "yan"
 }
 
+# ---------------------------------------------------------------------------
+# C12 — the live-upgrade state. This repo is stowed live configuration: a pane
+# whose chip was published by the PREVIOUS statusline (no account option yet)
+# is a normal state right after an upgrade, not a hypothetical. If its
+# percentage, owner and model then hold steady, the render must still backfill
+# the missing account — and having backfilled once, fall quiescent again: an
+# arm that keeps accepting identical renders is the 3×/sec write regression C3
+# exists to prevent, just wearing a new option.
+# ---------------------------------------------------------------------------
+c12() {
+    fresh || return
+    # What the pre-account publisher left behind: three options, no account.
+    T set -p -t "$PANE" @claude_ctx 60
+    T set -p -t "$PANE" @claude_ctx_sid sid-A
+    T set -p -t "$PANE" @claude_ctx_model 'opus-5[1m]'
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
+    check "C12 unchanged triple still backfills the account" \
+        "$(opt @claude_ctx_account)" "yan"
+    check "C12 the rest untouched" "$(opt @claude_ctx)" "60"
+    T set -w -t "$WIN" pane-border-status off
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
+    check "C12 backfilled once, quiescent after" "$(status)" "off"
+}
+
+# ---------------------------------------------------------------------------
+# C13 — two accounts sharing a local part. The house policy already lives in
+# claude.zsh: a short name is minted only while the local part is UNIQUE among
+# account dirs, because two lanes wearing the same label defeats the point of
+# labeling lanes. The chip follows the same policy from the same registry (the
+# dirs): unique local part → short label, collision → the full email. The
+# fixture dirs are removed before the case ends so the C9 guard's "nothing in
+# the sandbox HOME" stays true on any run order.
+# ---------------------------------------------------------------------------
+c13() {
+    fresh || return
+    mkdir -p "$SANDBOX_HOME/.claude-accounts/alex@work.example" \
+             "$SANDBOX_HOME/.claude-accounts/alex@personal.example" \
+             "$SANDBOX_HOME/.claude-accounts/yan@planlab.ai"
+    pub sid-A 'claude-opus-5[1m]' 600000 'alex@work.example'
+    check "C13 a colliding local part keeps its full email" \
+        "$(opt @claude_ctx_account)" "alex@work.example"
+    check "C13 border draws the full email" "$(border)" " alex@work.example opus-5[1m] ✳ 60% "
+    pub sid-B 'claude-fable-5' 600000 'yan@planlab.ai'
+    check "C13 a unique local part stays short" \
+        "$(opt @claude_ctx_account)" "yan"
+    rm -rf "$SANDBOX_HOME/.claude-accounts"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

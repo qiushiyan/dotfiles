@@ -110,15 +110,25 @@ MODEL_ID="${MODEL_ID#claude-}"
 # that variable being ABSENT (headroom's contract, docs/claude-accounts.md) —
 # so the primary has no email here to show and stays the unmarked lane: no
 # account segment, zero border width spent on the default case. The label is
-# the email's local part; scrubbed to the same inert charset as the model id
-# because it rides the same two hostile paths (tmux format string, quoted
-# set-option).
+# the email's local part while that is UNIQUE among the account dirs, the full
+# email when two lanes claim the same one — claude.zsh's short-alias policy,
+# followed from the same registry (the dirs ARE the account list), because two
+# lanes wearing one label defeats the point of labeling lanes. Scrubbed to the
+# model id's inert charset plus "@" (harmless in both hostile paths — tmux
+# formats only ever trip on # , { } and quotes) because it rides the same two:
+# the tmux format string and the quoted set-option.
 ACCOUNT=""
 case "${CLAUDE_CONFIG_DIR:-}" in
     "$HOME/.claude-accounts"/*)
         ACCOUNT="${CLAUDE_CONFIG_DIR##*/}"
-        ACCOUNT="${ACCOUNT%%@*}"
-        ACCOUNT="${ACCOUNT//[^a-zA-Z0-9._-]/}"
+        ACCT_LOCAL="${ACCOUNT%%@*}"
+        ACCT_CLAIMS=0
+        for _acct_dir in "$HOME/.claude-accounts"/*/; do
+            _acct_base="${_acct_dir%/}"; _acct_base="${_acct_base##*/}"
+            [ "${_acct_base%%@*}" = "$ACCT_LOCAL" ] && ACCT_CLAIMS=$((ACCT_CLAIMS+1))
+        done
+        [ "$ACCT_CLAIMS" -le 1 ] && ACCOUNT="$ACCT_LOCAL"
+        ACCOUNT="${ACCOUNT//[^a-zA-Z0-9._@-]/}"
         ;;
 esac
 
@@ -256,19 +266,21 @@ fi
 # once and forgotten), or the OWNER: a successor session resuming at its
 # predecessor's exact percentage must still record its own sid, or the
 # predecessor's late cleanup would pass its owner check and erase the
-# successor's chip. The ACCOUNT rides along on every accepted write but earns
-# no gate arm of its own: it is fixed for the life of a session (headroom sets
-# the env once, at launch), so it can only differ when the session does — and
-# a new session is exactly what the owner arm already accepts (resume mints a
-# new session id, so even a re-homed conversation arrives as a new owner).
-# An unchanged triple writes nothing (set-option triggers
+# successor's chip. The ACCOUNT gets a gate arm like the rest even though it
+# is fixed for the life of a session (headroom sets the env once, at launch):
+# a pane published by a PRE-account version of this script is a normal state
+# in a stowed live repo, and with the other three unchanged only an account
+# arm backfills it — the arm also self-heals a tampered option and keeps the
+# gate honest on its own terms instead of leaning on "resume mints a new
+# session id" staying true of the vendor. At steady state the arm never
+# fires, so an unchanged quadruple still writes nothing (set-option triggers
 # redraw/layout work even for an unchanged value, and this runs ~3×/sec while
 # streaming). Every accepted write records all three and reconciles the
 # window's border in the background — accepted writes are sparse, and the
 # reconcile doubles as passive repair after pane relocation.
 if [ -n "${TMUX_PANE:-}" ] && [ "${SESSION_ID:--}" != "-" ]; then
     tmux if-shell -F -t "$TMUX_PANE" \
-        "#{&&:#{!=:#{@claude_ctx_dead},$SESSION_ID},#{||:#{!=:#{@claude_ctx},$PERCENT_USED},#{||:#{!=:#{@claude_ctx_sid},$SESSION_ID},#{!=:#{@claude_ctx_model},$MODEL_ID}}}}" \
+        "#{&&:#{!=:#{@claude_ctx_dead},$SESSION_ID},#{||:#{!=:#{@claude_ctx},$PERCENT_USED},#{||:#{!=:#{@claude_ctx_sid},$SESSION_ID},#{||:#{!=:#{@claude_ctx_model},$MODEL_ID},#{!=:#{@claude_ctx_account},$ACCOUNT}}}}}" \
         "set-option -p -t '$TMUX_PANE' @claude_ctx '$PERCENT_USED' ; set-option -p -t '$TMUX_PANE' @claude_ctx_sid '$SESSION_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_model '$MODEL_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_account '$ACCOUNT' ; run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh reconcile $TMUX_PANE'" \
         2>/dev/null || true
 fi

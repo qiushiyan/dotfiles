@@ -123,7 +123,9 @@ Everything derives from that tree:
 - **Daily**: `x`. Nothing else.
 - **Which lane is a running session on?** Its tmux pane border says: the
   context chip (`yan opus-5 ✳ 37%`) leads with the account's email local
-  part, read from the `CLAUDE_CONFIG_DIR` headroom set at launch. The
+  part — the full email when two accounts share one, the same
+  ambiguity rule as the `x-<name>` short aliases — read from the
+  `CLAUDE_CONFIG_DIR` headroom set at launch. The
   primary shows no account label — it launches with the variable absent, so
   it is the unmarked lane by construction. Details and the narrow-pane
   shedding order: `tmux/.config/tmux/workflow.md`.

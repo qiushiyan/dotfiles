@@ -16,11 +16,12 @@
 #                      carries just this one draws nothing.
 #   @claude_ctx_account
 #                      which account lane the session burns — the email local
-#                      part for a ~/.claude-accounts/ extra, EMPTY for the
+#                      part for a ~/.claude-accounts/ extra (the full email
+#                      when two lanes share a local part), EMPTY for the
 #                      primary, which stays the unmarked lane. Same cosmetic
-#                      standing as the model; fixed per session, so it earns
-#                      no arm in the publish gate (a new account means a new
-#                      session, and the owner arm already accepts that).
+#                      standing as the model, and gated like it: its arm only
+#                      ever fires to backfill a pane published before the
+#                      option existed, since the value is fixed per session.
 #   @claude_ctx_sid    which Claude session published it
 #   @claude_ctx_dead   tombstone: a session id whose publications are refused.
 #                      Closes the hard-kill race — a statusline subprocess can
