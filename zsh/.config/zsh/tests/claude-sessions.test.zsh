@@ -188,18 +188,22 @@ test_launch_preflight_survives_root_override() (
   [[ ! -f "$SB/claude.log" ]] || { print "claude ran over broken topology"; return 1 }
 )
 
-# A generated launcher records its account and routes to it in one step.
-test_generated_launcher_remembers_and_routes() (
+# A named launch is scoped: it routes to its account and leaves .current
+# alone — only the board's enter moves where bare `x` goes. The pin as a
+# launcher side effect is what let a two-minute hop to another account
+# silently retarget every later bare `x`.
+test_generated_launcher_routes_without_repinning() (
   sandbox
   mkdir -p "$H/.claude-accounts/a@x.com"
   ln -s "$H/.claude/projects" "$H/.claude-accounts/a@x.com/projects"
+  print -rn -- b@x.com >"$H/.claude-accounts/.current"
   export HOME="$H" PATH="$SB/bin:$PATH"
   source "$CLAUDE_ZSH"
   x-a@x.com || { print "generated launcher failed"; return 1 }
-  [[ "$(<"$H/.claude-accounts/.current")" == "a@x.com" ]] \
-    || { print ".current not recorded: $(cat "$H/.claude-accounts/.current" 2>/dev/null)"; return 1 }
   grep -q "cfg=$H/.claude-accounts/a@x.com" "$SB/claude.log" 2>/dev/null \
     || { print "launcher routed elsewhere:"; cat "$SB/claude.log" 2>/dev/null; return 1 }
+  [[ "$(<"$H/.claude-accounts/.current")" == "b@x.com" ]] \
+    || { print "named launcher moved .current: $(cat "$H/.claude-accounts/.current" 2>/dev/null)"; return 1 }
 )
 
 test_account_add_fails_when_canonical_is_link() (
@@ -456,7 +460,7 @@ t "primary launch strips an inherited CLAUDE_CONFIG_DIR" test_launch_primary_str
 t "empty .current refuses instead of primary fallback"   test_launch_refuses_empty_current
 t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_without_headroom
 t "root override cannot skip the topology preflight"     test_launch_preflight_survives_root_override
-t "generated launcher remembers and routes in one step"  test_generated_launcher_remembers_and_routes
+t "generated launcher routes without repinning bare x"   test_generated_launcher_routes_without_repinning
 t "account-add fails closed on symlinked canonical"      test_account_add_fails_when_canonical_is_link
 t "x-select cds from non-empty advice, status through"   test_x_select_cds_from_advice
 t "x-select stays put on empty advice"                   test_x_select_stays_put_on_empty_advice

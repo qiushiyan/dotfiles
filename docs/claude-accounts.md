@@ -6,9 +6,10 @@ lives.
 
 ## TL;DR
 
-- **`x`** — Claude with permissions bypassed, on the *last explicitly chosen*
-  account. **`x-<name>`** (`x-qiushi`, `x-yan`, …) chooses an account and
-  sticks, so the next bare `x` stays there. Every launcher routes through
+- **`x`** — Claude with permissions bypassed, on the default account (the
+  board's enter sets it). **`x-<name>`** (`x-qiushi`, `x-yan`, …) starts one
+  session on that account and nothing more — bare `x`'s target is
+  untouched. Every launcher routes through
   `headroom launch`, which validates the account and owns
   `CLAUDE_CONFIG_DIR` — an inherited value (a tmux server started inside a
   Claude session) can never re-route a launch, and corrupt routing state
@@ -26,8 +27,10 @@ lives.
   `r` rename, `dd` delete, space preview. (`headroom resume`, the old
   decision-line spelling, is a permanent tombstone: if x-select prints a
   stale-shell message, run `exec zsh`.)
-- **`x-accounts`** (alias **`x-acc`**) — account picker: choose an account
-  off the live usage board, stick like `x-<name>` does, then launch on it.
+- **`x-accounts`** (alias **`x-acc`**) — account board: choose where bare
+  `x` goes next off the live usage bars. Enter repins and exits — no
+  session starts until you type `x`, so "change the default" and "start a
+  session" stay separate decisions.
 - **Sessions are machine-global** — the picker (and native `x --resume`)
   from any account lists every session on the machine; which account
   recorded a conversation never matters for *seeing* it. Which account
@@ -119,8 +122,9 @@ Everything derives from that tree:
 
 - **Daily**: `x`. Nothing else.
 - **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
-  headroom off the live board; bare `x` follows from then on for *new*
-  sessions. (Or bare `headroom` to look, then an `x-<name>` by hand.)
+  headroom off the live board, then type `x`; bare `x` targets it from then
+  on. For a one-off session on another account without moving `x`, that
+  account's `x-<name>`.
 - **Resume an old conversation**: `x-select` — every session on the
   machine, this repo's (all worktrees) on top. Enter continues it in its
   own project dir on the account that last drove it, so a session keeps its
@@ -135,7 +139,7 @@ Everything derives from that tree:
   always first; a new account needs no entry (it appends alphabetically
   until promoted).
 - **Prompted (no bypass) session**: `claude-account <name|email>` (alias
-  `x-account`); it moves the `x` target too.
+  `x-account`); like `x-<name>`, bare `x`'s target is untouched.
 - **New subscription**: `claude-account-add <email>` seeds the dir and names
   the launcher; `/login` on its first launch binds the account.
 - **Stale token** on a rarely-used account: the board says so — run that

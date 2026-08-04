@@ -11,11 +11,13 @@ the user as commands to run — launchers start live sessions.
 - **Usage / quota**: run `headroom` — every account's 5-hour/weekly limit
   bars, each account's launcher command, and which account bare `x`
   currently targets. `headroom --json` for scripting.
-- **Switching**: the user runs that account's launcher (`x-<name>`, shown on
-  the board) or picks off the live board with `x-acc`; give them the
-  command. Launchers route through `headroom launch`, which validates the
-  account and owns `CLAUDE_CONFIG_DIR`. Credentials are per-account —
-  `/login` plays no part in switching.
+- **Switching**: a one-off session on another account is its launcher
+  (`x-<name>`, shown on the board; bare `x` is untouched). Changing the
+  default is `x-acc`: enter on the board repins bare `x` and exits, then
+  `x` starts the session. Give the user the command. Launchers route
+  through `headroom launch`, which validates the account and owns
+  `CLAUDE_CONFIG_DIR`. Credentials are per-account — `/login` plays no part
+  in switching.
 - **Resuming / session history**: sessions are machine-global — every
   account's `projects/` symlinks to `~/.claude/projects`. `x-select` lists
   every session and resumes each on the account that last drove it; native
