@@ -9,9 +9,11 @@
 # per pane:
 #
 #   @claude_ctx        the percentage — presence of a value IS "chip shown"
-#   @claude_ctx_model  the raw model id drawn left of the percentage. Cosmetic
-#                      only: it is never the presence marker, so a pane that
-#                      somehow carries just this one draws nothing.
+#   @claude_ctx_model  the model id, minus its "claude-" prefix, drawn left of
+#                      the percentage — a display value like the percentage
+#                      beside it, not a mirror of the payload. Cosmetic only:
+#                      it is never the presence marker, so a pane that somehow
+#                      carries just this one draws nothing.
 #   @claude_ctx_sid    which Claude session published it
 #   @claude_ctx_dead   tombstone: a session id whose publications are refused.
 #                      Closes the hard-kill race — a statusline subprocess can

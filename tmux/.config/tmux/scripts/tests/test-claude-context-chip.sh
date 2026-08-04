@@ -1,0 +1,308 @@
+#!/usr/bin/env bash
+# test-claude-context-chip.sh — the pinned traps for the Claude context chip:
+# what Claude's statusline publishes onto a pane border, and what tears it down.
+#
+# The chip has no user-visible failure alarm — a stale model id or a chip that
+# stopped updating looks exactly like a correct one, and the two halves that
+# can break it are both easy to break silently: the SERVER-side compare-and-set
+# gate at the tail of statusline-command.sh (which must accept a real change
+# and refuse a no-op, three times a second, per live session) and the unset
+# list in tmux-claude-ctx.sh's drop_branch (which must retire every option it
+# publishes). Each case below says which of those it holds down.
+#
+# Runs entirely on a throwaway socket, against the WORKING TREE's scripts —
+# never the live server, never the stowed copies. Usage:
+#   bash test-claude-context-chip.sh [C1 C5 ...]
+
+set -uo pipefail
+
+SOCK="ctxtest-$$"
+
+# The working tree these tests belong to, not $HOME: a suite that reached the
+# stowed copies would grade whatever is installed instead of the branch it was
+# run from, and pass over a change that was never applied.
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+REPO=$(cd "$HERE/../../../../.." && pwd)
+STATUSLINE="$REPO/claude/.claude/commands/statusline-command.sh"
+CTX="$REPO/tmux/.config/tmux/scripts/tmux-claude-ctx.sh"
+CONF="$REPO/tmux/.config/tmux/tmux.conf"
+
+PASS=0; FAIL=0; FAILED=""
+T() { tmux -L "$SOCK" "$@"; }
+
+SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/ctx-chip-test.XXXXXX")
+SANDBOX_RESURRECT="$SANDBOX/resurrect"
+# A HOME of our own. Both scripts under test resolve a sibling through
+# $HOME/.config/tmux/scripts — the statusline's backgrounded `reconcile` call
+# most of all — so the override is what keeps this suite on the working tree;
+# the symlink is the only thing in it, which also means the statusline finds no
+# ~/.config/terminal-theme and takes $TERMINAL_THEME, off the user's live one.
+SANDBOX_HOME="$SANDBOX/home"
+mkdir -p "$SANDBOX_RESURRECT" "$SANDBOX_HOME/.config/tmux"
+ln -s "$REPO/tmux/.config/tmux/scripts" "$SANDBOX_HOME/.config/tmux/scripts"
+
+cleanup() {
+    T kill-server 2>/dev/null
+    [ -n "${SANDBOX:-}" ] && rm -rf "$SANDBOX"
+}
+trap cleanup EXIT
+
+fresh() {
+    T kill-server 2>/dev/null; sleep 0.2
+    # The pane runs `sleep`, NOT a shell. An interactive zsh here sources the
+    # user's rc, which installs the production precmd sweep — the one that
+    # clears a chip whenever a prompt returns, on the reasoning that a live
+    # Claude would be holding the foreground. In a test pane that reasoning is
+    # false and the sweep is a second writer: it wipes what the case just
+    # published, from inside the pane, at whatever moment zsh finishes loading.
+    # That raced invisibly against every case here and cost a debugging pass.
+    # A pane occupied by a non-shell process is also the truthful model of the
+    # thing under test — a pane with Claude running in it.
+    T -f "$CONF" new-session -d -s t -x 200 -y 50 'sleep 100000' 2>/dev/null
+    # new-session RETURNING is not the server being ready — the config is still
+    # loading behind it, plugins included. A pane id read too early comes back
+    # EMPTY, and an empty id doesn't fail: every later command targets nothing,
+    # no-ops, and the case's assertions compare one empty string to another. A
+    # fixed sleep hid that and lost the race on a cold checkout, so poll for the
+    # pane and refuse to run the case without one.
+    PANE=""; WIN=""; SOCKPATH=""
+    for _ in $(seq 1 50); do
+        PANE=$(T list-panes -t t -F '#{pane_id}' 2>/dev/null | head -1)
+        [ -n "$PANE" ] && break
+        sleep 0.2
+    done
+    WIN=$(T display -p -t t '#{window_id}' 2>/dev/null)
+    SOCKPATH=$(T display -p '#{socket_path}' 2>/dev/null)
+    if [ -z "$PANE" ] || [ -z "$WIN" ] || [ -z "$SOCKPATH" ]; then
+        no "harness: the test server never came up" \
+           "pane=[$PANE] win=[$WIN] socket=[$SOCKPATH] — the case did not run"
+        return 1
+    fi
+    # Same trap the pane-control suite documents: resurrect's save directory is
+    # one shared path unless told otherwise, so a throwaway server that reaches
+    # the real save.sh overwrites the user's snapshot.
+    T set -g @resurrect-dir "$SANDBOX_RESURRECT" 2>/dev/null
+}
+
+# Publish one statusline render: pub <sid> <model-id|-> <input-tokens>.
+# "-" means a payload carrying no model key at all, which is not the same as an
+# empty one. Everything the scripts touch is pinned to the test server ($TMUX,
+# the socket the scripts resolve tmux through — without it they fall through to
+# the DEFAULT socket, the user's live server, where these pane ids don't exist
+# and every assertion below would pass for the wrong reason) and to the sandbox
+# HOME.
+pub() {
+    local sid="$1" model="$2" tokens="$3" payload
+    if [ "$model" = "-" ]; then
+        payload=$(printf '{"session_id":"%s","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$sid" "$SANDBOX" "$tokens")
+    else
+        payload=$(printf '{"session_id":"%s","model":{"id":"%s"},"workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$sid" "$model" "$SANDBOX" "$tokens")
+    fi
+    printf '%s' "$payload" | env HOME="$SANDBOX_HOME" TERMINAL_THEME=flexoki_light \
+        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$STATUSLINE" >/dev/null 2>&1
+    sleep 0.4   # the accepted branch reconciles the border in the background
+}
+
+# A SessionEnd hook firing for <sid>.
+ends() {
+    printf '{"session_id":"%s"}' "$1" | env HOME="$SANDBOX_HOME" \
+        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" clear-session "$PANE"
+    sleep 0.4
+}
+
+opt()    { T show -pqv -t "$PANE" "$1"; }
+status() { T show -wv -t "$WIN" pane-border-status 2>/dev/null; }
+# What the border actually draws, styles stripped. Only "#[...]" is a style —
+# the sanitizer strips the leading # from anything hostile in a model id, so a
+# bracket that survives here is content, and visible as such.
+border() {
+    T display-message -p -t "$PANE" "$(T show -gv pane-border-format)" \
+        | sed 's/#\[[^]]*\]//g'
+}
+
+ok()   { PASS=$((PASS+1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; }
+no()   { FAIL=$((FAIL+1)); FAILED="$FAILED $2"; printf '  \033[31mFAIL\033[0m %s\n       %s\n' "$1" "$2"; }
+check(){ [ "$2" = "$3" ] && ok "$1" || no "$1" "expected [$3] got [$2]"; }
+want() { case " ${WANT:-} " in *" $1 "*) return 0;; esac; [ -z "${WANT:-}" ]; }
+
+# ---------------------------------------------------------------------------
+# C1 — a render publishes both halves and lights the border. The model is
+# drawn LEFT of the percentage and carries no "claude-" prefix; the percentage
+# keeps its own value, which is the field-alignment check on the positional
+# read that parses both out of one jq call.
+# ---------------------------------------------------------------------------
+c1() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    check "C1 percentage published"   "$(opt @claude_ctx)"       "60"
+    check "C1 model published trimmed" "$(opt @claude_ctx_model)" "opus-5[1m]"
+    check "C1 owner recorded"         "$(opt @claude_ctx_sid)"    "sid-A"
+    check "C1 border row on"          "$(status)"                 "top"
+    check "C1 border draws model then percentage" "$(border)" " opus-5[1m] ✳ 60% "
+}
+
+# ---------------------------------------------------------------------------
+# C2 — a /model switch mid-session repaints. Percentage and session id are
+# BOTH unchanged here, so the model is the only thing that can carry the write
+# past the gate: this is the case that fails if the gate's model arm is
+# dropped, mis-nested, or compares against the wrong option. The border row is
+# forced off first so an accepted write proves itself by the reconcile it
+# queues, not merely by the value it leaves behind.
+# ---------------------------------------------------------------------------
+c2() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    T set -w -t "$WIN" pane-border-status off
+    pub sid-A 'claude-fable-5' 600000
+    check "C2 model updated on a model-only change" "$(opt @claude_ctx_model)" "fable-5"
+    check "C2 percentage untouched"                 "$(opt @claude_ctx)"       "60"
+    check "C2 accepted write reconciled the border" "$(status)"                "top"
+    check "C2 border redrawn"                       "$(border)"                " fable-5 ✳ 60% "
+}
+
+# ---------------------------------------------------------------------------
+# C3 — the other half of the gate, and the reason it exists: an UNCHANGED
+# triple must write nothing. set-option costs redraw and layout work even when
+# the value is identical, and this runs ~3×/sec per streaming session, so a
+# gate that always accepts is a performance regression with no visible symptom.
+# Forcing the row off makes the no-op observable: a write would reconcile it
+# back on, so "still off" is the assertion that nothing ran.
+# ---------------------------------------------------------------------------
+c3() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    T set -w -t "$WIN" pane-border-status off
+    pub sid-A 'claude-opus-5[1m]' 600000
+    check "C3 unchanged triple published nothing" "$(status)"                "off"
+    check "C3 values still intact"                "$(opt @claude_ctx_model)" "opus-5[1m]"
+}
+
+# ---------------------------------------------------------------------------
+# C4 — a payload with no model at all still gets a chip. The percentage alone
+# is what "chip shown" means, so the model must degrade to nothing rather than
+# to a placeholder, and the border must not keep a separator or a stray space
+# where it would have been.
+# ---------------------------------------------------------------------------
+c4() {
+    fresh || return
+    pub sid-A - 950000
+    check "C4 percentage published"      "$(opt @claude_ctx)"       "95"
+    check "C4 model empty, not a sentinel" "$(opt @claude_ctx_model)" ""
+    check "C4 border row on"             "$(status)"                "top"
+    check "C4 border shows the number alone" "$(border)"            " ✳ 95% "
+}
+
+# ---------------------------------------------------------------------------
+# C5 — a model id is untrusted text on two paths at once: it is interpolated
+# into a tmux FORMAT string and into a single-quoted set-option inside an
+# if-shell command string, and it is one whitespace-separated field of a
+# positional read. A quote or a comma could end a command early; a space would
+# shift every field after it and corrupt the percentage; a "#[" would inject a
+# style into the border. All three are the same defense — the jq scrub — so
+# one hostile id tests it end to end.
+# ---------------------------------------------------------------------------
+c5() {
+    fresh || return
+    pub sid-A "claude-x y, #[fg=red]'; kill-server" 500000
+    check "C5 server survived"          "$(T list-sessions -F '#{session_name}' 2>/dev/null | head -1)" "t"
+    check "C5 id reduced to one inert token" "$(opt @claude_ctx_model)" "xy[fgred]kill-server"
+    check "C5 percentage not corrupted"  "$(opt @claude_ctx)"       "50"
+    check "C5 no style injected on the border" "$(border)" " xy[fgred]kill-server ✳ 50% "
+}
+
+# ---------------------------------------------------------------------------
+# C6 — SessionEnd also fires on /resume switches, where a SUCCESSOR session
+# may already own the pane. A dying session must not clear the chip its
+# successor just published — including its model, which is the new option this
+# check now has to protect too.
+# ---------------------------------------------------------------------------
+c6() {
+    fresh || return
+    pub sid-B 'claude-fable-5' 300000
+    ends sid-A
+    check "C6 stale SessionEnd left the percentage" "$(opt @claude_ctx)"       "30"
+    check "C6 stale SessionEnd left the model"      "$(opt @claude_ctx_model)" "fable-5"
+    check "C6 stale SessionEnd left the owner"      "$(opt @claude_ctx_sid)"   "sid-B"
+    check "C6 border still up"                      "$(status)"                "top"
+}
+
+# ---------------------------------------------------------------------------
+# C7 — the owner's SessionEnd retires EVERY option it published. A model left
+# behind is the specific silent failure: the border row goes down, so nothing
+# looks wrong, and the stale id surfaces on the next session to land in this
+# pane — wearing the previous session's model.
+# ---------------------------------------------------------------------------
+c7() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    ends sid-A
+    check "C7 percentage unset"       "$(opt @claude_ctx)"       ""
+    check "C7 model unset"            "$(opt @claude_ctx_model)" ""
+    check "C7 owner unset"            "$(opt @claude_ctx_sid)"   ""
+    check "C7 session tombstoned"     "$(opt @claude_ctx_dead)"  "sid-A"
+    check "C7 border row dropped"     "$(status)"                ""
+    check "C7 border draws nothing"   "$(border)"                ""
+}
+
+# ---------------------------------------------------------------------------
+# C8 — the hard-kill race. A statusline subprocess can outlive the Claude it
+# belonged to and publish AFTER cleanup ran; the tombstone must refuse it, and
+# refuse the model with it. A NEW session in the same pane must still publish
+# freely, model included — otherwise the pane is poisoned for its successor.
+# ---------------------------------------------------------------------------
+c8() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    ends sid-A
+    pub sid-A 'claude-opus-5[1m]' 610000
+    check "C8 tombstoned session cannot republish"       "$(opt @claude_ctx)"       ""
+    check "C8 tombstoned session cannot republish model" "$(opt @claude_ctx_model)" ""
+    pub sid-B 'claude-fable-5' 200000
+    check "C8 a new session publishes"       "$(opt @claude_ctx)"       "20"
+    check "C8 a new session publishes model" "$(opt @claude_ctx_model)" "fable-5"
+    check "C8 border back up"                "$(status)"                "top"
+}
+
+# ---------------------------------------------------------------------------
+# C9 — the isolation guard (see docs/testing.md). Two silent escapes to close:
+# a case that forgets $TMUX drives the user's LIVE server, where these pane ids
+# don't exist so everything no-ops and the suite passes green having tested
+# nothing; and a case that forgets the HOME override grades the stowed copies
+# instead of this working tree. Both are invisible in a passing run, so they
+# get asserted rather than assumed.
+# ---------------------------------------------------------------------------
+c9() {
+    fresh || return
+    pub sid-guard 'claude-opus-5[1m]' 600000
+
+    check "C9 the suite ran against its own socket" \
+        "$(basename "$SOCKPATH")" "$SOCK"
+
+    # Nothing this suite published may appear on the default socket. No live
+    # server at all is a pass, not an error.
+    leaked=$(tmux list-panes -a -F '#{@claude_ctx_sid}' 2>/dev/null | grep -c '^sid-guard$' || true)
+    check "C9 the live server carries none of our sessions" "$leaked" "0"
+
+    # The scripts must have been reached through the sandbox HOME, so the code
+    # under test is this tree's.
+    check "C9 sandbox HOME points at the working tree" \
+        "$(readlink "$SANDBOX_HOME/.config/tmux/scripts")" \
+        "$REPO/tmux/.config/tmux/scripts"
+
+    # And the sandbox HOME stays a shell: anything written into it means a
+    # script wrote to $HOME on a path this suite exercises.
+    check "C9 nothing was written into the sandbox HOME" \
+        "$(find "$SANDBOX_HOME" -mindepth 1 -not -path "$SANDBOX_HOME/.config" \
+            -not -path "$SANDBOX_HOME/.config/tmux" \
+            -not -path "$SANDBOX_HOME/.config/tmux/scripts" | wc -l | tr -d ' ')" "0"
+}
+
+WANT="${*:-}"
+echo "tmux $(tmux -V) — Claude context chip suite"
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9; do
+    n=$(echo "$c" | tr 'a-z' 'A-Z')
+    want "$n" && { echo "[$n]"; $c; }
+done
+echo
+printf 'passed %d, failed %d%s\n' "$PASS" "$FAIL" "${FAILED:+ ($FAILED)}"
+[ "$FAIL" -eq 0 ]
