@@ -55,18 +55,35 @@ Then add the Codex symlink by hand if Codex should get the skill.
 
 ## Controlling invocation
 
-**Invocation control belongs in the skill's frontmatter**, and nowhere else:
+Two mechanisms work, and which one you want depends on **who owns the file**.
+
+**Frontmatter — the default.** Documented, and verified in both directions:
 
 - `disable-model-invocation: true` → user-invoked only, and the description
   leaves the model's context.
 - `user-invocable: false` → the inverse (Claude-only).
 
-Both are documented and verified working. The two tempting alternatives are
-traps:
+**`skillOverrides` in `settings.json` — for skills you don't own.** Editing the
+frontmatter of a **CLI-managed** skill (anything in
+`~/.agents/.skill-lock.json`) is a fork that `skills update` silently reverts —
+see the `writing-great-skills` note above. An override in `settings.json` sits
+outside the file, so an update can't touch it:
 
-- **`skillOverrides` in `settings.json` does nothing** — verified on v2.1.205:
-  an `"on"` override failed to re-enable a skill, while frontmatter worked. It
-  is undocumented with open upstream bugs. Do not use it.
+```jsonc
+"skillOverrides": { "writing-for-agents": "user-invocable-only" }
+```
+
+Verified working in the restricting direction: `emil-design-engineering` carries
+a full model-facing trigger list and no frontmatter flag, and an override alone
+keeps it out of the model's skill list. **The re-enabling direction is a
+different story** — an `"on"` override failed to bring a disabled skill back on
+v2.1.205. So: use it to take a skill away from the model, don't rely on it to
+give one back, and remember the field is undocumented with open upstream bugs.
+Global overrides go in `claude/.claude/settings.json`; a project-local one in a
+repo's own `.claude/settings.local.json` binds only inside that repo.
+
+The one real trap:
+
 - **Never put a skill in `permissions.deny`.** Deny gates _execution_, not
   visibility: the description still costs context, the model still tries and
   gets blocked, and you lose your own `/skill` invocation too. Deny is for tools
