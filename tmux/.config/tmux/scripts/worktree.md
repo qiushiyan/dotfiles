@@ -8,6 +8,11 @@ reaps, and PR-checkouts git worktrees**. Implemented as
 This doc is the *why* and the *watch-outs* — the script is the *how*. Don't read
 it for syntax; read it before you change behavior.
 
+Four sections carry most of the load-bearing reasoning and are worth reading
+before touching anything near them: **Deciding what counts as merged**,
+**Everything per-worktree runs in parallel**, **Removal keeps a way back**, and
+the gotcha on window identity.
+
 ## Two front-ends, one core
 
 The git-worktree logic itself — the `~/dev/.worktrees/<repo>/<branch>` path
@@ -107,8 +112,8 @@ The workflow this serves:
    dirty flag → `mv` each worktree into `~/dev/.worktrees/.trash/<batch>` (a
    same-filesystem rename — instant however big node_modules is) → one
    `git worktree prune` → kill the windows → **aggregated** branch deletion
-   (merged → safe `-d` behind one default-yes confirm; unmerged → explicit
-   force past a warning) → `tmux run-shell -b "rm -rf …"` sweeps the trash
+   (merged → one default-yes confirm; unmerged → explicit force past a warning,
+   with "merged" defined below) → `tmux run-shell -b "rm -rf …"` sweeps the trash
    server-side, so it survives the popup closing, and empty parent dirs are
    tidied. Parallel `rm -rf`s were considered and rejected: deletion is
    disk-metadata-bound (parallelism buys little on one SSD) and concurrent git
@@ -204,6 +209,113 @@ The workflow this serves:
    list markers (`»` = the worktree you're in, `*` = dirty) use plain ANSI
    colors for the same reason.
 
+## Deciding what counts as merged
+
+`wt_merged_into <branch> <base>` in the core is the single answer to "is this
+branch's work already on the base", used by both reap candidacy and the
+branch-deletion prompt. It was `git merge-base --is-ancestor` in two places,
+and that is wrong in a way that is worse than it looks: **on a squash-merging
+repo, every shipped branch reports "NOT merged"**, so the batch-remove flow
+asks you to force-delete "dropping their commits" on work that is demonstrably
+on main. A warning that cries wolf on every removal is worse than no warning —
+you stop reading it, and the one time a branch really was unmerged you force
+past that too.
+
+Three ways work lands on a base; only the first is visible in the graph.
+
+| how it landed | what the base gets | how we detect it |
+| --- | --- | --- |
+| merge commit / fast-forward | the branch's own commits | `merge-base --is-ancestor` |
+| GitHub **Squash and merge** | one new commit, no shared history | collapse the branch to a dangling `commit-tree` (tip's tree, parented on the merge base) and ask `git cherry` if the base already carries that patch |
+| GitHub **Rebase and merge** | the commits re-authored, new SHAs | per-commit `git cherry`; merged iff every line is `-` |
+
+Checks run in that order because it is also cheapest-first: the graph query is
+microseconds, each patch-id scan is ~0.1–0.4 s, so only a branch that really is
+unmerged pays for both. Two consequences worth keeping in mind:
+
+- **`git branch -d` disagrees with us on purpose.** Git's own "fully merged"
+  test is the graph-only one, so `-d` *refuses* a squash-merged branch. Having
+  independently established containment by patch identity, `delete_merged_branch`
+  falls back to `-D` — and reports a deletion that still fails instead of
+  swallowing it, which is what the old `2>/dev/null` did.
+- **A verdict is only as fresh as the base ref**, and nothing here used to
+  fetch. Merge a PR in the browser and its branch stayed "unmerged" until you
+  next pulled — the second half of the same false alarm. The popup now fires
+  `wt_fetch_base` in the **background at startup** (only when `wt_base_is_stale`
+  — no fetch in the last 5 min) and `await_base_fetch`s it at the moment a
+  verdict is needed, so browsing the list pays for the network. Same shape as
+  the branch-creation guard in `git.zsh`: `FETCH_HEAD` mtime for freshness
+  (`-size +0c` too — a killed fetch truncates it with a *fresh* mtime), a
+  `timeout`-bounded probe, and a failed probe that **says so** rather than
+  quietly grading against last week's base.
+
+What it still can't see: a branch merged into something other than the default
+base, and a branch whose diff was applied by hand with edits (no patch matches).
+Both correctly fall through to the force prompt.
+
+The verdict is **memoized** on `(branch sha, base sha)` in
+`<git-common-dir>/wt-merged-cache`, which is what makes it cheap enough to draw
+in the list on every popup open (measured on a 7-worktree repo: 0.8 s cold,
+0.2 s on memo hits). It is a pure function of those two shas, so there is
+nothing to invalidate — a ref that moves is simply a different key, and that
+key is the safety property: a memo keyed on the branch alone would keep
+answering "merged" after the base moved, and a stale "merged" is how a branch
+gets deleted. `wt_trim_merged_cache` caps the file at popup startup.
+
+Tests: `tests/test-worktree-core.sh` (W1–W5 are one case per merge style plus the
+must-stay-NO case; W10 pins the truncated-`FETCH_HEAD` trap; W22/W23 poison the
+memo to prove it is really read, and really keyed on both shas).
+
+## Everything per-worktree runs in parallel
+
+Every question the popup asks about a worktree is a git process — `git status`
+for the dirty marker, the merge test for the tag — so asking them in a loop made
+the popup's time-to-first-paint scale with how many worktrees you keep. Measured
+on a 7-worktree repo: **2.6 s cold / 0.30 s warm serially, 0.03 s fanned out**
+for the status pass alone.
+
+`wt_fanout <fn>` in the core takes `"<f1>\t<f2>"` lines on stdin, runs one job
+per line, and prints the results **in input order**. Two things are load-bearing:
+
+- **Order comes from zero-padded filenames**, not from completion order. A list
+  that reshuffles itself between openings is one you can't build muscle memory
+  on.
+- **The loop runs inside an explicit `( … )` subshell**, so its bare `wait`
+  cannot adopt a caller's background job. The popup keeps a base fetch in flight
+  the whole time this runs; a `wait` that swallowed it would block the list on
+  the network — precisely what backgrounding that fetch exists to prevent. If
+  you add another `wait` anywhere in this script, check it against that.
+
+Probes use `git --no-optional-locks`: nothing here writes, and this workflow has
+agents running git in those same worktrees, so a probe must never contend for
+`index.lock`.
+
+## Removal keeps a way back
+
+Removal used to have two points of no return, both one keystroke deep:
+discarding a dirty worktree (the batch's trash is swept *immediately*, so a
+mistyped `y` was final) and force-deleting an unmerged branch (`git branch -D`
+takes the branch's reflog with it, leaving `git fsck --lost-found` as the
+recovery route). Both now snapshot first, into `refs/wt-trash/<batch>/<slot>-<branch>`:
+
+- **A dirty worktree** is captured by `wt_snapshot_worktree` as one commit
+  parented on HEAD, so `git diff HEAD <ref>` reads as the changes that were
+  pending. Not `git stash create` — that captures *tracked* modifications only,
+  and the dirt in an agent's worktree is mostly new untracked files. The tree is
+  built in a scratch `GIT_INDEX_FILE`, so the worktree's own index is untouched
+  and nothing lands on the shared stash list; `add -A` still obeys `.gitignore`,
+  which is what keeps `node_modules` out of it. **A worktree that cannot be
+  snapshotted is not removed** — "discard" must never quietly mean "lost".
+- **An unmerged branch tip** is parked at a ref before `-D`.
+
+The ref name is printed with the command that undoes it. `<slot>` is an index,
+not just the branch name, because two branches in one batch can collide —
+`feat` and `feat/x` can't both exist in the ref store (directory/file conflict),
+and a silent overwrite would drop one of the two things we just promised to
+keep. These refs pin objects, so they expire on the same age-gate principle as
+the trash directory (`wt_prune_backups`, `@worktree_backup_days`, default 30;
+`0` keeps them forever).
+
 ## Gotchas / watch-outs (read before editing)
 
 - **The fzf output is a positional contract.** With `--print-query` +
@@ -217,10 +329,12 @@ The workflow this serves:
 - **`ctrl-a`/`ctrl-d`/`ctrl-u` are rebound inside the list.** `ctrl-a` =
   toggle-all, `ctrl-d`/`ctrl-u` = preview half-page scroll (vim feel). Stock
   fzf `ctrl-u` (clear query) is deliberately traded away.
-- **Reap can't see squash-merges.** Candidacy is `git merge-base
-  --is-ancestor`, so a branch squash-merged on GitHub isn't an ancestor of the
-  base: it won't be reaped, and at branch-deletion time it counts as "NOT
-  merged" (needs the explicit force). Those go through a manual `ctrl-x`.
+- **"Merged" is patch identity, not just ancestry — and the base is refreshed
+  first.** Both are corrections to a false alarm that used to fire constantly:
+  every squash-merged branch was reported "NOT merged into origin/HEAD… drops
+  their commits", which is how you train someone to force past the one warning
+  that was real. See "Deciding what counts as merged" below before touching
+  `wt_merged_into`.
 - **The trash sweep is age-gated on purpose.** Startup schedules a background
   sweep of `~/dev/.worktrees/.trash` entries **older than 2 minutes** (crash
   self-healing); each batch sweeps only its own uniquely-named dir. The age
@@ -257,10 +371,20 @@ The workflow this serves:
   under `~/dev/.worktrees/main/`. Accepted on purpose (simplicity over a prettier
   folder name); if two such repos ever collide on a branch name, create refuses
   with "path already exists" — no data loss.
-- **Window matching is by name (`#W`), with `/`→`-`.** Switch/remove locate a
-  worktree's window by its sanitized branch name. Two branches that sanitize to
-  the same name (`feat/x` vs `feat-x`) collide on one window. Rare, but the
-  branch→window mapping is not guaranteed injective.
+- **Windows are found by PATH first, name second — and removal reaches into
+  other sessions.** A window's name is the branch with `/`→`-`, which is neither
+  injective (`feat/x` and `feat-x` produce the same name, so switching to one
+  could land you in the other) nor stable (rename the window and the mapping is
+  gone). So `windows_for_path` matches on `#{pane_current_path}` — a pane in the
+  worktree, or in a subdirectory of it — and the name match survives only as the
+  fallback for a window whose pane has since `cd`'d elsewhere. Two consequences:
+  - **Removal kills matching windows in *every* session** (`list-panes -a`), not
+    just the popup's. A window pointing at a deleted directory is broken wherever
+    it lives. If such a window is the **last** one in another session, tmux ends
+    that session — expected, but it is a session disappearing out of view.
+  - **The window ids must be collected _before_ the `mv`.** A process whose cwd
+    is renamed under it reports the *new* path, so after staging into the trash
+    nothing matches any more and every window survives its worktree.
 - **Slashed branches create nested folders.** `feat/login` →
   `~/dev/.worktrees/<repo>/feat/login`. Git is fine with it, and batch removal
   now tidies the empty `feat/` parent afterwards (`find -mindepth 1 -type d
