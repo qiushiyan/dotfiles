@@ -47,11 +47,17 @@ Then add the Codex symlink by hand if Codex should get the skill.
   never reach for it just to "clean the store".
 - **`~/.agents/.skill-lock.json` is not in this repo**, so CLI tracking does not
   survive to a new machine — `make install` won't restore it.
-- **Forking a CLI-managed skill gets clobbered by `skills update`.**
-  `writing-great-skills` has upstream's `disable-model-invocation: true`
-  deliberately removed so the model can auto-invoke it. After any update, delete
-  the line again or
-  `git checkout -- claude/.claude/skills/writing-great-skills/SKILL.md`.
+- **Forking a CLI-managed skill gets clobbered by `skills update`.** Editing the
+  frontmatter of anything in the lockfile is a fork the next update silently
+  reverts. Prefer a `skillOverrides` entry (below), which lives outside the file
+  and survives; keep a frontmatter fork only for what an override can't express,
+  and expect to re-apply it.
+- **A renamed upstream skill goes stale in silence.** `writing-great-skills` was
+  renamed to `writing-for-agents` upstream on 2026-07-23. Its lockfile
+  `skillPath` then 404'd, so `skills update` no-opped on it forever — no error,
+  no warning, and the local copy just froze. An update that reports success is
+  not evidence the skill still exists upstream; if one looks suspiciously
+  unchanged, check the path by hand.
 
 ## Controlling invocation
 
@@ -65,9 +71,9 @@ Two mechanisms work, and which one you want depends on **who owns the file**.
 
 **`skillOverrides` in `settings.json` — for skills you don't own.** Editing the
 frontmatter of a **CLI-managed** skill (anything in
-`~/.agents/.skill-lock.json`) is a fork that `skills update` silently reverts —
-see the `writing-great-skills` note above. An override in `settings.json` sits
-outside the file, so an update can't touch it:
+`~/.agents/.skill-lock.json`) is a fork that `skills update` silently reverts.
+An override in `settings.json` sits outside the file, so an update can't touch
+it:
 
 ```jsonc
 "skillOverrides": { "writing-for-agents": "user-invocable-only" }
