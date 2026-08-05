@@ -97,7 +97,8 @@ Write the updates from your confirmed plan, applying the **Documentation standar
 3. Confirm no absolute paths leaked in — repo-root-relative only.
 4. Confirm no source code was pasted (prose / pseudo-code call chains are fine).
 5. Grep across the docs tree for the basenames of any file you moved, renamed, or deleted — every hit should resolve.
-6. Check: _"If a teammate reads this cold, do the docs give them the mental model without reading every file?"_
+6. For each concept the change replaced, grep the docs for the old name — every surviving mention must earn its place by future need (a live fact, a mid-flight transition), never as a contrast with the past.
+7. Check: _"If a teammate reads this cold, do the docs give them the mental model without reading every file?"_
 
 ## Step 7 — Maintain the surfaces above the docs
 
@@ -130,7 +131,7 @@ What good docs look like, and the rules to hold while editing. A project's own s
 
    Not: `src/payments/checkout.ts`, `src/payments/webhooks.ts`, `src/auth.ts` listed one full path at a time.
 
-3. **Describe the current state, never a changelog.** No "added X", "changed Y", "as of version Z". When something changes, restructure the prose so it describes what is true _now_ — git history is the changelog. Present tense for what exists; future tense ("we will…") is a smell that a proposal has leaked into a description of reality.
+3. **Describe the current state, never a changelog.** No "added X", "changed Y", "as of version Z". When something changes, restructure the prose so it describes what is true _now_ — git history is the changelog. Present tense for what exists; future tense ("we will…") is a smell that a proposal has leaked into a description of reality. The same leak has a present-tense disguise: "B, not A", "replaces A", "the old A", "no longer" — every word true, but the sentence shaped like the diff instead of the system. The test for any trace of the before-state is future need: *will a reader who never saw A need this?* For most refactors, no — name B and let git history keep the story. A earns a mention only while the answer is yes: it still bites today (state the hazard as a present fact — extract the invariant the history proved and drop the narrative), or the transition is mid-flight and the coexistence is part of the system.
 
 ### The rest
 
