@@ -76,17 +76,18 @@ An override in `settings.json` sits outside the file, so an update can't touch
 it:
 
 ```jsonc
-"skillOverrides": { "writing-for-agents": "user-invocable-only" }
+// this repo's own .claude/settings.local.json — the live example
+"skillOverrides": { "emil-design-engineering": "user-invocable-only" }
 ```
 
-Verified working in the restricting direction: `emil-design-engineering` carries
-a full model-facing trigger list and no frontmatter flag, and an override alone
-keeps it out of the model's skill list. **The re-enabling direction is a
-different story** — an `"on"` override failed to bring a disabled skill back on
-v2.1.205. So: use it to take a skill away from the model, don't rely on it to
-give one back, and remember the field is undocumented with open upstream bugs.
-Global overrides go in `claude/.claude/settings.json`; a project-local one in a
-repo's own `.claude/settings.local.json` binds only inside that repo.
+Verified working in the restricting direction: that skill carries a full
+model-facing trigger list and no frontmatter flag, and the override alone keeps
+it out of the model's skill list. **The re-enabling direction is a different
+story** — an `"on"` override failed to bring a disabled skill back on v2.1.205.
+So: use it to take a skill away from the model, don't rely on it to give one
+back, and remember the field is undocumented with open upstream bugs. Global
+overrides go in `claude/.claude/settings.json`; a project-local one in a repo's
+own `.claude/settings.local.json` binds only inside that repo.
 
 The one real trap:
 
