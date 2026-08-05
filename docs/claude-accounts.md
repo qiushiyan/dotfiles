@@ -102,10 +102,14 @@ Everything derives from that tree:
   refuses to start over a broken topology, because a real directory there would fork
   history silently. Per-session extras (`file-history/`, todos,
   `session-env/`) stay account-local: resuming under a different account
-  keeps the conversation, not `/rewind` checkpoints. Retention is one
-  policy by construction — `cleanupPeriodDays` is pinned in the shared
-  `settings.json` (never `0`, which disables persistence, not cleanup),
-  and every account's cleanup pass applies it to the shared store.
+  keeps the conversation, not `/rewind` checkpoints — and deleting a
+  transcript from the shared store strands that state in every account
+  that recorded any, which is what **ccclean**'s `gc` sweep collects.
+  Retention is one policy by construction — `cleanupPeriodDays` is pinned
+  in the shared `settings.json` (never `0`, which disables persistence,
+  not cleanup), and every account's cleanup pass applies it to the shared
+  store. That setting is the floor, deliberately generous; the actual
+  policy is ccclean's, in `~/dev/ccclean` (see below).
 - **Discovery.** `claude.zsh` globs the dirs at shell init and generates the
   launchers: `x-<email>` always exists and is the guaranteed identity; a
   short `x-<local-part>` alias (`x-yan`) is added only when the local part is
@@ -188,7 +192,19 @@ Everything derives from that tree:
 - obelisk (session-history search) indexes `~/.claude/projects` and so sees
   every account's sessions. Index it incrementally, never `obelisk --build`:
   a force rebuild mirrors only files still on disk, and for transcripts
-  retention already pruned, the index row is the last record in existence.
+  retention already pruned, the index row is the last record in existence
+  — a **lossy** one. obelisk truncates every message at 10,000 characters
+  (`TEXT_LIMIT` in its `parsing.js`) and keeps `toolUseResult` only for its
+  `filePath`, so it is a search index, never an archive. That is why
+  ccclean archives rather than deletes anything worth keeping, and says so
+  in the prune preview instead of implying a backup exists.
+- **Session retention is ccclean's**, a separate Python CLI in
+  `~/dev/ccclean` (installed by `uv tool install`). It judges sessions by
+  human turns rather than age, refuses to prune anything obelisk has not
+  fully indexed, and sweeps the account-local per-session state that
+  deleting a shared transcript strands. Its rules and their evidence:
+  `~/dev/ccclean/DESIGN.md`. It is not in this repo — like headroom, the
+  engine lives on its own and nothing here wraps it.
 - Launch routing belongs to headroom, verification included: wrappers
   delegate to `headroom launch` / `headroom sessions`, which validate the
   account and the shared-sessions topology themselves — wrappers never set

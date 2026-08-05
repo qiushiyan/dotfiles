@@ -128,7 +128,9 @@ changing one piece without the others breaks it.
   there. Session transcripts are machine-global (every account's `projects/`
   symlinks to `~/.claude/projects`, enforced at launch; toolkit in
   `zsh/.config/zsh/claude-sessions.zsh`). Account dirs are runtime state,
-  never in this repo → `docs/claude-accounts.md`.
+  never in this repo → `docs/claude-accounts.md`. Retention of that shared
+  store belongs to **ccclean**, a Python CLI in `~/dev/ccclean` — like
+  headroom, an engine on its own with nothing here wrapping it.
 - **Agent skills** — Claude Code is a superset of Codex, which symlinks into it.
   Adding, forking, or disabling a skill has several traps that fail silently →
   `docs/agent-skills.md`.

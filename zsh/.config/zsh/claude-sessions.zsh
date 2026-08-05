@@ -320,7 +320,8 @@ _claude_sessions_reindex() {
   # The full pre-state, because the assertions below must prove nothing was
   # LOST, not merely that the expected additions arrived — for every
   # transcript retention already pruned, the index row is the last record
-  # in existence.
+  # in existence (a lossy one: obelisk truncates each message at 10,000
+  # characters, so it is a search index and never an archive).
   sqlite3 "$db" "SELECT id FROM sessions ORDER BY id;" >"$work/pre-ids"
   local mem_before mem_after
   mem_before=$(sqlite3 "$db" "SELECT COUNT(*) FROM memories;")$'\n'$(sqlite3 "$db" "SELECT * FROM memories ORDER BY 1;" | shasum -a 256)
@@ -420,7 +421,9 @@ claude-sessions-check() {
   done
   (( n_accounts )) || print -r -- "note: no secondary accounts under $root"
 
-  # Retention: the pin must hold in the one file every account resolves.
+  # Retention: the pin must hold in the one file every account resolves. It is
+  # the floor, kept generous on purpose — the actual policy is ccclean's
+  # (~/dev/ccclean), which judges sessions by human turns rather than age.
   for d in "$HOME/.claude" "$root"/*(/N); do
     if [[ ! "$d/settings.json" -ef "$tracked" ]]; then
       _cs_fail "${d:t:-primary}: settings.json does not resolve to the tracked shared file"
