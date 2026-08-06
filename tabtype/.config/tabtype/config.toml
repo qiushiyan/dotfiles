@@ -66,7 +66,7 @@ For each, as if briefing a CEO: why it matters now, what it actually means in pl
 [[snippets]]
 key = "write-spec"
 expand = '''
-Now, write the spec to `docs/specs/`. Ground the problem and the approach in actual code — read the relevant modules first if you haven't.
+Now, write the spec to wherever this project conventionally keeps specs — follow an existing convention if one exists (common shapes: `docs/specs/`, `docs/<feature>/specs/`). Ground the problem and the approach in actual code — read the relevant modules first if you haven't.
 
 This document carries the design the plan is built on, and a human reads it later to understand the change. Tight prose beats exhaustive sections, and every section earns its place.
 
