@@ -1,26 +1,31 @@
 # Tests
 
-This repo is mostly configuration, so there is no build. Four suites, all
-runnable with an optional list of case ids to narrow the run:
+This repo is mostly configuration, so there is no build. The bash suites take an
+optional list of case ids to narrow the run:
 
 ```bash
 bash tmux/.config/tmux/scripts/tests/test-pane-control.sh        [T5 T14 …]
 bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
 bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W2 W10 …]
 bash claude/.claude/skills/handoff/handoff-path.test.sh          [T3 T7 …]
+zsh  zsh/.config/zsh/tests/claude-sessions.test.zsh              # runs whole
 ```
 
-The first covers the tmux pane control plane and the second the Claude context
-chip — both build throwaway tmux servers on their own sockets; the third covers
-the tmux-free git logic behind the worktree popup (what counts as merged, base
-resolution, base freshness); the fourth covers handoff baton path resolution.
+The first two cover the tmux pane control plane and the Claude context chip, and
+both build throwaway tmux servers on their own sockets; the third covers the
+tmux-free git logic behind the worktree popup (what counts as merged, base
+resolution, base freshness); the fourth covers handoff baton path resolution;
+the fifth covers the shared-sessions toolkit (launcher enforcement of the
+projects topology, migration abort paths, obelisk reindex verification) against
+a throwaway `$HOME` with stubbed `pgrep`/`lsof`/`claude`/`obelisk`.
+
 The chip suite drives the real `statusline-command.sh` from the **working tree**
 rather than the stowed copy, which is what lets it grade a branch instead of
 whatever happens to be installed.
 
 ## A test that escapes its sandbox corrupts live state
 
-This is the constraint that governs both suites. Because the repo's files _are_
+This is the constraint that governs every suite here. Because the repo's files _are_
 the user's live configuration, a test that reaches past its sandbox doesn't fail
 — it quietly damages the running system. Both escape routes are silent, so a new
 case has to close them deliberately.

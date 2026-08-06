@@ -19,9 +19,10 @@ How file finding, grep, and the file explorer are wired in this dotfiles repo.
 | `<leader>e` | mini.files | File explorer (cwd) |
 | `<leader>E` | mini.files | File explorer (file's dir) |
 
-Three plugins, three jobs. No single tool owns everything.
+One job per plugin; no single tool owns everything. Plugin paths below are
+relative to `nvim/.config/nvim/lua/`.
 
-## The three plugins, and why
+## The plugins, and why
 
 - **fff.nvim** — the file/grep picker. Picked over snacks.picker for speed (Rust core, resident index, frecency ranking) and typo-resistant fuzzy matching. See `plugins/fff.lua`.
 - **snacks.picker** — folke's picker, still installed because it has well-built buffer / git-log / keymap pickers and we have no reason to replace those. See `plugins/snacks.lua`.

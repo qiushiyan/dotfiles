@@ -33,8 +33,8 @@ Two traps, both about *which* `^D` binding is live at the prompt:
    added *earlier* in `viins`/`vicmd` is in an inactive keymap and never fires.
 2. **Raw byte vs CSI-u.** Ghostty normally sends Ctrl+D as the raw C0 byte
    (`^D`), and only sends the CSI-u form (`\e[100;5u`) when a TUI exits without
-   popping the Kitty keyboard protocol. Binding only the CSI-u form (the old
-   line-31 binding) missed the common case.
+   popping the Kitty keyboard protocol. Binding only the CSI-u form misses the
+   common case — both forms need the binding.
 
 ## Design — two layers, robust by construction
 
@@ -63,4 +63,3 @@ exit and pointing at `exit`/`prefix`-`x` needs no read at all.
   `emacs` keymap — same fix.
 - **Verify it's live:** in a fresh shell, `bindkey '^D'` should print
   `"^D" _guard_ctrl_d`.
-- **Revert:** `git checkout zsh/.zshrc` (and delete this file).

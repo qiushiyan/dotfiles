@@ -75,52 +75,26 @@ project's own skill or `documentation-standards.md` when present.
 
 ## The handoff (`/handoff`, `~/dev/.handoffs`)
 
-- **Gate first.** Thread continues → full handoff. Stopped mid-task → baton now,
-  doc pass becomes the next session's first move. Work done and nothing queued →
-  doc pass only, and the spent baton that spawned this session gets deleted; a
-  manufactured or stale baton is worse than none. Pass the answer inline to skip
-  the question: `/handoff next: wire the retry path`.
-- **The artifact is `~/dev/.handoffs/<repo>/<slug>.md`** — central, outside every
-  worktree, a sibling of `~/dev/.worktrees` — addressed to the next session's
-  agent: state, lessons and dead-ends with their _why_, first moves (reads,
-  claims to verify, a no-code-first synthesis gate).
-- **The slug is the _next_ session's branch, not this one's.** Naming it after
-  today's branch files the baton under work that's already over, and leaves the
-  next worktree's name to be looked up. Named forward, the filename is the
-  argument to `gwt <slug>` — one token for baton, branch, and worktree — and the
-  lifecycle closes: the baton that spawned the session you're in is named for the
-  branch you're on, so deleting a spent one is a lookup, not a hunt. Review
-  posture has no next worktree, so its slug is `review-<branch>`; cleanup checks
-  both names.
-- **The project folder is computed, not prompted.**
-  `claude/.claude/skills/handoff/handoff-path.sh <slug>` prints the baton path
-  and creates its folder, so the skill carries no derivation to re-run and no
-  repo-layout examples to rot; `handoff-path.test.sh` pins the behavior. Two
-  things that look like bugs and aren't: an ordinary checkout (submodules
-  included) is named by `--show-toplevel` but a linked worktree by
-  `--git-common-dir`, since each query returns git's plumbing for the other; and
-  flattening the `~/dev` path with `-` isn't injective, accepted because it
-  removes the realistic collision — every `<project>/main` sharing one folder —
-  without a special-case list. Team-shared `pl-loopy-handoff` can't call the
-  helper, so it hardcodes its project name.
-- **It _is_ the next first prompt, not a document about the work.** The flow is:
-  new worktree → `pbcopy <` the baton → paste. Line 1 is therefore the
-  `/onboarding <topic>` invocation with no title above it; paths stay
-  repo-relative to survive the worktree switch; the text calls itself "this
-  brief" and never tells the agent to read a file — the paste is the delivery.
-  Onboarding skills stay neutral, never auto-reading it.
-- **Lives outside git entirely** — the central folder needs no ignore rules, and
-  its per-project folders double as the archive (`ls -lt` orders them; the date
-  lives in the baton's body, not its name). Projects with linear roadmaps may
-  still archive copies in their records dir.
-- **Honesty floor:** a session that taught nothing transferable hands off state
-  and next move, and nothing else.
+The baton **is** the next session's first prompt, not a document about the work:
+new worktree → `pbcopy <` the baton → paste, and line 1 is the `/onboarding`
+invocation. It lands at `~/dev/.handoffs/<repo>/<slug>.md`, outside every
+worktree and outside git, carrying state, lessons and dead-ends with their
+_why_, and first moves.
+
+Two rules are worth knowing even from outside: a gate decides up front whether
+this is a full handoff, a baton-only stop, or a doc pass with no baton at all;
+and the slug names the **next** session's branch, so one token serves as baton,
+branch and worktree (`gwt <slug>`).
+
+Path derivation, slug edge cases, and the honesty floor:
+`docs/handoff.md`.
 
 ## The doc shape that keeps onboarding cheap
 
-Onboarding cost is doc-tree shape, not skill wording. The contract, encoded in
-each project's `documentation-standards.md` and enforced by its update-docs
-verify step:
+Onboarding cost is doc-tree shape, not skill wording. Each project encodes this
+contract in its own `documentation-standards.md`, enforced by its update-docs
+verify step; this repo has no such file, so these paragraphs are its contract
+and the global skills' standards apply:
 
 - **Spine / satellites.** The always-read Phase-1 set carries the mental model —
   principles, vocabulary, workflows, invariants; mechanism lives in topic
@@ -131,10 +105,8 @@ verify step:
   measures it and must flag an overrun, naming the split candidate, even when the
   split is deferred. Exceeding it is allowed only as a recorded decision, never
   as drift.
-- **duet is the reference implementation**: one oversized design doc became a
-  spine plus per-topic satellites (`run-operations.md`, `afk-resilience.md`,
-  `consultant.md`, `voices-and-providers.md`), cutting its Phase-1 set by roughly
-  a third. itell already has the shape.
+- **duet is the reference implementation**, and itell already has the shape —
+  both separate repos, so their satellite names live there rather than here.
 
 ## The periodic pass — `/distill-docs`
 

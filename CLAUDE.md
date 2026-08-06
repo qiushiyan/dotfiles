@@ -20,30 +20,17 @@ environment instead of hardcoding.
 Three ways to wreck live state from inside this repo. None of them raise an
 error at the time.
 
-**1. `~/.claude` and `~/.codex` must stay real directories, never folded
-symlinks.** Only tracked config items are symlinked in from their packages
-(per-item folding); everything the apps write at runtime — Claude's
-`history.jsonl`, `sessions/`, `projects/`, `telemetry/`; Codex's sqlite DBs,
-`sessions/`, the `auth.json` secret, caches — stays in the real `~/` directory
-and never enters this repo. `make install`/`restow` `mkdir -p` them first to
-preserve this (`REAL_DIRS` in the Makefile), and both `.gitignore` blocks
-allow-list only config as defense-in-depth. Let either become a single symlink
-to its package and all that runtime state, `~/.codex/auth.json` included, lands
-in this public repo.
+**1. `~/.claude`, `~/.codex` and `~/.config/lazygit` must stay real
+directories, never folded symlinks.** Only tracked config is symlinked in,
+per item; everything the apps write at runtime stays in the real `~/` directory
+and out of this public repo — `~/.codex/auth.json` included. `make install`
+and the `.gitignore` allow-lists both defend it → `docs/stow-layout.md`.
 
 **2. Never write to `claude/.claude/CLAUDE.md` — it is empty, and stays empty.**
-It reads like a project-local memory file describing this repo's `claude/`
-package. It is not. It stows to `~/.claude/CLAUDE.md`, the **global** user
-memory, which is prepended to every request in _every_ project on this machine.
-Notes about this repo's layout, or about how Claude is configured here, become
-permanent context for unrelated work everywhere. To document Claude
-configuration, write an ordinary doc under `docs/` and link it from the map
-below.
-
-The same hazard exists at any package root, since `<pkg>/CLAUDE.md` stows to
-`~/CLAUDE.md`: `tabtype/CLAUDE.md` is package-local guidance kept out of `$HOME`
-by an entry in `tabtype/.stow-local-ignore`. Package-local guidance needs that
-ignore entry; the global memory file needs to stay empty.
+It looks package-local; it is not. It stows to `~/.claude/CLAUDE.md`, the
+**global** memory prepended to every request in _every_ project on this machine.
+Document Claude configuration in a `docs/` file instead. Any `<pkg>/CLAUDE.md`
+has the same reach → `docs/stow-layout.md`.
 
 **3. A test that escapes its sandbox corrupts live state.** Both escape routes
 are silent, and a green suite that tested nothing looks identical to a passing
@@ -60,10 +47,8 @@ make brew       # install Homebrew packages from Brewfile
 make brew-dump  # update Brewfile from current Homebrew state
 ```
 
-This is configuration, so there is no build. Tests: `docs/testing.md`.
-
-To bring an existing config file under management, use the `dotadd` zsh function
-— it moves the file into the correct package and stows it.
+No build — this is configuration. Tests: `docs/testing.md`. To bring a new file
+under management use the `dotadd` zsh function rather than moving it by hand.
 
 ## Package layout
 
@@ -81,16 +66,14 @@ lessons/   ~/.config/lessons/   engineering reference docs that prompts read —
 scripts/   ~/.local/bin/, ~/Library/LaunchAgents/
 ```
 
-The rest — `git/`, `ghostty/`, `ohmyposh/`, `zed/`, `k9s/`, `lazygit/`,
-`karabiner/`, `ssh/`, `raycast/`, `tabtype/` — is one tool's config at its
-conventional path.
+Every other package is one tool's config at its conventional path.
 
 ## Conventions
 
-- **Theme**: `$TERMINAL_THEME` (from `~/.config/terminal-theme`, default
-  `flexoki_light`; also `catppuccin_mocha`) drives the Claude statusline, Oh My
-  Posh prompt, `ls`/completion colors, and the Neovim colorscheme.
-  Ghostty/tmux/k9s are themed per-tool. See `docs/theming.md`.
+- **Theme**: `$TERMINAL_THEME`, read from `~/.config/terminal-theme`, drives the
+  Claude statusline, Oh My Posh prompt, `ls`/completion colors and the Neovim
+  colorscheme; Ghostty/tmux/k9s are themed per-tool. See `docs/theming.md` for
+  the supported values and how to add one.
 - **Editor**: Neovim (LazyVim-based); vim keybindings everywhere, `set -o vi`.
 - **Shell**: three startup files with a load-bearing order, nvm lazy-loaded,
   `python` and `make` are functions rather than aliases. Read `docs/zsh.md`
@@ -106,31 +89,21 @@ conventional path.
 Each of these is one feature implemented across several packages at once;
 changing one piece without the others breaks it.
 
-- **Claude context chip** — the statusline script pushes context-usage % into the
-  pane-local `@claude_ctx` tmux option, the pane border draws it, and
-  `tmux-claude-ctx.sh` is the sole owner of turning borders off (fed by Claude's
-  `SessionEnd` hook, a zsh `precmd` sweep, and tmux pane-exit/relocation
-  events). Spans `claude/`, `tmux/`, `zsh/` → `tmux/.config/tmux/workflow.md`.
+- **Claude context chip** — a live Claude session's account, model and context
+  usage on its tmux pane border. Spans `claude/`, `tmux/`, `zsh/`;
+  `tmux-claude-ctx.sh` is the sole owner of turning borders off →
+  `tmux/.config/tmux/workflow.md`.
 - **tmux pane control** — `prefix z` floats a pane into an overlay rather than
-  zooming it; `prefix p` holds the pane-moving verbs in a sticky key table. A
-  floated pane is genuinely relocated into a holder session, so its recovery,
-  its restricted key surface, and the resurrect save wrapper are all
-  load-bearing. **Read `tmux/.config/tmux/scripts/float-pane.md` before editing
-  `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, or the pane/float key tables in
-  `tmux.conf`.**
-- **Claude accounts** — several subscriptions coexist: `~/.claude` is primary,
-  each extra is `~/.claude-accounts/<email>/` with its own Keychain login.
-  Launchers (`x`, `x-<name>`, `x-acc`, `x-select`) live in
-  `zsh/.config/zsh/claude.zsh` but are thin wrappers over **headroom**, a Go
-  CLI in `~/dev/headroom`, which owns the usage board, the session picker,
-  and launch routing itself (`headroom launch` builds `CLAUDE_CONFIG_DIR`
-  from the validated choice; wrappers never touch it) — so fix the engine
-  there. Session transcripts are machine-global (every account's `projects/`
-  symlinks to `~/.claude/projects`, enforced at launch; toolkit in
-  `zsh/.config/zsh/claude-sessions.zsh`). Account dirs are runtime state,
-  never in this repo → `docs/claude-accounts.md`. Retention of that shared
-  store belongs to **ccclean**, a Python CLI in `~/dev/ccclean` — like
-  headroom, an engine on its own with nothing here wrapping it.
+  zooming it; `prefix p` holds the pane-moving verbs. A float genuinely
+  relocates the pane into a holder session, which is why so much hangs off it.
+  **Read `tmux/.config/tmux/scripts/float-pane.md` before editing
+  `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, or the pane/float key tables.**
+- **Claude accounts** — several subscriptions coexist (`~/.claude` primary,
+  extras under `~/.claude-accounts/<email>/`, all runtime state that never
+  enters this repo). The `x*` launchers in `zsh/.config/zsh/claude.zsh` are thin
+  wrappers over two engines that live **outside** this repo — headroom
+  (`~/dev/headroom`) and ccclean (`~/dev/ccclean`) — so that is usually where a
+  fix belongs → `docs/claude-accounts.md`.
 - **Agent skills** — Claude Code is a superset of Codex, which symlinks into it.
   Adding, forking, or disabling a skill has several traps that fail silently →
   `docs/agent-skills.md`.
@@ -139,19 +112,23 @@ changing one piece without the others breaks it.
 
 ```
 docs/
+  stow-layout.md          what gets symlinked, and what must stay real
   zsh.md                  shell architecture, module map, perf lessons
   agent-skills.md         the Claude ⊇ Codex skill layout and its traps
-  testing.md              the two suites and their sandbox rules
+  testing.md              the test suites and their sandbox rules
   claude-accounts.md      multi-account setup
   theming.md              the $TERMINAL_THEME switch
-  doc-loop.md             the session loop end to end: onboarding, the
-                          consult → spike → build → review middle, handoff
+  doc-loop.md             the session loop: onboarding → consult/spike/review
+                          → update-docs → handoff
   MIGRATION.md            new-machine setup
+  mobile-terminal-access.md   phone → Mac over Tailscale + mosh
   ctrl-d-guard.md · claude-prompt-completion.md
   neovim-file-picker.md · neovim-image-handling.md
-  mobile-terminal-access.md
+  superpowers/            dated specs and plans — history, not live docs
 tmux/.config/tmux/
   workflow.md             how the tmux setup is meant to be used day to day
   roadmap.md              index of the tmux design docs
   scripts/                float-pane.md · worktree.md · agent-notify.md
 ```
+
+Each doc routes to its own satellites; this map lists only the entry points.

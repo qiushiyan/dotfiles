@@ -4,7 +4,7 @@ A persistent setup for running terminal-based AI coding agents (Claude Code, Cod
 
 > **Detailed rationale:** see `docs/superpowers/specs/2026-04-12-mobile-terminal-access-design.md`. This document is the operational quick-reference: what's installed, where it lives, how to use it, and how to fix it.
 
-## The four pieces
+## The pieces
 
 ```
 ┌─────────────────┐    ┌──────────────────────────────────────────┐
@@ -47,7 +47,7 @@ Mosh is UDP-based. It runs over SSH for the initial auth handshake, then drops t
 
 Mosh keeps the *connection* alive. tmux keeps the *session* alive across full disconnects, machine sleep, and laptop reboots-of-the-tmux-server. A `claude` process started in a tmux window keeps running with no client attached; you reattach later and pick up exactly where you left off.
 
-The existing tmux config (`tmux/.config/tmux/tmux.conf`) already has `mouse on`, vi mode, and the catppuccin theme. We didn't change it.
+The existing tmux config (`tmux/.config/tmux/tmux.conf`) already provides what this needs — `mouse on` and vi mode — so mobile access required no tmux changes. Its theme follows `$TERMINAL_THEME` (`docs/theming.md`).
 
 ### Moshi — the iOS client
 
@@ -63,11 +63,11 @@ If the Mac sleeps while you're away, the agents pause. macOS's built-in `caffein
 
 ## What's installed where
 
-### Laptop (`/Users/qiushi/dotfiles/`)
+### Laptop (paths relative to this repo)
 
 | Path | Purpose |
 |---|---|
-| `zsh/.zshenv` | Adds `/opt/homebrew/bin` to PATH and sets `LANG=en_US.UTF-8` for **non-interactive** SSH shells. Without this, mosh-server fails because Apple Silicon's brew shellenv loads from `/etc/zprofile` (login shells only) and macOS doesn't set a UTF-8 locale for non-login non-interactive shells. mosh-server hard-refuses to start without UTF-8. |
+| `zsh/.zshenv` | PATH and `LANG=en_US.UTF-8` for **non-interactive** SSH shells — mosh-server hard-refuses to start without UTF-8, and `/etc/zprofile` fires only for login shells. Why `.zshenv` is the right file: `docs/zsh.md`. |
 | `zsh/.config/zsh/utils.zsh` | Defines the `agents` and `agents-status` shell functions (search for `agents() {` near the bottom). |
 | `mosh` | Installed via Homebrew (`brew install mosh`), version 1.4.0+. |
 | `~/.ssh/id_ed25519_phone` | Dedicated SSH key for the phone, **NOT** in the dotfiles repo. Generated with `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_phone -C "phone@moshi" -N ""`. |
@@ -139,49 +139,7 @@ tmux kill-session -t agents
 
 ## Accessing dev servers from the phone
 
-`pnpm dev` and similar commands start a web server bound to `127.0.0.1` by default. `http://localhost:3000` on the phone is **always** the phone itself — `localhost` means "this device," regardless of what's running in your SSH session. To reach the laptop's dev server from the phone's browser, you need to make the server reachable over the network and then visit it at the laptop's Tailscale hostname.
-
-Two approaches, both fine, pick based on whether your app needs HTTPS.
-
-### Option A — bind the dev server to all interfaces (simplest, HTTP only)
-
-Most tools take a flag to bind to `0.0.0.0` instead of `127.0.0.1`:
-
-| Tool | Command |
-|---|---|
-| Vite | `pnpm dev --host` |
-| Next.js | `pnpm dev --hostname 0.0.0.0` or `HOSTNAME=0.0.0.0 pnpm dev` |
-| Remix / Astro | `pnpm dev --host` |
-| Create React App | `HOST=0.0.0.0 pnpm start` |
-
-Then on the phone's browser: `http://qiushi-mac:3000`. Tailscale MagicDNS resolves `qiushi-mac` to the tailnet IP, the dev server accepts the connection because it's now listening on all interfaces, HMR works normally.
-
-**Caveat:** this also exposes the dev server to anything on your home LAN (not just the tailnet). Usually fine at home; if that matters, use Option B.
-
-### Option B — Tailscale Serve (adds real HTTPS)
-
-If the app needs HTTPS for service workers, WebAuthn, camera/mic APIs, or `SharedArrayBuffer`:
-
-```sh
-# Laptop, while pnpm dev runs on localhost:3000
-tailscale serve --bg https / http://localhost:3000
-# Phone browser:
-# https://qiushi-mac.<your-tailnet>.ts.net
-```
-
-Tailscale runs an HTTPS proxy on the laptop's tailnet interface, terminates TLS with a real ACME-issued certificate for the `*.ts.net` subdomain, and forwards to `localhost:3000`. The dev server can still bind to `127.0.0.1` — only Tailscale talks to it directly. Strictly tailnet-only, never LAN.
-
-Tear down with `tailscale serve --bg off` (or `tailscale serve reset` for everything).
-
-**One-time prerequisite:** HTTPS certs must be enabled for your tailnet in the Tailscale admin console → DNS → HTTPS Certificates. Single toggle, free.
-
-### Which to use
-
-Start with Option A — it's one flag on a command you already run. Switch to Option B only when a specific browser API rejects insecure origins. You'll know because the console will tell you.
-
-### This is orthogonal to Moshi
-
-Moshi gives you a terminal. For the browser-to-dev-server path, your phone's **browser** talks directly to the laptop via Tailscale — Moshi is not involved. Terminal traffic and web traffic are two independent channels over the same tailnet.
+`localhost` on the phone is always the phone. To reach a dev server running on the laptop you bind it to all interfaces, or front it with Tailscale Serve for real HTTPS, and browse to the laptop's Tailscale hostname. Your phone's *browser* talks to the laptop directly — this path does not involve Moshi at all → `docs/mobile-dev-servers.md`.
 
 ## Why the Mac stays awake (defense in depth)
 
@@ -243,29 +201,12 @@ From the laptop, stream sshd logs while the phone tries to connect:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `mosh-server: command not found` over SSH | `/opt/homebrew/bin` not in PATH for non-interactive ssh | Already fixed in `zsh/.zshenv`. If broken, verify the brew shellenv guard there. |
-| `mosh-server needs a UTF-8 native locale` | LANG/LC_ALL not set in non-interactive shell | Already fixed in `zsh/.zshenv`. |
-| `caffeinate` window dies immediately on session create | Old buggy `caffeinate -dimsu sleep infinity` (BSD sleep doesn't accept "infinity") | Fixed in `agents()` — no child argument. |
-| `agents-status` reports caffeinate active when it isn't | Old `pgrep -qx caffeinate` matched unrelated macOS daemons | Fixed — now scoped to the agents session via `pane_current_command`. |
+| `mosh-server: command not found`, or `needs a UTF-8 native locale` | PATH or locale missing for a non-interactive ssh shell | Both come from `zsh/.zshenv`; verify the brew shellenv guard there. |
 | caffeinate window vanished from a running session | Manually killed, or the underlying process crashed | Re-run `agents` — the function self-heals the missing window. |
 | Mac asleep with lid closed, can't wake from phone | Wake-on-Network on battery is disabled (current setting is "Only on Power Adapter") | Plug in the laptop before leaving, or keep the lid open. |
 | Connection hangs at "Connecting..." in Moshi | Tailscale not connected on phone, or the Mac is fully powered off | Check Tailscale iOS toggle. If the Mac is off, no remedy short of physical access. |
 | Moshi: "DNS resolution failed: nodename nor servname provided" for `qiushi-mac` | iOS VPN split-brain: Tailscale data plane + MagicDNS torn down while the app still looks "Connected" | See **Troubleshooting a broken connection from the phone** above. Short version: iOS Settings → VPN → Tailscale → toggle Status off/on. Force-quitting Moshi and toggling inside the Tailscale app both unreliable. |
 | Moshi hangs at "checking server" or times out with raw Tailscale IP as host, even though `tailscale ping` from laptop succeeds | Same cause as above: control plane OK, data plane broken | Same fix as above: iOS Settings VPN toggle. Diagnostic: `log stream --predicate 'process == "sshd"'` on the laptop — if no sshd lines appear while the phone tries to connect, packets aren't crossing Tailscale. |
-
-## File map
-
-```
-docs/
-  mobile-terminal-access.md                              ← this document
-  superpowers/specs/
-    2026-04-12-mobile-terminal-access-design.md          ← design rationale
-zsh/
-  .zshenv                                                ← PATH + locale fixes
-  .config/zsh/utils.zsh                                  ← agents, agents-status
-tmux/
-  .config/tmux/tmux.conf                                 ← pre-existing, unchanged
-```
 
 ## Maintenance hooks for future-you
 

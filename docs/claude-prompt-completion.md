@@ -55,6 +55,7 @@ Deliberately not covered (yet): `.claude/commands/`, `@`-file completion.
 path) and was tried first — but it redirects *all* Claude temp files, child
 process `$TMPDIR` and Node/nvim caches included, into the repo, and forfeits
 macOS's automatic `/tmp` cleanup. cwd inheritance gives the same information
-for free. The override survives as a commented-out line in `x()`
-(`zsh/.config/zsh/utils.zsh`), with a matching `.tmp/` entry in the global
-gitignore (`git/.config/git/ignore`), should it ever be wanted again.
+for free. The override survives as a commented-out line beside `x()`
+(`zsh/.config/zsh/claude.zsh`), with a matching `.tmp/` entry in the global
+gitignore (`git/.config/git/ignore`, see `docs/neovim-file-picker.md`), should
+it ever be wanted again.

@@ -93,23 +93,11 @@ Everything derives from that tree:
   `claude/.claude`, so all accounts run identical settings/skills/hooks and a
   config edit lands everywhere. Only login state (`.claude.json`, the
   Keychain item) and prompt history are per-account.
-- **Sessions.** Transcripts are keyed by project cwd and carry no
-  credentials, so they belong to the machine, not the account: every
-  account's `projects/` symlinks to the primary's store, the resume picker
-  in any account lists every session, and resuming appends to the one
-  canonical file — accounts are auth/quota lanes, never history silos. 
-  `headroom launch` re-verifies the link (by inode) on every launch and
-  refuses to start over a broken topology, because a real directory there would fork
-  history silently. Per-session extras (`file-history/`, todos,
-  `session-env/`) stay account-local: resuming under a different account
-  keeps the conversation, not `/rewind` checkpoints — and deleting a
-  transcript from the shared store strands that state in every account
-  that recorded any, which is what **ccclean**'s `gc` sweep collects.
-  Retention is one policy by construction — `cleanupPeriodDays` is pinned
-  in the shared `settings.json` (never `0`, which disables persistence,
-  not cleanup), and every account's cleanup pass applies it to the shared
-  store. That setting is the floor, deliberately generous; the actual
-  policy is ccclean's, in `~/dev/ccclean` (see below).
+- **Sessions.** Transcripts carry no credentials and are keyed by project cwd,
+  so they belong to the machine, not the account: every account's `projects/`
+  symlinks to the primary's store, and any account's picker lists every
+  session. Accounts are auth/quota lanes, never history silos. The store, its
+  retention policy and its repair runbook: `docs/claude-sessions-store.md`.
 - **Discovery.** `claude.zsh` globs the dirs at shell init and generates the
   launchers: `x-<email>` always exists and is the guaranteed identity; a
   short `x-<local-part>` alias (`x-yan`) is added only when the local part is
@@ -125,14 +113,18 @@ Everything derives from that tree:
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
-- **Which lane is a running session on?** Its tmux pane border says: the
-  context chip (`yan opus-5 ✳ 37%`) leads with the account's email local
-  part — the full email when two accounts share one, the same
-  ambiguity rule as the `x-<name>` short aliases — read from the
-  `CLAUDE_CONFIG_DIR` headroom set at launch. The
-  primary shows no account label — it launches with the variable absent, so
-  it is the unmarked lane by construction. Details and the narrow-pane
-  shedding order: `tmux/.config/tmux/workflow.md`.
+- **Which lane is a running session on?** Its tmux pane border says so — the
+  context chip (`yan opus-5[1m] ✳ 37%`) leads with the account's email local
+  part, or the full email when two lanes share one, the same ambiguity rule
+  as the `x-<name>` short aliases. **Every lane is labeled, the primary
+  included.** Only the *source* differs: an extra is named by the
+  `CLAUDE_CONFIG_DIR` headroom set at launch, which is its email, while the
+  primary — the one account with no dir to be named by — is read from
+  `~/.claude.json`. Uniqueness is judged across the primary and the account
+  dirs together, and a `CLAUDE_CONFIG_DIR` pointing outside
+  `~/.claude-accounts/` wears that dir's basename rather than borrowing the
+  primary's identity. Rendering and the narrow-pane shedding order:
+  `tmux/.config/tmux/workflow.md`.
 - **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
   headroom off the live board, then type `x`; bare `x` targets it from then
   on. For a one-off session on another account without moving `x`, that
@@ -165,11 +157,8 @@ Everything derives from that tree:
   machinery; its `--canary` proves cross-account resume end to end but
   spends one request on two accounts.
 - **Launcher refuses with a topology error**: that account's `projects`
-  became a real directory again (or a wrong link) — quit every Claude
-  session and run `claude-sessions-migrate`. It is all-or-nothing: refuses
-  while any session runs, verifies a hash manifest of every source file
-  before swapping, and keeps each merged tree as a
-  `projects.pre-share.<timestamp>` backup.
+  became a real directory again, or a wrong link — quit every Claude session
+  and run `claude-sessions-migrate` → `docs/claude-sessions-store.md`.
 - **Logged into the wrong account in a dir**: the dashboard's red
   `(dir says …!)` warning catches it. Cleanest fix: `/login` again in that
   dir's session with the right account.
@@ -181,30 +170,9 @@ Everything derives from that tree:
 - The primary stays in `~/.claude`. Relocating it would orphan its history
   and its default-named Keychain item for no benefit.
 - `~/.claude/projects` is a real directory — never itself a link — and every
-  account dir's `projects` is a symlink to it. Seeding creates the link
-  (`_claude_link_projects` in `zsh/.config/zsh/claude.zsh`), every launch
-  re-checks it, and `claude-sessions-migrate` converts a tree that predates
-  the convention. The session toolkit and its sandbox harness live in
-  `zsh/.config/zsh/claude-sessions.zsh` and `zsh/.config/zsh/tests/`; the
-  harness also covers `claude.zsh`'s launchers, building headroom from
-  `~/dev/headroom` so it tests the real wrapper→engine seam — run it after
-  touching any of the three.
-- obelisk (session-history search) indexes `~/.claude/projects` and so sees
-  every account's sessions. Index it incrementally, never `obelisk --build`:
-  a force rebuild mirrors only files still on disk, and for transcripts
-  retention already pruned, the index row is the last record in existence
-  — a **lossy** one. obelisk truncates every message at 10,000 characters
-  (`TEXT_LIMIT` in its `parsing.js`) and keeps `toolUseResult` only for its
-  `filePath`, so it is a search index, never an archive. That is why
-  ccclean archives rather than deletes anything worth keeping, and says so
-  in the prune preview instead of implying a backup exists.
-- **Session retention is ccclean's**, a separate Python CLI in
-  `~/dev/ccclean` (installed by `uv tool install`). It judges sessions by
-  human turns rather than age, refuses to prune anything obelisk has not
-  fully indexed, and sweeps the account-local per-session state that
-  deleting a shared transcript strands. Its rules and their evidence:
-  `~/dev/ccclean/DESIGN.md`. It is not in this repo — like headroom, the
-  engine lives on its own and nothing here wraps it.
+  account dir's `projects` is a symlink to it. Everything that rests on that
+  (retention, obelisk's index, the migrate runbook, the test harness):
+  `docs/claude-sessions-store.md`.
 - Launch routing belongs to headroom, verification included: wrappers
   delegate to `headroom launch` / `headroom sessions`, which validate the
   account and the shared-sessions topology themselves — wrappers never set

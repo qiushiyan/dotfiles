@@ -11,7 +11,7 @@ How clipboard images get pasted into buffers and rendered on screen in this dotf
 | `<leader>iI` | Image paste to the project's `img/` dir, relative path, prompts for a name |
 | (automatic) | `![](path)` links in markdown render as a floating preview via snacks.image |
 
-Pasting is **img-clip.nvim** (`plugins/img-clip.lua`); rendering is **snacks.image** (`plugins/snacks.lua`); the smart `<C-v>` lives in `config/keymaps.lua`.
+Pasting is **img-clip.nvim** (`plugins/img-clip.lua`); rendering is **snacks.image** (`plugins/snacks.lua`); the smart `<C-v>` lives in `config/keymaps.lua`. Paths are relative to `nvim/.config/nvim/lua/`.
 
 ## Why pasting needs a plugin at all
 

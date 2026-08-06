@@ -9,12 +9,14 @@ Claude-only skill is simply one with no Codex symlink.
 claude/.claude/skills/<name>/          # source of truth — real directories
 codex/.codex/skills/<name>             # relative symlink → ../../../claude/.claude/skills/<name>
 codex/.codex/skills/keep-codex-fast/   # real dir — the declared Codex-only exception
+codex/.codex/skills/.system/           # Codex's bundled skills — gitignored, not ours
 ~/.agents/skills/                      # the `skills` CLI's store — keep it empty
 ```
 
 **Audit:** every entry under `codex/.codex/skills/` is either a symlink into
 `claude/.claude/skills/` or a declared Codex-only skill. Any other real
-directory is a bug.
+directory is a bug — except `.system/`, Codex's own bundled skills, which it
+reinstalls and `.gitignore` excludes.
 
 ## Why the links must stay inside the repo
 
@@ -52,12 +54,12 @@ Then add the Codex symlink by hand if Codex should get the skill.
   reverts. Prefer a `skillOverrides` entry (below), which lives outside the file
   and survives; keep a frontmatter fork only for what an override can't express,
   and expect to re-apply it.
-- **A renamed upstream skill goes stale in silence.** `writing-great-skills` was
-  renamed to `writing-for-agents` upstream on 2026-07-23. Its lockfile
-  `skillPath` then 404'd, so `skills update` no-opped on it forever — no error,
-  no warning, and the local copy just froze. An update that reports success is
-  not evidence the skill still exists upstream; if one looks suspiciously
-  unchanged, check the path by hand.
+- **A renamed upstream skill goes stale in silence.** When a skill is renamed
+  upstream, its lockfile `skillPath` starts 404ing and `skills update` no-ops on
+  it forever — no error, no warning, the local copy just frozen. (This is not
+  hypothetical: it happened to `writing-great-skills` → `writing-for-agents`.)
+  An update that reports success is not evidence the skill still exists
+  upstream; if one looks suspiciously unchanged, check the path by hand.
 
 ## Controlling invocation
 
@@ -82,10 +84,11 @@ it:
 
 Verified working in the restricting direction: that skill carries a full
 model-facing trigger list and no frontmatter flag, and the override alone keeps
-it out of the model's skill list. **The re-enabling direction is a different
-story** — an `"on"` override failed to bring a disabled skill back on v2.1.205.
-So: use it to take a skill away from the model, don't rely on it to give one
-back, and remember the field is undocumented with open upstream bugs. Global
+it out of the model's skill list. **The re-enabling direction is unreliable** —
+an `"on"` override failed to bring a disabled skill back when last tested
+(v2.1.205), and the field is undocumented with open upstream bugs. So: use it to
+take a skill away from the model, and don't depend on it to give one back
+without re-testing. Global
 overrides go in `claude/.claude/settings.json`; a project-local one in a repo's
 own `.claude/settings.local.json` binds only inside that repo.
 
