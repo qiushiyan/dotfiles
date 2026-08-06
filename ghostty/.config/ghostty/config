@@ -10,9 +10,9 @@ background-blur-radius = 25
 # font-family = JetBrainsMono Nerd Font
 
 
-# font-family = Berkeley Mono
-font-family = DankMono Nerd Font Mono
-font-size = 23
+font-family = Berkeley Mono
+# font-family = DankMono Nerd Font Mono
+font-size = 21
 font-thicken = true
 adjust-cell-width = -2%
 adjust-cell-height = 15%

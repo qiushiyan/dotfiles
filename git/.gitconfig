@@ -64,3 +64,5 @@ undo = reset --soft
 [delta "dark-mode"]
 	dark = true
 	syntax-theme = Nord
+[maintenance]
+	repo = /Users/qiushi/dev/planlab/main

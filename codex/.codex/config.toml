@@ -131,6 +131,15 @@ trust_level = "trusted"
 [projects."/Users/qiushi/dev/headroom"]
 trust_level = "trusted"
 
+[projects."/Users/qiushi/personal/investment"]
+trust_level = "trusted"
+
+[projects."/Users/qiushi/dev/ccclean"]
+trust_level = "trusted"
+
+[projects."/Users/qiushi/wiki"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
@@ -181,7 +190,7 @@ source_type = "local"
 source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-08-02T19:15:01Z"
+last_updated = "2026-08-06T03:14:37Z"
 source_type = "local"
 source = "/Users/qiushi/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 

@@ -121,6 +121,21 @@ It's an ambient "unread" badge, not an interrupt — glance at the bar, triage, 
 - Select + copy: `v` start selection, `C-v` rectangle, `H`/`L` to line start/end, `y` to copy and exit.
 - Botched a selection? Tap **`Esc`** once — it clears the selection but *stays* in copy mode at the same scroll spot, so you just re-`v`. A lone `Esc` never tears down copy mode and dumps you at the bottom the way stock tmux does. To actually exit via `Esc`, double-tap it within ~0.4s (tunable: the `sleep 0.4` on the binding in `tmux.conf`), since tmux has no native double-tap — the first press arms a flag a background timer clears.
 
+## Browsing past copies (`prefix =`)
+
+Copy-mode `y` puts text in a **tmux paste buffer**, not the macOS clipboard (`set-clipboard` is `external`, so tmux never emits its own OSC 52 — that's why `prefix y` shells out to `pbcopy`). Those buffers stack up to 50 deep, so the last 50 things you copied are all still there — `prefix ]` only ever gives back the newest one.
+
+**`prefix =`** opens the full stack as a zoomed, searchable list:
+
+- **`Enter`** — paste the selected buffer into the current pane.
+- **`/`** — search by name *or content*, so you can find a copy by a phrase inside it; `n`/`N` step through matches. (`C-s` does the same, and `f` filters by format instead.)
+- **`d`** — delete the selected buffer. Stock tmux's `prefix -` no longer does this; that key is a stacked split here.
+- **`e`** — open the buffer in `$EDITOR`. Useful for trimming a long agent response down before pasting it somewhere.
+- **`v`** — toggle the preview pane, for when one line of each buffer isn't enough to tell them apart.
+- **`q`** — exit.
+
+`prefix #` also lists buffers, but as read-only output you can't act on — `prefix =` is the one worth remembering.
+
 ## Jumping to a string on screen (flash-style)
 
 When you can *see* the word you want — a path, a SHA, a function name — `prefix s` gets the cursor there without scrolling or stepping through `/` matches.
@@ -172,6 +187,8 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 **Reorder** — windows `Shift-Left`/`Shift-Right` · panes: float `prefix z` (stock zoom `prefix Z`), everything else in **`prefix p`** pane mode (table above)
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom · `Esc` clear selection (stays in copy mode) · `q` or double-`Esc` exit
+
+**Paste buffers** — browse `prefix =` · `Enter` paste · `/` search name/content · `d` delete · `e` edit · `v` preview · `q` exit · newest only `prefix ]`
 
 **Jump (flash-style)** — `prefix s` (or `C-s` in copy mode) → type to search · label to jump · `Enter` nearest · `Esc` cancel
 

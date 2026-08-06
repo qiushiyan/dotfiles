@@ -97,7 +97,7 @@ return {
     opts = {
       servers = {
         harper_ls = {
-          enabled = true,
+          enabled = false,
           filetypes = { "markdown" },
           settings = {
             ["harper-ls"] = {
