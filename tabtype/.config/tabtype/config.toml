@@ -6,12 +6,26 @@ expand = '''
 **Don't change code yet — this is an analysis pass.** Reason holistically, grounded in actual code, not assumptions.
 
 1. **Read the relevant code** to see how things work today. Trace real data/control flow, note existing constraints and why they exist, cite the files/functions you read. Without this, "first principles" is guessing.
-2. **Interview me about ambiguous product intent** (fuzzy terms, unclear scope, priorities you're guessing at) and **push back if my framing seems off**. Ask everything in one batch, clustered by topic — defer only a follow-up that a pending answer would decide or reshape. Make each question decidable from its text alone (I answer from your words, not from the code and context you just read): a line on why it matters, what it actually means in plain product terms, the options with what each implies for the real user, and your recommended answer. Don't ask what code can answer — you've just read it. **For clear, targeted bug fixes, skip this step.**
+2. **Interview me about ambiguous product intent** (fuzzy terms, unclear scope, priorities you're guessing at) and **push back if my framing seems off**. Route and write every question per **How to ask questions** below. Don't ask what code can answer — you've just read it. **For clear, targeted bug fixes, skip this step.**
 3. **State the real problem** and the underlying goal **in your own words**, informed by what you read and learned.
 4. **Evaluate the current design** against the goal — is this a *local* change the structure absorbs cleanly, or is the structure itself in the way? When the foundation fights the change, reach for **preparatory refactoring** (Kent Beck: *make the change easy, then make the easy change*) — reshape the foundation first so the feature becomes a natural addition.
 5. **Explore the design space, then synthesize.** Sketch 2–3 approaches that make *genuinely different bets* — from a contained change within the subsystem's current structure to a rework of its architecture — so they stress-test each other instead of standing in as strawmen for a choice you've already made. Then recommend a direction built *from* that comparison, weighed by how fully it solves the root problem rather than how little it disturbs: combine the best of more than one where it helps, rather than adopt a single option whole. Name the tradeoff you're accepting, and where the decision is genuinely a judgment call, say so.
 
-Don't patch a flawed design with another patch, and don't shy from structural change when it's justified — but back a "structurally wrong" claim with code and name its cost. Preparatory refactoring is earned only when the structure genuinely blocks the goal, never license to rewrite what merely looks imperfect.'''
+Don't patch a flawed design with another patch, and don't shy from structural change when it's justified — but back a "structurally wrong" claim with code and name its cost. Preparatory refactoring is earned only when the structure genuinely blocks the goal, never license to rewrite what merely looks imperfect.
+
+## How to ask questions
+
+Route every question you're tempted to ask into one of three lanes:
+
+- **Product/direction forks** — real decisions with live options that are mine (intent, priorities, UX, scope). Ask these, in the form below. If there are none, say so and move on.
+- **Implementation details** — yours. Decide, record the choice in your analysis, continue.
+- **Technical unknowns that don't change the direction** — record these under **"Open technical questions — parked for the consult round"**, each with your working answer. I read this list without answering it; a later consultation or review round resolves it. Omit the list when it's empty.
+
+Write each fork as if briefing a CEO: I decide from your words alone, not from the code or the session behind them. Each question carries why it matters now, what it means in plain product terms, the options with what each implies for the real user, and your recommendation. Batch them, clustered by topic — defer only a follow-up that a pending answer would decide or reshape. Before sending, check each against: could I decide from this text alone?
+
+<example>
+**Q2 — When a schedule import partially fails, do we save the good rows or reject the file?** This decides what a user sees after uploading a 500-task file with 3 bad rows. Save-partial gets them working immediately but they may not notice the 3 missing tasks; reject-whole is safe but turns one typo into a blocked afternoon. Recommendation: save-partial with a banner naming the failed rows — the blocked afternoon is the worse failure.
+</example>'''
 
 [[snippets]]
 key = "compare-notes"
@@ -39,6 +53,13 @@ Before you commit to that first take, step back and pressure-test it. Treat it a
 - **Weigh a genuinely different approach** than your first, and keep the first only if it still wins on solving the root problem — not on least disturbance.
 
 Back a "structurally wrong" call with code and name its cost; don't manufacture a rewrite for what merely looks imperfect. Where the direction is a real judgment call, say so rather than force a verdict.'''
+
+[[snippets]]
+key = "elaborate-questions"
+expand = '''
+Re-present the questions you just asked so I can decide them from your words alone — I haven't read the code or the session behind them.
+
+For each, as if briefing a CEO: why it matters now, what it actually means in plain product terms, the options with what each implies for the real user, and your recommended answer. Where a question is a technical unknown that doesn't change the direction rather than a decision that's mine, move it under "Open technical questions — parked for the consult round" with your working answer instead of asking it.'''
 
 # ── Spec stage ────────────────────────────────────────
 
@@ -501,6 +522,7 @@ expand = '''
 - The load-bearing mental model: the core abstractions, data/control flow, and invariants — plus the critical files where the real logic lives, so you can reason about feedback without re-reading everything.
 - Key decisions and *why* — especially the contestable ones a reviewer will probe; keep the rationale so you can defend or reconsider each from first principles.
 - Deviations from the plan, known risk areas, and current test state — the spots most likely to draw scrutiny.
+- The friction points — what took repeated attempts or re-reading to trust, and whether the difficulty was the problem's or the design's. Reviewers probe exactly where the work fought back, and the diff can't show it; keep the spot and the why, not the detours replayed.
 
 **Drop:**
 - The step-by-step build process: red-green-refactor cycles, intermediate states, debugging detours, dead ends.
@@ -671,6 +693,7 @@ You're holding the whole session, so tailor it to this one — point at the actu
 - **The decisions that stuck, and why** — the conclusion, not the debate that reached it.
 - **The anchors to re-ground from** — load-bearing files and symbols, the commands to run, the test state. Point at the code, don't restate it — I'll reread it.
 - **The traps** — invariants to hold, and things that look wrong but are deliberate.
+- **The friction** — what fought back: multi-attempt fixes, code re-read before it could be trusted, assumptions that broke — each tagged as the problem's difficulty or the design's. The conclusions survive compaction anyway; the struggle is the evidence that doesn't. Nothing fought back? Skip the section.
 - **What's next** — the remaining work on this branch, and separately anything parked for a follow-up (deferred by choice, not forgotten). Nothing parked? Say so.
 
 **Drop** the journey: dead ends, superseded drafts, raw tool output, the round-by-round back-and-forth — cite a path instead of preserving an artifact's contents.

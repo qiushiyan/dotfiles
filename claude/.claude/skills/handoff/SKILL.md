@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Wrap up a session into a baton for the next one — an optional doc pass, the session's transferable lessons, and a handoff file named for the next session's branch that *is* its first prompt, ready to paste into a fresh worktree — or back into this one, in review posture, when the branch isn't ready to merge.
+description: Wrap up a session into a baton for the next one — an optional doc pass, the session's harvest (lessons and friction), and a handoff file named for the next session's branch that *is* its first prompt, ready to paste into a fresh worktree — or back into this one, in review posture, when the branch isn't ready to merge.
 disable-model-invocation: true
 argument-hint: [optional: the next session's goal, e.g. "next: wire the retry path", "review posture: not merging yet" — or "nothing queued"]
 allowed-tools: Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git branch:*), Bash(git merge-base:*), Bash(git worktree list:*), Bash(bash ~/.claude/skills/handoff/handoff-path.sh:*), Bash(date:*), Bash(pbcopy:*), Read, Write, Edit, Glob, Grep, Agent
@@ -35,14 +35,18 @@ Done when docs are updated, or the skip is named ("deferred to next session" / "
 
 ## 3 — Harvest what only this session knows
 
-The diff shows what changed. Collect what it can't show:
+The diff shows what changed. The harvest collects what it can't show, in two halves — what the session learned, and what it fought.
+
+**Lessons** — conclusions the next session should inherit:
 
 - Decisions made and the alternatives they beat.
 - Dead-ends — approaches tried and abandoned, and why. A fresh session re-attempts these first unless told.
-- What proved harder or subtler than the plan assumed; invariants the work established that the next change must not break.
+- Invariants the work established that the next change must not break.
 - Verification state — what was tested, what was merely written.
 
-Done when every kept lesson carries why you believe it and how sure you are — and a session that taught nothing transferable gets a baton of state + next move and nothing else; the honesty floor cuts both ways.
+**Friction** — where the work actually hurt, mined now because the wrap-up is what glosses it: fixes that took several attempts, code re-read repeatedly before it could be trusted, wrong turns, assumptions that broke, places too many cases had to be held in mind at once. Make one call per point: **essential** — the problem is genuinely that hard — or **accidental** — the current design manufactured the struggle. Essential friction joins the lessons ("harder than it looks, and why"). Accidental friction is a design signal: name the concrete struggle and the reshape that would have dissolved it. You built what you're now judging, so hand the next session the case, not the verdict.
+
+Done when every kept lesson carries why you believe it and how sure you are, and every friction point carries its essential-or-accidental call — a session that taught nothing and fought nothing gets a baton of state + next move and nothing else; the honesty floor cuts both ways.
 
 ## 4 — Write the baton
 
@@ -71,9 +75,11 @@ truth; this brief is the bridge. Where they disagree, trust the docs and code.
 Branch and base, committed vs uncommitted, in-review vs merged, verified vs
 merely written — and the branch this work continues on, with its base.
 
-## Lessons and dead-ends
+## Lessons, dead-ends, and friction
 
-From step 3, each with its why. If none: "No transferable lessons — state only."
+From step 3, each with its why. Accidental friction lands as the struggle plus
+the reshape it points at — a case for the next session to weigh, not a verdict
+to execute. If none: "No transferable lessons — state only."
 
 ## First moves
 
@@ -82,7 +88,10 @@ From step 3, each with its why. If none: "No transferable lessons — state only
    e.g. log-reading or repro/verify helpers — omit the line when none apply>
 3. Verify for yourself: <the 1–3 claims most likely to bite if taken on faith>
 4. Before writing code: state the plan in your own words and flag anything
-   that contradicts this brief.
+   that contradicts this brief. Route questions that arise: product/direction
+   forks to the user, each in plain product terms with options, implications,
+   and your recommendation; technical unknowns recorded with your working
+   answer for a later consult round rather than asked.
 ```
 
 Write it to survive the paste:
