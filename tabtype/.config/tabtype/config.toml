@@ -261,6 +261,23 @@ expand = '''
 '''
 
 [[snippets]]
+key = "compact-for-impl"
+expand = '''
+/compact Transitioning from settled design straight to implementation — the next message starts the build, with no plan stage in between. The spec is settled and on disk, so compact for a **focused implementation window**: keep what the build turns on, drop the journey that produced the design.
+
+**Preserve:**
+- Exact paths to the artifacts on disk — the spec, plus any issue record or notes the build will consult. The build starts by rereading the spec from disk, not from this summary.
+- Session state the documents don't carry: branch/worktree, what's already committed, cleanups done or still owed.
+- The load-bearing architectural direction: module/function names, composition shape, coupling decisions, the invariants the build must hold — and my ratified decisions with the caveats I attached to them.
+- *Why* the design is shaped this way — the decisions the build has to honor — but not the alternatives that lost.
+
+**Drop or summarize:**
+- The exploration journey: domain onboarding, investigation forensics, brainstormed approaches, tradeoff debates.
+- Consultation and review rounds — their conclusions live in the spec.
+- Code reads that fed the design — the touched files get reread fresh before code is written, so the reading process isn't needed.
+'''
+
+[[snippets]]
 key = "reread-context"
 expand = '''
 Reread the files this change touches and rebuild your mental model from the actual code, not memory — trace the real data/control flow, note existing constraints, and find the seams the work will build on. **No code yet.**'''
