@@ -86,16 +86,18 @@ fresh() {
 
 # Publish one statusline render: pub <sid> <model-id|-> <input-tokens> [acct].
 # "-" means a payload carrying no model key at all, which is not the same as an
-# empty one. The optional 4th arg is an account DIR NAME (an email): the
-# statusline learns the account from CLAUDE_CONFIG_DIR, not from the payload,
-# so it arrives via env — and when absent it is explicitly UNSET, because this
-# suite itself runs inside a Claude session that carries the real variable;
-# inheriting it would make "the primary is unmarked" pass on a path mismatch
-# instead of on absence. Everything the scripts touch is pinned to the test
-# server ($TMUX, the socket the scripts resolve tmux through — without it they
-# fall through to the DEFAULT socket, the user's live server, where these pane
-# ids don't exist and every assertion below would pass for the wrong reason)
-# and to the sandbox HOME.
+# empty one. The optional 4th arg is the lane: an account DIR NAME (an email)
+# for a managed extra, or an absolute PATH to drive CLAUDE_CONFIG_DIR straight
+# — the unmanaged escape hatch, and the explicit ~/.claude spelling of the
+# primary. The statusline learns the account from CLAUDE_CONFIG_DIR, not from
+# the payload, so it arrives via env — and when absent it is explicitly UNSET,
+# because this suite itself runs inside a Claude session that carries the real
+# variable; inheriting it would make the primary-lane cases pass on a path
+# mismatch instead of on absence. Everything the scripts touch is pinned to the
+# test server ($TMUX, the socket the scripts resolve tmux through — without it
+# they fall through to the DEFAULT socket, the user's live server, where these
+# pane ids don't exist and every assertion below would pass for the wrong
+# reason) and to the sandbox HOME.
 pub() {
     local sid="$1" model="$2" tokens="$3" acct="${4:-}" payload
     if [ "$model" = "-" ]; then
@@ -104,11 +106,11 @@ pub() {
         payload=$(printf '{"session_id":"%s","model":{"id":"%s"},"workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$sid" "$model" "$SANDBOX" "$tokens")
     fi
     local -a acct_env
-    if [ -n "$acct" ]; then
-        acct_env=(CLAUDE_CONFIG_DIR="$SANDBOX_HOME/.claude-accounts/$acct")
-    else
-        acct_env=(-u CLAUDE_CONFIG_DIR)
-    fi
+    case "$acct" in
+        "")  acct_env=(-u CLAUDE_CONFIG_DIR) ;;
+        /*)  acct_env=(CLAUDE_CONFIG_DIR="$acct") ;;
+        *)   acct_env=(CLAUDE_CONFIG_DIR="$SANDBOX_HOME/.claude-accounts/$acct") ;;
+    esac
     printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME=flexoki_light \
         TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$STATUSLINE" >/dev/null 2>&1
     sleep 0.4   # the accepted branch reconciles the border in the background
@@ -130,6 +132,16 @@ starts() {
     printf '{"session_id":"%s","source":"resume"}' "$1" | env HOME="$SANDBOX_HOME" \
         TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" activate-session
     sleep 0.3
+}
+
+# The primary account's login file, at the vendor's path: $HOME/.claude.json,
+# directly in HOME and NOT inside ~/.claude. It is the primary's only source of
+# an email — it has no account dir to be named by — so a case that wants a
+# labeled primary lane must lay one down. Cases create it and delete it before
+# they end, keeping C9's "nothing in the sandbox HOME" guard meaningful under
+# any run order.
+primary_login() {
+    printf '{"oauthAccount":{"emailAddress":"%s"}}' "$1" > "$SANDBOX_HOME/.claude.json"
 }
 
 opt()    { T show -pqv -t "$PANE" "$1"; }
@@ -159,7 +171,11 @@ c1() {
     check "C1 percentage published"   "$(opt @claude_ctx)"       "60"
     check "C1 model published trimmed" "$(opt @claude_ctx_model)" "opus-5[1m]"
     check "C1 owner recorded"         "$(opt @claude_ctx_sid)"    "sid-A"
-    check "C1 primary lane unmarked"  "$(opt @claude_ctx_account)" ""
+    # No ~/.claude.json in this sandbox, so the primary has no email to read:
+    # the label is absent because it is UNKNOWN here, which is the degraded
+    # case, not the primary's normal one. C19 covers the normal one.
+    check "C1 a primary with no readable login shows no account" \
+        "$(opt @claude_ctx_account)" ""
     check "C1 border row on"          "$(status)"                 "top"
     check "C1 border draws model then percentage" "$(border)" " opus-5[1m] ✳ 60% "
 }
@@ -553,9 +569,62 @@ c18() {
         "0"
 }
 
+# ---------------------------------------------------------------------------
+# C19 — the primary gets a label like everyone else. It is the one account
+# with no dir to be named by (CLAUDE_CONFIG_DIR is ABSENT for it, by
+# headroom's contract), so its email comes from ~/.claude.json instead — and
+# that difference in SOURCE must not become a difference in DISPLAY. It used
+# to: the primary was the deliberately unmarked lane, which on the account
+# that runs most read as a chip that had simply stopped working.
+#
+# The primary is then a member of the uniqueness registry, not an exception to
+# it. Counting claims among the account DIRS alone — the pre-change registry —
+# calls both lanes below unique and draws one "qiushi" for two different
+# accounts, which is exactly the confusion the collision rule exists to stop.
+# ---------------------------------------------------------------------------
+c19() {
+    fresh || return
+    primary_login 'qiushi@planlab.ai'
+    pub sid-A 'claude-opus-5[1m]' 600000
+    check "C19 the primary publishes its own account" \
+        "$(opt @claude_ctx_account)" "qiushi"
+    check "C19 border draws it like any other lane" \
+        "$(border)" " qiushi opus-5[1m] ✳ 60% "
+    mkdir -p "$SANDBOX_HOME/.claude-accounts/qiushi@other.example"
+    pub sid-B 'claude-fable-5' 500000
+    check "C19 an extra claiming its local part sends the primary to full" \
+        "$(opt @claude_ctx_account)" "qiushi@planlab.ai"
+    pub sid-C 'claude-fable-5' 400000 'qiushi@other.example'
+    check "C19 and the extra with it" \
+        "$(opt @claude_ctx_account)" "qiushi@other.example"
+    rm -rf "$SANDBOX_HOME/.claude-accounts" "$SANDBOX_HOME/.claude.json"
+}
+
+# ---------------------------------------------------------------------------
+# C20 — the two CLAUDE_CONFIG_DIR values that are neither a managed extra nor
+# an absent variable. Now that "no variable" resolves to a real email rather
+# than to nothing, a dir that is merely UNRECOGNISED must not fall down the
+# same arm and inherit it: that would print the primary's address over a
+# session spending someone else's quota — the one wrong answer available here,
+# and one nothing else on the border would contradict. It wears its own
+# basename instead. The mirror case is the explicit spelling of the default
+# dir, which IS the primary and has to resolve as such.
+# ---------------------------------------------------------------------------
+c20() {
+    fresh || return
+    primary_login 'qiushi@planlab.ai'
+    pub sid-A 'claude-opus-5[1m]' 600000 "$SANDBOX/unmanaged"
+    check "C20 an unmanaged config dir wears its own name" \
+        "$(opt @claude_ctx_account)" "unmanaged"
+    pub sid-B 'claude-fable-5' 500000 "$SANDBOX_HOME/.claude"
+    check "C20 an explicit ~/.claude is the primary lane" \
+        "$(opt @claude_ctx_account)" "qiushi"
+    rm -f "$SANDBOX_HOME/.claude.json"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

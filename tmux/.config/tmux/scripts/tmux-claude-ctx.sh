@@ -16,12 +16,13 @@
 #                      carries just this one draws nothing.
 #   @claude_ctx_account
 #                      which account lane the session burns — the email local
-#                      part for a ~/.claude-accounts/ extra (the full email
-#                      when two lanes share a local part), EMPTY for the
-#                      primary, which stays the unmarked lane. Same cosmetic
-#                      standing as the model, and gated like it: its arm only
-#                      ever fires to backfill a pane published before the
-#                      option existed, since the value is fixed per session.
+#                      part (the full email when two lanes share one), for
+#                      EVERY lane including the primary; empty means the
+#                      statusline could not read an email, not "this is the
+#                      default account". Same cosmetic standing as the model,
+#                      and gated like it: its arm only ever fires to backfill
+#                      a pane published before the option existed, since the
+#                      value is fixed per session.
 #   @claude_ctx_sid    which Claude session published it
 #   @claude_ctx_dead   ACTIVATION BARRIER: a session id whose publications
 #                      are refused from teardown until Claude emits a

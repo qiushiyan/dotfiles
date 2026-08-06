@@ -105,14 +105,37 @@ read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID CURRENT_DIR <<< "$(echo 
 [ "$MODEL_ID" = "-" ] && MODEL_ID=""
 MODEL_ID="${MODEL_ID#claude-}"
 
-# Which account lane this session burns, from the env headroom built at launch:
-# extras run under CLAUDE_CONFIG_DIR=~/.claude-accounts/<email>, the PRIMARY by
-# that variable being ABSENT (headroom's contract, docs/claude-accounts.md) —
-# so the primary has no email here to show and stays the unmarked lane: no
-# account segment, zero border width spent on the default case. The label is
-# the email's local part while that is UNIQUE among the account dirs, the full
-# email when two lanes claim the same one — claude.zsh's short-alias policy,
-# followed from the same registry (the dirs ARE the account list), because two
+# Which account lane this session burns. EVERY lane is labeled, the primary
+# included: "which account is this session spending" is the same question
+# whether or not that account happens to be the default one, so the border
+# answers it the same way. (It did not always. The primary was once the
+# deliberately unmarked lane — zero border width spent on the common case —
+# which in practice read as a chip that was broken for the account that runs
+# most, and made the label's absence carry meaning nobody recovers unaided.)
+#
+# The email comes from one of two places, because the vendor leaves the primary
+# no dir name to read. headroom launches an extra with
+# CLAUDE_CONFIG_DIR=~/.claude-accounts/<email>, so the dir name IS the email —
+# and it is the lane identity headroom actually routed to, free of any file
+# read. The primary launches with that variable ABSENT (headroom's contract,
+# docs/claude-accounts.md) and keeps its login in ~/.claude.json — directly in
+# $HOME, NOT inside ~/.claude, the vendor layout headroom's PrimaryMeta()
+# encodes too. That parse costs ~4ms on a ~130KB file, against the two `git`
+# calls this render already makes, and 1500/1500 reads at render rate came back
+# whole — so nothing caches it, and a file that will not parse yields no label
+# rather than a guess. It is read on EVERY lane, not just the primary's,
+# because the primary's local part is part of the registry the uniqueness rule
+# below counts against.
+#
+# A CLAUDE_CONFIG_DIR pointing anywhere else is the unmanaged escape hatch
+# (docs/claude-accounts.md) and wears its own dir's basename. Whatever that
+# session is, it is emphatically not the primary, and quietly lending it the
+# primary's email is the one answer here that would actively mislead.
+#
+# The label is the email's local part while that is UNIQUE across the whole
+# registry — the primary AND every account dir — and the full email when two
+# lanes claim the same one: claude.zsh's short-alias policy, followed from the
+# same registry (the dirs, plus the one account that has no dir), because two
 # lanes wearing one label defeats the point of labeling lanes. Everything is
 # scrubbed to the model id's inert charset plus "@" (harmless in both hostile
 # paths — tmux formats only ever trip on # , { } and quotes) because it rides
@@ -121,24 +144,52 @@ MODEL_ID="${MODEL_ID#claude-}"
 # deletes legal email chars like "+", so alex+work@… and alexwork@… are
 # distinct on disk but identical on the border — labels stay unique up to
 # emails that differ only by scrubbed characters.
-ACCOUNT=""
+PRIMARY_EMAIL=""
+[ -r "$HOME/.claude.json" ] &&
+    PRIMARY_EMAIL=$(jq -r '.oauthAccount.emailAddress // ""' "$HOME/.claude.json" 2>/dev/null)
+
 case "${CLAUDE_CONFIG_DIR:-}" in
-    "$HOME/.claude-accounts"/*)
-        ACCOUNT="${CLAUDE_CONFIG_DIR##*/}"
-        ACCT_LOCAL="${ACCOUNT%%@*}"; ACCT_LOCAL="${ACCT_LOCAL//[^a-zA-Z0-9._-]/}"
-        ACCT_CLAIMS=0
-        for _acct_dir in "$HOME/.claude-accounts"/*/; do
-            _acct_base="${_acct_dir%/}"; _acct_base="${_acct_base##*/}"
-            _acct_base="${_acct_base%%@*}"; _acct_base="${_acct_base//[^a-zA-Z0-9._-]/}"
-            [ "$_acct_base" = "$ACCT_LOCAL" ] && ACCT_CLAIMS=$((ACCT_CLAIMS+1))
-        done
-        if [ "$ACCT_CLAIMS" -le 1 ]; then
-            ACCOUNT="$ACCT_LOCAL"
-        else
-            ACCOUNT="${ACCOUNT//[^a-zA-Z0-9._@-]/}"
-        fi
-        ;;
+    ""|"$HOME/.claude"|"$HOME/.claude/")
+        LANE_EMAIL="$PRIMARY_EMAIL" ;;
+    *)
+        LANE_EMAIL="${CLAUDE_CONFIG_DIR%/}"; LANE_EMAIL="${LANE_EMAIL##*/}" ;;
 esac
+LANE_LOCAL="${LANE_EMAIL%%@*}"; LANE_LOCAL="${LANE_LOCAL//[^a-zA-Z0-9._-]/}"
+
+# The registry uniqueness is counted against. Membership is tested by walking
+# it rather than matching against "${ACCT_REG[*]}" as one string: a dir name is
+# attacker-shaped and may contain spaces, which would make a substring test
+# find neighbours that aren't there.
+ACCT_REG=("$PRIMARY_EMAIL")
+for _acct_dir in "$HOME/.claude-accounts"/*/; do
+    [ -d "$_acct_dir" ] || continue          # the glob itself, when the root is absent
+    _acct_base="${_acct_dir%/}"; ACCT_REG+=("${_acct_base##*/}")
+done
+_lane_known=0
+for _acct_entry in "${ACCT_REG[@]}"; do
+    [ "$_acct_entry" = "$LANE_EMAIL" ] && _lane_known=1
+done
+# An unmanaged dir is in no registry but still must not silently wear a label a
+# managed lane already owns.
+[ "$_lane_known" -eq 1 ] || ACCT_REG+=("$LANE_EMAIL")
+
+ACCT_CLAIMS=0
+for _acct_entry in "${ACCT_REG[@]}"; do
+    _acct_base="${_acct_entry%%@*}"; _acct_base="${_acct_base//[^a-zA-Z0-9._-]/}"
+    # The empty entry a missing/unparsed ~/.claude.json leaves behind claims
+    # nothing — otherwise it would collide with every other empty and push a
+    # real lane to its full email for no reason.
+    [ -n "$_acct_base" ] && [ "$_acct_base" = "$LANE_LOCAL" ] && ACCT_CLAIMS=$((ACCT_CLAIMS+1))
+done
+
+ACCOUNT=""
+if [ -n "$LANE_LOCAL" ]; then
+    if [ "$ACCT_CLAIMS" -le 1 ]; then
+        ACCOUNT="$LANE_LOCAL"
+    else
+        ACCOUNT="${LANE_EMAIL//[^a-zA-Z0-9._@-]/}"
+    fi
+fi
 
 # Validate jq extraction succeeded
 if [ -z "$CURRENT_DIR" ]; then
