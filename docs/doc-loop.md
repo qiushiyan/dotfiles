@@ -113,8 +113,10 @@ and the global skills' standards apply:
 Update-docs is diff-scoped, so cross-doc duplication and rot in untouched files
 accumulate in the seams no matter how disciplined the per-change passes are —
 duet accumulated duplicate copies of one key list, and two shipped specs left
-sitting beside the design docs, across many update-docs runs. Roughly monthly, or
-when update-docs' budget check flags an overrun, run the global `/distill-docs`:
+sitting beside the design docs, across many update-docs runs. Run the global
+`/distill-docs` when update-docs' budget check flags an overrun, and otherwise
+weekly as a standing slot — at that cadence most runs find little, and a pass
+that reports a clean tree is the point rather than a wasted one:
 mechanical sweeps and a delegated redundancy map → owner-confirmed surgery →
 verify → a _fix-the-generator_ step that patches the project's standards or
 update-docs skill whenever a rot class recurs. It defers to each project's
