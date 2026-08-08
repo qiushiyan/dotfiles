@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "alt-text": {
+      "source": "bholmesdev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/alt-text/SKILL.md",
+      "computedHash": "42f8bc28847db5fb00ea410dffe2146d74eb32547b7543a0128011560bc74fe5"
+    },
+    "done": {
+      "source": "bholmesdev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/done/SKILL.md",
+      "computedHash": "385e8eb8bbeb95fce0603e669b1fe3c0d1ab0f7ef6b02fbaf315fd2dbc2304d0"
+    },
+    "free-disk-space": {
+      "source": "bholmesdev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/free-disk-space/SKILL.md",
+      "computedHash": "472cf71aa0516a072f7f08434d03d613893cd0b6b54293fd83478c6041797af5"
+    },
+    "simplify": {
+      "source": "bholmesdev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/simplify/SKILL.md",
+      "computedHash": "5fbcd24a47d3de5b0166a5a446cce4f2f979266f34f6a44fee4a1ed7d7c62e48"
+    },
+    "taste-review": {
+      "source": "bholmesdev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/taste-review/SKILL.md",
+      "computedHash": "7e358eff29008e294cfabfea5f5faa04f46a6de258e3a151721272ed2e9cc82c"
+    },
+    "transcribe": {
+      "source": "bholmesdev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/transcribe/SKILL.md",
+      "computedHash": "41795d874d300af97e58343cc3b91b6e1af5203e5dfb12b68928afe7f02f56ee"
+    }
+  }
+}
