@@ -118,12 +118,13 @@ docs/
   testing.md              the test suites and their sandbox rules
   claude-accounts.md      multi-account setup
   theming.md              the $TERMINAL_THEME switch
+  ghostty-fonts.md        why bold barely reads, and the levers that exist
   doc-loop.md             the session loop: onboarding → consult/spike/review
                           → update-docs → handoff
   MIGRATION.md            new-machine setup
   mobile-terminal-access.md   phone → Mac over Tailscale + mosh
   ctrl-d-guard.md · claude-prompt-completion.md
-  neovim-file-picker.md · neovim-image-handling.md
+  neovim-file-picker.md · neovim-image-handling.md · neovim-diagnostics.md
   superpowers/            dated specs and plans — history, not live docs
 tmux/.config/tmux/
   workflow.md             how the tmux setup is meant to be used day to day

@@ -120,8 +120,8 @@ Toggle current terminal `ctrl + /`
 
 - delete current buffer `<leader>bd`
 
-- mark important files `<leader>m` (the `grapple` plugin)
-  - navigate to marked files `M` or `<leader>M`
+- mark important files `<leader>m` (the `harpoon` plugin, bookmarks shared across git worktrees)
+  - navigate to marked files `M` or `<leader>M`, jump directly `<leader>1`-`<leader>4`
 
 ## Windows
 
@@ -152,8 +152,8 @@ Toggle current terminal `ctrl + /`
 
 - see troubles pane `<leader>xx`
 
-- show diagnostics for line `ctrl + shift + d`. next and prev diagnostics `]d`
-  and `[d`
+- show diagnostics for line `<leader>cd`, yank them AI-formatted `<leader>cy`
+  (see `docs/neovim-diagnostics.md`). next and prev diagnostics `]d` and `[d`
 
 - code actions `ctrl + shift + f` or `<leader>ca`
 

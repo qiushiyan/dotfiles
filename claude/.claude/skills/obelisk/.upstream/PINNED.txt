@@ -1,0 +1,8 @@
+Pinned from tommy0103/obelisk skill-doc/ @ 7c1b478 (2026-08-04)
+Verified byte-identical to the installed copy on 2026-08-07.
+Companion CLI at pin time: @obelisk-apps/cli 0.2.2 (pnpm global).
+
+Upgrade: pnpm add -g @obelisk-apps/cli@latest; fetch the new skill-doc/;
+diff -r it against this directory; fold genuine improvements into ../SKILL.md
+(re-checking every LESSONS.md item against the new version); replace this
+directory's contents with the new pristine copy and update this file.

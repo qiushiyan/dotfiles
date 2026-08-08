@@ -102,7 +102,7 @@ return {
         end,
       },
       {
-        "<leader>e",
+        "<leader>E",
         function()
           if not require("mini.files").close() then
             require("mini.files").open(vim.uv.cwd(), true)
@@ -111,7 +111,7 @@ return {
         desc = "Open mini.files (cwd)",
       },
       {
-        "<leader>E",
+        "<leader>e",
         function()
           local buf_name = vim.api.nvim_buf_get_name(0)
           local dir_name = vim.fn.fnamemodify(buf_name, ":p:h")

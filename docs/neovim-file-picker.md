@@ -16,8 +16,9 @@ How file finding, grep, and the file explorer are wired in this dotfiles repo.
 | `<leader>fp` | snacks.picker | Find plugin file |
 | `<leader>gl` | snacks.picker | Git log |
 | `<M-k>` | snacks.picker | Keymap search |
-| `<leader>e` | mini.files | File explorer (cwd) |
-| `<leader>E` | mini.files | File explorer (file's dir) |
+| `<leader>e` | mini.files | File explorer (file's dir) |
+| `<leader>E` | mini.files | File explorer (cwd) |
+| `<leader>m` / `M` | harpoon2 | Toggle / browse per-repo file bookmarks; `<leader>1`-`4` jump |
 
 One job per plugin; no single tool owns everything. Plugin paths below are
 relative to `nvim/.config/nvim/lua/`.
@@ -27,6 +28,7 @@ relative to `nvim/.config/nvim/lua/`.
 - **fff.nvim** — the file/grep picker. Picked over snacks.picker for speed (Rust core, resident index, frecency ranking) and typo-resistant fuzzy matching. See `plugins/fff.lua`.
 - **snacks.picker** — folke's picker, still installed because it has well-built buffer / git-log / keymap pickers and we have no reason to replace those. See `plugins/snacks.lua`.
 - **mini.files** — the file explorer. Separate concern from the picker; fff doesn't do tree-style navigation. See `plugins/file-explorer.lua`.
+- **harpoon2** — bookmarks for a handful of important files, persistent across restarts and **shared across git worktrees**: the list is keyed by the repo's common `.git` dir and paths are stored worktree-relative, so a bookmark made in one checkout opens the corresponding file in whichever checkout is current (the custom `select` resolves against the current worktree root, cwd-independent). See `plugins/harpoon.lua`.
 
 snacks.picker is the only general-purpose picker installed. Besides the keys above, the `gR` buffer symbol search in `plugins/lsp.lua` goes through it, and `<leader>fr`/`<leader>fR` are LazyVim's default snacks bindings — the recent-files finder merges current-session buffers with vim's oldfiles, so files from the running session appear too. fff is project-scoped (it ranks by frecency but only indexes the cwd tree), so cross-project recents belong to snacks.
 

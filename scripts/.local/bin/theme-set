@@ -31,13 +31,22 @@ THEMES=(flexoki_light catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_d
 # linger — the clean form of "find old fields → delete → write new". Switching
 # more than the theme (e.g. a per-theme background-opacity / blur) is just extra
 # lines here; ghostty's base config keeps the shared defaults.
+#
+# bold-color is per-theme because there is no single value that works on both
+# backgrounds. Dank Mono's bold is only ~12% heavier than its regular, so weight
+# alone doesn't mark emphasis (→ docs/ghostty-fonts.md); a colour does. The rule:
+# on dark backgrounds bold goes warmer and brighter than the foreground, on light
+# backgrounds deeper and more saturated — going brighter on white loses contrast.
+# Each value is drawn from that theme's own palette, so bold stays in-family.
+# A literal colour (not `bright`) is deliberate: it is the only form that colours
+# bold text drawn in the *default* foreground, which is most of it.
 ghostty_block() {
   case "$1" in
-    flexoki_light)    printf 'theme = Flexoki Light\n' ;;
-    catppuccin_mocha) printf 'theme = Catppuccin Mocha\n' ;;
-    tailwind_light)   printf 'theme = tailwind-light-contrast\n' ;;
-    tokyo_night_moon) printf 'theme = TokyoNight Moon\n' ;;
-    gruvbox_dark)     printf 'theme = Gruvbox Dark\n' ;;
+    flexoki_light)    printf 'theme = Flexoki Light\nbold-color = #205ea6\n' ;;
+    catppuccin_mocha) printf 'theme = Catppuccin Mocha\nbold-color = #f9e2af\n' ;;
+    tailwind_light)   printf 'theme = tailwind-light-contrast\nbold-color = #1447e6\n' ;;
+    tokyo_night_moon) printf 'theme = TokyoNight Moon\nbold-color = #ffc777\n' ;;
+    gruvbox_dark)     printf 'theme = Gruvbox Dark\nbold-color = #fabd2f\n' ;;
   esac
 }
 

@@ -10,8 +10,11 @@ background-blur-radius = 25
 # font-family = JetBrainsMono Nerd Font
 
 
-font-family = Berkeley Mono
-# font-family = DankMono Nerd Font Mono
+# font-family = Berkeley Mono
+font-family = DankMono Nerd Font Mono
+# Dank Mono's bold is ~12% heavier than its regular and it ships no bold-italic
+# at all, so emphasis barely reads here. That is a property of the family, not a
+# misconfiguration -- measurements and the levers: docs/ghostty-fonts.md
 font-size = 21
 font-thicken = true
 adjust-cell-width = -2%

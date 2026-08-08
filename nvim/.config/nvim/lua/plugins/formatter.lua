@@ -10,7 +10,9 @@ return {
         javascript = { "oxfmt" },
         javascriptreact = { "oxfmt" },
         json = { "prettier" },
-        markdown = { "prettier" },
+        -- markdown is oxfmt too (it formats prose *and* embedded code blocks).
+        -- Never runs on save -- see the autoformat opt-out in conform.lua.
+        markdown = { "oxfmt" },
         yaml = { "prettier" },
       },
     },

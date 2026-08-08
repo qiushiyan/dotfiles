@@ -1,3 +1,16 @@
+-- Markdown formatting is explicit only (`<leader>cf`, which passes force=true).
+-- Most markdown I open is documentation written by an agent that I'm only
+-- reading; auto-formatting it on save/quit turns every visit into an
+-- uncommitted diff. `vim.b.autoformat` is the single lever for that: both
+-- LazyVim's format-on-save and the FocusLost/BufLeave autocmd below go through
+-- LazyVim.format.enabled(), and a buffer-local value wins over the global one.
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "markdown", "markdown.mdx", "mdx" },
+  callback = function()
+    vim.b.autoformat = false
+  end,
+})
+
 -- Auto-format when focus is lost or I leave the buffer
 vim.api.nvim_create_autocmd({ "FocusLost", "BufLeave" }, {
   pattern = "*",

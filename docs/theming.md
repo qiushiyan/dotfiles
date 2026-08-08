@@ -95,9 +95,15 @@ repo). `theme-set` **fully regenerates** that include on every switch.
 Full regeneration is also what makes Ghostty **multi-field**: a theme's block can
 set `background-opacity`, `background-blur-radius`, … not just `theme`. Rewriting
 the whole file means a field dropped from a theme can never linger as a stale
-key. Today every theme sets only `theme`; extend `ghostty_block()` in `theme-set`
-to switch more. Fields a theme omits fall back to the base values in `config`
-(the include is last, so it wins).
+key. Fields a theme omits fall back to the base values in `config` (the include
+is last, so it wins); extend `ghostty_block()` in `theme-set` to switch more.
+
+Two fields ship today. `theme` is the obvious one. **`bold-color` is per-theme
+because no single value works on both backgrounds** — dark themes take a warmer,
+brighter accent than their foreground, light themes a deeper, more saturated one,
+since going brighter on white loses contrast. It exists because Dank Mono's bold
+is only ~12% heavier than its regular, so weight alone can't mark emphasis and
+colour does the job instead → `docs/ghostty-fonts.md`.
 
 ## Neovim specifics
 
@@ -115,7 +121,8 @@ to switch more. Fields a theme omits fall back to the base values in `config`
 
 Mechanical, one touch per tool — the cost of hand-tuned palettes. For `<name>`:
 
-1. `theme-set` — add to `THEMES` and `ghostty_block()`.
+1. `theme-set` — add to `THEMES` and `ghostty_block()` (the block owes a `theme`
+   *and* a `bold-color` picked from the new palette).
 2. zsh — a `case` arm in `theme.zsh`.
 3. statusline — a `case` arm (six color slots) in `statusline-command.sh`.
 4. oh-my-posh — a `palettes.list` entry in `zen.omp.json`.

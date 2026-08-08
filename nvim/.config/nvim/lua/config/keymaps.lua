@@ -54,6 +54,40 @@ vim.keymap.set("i", "<A-Down>", "<Esc>:m .+1<CR>==gi", { desc = "Move line down"
 vim.keymap.set({ "n", "v" }, "<C-S-f>", vim.lsp.buf.code_action, { desc = "Code actions" })
 vim.keymap.set("n", "<C-S-d>", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
 
+-- yank the current line's diagnostic message(s) to the system clipboard,
+-- prefixed with file:line, the text the diagnostic covers, and its source, e.g.
+--   src/app.ts:42 `user.name` (typescript 2339)
+--   Property 'name' does not exist on type 'User'.
+vim.keymap.set("n", "<leader>cy", function()
+  local diagnostics = vim.diagnostic.get(0, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
+  if #diagnostics == 0 then
+    vim.notify("No diagnostics on this line", vim.log.levels.WARN)
+    return
+  end
+  local file = vim.fn.expand("%:~:.")
+  local chunks = {}
+  for _, d in ipairs(diagnostics) do
+    local header = file .. ":" .. (d.lnum + 1)
+    if d.end_lnum == d.lnum and d.end_col and d.end_col > d.col then
+      local line = vim.api.nvim_buf_get_lines(0, d.lnum, d.lnum + 1, false)[1] or ""
+      local symbol = vim.trim(line:sub(d.col + 1, d.end_col))
+      if symbol ~= "" and #symbol <= 60 then
+        header = header .. " `" .. symbol .. "`"
+      end
+    end
+    local origin = d.source or ""
+    if d.code then
+      origin = origin .. (origin ~= "" and " " or "") .. d.code
+    end
+    if origin ~= "" then
+      header = header .. " (" .. origin .. ")"
+    end
+    table.insert(chunks, header .. "\n" .. d.message)
+  end
+  vim.fn.setreg("+", table.concat(chunks, "\n\n"))
+  vim.notify("Yanked " .. #chunks .. " diagnostic" .. (#chunks > 1 and "s" or ""))
+end, { desc = "Yank line diagnostics" })
+
 -- By default, CTRL-U and CTRL-D scroll by half a screen (50% of the window height)
 -- Scroll by 35% of the window height and keep the cursor centered
 local scroll_percentage = 0.4
