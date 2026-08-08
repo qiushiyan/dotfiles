@@ -163,10 +163,23 @@ Below roughly 1.2× it reads as undersized whatever the typeface.
 ### adjust-cell-height is pure air for CJK
 
 Ghostty **centres the glyph vertically** in the taller cell, so every point of
-`adjust-cell-height` becomes padding above and below. At 15% — a value tuned for
-Latin alone — 汉字 ink was 67% of the line box; 8% measured 71%. It buys nothing
-horizontally, and `adjust-cell-width` is the mirror image: widening the cell only
-widens the gap, because the width clamp is already satisfied at 1.0 em.
+`adjust-cell-height` becomes padding above and below 汉字:
+
+| value | line box | 汉字 ink of it | |
+|---|---|---|---|
+| 15% | 55px | 67% | tuned for Latin alone, before any of this |
+| **12%** | **54px** | **69%** | shipped |
+| 8% | 52px | 71% | tried; Latin read cramped |
+
+It buys nothing horizontally, and `adjust-cell-width` is the mirror image:
+widening the cell only widens the gap, because the width clamp is already
+satisfied at 1.0 em.
+
+**This is one number serving two scripts, so it stays a live tension.** Latin
+wants the leading; 汉字 want it gone. Ghostty has no per-font line-height
+override, so there is no configuration that ends the argument — 12% is a truce
+held by taste, not a solved problem. If Latin ever reads cramped, move it back up
+and accept squatter 汉字; the table says what each point costs.
 
 ### The codepoint-map ranges were their own trap
 
@@ -191,6 +204,20 @@ U+2E80-U+303F,U+3400-U+4DBF,U+4E00-U+9FFF,U+F900-U+FAFF,U+FF00-U+FFEF
 counts East Asian Ambiguous as one cell, so they overrun their box.
 **`Sarasa Term SC`** draws them at 0.5 em, which is what the grid expects.
 `Sarasa Fixed SC` is the same again minus `calt` — no ligatures.
+
+### What Sarasa costs on disk
+
+`brew install --cask font-sarasa-gothic` drops a single **793 MB**
+`Sarasa-SuperTTC.ttc` into `~/Library/Fonts` — 480 faces, SC/TC/J/K crossed with
+Mono/Term/Fixed/Gothic/UI crossed with every weight, of which exactly one is
+used. It is ~18% of that directory.
+
+Left alone on purpose. The only way down is to hand-download the SC-only archive
+from the upstream release and drop out of Homebrew's management, which trades a
+reproducible `make brew` for disk that is not currently scarce. Worth revisiting
+only while actually reclaiming space — and if it does get retired, remember
+`font-lxgw-wenkai` (24 MB) is already installed and one `#` away from being the
+fallback again.
 
 ### Rejected: a 1:2 family as the primary
 

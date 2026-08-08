@@ -18,10 +18,11 @@ font-family = DankMono Nerd Font Mono
 font-size = 21
 font-thicken = true
 adjust-cell-width = -2%
-# 15% was tuned for Latin alone. Ghostty centers the glyph in the taller cell, so
-# every point of this is air above and below 汉字, which read squat at 15%
-# (ink 67% of the line box). 8% -> ~72%. → docs/ghostty-fonts.md
-adjust-cell-height = 8%
+# One number serving two scripts. Ghostty centers the glyph in the taller cell, so
+# every point here is air above and below 汉字: ink was 67% of the line box at the
+# 15% this sat at when it was tuned for Latin alone, 71% at 8%. 12% is the truce --
+# 汉字 at 69%, Latin barely tighter than it was. → docs/ghostty-fonts.md
+adjust-cell-height = 12%
 
 # font-size = 24
 font-family = IosevkaTerm Nerd Font
