@@ -118,7 +118,7 @@ docs/
   testing.md              the test suites and their sandbox rules
   claude-accounts.md      multi-account setup
   theming.md              the $TERMINAL_THEME switch
-  ghostty-fonts.md        why bold barely reads, and the levers that exist
+  ghostty-fonts.md        why bold barely reads, why 汉字 render small
   doc-loop.md             the session loop: onboarding → consult/spike/review
                           → update-docs → handoff
   MIGRATION.md            new-machine setup
