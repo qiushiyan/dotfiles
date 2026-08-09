@@ -10,6 +10,7 @@ expand = '''
 3. **State the real problem** and the underlying goal **in your own words**, informed by what you read and learned.
 4. **Evaluate the current design** against the goal — is this a *local* change the structure absorbs cleanly, or is the structure itself in the way? When the foundation fights the change, reach for **preparatory refactoring** (Kent Beck: *make the change easy, then make the easy change*) — reshape the foundation first so the feature becomes a natural addition.
 5. **Explore the design space, then synthesize.** Sketch 2–3 approaches that make *genuinely different bets* — from a contained change within the subsystem's current structure to a rework of its architecture — so they stress-test each other instead of standing in as strawmen for a choice you've already made. Then recommend a direction built *from* that comparison, weighed by how fully it solves the root problem rather than how little it disturbs: combine the best of more than one where it helps, rather than adopt a single option whole. Name the tradeoff you're accepting, and where the decision is genuinely a judgment call, say so.
+6. **Account for the risk the recommendation carries.** Risk here isn't lines changed — an internal refactor can be large and inert. It's whether the change lands on the **hot path** (code that runs on every request, render, or token), on a **surface the user sees or drives often**, or inside a **core feature's execution logic**. For each of those it touches, say what runs differently, what holds the risk down (coverage that already exists, a flag or fallback, a signal that would catch a regression), and — where the risk is real — why it's worth taking. Ground it in the code you read: "adds a branch that only runs in the error path" is an answer, "overhead is minimal" is not. This is an accounting, not a veto — a controlled risk on the hot path is fine, an unexamined one isn't. When the change touches none of the three, one line saying so is the whole step.
 
 Don't patch a flawed design with another patch, and don't shy from structural change when it's justified — but back a "structurally wrong" claim with code and name its cost. Preparatory refactoring is earned only when the structure genuinely blocks the goal, never license to rewrite what merely looks imperfect.
 
@@ -51,6 +52,7 @@ Before you commit to that first take, step back and pressure-test it. Treat it a
 - **Restate the real problem in your own words** — the underlying goal, not the symptom as first framed. Push back if my framing or your own first take is off, and follow the reframe if it moves.
 - **Zoom out to the structure.** Is this a local change the design absorbs cleanly, or is the structure itself in the way? When the foundation fights the change, preparatory refactoring (*make the change easy, then make the easy change*) beats another patch.
 - **Weigh a genuinely different approach** than your first, and keep the first only if it still wins on solving the root problem — not on least disturbance.
+- **Account for what the take risks.** If it lands on the hot path, a surface the user drives often, or a core feature's execution logic, name what runs differently and what holds the risk down — a first take usually looks cheaper than it is.
 
 Back a "structurally wrong" call with code and name its cost; don't manufacture a rewrite for what merely looks imperfect. Where the direction is a real judgment call, say so rather than force a verdict.'''
 
@@ -60,6 +62,15 @@ expand = '''
 Re-present the questions you just asked so I can decide them from your words alone — I haven't read the code or the session behind them.
 
 For each, as if briefing a CEO: why it matters now, what it actually means in plain product terms, the options with what each implies for the real user, and your recommended answer. Where a question is a technical unknown that doesn't change the direction rather than a decision that's mine, move it under "Open technical questions — parked for the consult round" with your working answer instead of asking it.'''
+
+[[snippets]]
+key = "risk-check"
+expand = '''
+Account for the risk this change carries before we go further. This is an accounting pass, not a fix — no code changes.
+
+Risk here isn't lines changed; an internal refactor can be large and inert. It's whether this lands on the **hot path** (code that runs on every request, render, or token), on a **surface the user sees or drives often**, or inside a **core feature's execution logic**.
+
+For each of those it touches: what actually runs differently, what holds the risk down (coverage that already exists, a flag or fallback, a signal that would catch a regression), and — where the risk is real — why it's worth taking. Ground each claim in the code rather than an estimate: "only runs in the error path" is an answer, "overhead is minimal" is not. When it touches none of the three, one line saying so is the whole answer.'''
 
 # ── Spec stage ────────────────────────────────────────
 
@@ -89,7 +100,7 @@ The spec runs top-down, product to technical, each tier at its own altitude.
 - What we're adding or fixing, in product terms — the feature, the bug, the problem it solves.
 - The approach we're taking, and the scope of the change.
 - The boundary once it lands: what's fixed, what isn't, and what's explicitly deferred (one line why each).
-- Risks or impacts on existing users, and our mitigations, if any.
+- Risks to existing users — the hot path, surfaces they drive often, core-feature logic — and what holds each down; one line if the change touches none.
 
 Technical detail earns a place here only where it makes the problem or the solution easier to grasp. Someone who reads nothing else should still know what they're getting and not getting.
 
