@@ -119,6 +119,7 @@ docs/
   claude-accounts.md      multi-account setup
   theming.md              the $TERMINAL_THEME switch
   ghostty-fonts.md        why bold barely reads, why 汉字 render small
+  tmux-popup-patch.md     why tmux is a patched local-tap formula, not stock
   doc-loop.md             the session loop: onboarding → consult/spike/review
                           → update-docs → handoff
   MIGRATION.md            new-machine setup

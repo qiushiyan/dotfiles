@@ -7,6 +7,10 @@ tap "hashicorp/tap"
 tap "jandedobbeleer/oh-my-posh"
 tap "mongodb/brew"
 tap "qiushiyan/degit", "https://github.com/qiushiyan/degit"
+# local-only tap (no remote): recreate on a new machine with `brew tap-new
+# qiushiyan/local` then copy the formula from docs/tmux-popupfix.rb —
+# see docs/tmux-popup-patch.md
+tap "qiushiyan/local"
 tap "supabase/tap"
 
 # === Build dependencies & libraries ===
@@ -72,7 +76,10 @@ brew "rsync"
 brew "sesh"
 brew "stow"
 brew "tldr"
-brew "tmux"
+# stock tmux replaced by qiushiyan/local/tmux-popupfix (3.7b + popup overlay
+# fix, see docs/tmux-popup-patch.md); revert to `brew "tmux"` once an upstream
+# release after 3.7b fixes popups under status-position top
+brew "qiushiyan/local/tmux-popupfix"
 brew "trash"
 brew "tree"
 brew "wget"
