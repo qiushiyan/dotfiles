@@ -21,7 +21,7 @@ A manufactured handoff sends the next session down a road nobody planned. `$ARGU
 - **Thread continues** — work unfinished, or a known next milestone → full handoff: steps 2–5.
 - **Stopped mid-task** — context or time ran out before the work landed → the baton is the most valuable thing you can leave. Run steps 3–5 now and fold the doc pass into the baton's first moves.
 - **Done but not trusted** — the work is "complete" but the user's verdict is that it doesn't merge yet — edge cases kept surfacing after earlier "done" claims — and the next session re-reviews this branch's work before any merge → full handoff: steps 2–5 in **review posture** (step 4 defines it).
-- **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 alone. Step 4 names each baton for what it sends the next session to, so landing this branch spends the baton that spawned it: check both names the convention can produce for the branch you're on — `<branch>` and, when that session was a review, `review-<branch>` — and propose deleting whichever exists. A stale baton is worse than none.
+- **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 alone. Step 4 names each baton for what it sends the next session to, so landing this branch spends the baton that spawned it: check both names the convention can produce for the branch you're on — `<branch>` and, when that session was a review, `review-<branch>` — and propose deleting whichever exists. A stale baton is worse than none. When the whole folder has gone that way — several batons written across a busy week that nobody can now place — `/handoff-sweep` is the pass that reads them together and reconciles them against the repo; this skill writes one baton and cannot see the folder around it.
 
 Review posture is entered on the user's verdict — `$ARGUMENTS` or the session saying the branch isn't ready — never on your own read of the work. A clean ending with a natural next goal is a forward handoff: write it, no question. When the ending shows the *done but not trusted* signature but the verdict was never spoken — a large or bumpy branch, bugs found after green claims, no merge decision stated — settle the gate with one question: *merging this and moving on, or holding it for a review session?*
 
@@ -67,8 +67,11 @@ The first line is the invocation the paste fires; everything under it is context
 ```markdown
 /<onboarding-skill> <the next session's goal in a phrase, with its 2–3 strands>
 
-You are picking up work from a previous session (<date>). Docs and code are the
-truth; this brief is the bridge. Where they disagree, trust the docs and code.
+anchor: <date> · <default-branch> `<sha>` · claims rest on <the PRs, branches
+or changes whose state this brief assumes>
+
+You are picking up work from a previous session. Docs and code are the truth;
+this brief is the bridge. Where they disagree, trust the docs and code.
 
 ## Where things stand
 
@@ -83,11 +86,15 @@ to execute. If none: "No transferable lessons — state only."
 
 ## First moves
 
-1. Read: <the 2–4 files this task hinges on, one line of why each>
-2. Skills: <the project skills this work runs through beyond onboarding,
+1. Drift check, before the reads: `git log <sha>..<default-branch> --oneline --
+   <the paths this brief names>`, then account for everything the anchor lists
+   in one line each — its state now, what landed in those paths since the
+   anchor, and which of this brief's instructions the drift makes moot.
+2. Read: <the 2–4 files this task hinges on, one line of why each>
+3. Skills: <the project skills this work runs through beyond onboarding,
    e.g. log-reading or repro/verify helpers — omit the line when none apply>
-3. Verify for yourself: <the 1–3 claims most likely to bite if taken on faith>
-4. Before writing code: state the plan in your own words and flag anything
+4. Verify for yourself: <the 1–3 claims most likely to bite if taken on faith>
+5. Before writing code: state the plan in your own words and flag anything
    that contradicts this brief. Route questions that arise: product/direction
    forks to the user, each in plain product terms with options, implications,
    and your recommendation; technical unknowns recorded with your working
@@ -100,6 +107,8 @@ Write it to survive the paste:
 - **Every path is repo-relative.** The next session lives in a different worktree; an absolute path into this one dangles. Cite files, specs, PRs and issues by repo-relative path or URL.
 - **Refer to it as "this brief", never as a file.** The next session receives this text as its prompt, not as a file to open.
 
+**The anchor dates the baton; the drift check spends it.** A baton is read a day or a week later, across sibling work its author never saw, so it carries the means to date itself: the write date, the default branch and its sha at writing (`git log -1 --format=%h <default-branch>` — discover the branch name rather than assuming one, `git branch -r` shows `origin/HEAD`), and the PRs, branches or changes whose state its claims rest on. First moves then opens on that diff and ends on which of the brief's own instructions the drift makes moot — the question "trust the docs and code" never asks, because an instruction that shipped in the meantime contradicts nothing in the tree. When the project's baton folder already holds siblings, add `cluster:` for the workstream and `blocked-by:` / `collides-with:` for the batons this one must not run before or beside; with no siblings they are load for nothing.
+
 Point rather than pre-chew — a baton that hands the next session answers instead of pointers robs it of the verification that would make them its own. Reference rather than duplicate: anything already captured in an artifact — the docs the doc pass just updated, specs, issues, commits, diffs — is cited, never restated; the baton carries only what lives nowhere else. Redact secrets before writing — keys, tokens, pasted credentials or log lines carrying them — this text becomes another agent's prompt. Keep it under ~150 lines.
 
 **Review posture** (the gate's *done but not trusted* ending) hands the branch to its reviewer, not its continuer. Same file, same rules, four deltas:
@@ -109,7 +118,7 @@ Point rather than pre-chew — a baton that hands the next session answers inste
 - "Where things stand" carries the **review surface**: the mechanisms and workarounds this branch accreted, one line each, mechanism → home file — the shape to review, not re-derive. Verification state is claims, not facts: suite numbers come with "re-run before trusting".
 - Line 1's goal names the review; unless `$ARGUMENTS` sets its own agenda, it carries the standing one — does the accretion compose or hide seams; what to extract and where the seams go; why the suite stayed green over the escaped edge cases, and the harness that would catch that class. First moves offers the user `/review` — a cold dispatched read to ride beside the session's own.
 
-Done when the baton passes the cold-paste test: the invocation sits on line 1, every pointer resolves from inside the receiving worktree, nothing in it depends on this session or this file existing, and the filename names where the next session goes — the worktree to create, or the review to run when the posture is review.
+Done when the baton passes the cold-paste test: the invocation sits on line 1, every pointer resolves from inside the receiving worktree, nothing in it depends on this session or this file existing, it dates itself with an anchor the receiving session can diff from, and the filename names where the next session goes — the worktree to create, or the review to run when the posture is review.
 
 ## 5 — Close
 
