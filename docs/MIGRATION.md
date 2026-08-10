@@ -91,6 +91,7 @@ step like `./scripts/bootstrap.sh brewfile`) is safe.
 | **sudo password** during `brew bundle` | `xquartz`, `font-sf-mono`, `font-sf-pro` install system-wide | Stay near the keyboard; if you fat-finger it 3×, the formula errors and `brew bundle` aborts. Re-run after. |
 | `mongodb-community` failure | Mongo's brew formula breaks on each new macOS major | Currently commented out in `Brewfile`. If you actually need a local Mongo server, run it via Docker. |
 | The `homebrew/cask` / `homebrew/core` "tap failed" lines | Deprecated taps; brew prints scary text but it's noise | Ignore (they're already removed from `Brewfile`). |
+| `qiushiyan/local` tap fails / `tmux-popupfix` not found | That tap is local-only (no remote) — it carries the patched tmux formula | `brew tap-new qiushiyan/local`, copy `docs/tmux-popupfix.rb` to the tap's `Formula/`, re-run → `docs/tmux-popup-patch.md` |
 | `font-sarasa-gothic` takes a while and lands **793 MB** | It ships one `Sarasa-SuperTTC.ttc` holding 480 faces — SC/TC/J/K × Mono/Term/Fixed/Gothic/UI × every weight — and only `Sarasa Term SC` is used | Let it. Splitting it out means hand-downloading the SC-only archive and leaving Homebrew's management, which is the worse trade → `docs/ghostty-fonts.md` |
 
 ### What `step_thirdparty` installs
