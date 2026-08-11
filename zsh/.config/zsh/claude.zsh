@@ -60,6 +60,9 @@
 #                         (no bypass) session; bare `x`'s target untouched
 #   x-account-add         ≡ claude-account-add <email> — seed a new account
 #                         dir, then /login
+#   x-account-remove      ≡ claude-account-remove <email> — delete an
+#                         account dir + its Keychain item (also removes
+#                         stranded <dir>.lock vendor debris)
 #
 # To bypass permissions on every invocation instead — plain `claude`
 # included — set  "permissions": { "defaultMode": "bypassPermissions" }  in
@@ -123,6 +126,7 @@ _claude_canonical() {
     return 0
   fi
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
+    [[ "${d:t}" == *.lock ]] && continue  # stranded vendor lock dir, not an account
     [[ "${${d:t}%%@*}" == "$q" ]] && hits+=("${d:t}")
   done
   (( ${#hits} == 1 )) && { print -r -- "${hits[1]}"; return 0 }
@@ -144,8 +148,9 @@ _claude_selector() {
 }
 
 # x-* names for the whole toolkit, so one prefix reaches everything.
-x-account()     { claude-account "$@" }
-x-account-add() { claude-account-add "$@" }
+x-account()        { claude-account "$@" }
+x-account-add()    { claude-account-add "$@" }
+x-account-remove() { claude-account-remove "$@" }
 x-check()       { headroom check "$@" }
 # Account board (headroom accounts): live usage for every account, refreshing
 # itself while it is open. Enter repins bare `x` and exits — deliberately no
@@ -273,6 +278,68 @@ claude-account-add() {
   echo "next: $(_claude_selector "$1") → /login as $1"
 }
 
+# Remove an account dir — or stranded `<dir>.lock` vendor debris — the
+# inverse of claude-account-add. Refuses while the account has a live
+# registered session; deletes the per-dir Keychain credential item (service
+# "Claude Code-credentials-" + sha256(dir)[:8], the same derivation Claude
+# Code and headroom use), then the dir, and scrubs the `.order` line.
+# Transcripts are machine-global and survive: the picker shows the removed
+# owner as degraded, and `x` on a row re-homes it. Nothing rewrites
+# `.current` behind headroom's back — if bare `x` pointed here, `headroom
+# launch` refuses (corrupt-vs-chosen stays distinguishable) until the
+# board's enter repicks.
+claude-account-remove() {
+  emulate -L zsh
+  if [[ "${1-}" != *@* && "${1-}" != *.lock ]] || [[ "$1" == */* ]]; then
+    echo "usage: claude-account-remove <email> (or a stranded <dir>.lock)" >&2
+    return 1
+  fi
+  local email="$1" dir="$CLAUDE_ACCOUNTS_ROOT/$1"
+  if [[ ! -d "$dir" ]]; then
+    echo "claude-account-remove: $dir does not exist" >&2
+    return 1
+  fi
+  # A registered session whose pid is still alive refuses the removal:
+  # deleting a config dir under a running claude orphans its login state.
+  local f pid
+  for f in "$dir"/sessions/*.json(N); do
+    pid=$(grep -o '"pid":[0-9]*' "$f" 2>/dev/null | head -1)
+    pid="${pid#*:}"
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+      echo "claude-account-remove: live session (pid $pid, $f) — quit it first" >&2
+      return 1
+    fi
+  done
+  local login
+  login=$(grep -o '"emailAddress": *"[^"]*"' "$dir/.claude.json" 2>/dev/null | head -1)
+  login="${${login##*: \"}%\"}"; login="${${login##*:\"}%\"}"
+  echo "removing $dir${login:+ (logged in as $login)}"
+  printf 'type the dir name to confirm: '
+  local reply; read -r reply
+  if [[ "$reply" != "$email" ]]; then
+    echo "aborted" >&2
+    return 1
+  fi
+  # The Keychain item exists only if this dir ever ran /login; lock debris
+  # and never-bound seeds have none, and that is not an error.
+  local svc="Claude Code-credentials-$(printf %s "$dir" | shasum -a 256 | cut -c1-8)"
+  if security delete-generic-password -s "$svc" -a "$USER" >/dev/null 2>&1; then
+    echo "deleted Keychain item ($svc)"
+  else
+    echo "no Keychain item ($svc) — never logged in, or already gone"
+  fi
+  rm -rf -- "$dir"
+  local ord="$CLAUDE_ACCOUNTS_ROOT/.order"
+  if [[ -f "$ord" ]] && grep -Fqx "$email" "$ord"; then
+    grep -Fvx "$email" "$ord" > "$ord.tmp" && mv "$ord.tmp" "$ord"
+    echo "removed from .order"
+  fi
+  unfunction "x-$email" 2>/dev/null || true
+  _claude_gen_launchers
+  echo "removed $dir"
+  echo "if bare x pointed here it now refuses — x-acc repicks; exec zsh drops stale short aliases"
+}
+
 # Generate launchers for every account dir. Each starts one session on its
 # account and nothing more — deliberately no --remember: a named launch is
 # scoped ("this session, that account"), and a pin riding along as its side
@@ -290,10 +357,12 @@ _claude_gen_launchers() {
   local d email name
   local -A count   # local part → number of accounts claiming it
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
+    [[ "${d:t}" == *.lock ]] && continue  # stranded vendor lock dir, not an account
     name="${${d:t}%%@*}"
     count[$name]=$(( ${count[$name]:-0} + 1 ))
   done
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
+    [[ "${d:t}" == *.lock ]] && continue
     email="${d:t}" name="${email%%@*}"
     functions[x-$email]="_claude_launch ${(q)email} --dangerously-skip-permissions \"\$@\""
     if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]] && (( ! ${CLAUDE_X_RESERVED[(Ie)$name]} )); then

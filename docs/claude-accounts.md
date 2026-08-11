@@ -146,6 +146,20 @@ Everything derives from that tree:
   `x-account`); like `x-<name>`, bare `x`'s target is untouched.
 - **New subscription**: `claude-account-add <email>` seeds the dir and names
   the launcher; `/login` on its first launch binds the account.
+- **Retired subscription**: `claude-account-remove <email>` (alias
+  `x-account-remove`) — refuses while the account has a live session, then
+  deletes its Keychain item (service `Claude Code-credentials-` +
+  `sha256(dir)[:8]`, the same derivation Claude Code uses) and the dir, and
+  scrubs the `.order` line. Transcripts survive — they are machine-global —
+  and the picker shows the dead owner as degraded until `x` re-homes each
+  session. `.current` is never rewritten behind headroom's back: if bare `x`
+  pointed at the removed account, launches refuse until `x-acc` repicks.
+- **A `<name>.lock` "account" appears**: vendor lock debris, not an account —
+  Claude Code's config locking creates `<dir>.lock` directories and a crash
+  strands them in the accounts root (observed 2026-08-10). headroom's
+  discovery and the launcher glob both skip them, and `headroom check` names
+  stranded ones; `claude-account-remove <name>.lock` (or a plain `rm -rf`
+  with no claude running) deletes the debris.
 - **Stale token** on a rarely-used account: the board says so — run that
   account's `x-<name>` once. Only Claude Code refreshes tokens; the engine
   never touches login or quota state (its own files are `.current` and
