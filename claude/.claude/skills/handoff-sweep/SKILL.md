@@ -29,9 +29,11 @@ Each baton's declared fields joined against live git: cluster, anchor, how far t
 
 **Then a state pass, because the index's join is deliberately shallow and every miss it makes fails the same direction: finished work reported as nothing.** It matches a PR by head branch equal to the slug, so a baton whose branch carries a convention prefix (`feat/<slug>`) reads `unstarted` over an open, review-ready PR; and a branch nobody has filed a PR for is invisible to it entirely — which is exactly the state a large finished branch sits in for days. Run `git worktree list`, `gh pr list --state open`, and for every baton with a branch, `git diff --stat <default-branch>...<branch>`: the file set and its size, not merely whether it exists.
 
-State is the most load-bearing input to everything below, and the first thing a human asks about. Take it from the repo, never from the table alone.
+State is the most load-bearing input to everything below, and the first thing a human asks about. Take it from the repo, never from the index alone.
 
-Done when every baton appears in the table, and every branch or PR the folder implies has been resolved to a state you read rather than inferred.
+Done when every baton appears in the index, and every branch or PR the folder implies has been resolved to a state you read rather than inferred.
+
+The index closes on **what the folder owes** — a cluster a baton names that `_clusters.md` defines nowhere, an ordering entry pointing at a baton that no longer exists, a live baton nobody has placed in the order. Those three are derived, so they are the reconcile pass's worklist rather than something to notice: whatever it lists, step 5 resolves.
 
 ## 2 — Read the folder
 

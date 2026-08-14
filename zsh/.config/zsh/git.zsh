@@ -1107,42 +1107,18 @@ _gitguard() {
 #   brief <fragment>   that brief's gwt command, its pointer on the clipboard
 brief() {
   emulate -L zsh
-  local helper="$HOME/.claude/skills/handoff/handoff-path.sh"
   local index="$HOME/.claude/skills/handoff-sweep/baton-index.sh"
-  local probe folder file slug base f c
-  local -a matches
+  local out slug file goal base existing c
 
-  # The folder scheme is the handoff skill's, never recomputed here — it
-  # handles worktrees, submodules and symlinked dev roots, and two copies of
-  # that logic would drift.
-  probe=$(bash "$helper" _probe_ 2>/dev/null) || {
-    print -u2 "brief: not inside a git repository — cd to the project first"; return 1
-  }
-  folder=${probe:h}   # the helper mkdir -p's this, so it always exists
-
-  # No argument: the index answers "what is waiting, and can it run yet?".
+  # No argument: the index answers "what is waiting, can it run yet, and does
+  # the folder owe a sweep?".
   [[ -n "$1" ]] || { bash "$index"; return }
 
-  # A brief is a file whose line 1 is the invocation it fires — the index's own
-  # test, reused so what matches here is exactly what it listed. A retired
-  # brief is *.md.done and drops out of both. Match the fragment against the
-  # SLUG, never the absolute path, or the fixed prefix (.handoffs, the project
-  # dir) makes every fragment match everything.
-  for f in ${(f)"$(find "$folder" -name '*.md' -type f | sort)"}; do
-    [[ $(head -1 "$f") == /* ]] || continue
-    [[ ${${${f#$folder/}%.md}:l} == *${1:l}* ]] && matches+=("$f")
-  done
-
-  if (( ${#matches} == 0 )); then
-    print -u2 "brief: nothing matching '$1' — the queue:"; bash "$index"; return 1
-  elif (( ${#matches} > 1 )); then
-    print -u2 "brief: '$1' matches ${#matches} briefs:"
-    for f in $matches; do print -u2 "  ${${f#$folder/}%.md}"; done
-    return 1
-  fi
-
-  file=$matches[1]
-  slug=${${file#$folder/}%.md}
+  # The index owns what counts as a baton and how a slug is matched — one
+  # parser, so this never disagrees with the listing it just showed you.
+  out=$(bash "$index" --resolve "$1") || return $?
+  slug=${out%%$'\t'*}; out=${out#*$'\t'}
+  file=${out%%$'\t'*}; goal=${out#*$'\t'}
 
   base=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
   base=${base#origin/}
@@ -1154,20 +1130,22 @@ brief() {
 
   printf '%s\nBrief: %s\n' "$(head -1 "$file")" "$file" | pbcopy
 
+  print -P "%F{cyan}%B$slug%b%f"
+  [[ -n $goal ]] && print -P "  %F{242}${goal[1,140]}%f"
+
   # What to run depends on what the slug already is. A review-posture baton
   # names no new branch — its subject is an existing worktree. A slug already
   # checked out somewhere is a resume, and `gwt` would refuse the existing path.
-  local existing
   existing=$(git worktree list --porcelain \
              | awk -v b="refs/heads/$slug" '/^worktree /{p=substr($0,10)} $0=="branch "b{print p; exit}')
   if [[ $slug == review-* ]]; then
-    print "  review posture — open the ${slug#review-} worktree; the pointer is the whole ready command"
+    print -P "  %F{yellow}review posture%f — open the ${slug#review-} worktree; the pointer is the whole ready command"
   elif [[ -n $existing ]]; then
-    print "  cd $existing"
+    print -P "  %F{green}cd%f $existing"
   else
-    print "  gwt $slug ${base:-develop}"
+    print -P "  %F{green}gwt%f $slug ${base:-develop}"
   fi
-  print "  pointer on the clipboard"
+  print -P "  %F{242}pointer on the clipboard%f"
 }
 
 _brief() {
