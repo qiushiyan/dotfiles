@@ -2,8 +2,8 @@
 name: handoff
 description: Wrap up a session into a baton for the next one — an optional doc pass, the session's harvest (lessons and friction), and a handoff file named for the next session's branch that *is* its first prompt, ready to paste into a fresh worktree — or back into this one, in review posture, when the branch isn't ready to merge.
 disable-model-invocation: true
-argument-hint: [optional: the next session's goal, e.g. "next: wire the retry path", "review posture: not merging yet" — or "nothing queued"]
-allowed-tools: Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git branch:*), Bash(git merge-base:*), Bash(git worktree list:*), Bash(bash ~/.claude/skills/handoff/handoff-path.sh:*), Bash(date:*), Bash(pbcopy:*), Read, Write, Edit, Glob, Grep, Agent
+argument-hint: "optional: the next session's goal, e.g. 'next: wire the retry path', 'review posture: not merging yet' — or 'nothing queued'"
+allowed-tools: Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git branch:*), Bash(git merge-base:*), Bash(git worktree list:*), Bash(bash ~/.claude/skills/handoff/handoff-path.sh:*), Bash(bash ~/.claude/skills/handoff-sweep/baton-index.sh:*), Bash(date:*), Bash(pbcopy:*), Read, Write, Edit, Glob, Grep, Agent
 ---
 
 # Hand off the session
@@ -58,7 +58,7 @@ bash ~/.claude/skills/handoff/handoff-path.sh <slug>
 
 **`<slug>` is the branch the next session will work on**, not the one this session worked on. Today's branch is merged or nearly so, so a baton named for it is filed under work that's already over — and the next worktree's name, the one thing you'd have to open the file to find, stays hidden. Named forward, the filename is already the argument step 5 hands over: one token for the baton, the branch, and the worktree.
 
-Write it as you'd write the branch, because it is the branch. The repo's own convention (`git branch`, `git worktree list`) sets the shape — including a `feat/`-style prefix where that's the convention, which nests the baton exactly as it nests the worktree — and within that: lowercase kebab, 2–4 words, naming the outcome the next session is heading for. `retry-backoff-ceiling`, `pty-harness`, `steer-render-split`. Today's branch plus a suffix (`-followup`, `-part-2`, a trailing date) names the road behind instead, and a worktree's name is the first thing its session reads.
+Write it as you'd write the branch, because it is the branch. [`SLUG-NAMING.md`](SLUG-NAMING.md) carries the **cold-read test** it has to pass — a place and an outcome, in words the tree already uses; read it before you choose, and note that a project skill wrapping this one may bind it to that project's own vocabulary.
 
 A same-named file is an earlier baton for this same goal — overwrite it. Two *live* batons colliding means one slug is too vague; sharpen it.
 
@@ -118,7 +118,9 @@ Point rather than pre-chew — a baton that hands the next session answers inste
 - "Where things stand" carries the **review surface**: the mechanisms and workarounds this branch accreted, one line each, mechanism → home file — the shape to review, not re-derive. Verification state is claims, not facts: suite numbers come with "re-run before trusting".
 - Line 1's goal names the review; unless `$ARGUMENTS` sets its own agenda, it carries the standing one — does the accretion compose or hide seams; what to extract and where the seams go; why the suite stayed green over the escaped edge cases, and the harness that would catch that class. First moves offers the user `/review` — a cold dispatched read to ride beside the session's own.
 
-Done when the baton passes the cold-paste test: the invocation sits on line 1, every pointer resolves from inside the receiving worktree, nothing in it depends on this session or this file existing, it dates itself with an anchor the receiving session can diff from, and the filename names where the next session goes — the worktree to create, or the review to run when the posture is review.
+Done when the baton passes the cold-paste test — the invocation sits on line 1, every pointer resolves from inside the receiving worktree, nothing in it depends on this session or this file existing, it dates itself with an anchor the receiving session can diff from, and the filename names where the next session goes — **and** `bash ~/.claude/skills/handoff-sweep/baton-index.sh` shows the row you just wrote reading true.
+
+That last one is the half you cannot get by re-reading the file: the index renders what the file only claims, so it is what catches a cluster that didn't parse, an anchor sha the drift column resolves as `?`, a head block that fell past the parser's window, or a `blocked-by` naming a sibling that isn't there. It also stands the new name beside its siblings — the closest thing available to a cold reader's first look at it.
 
 ## 5 — Close
 
