@@ -94,7 +94,8 @@ changing one piece without the others breaks it.
   `tmux-claude-ctx.sh` is the sole owner of turning borders off →
   `tmux/.config/tmux/workflow.md`.
 - **tmux pane control** — `prefix z` floats a pane into an overlay rather than
-  zooming it; `prefix p` holds the pane-moving verbs. A float genuinely
+  zooming it; `prefix C-z` opens an ephemeral scratch popup at the pane's cwd;
+  `prefix p` holds the pane-moving verbs. A float genuinely
   relocates the pane into a holder session, which is why so much hangs off it.
   **Read `tmux/.config/tmux/scripts/float-pane.md` before editing
   `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, or the pane/float key tables.**

@@ -1,10 +1,13 @@
 # Floating zoom & pane mode — design notes
 
-One control plane for moving panes around, in two halves:
+One control plane for moving panes around, in three parts:
 
 - **`prefix z`** — maximize the current pane into a *floating* overlay instead of
   tmux's all-or-nothing zoom, so the rest of the window stays visible and live
   behind it. `tmux-float-pane.sh`.
+- **`prefix C-z`** — an *ephemeral* scratch shell in a popup at the current
+  pane's directory; closing the shell disposes of it. Same script, none of the
+  holder machinery — see "The scratch popup".
 - **`prefix p`** — a sticky "pane mode" key table holding every pane-moving verb
   behind one key. `tmux-pane-relocate.sh` + the `panes` table in `tmux.conf`.
 
@@ -89,6 +92,50 @@ The holder needs **both** halves of the restriction:
 
 Keys unbound in a custom root table pass through to the pane, so typing in the
 floated app is unaffected — the standard nested-tmux recipe.
+
+One more piece of staging is about the client, not keys: the holder sets
+`detach-on-destroy on`, session-local. When the floated pane's process exits
+*inside* the float (`:q` in a floated nvim), the holder — whose only content it
+is — is destroyed with the nested client still attached, and this config's
+global `detach-on-destroy off` would re-home that client onto the most recently
+active session. The popup then becomes a live **mirror** of the session behind
+it, with the full key surface (float-root died with the holder): `prefix z`
+digs a *deeper* float instead of closing, and ctrl-d drives the real panes
+through the glass. tmux reads the option from the dying session, so the
+holder-local `on` detaches the client instead — the blocking attach returns,
+restore runs (a no-op; the pane is gone), the popup closes, and the global
+preference is untouched. Shipped as a live incident (2026-08-14); pinned by
+T25.
+
+## The scratch popup
+
+`prefix C-z` opens an **ephemeral** shell in a popup at the active pane's
+current directory — poke around next to a running agent without carving a pane
+out of the layout first. Deliberately none of the float's machinery: no holder,
+no state, no resurrect interaction, and no key-table staging — the popup runs a
+plain shell, not a nested tmux client, so the outer prefix surface is never
+inherited. The popup's lifecycle *is* the garbage collection: `ctrl-d` / `exit`
+ends the shell, `display-popup -E` reaps the popup, nothing remains.
+
+This is the second consumer the container-adapter note above anticipated — and
+it shares only the presentation conventions (geometry, border validation,
+title), exactly as prescribed: the holder state machine exists to relocate a
+tiled pane and restore a source layout, and a scratch shell has neither.
+
+**The scratch must not look like the float.** Ctrl-d in a float kills a real
+process the user cares about; ctrl-d in a scratch is the way out. Opposite
+semantics, so opposite dress: the scratch is smaller (75% vs 90%) and keeps the
+transient-dialog `rounded` border while the float wears `heavy`. Override with
+`tmux set -g @scratch_border <...>`, same values as `@float_border`.
+
+Two small affordances: `SCRATCH_SRC_PANE` rides into the popup's environment so
+a script inside can `send-keys` back to the pane it was opened from, and
+`SCRATCH_CMD` is the testing seam standing in for the interactive shell (T26
+asserts "opens at the pane's cwd" and "leaves nothing behind" through it).
+
+The *persistent* variant (history and cwd surviving across toggles) remains a
+`roadmap.md` item; it would re-introduce session naming and idle GC, which is
+exactly the machinery this deliberately does not have.
 
 ## Restore and recovery
 

@@ -743,10 +743,83 @@ t24() {
         "$(T show -pqv -t "$P" @fl_phase)" ""
 }
 
+# ---------------------------------------------------------------------------
+# T25 — THE MIRROR. The floated pane's process exiting inside the float (`:q`
+# in a floated nvim) destroys the holder with the nested client still attached;
+# the global detach-on-destroy=off then re-homed that client onto the source
+# session, turning the popup into a live mirror of the session behind it, full
+# key surface included — prefix z dug a deeper float instead of closing, and
+# ctrl-d drove the real panes through the glass. The holder-local
+# detach-on-destroy=on must detach the client instead. Shipped as a live
+# incident (2026-08-14, a floated nvim).
+# ---------------------------------------------------------------------------
+t25() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    P=$(T display -p -t "$W" '#{pane_id}')
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
+    sleep 2
+    holder=$(T list-sessions -F '#{session_name}' | grep '^_float_' | head -1)
+    if [ -z "$holder" ]; then no "T25 holder exists" "none"; return; fi
+
+    # A real nested client on the holder — exactly what the container's
+    # blocking attach is.
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK attach -t '=$holder'" Enter
+    sleep 2.5
+    check "T25 nested client is on the holder" \
+        "$(T list-clients -F '#{client_session}' | head -1)" "$holder"
+
+    # The pane dies in the float — same as quitting the floated program.
+    T kill-pane -t "$P"; sleep 1
+
+    check "T25 holder died with its pane" \
+        "$(T list-sessions -F '#{session_name}' | grep -c '^_float_' || true)" "0"
+    check "T25 client detached, not re-homed into a mirror" \
+        "$(T list-clients 2>/dev/null | wc -l | tr -d ' ')" "0"
+}
+
+# ---------------------------------------------------------------------------
+# T26 — scratch popup: opens AT the pane's cwd, and its whole lifecycle leaves
+# nothing behind — no session, no holder, no pane state. SCRATCH_CMD is the
+# seam standing in for the interactive shell.
+# ---------------------------------------------------------------------------
+t26() {
+    fresh
+    sess_before=$(T list-sessions | wc -l | tr -d ' ')
+
+    # No client to draw on: scratch must fail without creating anything —
+    # there is no state machine to roll back, and this proves it.
+    P0=$(T display -p -t t '#{pane_id}')
+    R "$FLOAT" scratch "$P0" >/dev/null 2>&1
+    check "T26 clientless scratch creates nothing" \
+        "$(T list-sessions | wc -l | tr -d ' ')" "$sess_before"
+
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T26 client attached" "no client"; return; fi
+
+    mkdir -p "$SANDBOX/scr-cwd"
+    P=$(T split-window -P -F '#{pane_id}' -c "$SANDBOX/scr-cwd" -t t)
+    sleep 0.3
+    SCRATCH_CMD="pwd > '$SANDBOX/scratch-out'" R "$FLOAT" scratch "$P" "$C" >/dev/null 2>&1
+    sleep 0.5
+    check "T26 scratch opened at the pane's cwd" \
+        "$(grep -c 'scr-cwd$' "$SANDBOX/scratch-out" 2>/dev/null || true)" "1"
+    check "T26 scratch leaves no session behind" \
+        "$(T list-sessions | wc -l | tr -d ' ')" "$sess_before"
+    check "T26 scratch leaves no holder or float state" \
+        "$(T list-panes -a -F '#{@fl_phase}' | grep -c . || true)" "0"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
 for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t8 t9 t10 t11 t14 \
-         t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24; do
+         t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24 t25 t26; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

@@ -20,6 +20,8 @@
 #   toggle <pane> [client]  float the pane (no-op if already floating)
 #   restore <pane>          put it back; IDEMPOTENT — safe to call twice, and
 #                           safe to call on a pane that was never floated
+#   scratch <pane> [client] EPHEMERAL popup shell at the pane's current
+#                           directory; no holder, no state — see scratch_popup
 #   sweep                   restore every stranded holder (crash recovery)
 #   prepare-save            sweep, then block until settled — for the resurrect
 #                           save wrapper, so a snapshot never records a float
@@ -82,6 +84,14 @@ FLOAT_CLAIM_TTL="${FLOAT_CLAIM_TTL:-30}"
 #   tmux set -g @float_border double
 FLOAT_BORDER_DEFAULT=heavy
 
+# The scratch popup must NOT look like the float: ctrl-d in a float kills a
+# real process the user cares about, ctrl-d in a scratch is the way out. So the
+# scratch is smaller and keeps the transient-dialog rounded border while the
+# float wears heavy. Override: tmux set -g @scratch_border <same values>.
+SCRATCH_W="${SCRATCH_W:-75%}"
+SCRATCH_H="${SCRATCH_H:-75%}"
+SCRATCH_BORDER_DEFAULT=rounded
+
 msg() { tmux display-message "$*" 2>/dev/null || true; }
 
 # --- small helpers over tmux state -------------------------------------------
@@ -112,6 +122,18 @@ sess_exists()  { tmux has-session -t "=$1" 2>/dev/null; }
 # reconciled by the single owner, with no target (= all-window sweep). A moved
 # pane strands markers on BOTH ends, and a targeted call can only fix one.
 reconcile() { TMUX_PANE= bash "$CLAUDE_CTX" reconcile >/dev/null 2>&1 || true; }
+
+# Validate a @*_border override — display-popup rejects an unknown value
+# outright, which would fail the whole presentation over a typo.
+resolve_border() { # <@option> <default>
+    local b
+    b=$(tmux show -gqv "$1" 2>/dev/null)
+    case "$b" in
+        single|rounded|double|heavy|simple|padded|none) printf '%s' "$b" ;;
+        "") printf '%s' "$2" ;;
+        *)  msg "float: ignoring invalid $1 '$b'"; printf '%s' "$2" ;;
+    esac
+}
 
 # Restore `want_order` (space-separated pane ids) as the window's tiled pane
 # ORDER, then apply `layout`. Order first: the layout string is positional.
@@ -158,6 +180,19 @@ container_restrict_keys() {
     tmux set -t "$holder" key-table float-root 2>/dev/null
     tmux set -t "$holder" prefix  None 2>/dev/null
     tmux set -t "$holder" prefix2 None 2>/dev/null
+    # THE MIRROR TRAP. When the floated pane's process exits IN the float
+    # (`:q` in a floated nvim, ctrl-d in a floated shell), the holder — whose
+    # only content it is — is destroyed with the nested client still attached.
+    # tmux then consults detach-on-destroy, and this config's global `off`
+    # re-homes that client to the most recently active session: the popup
+    # becomes a live MIRROR of the session it floats over, with the full key
+    # surface (float-root died with the holder), where `prefix z` opens a
+    # deeper float instead of closing this one and ctrl-d drives the REAL
+    # panes through the glass. tmux reads the option from the DYING session,
+    # so a holder-local `on` detaches the nested client instead — the blocking
+    # attach returns, the container restores (a no-op, the pane is gone), and
+    # the popup closes. The user's global preference is untouched.
+    tmux set -t "$holder" detach-on-destroy on 2>/dev/null
 }
 
 # Undo the above. Needed whenever a holder is surfaced to the user as a recovery
@@ -165,7 +200,7 @@ container_restrict_keys() {
 # are dead in it.
 container_release_keys() {
     local holder="$1" o
-    for o in key-table prefix prefix2 status; do
+    for o in key-table prefix prefix2 status detach-on-destroy; do
         tmux set -t "$holder" -u "$o" 2>/dev/null
     done
 }
@@ -180,16 +215,8 @@ open_container() {
     local holder="$1" pane="$2" client="$3" sock
     sock=$(tmux display-message -p '#{socket_path}' 2>/dev/null)
 
-    # Validate the override — display-popup rejects an unknown value outright,
-    # which would fail the whole presentation over a typo.
     local border
-    border=$(tmux show -gqv @float_border 2>/dev/null)
-    case "$border" in
-        single|rounded|double|heavy|simple|padded|none) ;;
-        "") border="$FLOAT_BORDER_DEFAULT" ;;
-        *)  msg "float: ignoring invalid @float_border '$border'"
-            border="$FLOAT_BORDER_DEFAULT" ;;
-    esac
+    border=$(resolve_border @float_border "$FLOAT_BORDER_DEFAULT")
 
     # Title the float after what is IN it — the pane's label if it has one, else
     # the running command. (It used to show the holder's nonce, a pid-epoch pair
@@ -225,6 +252,15 @@ float_pane() {
     local win sess
     win=$(tmux display-message -p -t "$pane" '#{window_id}')
     sess=$(tmux display-message -p -t "$pane" '#{session_name}')
+
+    # A pane already sitting in a holder is the floated pane itself, seen
+    # through its container. The phase check above catches it in practice;
+    # this holds the invariant even for a holder pane whose state is missing
+    # (mid-clear, or joined in by hand) — toggling THAT would break the pane
+    # out into a second holder and strand the first float's restore metadata.
+    if [ -n "$(tmux show -qv -t "$sess" @fl_holder_nonce 2>/dev/null)" ]; then
+        msg "float: already inside a float"; return 1
+    fi
 
     # Floating the only tiled pane would destroy the window and leave nothing
     # behind the container — which is the entire value of this over zoom.
@@ -323,6 +359,43 @@ float_pane() {
     # unconditionally covers that: on the normal path the container's own shell
     # has already restored, and restore is idempotent, so this is a no-op.
     restore_pane "$pane"
+}
+
+# --- scratch ------------------------------------------------------------------
+
+# `prefix C-z`: an EPHEMERAL shell in a popup, opened at the active pane's
+# current directory — poke around next to a running agent without carving a
+# pane out of the layout first. Deliberately none of the float's machinery: no
+# holder, no state, no resurrect interaction, and no key-table staging either —
+# the popup runs a plain shell, not a nested tmux client, so the outer prefix
+# surface is never inherited. The popup's lifecycle IS the garbage collection:
+# ctrl-d / exit ends the shell, display-popup -E reaps the popup, nothing
+# remains. This is the second consumer of the presentation conventions
+# (geometry, border validation, title) — see "the container adapter" above for
+# why it must NOT share the holder state machine.
+#
+# SCRATCH_CMD is a testing seam: the suite substitutes a command that records
+# its cwd and exits, which is how "opens at the pane's directory" and "leaves
+# nothing behind" are asserted without a human watching a popup.
+scratch_popup() {
+    local pane="$1" client="${2:-}"
+
+    pane_exists "$pane" || { msg "scratch: no such pane"; return 1; }
+
+    local dir
+    dir=$(tmux display-message -p -t "$pane" '#{pane_current_path}' 2>/dev/null)
+    [ -d "$dir" ] || dir="$HOME"
+
+    local border
+    border=$(resolve_border @scratch_border "$SCRATCH_BORDER_DEFAULT")
+
+    # SCRATCH_SRC_PANE rides in so a script run inside the scratch can
+    # send-keys back to the pane it was opened from.
+    local args=(-E -d "$dir" -w "$SCRATCH_W" -h "$SCRATCH_H" -b "$border"
+                -T " scratch · ${dir##*/} " -e SCRATCH_SRC_PANE="$pane")
+    [ -n "$client" ] && args+=(-c "$client")
+
+    tmux display-popup "${args[@]}" "${SCRATCH_CMD:-exec ${SHELL:-bash} -il}"
 }
 
 # --- restore ------------------------------------------------------------------
@@ -670,6 +743,7 @@ prepare_save() {
 case "${1:-}" in
     toggle)  float_pane "${2:?pane required}" "${3:-}" ;;
     restore) restore_pane "${2:?pane required}" ;;
+    scratch) scratch_popup "${2:?pane required}" "${3:-}" ;;
     sweep)   sweep ;;
     prepare-save) prepare_save ;;
     container)
@@ -682,7 +756,7 @@ case "${1:-}" in
         bash "$SELF" restore "$pane"
         ;;
     *)
-        printf 'usage: %s {toggle|restore|sweep|prepare-save} ...\n' "${0##*/}" >&2
+        printf 'usage: %s {toggle|restore|scratch|sweep|prepare-save} ...\n' "${0##*/}" >&2
         exit 64
         ;;
 esac

@@ -52,16 +52,20 @@ framing has inverted.)
 **What:** one key toggles a *persistent* floating shell (history + cwd preserved)
 for quick `git` / `gh` / `ls`; another dismisses it. Your layout never moves.
 
-**What already covers part of it:** tmux 3.7's native floating panes
-(`prefix *` → `new-pane`) give a non-modal floating shell for free. That handles
-the quick-command case; what it does not give is **persistence** across toggles,
-which was the point of the original item.
+**What already covers part of it:** the **ephemeral** scratch popup shipped as
+`prefix C-z` (`scripts/float-pane.md`, "The scratch popup") — a disposable
+shell at the current pane's cwd, gone on exit. tmux 3.7's native floating panes
+(`prefix *` → `new-pane`) also give a non-modal floating shell. What neither
+gives is **persistence** across toggles, which was the point of the original
+item — this entry is now only that remainder.
 
-**Mechanism:** a second caller of the float's container adapter
-(`scripts/float-pane.md`), pointed at a persistent scratch session instead of a
-relocated pane. Share only the adapter — the holder state machine exists to
-relocate a tiled pane and restore a source layout, and a scratch terminal has
-neither.
+**Mechanism:** point the shipped scratch presentation at a persistent scratch
+session (a nested attach) instead of a fresh shell. Share only the presentation
+— the holder state machine exists to relocate a tiled pane and restore a source
+layout, and a scratch terminal has neither. NB: a persistent session brings
+back naming and idle-GC questions the ephemeral variant deliberately avoids,
+and a nested attach means the key-table staging questions too — decide before
+building.
 
 **Effort:** small.
 

@@ -75,6 +75,7 @@ A typical task window: agent on one side, dev server on the other, a scratch she
 - **Split:** **`prefix |`** side by side, **`prefix -`** stacked — both open in the current pane's directory.
 - **Move between panes:** `prefix h/j/k/l`, or **`Ctrl+h/j/k/l` with no prefix** (these also hop in and out of Neovim splits seamlessly).
 - **Focus one:** **`prefix z`** maximizes the pane into a **floating overlay** — the rest of the window stays visible *and live* behind it, so a build or another agent keeps scrolling while you read. `prefix z` again puts it back exactly where it was. (Stock fullscreen zoom is still on `prefix Z`.)
+- **Quick shell:** **`prefix C-z`** pops up a **throwaway shell at the current pane's directory** — check `git status` or an `ls` next to a running agent without splitting a pane off. `C-d` closes and disposes of it; it's smaller than the float and rounded-bordered so the two never look alike (in a float, `C-d` would kill your real process).
 - **Rearrange:** **`prefix p`** — see below. **Close:** just exit its shell (`C-d`); `prefix X` force-kills a stuck pane.
 
 ### Rearranging panes (`prefix p`)
