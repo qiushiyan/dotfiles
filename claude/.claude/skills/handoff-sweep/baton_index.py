@@ -78,10 +78,20 @@ def parse_baton(path: Path, folder: Path) -> Baton | None:
     # anything, so a line 1 without one is worth saying out loud.
     if m := re.match(r"^/(\S+)\s*(.*)$", lines[0]):
         rest = m.group(2).strip()
-        route, sep, goal = rest.partition("—")
-        b.topic = route.strip()
-        b.goal = goal.strip()
-        if not sep or not b.goal:
+        left, sep, right = rest.partition("—")
+        # A route is a short argument the invoked skill takes (`infra`,
+        # `infra-runtime`). Anything longer is prose, which means this skill
+        # takes no route and the whole line is the goal — including its dashes.
+        short = len(left.split()) <= 3
+        if sep and short:
+            b.topic, b.goal = left.strip(), right.strip()   # `<route> — <goal>`
+        elif sep:
+            b.topic, b.goal = "", rest                      # prose that contains a dash
+        elif short:
+            b.topic, b.goal = rest, ""                      # a route and nothing else
+        else:
+            b.topic, b.goal = "", rest                      # a goal, no route argument
+        if not b.goal:
             b.warnings.append("line 1 carries no goal — the paste says only the route")
 
     head = "\n".join(lines[:HEAD_LINES])
