@@ -285,8 +285,10 @@ create_worktree() {
   if [ -e "$path" ]; then echo "path already exists: $path"; sleep 1.5; return 1; fi
   base="$(wt_default_base)"
   mkdir -p "$(dirname "$path")"
-  # wt_add forks a new branch (falls back to checking out an existing one); on
-  # failure it prints git's error to stderr — pause so it's readable before the loop refreshes.
+  # wt_add resolves the name and picks the verb itself: existing local branch →
+  # checkout, remote-only branch → tracking checkout, otherwise a new branch off
+  # $base (so $base is a suggestion, not a decision). On failure it prints git's
+  # error to stderr — pause so it's readable before the loop refreshes.
   if ! wt_add "$name" "$base" "$path"; then sleep 2.5; return 1; fi
   winid="$(tmux new-window -t "$session" -n "$win" -c "$path" -P -F '#{window_id}')"
   maybe_copy_files "$path"               # seed .env* etc. BEFORE install may need them
@@ -490,7 +492,7 @@ reap_merged() {
 
 # ctrl-p: open GitHub PRs via gh; enter fetches the PR head into a local branch
 # (refs/pull/<n>/head exists for fork PRs too) and reuses the normal create
-# path — wt_add's existing-branch fallback checks it out, then window, file
+# path — wt_add resolves the now-local branch and checks it out, then window, file
 # seed, install + agent as usual. ctrl-o opens the PR in the browser instead;
 # esc returns to the worktree list.
 # Output contract HERE is two lines (--expect without --print-query): line 1 =

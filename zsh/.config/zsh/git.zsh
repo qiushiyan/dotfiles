@@ -790,22 +790,42 @@ _gitswitch() {
   _arguments '1:profile:(personal marswave cola)'
 }
 
-# gwt — lightweight "git worktree new": create a worktree for a NEW branch off a
-# base, seed the main worktree's gitignored files into it, and cd there IN THE
-# CURRENT PANE. The no-new-window, no-install counterpart to the `prefix W` popup;
-# both share tmux/.config/tmux/scripts/worktree-core.sh (the actual git work). The
-# cd must happen in this shell, which is the whole reason this is a function and
-# not a call to the core's CLI directly.
+# gwt — lightweight "git worktree": put a branch in a worktree, seed the main
+# worktree's gitignored files into it, and cd there IN THE CURRENT PANE. The
+# no-new-window, no-install counterpart to the `prefix W` popup; both share
+# tmux/.config/tmux/scripts/worktree-core.sh (the actual git work). The cd must
+# happen in this shell, which is the whole reason this is a function and not a
+# call to the core's CLI directly.
+#
+# The branch need NOT be new. The core resolves the name before picking a verb: an
+# existing local branch is checked out, a branch that exists only on a remote is
+# checked out as a tracking branch (upstream set), and only a name that exists
+# nowhere creates anything. It says on stderr which one it did. --new forces
+# creation — the inverse of the flag you might expect, because the case that needs
+# protecting is the one where you don't know the name is already taken.
 #
 # Base resolution diverges from the popup ON PURPOSE: omit it and gwt defaults to
 # the CURRENT branch (you usually want to fork from where you stand) behind a [y/N]
-# confirm; the popup instead forks from the origin/HEAD→main→master chain.
+# confirm; the popup instead forks from the origin/HEAD→main→master chain. The
+# confirm only appears when a branch is actually being CREATED — for a branch that
+# already exists there is no base to choose.
 gwt() {
   emulate -L zsh
-  local branch="$1" base="$2"
   local core="$HOME/.config/tmux/scripts/worktree-core.sh"
+  local branch="" base="" force_new=0 arg
 
-  if [[ "$branch" == "-h" || "$branch" == "--help" ]]; then _gwt_help; return 0; fi
+  for arg in "$@"; do
+    case "$arg" in
+      -h|--help) _gwt_help; return 0 ;;
+      --new)     force_new=1 ;;
+      -*)        print -u2 "gwt: unknown flag: $arg"; _gwt_help; return 1 ;;
+      *) if   [[ -z "$branch" ]]; then branch="$arg"
+         elif [[ -z "$base" ]];   then base="$arg"
+         else print -u2 "gwt: too many arguments: $arg"; return 1
+         fi ;;
+    esac
+  done
+
   if [[ -z "$branch" ]]; then
     print -u2 "gwt: branch name required"; _gwt_help; return 1
   fi
@@ -813,9 +833,20 @@ gwt() {
     print -u2 "gwt: not inside a git repository"; return 1
   fi
 
-  # No base given → default to the current branch, but confirm (the worktree+branch
-  # are cheap to make but annoying to undo, and the base is easy to get wrong).
-  if [[ -z "$base" ]]; then
+  # Ask the core what the name already refers to BEFORE deciding whether a base is
+  # even a question — prompting for a fork point and then discarding it (which is
+  # what happens for an already-existing branch) is theatre. This probe is also
+  # where the single bounded fetch happens, so the prompt below is based on a
+  # freshly-resolved answer rather than a stale remote-tracking cache.
+  local verdict=absent
+  if (( ! force_new )); then
+    verdict="$(bash "$core" resolve "$branch")" || return 1
+  fi
+
+  # Creating, and no base given → default to the current branch, but confirm (the
+  # worktree+branch are cheap to make but annoying to undo, and the base is easy
+  # to get wrong).
+  if [[ "$verdict" == absent && -z "$base" ]]; then
     base="$(git rev-parse --abbrev-ref HEAD)"
     printf 'gwt: no base given — fork "%s" from current branch "%s"? [y/N] ' "$branch" "$base"
     local ans; read -r ans
@@ -823,44 +854,66 @@ gwt() {
   fi
 
   # The core does the git work and prints ONLY the new worktree's path to stdout
-  # (its copy summary / errors go to stderr, visible). cd into it on success.
+  # (the verb it chose, the copy summary and errors go to stderr, visible). cd into
+  # it on success.
   # NB: do NOT name this `path` — that's a zsh special var tied to $PATH, and a
   # `local path` would blank PATH for the rest of this function (bash can't be found).
+  local -a coreargs=(create)
+  (( force_new )) && coreargs+=(--new)
+  coreargs+=("$branch")
+  [[ -n "$base" ]] && coreargs+=("$base")
+
   local dest
-  dest="$(bash "$core" create "$branch" "$base")" || return 1
+  dest="$(bash "$core" "${coreargs[@]}")" || return 1
   [[ -n "$dest" ]] && cd "$dest"
 }
 
 _gwt_help() {
   cat <<'EOF'
-Usage: gwt <branch> [base]
+Usage: gwt <branch> [base] [--new]
 
-Create a git worktree for a NEW branch off <base>, copy the main worktree's
-gitignored files (.env*, .npmrc, scripts.local, …) into it, and cd there — in the
-current pane (no new tmux window, no dependency install).
+Put <branch> in a git worktree, copy the main worktree's gitignored files
+(.env*, .npmrc, scripts.local, …) into it, and cd there — in the current pane
+(no new tmux window, no dependency install).
+
+The branch does not have to be new. gwt resolves the name first and reports on
+stderr which of these it did:
+
+  exists locally            checks that branch out into the worktree
+  exists only on a remote   checks out a tracking branch (upstream set)
+  exists nowhere            creates it off <base>
 
 Worktrees land at  ~/dev/.worktrees/<repo>/<branch>.
 
 Arguments:
-  branch   (required)  name of the new branch / worktree
-  base     (optional)  branch to fork from; if omitted, defaults to the CURRENT
-                       branch and asks for [y/N] confirmation
+  branch   (required)  branch to place in a worktree
+  base     (optional)  fork point, used ONLY when the branch is being created; if
+                       omitted, defaults to the CURRENT branch and asks for [y/N]
+                       confirmation
 
 Options:
+  --new       create a new branch off <base> even if a remote branch of that
+              name exists
   -h, --help  Show this help message
 
 Examples:
-  gwt fix/login          fork fix/login from the current branch (after y/N)
-  gwt fix/login main     fork fix/login from main, no prompt
+  gwt fix/login              fork fix/login from the current branch (after y/N)
+  gwt fix/login main         fork fix/login from main, no prompt
+  gwt skill/cust-foo         check out existing origin/skill/cust-foo, tracking
+  gwt fix/login --new        new branch, ignoring any origin/fix/login
 
 Related:
   prefix W   tmux popup to switch / create / remove worktrees (opens a new window)
 EOF
 }
 
+# Completes local branches AND remote-only branch names (lstrip=3 drops
+# refs/remotes/<remote>/, which is the form you actually type — gwt resolves the
+# remote itself).
 _gwt() {
   _arguments \
-    '1:new branch name:' \
+    '--new[create a new branch even if a remote branch of that name exists]' \
+    '1:branch (existing local, existing remote, or new):($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))' \
     '2:base branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
 }
 
@@ -1041,6 +1094,79 @@ _gitguard() {
 }
 
 # --------------------------------------------------------------------
+# brief — start a queued handoff brief: worktree command out, paste in.
+# --------------------------------------------------------------------
+# A brief written days ago carries everything the next session needs, but the
+# two things you must produce to START it — the worktree to open and the
+# invocation the paste fires — have left your head by then. Neither is stored,
+# because neither has to be: the slug IS the branch (baton-index.sh resolves
+# git state through it) and line 1 IS the invocation. This reads both back out.
+#
+#   brief              the index: every brief, its cluster, drift, and whether
+#                      a branch or PR exists for it yet
+#   brief <fragment>   that brief's gwt command, its pointer on the clipboard
+brief() {
+  emulate -L zsh
+  local helper="$HOME/.claude/skills/handoff/handoff-path.sh"
+  local index="$HOME/.claude/skills/handoff-sweep/baton-index.sh"
+  local probe folder file slug base f c
+  local -a matches
+
+  # The folder scheme is the handoff skill's, never recomputed here — it
+  # handles worktrees, submodules and symlinked dev roots, and two copies of
+  # that logic would drift.
+  probe=$(bash "$helper" _probe_ 2>/dev/null) || {
+    print -u2 "brief: not inside a git repository — cd to the project first"; return 1
+  }
+  folder=${probe:h}
+  [[ -d "$folder" ]] || { print -u2 "brief: no briefs for this project yet ($folder)"; return 1 }
+
+  # No argument: the index answers "what is waiting, and can it run yet?".
+  [[ -n "$1" ]] || { bash "$index"; return }
+
+  # A brief is a file whose line 1 is the invocation it fires — the index's own
+  # test, reused so what matches here is exactly what it listed. A retired
+  # brief is *.md.done and drops out of both.
+  for f in $(find "$folder" -name '*.md' -type f | sort); do
+    [[ $(head -1 "$f") == /* ]] || continue
+    [[ ${f:l} == *${1:l}* ]] && matches+=("$f")
+  done
+
+  if (( ${#matches} == 0 )); then
+    print -u2 "brief: nothing matching '$1' — the queue:"; bash "$index"; return 1
+  elif (( ${#matches} > 1 )); then
+    print -u2 "brief: '$1' matches ${#matches} briefs:"
+    for f in $matches; do print -u2 "  ${${f#$folder/}%.md}"; done
+    return 1
+  fi
+
+  file=$matches[1]
+  slug=${${file#$folder/}%.md}
+
+  base=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
+  base=${base#origin/}
+  if [[ -z $base ]]; then
+    for c in develop main master trunk; do
+      git rev-parse --verify --quiet "$c" >/dev/null 2>&1 && { base=$c; break }
+    done
+  fi
+
+  printf '%s\nBrief: %s\n' "$(head -1 "$file")" "$file" | pbcopy
+  print "  gwt $slug ${base:-develop}"
+  print "  pointer on the clipboard — paste it once the worktree opens"
+}
+
+_brief() {
+  local folder probe
+  probe=$(bash "$HOME/.claude/skills/handoff/handoff-path.sh" _probe_ 2>/dev/null) || return
+  folder=${probe:h}
+  local -a slugs
+  slugs=(${(f)"$(cd "$folder" 2>/dev/null && find . -name '*.md' -type f \
+                 | sed 's|^\./||; s|\.md$||' | sort)"})
+  _describe 'brief' slugs
+}
+
+# --------------------------------------------------------------------
 # Completion registration — called from .zshrc after compinit. compdef is
 # unavailable when this file is first sourced from .zshenv (pre-compinit),
 # so registration is deferred here instead of re-sourcing the whole file.
@@ -1053,5 +1179,6 @@ _git_zsh_register_completions() {
   compdef _gitswitch gitswitch
   compdef _gopen     gopen
   compdef _gwt      gwt
+  compdef _brief     brief
   compdef _gitguard  gitguard
 }

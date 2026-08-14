@@ -16,9 +16,10 @@
 #
 # CLI stdout contract (load-bearing — gwtn captures it):
 #   `create` prints ONLY the final worktree path to stdout. Every human-facing
-#   message (the copy summary, errors) goes to STDERR, so the caller can do
-#   `path="$(worktree-core.sh create ...)"` and get a clean path while the messages
-#   still stream to the terminal.
+#   message (the verb it chose, the copy summary, errors) goes to STDERR, so the
+#   caller can do `path="$(worktree-core.sh create ...)"` and get a clean path
+#   while the messages still stream to the terminal.
+#   `resolve` prints ONLY the verdict line (see wt_resolve_branch) to stdout.
 #
 # New worktrees land at  ~/dev/.worktrees/<repo>/<branch>  for every project
 # (repo = the toplevel's basename; no per-repo special-casing).
@@ -211,24 +212,131 @@ _wt_merged_compute() {
   return 0
 }
 
+# --- branch resolution --------------------------------------------------------
+
+# What does <branch> ALREADY refer to? This is the decision that picks wt_add's
+# verb, and it exists because the obvious ordering is wrong. `worktree add -b` is
+# a CREATION, and a creation succeeds whenever no LOCAL branch exists — so trying
+# it first let "create" win every tie, including the tie against a branch that
+# exists only on a remote. That produced a brand-new empty branch quietly
+# shadowing the remote one, which is the worst available outcome: same name, none
+# of the commits, no error. Resolve the name FIRST, then choose the verb.
+#
+# Prints exactly one line:
+#   local                a local branch of that name exists
+#   remote <ref>         no local branch; exactly one refs/remotes/*/<branch>
+#   ambiguous <ref>…     no local branch; several remotes carry the name
+#   absent               nothing, anywhere
+#
+# In a for-each-ref pattern `*` fills the remote-name slot only — it does not
+# cross `/`, so a slashed branch (skill/foo/bar) resolves correctly. But the
+# pattern DOES match a longer ref at a component boundary: `…/*/feat/x` also
+# matches `…/origin/feat/x/y`. The exact-suffix filter drops those, so a `remote`
+# verdict always names a ref that really is <branch>.
+wt_resolve_branch() {
+  local branch="$1" ref n=0 all=""
+  git show-ref --verify --quiet "refs/heads/$branch" && { printf 'local\n'; return 0; }
+  while IFS= read -r ref; do
+    [ -n "$ref" ] || continue
+    case "$ref" in
+      */"$branch") n=$((n + 1)); all="${all:+$all }$ref" ;;
+    esac
+  done <<EOF
+$(git for-each-ref --format='%(refname)' "refs/remotes/*/$branch" 2>/dev/null)
+EOF
+  case "$n" in
+    0) printf 'absent\n' ;;
+    1) printf 'remote %s\n' "$all" ;;
+    *) printf 'ambiguous %s\n' "$all" ;;
+  esac
+}
+
+# The same verdict, but with ONE bounded network probe when the answer would be
+# "absent" — the only verdict that is dangerous to get wrong from a stale cache.
+# Remote-tracking refs are a local cache: a branch pushed since your last fetch
+# reads as absent, and absent means "create a new branch off the base" — the same
+# silent-shadow bug, just rarer. The probe costs nothing on a hit, and a miss is
+# precisely the moment you were about to create a branch and wanted fresh refs
+# anyway (gwt otherwise never fetches, so this is also its only guard against
+# forking off a stale base). Staleness gate and timeout are the ones from the
+# base-freshness section above.
+wt_resolve_branch_fresh() {
+  local branch="$1" verdict
+  verdict="$(wt_resolve_branch "$branch")"
+  [ "$verdict" = absent ] || { printf '%s\n' "$verdict"; return 0; }
+  wt_base_is_stale || { printf 'absent\n'; return 0; }
+  printf 'wt: no branch "%s" here or on a remote — refreshing remote refs…\n' "$branch" >&2
+  wt_fetch_base || printf 'wt: fetch failed or timed out — resolving against the last-fetched state\n' >&2
+  wt_resolve_branch "$branch"
+}
+
 # --- create ------------------------------------------------------------------
 
-# Add a worktree at <path> for branch <branch>, forked from <base>. Tries a NEW
-# branch first (--no-track -b); if that branch already exists, falls back to
-# checking it out into the worktree. Returns 0/1; on failure prints git's own
-# error (under a header) to stderr so either front-end can surface it.
+# Put <branch> in a worktree at <path>, forking from <base> ONLY if the branch
+# does not already exist somewhere. The verb comes from the resolution above:
+#
+#   local      → check the existing branch out. <base> unused.
+#   remote     → `git worktree add <path> <branch>`, whose DWIM creates the local
+#                branch at <remote>/<branch> AND sets it as upstream ("branch 'x'
+#                set up to track 'origin/x'"). <base> unused.
+#   absent     → `--no-track -b` off <base>: a genuinely new branch.
+#   ambiguous  → refuse, naming the candidates. git's own error here is a bare
+#                "fatal: invalid reference: <branch>", which tells you nothing.
+#
+# <force_new> (4th arg, default 0) forces the `absent` verb — the escape hatch for
+# "I want a new branch that happens to share a name with a remote one". It is the
+# inverse of the flag you might expect: the dangerous case is the one where you
+# DON'T know the name is taken, so the safe reading has to be the default.
+#
+# The chosen verb is always announced on stderr. The bug this replaced was bad
+# specifically because it was silent, so the fix must not be.
+#
+# Returns 0/1; on failure prints git's own error (under a header) to stderr so
+# either front-end can surface it.
 wt_add() {
-  local branch="$1" base="$2" path="$3" tmp
+  local branch="$1" base="$2" path="$3" force_new="${4:-0}"
+  local verdict kind tmp rc ref short
+
+  if [ "$force_new" = 1 ]; then verdict="absent"; else verdict="$(wt_resolve_branch_fresh "$branch")"; fi
+  kind="${verdict%% *}"
+
+  if [ "$kind" = ambiguous ]; then
+    printf 'wt: "%s" exists on more than one remote:\n' "$branch" >&2
+    # Unquoted on purpose: one line per ref. Refnames cannot contain whitespace
+    # or glob characters, so word-splitting is exactly the right tool here.
+    # shellcheck disable=SC2086
+    set -- ${verdict#ambiguous }
+    for ref in "$@"; do printf '      %s\n' "${ref#refs/remotes/}" >&2; done
+    printf '    disambiguate by creating the local branch yourself first, e.g.\n' >&2
+    printf '      git branch --track %s <remote>/%s\n' "$branch" "$branch" >&2
+    return 1
+  fi
+
   tmp="$(mktemp)"
   # Capture BOTH git streams to $tmp: git prints "Preparing worktree…" (stderr) and
   # "HEAD is now at…" (stdout), and we must not let either leak to OUR stdout — the
   # CLI's stdout is the worktree path alone. Silent on success; on failure the
   # captured output is replayed to stderr.
-  if git worktree add --no-track -b "$branch" "$path" "$base" >"$tmp" 2>&1; then
-    rm -f "$tmp"; return 0
-  elif git worktree add "$path" "$branch" >>"$tmp" 2>&1; then
-    rm -f "$tmp"; return 0   # branch already existed — checked it out into the worktree instead
-  fi
+  case "$kind" in
+    local)
+      printf 'wt: "%s" already exists locally — checking it out (base not used)\n' "$branch" >&2
+      git worktree add "$path" "$branch" >"$tmp" 2>&1
+      ;;
+    remote)
+      # "refs/remotes/origin/feat/x" → short "origin/feat/x", remote "origin".
+      short="${verdict#remote refs/remotes/}"
+      printf 'wt: "%s" exists only on %s — checking out %s as a tracking branch (base not used)\n' \
+        "$branch" "${short%/$branch}" "$short" >&2
+      git worktree add "$path" "$branch" >"$tmp" 2>&1
+      ;;
+    *)
+      printf 'wt: creating new branch "%s" off "%s"\n' "$branch" "$(wt_base_display "$base")" >&2
+      git worktree add --no-track -b "$branch" "$path" "$base" >"$tmp" 2>&1
+      ;;
+  esac
+  rc=$?
+
+  [ "$rc" -eq 0 ] && { rm -f "$tmp"; return 0; }
   printf 'git worktree add failed:\n' >&2; cat "$tmp" >&2; rm -f "$tmp"
   return 1
 }
@@ -443,15 +551,18 @@ _wt_reap_one() {
 
 # --- CLI (only when EXECUTED directly, not when sourced) ----------------------
 
-# create <branch> [base] [--no-copy]
-#   base defaults to wt_default_base (origin/HEAD chain) when omitted — but gwtn
-#   always passes an explicit base (the current branch), so that default is just a
-#   standalone-use convenience. Prints ONLY the worktree path to stdout.
+# create <branch> [base] [--no-copy] [--new]
+#   base defaults to wt_default_base (origin/HEAD chain) when omitted, and is used
+#   ONLY when the branch is being created — an existing local or remote branch is
+#   checked out and the base is irrelevant (wt_add says which happened). --new
+#   forces creation even when a remote branch of that name exists.
+#   Prints ONLY the worktree path to stdout.
 _wt_core_create() {
-  local branch="" base="" copy=1
+  local branch="" base="" copy=1 force_new=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --no-copy) copy=0 ;;
+      --new) force_new=1 ;;
       --) shift; break ;;
       -*) printf 'create: unknown flag: %s\n' "$1" >&2; return 2 ;;
       *)  if   [ -z "$branch" ]; then branch="$1"
@@ -468,7 +579,7 @@ _wt_core_create() {
   local path; path="$(wt_worktree_root)/$branch"
   [ -e "$path" ] && { printf 'create: path already exists: %s\n' "$path" >&2; return 1; }
   mkdir -p "$(dirname "$path")"
-  wt_add "$branch" "$base" "$path" || return 1
+  wt_add "$branch" "$base" "$path" "$force_new" || return 1
   if [ "$copy" -eq 1 ]; then
     local msg; msg="$(wt_copy_ignored "$path")"
     [ -n "$msg" ] && printf '%s\n' "$msg" >&2
@@ -476,13 +587,29 @@ _wt_core_create() {
   printf '%s\n' "$path"
 }
 
+# resolve <branch>
+#   Print what <branch> already refers to (the wt_resolve_branch verdict line),
+#   refreshing remote refs once if the answer would be "absent". Exists so a
+#   front-end can find out whether a base is even a question BEFORE prompting for
+#   one: gwt used to ask "fork from <current branch>?" and then discard the answer
+#   whenever the branch already existed. Doing the probe here also means the one
+#   bounded fetch happens before the prompt, not after it.
+_wt_core_resolve() {
+  local branch="${1:-}"
+  [ -n "$branch" ] || { printf 'resolve: branch name required\n' >&2; return 2; }
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+    || { printf 'resolve: not inside a git repository: %s\n' "$PWD" >&2; return 1; }
+  wt_resolve_branch_fresh "$branch"
+}
+
 _wt_core_main() {
   set -u
   local sub="${1:-}"; [ $# -gt 0 ] && shift
   case "$sub" in
-    create) _wt_core_create "$@" ;;
-    "")     printf 'worktree-core.sh: missing subcommand (try: create)\n' >&2; return 2 ;;
-    *)      printf 'worktree-core.sh: unknown subcommand: %s\n' "$sub" >&2; return 2 ;;
+    create)  _wt_core_create "$@" ;;
+    resolve) _wt_core_resolve "$@" ;;
+    "")      printf 'worktree-core.sh: missing subcommand (try: create, resolve)\n' >&2; return 2 ;;
+    *)       printf 'worktree-core.sh: unknown subcommand: %s\n' "$sub" >&2; return 2 ;;
   esac
 }
 
