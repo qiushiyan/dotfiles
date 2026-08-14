@@ -56,7 +56,7 @@ The helper prints the file to write and creates its folder — batons are groupe
 bash ~/.claude/skills/handoff/handoff-path.sh <slug>
 ```
 
-**`<slug>` is the branch the next session will work on**, not the one this session worked on. Today's branch is merged or nearly so, so a baton named for it is filed under work that's already over — and the next worktree's name, the one thing you'd have to open the file to find, stays hidden. Named forward, the filename is already the argument step 5 hands over: one token for the baton, the branch, and the worktree.
+**`<slug>` is the branch the next session will work on**, not the one this session worked on: one token for the baton, the branch, and the worktree, and already the argument step 5 hands over.
 
 Write it as you'd write the branch, because it is the branch. [`SLUG-NAMING.md`](SLUG-NAMING.md) carries the **cold-read test** it has to pass — a place and an outcome, in words the tree already uses; read it before you choose, and note that a project skill wrapping this one may bind it to that project's own vocabulary.
 

@@ -27,8 +27,12 @@
 # --- repo identity & worktree root -------------------------------------------
 
 # Every project's worktrees live under one root, grouped by repo dir name.
+# Root the group on the MAIN checkout, never on `pwd`: run from a linked
+# worktree, --show-toplevel is the branch directory, which would nest the next
+# worktree under a sibling branch's name instead of the project's. Same reason
+# handoff-path.sh resolves the project through --git-common-dir.
 wt_worktree_root() {
-  printf '%s\n' "$HOME/dev/.worktrees/$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")"
+  printf '%s\n' "$HOME/dev/.worktrees/$(basename "$(wt_main_worktree 2>/dev/null)")"
 }
 
 # The main (first) worktree — canonical home for gitignored files we seed from.

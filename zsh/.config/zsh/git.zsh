@@ -1118,18 +1118,19 @@ brief() {
   probe=$(bash "$helper" _probe_ 2>/dev/null) || {
     print -u2 "brief: not inside a git repository — cd to the project first"; return 1
   }
-  folder=${probe:h}
-  [[ -d "$folder" ]] || { print -u2 "brief: no briefs for this project yet ($folder)"; return 1 }
+  folder=${probe:h}   # the helper mkdir -p's this, so it always exists
 
   # No argument: the index answers "what is waiting, and can it run yet?".
   [[ -n "$1" ]] || { bash "$index"; return }
 
   # A brief is a file whose line 1 is the invocation it fires — the index's own
   # test, reused so what matches here is exactly what it listed. A retired
-  # brief is *.md.done and drops out of both.
-  for f in $(find "$folder" -name '*.md' -type f | sort); do
+  # brief is *.md.done and drops out of both. Match the fragment against the
+  # SLUG, never the absolute path, or the fixed prefix (.handoffs, the project
+  # dir) makes every fragment match everything.
+  for f in ${(f)"$(find "$folder" -name '*.md' -type f | sort)"}; do
     [[ $(head -1 "$f") == /* ]] || continue
-    [[ ${f:l} == *${1:l}* ]] && matches+=("$f")
+    [[ ${${${f#$folder/}%.md}:l} == *${1:l}* ]] && matches+=("$f")
   done
 
   if (( ${#matches} == 0 )); then
@@ -1152,8 +1153,21 @@ brief() {
   fi
 
   printf '%s\nBrief: %s\n' "$(head -1 "$file")" "$file" | pbcopy
-  print "  gwt $slug ${base:-develop}"
-  print "  pointer on the clipboard — paste it once the worktree opens"
+
+  # What to run depends on what the slug already is. A review-posture baton
+  # names no new branch — its subject is an existing worktree. A slug already
+  # checked out somewhere is a resume, and `gwt` would refuse the existing path.
+  local existing
+  existing=$(git worktree list --porcelain \
+             | awk -v b="refs/heads/$slug" '/^worktree /{p=substr($0,10)} $0=="branch "b{print p; exit}')
+  if [[ $slug == review-* ]]; then
+    print "  review posture — open the ${slug#review-} worktree; the pointer is the whole ready command"
+  elif [[ -n $existing ]]; then
+    print "  cd $existing"
+  else
+    print "  gwt $slug ${base:-develop}"
+  fi
+  print "  pointer on the clipboard"
 }
 
 _brief() {
@@ -1161,8 +1175,12 @@ _brief() {
   probe=$(bash "$HOME/.claude/skills/handoff/handoff-path.sh" _probe_ 2>/dev/null) || return
   folder=${probe:h}
   local -a slugs
-  slugs=(${(f)"$(cd "$folder" 2>/dev/null && find . -name '*.md' -type f \
-                 | sed 's|^\./||; s|\.md$||' | sort)"})
+  # Same line-1 test the function uses, so completion never offers a name it
+  # would then reject (_clusters.md, the *.evidence/ sidecars).
+  local f
+  for f in ${(f)"$(find "$folder" -name '*.md' -type f 2>/dev/null | sort)"}; do
+    [[ $(head -1 "$f") == /* ]] && slugs+=("${${f#$folder/}%.md}")
+  done
   _describe 'brief' slugs
 }
 

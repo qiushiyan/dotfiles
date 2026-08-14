@@ -6,9 +6,11 @@
 # reap would take — @worktree_show_merged off to drop it). Rows are built in
 # parallel; serially the list was the popup's whole time-to-first-paint.
 #   enter        switch to the highlighted worktree's window; if the typed name
-#                matches nothing, create that worktree + branch and open its window
-#   ctrl-n       force-create a worktree + branch from the TYPED name (even when
-#                the query still fuzzy-matches an existing worktree)
+#                matches no worktree, place that branch in one and open its window
+#   ctrl-n       place the TYPED name in a worktree even when the query still
+#                fuzzy-matches an existing worktree. wt_add resolves the name
+#                first, so an existing local or remote branch is checked out
+#                rather than created; only a name that exists nowhere is new.
 #   tab/ctrl-a   mark one / toggle all entries (shift-tab unmarks)
 #   ctrl-x       remove the marked worktrees (or the highlighted one if none are
 #                marked) as ONE confirmed batch — trash-and-sweep, see below
