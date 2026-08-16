@@ -1,7 +1,6 @@
 ---
 name: consult
 description: "Get independent design takes from fresh AI sessions (codex or claude) on the problem at hand, then synthesize the deltas."
-disable-model-invocation: true
 ---
 
 # Consult — independent second opinions

@@ -7,17 +7,16 @@ optional list of case ids to narrow the run:
 bash tmux/.config/tmux/scripts/tests/test-pane-control.sh        [T5 T14 …]
 bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
 bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W2 W10 …]
-bash claude/.claude/skills/handoff/handoff-path.test.sh          [T3 T7 …]
 zsh  zsh/.config/zsh/tests/claude-sessions.test.zsh              # runs whole
 ```
 
 The first two cover the tmux pane control plane and the Claude context chip, and
 both build throwaway tmux servers on their own sockets; the third covers the
 tmux-free git logic behind the worktree popup (what counts as merged, base
-resolution, base freshness); the fourth covers handoff baton path resolution;
-the fifth covers the shared-sessions toolkit (launcher enforcement of the
-projects topology, migration abort paths, obelisk reindex verification) against
-a throwaway `$HOME` with stubbed `pgrep`/`lsof`/`claude`/`obelisk`.
+resolution, base freshness); the fourth covers the shared-sessions toolkit
+(launcher enforcement of the projects topology, migration abort paths, obelisk
+reindex verification) against a throwaway `$HOME` with stubbed
+`pgrep`/`lsof`/`claude`/`obelisk`.
 
 The chip suite drives the real `statusline-command.sh` from the **working tree**
 rather than the stowed copy, which is what lets it grade a branch instead of
@@ -40,13 +39,21 @@ reason. A green suite that tested nothing is the failure mode to fear here.
 is a single path shared by all servers unless `@resurrect-dir` is set, so a test
 reaching the real `save.sh` overwrites the user's session snapshot; `fresh()`
 sandboxes it and T21 asserts the real directory was never touched. Likewise
-`handoff-path.sh` creates directories under `$HOME`, so its suite overrides
-`HOME` and T11 asserts the real baton store is untouched — ad-hoc verification
-that skips the override scatters folders into it for real. Global patterns like
-`pkill` need the same care.
+the sessions toolkit reads and writes under `$HOME`, so every case in its suite
+exports a throwaway `HOME` before running anything — ad-hoc verification that
+skips the override edits the user's real accounts and session state. Global
+patterns like `pkill` need the same care.
 
 Each suite carries a guard case for exactly this reason; when you add state that
-crosses the sandbox boundary, add the guard alongside it.
+crosses the sandbox boundary, add the guard alongside it. The chip suite's C9 is
+that guard, and it has already earned its keep: the statusline gained a detached
+quota refresher, and the first run afterwards caught it running the real
+`headroom` against the real accounts root and writing the user's live
+`~/.cache`. The lever that closed it, `CLAUDE_CTX_REFRESH_CMD`, is worth copying
+in shape — unset means production, set-but-empty disables the spawn, and set to
+a path substitutes a stub. A lever that could only disable would have bought
+isolation by leaving the trigger, the throttle and the lock test permanently
+unexercised, which is how they would rot; C22 drives all three against the stub.
 
 **Watch what runs _inside_ the sandbox, too.** A test pane running the user's
 interactive shell loads `~/.zshrc`, and this config's zsh hooks are production

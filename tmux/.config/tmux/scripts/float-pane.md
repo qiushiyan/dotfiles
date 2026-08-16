@@ -5,7 +5,7 @@ One control plane for moving panes around, in three parts:
 - **`prefix z`** — maximize the current pane into a *floating* overlay instead of
   tmux's all-or-nothing zoom, so the rest of the window stays visible and live
   behind it. `tmux-float-pane.sh`.
-- **`prefix C-z`** — an *ephemeral* scratch shell in a popup at the current
+- **`prefix Z`** — an *ephemeral* scratch shell in a popup at the current
   pane's directory; closing the shell disposes of it. Same script, none of the
   holder machinery — see "The scratch popup".
 - **`prefix p`** — a sticky "pane mode" key table holding every pane-moving verb
@@ -109,7 +109,7 @@ T25.
 
 ## The scratch popup
 
-`prefix C-z` opens an **ephemeral** shell in a popup at the active pane's
+`prefix Z` opens an **ephemeral** shell in a popup at the active pane's
 current directory — poke around next to a running agent without carving a pane
 out of the layout first. Deliberately none of the float's machinery: no holder,
 no state, no resurrect interaction, and no key-table staging — the popup runs a

@@ -89,12 +89,16 @@ Every other package is one tool's config at its conventional path.
 Each of these is one feature implemented across several packages at once;
 changing one piece without the others breaks it.
 
-- **Claude context chip** — a live Claude session's account, model and context
+- **Claude context chip** — a live Claude session's account, that account's
+  5-hour and model-scoped-weekly quota, its model and context
   usage on its tmux pane border. Spans `claude/`, `tmux/`, `zsh/`;
   `tmux-claude-ctx.sh` is the sole owner of turning borders off →
-  `tmux/.config/tmux/workflow.md`.
+  `tmux/.config/tmux/workflow.md`. Everything but the weekly comes off the
+  payload Claude Code hands the statusline; the weekly is the one value that
+  reaches outside this repo, to `headroom limits` →
+  `docs/claude-accounts.md`.
 - **tmux pane control** — `prefix z` floats a pane into an overlay rather than
-  zooming it; `prefix C-z` opens an ephemeral scratch popup at the pane's cwd;
+  zooming it; `prefix Z` opens an ephemeral scratch popup at the pane's cwd;
   `prefix p` holds the pane-moving verbs. A float genuinely
   relocates the pane into a holder session, which is why so much hangs off it.
   **Read `tmux/.config/tmux/scripts/float-pane.md` before editing

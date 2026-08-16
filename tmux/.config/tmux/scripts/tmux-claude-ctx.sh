@@ -6,7 +6,7 @@
 # model id and account lane into per-pane user options on every render
 # (compare-and-set, see the tail of ~/.claude/commands/statusline-command.sh);
 # pane-border-format draws them right-aligned on the pane's border, shedding
-# the cosmetic ones as the pane narrows (see tmux.conf). Five options per pane:
+# the cosmetic ones as the pane narrows (see tmux.conf). Eight options per pane:
 #
 #   @claude_ctx        the percentage — presence of a value IS "chip shown"
 #   @claude_ctx_model  the model id, minus its "claude-" prefix, drawn left of
@@ -23,6 +23,24 @@
 #                      and gated like it: its arm only ever fires to backfill
 #                      a pane published before the option existed, since the
 #                      value is fixed per session.
+#   @claude_ctx_5h     the account's 5-hour limit, as a percentage. Cosmetic
+#                      like the two above, and like them it draws only beside a
+#                      live percentage — but unlike them it can go EMPTY on a
+#                      session that is still perfectly alive (API billing
+#                      carries no rate limits at all), so emptiness here is a
+#                      value the gate writes, never a state to be skipped.
+#   @claude_ctx_wk     the MODEL-SCOPED weekly limit, percentage, and
+#   @claude_ctx_wk_model
+#                      the model it is scoped to ("Fable") — drawn together as
+#                      one field, because a bare number beside 5h:NN could be
+#                      anything. This is the one chip value the statusline does
+#                      not learn from Claude Code: the vendor's payload carries
+#                      only the all-models weekly, which is routinely far lower
+#                      than the scoped one that actually stops work, so it
+#                      comes from headroom by way of a cache file that
+#                      ~/.claude/commands/claude-quota-refresh.sh keeps warm.
+#                      It empties whenever that reading stops being about a
+#                      window anyone is still spending against.
 #   @claude_ctx_sid    which Claude session published it
 #   @claude_ctx_dead   ACTIVATION BARRIER: a session id whose publications
 #                      are refused from teardown until Claude emits a
@@ -152,6 +170,9 @@ drop_branch() {
     printf "set-option -p -u -t '%s' @claude_ctx ; " "$pane"
     printf "set-option -p -u -t '%s' @claude_ctx_model ; " "$pane"
     printf "set-option -p -u -t '%s' @claude_ctx_account ; " "$pane"
+    printf "set-option -p -u -t '%s' @claude_ctx_5h ; " "$pane"
+    printf "set-option -p -u -t '%s' @claude_ctx_wk ; " "$pane"
+    printf "set-option -p -u -t '%s' @claude_ctx_wk_model ; " "$pane"
     printf "set-option -p -u -t '%s' @claude_ctx_sid ; " "$pane"
     printf "run-shell -b 'bash %s reconcile %s'" "$SELF" "$pane"
 }

@@ -53,7 +53,7 @@ framing has inverted.)
 for quick `git` / `gh` / `ls`; another dismisses it. Your layout never moves.
 
 **What already covers part of it:** the **ephemeral** scratch popup shipped as
-`prefix C-z` (`scripts/float-pane.md`, "The scratch popup") — a disposable
+`prefix Z` (`scripts/float-pane.md`, "The scratch popup") — a disposable
 shell at the current pane's cwd, gone on exit. tmux 3.7's native floating panes
 (`prefix *` → `new-pane`) also give a non-modal floating shell. What neither
 gives is **persistence** across toggles, which was the point of the original

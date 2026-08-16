@@ -30,7 +30,7 @@
 # Root the group on the MAIN checkout, never on `pwd`: run from a linked
 # worktree, --show-toplevel is the branch directory, which would nest the next
 # worktree under a sibling branch's name instead of the project's. Same reason
-# handoff-path.sh resolves the project through --git-common-dir.
+# `brief`'s folder scheme resolves the project through --git-common-dir.
 wt_worktree_root() {
   printf '%s\n' "$HOME/dev/.worktrees/$(basename "$(wt_main_worktree 2>/dev/null)")"
 }

@@ -91,7 +91,18 @@ input=$(cat)
 # field's place for read; the lines below turn it back into the empty string,
 # so the border format needs ONE presence test (a length check) rather than a
 # length check plus a sentinel comparison.
-read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID CURRENT_DIR <<< "$(echo "$input" | jq -r '
+#
+# rate_limits.five_hour is the vendor's own figure for the account THIS session
+# burns — live, exact, and already in hand, so the chip's 5-hour number costs
+# nothing beyond this field. Its sibling rate_limits.seven_day is deliberately
+# NOT read: that is the ALL-MODELS weekly, and the weekly the chip shows is the
+# model-scoped one (routinely far higher — 94% against 54% on one lane the day
+# this was written), which the payload does not carry at all. That one comes
+# from headroom, off the cache file read further down.
+# used_percentage is documented as a float and observed as an integer, so it is
+# rounded; a value that survives that and still is not a plain integer is
+# treated as absent below rather than pushed at a tmux format.
+read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID FIVE_HOUR CURRENT_DIR <<< "$(echo "$input" | jq -r '
   .context_window as $ctx |
   ($ctx.current_usage // {}) as $usage |
   (if $ctx.current_usage != null then
@@ -100,10 +111,15 @@ read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID CURRENT_DIR <<< "$(echo 
     $ctx.total_input_tokens + $ctx.total_output_tokens
   end) as $tokens |
   ((.model.id // "") | gsub("[^a-zA-Z0-9._\\[\\]-]"; "")) as $model |
-  "\($ctx.context_window_size) \($tokens) \(.session_id // "-") \(if $model == "" then "-" else $model end) \(.workspace.current_dir)"
+  ((.rate_limits.five_hour.used_percentage // null) as $fh |
+   if $fh == null then "-" else ($fh | round | tostring) end) as $five |
+  "\($ctx.context_window_size) \($tokens) \(.session_id // "-") \(if $model == "" then "-" else $model end) \($five) \(.workspace.current_dir)"
 ')"
 [ "$MODEL_ID" = "-" ] && MODEL_ID=""
 MODEL_ID="${MODEL_ID#claude-}"
+case "$FIVE_HOUR" in
+    ''|*[!0-9]*) FIVE_HOUR="" ;;
+esac
 
 # Which account lane this session burns. EVERY lane is labeled, the primary
 # included: "which account is this session spending" is the same question
@@ -189,6 +205,78 @@ if [ -n "$LANE_LOCAL" ]; then
     else
         ACCOUNT="${LANE_EMAIL//[^a-zA-Z0-9._@-]/}"
     fi
+fi
+
+# The model-scoped weekly, off the file claude-quota-refresh.sh maintains for
+# this lane (that script documents the line's six fields and why they are what
+# they are). Everything here obeys one rule: NO SUBPROCESS. `read` with a
+# redirect is a builtin, the line is read whole, and every decision below is
+# bash arithmetic — this block runs ~3×/second per pane while a session
+# streams, and the number it draws changes about half a point an hour.
+#
+# When to believe an old reading is the whole design. Inside a live window
+# usage only climbs, so a stale figure UNDERSTATES and is safe to draw; once
+# the window has rolled over the same figure describes a window nobody is
+# spending against, and a low number there reads as headroom that may not
+# exist. So the reset instant decides, not the age — and age is consulted only
+# for the case the vendor leaves the reset null, where nothing else can.
+WEEK_PCT=""; WEEK_MODEL=""
+NOW="${EPOCHSECONDS:-}"
+[ -n "$NOW" ] || NOW=$(date +%s)   # bash < 5 has no EPOCHSECONDS; settings.json
+                                   # runs this through PATH bash, which is 5.x
+QUOTA_LANE="${LANE_EMAIL//[^a-zA-Z0-9._@-]/}"
+QUOTA_FILE="$HOME/.cache/claude-ctx/$QUOTA_LANE.quota"
+QUOTA_AT=0
+if [ -n "$QUOTA_LANE" ] && [ -r "$QUOTA_FILE" ]; then
+    q_at=""; q_lane=""; q_pct=""; q_model=""; q_obs=""; q_res=""
+    read -r q_at q_lane q_pct q_model q_obs q_res < "$QUOTA_FILE"
+    # A line written for a DIFFERENT lane is not this lane's data and does not
+    # count as an attempt either — leaving QUOTA_AT at 0 re-arms the refresh
+    # below, which rewrites the file for whoever is asking now.
+    if [ "$q_lane" = "$QUOTA_LANE" ]; then
+        case "$q_at" in ''|*[!0-9]*) ;; *) QUOTA_AT="$q_at" ;; esac
+        live=0
+        case "$q_res" in
+            ''|*[!0-9]*)
+                # No reset instant to judge by: fall back to age, and be
+                # conservative about it — half an hour, well past the refresh
+                # cadence, so this only ever fires when refreshing is broken.
+                case "$q_obs" in
+                    ''|*[!0-9]*) ;;
+                    *) [ "$((NOW - q_obs))" -le 1800 ] && live=1 ;;
+                esac ;;
+            *) [ "$q_res" -gt "$NOW" ] && live=1 ;;
+        esac
+        # An unlabeled number beside 5h:NN could be anything, so the model name
+        # is as load-bearing as the percentage; "-" in either field means the
+        # refresher had nothing trustworthy and the chip shows nothing.
+        if [ "$live" = 1 ] && [ -n "$q_model" ] && [ "$q_model" != "-" ]; then
+            case "$q_pct" in
+                ''|*[!0-9]*) ;;
+                *) WEEK_PCT="$q_pct"; WEEK_MODEL="$q_model" ;;
+            esac
+        fi
+    fi
+fi
+
+# Re-arm the refresher when its last ATTEMPT (not its last success) has aged
+# out. The lock test is what keeps a busy window cheap: six panes rendering
+# three times a second all see the same stale stamp for the ~400ms a refresh
+# takes, and without it every one of those renders would spawn a process that
+# does nothing but discover the lock and exit. Detached in a subshell so the
+# render never waits on it.
+# CLAUDE_CTX_REFRESH_CMD is a test lever, not a setting. UNSET (production)
+# means the refresher beside this script; set-but-EMPTY turns refreshing off;
+# set to a path substitutes that. The chip suite needs all three: it drives
+# this script for real, so an unlevered spawn would reach past its sandbox to
+# the live headroom store and the network — but a suite that only ever
+# disabled the spawn would leave the trigger, the throttle and the lock test
+# below permanently untested, which is how they would rot.
+QUOTA_REFRESH="${CLAUDE_CTX_REFRESH_CMD-${BASH_SOURCE[0]%/*}/claude-quota-refresh.sh}"
+if [ -n "$LANE_EMAIL" ] && [ -n "$QUOTA_REFRESH" ] &&
+   [ "$((NOW - QUOTA_AT))" -gt 300 ] && [ ! -d "${QUOTA_FILE%.quota}.lock" ] &&
+   [ -r "$QUOTA_REFRESH" ]; then
+    ( bash "$QUOTA_REFRESH" "$LANE_EMAIL" >/dev/null 2>&1 & ) 2>/dev/null
 fi
 
 # Validate jq extraction succeeded
@@ -334,15 +422,24 @@ fi
 # in a stowed live repo, and with the other three unchanged only an account
 # arm backfills it — the arm also self-heals a tampered option and keeps the
 # gate honest on its own terms instead of leaning on "resume mints a new
-# session id" staying true of the vendor. At steady state the arm never
-# fires, so an unchanged quadruple still writes nothing (set-option triggers
-# redraw/layout work even for an unchanged value, and this runs ~3×/sec while
-# streaming). Every accepted write records all three and reconciles the
-# window's border in the background — accepted writes are sparse, and the
-# reconcile doubles as passive repair after pane relocation.
+# session id" staying true of the vendor.
+# The three QUOTA values — the 5-hour percentage, the model-scoped weekly and
+# the model it is scoped to — get arms for the ordinary reason instead: unlike
+# the account they genuinely change, and unlike the context percentage they can
+# legitimately go EMPTY (the weekly's window rolls over, the refresher cannot
+# reach headroom, the payload carries no rate_limits on API billing). Empty is
+# a value here, not an absence to be skipped, and the !=  comparison treats it
+# as one — which is what lets a stale weekly stop being drawn rather than
+# linger. They still move slowly enough that the arms rarely fire: percentages
+# are integers, and the weekly's own source only changes every few minutes.
+# At steady state no arm fires, so an unchanged septuple writes nothing
+# (set-option triggers redraw/layout work even for an unchanged value, and this
+# runs ~3×/sec while streaming). Every accepted write records all seven values
+# and reconciles the window's border in the background — accepted writes are
+# sparse, and the reconcile doubles as passive repair after pane relocation.
 if [ -n "${TMUX_PANE:-}" ] && [ "${SESSION_ID:--}" != "-" ]; then
     tmux if-shell -F -t "$TMUX_PANE" \
-        "#{&&:#{!=:#{@claude_ctx_dead},$SESSION_ID},#{||:#{!=:#{@claude_ctx},$PERCENT_USED},#{||:#{!=:#{@claude_ctx_sid},$SESSION_ID},#{||:#{!=:#{@claude_ctx_model},$MODEL_ID},#{!=:#{@claude_ctx_account},$ACCOUNT}}}}}" \
-        "set-option -p -t '$TMUX_PANE' @claude_ctx '$PERCENT_USED' ; set-option -p -t '$TMUX_PANE' @claude_ctx_sid '$SESSION_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_model '$MODEL_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_account '$ACCOUNT' ; run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh reconcile $TMUX_PANE'" \
+        "#{&&:#{!=:#{@claude_ctx_dead},$SESSION_ID},#{||:#{!=:#{@claude_ctx},$PERCENT_USED},#{||:#{!=:#{@claude_ctx_sid},$SESSION_ID},#{||:#{!=:#{@claude_ctx_model},$MODEL_ID},#{||:#{!=:#{@claude_ctx_account},$ACCOUNT},#{||:#{!=:#{@claude_ctx_5h},$FIVE_HOUR},#{||:#{!=:#{@claude_ctx_wk},$WEEK_PCT},#{!=:#{@claude_ctx_wk_model},$WEEK_MODEL}}}}}}}}" \
+        "set-option -p -t '$TMUX_PANE' @claude_ctx '$PERCENT_USED' ; set-option -p -t '$TMUX_PANE' @claude_ctx_sid '$SESSION_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_model '$MODEL_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_account '$ACCOUNT' ; set-option -p -t '$TMUX_PANE' @claude_ctx_5h '$FIVE_HOUR' ; set-option -p -t '$TMUX_PANE' @claude_ctx_wk '$WEEK_PCT' ; set-option -p -t '$TMUX_PANE' @claude_ctx_wk_model '$WEEK_MODEL' ; run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh reconcile $TMUX_PANE'" \
         2>/dev/null || true
 fi

@@ -20,7 +20,7 @@
       "CronDelete",
       "CronList"
     ],
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "auto"
   },
   "model": "opus[1m]",
   "disableClaudeAiConnectors": true,
@@ -88,9 +88,9 @@
       }
     ]
   },
-  "disableRemoteControl": true,
+  "disableRemoteControl": false,
   "disableWorkflows": true,
-  "disableArtifact": true,
+  "disableArtifact": false,
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/commands/statusline-command.sh"

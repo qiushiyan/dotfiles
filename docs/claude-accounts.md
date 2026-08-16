@@ -113,10 +113,21 @@ Everything derives from that tree:
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
-- **Which lane is a running session on?** Its tmux pane border says so — the
-  context chip (`yan opus-5[1m] ✳ 37%`) leads with the account's email local
+- **Which lane is a running session on, and how much is left in it?** Its
+  tmux pane border says so — the context chip
+  (`yan 5h:23 Fable:15 opus-5[1m] ✳ 37%`) leads with the account's email local
   part, or the full email when two lanes share one, the same ambiguity rule
-  as the `x-<name>` short aliases. **Every lane is labeled, the primary
+  as the `x-<name>` short aliases, and follows it with that account's 5-hour
+  and **model-scoped weekly** limits. The 5-hour figure rides in on Claude
+  Code's own statusline payload; the weekly does not exist there (the payload
+  carries only the all-models figure, routinely far below the scoped one that
+  actually stops work), so it comes from `headroom limits` by way of a small
+  cache file — `claude-quota-refresh.sh` keeps it warm, the render path only
+  ever reads it. The board (`x-acc`) stays the place for the full breakdown
+  across every account; the chip answers for the one lane in front of you.
+  Details of the drawing, the shed order and the staleness rule:
+  `tmux/.config/tmux/workflow.md` § The Claude context chip.
+  **Every lane is labeled, the primary
   included.** Only the *source* differs: an extra is named by the
   `CLAUDE_CONFIG_DIR` headroom set at launch, which is its email, while the
   primary — the one account with no dir to be named by — is read from

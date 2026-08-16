@@ -267,7 +267,7 @@ float_pane() {
     local order
     order=$(tiled_panes "$win" | tr '\n' ' ')
     if [ "$(printf '%s' "$order" | wc -w | tr -d ' ')" -lt 2 ]; then
-        msg "float: only one pane in this window — use prefix Z to zoom"
+        msg "float: only one pane in this window — use prefix C-z to zoom"
         return 1
     fi
 
@@ -363,7 +363,7 @@ float_pane() {
 
 # --- scratch ------------------------------------------------------------------
 
-# `prefix C-z`: an EPHEMERAL shell in a popup, opened at the active pane's
+# `prefix Z`: an EPHEMERAL shell in a popup, opened at the active pane's
 # current directory — poke around next to a running agent without carving a
 # pane out of the layout first. Deliberately none of the float's machinery: no
 # holder, no state, no resurrect interaction, and no key-table staging either —

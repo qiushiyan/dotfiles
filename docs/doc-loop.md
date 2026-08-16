@@ -17,8 +17,8 @@ All checkpoints are user-triggered by design — the skills never fire themselve
     …implement…              ← the host builds from the synthesis
     /review                  ← a cold session judges the committed range → the PR
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)
-/handoff [next: …]           ← lessons + a baton in ~/dev/.handoffs, itself the next first prompt
-  → new worktree, pbcopy < the baton, paste — line 1 fires /onboarding <topic>
+/handoff [next: …]           ← lessons + a brief in ~/dev/.handoffs, itself the next first prompt
+  → brief start <slug> places the worktree and hands over the pointer
 ```
 
 `/update-docs` and `/handoff` are separable on purpose: a routine change wants a
@@ -75,19 +75,18 @@ project's own skill or `documentation-standards.md` when present.
 
 ## The handoff (`/handoff`, `~/dev/.handoffs`)
 
-The baton **is** the next session's first prompt, not a document about the work:
-new worktree → `pbcopy <` the baton → paste, and line 1 is the `/onboarding`
-invocation. It lands at `~/dev/.handoffs/<repo>/<slug>.md`, outside every
-worktree and outside git, carrying state, lessons and dead-ends with their
-_why_, and first moves.
+The brief **is** the next session's first prompt, not a document about the work:
+`brief start <slug>` places the worktree and hands the session its pointer —
+the invocation and the goal on line 1, the file's path on line 2. It lands at
+`~/dev/.handoffs/<project>/<slug>.md`, outside every worktree and outside git,
+carrying state, lessons and dead-ends with their _why_, and first moves.
 
 Two rules are worth knowing even from outside: a gate decides up front whether
-this is a full handoff, a baton-only stop, or a doc pass with no baton at all;
-and the slug names the **next** session's branch, so one token serves as baton,
-branch and worktree (`gwt <slug>`).
+this is a full handoff, a brief-only stop, or a doc pass with no brief at all;
+and the slug names the **next** session's branch, so one token serves as brief,
+branch, worktree and PR lookup key.
 
-Path derivation, slug edge cases, and the honesty floor:
-`docs/handoff.md`.
+Where the machinery lives and which repo owns which half: `docs/handoff.md`.
 
 ## The doc shape that keeps onboarding cheap
 
@@ -133,5 +132,5 @@ update-docs skill whenever a rot class recurs. It defers to each project's
   pointers and claims-to-verify, not answers — verification is what makes the
   knowledge its own.
 - **Wrap up at task boundaries, not context exhaustion.** Past ~50% window, write
-  the baton first (it needs the session's memory) and run the doc pass fresh (it
+  the brief first (it needs the session's memory) and run the doc pass fresh (it
   only needs the diff).

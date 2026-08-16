@@ -1094,72 +1094,34 @@ _gitguard() {
 }
 
 # --------------------------------------------------------------------
-# brief — start a queued handoff brief: worktree command out, paste in.
+# brief — thin wrapper over the brief CLI (~/dev/brief).
 # --------------------------------------------------------------------
-# A brief written days ago carries everything the next session needs, but the
-# two things you must produce to START it — the worktree to open and the
-# invocation the paste fires — have left your head by then. Neither is stored,
-# because neither has to be: the slug IS the branch (baton-index.sh resolves
-# git state through it) and line 1 IS the invocation. This reads both back out.
-#
-#   brief              the index: every brief, its cluster, drift, and whether
-#                      a branch or PR exists for it yet
-#   brief <fragment>   that brief's gwt command, its pointer on the clipboard
+# The binary owns everything whose staleness could misroute: the folder
+# scheme, the parser, resolution, placement, the pointer. This init-frozen
+# layer holds only what a parent shell alone can do — make the cd stick —
+# via the binary's --cd-file contract (empty file = no entry, do not cd).
 brief() {
   emulate -L zsh
-  local index="$HOME/.claude/skills/handoff-sweep/baton-index.sh"
-  local out slug file goal base existing c
-
-  # No argument: the index answers "what is waiting, can it run yet, and does
-  # the folder owe a sweep?".
-  [[ -n "$1" ]] || { bash "$index"; return }
-
-  # The index owns what counts as a baton and how a slug is matched — one
-  # parser, so this never disagrees with the listing it just showed you.
-  out=$(bash "$index" --resolve "$1") || return $?
-  slug=${out%%$'\t'*}; out=${out#*$'\t'}
-  file=${out%%$'\t'*}; goal=${out#*$'\t'}
-
-  base=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
-  base=${base#origin/}
-  if [[ -z $base ]]; then
-    for c in develop main master trunk; do
-      git rev-parse --verify --quiet "$c" >/dev/null 2>&1 && { base=$c; break }
-    done
+  local bin="$HOME/.local/bin/brief"
+  [[ -x $bin ]] || { print -u2 "brief: binary missing — (cd ~/dev/brief && make install)"; return 1 }
+  if [[ $1 == start ]]; then
+    local cdf rc
+    cdf=$(mktemp "${TMPDIR:-/tmp}/brief-cd.XXXXXX") || return 1
+    "$bin" "$@" --cd-file "$cdf"
+    rc=$?
+    [[ -s $cdf ]] && cd "$(<$cdf)"
+    rm -f "$cdf"
+    return $rc
   fi
-
-  printf '%s\nBrief: %s\n' "$(head -1 "$file")" "$file" | pbcopy
-
-  print -P "%F{cyan}%B$slug%b%f"
-  [[ -n $goal ]] && print -P "  %F{242}${goal[1,140]}%f"
-
-  # What to run depends on what the slug already is. A review-posture baton
-  # names no new branch — its subject is an existing worktree. A slug already
-  # checked out somewhere is a resume, and `gwt` would refuse the existing path.
-  existing=$(git worktree list --porcelain \
-             | awk -v b="refs/heads/$slug" '/^worktree /{p=substr($0,10)} $0=="branch "b{print p; exit}')
-  if [[ $slug == review-* ]]; then
-    print -P "  %F{yellow}review posture%f — open the ${slug#review-} worktree; the pointer is the whole ready command"
-  elif [[ -n $existing ]]; then
-    print -P "  %F{green}cd%f $existing"
-  else
-    print -P "  %F{green}gwt%f $slug ${base:-develop}"
-  fi
-  print -P "  %F{242}pointer on the clipboard%f"
+  "$bin" "$@"
 }
 
 _brief() {
-  local folder probe
-  probe=$(bash "$HOME/.claude/skills/handoff/handoff-path.sh" _probe_ 2>/dev/null) || return
-  folder=${probe:h}
+  # The binary owns brief detection; resolve's bare form is the completion
+  # feed (file scan only — no network on this path).
   local -a slugs
-  # Same line-1 test the function uses, so completion never offers a name it
-  # would then reject (_clusters.md, the *.evidence/ sidecars).
-  local f
-  for f in ${(f)"$(find "$folder" -name '*.md' -type f 2>/dev/null | sort)"}; do
-    [[ $(head -1 "$f") == /* ]] && slugs+=("${${f#$folder/}%.md}")
-  done
-  _describe 'brief' slugs
+  slugs=(${(f)"$("$HOME/.local/bin/brief" resolve 2>/dev/null)"})
+  (( $#slugs )) && _describe 'brief' slugs
 }
 
 # --------------------------------------------------------------------

@@ -1,7 +1,6 @@
 ---
 name: review
 description: "Get a code review of the branch's committed work — a cold AI session, briefed fresh-eyes or spec-anchored, plus the consult voice warm when one shaped the design — then judge and apply the findings."
-disable-model-invocation: true
 ---
 
 # Review — independent review of committed work
@@ -70,7 +69,7 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    Done when every finding carries a verdict: confirmed, rebutted with a first-principles reason, or foundational — those the user decides — and every critical or moderate behavioral verdict names the test that decided it, or why none could.
 
-6. **Fix, and account for the tests.** Apply the confirmed criticals and moderates yourself — in this skill the host is the implementer; minors go by user preference. Design the fix from the finding, not from the red test: the cheapest change that greens it is usually the local patch the reviewer stepped past. A confirmed structural finding gets the actual reshape, not a shrunken local version of it and not a deferral to "future work". Every confirmed bug also indicts the suite — it was green over the bug: decide whether the step-5 test filled a coverage gap or must replace a weak test (wrong altitude, over-mocked, asserting internals), and add / strengthen / delete accordingly. Done when the project's checks are green over the fixes, the step-5 tests among them.
+6. **Fix, and account for the tests.** Apply the confirmed criticals and moderates yourself — in this skill the host is the implementer; minors go by user preference. Design the fix from the finding, not from the red test: the cheapest change that greens it is usually the local patch the reviewer stepped past. A confirmed structural finding gets the actual reshape, not a shrunken local version of it and not a deferral to "future work". Write the fix for the **next reader**, who will never see this review: comments and test titles carry the behavior and its reason in the present tense, while the round's coordinates (`(review r2)`, the finding id, the reviewer's name) and the changelog voice (`previously`, `used to`, `no longer`) go in the commit message and the step-7 summary. Every confirmed bug also indicts the suite — it was green over the bug: decide whether the step-5 test filled a coverage gap or must replace a weak test (wrong altitude, over-mocked, asserting internals), and add / strengthen / delete accordingly — a test whose subject the fix removed is a **tombstone**, deleted rather than inverted, since what earns the keep is the subject, not the polarity. Done when the project's checks are green over the fixes, the step-5 tests among them.
 
 7. **Round 2, when the fixes were substantive:** send a per-finding summary of what changed — rebuttals included — into the same session (`envoy collect` prints the resume command; a fan-out of reviewers continues whole: `envoy fan --resume-from <out-dir> --prompt-file round2.md`). The question is narrow: was each point actually integrated or hand-waved, and did the fixes regress anything? Converging, not relitigating. For light fixes, handing the user the takeover command is the cheap substitute.
 

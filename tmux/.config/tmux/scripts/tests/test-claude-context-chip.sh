@@ -98,12 +98,17 @@ fresh() {
 # they fall through to the DEFAULT socket, the user's live server, where these
 # pane ids don't exist and every assertion below would pass for the wrong
 # reason) and to the sandbox HOME.
+# A 5th arg is the payload's rate_limits.five_hour percentage — the vendor's
+# own 5-hour figure, which reaches the chip straight off this document. Absent
+# means a payload with no rate_limits key at all, which is a real state (API
+# billing has no subscription limits) and not the same as a zero.
 pub() {
-    local sid="$1" model="$2" tokens="$3" acct="${4:-}" payload
+    local sid="$1" model="$2" tokens="$3" acct="${4:-}" five="${5:-}" payload rl=""
+    [ -n "$five" ] && rl=$(printf ',"rate_limits":{"five_hour":{"used_percentage":%s,"resets_at":9999999999}}' "$five")
     if [ "$model" = "-" ]; then
-        payload=$(printf '{"session_id":"%s","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$sid" "$SANDBOX" "$tokens")
+        payload=$(printf '{"session_id":"%s","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' "$sid" "$SANDBOX" "$tokens" "$rl")
     else
-        payload=$(printf '{"session_id":"%s","model":{"id":"%s"},"workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$sid" "$model" "$SANDBOX" "$tokens")
+        payload=$(printf '{"session_id":"%s","model":{"id":"%s"},"workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' "$sid" "$model" "$SANDBOX" "$tokens" "$rl")
     fi
     local -a acct_env
     case "$acct" in
@@ -111,7 +116,13 @@ pub() {
         /*)  acct_env=(CLAUDE_CONFIG_DIR="$acct") ;;
         *)   acct_env=(CLAUDE_CONFIG_DIR="$SANDBOX_HOME/.claude-accounts/$acct") ;;
     esac
+    # CLAUDE_CTX_REFRESH_CMD set-but-empty: no quota refresher is spawned. It
+    # would run the REAL headroom against the REAL accounts root and the
+    # network, and write the user's live ~/.cache — the C9 guard catches that,
+    # and it caught it once for real. C22 is where the spawn itself is tested,
+    # by pointing this at a stub instead of clearing it.
     printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME=flexoki_light \
+        CLAUDE_CTX_REFRESH_CMD="${REFRESH_CMD-}" \
         TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$STATUSLINE" >/dev/null 2>&1
     sleep 0.4   # the accepted branch reconciles the border in the background
 }
@@ -622,9 +633,141 @@ c20() {
     rm -f "$SANDBOX_HOME/.claude.json"
 }
 
+# Lay down the line claude-quota-refresh.sh would have left for a lane, with
+# every instant expressed RELATIVE TO NOW so a case says what it means:
+#   quota <lane> <attempted-ago> <percent> <model> <observed-ago> <resets-in|->
+# A negative resets-in is a window that has already ended.
+quota() {
+    local lane="$1" at_ago="$2" pct="$3" model="$4" obs_ago="$5" res_in="$6" now res obs
+    now=$(date +%s)
+    res="-"; [ "$res_in" != "-" ] && res=$((now + res_in))
+    obs="-"; [ "$obs_ago" != "-" ] && obs=$((now - obs_ago))
+    mkdir -p "$SANDBOX_HOME/.cache/claude-ctx"
+    printf '%s %s %s %s %s %s\n' "$((now - at_ago))" "$lane" "$pct" "$model" "$obs" "$res" \
+        > "$SANDBOX_HOME/.cache/claude-ctx/$lane.quota"
+}
+
+# ---------------------------------------------------------------------------
+# C21 — the two quota numbers. The 5-hour figure rides in on Claude Code's own
+# payload; the model-scoped weekly comes off the cache file, and the whole
+# question there is WHEN AN OLD READING IS STILL AN ANSWER. Inside a live
+# window usage only climbs, so an aged figure understates and is safe to draw;
+# once the window has ended the same figure describes a window nobody is
+# spending against, and a low number there reads as headroom that may not
+# exist. So the reset instant decides — age only stands in when the vendor
+# left the reset null. Every rejection empties the pair rather than drawing a
+# zero: a 0 on the border is indistinguishable from free quota.
+# ---------------------------------------------------------------------------
+c21() {
+    fresh || return
+    local lane=lane@x.test
+    mkdir -p "$SANDBOX_HOME/.claude-accounts/$lane"
+
+    quota "$lane" 10 51 Fable 60 3600
+    pub sid-A 'claude-opus-5[1m]' 370000 "$lane" 23.5
+    check "C21 the scoped weekly is published" "$(opt @claude_ctx_wk)" "51"
+    check "C21 with the model it is scoped to" "$(opt @claude_ctx_wk_model)" "Fable"
+    # 23.5 rounds, and it must arrive as a bare integer: the border feeds it to
+    # e|/ for the severity colour, which is integer arithmetic.
+    check "C21 the 5-hour figure is rounded off the payload" "$(opt @claude_ctx_5h)" "24"
+
+    # A payload with no rate_limits at all — API billing. The weekly, which
+    # comes from somewhere else entirely, must be untouched by that.
+    pub sid-A 'claude-opus-5[1m]' 380000 "$lane"
+    check "C21 no rate_limits leaves the 5-hour empty" "$(opt @claude_ctx_5h)" ""
+    check "C21 and does not disturb the weekly" "$(opt @claude_ctx_wk)" "51"
+
+    # The window ended a minute ago.
+    quota "$lane" 10 51 Fable 60 -60
+    pub sid-A 'claude-opus-5[1m]' 390000 "$lane" 5
+    check "C21 a rolled-over window is not drawn" "$(opt @claude_ctx_wk)" ""
+    check "C21 and takes its model label with it" "$(opt @claude_ctx_wk_model)" ""
+    check "C21 while the 5-hour figure is unaffected" "$(opt @claude_ctx_5h)" "5"
+
+    # No reset instant to judge by: age is the only evidence, and the cutoff
+    # sits far past the refresh cadence, so it only fires when refreshing has
+    # actually stopped working.
+    quota "$lane" 10 62 Fable 60 -
+    pub sid-A 'claude-opus-5[1m]' 400000 "$lane" 5
+    check "C21 a null reset falls back to a fresh observation" "$(opt @claude_ctx_wk)" "62"
+    quota "$lane" 10 62 Fable 7200 -
+    pub sid-A 'claude-opus-5[1m]' 410000 "$lane" 5
+    check "C21 a null reset with a stale observation is dropped" "$(opt @claude_ctx_wk)" ""
+
+    # A line written for someone else. The filename is sanitized, so two lanes
+    # differing only in stripped characters can land on one file — showing one
+    # account's quota under another's name is the failure this rejects.
+    quota "$lane" 10 77 Fable 60 3600
+    sed -i '' "s/$lane/other@x.test/" "$SANDBOX_HOME/.cache/claude-ctx/$lane.quota"
+    pub sid-A 'claude-opus-5[1m]' 420000 "$lane" 5
+    check "C21 a line naming another lane is refused" "$(opt @claude_ctx_wk)" ""
+
+    # Whatever the refresher could not read comes through as "-", never 0.
+    quota "$lane" 10 - - 60 3600
+    pub sid-A 'claude-opus-5[1m]' 430000 "$lane" 5
+    check "C21 an unreadable percentage draws nothing" "$(opt @claude_ctx_wk)" ""
+    quota "$lane" 10 44 - 60 3600
+    pub sid-A 'claude-opus-5[1m]' 440000 "$lane" 5
+    check "C21 a number with no model label draws nothing" "$(opt @claude_ctx_wk)" ""
+
+    rm -rf "$SANDBOX_HOME/.claude-accounts" "$SANDBOX_HOME/.cache"
+}
+
+# ---------------------------------------------------------------------------
+# C22 — the refresher trigger. The render path must never WAIT on headroom, and
+# a window full of panes must not spawn one refresher per pane per render, so
+# the trigger is throttled on the last ATTEMPT and suppressed while a sibling
+# holds the lock. Both are invisible when they break — the chip keeps working
+# and the machine just does more work — so they are asserted against a stub
+# standing in for the real refresher.
+# ---------------------------------------------------------------------------
+c22() {
+    fresh || return
+    local lane=lane@x.test
+    mkdir -p "$SANDBOX_HOME/.claude-accounts/$lane" "$SANDBOX_HOME/.cache/claude-ctx"
+    local stub="$SANDBOX/refresh-stub.sh" marker="$SANDBOX/refreshed"
+    printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$1" >> "%s"\n' "$marker" > "$stub"
+    chmod +x "$stub"
+    rm -f "$marker"
+    REFRESH_CMD="$stub"
+    # How many refreshers were spawned. An absent marker is ZERO, said out
+    # loud: `wc -l` on a missing file errors and prints nothing, which would
+    # compare equal to an expected "" and pass the suppression cases without
+    # counting anything at all.
+    spawns() { if [ -e "$1" ]; then wc -l < "$1" | tr -d ' '; else echo 0; fi; }
+
+    # No cache file at all: the lane has never been asked about.
+    pub sid-A 'claude-opus-5[1m]' 370000 "$lane" 5
+    check "C22 a cold lane triggers a refresh" \
+        "$(head -1 "$marker" 2>/dev/null)" "$lane"
+
+    # A recent attempt, even one that learned nothing, holds the trigger off.
+    rm -f "$marker"
+    quota "$lane" 10 - - - -
+    pub sid-B 'claude-opus-5[1m]' 380000 "$lane" 5
+    check "C22 a recent attempt suppresses the next" "$(spawns "$marker")" "0"
+
+    # Stale enough to re-arm, but a sibling pane is already inside a refresh.
+    rm -f "$marker"
+    quota "$lane" 400 51 Fable 400 3600
+    mkdir -p "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
+    pub sid-C 'claude-opus-5[1m]' 390000 "$lane" 5
+    check "C22 the lock suppresses a duplicate refresher" "$(spawns "$marker")" "0"
+    check "C22 and the stale line is still drawn meanwhile" "$(opt @claude_ctx_wk)" "51"
+
+    # Lock gone, still stale: the trigger fires again.
+    rmdir "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
+    pub sid-D 'claude-opus-5[1m]' 400000 "$lane" 5
+    check "C22 a stale line with no lock re-arms it" \
+        "$(head -1 "$marker" 2>/dev/null)" "$lane"
+
+    unset REFRESH_CMD
+    rm -rf "$SANDBOX_HOME/.claude-accounts" "$SANDBOX_HOME/.cache" "$stub" "$marker"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done
