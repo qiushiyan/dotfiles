@@ -816,10 +816,52 @@ t26() {
         "$(T list-panes -a -F '#{@fl_phase}' | grep -c . || true)" "0"
 }
 
+# ---------------------------------------------------------------------------
+# T27 — THE GHOST CLIENT. A client that was suspended and never resumed shares
+# the live client's tty name; `-c <name>` resolves by name, first match, and
+# does not skip suspended clients — while list-clients hides them. So the
+# popup is drawn onto a stopped client and nothing appears; toggle and scratch
+# both went dark for a day (2026-08-16). live_client() must notice the name is
+# poisoned and let tmux pick the client that actually pressed the key.
+# The ghost here is manufactured for real: suspend the inner client, then
+# attach again from the SAME outer pane so both share one pty.
+# ---------------------------------------------------------------------------
+t27() {
+    fresh
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T27 client attached" "no client"; return; fi
+    ghost=$(T display -p -c "$C" '#{client_pid}')
+    T suspend-client -t "$C"; sleep 1.5              # outer shell gets its prompt back
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    live=$(T list-clients -F '#{client_pid}' 2>/dev/null | head -1)
+    if [ -z "$live" ] || [ "$live" = "$ghost" ]; then
+        no "T27 ghost + live client share a name" "live=[$live] ghost=[$ghost]"
+        kill -9 "$ghost" 2>/dev/null; return
+    fi
+    ok "T27 ghost + live client share a name"
+    # The premise: name resolution prefers the ghost. If a future tmux fixes
+    # that, this reads the live pid and the guard is simply idle — still pass.
+    resolved=$(T display -p -c "$C" '#{client_pid}')
+    [ "$resolved" = "$ghost" ] && echo "       (name resolves to the ghost — the trap is armed)"
+
+    P=$(T display -p -t t '#{pane_id}')
+    SCRATCH_CMD='sleep 4' R "$FLOAT" scratch "$P" "$C" >/dev/null 2>&1 &
+    sleep 1.5
+    check "T27 scratch is drawn on the live client, not the ghost" \
+        "$(O capture-pane -p -t o | grep -c 'scratch ·' || true)" "1"
+    T display-popup -C 2>/dev/null; sleep 0.5       # no -c: best client = live
+    kill -9 "$ghost" 2>/dev/null                    # stopped process; would outlive the suite
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
 for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t8 t9 t10 t11 t14 \
-         t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24 t25 t26; do
+         t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24 t25 t26 t27; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

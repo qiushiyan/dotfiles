@@ -315,6 +315,21 @@ tmux says `cannot swap floating panes`.
 
 ## Traps that cost real debugging
 
+- **A `-c <tty>` target can resolve to a ghost.** `cmd_find_client` matches by
+  tty name, first in attach order, and does **not** skip a suspended client —
+  while `list-clients` hides one (`sort_get_clients` drops
+  `CLIENT_UNATTACHEDFLAGS`). A client suspended and never resumed (stock
+  `suspend-client`, then `tmux attach` again from the same terminal) therefore
+  shares the live client's name, precedes it, wins the lookup, and every popup
+  is drawn onto a stopped tty: float and scratch both went dark for a day
+  (2026-08-16), and the ghost was invisible to `list-clients` the whole time.
+  `live_client()` keeps a client name only if the pid it resolves to is one
+  `list-clients` shows, else passes no `-c` and lets tmux pick the session's
+  most recently active client — on the keypress path, the one that pressed
+  the key. Pinned by T27, which manufactures a real ghost. Diagnosis, if it
+  ever recurs: `tmux display -p -c <tty> '#{client_pid} #{client_flags}'`
+  showing `suspended` while `list-clients` shows a different pid; cure:
+  `kill -9` the stopped `tmux attach` in the outer shell's job table.
 - **`show-option -t "=name"` reads back empty**, with rc=0. The `=` exact-match
   form is for a target-*session* (`has-session`, `kill-session`, `attach-session`
   take it); `show-option`'s target is a target-*pane*. Using it makes every holder

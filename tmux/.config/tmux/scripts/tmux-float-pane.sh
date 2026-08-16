@@ -123,6 +123,26 @@ sess_exists()  { tmux has-session -t "=$1" 2>/dev/null; }
 # pane strands markers on BOTH ends, and a targeted call can only fix one.
 reconcile() { TMUX_PANE= bash "$CLAUDE_CTX" reconcile >/dev/null 2>&1 || true; }
 
+# A `-c <name>` target resolves a client by tty NAME, first match in attach
+# order — and tmux does not skip a SUSPENDED client there, although
+# list-clients hides one (cmd_find_client vs sort_get_clients, 3.7b). So a
+# client that was suspended and never resumed (stock suspend-client, then
+# `tmux attach` again from the same terminal) is a ghost that shares the live
+# client's name and precedes it in the list: it wins the lookup, the popup is
+# drawn onto a stopped client, and nothing appears. Seen live 2026-08-16 —
+# both the float and the scratch went dark for a day. Keep the name only if it
+# resolves to a client list-clients can see; otherwise pass no client at all
+# and let tmux pick the session's most recently active one, which on the
+# keypress path is the client that pressed the key.
+live_client() {
+    local name="$1" pid
+    [ -n "$name" ] || return 0
+    pid=$(tmux display-message -p -c "$name" '#{client_pid}' 2>/dev/null)
+    [ -n "$pid" ] || return 0
+    tmux list-clients -F '#{client_pid}' 2>/dev/null | grep -qx "$pid" && printf '%s' "$name"
+    return 0
+}
+
 # Validate a @*_border override — display-popup rejects an unknown value
 # outright, which would fail the whole presentation over a typo.
 resolve_border() { # <@option> <default>
@@ -228,6 +248,7 @@ open_container() {
     [ -n "$title" ] || title="zoom"
 
     local args=(-E -w "$FLOAT_W" -h "$FLOAT_H" -b "$border" -T " $title ")
+    client=$(live_client "$client")
     [ -n "$client" ] && args+=(-c "$client")
 
     # display-popup BLOCKS its issuing command until dismissed, which is why
@@ -393,6 +414,7 @@ scratch_popup() {
     # send-keys back to the pane it was opened from.
     local args=(-E -d "$dir" -w "$SCRATCH_W" -h "$SCRATCH_H" -b "$border"
                 -T " scratch · ${dir##*/} " -e SCRATCH_SRC_PANE="$pane")
+    client=$(live_client "$client")
     [ -n "$client" ] && args+=(-c "$client")
 
     tmux display-popup "${args[@]}" "${SCRATCH_CMD:-exec ${SHELL:-bash} -il}"
