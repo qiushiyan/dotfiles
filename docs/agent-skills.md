@@ -98,3 +98,60 @@ The one real trap:
   visibility: the description still costs context, the model still tries and
   gets blocked, and you lose your own `/skill` invocation too. Deny is for tools
   (e.g. `NotebookEdit`), not skills.
+
+## Vendored bundled skills
+
+`"disableBundledSkills": true` in `claude/.claude/settings.json` is what we
+want for ~30 bundled skills and wrong for a handful. **There is no way to
+exempt one.** The kill switch is all-or-nothing with a single hardcoded
+escape hatch — a `survivesBundledKillSwitch` property set in the CLI's own
+source, and as of v2.1.233 exactly one skill sets it (`/doctor`). No
+`enabledSkills` / `disabledSkills` / per-skill settings key exists, in the
+binary or the docs. `skillOverrides` doesn't reach these either: it's the
+re-enabling direction, which is the direction that doesn't work (above).
+
+So the way back in is to **vendor the skill** — a real directory under
+`claude/.claude/skills/`. Skills there are explicitly unaffected by the kill
+switch, and a user skill shadows a bundled one of the same name, so a vendored
+copy stays correct whether or not the switch later flips.
+
+Currently vendored:
+
+```
+claude/.claude/skills/artifact-design/   # ← bundled, CLI v2.1.233 (2026-08-17)
+```
+
+The Artifact tool description says you *must* load `artifact-design` before
+writing any artifact, and `"disableArtifact": false` is set — so without this
+the tool was live and its mandatory skill was missing. Two sibling skills,
+`artifact-diagramming` and `artifact-capabilities`, are in the same state and
+deliberately not vendored yet; `artifact-capabilities` is the one the tool
+calls mandatory before declaring `capabilities` or writing `window.claude.*`
+runtime code.
+
+**This is a copy, and copies rot.** Re-extract after a CLI upgrade that touches
+artifacts. The body lives in the binary as a template literal:
+
+```bash
+node -e '
+  const fs=require("fs"), B=process.env.HOME+"/.local/share/claude/versions/<VER>";
+  const s=fs.readFileSync(B).toString("latin1"), k="var otg=`";
+  const a=s.indexOf(k+"---")+k.length, b=s.indexOf("`;var ntg=",a);
+  const body=Buffer.from(s.slice(a,b),"latin1").toString("utf8");
+  process.stdout.write(eval("`"+body.replace(/\$\{/g,"\\${")+"`"));
+'
+```
+
+Two extraction traps:
+
+- **Don't go through `strings`.** `strings -n 6` drops every line shorter than
+  six bytes — which silently eats the blank lines and the `---` frontmatter
+  fence, collapsing the whole document into one paragraph. Read the raw binary.
+- **`<!-- dataviz-callout -->` is a placeholder, not content.** The runtime
+  substitutes it only behind the `tengu_cobalt_plinth_dataviz` flag (default
+  off). Delete the line — left in, it points at `dataviz`, which the kill
+  switch still disables.
+
+The `var otg=` symbol is minifier output and will not be stable across
+versions. Locate the skill by its frontmatter (`name: artifact-design`) and
+re-derive the surrounding variable name.
