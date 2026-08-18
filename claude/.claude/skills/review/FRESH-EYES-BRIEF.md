@@ -90,6 +90,16 @@ Nothing to name? Delete the section.»
   restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md`
   decides whether a seam earns a port, and replace-don't-layer for the moved
   tests.
+- **Composition — how this joins what was already there** — read
+  `~/.config/lessons/codebase-design/composition.md` and run its trace: take one
+  real path this change serves, follow it entry to effect, and name what each hop
+  adds. Then judge the join — did the concepts already in the codebase absorb the
+  new case, or did it get its own route beside them (a flag, a wrapper, a parallel
+  function, a second mechanism answering a question the first one answers)? You
+  are the right reader for this: you were told nothing about how it was built, so
+  a hop that only makes sense from inside the implementation's history will not
+  make sense to you either. Findings here name the reshape and the concept it
+  deletes — and only where a caller that exists today pays for it.
 
 ## Do not flag
 
@@ -103,14 +113,18 @@ Nothing to name? Delete the section.»
 ## Output
 
 1. **What I expected** — the sentences you wrote before reading, verbatim.
-2. **Expectation violations** — what you expected, what it does, where in the
+2. **The trace** — the hops of the one path you followed, entry to effect, one
+   line each for what that hop adds, and "adds nothing" where that is the
+   answer. Findings can cite it by hop instead of re-describing the path.
+3. **Expectation violations** — what you expected, what it does, where in the
    code. Unranked, and the section this review exists for; "none" is a real
    answer, said explicitly.
-3. **Defects** — **critical** (blocks merge) / **moderate** (fix before merge) /
-   **minor**. Structural regressions are critical, not minor. For each: what,
+4. **Defects** — **critical** (blocks merge) / **moderate** (fix before merge) /
+   **minor**. Structural and compositional regressions are critical, not minor —
+   a path that works and accreted has still failed. For each: what,
    where (file/function), the code that proves it, a concrete fix. Say "none"
    for an empty tier.
-4. **Design objections** — where you would have built this differently and what
+5. **Design objections** — where you would have built this differently and what
    keeping it costs, or "none".
 
 Be specific and terse; no praise padding.

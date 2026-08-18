@@ -21,8 +21,9 @@ The order a planning model should read these, with gates. The snippet's include 
 | 3 | [`testing/mocking-and-fixtures.md`](testing/mocking-and-fixtures.md) | The bridge: how the modules you shaped get tested | always |
 | 4 | [`testing/test-quality.md`](testing/test-quality.md) | The bar the planned tests must clear — and the shapes to reject | always |
 | 5 | [`testing/vitest.md`](testing/vitest.md) | Vitest API/CLI specifics | **TS-Vitest projects only** |
-| 6 | [`codebase-design/deepening.md`](codebase-design/deepening.md) | Deepen an existing cluster of shallow modules | **only when restructuring** |
-| 7 | [`codebase-design/design-it-twice.md`](codebase-design/design-it-twice.md) | Explore alternative interfaces | **only when the interface is uncertain** |
+| 6 | [`codebase-design/composition.md`](codebase-design/composition.md) | The call path between modules — what each hop adds, and whether a change joins the design or accretes beside it | **when the change joins existing code**; always at review time |
+| 7 | [`codebase-design/deepening.md`](codebase-design/deepening.md) | Deepen an existing cluster of shallow modules | **only when restructuring** |
+| 8 | [`codebase-design/design-it-twice.md`](codebase-design/design-it-twice.md) | Explore alternative interfaces | **only when the interface is uncertain** |
 
 Each doc opens with a **"## The bar"** section (skimmable imperatives), then expands into depth (the planning read).
 

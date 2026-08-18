@@ -18,6 +18,17 @@ Skim these as a lens; the sections below carry the why.
   redesigned around a different contract, the pieces wired together
   differently. Propose the reshape when you see one; when nothing reshapes
   cleanly, the local finding is the right one.
+- **Judge how the change joins the design.** Separate from whether it works:
+  did the concepts already there absorb the new case, or did it get its own
+  route beside them — a flag, a wrapper, a parallel function, a second
+  mechanism answering a question the first one already answers? Trace one real
+  path the change serves, entry to effect, and name what each hop adds; the hop
+  that adds nothing is a finding, and so is the layer that speaks its caller's
+  vocabulary back to it. Do this on the small contained fixes too — a bolt-on
+  hides best in the range nobody thinks to trace. The vocabulary is
+  [`../codebase-design/composition.md`](../codebase-design/composition.md); the
+  counterweight is the next bullet, since a reshape proposed for a caller that
+  doesn't exist yet is the same additive bias one altitude up.
 - **Hold requested tests to the additive-bias bar.** Asking for another test is
   cheap, always defensible, and looks rigorous — a missing test is visible
   today; a superfluous one bills the future, and never to you. A test you
@@ -69,10 +80,13 @@ optimum: each finding improves the code as shaped, and none asks whether the
 shape is the problem. Reshapes are where review buys the most — the change that
 deletes a concept (a branch, a mode, a helper layer) outranks the one that
 tidies it — and they are exactly what the author, deep inside their own
-framing, is least positioned to see. The structural vocabulary for judging a
-reshape — depth, seams, the deletion test, illegal states — is
+framing, is least positioned to see. Two vocabularies carry the findings, and
+structural findings are written in their terms: depth, seams, the deletion
+test, and illegal states, for one module against its callers, in
 [`../codebase-design/deep-modules.md`](../codebase-design/deep-modules.md);
-write structural findings in its terms.
+pass-throughs, accretion, connascence across a seam, and the lava layer, for
+the path *between* modules, in
+[`../codebase-design/composition.md`](../codebase-design/composition.md).
 
 ## Why the additive bias needs naming
 
@@ -93,4 +107,5 @@ findings, each heavier.
 > (`snippets/build.toml`) and the `/review` dispatch brief. No external
 > upstream; those two prompt surfaces are the baseline. The artifact-vs-account
 > and withheld-design bars were added 2026-07-31 with `/review`'s fresh-eyes
-> mode._
+> mode; the join-the-design bar and its `composition.md` vocabulary were added
+> 2026-08-18._

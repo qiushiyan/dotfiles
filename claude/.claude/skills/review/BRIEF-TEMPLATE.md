@@ -64,6 +64,7 @@ their content.»
 - **Silent deviations** — planned tests that never appeared, promised helpers that don't exist, scope creep past the spec.
 - **Test quality** — right altitude (behavior, not internals); covers the planned cases plus the obvious additions; survives plausible refactors; follows project test patterns. Weigh what the change did to the tests already there: a behavior it removed or reshaped can leave an existing test asserting something gone, now redundant, or pinned to internals that moved — flag those for deletion or rewrite, not silent survival.
 - **Structural quality** — read `~/.config/lessons/codebase-design/deep-modules.md` for the bar, and write structural findings in its vocabulary. When the change restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md` decides whether a seam earns a port, and replace-don't-layer for the moved tests.
+- **Composition — how this joins what was already there** — read `~/.config/lessons/codebase-design/composition.md` and run its trace: take one real path this change serves, follow it entry to effect, and name what each hop adds. Then judge the join — did the concepts already in the codebase absorb the new case, or did it get its own route beside them (a flag, a wrapper, a parallel function, a second mechanism answering a question the first one answers)? The settled direction fences the *what*, never the wiring: a decision to build X says nothing about whether X was bolted onto the existing call path or integrated into it, so this axis stays fully open even where the foundation is closed. Findings here name the reshape and the concept it deletes — and only where a caller that exists today pays for it.
 
 ## Do not flag
 
@@ -73,10 +74,12 @@ their content.»
 
 ## Output
 
-Findings ordered by severity — **critical** (blocks merge) / **moderate**
+Open with **the trace**: the hops of the one path you followed, one line each
+for what that hop adds, and "adds nothing" where that is the answer. Then
+findings ordered by severity — **critical** (blocks merge) / **moderate**
 (fix before merge) / **minor** (nice-to-have) — and don't pass the review
-because the code works: structural regressions and missed reshapes are
-critical, not minor. For each finding: what, where (file/function), the
+because the code works: structural regressions, accretion, and missed reshapes
+are critical, not minor. For each finding: what, where (file/function), the
 evidence (cite the code that proves it — a finding you can't point at code
 for doesn't get reported), and a concrete fix. End with a **Foundational
 objections** section, and state "none" explicitly for any empty severity
