@@ -75,6 +75,9 @@ typeset -g CLAUDE_PRIMARY_NAME="qiushi"   # x-qiushi ≡ default ~/.claude
 # pin it to ours so `.current`, `--account qiushi` and x-qiushi agree even
 # across a primary logout. Exported: the launchers, tmux and hooks all inherit it.
 export HEADROOM_PRIMARY_NAME="$CLAUDE_PRIMARY_NAME"
+# The board advertises `headroom launch --account <name>` by default; this
+# shell has x-<name> for every account, so let it promise that spelling.
+export HEADROOM_LAUNCHER_FORMAT="x-%s"
 # Local parts that never get a short launcher alias: x-<these> are utilities.
 # Purely this file's concern — headroom advertises only the guaranteed
 # x-<email> identities, so there is no naming policy to keep in sync anymore.
