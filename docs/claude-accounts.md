@@ -208,9 +208,12 @@ Everything derives from that tree:
   `x-<local-part>` aliases and the reserved utility names are `claude.zsh`'s
   own concern — headroom advertises only full identities, so there is no
   naming policy to keep in sync.
-- `ACCOUNTS_ROOT` and `PRIMARY_NAME` are declared in `claude.zsh` (for
-  launcher generation) and in headroom's config defaults — keep those two in
-  sync. `HEADROOM_*` env overrides re-point headroom only (they exist for
+- `CLAUDE_ACCOUNTS_ROOT` matches headroom's default accounts root; the
+  primary's name is *not* a headroom default anymore — headroom derives it
+  from the primary's logged-in email unless `HEADROOM_PRIMARY_NAME` pins it,
+  and `claude.zsh` exports that variable from `CLAUDE_PRIMARY_NAME` so both
+  sides answer to `qiushi` by one declaration. The other `HEADROOM_*` env
+  overrides re-point headroom only (they exist for
   its test harnesses); under one, wrapper degradations are loud or absent —
   a launcher that doesn't exist, a preflight that refuses — never a silent
   misroute, because the preflight follows headroom's classification.
