@@ -61,19 +61,20 @@ constraint the code can't reveal. Nothing to say? Delete the section.»
   return shape, default, error mode, enum value, exported name, or config key
   the change touched: find the other callers and read them. This is the lens
   the author is worst placed to run and the one a small diff hides best.
-- **Does green mean anything?** For each behaviour this change added or
-  altered, name the test that would fail if the change were reverted. If you
-  can't name one, the suite says nothing about this change and that is a
-  finding. Then check the tests the range itself touched for the three shapes
-  that pass regardless: an assertion on a mock's return rather than the code's
-  behaviour, an assertion on shape or call count rather than the value that
-  actually changed, and — the common one — a test edited in the same commit so
-  its expectation now matches the new output, which documents the change
-  instead of pinning it. Requesting a new test still owes the bar: name the bug
-  it catches and confirm nothing already catches it.
+- **Does green mean anything?** Run **the revert test** on each behaviour this
+  change added or altered: name the test that goes red if the change is
+  reverted. A behaviour with no such test is **unpinned** — the suite says
+  nothing about it, and that is a finding whatever the coverage number says.
+  Then run the same test on the tests the range itself touched, because three
+  shapes stay green through anything: an assertion on a mock's return rather
+  than the code's behaviour, an assertion on shape or call count rather than
+  the value that actually changed, and — the common one — a test edited in the
+  same commit so its expectation now matches the new output, which documents
+  the change instead of pinning it. A test you request still owes the
+  additive-bias bar.
 - **The edges this change created or moved** — empty, absent, failed,
   duplicated, out-of-order, concurrent. Only the edges the diff is responsible
-  for; this is not a general edge-case audit.
+  for.
 - **Silent behaviour changes** — a default flipped, a guard removed, an
   unrelated path altered, scope past what the intent above claims. Cheap to see
   now, expensive to find later.
@@ -86,7 +87,8 @@ constraint the code can't reveal. Nothing to say? Delete the section.»
 - «deliberately deferred work, known out-of-scope items, staleness on record»
 - **Structure, composition, and design** — module shape, layering, how the
   change joins the existing call path, whether a reshape would have been
-  better. Out of scope this round; the one-line escalation is where that goes.
+  better. These have one outlet here, the escalation line below: one line
+  naming what you saw, and nothing on how to fix it.
 - Test-suite quality beyond the green question above — naming, organisation,
   coverage philosophy, altitude debates.
 - Style, naming, comments, and docs that follow this repo's own conventions.
@@ -98,9 +100,8 @@ constraint the code can't reveal. Nothing to say? Delete the section.»
 1. **Findings** — **critical** (blocks merge) / **moderate** (fix before merge)
    / **minor**. For each: what, where (file/function), the code that proves it,
    a concrete fix. Say "none" for an empty tier.
-2. **Unpinned behaviour** — each behaviour this change altered for which you
-   could not name a test that would fail on revert, and each range-touched test
-   that pins nothing. "None" is a real answer.
+2. **Unpinned behaviour** — every behaviour the revert test found no test for,
+   and every range-touched test that pins nothing. "None" is a real answer.
 3. **Escalation** — at most one line, only if the range decided something this
    round's lenses can't judge. Name what, not how to fix it. Otherwise omit.
 

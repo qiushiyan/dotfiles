@@ -91,15 +91,13 @@ Nothing to name? Delete the section.»
   decides whether a seam earns a port, and replace-don't-layer for the moved
   tests.
 - **Composition — how this joins what was already there** — read
-  `~/.config/lessons/codebase-design/composition.md` and run its trace: take one
-  real path this change serves, follow it entry to effect, and name what each hop
-  adds. Then judge the join — did the concepts already in the codebase absorb the
-  new case, or did it get its own route beside them (a flag, a wrapper, a parallel
-  function, a second mechanism answering a question the first one answers)? You
-  are the right reader for this: you were told nothing about how it was built, so
-  a hop that only makes sense from inside the implementation's history will not
-  make sense to you either. Findings here name the reshape and the concept it
-  deletes — and only where a caller that exists today pays for it.
+  `~/.config/lessons/codebase-design/composition.md` and run **the trace** it
+  defines, then judge the join: did the concepts already in the codebase absorb
+  the new case, or did it get its own route beside them? You are the right
+  reader for this — you were told nothing about how it was built, so a hop that
+  only makes sense from inside the implementation's history will not make sense
+  to you either. Name the reshape and the concept it deletes, and only where a
+  caller that exists today pays for it.
 
 ## Do not flag
 

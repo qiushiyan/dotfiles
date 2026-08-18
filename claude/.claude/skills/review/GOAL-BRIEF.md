@@ -51,10 +51,11 @@ find, and it is unrecoverable once you have read the code.
   `git log «base-sha»..HEAD --stat`. «The user-facing entry points to read
   first.»
 - Judge the code, not an account of it: comments, commit messages, and docs in
-  the range say what was intended; only the code says what happens.
+  the range say what was intended; only the code says what happens. Where they
+  disagree the code wins, and the disagreement is a finding.
 - Review only — do not change any code.
 
-## What earlier rounds already covered
+## Covered ground — what earlier rounds already went through
 
 «Compiled from this session's review record, not from memory: the prior rounds
 with their reviewers, the findings that were confirmed and fixed (one line
@@ -62,11 +63,10 @@ each, by what they were about rather than by id), the findings rebutted and on
 what ground, and the structural decisions those rounds settled. Then one line
 the compile can't produce: what those rounds did *not* reach, and why.»
 
-Treat this as the floor, not the ceiling. These are closed; re-reporting them
-spends the one budget this round has. But it is a record of what was *looked
-for*, never proof that the result is right — the whole point of this round is
-that a defect can be absent from every list above and the work still not do
-what it was for.
+Treat this as the floor, not the ceiling: those items are closed and
+re-reporting them spends the one budget this round has, but the list records
+what was *looked for* and never that the result is right. A defect can be
+absent from every line above and the work still not do what it was for.
 
 ## Facts you can't get from the code
 
@@ -97,8 +97,7 @@ inside the diff. Nothing to say? Delete the section.»
 ## Do not flag
 
 - «deliberately deferred work, known out-of-scope items, staleness on record»
-- Anything listed under **What earlier rounds already covered** — confirmed,
-  rebutted, or settled.
+- Anything on the **covered ground** list — confirmed, rebutted, or settled.
 - Line-level defects, seam hygiene, test mechanics, style, naming, docs.
 - Theoretical risks behind unlikely preconditions; work the goal doesn't ask
   for.
