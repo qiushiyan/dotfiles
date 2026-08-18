@@ -88,6 +88,7 @@ Adapt each to this change — they are the bar for the shape you're about to com
 - `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test, illegal states.
 - `~/.config/lessons/codebase-design/design-it-twice.md` — how to arrive at an interface instead of settling for the first one. Read it when you write the target-shape section.
 - `~/.config/lessons/codebase-design/deepening.md` — read it when the change restructures an existing cluster, or leans on a dependency across a seam you don't own: its dependency categories decide whether a seam needs a port at all.
+- `~/.config/lessons/codebase-design/composition.md` — the path *between* modules: what each hop in a call chain adds, whether adjacent layers change the abstraction, and whether a new case gets absorbed by the concepts already there or accretes beside them. Read it whenever this change extends existing code — it decides how the new shape wires into the old one, which is the half of the target shape a spec most often leaves implicit.
 
 **Skim the `## The bar` at the top of each of these.** You decide *which* behaviors matter and what gets faked where; the depth below the bar belongs to the plan and the build.
 - `~/.config/lessons/testing/tdd-loop.md` — behavior through interfaces. Which behaviors matter is a product call to surface, not to assume.
@@ -172,6 +173,7 @@ I've drafted a spec — the design document for this change. Review critically, 
 
 Background (skim as a lens, don't recite):
 - `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test
+- `~/.config/lessons/codebase-design/composition.md` — pass-throughs, accretion beside an existing mechanism, connascence across a seam
 - `~/.config/lessons/testing/tdd-loop.md` — vertical slices, behavior-focused tests, when to mock
 
 The spec runs top-down — product sections (goals, behaviors, non-goals) above technical sections (module boundaries, seams, the target shape, test standards) — and each tier reviews at its own altitude.
@@ -307,7 +309,7 @@ The spec settled the module shape and the seams; this plan owes the test discipl
 - `~/.config/lessons/testing/test-quality.md` — what earns a place in the suite; assert tokens and relations, not prose
 - `~/.config/lessons/testing/vitest.md` — Vitest APIs *(TS-Vitest projects only)*
 
-Where a structural decision in the spec is still unclear to you, `~/.config/lessons/codebase-design/deep-modules.md` is the vocabulary it was written in — read it to plan against that shape, not to redraw it.
+Where a structural decision in the spec is still unclear to you, `~/.config/lessons/codebase-design/deep-modules.md` is the vocabulary it was written in — read it to plan against that shape, not to redraw it. Where the unclear part is how the new shape *meets* the existing call path, that is `~/.config/lessons/codebase-design/composition.md`.
 
 ## What you're producing
 A plan **complementary to the spec**, not overlapping it. The spec settled the module shape, the seams, the target shape, and the test standards; point to them and spend the tokens on the tactics it deferred: the slices, the sequencing, the specific test cases and fixtures, the line-level anchors — and answer its open questions here. The relay that earns its tokens is a load-bearing gotcha, invariant, or constraint bolded in the exact slice that must honor it, surfaced at the point of action where rereading the spec wouldn't put it in front of you.
@@ -365,6 +367,7 @@ I've drafted an implementation plan. Review with the same rigor as the spec.
 
 Background (skim as a lens, don't recite):
 - `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test
+- `~/.config/lessons/codebase-design/composition.md` — pass-throughs, accretion beside an existing mechanism, connascence across a seam
 - `~/.config/lessons/testing/tdd-loop.md` — vertical slices, behavior-focused tests, when to mock
 - `~/.config/lessons/testing/test-quality.md` — the test-quality bar: the shapes to reject before they're written
 
@@ -438,6 +441,7 @@ Build the change directly from what we settled in our discussion — that's the 
 ## Read these first, then build
 Read each one and adapt it to this change — they're the bar, not optional background; don't go hunting them mid-build, and ask me for a path if one's missing.
 - `~/.config/lessons/codebase-design/deep-modules.md` — deep modules, seams, the deletion test, illegal states
+- `~/.config/lessons/codebase-design/composition.md` — how the change joins the existing call path: a hop that adds nothing, a flag threaded down for one distant caller, a second mechanism beside the one already there
 - `~/.config/lessons/testing/tdd-loop.md` — vertical slices, behavior-focused tests, mock only at boundaries, anti-patterns
 - `~/.config/lessons/testing/test-quality.md` — what earns a place in the suite; tokens and relations, not prose pins
 
@@ -579,20 +583,21 @@ key = "review-implementation"
 expand = '''
 Code-review my implementation.
 
-Read `~/.config/lessons/collaboration/review-lens.md` first and review in its stance — you are making the calls it governs: step back before endorsing a local fix, hold any test you'd request to its additive-bias bar, flag over-building, and grade the code rather than the account of it. For structural findings, read `~/.config/lessons/codebase-design/deep-modules.md` and write them in its vocabulary; when the change restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md` decides whether a seam earns a port, and replace-don't-layer for the moved tests.
+Read `~/.config/lessons/collaboration/review-lens.md` first and review in its stance — you are making the calls it governs: step back before endorsing a local fix, hold any test you'd request to its additive-bias bar, flag over-building, and grade the code rather than the account of it. For structural findings, read `~/.config/lessons/codebase-design/deep-modules.md` and write them in its vocabulary; when the change restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md` decides whether a seam earns a port, and replace-don't-layer for the moved tests. For how the change *joins* what was already there, read `~/.config/lessons/codebase-design/composition.md` and run its trace.
 
 **This run's lens** — everything is fair game; these are where it's most likely to hurt:
 
 - **Solves the problem** — does the implementation solve the spec's problem for the person using it, or just pass its own tests?
 - **Test quality** — right altitude (behavior, not internals), covers planned cases + obvious additions, survives plausible refactors, uses project patterns. Tests that add churn without signal are findings too: tests of *shape* (signatures, data structures) that pass when behavior breaks, tests pinning wording or constants no caller depends on, a second test re-proving what an existing one already owns.
 - **Plan ↔ code mismatches** — silent deviations: missing planned tests, missing helpers, scope creep.
-- **Spec/plan are settled** — don't relitigate approved decisions. If a fundamental issue only surfaces from the code, say so explicitly; don't smuggle it in as a "small fix."
+- **How it joins what was there** — take one real path this change serves, follow it entry to effect, and name what each hop adds. Did the concepts already in the codebase absorb the new case, or did it get its own route beside them — a flag, a wrapper, a parallel function, a second mechanism answering a question the first one answers? A hop that adds nothing is a finding; so is a reshape you'd propose for a caller that doesn't exist yet.
+- **Spec/plan are settled** — don't relitigate approved decisions. The settled direction fences the *what*, never the wiring: whether the approved thing was bolted onto the existing call path or integrated into it stays fully open. If a fundamental issue only surfaces from the code, say so explicitly; don't smuggle it in as a "small fix."
 
 **Per issue:**
 - Severity: **critical** (blocks merge) / **moderate** (fix before merge) / **minor** (nice-to-have).
 - Concrete fix with file/function references and enough detail to act on.
 
-**Approval bar:** don't pass because it works. Structural regressions and missed reshapes are presumptive blockers — flag as **critical**, not minor.
+**Approval bar:** don't pass because it works. Structural regressions, accretion, and missed reshapes are presumptive blockers — flag as **critical**, not minor.
 
 Implementation report below — treat it as a starting point: the implementer's pointers to reduce your overhead, not the boundary of your review. Review the whole feature against its actual goal, and actively look for what the report leaves out; if you only check what the implementer surfaced, it isn't an independent review.
 
