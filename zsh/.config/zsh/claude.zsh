@@ -20,9 +20,9 @@
 # seeded with symlinks to the tracked config in dotfiles/claude/.claude —
 # settings, skills, hooks, rules stay shared; login and prompt history stay
 # per-account. Session transcripts are machine-global: every account's
-# projects/ symlinks to ~/.claude/projects (see _claude_link_projects and
-# claude-sessions.zsh), so the resume picker sees every session regardless
-# of account.
+# projects/ symlinks to ~/.claude/projects (seeded by `headroom accounts
+# add`; migration of pre-share dirs in claude-sessions.zsh), so the resume
+# picker sees every session regardless of account.
 #
 # Launch routing belongs to headroom (~/dev/headroom, installed to
 # ~/.local/bin/headroom): `headroom launch` validates the account, verifies
@@ -30,7 +30,7 @@
 # decision alone — every inherited CLAUDE_CONFIG_DIR is stripped, exactly
 # one is set for a non-primary — so a polluted shell (a tmux server started
 # inside a Claude Code session) can never re-route a launch. These wrappers
-# only add what is personal: seeding, flags, short aliases, and the one
+# only add what is personal: the share source, flags, short aliases, and the one
 # thing only a parent shell can do (make a cd stick). The rule behind the
 # split, learned twice: shell functions are frozen at shell init and live
 # for weeks, so nothing that can misroute, mutate, or misparse belongs
@@ -79,42 +79,6 @@ export HEADROOM_PRIMARY_NAME="$CLAUDE_PRIMARY_NAME"
 # Purely this file's concern — headroom advertises only the guaranteed
 # x-<email> identities, so there is no naming policy to keep in sync anymore.
 typeset -ga CLAUDE_X_RESERVED=(usage account account-add select accounts acc check)
-
-# Fill a fresh account dir with symlinks to the tracked claude config.
-_claude_account_seed() {
-  emulate -L zsh
-  local dir="$1" pkg="$HOME/dotfiles/claude/.claude" item
-  mkdir -p "$dir"
-  for item in "$pkg"/*(DN); do
-    ln -s "$item" "$dir/${item:t}"
-  done
-  _claude_link_projects "$dir"
-}
-
-# Session transcripts are machine-global: every account's projects/ is a
-# symlink to the primary's store, so any account's session picker sees every
-# session and resume appends to the one canonical file. Strict on purpose —
-# never ln -sf: a real directory here holds unmigrated sessions
-# (claude-sessions-migrate moves them), and silently shadowing it would strand
-# history. Identity is checked by inode (-ef), not readlink text.
-_claude_link_projects() {
-  emulate -L zsh
-  local dir="$1" canon="$HOME/.claude/projects" link="$1/projects"
-  if [[ -h "$canon" || ( -e "$canon" && ! -d "$canon" ) ]]; then
-    print -u2 "claude accounts: $canon must be a real directory — the canonical session store cannot itself be a link"
-    return 1
-  fi
-  mkdir -p "$canon" || return 1
-  if [[ -h "$link" ]]; then
-    [[ "$link" -ef "$canon" ]] && return 0
-    print -u2 "claude accounts: $link is a symlink but does not resolve to $canon — fix it by hand"
-    return 1
-  elif [[ -e "$link" ]]; then
-    print -u2 "claude accounts: $link is a real directory (unmigrated sessions?) — run claude-sessions-migrate"
-    return 1
-  fi
-  ln -s "$canon" "$link"
-}
 
 # Expand a personal shorthand to the canonical name headroom knows: the
 # primary's name and full emails pass through, a unique local part becomes
@@ -261,87 +225,34 @@ claude-account() {
   _claude_launch "$name" "$@"
 }
 
-# Seed a dir for a new subscription; /login on first launch binds it.
+# Onboard a subscription: `headroom accounts add` owns the seeding (dir,
+# projects/ → the machine-global store, the topology check it must pass);
+# what is personal here is the share source — the tracked config package in
+# this repo, every entry of it — and regenerating the launchers afterwards.
 claude-account-add() {
   emulate -L zsh
-  if [[ "$1" != *@* ]]; then
-    echo "usage: claude-account-add <email>" >&2
-    return 1
-  fi
-  local dir="$CLAUDE_ACCOUNTS_ROOT/$1"
-  if [[ -d "$dir" ]]; then
-    echo "claude-account-add: $dir already exists" >&2
-    return 1
-  fi
-  if ! _claude_account_seed "$dir"; then
-    echo "claude-account-add: seeding $dir failed — inspect and remove it before retrying" >&2
-    return 1
-  fi
+  headroom accounts add --share-config="$HOME/dotfiles/claude/.claude" "$@" || return $?
   _claude_gen_launchers
-  echo "seeded $dir"
-  echo "next: $(_claude_selector "$1") → /login as $1"
+  [[ "${1-}" == *@* ]] && echo "launcher: $(_claude_selector "$1")"
+  return 0
 }
 
-# Remove an account dir — or stranded `<dir>.lock` vendor debris — the
-# inverse of claude-account-add. Refuses while the account has a live
-# registered session; deletes the per-dir Keychain credential item (service
-# "Claude Code-credentials-" + sha256(dir)[:8], the same derivation Claude
-# Code and headroom use), then the dir, and scrubs the `.order` line.
-# Transcripts are machine-global and survive: the picker shows the removed
-# owner as degraded, and `x` on a row re-homes it. Nothing rewrites
-# `.current` behind headroom's back — if bare `x` pointed here, `headroom
-# launch` refuses (corrupt-vs-chosen stays distinguishable) until the
-# board's enter repicks.
+# Retire a subscription (or delete stranded `<dir>.lock` debris): the engine
+# refuses while a session is live, asks for the dir name back, deletes the
+# account's own Keychain item and the dir, scrubs `.order`, and leaves
+# `.current` for the board to repick. Transcripts are machine-global and
+# survive. This wrapper only drops the launchers the shell generated.
 claude-account-remove() {
   emulate -L zsh
-  if [[ "${1-}" != *@* && "${1-}" != *.lock ]] || [[ "$1" == */* ]]; then
-    echo "usage: claude-account-remove <email> (or a stranded <dir>.lock)" >&2
-    return 1
-  fi
-  local email="$1" dir="$CLAUDE_ACCOUNTS_ROOT/$1"
-  if [[ ! -d "$dir" ]]; then
-    echo "claude-account-remove: $dir does not exist" >&2
-    return 1
-  fi
-  # A registered session whose pid is still alive refuses the removal:
-  # deleting a config dir under a running claude orphans its login state.
-  local f pid
-  for f in "$dir"/sessions/*.json(N); do
-    pid=$(grep -o '"pid":[0-9]*' "$f" 2>/dev/null | head -1)
-    pid="${pid#*:}"
-    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-      echo "claude-account-remove: live session (pid $pid, $f) — quit it first" >&2
-      return 1
-    fi
+  headroom accounts remove "$@" || return $?
+  local a
+  for a in "$@"; do
+    [[ "$a" == -* ]] && continue
+    unfunction "x-$a" 2>/dev/null || true
   done
-  local login
-  login=$(grep -o '"emailAddress": *"[^"]*"' "$dir/.claude.json" 2>/dev/null | head -1)
-  login="${${login##*: \"}%\"}"; login="${${login##*:\"}%\"}"
-  echo "removing $dir${login:+ (logged in as $login)}"
-  printf 'type the dir name to confirm: '
-  local reply; read -r reply
-  if [[ "$reply" != "$email" ]]; then
-    echo "aborted" >&2
-    return 1
-  fi
-  # The Keychain item exists only if this dir ever ran /login; lock debris
-  # and never-bound seeds have none, and that is not an error.
-  local svc="Claude Code-credentials-$(printf %s "$dir" | shasum -a 256 | cut -c1-8)"
-  if security delete-generic-password -s "$svc" -a "$USER" >/dev/null 2>&1; then
-    echo "deleted Keychain item ($svc)"
-  else
-    echo "no Keychain item ($svc) — never logged in, or already gone"
-  fi
-  rm -rf -- "$dir"
-  local ord="$CLAUDE_ACCOUNTS_ROOT/.order"
-  if [[ -f "$ord" ]] && grep -Fqx "$email" "$ord"; then
-    grep -Fvx "$email" "$ord" > "$ord.tmp" && mv "$ord.tmp" "$ord"
-    echo "removed from .order"
-  fi
-  unfunction "x-$email" 2>/dev/null || true
   _claude_gen_launchers
-  echo "removed $dir"
-  echo "if bare x pointed here it now refuses — x-acc repicks; exec zsh drops stale short aliases"
+  echo "exec zsh drops stale short aliases; x-acc repicks if bare x pointed here"
+  return 0
 }
 
 # Generate launchers for every account dir. Each starts one session on its

@@ -1137,6 +1137,6 @@ _git_zsh_register_completions() {
   compdef _gitswitch gitswitch
   compdef _gopen     gopen
   compdef _gwt      gwt
-  compdef _brief     brief
+  compdef _brief     brief b   # b is the alias (aliases.zsh); register both
   compdef _gitguard  gitguard
 }

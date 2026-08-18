@@ -5,7 +5,7 @@
 # are a property of the project, not the account: they carry no credentials,
 # and resume performs no account-ownership check. Every account therefore
 # shares one canonical store, ~/.claude/projects, via a per-account symlink
-# (seeded by _claude_link_projects in claude.zsh). Any account's resume
+# (seeded by `headroom accounts add`). Any account's resume
 # picker then sees every session, and resuming appends to the one canonical
 # file — no copies, no forks, so divergent same-UUID histories cannot exist.
 #

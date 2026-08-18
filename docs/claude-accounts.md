@@ -89,9 +89,10 @@ Everything derives from that tree:
   fact — keys its macOS Keychain credentials *per config dir*, so every dir is
   an independent login and `/login` in one session can never clobber another.
   (Details of the service-name derivation: headroom's DESIGN.md.)
-- **Sharing.** Account dirs are seeded with symlinks into the repo's
-  `claude/.claude`, so all accounts run identical settings/skills/hooks and a
-  config edit lands everywhere. Only login state (`.claude.json`, the
+- **Sharing.** Account dirs are seeded (`headroom accounts add
+  --share-config=<dir>`, which `claude-account-add` points at the repo's
+  `claude/.claude`) with symlinks into that package, so all accounts run
+  identical settings/skills/hooks and a config edit lands everywhere. Only login state (`.claude.json`, the
   Keychain item) and prompt history are per-account.
 - **Sessions.** Transcripts carry no credentials and are keyed by project cwd,
   so they belong to the machine, not the account: every account's `projects/`
@@ -155,13 +156,20 @@ Everything derives from that tree:
   until promoted).
 - **Prompted (no bypass) session**: `claude-account <name|email>` (alias
   `x-account`); like `x-<name>`, bare `x`'s target is untouched.
-- **New subscription**: `claude-account-add <email>` seeds the dir and names
-  the launcher; `/login` on its first launch binds the account.
+- **New subscription**: `claude-account-add <email>` ≡ `headroom accounts
+  add --share-config=~/dotfiles/claude/.claude <email>` plus launcher
+  regeneration — the engine makes the dir, links `projects/`, symlinks every
+  entry of the config package, and verifies the topology it just built;
+  `/login` on its first launch binds the account.
 - **Retired subscription**: `claude-account-remove <email>` (alias
-  `x-account-remove`) — refuses while the account has a live session, then
-  deletes its Keychain item (service `Claude Code-credentials-` +
-  `sha256(dir)[:8]`, the same derivation Claude Code uses) and the dir, and
-  scrubs the `.order` line. Transcripts survive — they are machine-global —
+  `x-account-remove`) ≡ `headroom accounts remove <email>` plus dropping the
+  generated launchers — the engine refuses while the account has a live (or
+  unverifiable) session, asks for the dir name back (`--yes` off a
+  terminal), then deletes its Keychain item (service
+  `Claude Code-credentials-` + `sha256(dir)[:8]`, the same derivation Claude
+  Code uses — headroom's one Keychain write, DESIGN.md's third documented
+  exception) and the dir, and scrubs the `.order` line. Transcripts
+  survive — they are machine-global —
   and the picker shows the dead owner as degraded until `x` re-homes each
   session. `.current` is never rewritten behind headroom's back: if bare `x`
   pointed at the removed account, launches refuse until `x-acc` repicks.

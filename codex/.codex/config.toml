@@ -140,6 +140,9 @@ trust_level = "trusted"
 [projects."/Users/qiushi/wiki"]
 trust_level = "trusted"
 
+[projects."/Users/qiushi/dev/brief"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]

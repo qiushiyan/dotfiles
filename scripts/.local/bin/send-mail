@@ -1,0 +1,399 @@
+#!/usr/bin/env python3
+"""send-mail — let an agent compose mail, but never let it send unreviewed.
+
+Sending is irreversible and the agent is composing on my behalf, so the two
+halves are split. Composing is the default and is always a dry run: it writes a
+draft to ~/.local/state/send-mail/drafts/, renders an HTML preview, opens it,
+and prints the one command that sends it. Nothing leaves the machine until I
+run that command with --commit.
+
+    send-mail --to a@b.com --subject "Hi" --body-file note.md --attach f.pdf
+    send-mail --commit 20260817-143000-hi
+
+--commit takes a draft id, not a fresh set of flags, so what gets sent is
+exactly what the preview showed. The draft records a sha256 of every
+attachment; if a file changed under it between preview and commit, the send is
+refused rather than quietly sending different bytes. Drafts are single-use.
+
+Transport is `m365 outlook mail send` (CLI for Microsoft 365 -> Graph API).
+Microsoft killed Basic Auth for SMTP AUTH in spring 2026, so app passwords and
+plain SMTP are dead for Outlook; OAuth via Graph is the only door left. Log in
+once with `m365 login`. Graph inlines attachments in the request, which caps
+total attachment size at roughly 3 MB — larger files need a share link instead.
+"""
+
+import argparse
+import hashlib
+import html
+import json
+import os
+import re
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+STATE = Path(
+    os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")
+) / "send-mail/drafts"
+
+# Graph rejects a sendMail request over ~4 MB; attachments are base64-inlined,
+# so the practical ceiling on raw bytes is lower.
+ATTACHMENT_LIMIT = 3 * 1024 * 1024
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def die(msg):
+    print(f"send-mail: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def split_addrs(value):
+    if not value:
+        return []
+    return [a.strip() for a in value.split(",") if a.strip()]
+
+
+def human_size(n):
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 ** 2:
+        return f"{n / 1024:.1f} KB"
+    return f"{n / 1024 ** 2:.1f} MB"
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def logged_in_account():
+    """The account m365 would actually send as, for an honest From: line."""
+    try:
+        out = subprocess.run(
+            ["m365", "status", "--output", "json"],
+            capture_output=True, text=True, timeout=30,
+        )
+        data = json.loads(out.stdout or "null")
+    except Exception:
+        return None
+    if isinstance(data, dict):
+        return data.get("connectedAs") or data.get("connectedAsApp")
+    return None
+
+
+def slug(text):
+    s = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return s[:40] or "no-subject"
+
+
+# ---------------------------------------------------------------- compose
+
+
+def compose(args):
+    to = split_addrs(args.to)
+    cc = split_addrs(args.cc)
+    bcc = split_addrs(args.bcc)
+    if not to:
+        die("--to is required")
+    for addr in to + cc + bcc:
+        if not EMAIL_RE.match(addr):
+            die(f"{addr!r} does not look like an email address")
+
+    if args.body_file:
+        if args.body_file == "-":
+            body = sys.stdin.read()
+        else:
+            p = Path(args.body_file).expanduser()
+            if not p.is_file():
+                die(f"body file not found: {p}")
+            body = p.read_text()
+    elif args.body is not None:
+        body = args.body
+    else:
+        die("give a body with --body or --body-file (use - for stdin)")
+    if not body.strip():
+        die("refusing to draft an empty body")
+
+    attachments = []
+    total = 0
+    for raw in args.attach:
+        p = Path(raw).expanduser().resolve()
+        if not p.is_file():
+            die(f"attachment not found: {p}")
+        size = p.stat().st_size
+        total += size
+        attachments.append(
+            {"path": str(p), "name": p.name, "size": size, "sha256": sha256(p)}
+        )
+    if total > ATTACHMENT_LIMIT:
+        die(
+            f"attachments total {human_size(total)}, over the ~3 MB Graph limit; "
+            "send a share link instead"
+        )
+
+    now = datetime.now()
+    draft = {
+        "id": f"{now:%Y%m%d-%H%M%S}-{slug(args.subject)}",
+        "created_at": now.isoformat(timespec="seconds"),
+        "from": args.sender or logged_in_account(),
+        "sender_override": args.sender,
+        "to": to,
+        "cc": cc,
+        "bcc": bcc,
+        "subject": args.subject,
+        "body": body,
+        "body_type": "HTML" if args.html else "Text",
+        "importance": args.importance,
+        "attachments": attachments,
+        "sent_at": None,
+    }
+
+    STATE.mkdir(parents=True, exist_ok=True)
+    json_path = STATE / f"{draft['id']}.json"
+    json_path.write_text(json.dumps(draft, indent=2, ensure_ascii=False))
+    preview_path = STATE / f"{draft['id']}.html"
+    preview_path.write_text(render_preview(draft))
+
+    if not args.no_open:
+        subprocess.run(["open", str(preview_path)], check=False)
+
+    print(f"draft   {draft['id']}")
+    print(f"preview {preview_path}")
+    if not draft["from"]:
+        print("warning: not logged in — run `m365 login` before committing")
+    print()
+    print("nothing has been sent. to send exactly this draft:")
+    print(f"    send-mail --commit {draft['id']}")
+
+
+# ---------------------------------------------------------------- commit
+
+
+def commit(draft_id):
+    json_path = STATE / f"{draft_id}.json"
+    if not json_path.is_file():
+        die(f"no such draft: {draft_id}")
+    draft = json.loads(json_path.read_text())
+
+    if draft.get("sent_at"):
+        die(f"draft already sent at {draft['sent_at']}; drafts are single-use")
+
+    # The preview is the contract. If an attachment changed on disk since then,
+    # the bytes I approved are not the bytes that would go out.
+    for att in draft["attachments"]:
+        p = Path(att["path"])
+        if not p.is_file():
+            die(f"attachment vanished since preview: {p}")
+        if sha256(p) != att["sha256"]:
+            die(f"attachment changed since preview: {p} — re-draft to review it")
+
+    account = logged_in_account()
+    if not account:
+        die("not logged in to Microsoft 365 — run `m365 login` first")
+
+    cmd = [
+        "m365", "outlook", "mail", "send",
+        "--to", ",".join(draft["to"]),
+        "--subject", draft["subject"],
+        "--bodyContents", draft["body"],
+        "--bodyContentType", draft["body_type"],
+        "--importance", draft["importance"],
+    ]
+    if draft["cc"]:
+        cmd += ["--cc", ",".join(draft["cc"])]
+    if draft["bcc"]:
+        cmd += ["--bcc", ",".join(draft["bcc"])]
+    if draft.get("sender_override"):
+        cmd += ["--sender", draft["sender_override"]]
+    for att in draft["attachments"]:
+        cmd += ["--attachment", att["path"]]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        sys.stderr.write(result.stdout)
+        sys.stderr.write(result.stderr)
+        die("m365 failed; nothing sent")
+
+    draft["sent_at"] = datetime.now().isoformat(timespec="seconds")
+    draft["sent_as"] = account
+    json_path.write_text(json.dumps(draft, indent=2, ensure_ascii=False))
+    print(f"sent as {account} -> {', '.join(draft['to'])}")
+    print(f"subject: {draft['subject']}")
+
+
+def list_drafts():
+    if not STATE.is_dir():
+        print("no drafts")
+        return
+    rows = sorted(STATE.glob("*.json"), reverse=True)
+    if not rows:
+        print("no drafts")
+        return
+    for path in rows[:30]:
+        d = json.loads(path.read_text())
+        state = f"sent {d['sent_at']}" if d.get("sent_at") else "pending"
+        print(f"{d['id']:<52} {state:<26} -> {', '.join(d['to'])}")
+
+
+# ---------------------------------------------------------------- preview
+
+
+PREVIEW_CSS = """
+:root {
+  --bg: #f6f6f4; --card: #fff; --ink: #1c1c1a; --muted: #6b6b66;
+  --line: #e2e2dd; --accent: #7a5cff; --warn-bg: #fff4e0; --warn-ink: #7a4a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a; --card: #1e1e23; --ink: #e8e8e4; --muted: #9a9a94;
+    --line: #2e2e35; --accent: #a68bff; --warn-bg: #3a2c12; --warn-ink: #f0c987;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 2.5rem 1.25rem 4rem; background: var(--bg); color: var(--ink);
+  font: 15px/1.6 ui-sans-serif, -apple-system, system-ui, sans-serif;
+}
+main { max-width: 44rem; margin: 0 auto; }
+.tag {
+  display: inline-block; font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
+  font-weight: 600; color: var(--accent); margin-bottom: .5rem;
+}
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 1.5rem; font-weight: 600; }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 1.25rem 1.5rem; margin-bottom: 1.25rem;
+}
+dl { display: grid; grid-template-columns: 5.5rem 1fr; gap: .45rem 1rem; margin: 0; }
+dt { color: var(--muted); font-size: 13px; }
+dd { margin: 0; word-break: break-word; }
+.body {
+  white-space: pre-wrap; word-wrap: break-word; font-size: 15px;
+  font-family: ui-sans-serif, -apple-system, system-ui, sans-serif;
+}
+.body.html-mode { white-space: normal; }
+ul.att { list-style: none; margin: 0; padding: 0; }
+ul.att li {
+  display: flex; justify-content: space-between; gap: 1rem;
+  padding: .4rem 0; border-bottom: 1px solid var(--line);
+}
+ul.att li:last-child { border-bottom: 0; }
+ul.att .size { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.warn {
+  background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px;
+  padding: .7rem 1rem; margin-bottom: 1.25rem; font-size: 14px;
+}
+pre.cmd {
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: .9rem 1.1rem; overflow-x: auto; margin: 0;
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.foot { color: var(--muted); font-size: 13px; margin-top: .75rem; }
+h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+     color: var(--muted); margin: 0 0 .85rem; font-weight: 600; }
+"""
+
+
+def render_preview(draft):
+    e = html.escape
+
+    def row(label, value):
+        if not value:
+            return ""
+        return f"<dt>{label}</dt><dd>{e(value)}</dd>"
+
+    meta = "".join([
+        row("From", draft["from"] or "(not logged in)"),
+        row("To", ", ".join(draft["to"])),
+        row("Cc", ", ".join(draft["cc"])),
+        row("Bcc", ", ".join(draft["bcc"])),
+        row("Format", draft["body_type"]),
+        row("Importance", draft["importance"] if draft["importance"] != "normal" else ""),
+    ])
+
+    if draft["attachments"]:
+        items = "".join(
+            f'<li><span>{e(a["name"])}</span>'
+            f'<span class="size">{human_size(a["size"])}</span></li>'
+            for a in draft["attachments"]
+        )
+        total = sum(a["size"] for a in draft["attachments"])
+        att_block = (
+            f'<div class="card"><h2>Attachments &middot; {human_size(total)} total</h2>'
+            f'<ul class="att">{items}</ul></div>'
+        )
+    else:
+        att_block = ""
+
+    if draft["body_type"] == "HTML":
+        # The body is already HTML the recipient will see; show it as-is.
+        body_html = f'<div class="body html-mode">{draft["body"]}</div>'
+    else:
+        body_html = f'<div class="body">{e(draft["body"])}</div>'
+
+    warn = ""
+    if not draft["from"]:
+        warn = ('<div class="warn">Not logged in to Microsoft 365 — '
+                'run <code>m365 login</code> before committing.</div>')
+
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draft — {e(draft['subject'])}</title>
+<style>{PREVIEW_CSS}</style></head>
+<body><main>
+  <div class="tag">Draft &middot; not sent</div>
+  <h1>{e(draft['subject'])}</h1>
+  {warn}
+  <div class="card"><dl>{meta}</dl></div>
+  <div class="card"><h2>Body</h2>{body_html}</div>
+  {att_block}
+  <h2>Send it</h2>
+  <pre class="cmd">send-mail --commit {e(draft['id'])}</pre>
+  <p class="foot">Drafted {e(draft['created_at'])}. Single-use: committing marks
+  this draft sent, and an attachment edited after this preview blocks the send.</p>
+</main></body></html>
+"""
+
+
+# ---------------------------------------------------------------- cli
+
+
+def main():
+    p = argparse.ArgumentParser(
+        prog="send-mail",
+        description="Compose a mail draft (dry run + HTML preview); send only with --commit.",
+    )
+    p.add_argument("--commit", metavar="DRAFT_ID", help="send a previously previewed draft")
+    p.add_argument("--list", action="store_true", help="list recent drafts")
+    p.add_argument("-t", "--to", help="comma-separated recipients")
+    p.add_argument("--cc")
+    p.add_argument("--bcc")
+    p.add_argument("-s", "--subject")
+    p.add_argument("--body", help="body text inline")
+    p.add_argument("--body-file", help="read body from a file, or - for stdin")
+    p.add_argument("--attach", action="append", default=[], metavar="PATH",
+                   help="attach a file (repeatable)")
+    p.add_argument("--html", action="store_true", help="body is HTML, not plain text")
+    p.add_argument("--sender", help="send as another mailbox (needs delegate rights)")
+    p.add_argument("--importance", choices=["low", "normal", "high"], default="normal")
+    p.add_argument("--no-open", action="store_true", help="do not open the preview in a browser")
+    args = p.parse_args()
+
+    if args.list:
+        list_drafts()
+    elif args.commit:
+        commit(args.commit)
+    else:
+        if not args.subject:
+            die("--subject is required")
+        compose(args)
+
+
+if __name__ == "__main__":
+    main()
