@@ -39,9 +39,9 @@ it is worth more than a structural finding filed in the wrong round.
 
 - Branch `«branch»`, commits `«base-sha»..HEAD` — start from
   `git log «base-sha»..HEAD --stat`.
-- **Read the code, not only the diff.** Every lens below except the first
-  requires reading files the diff does not touch; a review that stays inside
-  the patch cannot answer them.
+- Read the files the diff touches and the files that touch them. Every lens
+  below except the first is answered outside the patch, so the diff alone
+  cannot close one.
 - Judge the code, not an account of it: commit messages say what was intended,
   only the code says what happens. Where they disagree the code wins, and the
   disagreement is a finding.

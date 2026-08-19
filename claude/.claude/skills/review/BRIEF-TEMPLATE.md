@@ -82,8 +82,8 @@ because the code works: structural regressions, accretion, and missed reshapes
 are critical, not minor. For each finding: what, where (file/function), the
 evidence (cite the code that proves it — a finding you can't point at code
 for doesn't get reported), and a concrete fix. End with a **Foundational
-objections** section, and state "none" explicitly for any empty severity
-tier. Be specific and terse; no praise padding.
+objections** section. Say "none" explicitly for any empty severity tier and
+for that section when it is empty. Be specific and terse; no praise padding.
 
 ## Implementation report
 
@@ -96,3 +96,7 @@ isn't independent.
 ---
 
 «the report from step 2»
+
+---
+
+Findings in the format above, severity-ordered, foundational objections last.

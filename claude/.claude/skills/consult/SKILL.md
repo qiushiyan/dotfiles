@@ -20,7 +20,7 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    Done when that paragraph exists, and — for a causal claim — when observed and inferred are separated in it.
 
-2. **Pick the mode, then write the brief.** One question divides them: **is a causal claim on trial?** With one, the cause is judged before the fix; without one, there is nothing to falsify and the shape is the whole question. Route on what the user's words say, wherever in the turn they fall — this skill is invoked by file path about as often as by `/consult`, so there is not always an arguments block to read.
+2. **Pick the mode, then write the brief.** One question divides them: **is a causal claim on trial?** With one, the cause is judged before the fix; without one, there is nothing to falsify and the shape is the whole question. Route on what the user's words say, wherever in the turn they fall: this skill is invoked by file path as readily as by `/consult`, so an arguments block is not always there to read.
 
    | the turn says | on trial | mode |
    |---|---|---|

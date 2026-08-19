@@ -106,7 +106,7 @@ doubt; let the voice name what is wrong in it.»
    (file/section/function), why it's a problem (concrete failure or
    contradiction), and the smallest fix consistent with the constraints above.
    Where you would have built it differently, say so and what keeping ours
-   costs.
+   costs. "None" is a real answer here too.
 3. **Foundational objections** — a separate section, "none" said explicitly
    when it is empty.
 
