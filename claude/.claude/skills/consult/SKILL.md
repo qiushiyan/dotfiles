@@ -24,8 +24,10 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    | the turn says | on trial | mode |
    |---|---|---|
-   | a bug, a regression, "why is it doing this", a hypothesis, symptoms, a repro | a causal claim | **diagnosis** |
-   | "settle the final approach", "which shape", a spec or design doc, an interface, a scope call | a design choice | **approach** |
+   | a cause believed rather than proven — a hypothesis, a suspicion, "I think it's X because Y", a symptom nobody has traced yet | a causal claim | **diagnosis** |
+   | a shape to commit to — "settle the final approach", which interface, a spec or design doc, a scope call, or a bug whose cause is already read out of the code | a design choice | **approach** |
+
+   A bug in the picture is not the signal; an **unsettled cause** is. A session that has traced the mechanism and can point at the lines has no causal claim left on trial, however loud the incident was — there the fix is the whole question and `approach` is the instrument.
 
    **diagnosis** ([DIAGNOSIS-BRIEF.md](DIAGNOSIS-BRIEF.md)) — the cause goes on trial before the fix, and the brief's **order is the instrument**: what was observed, then the voice's **blind read** of it, then what this session concluded. Filling that first section costs the most care — every line is something someone saw, and one inference among them spends what the round was bought for. Where a wrong diagnosis would cost a whole implementation cycle, step 6 splits the blind read across two turns instead.
 

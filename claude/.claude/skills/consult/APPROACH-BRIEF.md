@@ -87,15 +87,29 @@ reads them itself — never restate their content here.»
 places you already suspect are weakest; a voice pointed at a seam digs deeper
 than one asked to "review everything". Ask what should happen rather than
 offering a menu: a question shaped "A or B?" has already made the decision and
-leaves the voice only the picking.»
+leaves the voice only the picking.
+
+The same trap wears a second costume — an example inside an open question. "Is
+this the right framing, or is the real problem something else (e.g. …)" reads
+as open and hands over the answer, and when the voice returns that answer
+neither of you can tell whether it was found or fed. Name the **area** you
+doubt; let the voice name what is wrong in it.»
 
 ## Output
 
-A prioritized findings list, most severe first. For each: what, where
-(file/section/function), why it's a problem (concrete failure or
-contradiction), and the smallest fix consistent with the constraints above.
-Where you would have built it differently, say so and what keeping ours costs.
-End with a separate **foundational objections** section, "none" said explicitly
-when it is empty. Be specific and terse; no praise padding.
+1. **The real problem, in your own words** — before you engage the proposal,
+   two or three sentences naming what you think is actually wrong. Where that
+   matches the framing above, say so plainly; where it differs, this is the
+   most valuable line in your reply. Write it from the code you read, not from
+   the questions you were asked.
+2. **Findings**, most severe first. For each: what, where
+   (file/section/function), why it's a problem (concrete failure or
+   contradiction), and the smallest fix consistent with the constraints above.
+   Where you would have built it differently, say so and what keeping ours
+   costs.
+3. **Foundational objections** — a separate section, "none" said explicitly
+   when it is empty.
+
+Be specific and terse; no praise padding.
 
 Design analysis only — do not change any code.
