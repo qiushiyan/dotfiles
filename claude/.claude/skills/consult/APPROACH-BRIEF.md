@@ -49,11 +49,10 @@ a file the reading list already points at — the artifact is the proposal then.
 
 ## What is actually settled
 
-«Only what something outside this session has already judged — a spec the user
-approved, a decision they made, a constraint the platform imposes. An analysis
-this session produced an hour ago does not belong here however confident it is:
-it goes under "What we propose", where the voice is meant to attack it. Nothing
-to list? Delete the section — an empty fence is better than a false one.»
+«The fence rule decides what may go here. This session's own analysis is not
+it — that goes under "What we propose", where the voice is meant to attack it.
+Nothing left to list? Delete the section: an empty fence is better than a false
+one.»
 
 Those items are fixed; on them your job is defects in the *execution* —
 internal consistency, gaps, edge cases. If you believe a settled item is

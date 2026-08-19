@@ -5,19 +5,17 @@ comments. The fixed lines are distilled from briefs that worked; keep them
 unless this run genuinely contradicts them.
 
 **The order of the sections is the instrument.** The voice reads what was
-observed, commits to its own reading of it, and only then sees what this
-session concluded. Independent convergence on the same cause is evidence;
-agreement after being handed the answer is not — which is the whole reason a
-consult is worth its cost after a long debugging session. Moving the
-conclusion above the commit point, or filling the observation section with
-inferences, spends that evidence and leaves the round buying a critique of a
-hypothesis instead of a check on it.
+observed, writes its **blind read** of it, and only then sees what this session
+concluded. Independent convergence on the same cause is evidence; agreement
+after being handed the answer is not — which is the whole reason a consult is
+worth its cost after a long debugging session. A conclusion that lands above
+the blind read, or an observation section padded with inferences, spends that
+evidence and leaves the round buying a critique of a hypothesis instead of a
+check on it.
 
-Nothing here is fenced. A fence is legitimate only over what something outside
-this session has already judged; an analysis this session produced an hour ago
-is not settled direction, it is the artifact on trial. Where a design choice
-with no causal claim behind it is the question, APPROACH-BRIEF.md is the
-instrument instead.
+Nothing here is fenced: by the fence rule this session's own analysis is the
+artifact on trial, not settled direction. Where a design choice with no causal
+claim behind it is the question, APPROACH-BRIEF.md is the instrument instead.
 -->
 
 # Diagnosis: «the symptom, one line, as observed rather than explained»
@@ -45,20 +43,20 @@ changed around then; the evidence gathered, quoted rather than summarised
 frequency is known, give it.
 
 Every line here is something someone saw. Inferences, causes, and suspicions
-belong in the section below the commit point — a conclusion smuggled in here
-defeats the whole brief.»
+belong below the blind read — a conclusion smuggled in here defeats the whole
+brief.»
 
-## Before you read further
+## The blind read
 
-Write down, now, before reading anything past this heading:
+Write this down now, before reading anything past this heading:
 
 1. Your reading of what is happening, in two or three sentences.
 2. The two or three causes you would rank as most likely, most likely first.
-3. For each, the cheapest observation that would confirm or rule it out.
+3. For each, the cheapest observation that would separate it from the others.
 
-Keep those and report them verbatim in your output. Whether they match what
-follows is the most valuable thing this round produces, and it is unrecoverable
-once you have read on.
+Report it verbatim in your output. Whether it matches what follows is the most
+valuable thing this round produces, and it is unrecoverable once you have read
+on.
 
 ## What we concluded
 
@@ -72,8 +70,8 @@ a finding.»
 ## What we propose to do about it
 
 «The fix or change this session would ship, and where it sits: at the cause, at
-a link in the chain, or at the symptom. Say which — a fix aimed at a link is
-not wrong, but it should be a choice rather than an accident.»
+a link in the chain, or at the symptom. Say which — aiming at a link is a
+legitimate choice, and naming it as one is what makes it reviewable.»
 
 ## Read these, in this order
 
@@ -88,10 +86,11 @@ them itself — never restate their content here.»
 - **Does the evidence carry the claim?** Take the causal chain link by link:
   which links are observed, which are inferred, and does any inferred link have
   a plausible alternative that the evidence does not exclude?
-- **What would falsify it?** Name the cheapest observation that would show the
-  hypothesis is wrong — a query, a log line, a one-off script, a targeted test.
-  If nothing available could distinguish this cause from its alternatives, say
-  that plainly: an unfalsifiable diagnosis is a finding, whatever else is true.
+- **The falsifying observation.** Name the cheapest thing we could look at that
+  would show the hypothesis is wrong — a query, a log line, a one-off script, a
+  targeted test. Where nothing available could separate this cause from its
+  alternatives, say that plainly: an unfalsifiable diagnosis is a finding
+  whatever else is true.
 - **What else produces these symptoms?** The alternatives that fit the observed
   evidence and were not ruled out, each with what would separate it from ours.
 - **Only then, the fix.** Is it aimed at the cause, at a link, or at the
@@ -104,13 +103,12 @@ them itself — never restate their content here.»
 
 ## Output
 
-1. **My reading, before I read yours** — items 1–3 from the commit point above,
-   verbatim.
+1. **The blind read** — items 1–3, verbatim.
 2. **The cause** — confirmed / not carried by the evidence / a different cause
    you would back, with the evidence for your verdict. State this before
    anything about the fix.
-3. **How to settle it** — the cheapest falsifying observation, concrete enough
-   to run: the query, the log to grep, the test to write.
+3. **The falsifying observation** — concrete enough to run: the query, the log
+   to grep, the test to write.
 4. **Alternatives not excluded**, each with what would separate it. "None" is a
    real answer.
 5. **The fix** — right altitude or wrong, and the smallest change consistent
