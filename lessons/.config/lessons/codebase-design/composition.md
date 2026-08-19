@@ -4,15 +4,17 @@ How modules stack into call paths, and how a change joins the ones already there
 
 The unit here is not a function. It is the route a real request takes from entry to effect, the layers it crosses, and what each crossing costs the next person to read it.
 
+**Both tenses.** Read forward, it decides how a new module should meet the ones already there — the question behind any public interface. Read backward, it judges whether a change that already exists was absorbed or bolted on. The instruments are the same; only whether the path is proposed or shipped changes, and each section below says which reading it is describing when the two differ.
+
 ## The bar
 
 Skim these as a lens; the sections below carry the why.
 
-- **Trace one real path before judging the diff.** Follow a request the change exists to serve, entry to effect, and name what each hop *adds* — a decision, a translation, an invariant, an effect. A hop that adds nothing is the finding, and the finding is the hop, not its contents.
+- **Trace one real path before judging anything.** Follow a request the design exists to serve, entry to effect, and name what each hop *adds* — a decision, a translation, an invariant, an effect. A hop that adds nothing is the finding, and the finding is the hop, not its contents. On a shipped change you trace the code; on a proposed one you trace the path a caller *will* take, which is the cheapest moment to discover a hop nobody can justify.
 - **Adjacent layers speak different abstractions.** Where a caller and its callee share the same nouns and a near-identical signature, one of the two is not a layer. Every hop should change what the vocabulary is *about*, not restate it one frame down.
 - **Judge the join, not the addition.** Ask of every change: did the concepts already there absorb the new case, or did it get its own path beside them — a flag, a wrapper, a parallel function, a second mechanism answering the same question? Working code that accreted still failed.
 - **Price the next change, not this one.** If the following case of the same kind would again require edits in the same N places, the change amplified instead of absorbing. The reshape moves the knowledge to one home; the patch schedules the next patch.
-- **Count concepts, not lines.** The strongest finding a review can make is that a reshape *deletes* a concept — a mode, a flag, a layer, a state, a whole path. A restructuring that only moves code is worth much less than one that leaves fewer things to know.
+- **Count concepts, not lines.** The strongest move available in either tense is the one that *deletes* a concept — a mode, a flag, a layer, a state, a whole path. A restructuring that only moves code is worth much less than one that leaves fewer things to know.
 - **Keep strong coupling short.** The harder a change in one place forces a matching change elsewhere (**connascence**), the closer the two must live. That coupling inside one module is fine; the same coupling across a seam is the finding, and what crosses a seam should use the weakest form that works.
 - **Special cases stay out of general mechanisms.** A parameter threaded down a chain so one distant caller behaves differently is the general mechanism learning about a special one. What only one caller knows, that caller keeps.
 - **The reshape must pay for itself.** A composition finding that asks for a general mechanism before the second real caller exists is the additive bias one altitude up. Name the caller that exists today, or file the observation and say it is one.
@@ -27,6 +29,8 @@ The instrument. Before forming any opinion, pick the single path the change exis
 4. **The shape of the path itself.** Does it descend — each hop more specific, or steadily more general — or does it **oscillate**: policy, mechanism, policy again, decisions made at three different altitudes about the same thing? Oscillation is where layering is decorative.
 
 Two questions a change owes the trace. Adding a hop to an existing path owes an answer to what the hop adds. Adding a *second* path to the same effect owes an answer to why the first one could not carry it.
+
+**Tracing a path that does not exist yet.** Nothing above needs a diff. Write the hops your design proposes — the call a caller will actually make, through each layer, to the effect it wants — and read them the same four ways. Two failures surface here and almost nowhere else: an interface whose caller must learn a hop it should never have heard of (the pass-through variable, visible in the signature before a line is written), and a layer added because the design felt like it needed one, which is the pass-through you get to delete for free. A hop deleted on a whiteboard costs nothing; the same hop deleted after it ships costs a migration.
 
 ## How a change joins
 
@@ -68,6 +72,8 @@ A patch is proposed against the code as it stands, and the code as it stands is 
 
 Reviews miss it for a matching reason. Defects announce themselves as failures; accretion announces itself as *working*, and the reviewer who accepts the implementation's framing will find only better ways to spend the branch. So the trace has to be walked deliberately, and on the small contained fixes most of all — those are the ranges nobody thinks to walk, and the ones where a bolt-on hides best.
 
+At design time the same pull is there and the cost of yielding is lower, which is the whole argument for spending the trace early: the shape that would accrete is also the shape that is easiest to draw, because it leaves every existing box on the diagram untouched. Choosing the join before the code exists is the one point where integrating and accreting cost the same.
+
 The counterweight is the last bar bullet, and it is not optional. People systematically overlook subtractive changes, so the reshape a review proposes should be the one that *removes* a concept; a proposal that only adds a layer of generality is the same bias with better vocabulary.
 
 ## Rejected framings
@@ -79,4 +85,4 @@ The counterweight is the last bar bullet, and it is not optional. People systema
 
 ---
 
-> _Lesson · codebase-design. New 2026-08 for the `/review` composition axis. Synthesizes Ousterhout's red flags (APOSD ch. 19) and layer/abstraction rule, Fowler's cross-module smells (shotgun surgery, divergent change, middle man, message chains), Page-Jones's connascence, and the architecture-erosion literature (drift vs erosion; Hadlow's lava-layer anti-pattern). No upstream skill baseline._
+> _Lesson · codebase-design. New 2026-08 for the `/review` composition axis, generalized to design time 2026-08-19 once `/consult` and the spec-stage snippets began citing it. Synthesizes Ousterhout's red flags (APOSD ch. 19) and layer/abstraction rule, Fowler's cross-module smells (shotgun surgery, divergent change, middle man, message chains), Page-Jones's connascence, and the architecture-erosion literature (drift vs erosion; Hadlow's lava-layer anti-pattern). No upstream skill baseline._
