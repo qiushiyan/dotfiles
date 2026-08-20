@@ -160,6 +160,7 @@ A vendored, flash.nvim-style tool in `scripts/easyjump/` (see its `DESIGN.md`) �
 
 - **`prefix u`** — fuzzy-pick any URL from the visible scrollback and open it in the browser. (`Shift+Ctrl+click` opens one directly, bypassing tmux's mouse.)
 - **`prefix y`** — copy the current pane's **working directory** to the clipboard. Reads the pane's foreground process, so it's correct even mid-session inside nvim or an agent — no need to interrupt what's running. Over SSH it copies the local cwd, not the remote one.
+- **`prefix g`** — open this pane's repo on **GitHub**: the PR thread when the branch has one, otherwise the branch's file tree (a detached HEAD opens its commit). Same resolution as the `gopen` shell command, and read from the same live cwd `prefix y` uses — so a pane sitting in a worktree opens *that* worktree's branch, and it works without interrupting whatever is running in the pane. On a branch GitHub has never seen it asks first, then pushes `-u` and opens the PR-create page.
 - **`prefix t`** — **theme picker**: pick a terminal theme and it switches everywhere at once — shell colors, prompt, this status bar, and Neovim (Ghostty needs a manual `⌘⇧,` reload on macOS). See `docs/theming.md`.
 - **`Ctrl+L`** — clear the screen like normal; if there's a pane to the right with nothing to clear, it jumps there instead. **`prefix C-k`** clears the screen *and* wipes scrollback.
 - **`prefix r`** — reload the tmux config after editing it.
@@ -203,7 +204,7 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 
 **Jump (flash-style)** — `prefix s` (or `C-s` in copy mode) → type to search · label to jump · `Enter` nearest · `Esc` cancel
 
-**Misc** — detach `prefix d` · reload `prefix r` · theme picker `prefix t` · clear `Ctrl+L` / `prefix C-k` · URL picker `prefix u` · copy cwd `prefix y` · save/restore `prefix C-s`/`prefix C-r`
+**Misc** — detach `prefix d` · reload `prefix r` · theme picker `prefix t` · clear `Ctrl+L` / `prefix C-k` · URL picker `prefix u` · copy cwd `prefix y` · open repo on GitHub `prefix g` · save/restore `prefix C-s`/`prefix C-r`
 
 **From outside tmux**
 
