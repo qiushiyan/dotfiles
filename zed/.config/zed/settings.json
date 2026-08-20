@@ -35,7 +35,7 @@
     "provider": "copilot"
   },
   "icon_theme": {
-    "mode": "dark",
+    "mode": "light",
     "light": "Catppuccin Mocha",
     "dark": "Catppuccin Mocha"
   },
@@ -70,8 +70,8 @@
   },
   "base_keymap": "VSCode",
   "theme": {
-    "mode": "dark",
-    "light": "Tailwind CSS Light (Enhanced)",
+    "mode": "light",
+    "light": "Vitesse Refined Light Soft",
     "dark": "Gruber Darker"
   },
   "vim_mode": true,
