@@ -106,3 +106,4 @@ alias b=brief                        # brief CLI (~/dev/brief); the zsh wrapper 
 alias tsx='tsx --no-warnings'
 alias -s ts='bun'                    # suffix: *.ts files run with bun
 alias -s git="git clone"             # suffix: *.git URLs auto-clone
+alias -s md=nvim                     # suffix: *.md files open in Neovim
