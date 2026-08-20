@@ -16,9 +16,7 @@ notify = ["/Users/qiushi/.codex/computer-use/Codex Computer Use.app/Contents/Sha
 # Keep non-Node tool paths available in Codex command shells. The active
 # nvm-managed Node toolchain is resolved dynamically by zsh/.zshenv.
 PATH = "/Users/qiushi/google-cloud-sdk/bin:/Users/qiushi/.config/tmux/plugins/tmuxifier/bin:/Users/qiushi/.wasmtime/bin:/Users/qiushi/.bun/bin:/Users/qiushi/bin:/Users/qiushi/bin/elixir-ls:/Users/qiushi/.local/bin:/Users/qiushi/.mix/escripts:/opt/homebrew/opt/postgresql@16/bin:/opt/homebrew/opt/openjdk@11/bin:/opt/homebrew/opt/node@16/bin:/usr/local/bin:/Users/qiushi/Library/Android/sdk/platform-tools:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/qiushi/.cargo/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Codex.app/Contents/Resources"
-BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"
-NODE_REPL_TRUSTED_CODE_PATHS = "/Users/qiushi/.codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 
 [projects."/Users/qiushi"]
 trust_level = "trusted"
@@ -159,13 +157,13 @@ NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_n
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/qiushi/.codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 CODEX_HOME = "/Users/qiushi/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
 NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.810.52044"
+BROWSER_USE_CODEX_APP_VERSION = "26.814.41407"
+NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/qiushi/.codex/plugins/cache/openai-bundled/browser/26.814.41407/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
 SKY_CUA_SERVICE_PATH = "/Users/qiushi/.codex/computer-use/Codex Computer Use.app"
 CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
 
@@ -188,12 +186,12 @@ hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
 
 [marketplaces.openai-bundled]
-last_updated = "2026-08-17T14:28:57Z"
+last_updated = "2026-08-20T13:33:25Z"
 source_type = "local"
 source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-08-14T08:14:08Z"
+last_updated = "2026-08-19T23:14:21Z"
 source_type = "local"
 source = "/Users/qiushi/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -231,6 +229,9 @@ enabled = true
 enabled = true
 
 [plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."codex-app-tools@openai-bundled"]
 enabled = true
 
 [tui.model_availability_nux]
