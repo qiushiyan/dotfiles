@@ -109,6 +109,12 @@ changing one piece without the others breaks it.
   wrappers over two engines that live **outside** this repo — headroom
   (`~/dev/headroom`) and ccclean (`~/dev/ccclean`) — so that is usually where a
   fix belongs → `docs/claude-accounts.md`.
+- **Neovim-aware path copy** — tmux `prefix y`/`Y` copy the file focused in
+  Neovim (absolute/relative), falling back to the pane cwd. Neovim pushes the
+  answer into pane-scoped `@yank_path`/`@yank_path_rel` options (`TmuxYankPath`
+  block in `nvim` `autocmds.lua`); the tmux bindings are pure format
+  conditionals and know nothing about nvim. Spans `nvim/`, `tmux/` →
+  `tmux/.config/tmux/workflow.md` (Quick helpers).
 - **Agent skills** — Claude Code is a superset of Codex, which symlinks into it.
   Adding, forking, or disabling a skill has several traps that fail silently →
   `docs/agent-skills.md`.

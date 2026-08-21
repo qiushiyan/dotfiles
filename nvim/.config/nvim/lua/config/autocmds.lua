@@ -113,6 +113,91 @@ do
   end
 end
 
+-- tmux `prefix y` / `prefix Y` are Neovim-aware through this block: it
+-- publishes the focused file's absolute and cwd-relative paths into the
+-- pane-scoped user options @yank_path / @yank_path_rel, and unsets them when
+-- the focused buffer isn't a copyable file, so the tmux bindings fall back to
+-- the pane cwd. Nvim pushes the resolved answer rather than tmux querying it
+-- over RPC because "is this path worth copying" is a buffer-domain question —
+-- buftype, .git/ edit files (COMMIT_EDITMSG, rebase-todo), Claude Code's
+-- Ctrl+G claude-prompt-*.md are all real files an outside `[ -f ]` check
+-- can't reject. Same push pattern as tmux-claude-ctx.sh's @ options.
+-- The explicit -t matters: `tmux set -p` without it falls back to the
+-- *client's* active pane when TMUX_PANE is unset (true inside display-popup),
+-- silently writing some other pane's options.
+do
+  local pane = vim.env.TMUX_PANE
+  if pane and vim.fn.executable("tmux") == 1 then
+    local last -- last published "abs\nrel" ("" = unset); nil forces a publish
+
+    local function copyable_path()
+      if vim.bo.buftype ~= "" then
+        return nil
+      end
+      local name = vim.api.nvim_buf_get_name(0)
+      if name == "" or not vim.uv.fs_stat(name) then
+        return nil
+      end
+      -- real files whose meaning is transient: git edit files, Ctrl+G prompts
+      if name:find("/%.git/") or name:find("claude%-prompt%-") then
+        return nil
+      end
+      return name
+    end
+
+    -- deferred one tick and coalesced: plugins (mini.icons among them) enter
+    -- scratch buffers transiently mid-startup, and publishing synchronously
+    -- from those BufEnters would unset the options right after the real
+    -- buffer set them. By the scheduled read the dust has settled.
+    local scheduled = false
+    local function publish()
+      if scheduled then
+        return
+      end
+      scheduled = true
+      vim.schedule(function()
+        scheduled = false
+        local abs = copyable_path()
+        local rel = abs and vim.fn.fnamemodify(abs, ":.") or nil
+        local key = abs and (abs .. "\n" .. rel) or ""
+        if key == last then
+          return
+        end
+        last = key
+        local cmd
+        if abs then
+          -- one tmux invocation; ";" is tmux's command separator, no shell involved
+          cmd = { "tmux", "set", "-p", "-t", pane, "@yank_path", abs, ";", "set", "-p", "-t", pane, "@yank_path_rel", rel }
+        else
+          cmd = { "tmux", "set", "-pu", "-t", pane, "@yank_path", ";", "set", "-pu", "-t", pane, "@yank_path_rel" }
+        end
+        vim.system(cmd, {})
+      end)
+    end
+
+    local group = vim.api.nvim_create_augroup("TmuxYankPath", { clear = true })
+    vim.api.nvim_create_autocmd(
+      { "BufEnter", "WinEnter", "BufFilePost", "DirChanged", "FocusGained", "VimResume" },
+      { group = group, callback = publish }
+    )
+    -- unset on exit/suspend so a shell in the same pane copies its cwd again;
+    -- VimResume above re-publishes because `last` is reset here. Synchronous
+    -- (short wait), because vim.schedule callbacks and detached children
+    -- aren't guaranteed to survive nvim's exit.
+    vim.api.nvim_create_autocmd({ "VimLeavePre", "VimSuspend" }, {
+      group = group,
+      callback = function()
+        vim.system({ "tmux", "set", "-pu", "-t", pane, "@yank_path", ";", "set", "-pu", "-t", pane, "@yank_path_rel" }, {}):wait(200)
+        last = nil
+      end,
+    })
+    -- this file loads on VeryLazy, after the initial BufEnter already fired —
+    -- publish the startup buffer directly or it stays unpublished until the
+    -- first buffer/focus change
+    publish()
+  end
+end
+
 -- custom macros
 local esc = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
 vim.api.nvim_create_augroup("JSLogMacro", { clear = true })

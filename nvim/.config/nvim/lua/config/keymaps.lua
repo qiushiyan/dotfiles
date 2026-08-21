@@ -156,11 +156,4 @@ end
 vim.keymap.set({ "n", "v", "i" }, "<M-f>", open_in_file_manager, { desc = "Open with file explorer" })
 vim.keymap.set("n", "<leader>fO", open_in_file_manager, { desc = "Open with file explorer" })
 
--- Copy relative path
-vim.keymap.set("n", "<C-k>y", function()
-  local relative_path = vim.fn.expand("%:.")
-  vim.fn.setreg("+", relative_path)
-  vim.notify("Copied: " .. relative_path)
-end, { desc = "Copy relative path to clipboard" })
-
 -- folding

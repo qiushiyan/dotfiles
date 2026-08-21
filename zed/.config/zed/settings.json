@@ -70,9 +70,9 @@
   },
   "base_keymap": "VSCode",
   "theme": {
-    "mode": "light",
+    "mode": "dark",
     "light": "Vitesse Refined Light Soft",
-    "dark": "Gruber Darker"
+    "dark": "Vitesse Black"
   },
   "vim_mode": true,
   "relative_line_numbers": "enabled",
