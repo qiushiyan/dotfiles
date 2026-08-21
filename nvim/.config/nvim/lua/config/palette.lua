@@ -121,6 +121,34 @@ function M.get_palette()
       pink = "#e60076",
       sky = "#0084d1",
     }
+  elseif scheme:match("^vitesse%-light") then
+    -- Vitesse Refined Light Soft (colors/vitesse-light-soft.lua) mapped onto
+    -- the catppuccin-shaped table ui.lua consumes.
+    return {
+      base = "#f1f0e9",
+      mantle = "#eceae1",
+      crust = "#e7e5db",
+      surface0 = "#dcdbd6",
+      surface1 = "#b8b5a9",
+      surface2 = "#999999",
+      text = "#393a34",
+      subtext0 = "#6b6c66",
+      subtext1 = "#52534c",
+      overlay0 = "#aaaaaa",
+      overlay1 = "#999999",
+      blue = "#296aa3",
+      green = "#1e754f",
+      red = "#ab5959",
+      yellow = "#998418",
+      mauve = "#a13865",
+      teal = "#2e8f82",
+      pink = "#a13865",
+      sky = "#2993a3",
+      -- Pale sage band for the lualine bar: green-tinted so it reads as an
+      -- intentional accent on the cream bg (the vitesse analogue of flexoki's
+      -- mint bar_bg below).
+      bar_bg = "#e4eae0",
+    }
   elseif scheme:match("^flexoki") then
     local p = flexoki_palette()
     -- flexoki-cyan-50: subtle mint-cream tint, the only off-paper accent in

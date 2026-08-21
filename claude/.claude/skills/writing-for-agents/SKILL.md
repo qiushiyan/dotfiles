@@ -51,6 +51,12 @@ Every step ends on a **completion criterion** — the condition that tells the a
 
 The strongest criteria are both checkable and exhaustive.
 
+Recipes fail in three ways an agent running them cold exposes:
+
+- **A step owes its decisions, not just its artifact.** "Add a branch to the selector" reads done when the branch parses; the value the branch must pick — and the rule for picking it — is the real work. Name both in the step.
+- **An exemplar is disclosed reference.** When a step means "make another one of these", name the file to copy (per branch, when branches copy different exemplars); a bare "add a `<name>.conf`" sends the agent hunting for the pattern or inventing one.
+- **A recipe ends on its proof**: the check that shows the whole addition working, plus updating any list that enumerates what was just added — the enumeration is a cache, and the recipe is its write path.
+
 ## When to split
 
 Splitting one document into two spends one of the two loads, so split only when the cut earns it:

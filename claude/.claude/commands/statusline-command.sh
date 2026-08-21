@@ -63,6 +63,17 @@ case "$THEME" in
         PINK=$'\033[38;2;211;134;155m'      # Purple #d3869b
         LAVENDER=$'\033[38;2;131;165;152m'  # Blue #83a598
         ;;
+    vitesse_light_soft)
+        # Soft cream bg (#f1f0e9) — Vitesse's muted dark accents for contrast.
+        # YELLOW is the darker Vitesse gold (#998418, its property color), not
+        # the terminal yellow #bda437, which washes out on the cream bg.
+        CYAN=$'\033[38;2;41;147;163m'       # Cyan #2993a3
+        GREEN=$'\033[38;2;30;117;79m'       # Green #1e754f
+        YELLOW=$'\033[38;2;153;132;24m'     # Gold #998418
+        RED=$'\033[38;2;171;89;89m'         # Red #ab5959
+        PINK=$'\033[38;2;161;56;101m'       # Magenta #a13865
+        LAVENDER=$'\033[38;2;41;106;163m'   # Blue #296aa3
+        ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2
         exit 1

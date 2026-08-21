@@ -1,6 +1,14 @@
 # ── Reasoning helpers ─────────────────────────────────
 
 [[snippets]]
+key = "postal"
+expand = "HA9 0EN"
+
+[[snippets]]
+key = "address"
+expand = "Flat 819, Solar"
+
+[[snippets]]
 key = "think-holistic"
 expand = '''
 **Don't change code yet — this is an analysis pass.** Reason holistically, grounded in actual code, not assumptions.

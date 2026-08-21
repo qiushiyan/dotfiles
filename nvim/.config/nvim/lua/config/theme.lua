@@ -34,6 +34,7 @@ local map = {
   tailwind_light   = { colorscheme = "tailwind-light-contrast",  background = "light" },
   tokyo_night_moon = { colorscheme = "tokyonight-moon",          background = "dark"  },
   gruvbox_dark     = { colorscheme = "gruvbox",                  background = "dark"  },
+  vitesse_light_soft = { colorscheme = "vitesse-light-soft",     background = "light" },
 }
 
 M.name = resolve()

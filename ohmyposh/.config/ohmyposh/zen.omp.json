@@ -52,6 +52,16 @@
         "green": "#b8bb26",
         "peach": "#fe8019",
         "red": "#fb4934"
+      },
+      "vitesse_light_soft": {
+        "os": "#999999",
+        "closer": "p:os",
+        "pink": "#a13865",
+        "lavender": "#a13865",
+        "blue":  "#296aa3",
+        "green": "#1e754f",
+        "peach": "#a65e2b",
+        "red": "#ab5959"
       }
     }
   },
