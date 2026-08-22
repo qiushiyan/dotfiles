@@ -138,8 +138,11 @@ do
       if name == "" or not vim.uv.fs_stat(name) then
         return nil
       end
-      -- real files whose meaning is transient: git edit files, Ctrl+G prompts
-      if name:find("/%.git/") or name:find("claude%-prompt%-") then
+      -- real files whose meaning is transient: git edit files, and Ctrl+G
+      -- prompts at their documented <base>/claude-<uid>/claude-prompt-<id>.md
+      -- shape (docs/claude-prompt-completion.md) — anchored on the parent dir
+      -- so ordinary files named claude-prompt-*.md still publish
+      if name:find("/%.git/") or name:find("/claude%-[^/]+/claude%-prompt%-[^/]*$") then
         return nil
       end
       return name
@@ -177,7 +180,9 @@ do
 
     local group = vim.api.nvim_create_augroup("TmuxYankPath", { clear = true })
     vim.api.nvim_create_autocmd(
-      { "BufEnter", "WinEnter", "BufFilePost", "DirChanged", "FocusGained", "VimResume" },
+      -- BufWritePost: a freshly created file fails the fs_stat check until its
+      -- first :write, so the write must republish
+      { "BufEnter", "WinEnter", "BufFilePost", "BufWritePost", "DirChanged", "FocusGained", "VimResume" },
       { group = group, callback = publish }
     )
     -- unset on exit/suspend so a shell in the same pane copies its cwd again;
