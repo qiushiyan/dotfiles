@@ -40,12 +40,52 @@ Helper usage ranking (in-script): `sql` 95, `search` 31, `sessions` 16,
 `overview` 10, `thread` 9, `memories` 8, everything else ≤ 4 — the skill's
 emphasis follows this distribution.
 
+## 2026-08-24 upstream refresh (pin `7c1b478` -> `3226391`, CLI 0.2.2 -> 0.2.5)
+
+Upstream moved: the skill doc is now published from its own docs-only repo
+`tommy0103/obelisk-skill` (built from `tommy0103/obelisk@c70c311`), and
+`obelisk install` shells out to `npx skills add tommy0103/obelisk-skill`, which
+writes straight into `~/.claude/skills/obelisk` -- it would overwrite the
+personalized SKILL.md. Warning recorded in `.upstream/PINNED.txt`.
+
+Re-measured from session `58f98cab-01b7-4552-8474-fb3cff1accdd` (wiki,
+2026-08-24), this session excluded from its own numbers. Corpus: 1273 sessions
+(824 Claude, 446 Codex, 3 Pi -- Pi is no longer zero, Kimi still is) across 387
+projects. Since the 2026-08-07 personalization: 116 `obelisk --*` calls in 17
+sessions.
+
+Did the fixes hold?
+
+| # | Verdict | Evidence since 2026-08-07 |
+|---|---------|---------------------------|
+| 1 schema guessing | **held** | 2 errors in 116 calls (1.7%), down from 11 in 157 (7%). Hot schema re-verified against 0.2.5; only `summaries` drifted, gaining `visibility, input_tokens, output_tokens` |
+| 3 budget / 4 batching / 5 reference tax / 8 path mangling | **held** | no recurrence in the error set |
+| 6 heredoc permission tax | **partial** | 39/116 calls (34%) still use `cat <<EOF`, down from 54% but entrenched. Upstream now *mandates* a shell `mktemp` recipe, which is strictly worse here -- deliberately not adopted, and its new BSD-`mktemp` pitfall is a cost we never pay |
+| 7 memory persist | **did not take** | still 2 live memories, and the newer one is this skill's own registration. Zero organic writes in 17 days. The round-3 offer is not firing; next iteration should make it unconditional on a durable conclusion rather than a judgement call |
+| 9 host-agnostic bulk | **held, narrowing** | 3 Pi sessions now exist, so "0 Pi rows" is no longer literally true; still far below the threshold where Pi machinery earns body space |
+
+New frictions found in this refresh:
+
+| # | Friction | Evidence | Fix in SKILL.md |
+|---|----------|----------|-----------------|
+| 10 | Own live session pollutes results. 0.2.5 refreshes the index before every query, so the running conversation competes with real history as evidence | Round-1 sweeps in this session returned this session as the top 3 hits | "Your own session is in the index" block: derive the session id deterministically from the scratchpad UUID, drop self-hits, never cite them back |
+| 11 | Upstream's invocation-nonce recipe does not work under our workflow. The nonce is the query file path as typed, and resolution needs that path already indexed -- a first-use path resolved 1 of 4 times here, a reused one 4 of 4. Upstream's "unique directory per query" therefore misses on nearly every Claude Code query, which is one-shot by construction | Probes `obq-verify-20260824-{a1,a2,a3,b1}`; `is_invoking` and `overview().current.session_id` both populate correctly once resolution succeeds | Query path is per-session and reused across rounds (`/tmp/obq-<session-id>.mjs`) instead of upstream's per-query `mktemp` dir -- keeps the `Bash(obelisk:*)` pre-approval *and* actually resolves from round 2 on |
+| 12 | The old fixed `/tmp/q.mjs` is entrenched and now actively harmful: weeks of reuse put it outside the nonce recency window, so identity never resolves | 33/116 calls since 2026-08-07 still write `/tmp/q.mjs` | Superseded by the per-session path above |
+| 13 | FTS ANDs every term, so a verbose topic string silently returns zero and reads like "no history exists". Round 1's own example encouraged long topic strings | Wiki-scoped sweep this session: 1 term 30 hits, 2 terms 26, 3 terms 9, 4 terms 0 | Query rule: two or three high-signal terms, widen with `OR`, read an empty round 1 as over-constrained first |
+| 14 | Upstream's new sandbox rule is worth keeping: a permission failure on `~/.obelisk` invites falling back to direct SQLite/JSONL reads, which silently answers from a stale index | Upstream `SKILL.md` "Fresh Index and Sandbox Permissions"; no local occurrence yet | Query rule: rerun unsandboxed, never route around a failed `obelisk` call |
+
+Also folded in, low-stakes: `subagents()` gained `after`/`before` (overlap
+bounds, not start times); `--attune` neither refreshes nor reads the index, so
+it works while the desktop app owns index writes, but needs an index that
+already exists.
+
 ## Provenance
 
-- Upstream: `tommy0103/obelisk` `skill-doc/` @ `7c1b478` (2026-08-04), pinned
-  byte-identical in `.upstream/` on 2026-08-07.
-- CLI: `@obelisk-apps/cli` 0.2.2 at pin time (historical errors span 0.2.0 and
-  0.2.2; installed via pnpm global, upgraded 2026-08-06 in session
-  `d35a39e2`).
-- Hot schema captured from `pragma_table_info` on 2026-08-07 against 0.2.2 —
+- Upstream: `tommy0103/obelisk-skill` `skills/obelisk/` @ `3226391`
+  (2026-08-24), pinned byte-identical in `.upstream/` and copied verbatim to
+  `references/`. Previous pin: `tommy0103/obelisk` `skill-doc/` @ `7c1b478`
+  (2026-08-04).
+- CLI: `@obelisk-apps/cli` 0.2.5 at pin time, npm global under nvm node 24
+  (upgraded from 0.2.2 on 2026-08-24; historical errors span 0.2.0–0.2.2).
+- Hot schema re-captured from `pragma_table_info` on 2026-08-24 against 0.2.5 —
   re-capture after every CLI upgrade.

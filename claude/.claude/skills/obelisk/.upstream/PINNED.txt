@@ -1,8 +1,20 @@
-Pinned from tommy0103/obelisk skill-doc/ @ 7c1b478 (2026-08-04)
-Verified byte-identical to the installed copy on 2026-08-07.
-Companion CLI at pin time: @obelisk-apps/cli 0.2.2 (pnpm global).
+Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 3226391 (2026-08-24),
+which the upstream repo publishes from tommy0103/obelisk @ c70c311.
+Verified byte-identical to this directory on 2026-08-24; ../references/ is a
+verbatim copy of references/ here.
+Companion CLI at pin time: @obelisk-apps/cli 0.2.5 (npm global, nvm node 24).
 
-Upgrade: pnpm add -g @obelisk-apps/cli@latest; fetch the new skill-doc/;
-diff -r it against this directory; fold genuine improvements into ../SKILL.md
-(re-checking every LESSONS.md item against the new version); replace this
-directory's contents with the new pristine copy and update this file.
+History: the skill used to live in tommy0103/obelisk skill-doc/ (previous pin
+7c1b478, 2026-08-04). It now ships from its own docs-only repo.
+
+DO NOT run `obelisk install`. It shells out to `npx skills add
+tommy0103/obelisk-skill`, which writes into ~/.claude/skills/obelisk and would
+overwrite the personalized ../SKILL.md. Upgrade by hand instead:
+
+  npm install -g @obelisk-apps/cli@latest
+  git clone https://github.com/tommy0103/obelisk-skill /tmp/obsk
+  diff -r /tmp/obsk/skills/obelisk .          # against this directory
+  # fold genuine improvements into ../SKILL.md, re-checking every LESSONS.md
+  # item against the new version; re-verify the hot schema with
+  # pragma_table_info against the new CLI; then replace this directory and
+  # ../references/ with the new pristine copy and update this file.

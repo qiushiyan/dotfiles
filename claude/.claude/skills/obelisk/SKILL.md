@@ -26,10 +26,15 @@ Upstream.
 
 ## Workflow
 
-One script per round: write it to `/tmp/q.mjs` with the **Write tool**, run
-`obelisk --query /tmp/q.mjs` with Bash. Both are pre-approved by
-`allowed-tools`; a `cat <<EOF` heredoc or a `| head` pipe is not, and each
-costs the user a permission prompt.
+One script per round, always at the same path: `/tmp/obq-<session-id>.mjs`,
+where `<session-id>` is the UUID directory in your scratchpad path
+(`…/<session-id>/scratchpad` — the same id is the session's `jsonl_path`
+basename). Overwrite it each round with the **Write tool**, run it with bare
+`obelisk --query /tmp/obq-<session-id>.mjs`. Unique per session, stable within
+one; never the old shared `/tmp/q.mjs`, and never upstream's per-query
+`mktemp` directory — Write plus bare `obelisk` are pre-approved by
+`allowed-tools`, while a `cat <<EOF` heredoc, a `mktemp`, or a `| head` pipe
+is not, and each costs the user a permission prompt.
 
 **Budget** every script so nothing needs piping: snippets `substr(...,1,240)`,
 `LIMIT` ≤ 20, whole-script JSON under ~10k chars. The script body runs inside
@@ -37,11 +42,25 @@ costs the user a permission prompt.
 sandboxed — no fs/network, and `remember()`/`forget()` exist only under
 `--attune`.
 
+**Your own session is in the index.** Obelisk rebuilds before every query, so
+this conversation is retrievable evidence competing with real history. The
+query file path doubles as an invocation nonce: when it resolves, `search()`
+hits and `sessions()` rows for this session carry `is_invoking: true` and
+`overview().current.session_id` holds its id. Resolution is best-effort and
+needs the path already indexed — measured on 2026-08-24, round 1 returns
+`null` and every later round with the same path resolves, which is exactly why
+the path is per-session rather than per-query. So do not depend on it: the
+scratchpad UUID is the deterministic answer, available before the first
+query. Drop self-hits from evidence (the `self` filter below, or
+`AND s.id <> '<session-id>'` in SQL) and never cite this session back to the
+user as its own history.
+
 **Round 1 — orient + sweep** (skip only when given an exact session id,
 message uuid, or file path):
 
 ```js
 const topic = 'English topic terms translated from the request';
+const self = '<session-id from the scratchpad path>';
 const map = overview({ limit: 6 });
 const project = map.current.project?.project;
 const scoped = project ? { project } : {};
@@ -52,7 +71,8 @@ return {
   },
   prior_memories: memories({ ...scoped, query: topic, limit: 5 })
     .map(m => ({ id: m.id, path: m.path, summary: m.summary?.slice(0, 240) })),
-  evidence: search(topic.replace(/[-_]/g, ' '), { ...scoped, limit: 8 })
+  evidence: search(topic.replace(/[-_]/g, ' '), { ...scoped, limit: 10 })
+    .filter(h => h.session.id !== self)
     .map(h => ({ session_id: h.session.id, title: h.session.title,
                  uuid: h.message.uuid, ts: h.message.timestamp,
                  snippet: h.message.text?.slice(0, 220) })),
@@ -67,15 +87,17 @@ Expand one promising hit vertically with `context(uuid)` (parent chain +
 session + subagent), not by pulling threads.
 
 **Round 3 — answer + persist.** Cite `session_id`/`uuid` compactly; prose
-carries the synthesis, not raw dumps. If retrieval produced a durable
-conclusion, make the memory offer (below) with the summary already drafted.
+carries the synthesis, not raw dumps. Then close the loop explicitly: end with
+either a drafted memory offer (below) or one clause saying nothing durable
+came out of this. Skipping both is the measured failure mode — the offer rule
+alone produced zero memories in its first 17 days.
 
 `obelisk --search "word"` is an existence check, nothing more; anything real
 gets a query script.
 
 ## Hot schema
 
-Verified against CLI 0.2.2 via `pragma_table_info` on 2026-08-07. Guessed
+Re-verified against CLI 0.2.5 via `pragma_table_info` on 2026-08-24. Guessed
 column names are the top historical failure class — trust this list over
 instinct:
 
@@ -83,7 +105,7 @@ instinct:
 - `messages(uuid, session_id, type, parent_uuid, timestamp, role, text, content_type, is_meta, model, is_sidechain, agent_id, input_tokens, output_tokens, cwd, skill, turn_duration_ms, source, visibility)`
 - `tool_calls(id, message_uuid, session_id, name, input_json, file_path, presentation)` — no timestamp: join `messages m ON m.uuid = tc.message_uuid`
 - `tool_results(tool_use_id, message_uuid, session_id, content, file_path, is_error)` — no timestamp and no `id`; the key is `tool_use_id` (`tr.tool_use_id = tc.id`)
-- `summaries(id, session_id, timestamp, source, content)` — `source` is the summary kind, not the provider
+- `summaries(id, session_id, timestamp, source, content, visibility, input_tokens, output_tokens)` — `source` is the summary kind, not the provider
 - `memories(id, session_id, project, message_start, message_end, path, anchors, summary, created_at, deleted_at, deleted_reason)`
 
 The three traps, each a real past error: it is `tc.name` (not `tool_name`),
@@ -97,10 +119,11 @@ Helpers cover the first pass: `overview()`, `memories({ query })`,
 `raw(uuid, { offset, limit })`, `subagents()`, `workflows()`,
 `workflowTree(runId)`. `search()` rows are
 `{ message: { uuid, text, content_type, is_meta, role, timestamp, cwd },
-session: { id, title, project }, rank, context }`, already FTS5-ranked — trust
-the returned order. Common opts:
-`{ limit, sessionId, project, after, before, cwd, source }`. `sql()` is the
-escalation for exact joins and aggregations.
+session: { id, title, project, is_invoking? }, rank, context }`, already
+FTS5-ranked — trust the returned order. Common opts:
+`{ limit, sessionId, project, after, before, cwd, source }`; on `subagents()`
+the `after`/`before` pair bounds overlap (still-active / already-started), not
+start time. `sql()` is the escalation for exact joins and aggregations.
 
 ## Query rules
 
@@ -117,6 +140,11 @@ escalation for exact joins and aggregations.
 - FTS `MATCH` chokes on hyphens and punctuation: quote the tokenized phrase
   (`search('"two words"')`) or drop to SQL `LIKE '%two-words%'` for literal
   punctuation.
+- FTS ANDs every term, so a long topic string is a conjunction that quietly
+  returns nothing — measured on one wiki-scoped sweep: 1 term 30 hits, 2 terms
+  26, 3 terms 9, 4 terms 0. Sweep with two or three high-signal terms, widen
+  with `OR`, and read an empty round 1 as "too many terms" before reading it as
+  "no history".
 - Real user input is `role='user' AND content_type='text'`; `thinking` rows
   are trace material, never user-visible conclusions. Raw SQL over
   conversation evidence carries `COALESCE(m.is_meta,0)=0` (helpers already
@@ -125,8 +153,15 @@ escalation for exact joins and aggregations.
   eyeballing returned rows.
 - Timestamps are UTC. Check the local zone (`date +"%Z %z"`) before telling
   the user when something happened.
-- A scoped empty result is an answer. Report it plainly; broaden only when
-  asked.
+- A scoped empty result is an answer once the query itself is cleared by the
+  two FTS rules above. Report it plainly; broaden only when asked.
+- Never route around a failed `obelisk` call by reading the SQLite file or the
+  JSONL directly — the CLI refreshes the index before answering, so a manual
+  fallback silently drops the newest sessions. `SQLITE_READONLY`, `EACCES`, or
+  "attempt to write a readonly database" against `~/.obelisk` means the shell
+  was sandboxed: rerun the same command unsandboxed. If write access stays
+  unavailable, stop and report the blocker rather than answering from stale
+  data.
 
 ## Codex sessions
 
@@ -153,7 +188,8 @@ written. Close the loop:
 - **Persist**: when retrieval yields a durable conclusion (design decision,
   convention, abandoned alternative, repeated failure cause), end the answer
   with a concrete offer — drafted English summary inline, so approval is one
-  word. On approval: Write the file (`.obelisk/memories/<slug>.md` in the
+  word. Offer it as a finished artifact awaiting a yes, not as a question
+  about whether saving would be useful. On approval: Write the file (`.obelisk/memories/<slug>.md` in the
   relevant project), then register with `obelisk --attune /tmp/m.mjs`:
 
 ```js
@@ -168,14 +204,17 @@ return remember({
 ```
 
 - `--attune` exposes only `remember()`/`forget()`; gather ids with a normal
-  `--query` first. `forget({ id, reason })` archives (the file stays). An
-  update is forget + remember as one approved operation. The user saying a
+  `--query` first. It neither refreshes nor reads the index, so it works while
+  the desktop app owns index writes — but it does need an index that already
+  exists, which any `--query` guarantees. `forget({ id, reason })` archives
+  (the file stays). An update is forget + remember as one approved operation. The user saying a
   memory is wrong *is* the approval; ask only when several memories match.
 
 ## Escalation references
 
-Upstream docs, still valid — skip their Pi/Kimi/visibility material (no Pi or
-Kimi rows exist in this index; every row is visible):
+Upstream docs, still valid — skip their Kimi and visibility material (no Kimi
+rows exist in this index and every row is visible; Pi is only 3 sessions out
+of 1273, so treat it as noise unless the user names it):
 
 | Read | when |
 |---|---|
@@ -188,9 +227,11 @@ Kimi rows exist in this index; every row is visible):
 
 ## Upstream
 
-`.upstream/` is the pristine host-agnostic skill-doc pinned at the commit in
-`.upstream/PINNED.txt`; `LESSONS.md` holds the friction analysis behind every
-rule above, with session-id receipts. The upgrade procedure lives in
-`PINNED.txt`; after any upgrade, re-verify the hot schema with
+`.upstream/` is the pristine host-agnostic skill doc, pinned at the commit in
+`.upstream/PINNED.txt` (now published from its own repo, `tommy0103/obelisk-skill`);
+`references/` is a verbatim copy of its references; `LESSONS.md` holds the
+friction analysis behind every rule above, with session-id receipts. The
+upgrade procedure lives in `PINNED.txt` — **never `obelisk install`**, which
+would overwrite this file. After any upgrade, re-verify the hot schema with
 `pragma_table_info` and re-check each `LESSONS.md` item against the new
 version before folding changes in here.
