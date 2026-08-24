@@ -85,8 +85,11 @@ already exists.
   (2026-08-24), pinned byte-identical in `.upstream/` and copied verbatim to
   `references/`. Previous pin: `tommy0103/obelisk` `skill-doc/` @ `7c1b478`
   (2026-08-04).
-- CLI: `@obelisk-apps/cli` 0.2.5 at pin time, npm global under nvm node 24
-  (upgraded from 0.2.2 on 2026-08-24; historical errors span 0.2.0–0.2.2).
+- CLI: `@obelisk-apps/cli` 0.2.5 at pin time, installed twice — npm global
+  under nvm node 24 (wins on PATH) and pnpm global. Both upgraded from 0.2.2 on
+  2026-08-24; historical errors span 0.2.0–0.2.2. See `.upstream/PINNED.txt`:
+  the two copies drifted apart that day, and `pnpm add -g …@latest` served a
+  stale `latest` from its packument cache.
 - Hot schema re-captured from `pragma_table_info` on 2026-08-24 against 0.2.5 —
   re-capture after every CLI upgrade.
 

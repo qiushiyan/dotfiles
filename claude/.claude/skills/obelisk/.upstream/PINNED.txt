@@ -2,7 +2,16 @@ Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 3226391 (2026-08-24),
 which the upstream repo publishes from tommy0103/obelisk @ c70c311.
 Verified byte-identical to this directory on 2026-08-24; ../references/ is a
 verbatim copy of references/ here.
-Companion CLI at pin time: @obelisk-apps/cli 0.2.5 (npm global, nvm node 24).
+Companion CLI at pin time: @obelisk-apps/cli 0.2.5.
+
+The CLI is installed TWICE and both copies must be upgraded together:
+  npm  global (nvm node 24)  -> /Users/qiushi/.nvm/versions/node/v24.15.0/bin
+  pnpm global                -> /Users/qiushi/Library/pnpm/bin
+nvm's bin wins on PATH today, but the pnpm copy sat at 0.2.2 while the npm copy
+ran 0.2.5, and a version without --nonce silently loses invocation identity.
+pnpm's packument cache also serves stale `latest` for a day or so after a
+release: `pnpm add -g @obelisk-apps/cli@latest` installed 0.2.4 while printing
+"0.2.5 is available", so pin the exact version.
 
 History: the skill used to live in tommy0103/obelisk skill-doc/ (previous pin
 7c1b478, 2026-08-04). It now ships from its own docs-only repo.
