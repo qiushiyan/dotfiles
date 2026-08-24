@@ -5,8 +5,8 @@ turn to produce a read-only attack packet for the user and for `/consult`,
 with the worktree left unchanged, and return the sections below.
 
 1. **Problem in plain terms** — who is affected, what fails, and the goal
-   beneath the brief's framing. Derive this from current code and evidence;
-   the reader last saw this brief a week ago.
+   beneath the brief's framing. Derive this from current code and evidence,
+   for a reader who no longer remembers this brief.
 
 2. **Premises checked**
    - Name and test the load-bearing premise behind the problem or the
@@ -30,10 +30,11 @@ with the worktree left unchanged, and return the sections below.
    - When an objection could change the choice, sketch one genuinely
      different countershape that answers it. Otherwise say the proposal
      survived this attack and omit a countershape.
-   - Compare the proposal and the countershape on the root problem and on
-     their user, performance, and code costs.
-   - Say whether a hybrid removes the strongest objection; reject it when
-     it merely combines both costs.
+   - With a countershape: compare it and the proposal on the root problem
+     and on their user, performance, and code costs, and say whether a
+     hybrid removes the strongest objection — a hybrid that merely combines
+     both costs is rejected. Without one: say why the objections leave the
+     choice standing.
    - Give a provisional recommendation and name the trade-off it accepts.
 
 5. **Decisions and parked unknowns**

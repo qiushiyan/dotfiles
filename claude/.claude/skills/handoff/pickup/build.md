@@ -6,7 +6,7 @@ return the sections below.
 
 1. **Problem in plain terms** — who is affected, what fails, and why the
    reviewed approach should remove that failure. Derive this from current
-   code and evidence; the reader last saw this brief a week ago.
+   code and evidence, for a reader who no longer remembers this brief.
 
 2. **Premises checked**
    - Name the single premise that must be true for the approach to solve
