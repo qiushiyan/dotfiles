@@ -5,11 +5,6 @@ description: >
   Reactive: when the user asks "how did I fix X", "what did we do last time", "find the session where", "上次怎么修的", "之前的session", "历史记录".
   Proactive: when the user references past work you lack context for, when you're about to modify a file with complex edit history, or when the user says "继续之前的" or "continue where we left off".
   Memory: when the user says "记住这个", "remember this", "写入记忆", "save this conclusion", or when a retrieval result contains a conclusion worth persisting.
-allowed-tools:
-  - Read
-  - Bash(obelisk:*)
-  - Bash(date:*)
-  - Write
 ---
 
 # obelisk — personal edition
@@ -26,20 +21,29 @@ Upstream.
 
 ## Workflow
 
-One script per round, always at the same path: `/tmp/obq-<session-id>.mjs`,
-where `<session-id>` is the UUID directory in your scratchpad path
-(`…/<session-id>/scratchpad` — the same id is the session's `jsonl_path`
-basename). Overwrite it each round with the **Write tool**, run it with bare
-`obelisk --query /tmp/obq-<session-id>.mjs`. Unique per session, stable within
-one; never the old shared `/tmp/q.mjs`, and never upstream's per-query
-`mktemp` directory — Write plus bare `obelisk` are pre-approved by
-`allowed-tools`, while a `cat <<EOF` heredoc, a `mktemp`, or a `| head` pipe
-is not, and each costs the user a permission prompt.
+One script per round, written and run in a single Bash call:
 
-**Budget** every script so nothing needs piping: snippets `substr(...,1,240)`,
-`LIMIT` ≤ 20, whole-script JSON under ~10k chars. The script body runs inside
-`(async () => { ... })()`; `return` emits JSON. Scripts are read-only and
-sandboxed — no fs/network, and `remember()`/`forget()` exist only under
+```bash
+Q=/tmp/obq-<session-id>.mjs   # <session-id> = the UUID directory in your scratchpad path
+cat > $Q <<'EOF'
+...query...
+EOF
+obelisk --query $Q
+```
+
+Quote the heredoc delimiter (`<<'EOF'`, not `<<EOF`) or the shell will eat the
+`$` and backticks in the JS. The path is stable for the whole session and
+unique to it — the same id is the session's `jsonl_path` basename. Never the
+old shared `/tmp/q.mjs`, and never a fresh path per round; both break
+invocation identity below.
+
+**Budget** every script so its whole output is worth reading: snippets
+`substr(...,1,240)`, `LIMIT` ≤ 20, whole-script JSON under ~10k chars. `| head`
+is not a substitute — it cuts JSON into something unparseable, so a piped
+result is a wasted round, not a cheap one. `jq` is available when a large
+result genuinely needs reshaping rather than shrinking. The script body runs
+inside `(async () => { ... })()`; `return` emits JSON. The JS sandbox itself is
+read-only — no fs/network, and `remember()`/`forget()` exist only under
 `--attune`.
 
 **Your own session is in the index.** Obelisk rebuilds before every query, so
@@ -189,8 +193,9 @@ written. Close the loop:
   convention, abandoned alternative, repeated failure cause), end the answer
   with a concrete offer — drafted English summary inline, so approval is one
   word. Offer it as a finished artifact awaiting a yes, not as a question
-  about whether saving would be useful. On approval: Write the file (`.obelisk/memories/<slug>.md` in the
-  relevant project), then register with `obelisk --attune /tmp/m.mjs`:
+  about whether saving would be useful. On approval: write the file
+  (`.obelisk/memories/<slug>.md` in the relevant project), then register it
+  with `obelisk --attune /tmp/oba-<session-id>.mjs`:
 
 ```js
 return remember({
