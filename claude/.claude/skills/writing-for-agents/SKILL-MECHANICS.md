@@ -13,6 +13,23 @@ Pick model-invocation only when the agent must reach the skill on its own, or an
 
 Shared reference that two user-invoked skills both need can live in neither — with no descriptions, neither can fire the other. Push it to a plain file outside the skill system: external reference any skill can point at.
 
+## Tool access
+
+Leave `allowed-tools` out. This machine runs Claude Code in
+bypass-all-permissions as the standing mode, and every skill is meant to reach
+any command it needs, so an allowlist buys no safety here — it only narrows
+what the skill can do, and the narrowing is invisible until a run hits the
+wall.
+
+The real cost is subtler than a blocked call. A workflow rule shaped so the
+allowlist can enforce it inherits the allowlist's arbitrary edges, and those
+edges then read as design. The obelisk skill spent months routing every query
+through the Write tool to stay inside `Bash(obelisk:*)`, banning the heredoc
+that would have done the same job in one call instead of two — a rule that
+looked earned, measured, and evidence-backed, and was buying a benefit that did
+not exist. When a rule needs an allowlist to survive, it is not carrying its own
+weight.
+
 ## Splitting by invocation
 
 The invocation cut of splitting (the sequence cut lives in `SKILL.md`): split off a model-invoked skill when you have a distinct leading word that should trigger it on its own — a trigger word you actually use in your prompts — or another skill must reach it. You pay context load for the new always-loaded description, so that independent reach has to be worth it.
