@@ -51,10 +51,12 @@ Done when every kept lesson carries why you believe it and how sure you are, and
 ## 4 — Write the brief
 
 ```sh
-brief new <slug> [--cluster <workstream>]
+brief new <slug> --pickup build|design [--cluster <workstream>]
 ```
 
 prints the file it scaffolded, folder created, with `anchored:` and `base:` already stamped from the repo — leave those two alone and fill the rest.
+
+**`--pickup` names how the next session's first turn runs**, and `brief start` refuses to launch a brief without it. `build` only when the approach is already reviewed — a spec the user approved, a consult record, a PR to continue; otherwise `design`. The gate each value fires is [`pickup/build.md`](pickup/build.md) / [`pickup/design.md`](pickup/design.md): the receiving session ends its first turn on that gate's contract — a plain-terms restatement, the premises checked, a verdict — before any edit. Read the gate you chose before writing `## At pickup`, since that section is its input.
 
 **`<slug>` is the branch the next session will work on**, not the one this session worked on: one token for the file, the branch, and the worktree. Write it as you'd write the branch, because it is the branch. [`SLUG-NAMING.md`](SLUG-NAMING.md) carries the **cold-read test** it has to pass — a place and an outcome, in words the tree already uses; read it before you choose, and note that a project skill wrapping this one may bind it to that project's own vocabulary.
 
@@ -71,6 +73,7 @@ run: /<onboarding-skill> <route>
 anchored: <stamped — leave>
 base: <stamped — leave>
 cluster: <workstream>
+pickup: build | design
 paths:
   - <repo-relative path>
 rests-on: <the PRs, branches or changes whose state this brief assumes,
@@ -82,6 +85,7 @@ collides-with: none
 ## Where things stand
 ## Lessons, dead-ends, and friction
 ## First moves
+## At pickup
 ```
 
 Head rules — each is the residue of a real failure:
@@ -93,10 +97,35 @@ Head rules — each is the residue of a real failure:
 - `paths:` scopes the drift check the next session runs — list exactly the repo-relative paths this brief's claims live in.
 - `run:` is the invocation the pickup fires: the project's onboarding skill plus its short route. Omit the field where the project has none — the goal then stands as the opening directive itself.
 - `cluster:` joins the folder's workstreams; with no siblings it is load for nothing.
+- `pickup:` is `build` or `design` — the test is above; the sweep may flip it when a design brief's approach settles.
 
 Body rules:
 
-- Open **First moves** with `brief drift`, then say — as prose only this session can write — what to weigh in what it reports: each `rests-on` entry's consequence, and which of this brief's instructions the drift would make moot. Then the 2–4 reads this task hinges on with one line of why each, the project skills the work runs through, the 1–3 claims most likely to bite if taken on faith, and: before writing code, state the plan in your own words and flag anything that contradicts this brief; route product forks to the user with options and a recommendation, record technical unknowns with your working answer rather than asking.
+- Open **First moves** with `brief drift`, then say — as prose only this session can write — what to weigh in what it reports: each `rests-on` entry's consequence, and which of this brief's instructions the drift would make moot. Then the 2–4 reads this task hinges on with one line of why each, and the project skills the work runs through — that is where First moves ends. The first-response contract has one home, the gate; a second copy in the body is the one a receiving session reads past.
+- **`## At pickup` is the last section, always**, and carries only what this session uniquely knows, in the shape the gate consumes:
+
+  ```markdown
+  ## At pickup
+
+  Load-bearing claims:
+  - <claim> · check: <file, query, or record> · decisive result: <what would
+    hold or falsify it>
+  - <one to three total>
+
+  Proposed approach:                                      <!-- design only -->
+  - <what changes, where, and the bet it makes>
+  - optimizes for: <goal or constraint>
+  - accepts: <known cost or capability given up>
+  - weakest support or contrary evidence: <evidence, unresolved assumption,
+    or none known>
+  - direction-changing evidence: <observation that would change the choice>
+
+  Visible product forks:
+  - <fork> · <options known now; recommendation if one exists>
+  - none
+  ```
+
+  The claims are the ones a receiving session would take on faith and be wrong; the approach block gives the design gate its target — the bet, its evidence, and the observation that would change the choice — and leaves the attack's direction to the receiving session, which reads every perspective fresh.
 - **The goal and the invocation live in the head alone.** Open the body with the work — restating either would give the next session two copies to disagree.
 - **Every path is repo-relative.** The next session lives in a different worktree; an absolute path into this one dangles. Cite files, specs, PRs and issues by repo-relative path or URL.
 - **Refer to it as "this brief", never as a file** — the text outlives its filename.
@@ -108,6 +137,7 @@ Point rather than pre-chew — a brief that hands the next session answers inste
 - The slug is `review-<this-branch>` — what's ahead is a verdict on this branch, not a new worktree, so the filename names the review instead of a destination. The opening of the body pins the next session to **this same branch in this same worktree** — the branch merges only after the review passes, so nothing new gets created. Worktree-local artifacts (gitignored scripts, scratch harnesses) are citable here: the next session can reach them.
 - A posture block opens the body, naming why trust broke — the concrete edge cases and bugs the user found after earlier "done" claims — and setting the stance: the next session treats each conclusion, this brief's included, as a claim to re-verify, and reads the accreted fixes adversarially — assume they hide more seams.
 - "Where things stand" carries the **review surface**: the mechanisms and workarounds this branch accreted, one line each, mechanism → home file — the shape to review, not re-derive. Verification state is claims, not facts: suite numbers come with "re-run before trusting".
+- `pickup:` is `build` — the review's first turn verifies and restates before it judges; the posture block, not the gate, sets the adversarial stance.
 - `goal:` names the review; unless `$ARGUMENTS` sets its own agenda, it carries the standing one — does the accretion compose or hide seams; what to extract and where the seams go; why the suite stayed green over the escaped edge cases, and the harness that would catch that class. First moves offers the user `/review` — a cold dispatched read to ride beside the session's own.
 
 Done when the brief passes the cold-pickup test — every pointer resolves from inside the receiving worktree, nothing in it depends on this session or this file existing, and the filename names where the next session goes — and, mechanically:
