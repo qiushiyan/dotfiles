@@ -16,14 +16,14 @@ You maintain a project's docs. The goal: after a change lands, the docs still ha
 Gather diff
   → Read existing docs
   → Assess significance
-  → Propose plan ──→ [user confirms] ──→ Update docs ──→ Verify
-       │                    │
-       ↓                    ↓
-  "No changes needed"   User adjusts scope
+  → State plan ──→ in-place edits: start now ──→ Update docs ──→ Verify
+       │                │
+       ↓                └→ gated items (tree-shape changes): wait for the user
+  "No changes needed"
    (exit early)
 ```
 
-Three exit points: (1) the changes are purely implementation-level and need no doc update, (2) the user rejects or defers the proposal, (3) updates are written and verified.
+Three exit points: (1) the changes are purely implementation-level and need no doc update, (2) the user rejects or defers the gated items, (3) updates are written and verified.
 
 ## Step 1 — Gather the diff
 
@@ -59,36 +59,43 @@ Find the docs home (commonly `docs/` plus the always-loaded mental-model file �
 
 Apply the significance tiers in the standards below. If the change is implementation-level, stop here: _"These changes are implementation-level — no documentation updates needed."_
 
-## Step 4 — Propose a plan
+## Step 4 — State the plan, gate only what changes the tree's shape
 
-**Do not start writing yet.** Present a concrete proposal and wait for confirmation:
+Present a concrete plan before writing. Whether you then wait depends on what the plan does to the docs tree, not on how many lines it touches:
+
+- **Proceed without waiting** — every change is an edit inside a doc that already exists: synchronizing prose with the code, correcting a stale claim, merging duplicated sections, fixing cross-references, folding a shipped spec's decisions into the architecture doc that owns them. Reviewing an approval prompt for these is pure round-trip cost; the plan itself is the record.
+- **Stop and wait** when any item in the plan would:
+  1. create a new doc file (a new page, route, or status surface);
+  2. delete, archive, move, or rename a doc file — pruning a shipped spec included;
+  3. touch an always-loaded file (`CLAUDE.md` / `AGENTS.md`) or an onboarding skill's always-read list;
+  4. reorganize how the tree is laid out (split a hub, merge folders, change an index's structure);
+  5. resolve a doc/code disagreement by changing the described design rather than the wording.
+
+Mixed plan: do the in-place edits now, hold only the gated items and say which they are. Format:
 
 ```
-## Proposed documentation updates
+## Documentation updates
 
 ### Scope
 [One sentence: what the work does at a high level]
 
-### Changes
-- `docs/<area>.md` — add section "X"; update the data-flow description
-- `docs/README.md` — add the new module to the structure map
+### Changes (starting now)
+- `docs/<area>.md` — update the data-flow description; merge the two "retry" paragraphs
 - `CLAUDE.md` / `AGENTS.md` — no change (no new cross-cutting rule)
 
-### Distillation
-- `docs/specs/<name>.md` — shipped; fold surviving decisions into `docs/<area>.md`, then prune
-
-### Deletions
-[Only when a doc / section is fully superseded. Be deliberate.]
+### Gated — waiting on you
+- `docs/<new-area>.md` — new doc (why an existing one can't own this)
+- `docs/specs/<name>.md` — shipped; fold into `docs/<area>.md`, then prune the file
 
 ### No action
 - `docs/<other>.md` — not affected
 ```
 
-The user may adjust scope, skip docs, or add areas you missed.
+An empty "Gated" section means the plan closes with "starting now" and nothing else; the user can still redirect at any point.
 
 ## Step 5 — Update the docs
 
-Write the updates from your confirmed plan, applying the **Documentation standards** below. Two rules carry this step — apply them as defined there: **consolidation** (every doc you touch gets tighter, not just longer) and **distillation** (a shipped spec's surviving decisions fold into the durable doc, then the spec is pruned). When the change alters the system's shape, also update the structure map / file index and any always-loaded mental-model file — but index entries are earned, not automatic (see the standards below).
+Write the in-place edits from your stated plan, and the gated items once confirmed, applying the **Documentation standards** below. Two rules carry this step — apply them as defined there: **consolidation** (every doc you touch gets tighter, not just longer) and **distillation** (a shipped spec's surviving decisions fold into the durable doc, then the spec is pruned). When the change alters the system's shape, also update the structure map / file index and any always-loaded mental-model file — but index entries are earned, not automatic (see the standards below).
 
 ## Step 6 — Verify
 

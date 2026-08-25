@@ -136,6 +136,10 @@ start time. `sql()` is the escalation for exact joins and aggregations.
   mangling is inconsistent across CLI versions (`-dev--worktrees-` vs
   `-dev-.worktrees-`). Match a fragment (`'%short-name%'`), never a constructed
   full path.
+- `sql()`'s read-only guard scans the whole statement text, string literals
+  included: `'update-docs'` or `'insert-mode'` inside quotes is rejected as a
+  write. Bind such values with `?` params (or build the literal in JS) instead
+  of inlining them.
 - FTS `MATCH` chokes on hyphens and punctuation: quote the tokenized phrase
   (`search('"two words"')`) or drop to SQL `LIKE '%two-words%'` for literal
   punctuation.
