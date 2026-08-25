@@ -72,7 +72,7 @@
   "theme": {
     "mode": "dark",
     "light": "Vitesse Refined Light Soft",
-    "dark": "Vitesse Black"
+    "dark": "Gruber Darker"
   },
   "vim_mode": true,
   "relative_line_numbers": "enabled",

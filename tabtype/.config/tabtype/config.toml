@@ -1,12 +1,18 @@
 # ── Reasoning helpers ─────────────────────────────────
+[[snippets]]
+key = "consult-and-verify"
+expand = """
+/consult run a consultation round with codex with diagnosis mode to pin the root cause. While you are waiting, use pl-loopy-verify to reproduce the symptom and use it as a chance to challenge your previous diagnosis and verify the real root cause, reproduce and verify only, no fix yet.
+"""
 
 [[snippets]]
-key = "postal"
-expand = "HA9 0EN"
-
-[[snippets]]
-key = "address"
-expand = "Flat 819, Solar"
+key = "loopy-prompt-check"
+expand = """
+Do a self evaluation and improvement round for the relevant prompt and tools surface we touched in
+this session against the standards in
+/Users/qiushi/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md and
+docs/loopy/prompting-guide.md
+"""
 
 [[snippets]]
 key = "think-holistic"
@@ -845,6 +851,15 @@ max_branch_age_days = 90
 badge_palette = "minimal"
 ignore_patterns = ["node_modules", ".git", "dist", "build"]
 
+
+# misc helpers
+[[snippets]]
+key = "postal"
+expand = "HA9 0JF"
+
+[[snippets]]
+key = "address"
+expand = "Flat 819, Solar"
 
 trigger = ";;"
 providers = [
