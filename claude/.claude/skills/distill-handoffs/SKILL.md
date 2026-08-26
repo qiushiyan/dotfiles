@@ -84,13 +84,13 @@ Four, and each is a fact the sweep found, not a design it chose — the receivin
 - **Note** — the edges drifted: a discharged gate, a collision that appeared, a measurement already paid for, folded into the section it bears on as the case rather than the verdict. A boundary move is written into both briefs, so neither session learns of it from the other's absence.
 - **Leave** — nothing moved.
 
-Writing order: references first (`_clusters.md`, the sibling head fields the CLI lists), then the file, then `brief anchor <slug> --by sweep` on every brief edited — an edited brief on its old anchor sends the next session to re-run drift you already resolved.
+Writing order: references first (`_clusters.md`, the sibling head fields the CLI lists), then the file, then `brief anchor <slug> --by sweep` on every brief edited — an edited brief on its old anchor sends the next session to re-run drift you already resolved. A head field changes through `brief set <slug> <key> <value>`; a hand splice of the fenced head takes a neighbouring field with it, and `brief check` only finds that afterwards.
 
 ## Retirement
 
 A brief is a view onto durable artifacts — the PR, the docs the sync pass updated, the issue or spec record. Once the work lands the view has nothing left to show, so:
 
-- **Delete** — `brief delete <slug>`, exact slug, live or retired — once you can name the durable home the report will cite. It refuses while a head field or `_clusters.md` still names the slug: amend the note, drop the sibling items (a `supersedes:` entry naming a deleted brief points at nothing), fold any lesson a successor still needs into the successor's body, then delete.
+- **Delete** — `brief delete <slug>`, exact slug, live or retired — once you can name the durable home the report will cite. It refuses while a head field or `_clusters.md` still names the slug: amend the note, drop the sibling items (a `supersedes:` entry naming a deleted brief points at nothing), fold any lesson a successor still needs into the successor's body, then delete. Read a live successor's lineage before deleting what it names — once a referrer is gone the reference report is silent about it. An `.evidence/` dir stays behind on purpose: the repo's docs cite these by path, so grep `docs/` for `.evidence` before removing one by hand.
 - **Keep** — the one exception: a named live successor depends on a specific passage unique to this brief, and no durable owner can take that passage without loss. Folding is still preferred; keeping is for when folding would lose it. `brief retire <slug> --reason "kept: <successor-slug> needs § <section>"` — the `kept:` prefix is what the next reconcile reads to know the judgement was made, and the file is re-judged when the successor lands.
 
 ## The folder note
