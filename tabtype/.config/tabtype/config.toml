@@ -1,19 +1,52 @@
-# ── Reasoning helpers ─────────────────────────────────
+# ── Loopy (planlab) ───────────────────────────────────
+# Stage order: diagnose → implement → verify → review → prompt hygiene → closeout.
+
 [[snippets]]
-key = "consult-and-verify"
+key = "loopy-consult-verify"
 expand = """
 /consult run a consultation round with codex with diagnosis mode to pin the root cause. While you are waiting, use pl-loopy-verify to reproduce the symptom and use it as a chance to challenge your previous diagnosis and verify the real root cause, reproduce and verify only, no fix yet.
 """
 
 [[snippets]]
-key = "loopy-prompt-check"
+key = "loopy-implement-spec"
 expand = """
-Do a self evaluation and improvement round for the relevant prompt and tools surface we touched in
-this session against the standards in
-/Users/qiushi/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md and
-docs/loopy/prompting-guide.md
+Reread the settled spec and the critical files this change touches to rebuild your mental model from
+the actual code, then implement end to end. Defer doc updates — I'll say when.
 """
 
+[[snippets]]
+key = "loopy-verify-baseline"
+expand = """
+run pl-loopy-verify with local spikes (no browser) to prove the intended behavior is implemented.
+When the change alters existing behavior, run the same spikes in a baseline worktree off develop and
+compare — the delta should be exactly the intended change, nothing else. Report expected vs. actual.
+"""
+
+[[snippets]]
+key = "loopy-review-verify"
+expand = """
+/review codex full review. While you are waiting, run pl-loopy-verify with local spikes to re-prove
+the intended behavior — compare against a baseline worktree off develop where applicable.
+"""
+
+[[snippets]]
+key = "loopy-prompt-check"
+expand = """
+Review and revise the prompt and tool surfaces relevant to this session's work against
+/Users/qiushi/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md and
+docs/loopy/prompting-guide.md (for skill bodies, also
+/Users/qiushi/dotfiles/claude/.claude/skills/writing-for-agents/SKILL.md).
+Report each finding as a named defect with its fix; say plainly if nothing needs changing.
+"""
+
+[[snippets]]
+key = "loopy-closeout"
+expand = """
+Branch merged and deployed — record causes, post outcomes, then run
+/Users/qiushi/dotfiles/claude/.claude/skills/handoff-sweep/SKILL.md.
+"""
+
+# ── Reasoning helpers ─────────────────────────────────
 [[snippets]]
 key = "think-holistic"
 expand = '''
