@@ -19,14 +19,16 @@ key = "loopy-verify-baseline"
 expand = """
 run pl-loopy-verify with local spikes (no browser) to prove the intended behavior is implemented.
 When the change alters existing behavior, run the same spikes in a baseline worktree off develop and
-compare — the delta should be exactly the intended change, nothing else. Report expected vs. actual.
+compare — the delta should be exactly the intended change, nothing else. Report expected vs. actual,
+then remove the baseline worktree: the comparison is a one-shot result we won't rerun.
 """
 
 [[snippets]]
 key = "loopy-review-verify"
 expand = """
 /review codex full review. While you are waiting, run pl-loopy-verify with local spikes to re-prove
-the intended behavior — compare against a baseline worktree off develop where applicable.
+the intended behavior — compare against a baseline worktree off develop where applicable, removing
+that worktree once the comparison is captured.
 """
 
 [[snippets]]
