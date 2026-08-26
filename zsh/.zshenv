@@ -32,3 +32,12 @@ if (( _compdef_stub )); then
   unfunction compdef
   unset _compdef_stub
 fi
+
+# ── EQUALS off ────────────────────────────────────────────  docs/zsh.md
+# zsh expands a leading-`=` word to that command's path (`=ls` → /bin/ls),
+# on assignment right-hand sides too (`x==ls`). Nothing here uses it, and it
+# is fatal to agent-authored one-liners: `cat a; echo ====; cat b` becomes a
+# lookup for a command named `===`, which aborts the eval'd line — so `cat b`
+# silently never runs and only the trailing error says so. Here rather than
+# in .zshrc because the shells that hit it are non-interactive.
+unsetopt EQUALS

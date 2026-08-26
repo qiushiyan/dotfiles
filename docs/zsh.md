@@ -12,7 +12,8 @@ different kind of shell:
   system `/etc/zprofile` only fires for login shells, so `ssh host cmd` and
   mosh-server would otherwise miss it), forces a UTF-8 locale for the same
   reason, sources `toolchain.zsh`, then sources every other
-  `~/.config/zsh/*.zsh` so functions and aliases exist everywhere.
+  `~/.config/zsh/*.zsh` so functions and aliases exist everywhere, and finally
+  turns `EQUALS` expansion off (below).
 - **`.zprofile`** — login shells only. Homebrew + OrbStack `shellenv`.
 - **`.zshrc`** — interactive shells only. oh-my-zsh, syntax highlighting,
   completions, Oh My Posh prompt, fzf/zoxide, the lazy `nvm` stub.
@@ -81,6 +82,22 @@ Hard-won during a startup-perf and robustness pass. Read before editing.
   `compinit`. `git.zsh` is sourced once, by `.zshenv`, which stubs `compdef` out
   to suppress errors; `.zshrc` calls `_git_zsh_register_completions` afterward.
   Don't re-source whole files just to register completions.
+- **`EQUALS` expansion is off, machine-wide** (`unsetopt EQUALS`, last line of
+  `.zshenv`). By default zsh expands any word starting with `=` to the path of
+  that command — `=ls` → `/bin/ls`, on assignment right-hand sides and
+  colon-separated components too, so `x==ls` assigns `/bin/ls` and `p=a:=ls:b`
+  becomes `a:/bin/ls:b`. All of that is now literal. It was disabled because AI
+  agents write bash-flavoured one-liners into this shell: `cat a; echo ====;
+  cat b` made zsh look up a command named `===`, and since the tool `eval`s the
+  whole string, the failure **aborted the rest of the line** — `cat b` never
+  ran, and the only clue was one error line under otherwise correct output.
+  947 truncated tool calls across 260 sessions before it was traced. `.zshenv`
+  rather than `.zshrc` because every shell that hits it is non-interactive, and
+  `.zshenv` is also read by sessions already running against a stale Claude
+  shell snapshot. Escape hatches for a script that wants the default back:
+  `emulate zsh`, or `zsh -f` to skip startup files entirely. `=(...)` process
+  substitution is a different feature and is unaffected. Pinned by
+  `zsh/.config/zsh/tests/startup-options.test.zsh`.
 - **Measure, don't guess.** Profile with `zmodload zsh/zprof`; verify a perf
   change with an _interleaved_ A/B benchmark (`git stash` the change, time both
   back-to-back, repeat) — not before/after numbers taken minutes apart. This

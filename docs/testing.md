@@ -8,6 +8,7 @@ bash tmux/.config/tmux/scripts/tests/test-pane-control.sh        [T5 T14 …]
 bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
 bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W2 W10 …]
 zsh  zsh/.config/zsh/tests/claude-sessions.test.zsh              # runs whole
+zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
 ```
 
 The first two cover the tmux pane control plane and the Claude context chip, and
@@ -16,7 +17,9 @@ tmux-free git logic behind the worktree popup (what counts as merged, base
 resolution, base freshness); the fourth covers the shared-sessions toolkit
 (launcher enforcement of the projects topology, migration abort paths, obelisk
 reindex verification) against a throwaway `$HOME` with stubbed
-`pgrep`/`lsof`/`claude`/`obelisk`.
+`pgrep`/`lsof`/`claude`/`obelisk`; the fifth pins the startup-option state
+non-interactive shells inherit from `.zshenv` (see the `EQUALS` entry in
+`zsh.md`), by starting a real `zsh -c` with `ZDOTDIR` on the working tree.
 
 The chip suite drives the real `statusline-command.sh` from the **working tree**
 rather than the stowed copy, which is what lets it grade a branch instead of
