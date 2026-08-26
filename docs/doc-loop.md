@@ -19,6 +19,7 @@ All checkpoints are user-triggered by design — the skills never fire themselve
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)
 /handoff [next: …]           ← lessons + a brief in ~/dev/.handoffs, itself the next first prompt
   → brief start <slug> places the worktree and hands over the pointer
+/distill-handoffs            ← after the merge: the spent brief deleted, its siblings settled
 ```
 
 `/update-docs` and `/handoff` are separable on purpose: a routine change wants a
@@ -107,7 +108,15 @@ and the global skills' standards apply:
 - **duet is the reference implementation**, and itell already has the shape —
   both separate repos, so their satellite names live there rather than here.
 
-## The periodic pass — `/distill-docs`
+## The periodic passes — `/distill-docs` and `/distill-handoffs`
+
+Each per-change pass has a periodic twin that clears what per-change passes
+cannot see: `/update-docs` ↔ `/distill-docs` over the doc tree,
+`/handoff` ↔ `/distill-handoffs` over the brief folder. The handoff twin runs
+mostly as a **closeout** — from the branch that just merged, deleting the
+brief that spawned it and settling only the briefs that named it — and, from
+the default branch, as the whole-folder reconcile; `docs/handoff.md` places
+its machinery. The docs twin:
 
 Update-docs is diff-scoped, so cross-doc duplication and rot in untouched files
 accumulate in the seams no matter how disciplined the per-change passes are —

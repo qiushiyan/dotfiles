@@ -1,7 +1,9 @@
 # The handoff loop's moving parts
 
 `/handoff` writes a brief addressed to the next session's agent;
-`/handoff-sweep` reconciles a whole folder of them. Satellite of
+`/distill-handoffs` reconciles them against the repo — one landed branch's
+briefs (the closeout pass, the common post-merge case), the whole folder, or
+a question about what moves next. Satellite of
 `docs/doc-loop.md` — that doc places both in the session loop; this one says
 where the machinery lives, which is what you need before editing any of it.
 
@@ -15,10 +17,11 @@ The loop is split so that staleness cannot misroute a session:
   session to the wrong branch lives here, behind one parser. **Read its
   `CLAUDE.md` before changing any surface this repo consumes** — it carries
   the mental model and lists every consumer, these packages among them.
-- **`claude/.claude/skills/{handoff,handoff-sweep}/`** (here) — the judgment
+- **`claude/.claude/skills/{handoff,distill-handoffs}/`** (here) — the judgment
   half: what a brief says, when one is earned, what a sweep verdict is. Prose
-  only; both skills reach the mechanism through a single `Bash(brief:*)` grant,
-  and `handoff/SLUG-NAMING.md` is the slug contract.
+  only; the mechanism is the CLI (`brief closeout` is the sweep's input,
+  `brief delete` its default retirement), and `handoff/SLUG-NAMING.md` is the
+  slug contract.
 - **`zsh/.config/zsh/git.zsh`** (here) — the `brief()` wrapper and its
   completion. It holds only what a parent shell alone can do: `brief start`
   needs its `cd` to stick, so the wrapper passes `--cd-file` and applies what
