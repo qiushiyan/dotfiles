@@ -87,6 +87,30 @@ truncated tool result hides the error text. The skill body's own claims are
 also queries — "agents call `describe` before guessing a column" is a count,
 and the count tells you whether the rule is working.
 
+For an **always-loaded document** (`CLAUDE.md`, `AGENTS.md`, a rules file)
+there is no invocation: the population is every session in the project, and
+the instrument is **pointer hit-rate** — for each pointer in the document,
+sessions whose edits fell in its branch against sessions that read its target.
+A branch with edits and no reads is a pointer that does not fire; a target
+read by nobody across the whole population is context load with no reach.
+
+```js
+// pointer hit-rate: edits under a package vs reads of the doc its pointer names
+const P = { 'zsh/': 'docs/zsh.md', 'tmux/': 'tmux/.config/tmux/workflow.md' };
+const ed = sql(`SELECT DISTINCT session_id sid, file_path f FROM tool_calls tc JOIN sessions s ON s.id=tc.session_id
+  WHERE s.project LIKE :p AND tc.name IN ('Edit','Write') AND tc.file_path LIKE :root`, { p: '%dotfiles', root: '/Users/qiushi/dotfiles/%' });
+const rd = sql(`SELECT DISTINCT session_id sid, file_path f FROM tool_calls tc JOIN sessions s ON s.id=tc.session_id
+  WHERE s.project LIKE :p AND tc.name='Read'`, { p: '%dotfiles' });
+out.pointer_hits = Object.entries(P).map(([pkg, doc]) => {
+  const inBranch = new Set(ed.filter(r => r.f.includes('/dotfiles/' + pkg)).map(r => r.sid));
+  const readDoc  = new Set(rd.filter(r => r.f.endsWith(doc)).map(r => r.sid));
+  return { pkg, doc, branch_sessions: inBranch.size, read_in_branch: [...inBranch].filter(s => readDoc.has(s)).length, read_anywhere: readDoc.size };
+});
+```
+
+Pair it with the first-prompt task mix (`MIN(timestamp)` user text per
+session) to see which tasks the document says nothing about.
+
 For a tool with no CLI engine (a pure-instruction skill, a doc, a snippet),
 the Bash signature is the script path or nothing, and B collapses to A; the
 failure facet becomes the user-voice facet plus the `Edit`/`Write` targets

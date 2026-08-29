@@ -10,7 +10,8 @@ claude/.claude/skills/<name>/          # source of truth — real directories
 codex/.codex/skills/<name>             # relative symlink → ../../../claude/.claude/skills/<name>
 codex/.codex/skills/keep-codex-fast/   # real dir — the declared Codex-only exception
 codex/.codex/skills/.system/           # Codex's bundled skills — gitignored, not ours
-~/.agents/skills/                      # the `skills` CLI's store — keep it empty
+~/.agents/skills/                      # the `skills` CLI's store — should be empty; a dir here is a
+                                       # leftover copy, removed only after the repo has the real dir
 ```
 
 **Audit:** every entry under `codex/.codex/skills/` is either a symlink into
@@ -154,7 +155,7 @@ claude/.claude/skills/<skill>/SKILL.md      the skill-specific gist + pointers u
 A rule about *how to write any agent-facing document* goes in the lesson,
 never into `writing-for-agents` (managed). A rule about *one skill's* domain
 goes in that skill. Lessons are not skills — no frontmatter, not invokable,
-reached only by a pointer from a skill or snippet — and `lessons/CLAUDE.md`
+reached only by a pointer from a skill or snippet — and `lessons/.config/lessons/CLAUDE.md`
 carries the conversion rules between the two forms.
 
 ## Vendored bundled skills

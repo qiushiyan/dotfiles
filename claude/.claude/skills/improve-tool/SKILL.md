@@ -69,6 +69,11 @@ for what past passes established about writing the instruction layer.
      called a discipline failure. Past passes found the dominant error was
      an engine branch that dropped its own helpful message.
 
+   A document's engine is the repo's mechanisms — hooks, Makefile targets,
+   ignore files, tests, the composer that renders it — so the first rule
+   applies there too: a red line a session once crossed wants a check, and
+   the prose keeps only the why.
+
    Keep **observed** apart from **inferred** — a stall in a log may be the
    user's laptop leaving wifi. Done when each of the top three frictions
    answers "how many, and where" with a number and ids.

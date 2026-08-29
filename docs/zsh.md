@@ -36,10 +36,11 @@ Sourced by `.zshenv`; `toolchain.zsh` first, then the rest in glob order.
 zsh/.config/zsh/
   toolchain.zsh    # cheap PATH setup (default Node via nvm, no subprocess)
   aliases.zsh
-  git.zsh          # aliases + the deferred completion registration
+  git.zsh          # git aliases, gopen/worktree helpers (also tmux prefix g), deferred completion registration
   nav.zsh
   utils.zsh        # gitclean, loc, n, take, dotadd, …
   theme.zsh        # the $TERMINAL_THEME switch
+  cwd-guard.zsh    # deleted-cwd defenses: _cwd_guard at startup, zshreload (tests/ has its harness)
   claude.zsh       # multi-account launchers (x, x-<name>) — see claude-accounts.md
   claude-sessions.zsh  # shared session store: migration + drift check (tests/ has its harness)
   xcode.zsh
@@ -64,7 +65,12 @@ Hard-won during a startup-perf and robustness pass. Read before editing.
 
 - **Reload with `exec zsh`, never `source ~/.zshrc`.** Re-sourcing only _adds_
   state; it cannot drop deleted aliases, functions, or exports, nor fix stale
-  in-memory state. `zshreload` is aliased to `exec zsh -l`.
+  in-memory state. `zshreload` (`cwd-guard.zsh`) is `exec zsh -l` behind a cwd
+  check: a zsh started inside a deleted directory gets `PWD="."`, and
+  zsh-syntax-highlighting then spins forever on `.:h == .` at the first
+  keystroke — the pane looks frozen. The function first moves to the nearest
+  ancestor that still exists; `_cwd_guard` catches every other way of starting
+  a shell there (moves to `~`).
 - **`.zshenv` must exit 0.** A non-zero last statement silently breaks
   `source ~/.zshenv && …` chains. Keep the final line a clean `if`, not a
   short-circuiting `&&`.
@@ -75,8 +81,8 @@ Hard-won during a startup-perf and robustness pass. Read before editing.
 - **`typeset -U path`** (in `.zshenv`) keeps `$PATH` duplicate-free no matter how
   often the config is sourced.
 - **Functions, not aliases, for real command names.** Aliases resolve before
-  `$PATH`, so `alias python=…` shadows virtualenvs; `python` and `make` are
-  functions for this reason. Start non-trivial functions with `emulate -L zsh`
+  `$PATH`, so `alias python=…` shadows virtualenvs; `python` is a
+  function for this reason. Start non-trivial functions with `emulate -L zsh`
   so ambient options can't change their behavior.
 - **Completions register late.** `compdef` exists only after oh-my-zsh runs
   `compinit`. `git.zsh` is sourced once, by `.zshenv`, which stubs `compdef` out

@@ -40,8 +40,9 @@ Three ways to wreck live state; none raises an error at the time.
   recipe. One `$TERMINAL_THEME` value fans out to several per-tool files, so
   a theme is done when every surface the doc lists has one.
 - **Editing `zsh/`** startup order, anything `.zshrc` sources, or a shell
-  slowness complaint → `docs/zsh.md` first (`python` and `make` are
-  functions; nvm is lazy-loaded).
+  slowness complaint → `docs/zsh.md` first. `gopen` (`git.zsh`) is also tmux
+  `prefix g` via `scripts/tmux-gopen.sh`, which sources `git.zsh`
+  non-interactively — keep it free of zle and rc dependencies.
 - **Skill, lesson, or agent-doc work** — the most common task here. The
   session loop is `docs/doc-loop.md`; which of the four ownership tiers a
   skill is in decides whether its body may be edited and where a rule lands
@@ -49,13 +50,16 @@ Three ways to wreck live state; none raises an error at the time.
   that works in this repo:
 
   ```bash
-  npx skills add <owner/repo@skill> -g -a claude-code --copy -y   # real dir, Claude only
-  npx skills update <name> -g -y     # one skill at a time; it re-creates a dangling
-                                     # ../../.agents/skills/<name> link — recovery in agent-skills.md
+  ls claude/.claude/skills/<name>            # exists → this is an update, not an install
+  npx skills add mattpocock/skills@resolving-merge-conflicts -g -a claude-code --copy -y
+  npx skills update <name> -g -y             # one skill at a time; it always re-creates a
+                                             # dangling ../../.agents/skills link → recovery in agent-skills.md
+  ln -s ../../../claude/.claude/skills/<name> codex/.codex/skills/<name>   # Codex, by hand
   ```
 
-  Codex gets a skill only by a relative symlink from `codex/.codex/skills/`
-  added by hand; never `-a codex`.
+  Done when the skill is a real directory under `claude/.claude/skills/`,
+  `~/.agents/skills/` holds no copy of it, and the Codex link (if any)
+  resolves. `-a codex` makes a divergent copy; the symlink is the only form.
 
 ## Package layout
 

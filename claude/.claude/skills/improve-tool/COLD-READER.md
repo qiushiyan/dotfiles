@@ -1,7 +1,12 @@
 # Cold-reader prompt
 
 One dispatch per route through the instructions, run as background agents in
-parallel. Fill every `<…>`; the scenario is concrete (one runId, one
+parallel. A subagent spawned inside a project receives that project's
+`CLAUDE.md` from the harness at spawn — a copy that can be older than disk —
+and two of three readers in one pass judged the injected copy without ever
+opening the file. The prompt therefore names the file to read and says the
+injected copy is not it; a report that quotes headings the file no longer has
+is a report on the wrong version and is re-run. Fill every `<…>`; the scenario is concrete (one runId, one
 complaint, one PR), the reading order is the order the skill itself imposes,
 and the agent holds no credentials so it reads and greps but never runs the
 engine.
@@ -15,7 +20,9 @@ read-only file reads and greps of the repo are fine to verify a claim).
 Scenario: <one concrete situation, in the user's words — "a teammate pastes
 one id from chat: can you tell me what broke?">
 
-Read, in this order, as that agent would: (1) <entry route or router>,
+Read the files from disk, in this order, as that agent would — if your
+context already holds a CLAUDE.md, ignore it; the file on disk is the one
+under review: (1) <entry route or router>,
 (2) <the instructions>, (3) only the parts of <satellite> you would actually
 reach for. Then read the rulebook
 /Users/qiushi/dotfiles/claude/.claude/skills/writing-for-agents/SKILL.md and
