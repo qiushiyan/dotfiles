@@ -44,6 +44,21 @@ divergent copy; symlink instead.
 
 Then add the Codex symlink by hand if Codex should get the skill.
 
+**`skills update` has no `--copy` and re-creates the bad link.** Verified
+2026-08-29 updating `writing-for-agents`: the CLI replaced the real directory
+with `../../.agents/skills/<name>` (dangling from the repo) and put the files
+in `~/.agents/skills/<name>/`. Recovery, every time:
+
+```bash
+S=claude/.claude/skills/<name>
+rm $S && cp -R ~/.agents/skills/<name> $S && rm -rf ~/.agents/skills/<name>
+git diff --stat $S     # read the upstream change before committing
+```
+
+Scope updates to one skill (`npx skills update <name> -g -y`) — a bare
+`skills update` also touches every customized skill still in the lockfile
+(see Ownership tiers).
+
 - **`skills remove` is all-or-nothing.** It deletes the store directory, the
   lockfile entry, _and_ every agent copy. There is no prune-only command, so
   never reach for it just to "clean the store".
@@ -98,6 +113,49 @@ The one real trap:
   visibility: the description still costs context, the model still tries and
   gets blocked, and you lose your own `/skill` invocation too. Deny is for tools
   (e.g. `NotebookEdit`), not skills.
+
+## Ownership tiers — who may edit a skill, and where a lesson goes
+
+Every directory under `claude/.claude/skills/` is one of four things, and the
+tier decides where an improvement is allowed to land. The tell is the lockfile
+(`~/.agents/.skill-lock.json`) plus the presence of `.upstream/`.
+
+| tier | tell | edit policy | where our own lessons about it go |
+|---|---|---|---|
+| **Managed** — installed from upstream and kept current (`writing-for-agents`, `codebase-design`, `research`, …) | in the lockfile, no `.upstream/` | never edit the body; `skills update` reverts it silently (it did: the local `## Tool access` section of `writing-for-agents` was lost on 2026-08-29 and now lives in `lessons/agent-tooling/`). Behaviour changes go through `skillOverrides` (above) | a lesson under `lessons/` that the consuming skill points at (`agent-tooling/usage-lessons.md` is the writing-for-agents companion) |
+| **Customized** — upstream pinned beside a rewritten body (`obelisk`) | `.upstream/PINNED.txt` + `LESSONS.md` in the skill dir | edit the body freely; upgrade by hand per `PINNED.txt`, re-checking every `LESSONS.md` item against the new upstream | in the skill's own `LESSONS.md` (receipts) and body (rules) |
+| **Original** — ours (`review`, `consult`, `improve-tool`, `handoff`, …) | in neither | edit freely | in the body, or in a lesson when several skills share the rule |
+| **Vendored bundled** — a copy of a Claude Code built-in (`artifact-design`) | listed in the section below | treat as managed by hand: refresh from the CLI, don't customize | — |
+
+**Trap: a customized skill that is still in the lockfile.** `obelisk` is
+both — installed by the CLI on 2026-07-20 and rewritten since, and its lock
+entry's `skillPath` resolves on the current upstream repo, so `skills update`
+would overwrite the customized body with upstream's. `skills remove` cannot fix
+it (all-or-nothing — it deletes the directory). The safe move is to delete the
+`obelisk` entry from `~/.agents/.skill-lock.json` by hand, so the CLI forgets
+it and the `PINNED.txt` procedure is the only upgrade path. Until that is done,
+run `skills update` only after `git status` shows the skill tree clean, and
+diff before committing.
+
+### Where a writing guideline lives
+
+Guidance for writing agent-facing text is layered, and the layer decides the
+file:
+
+```
+claude/.claude/skills/writing-for-agents/   managed — structure, pointers, leading words   (upstream's)
+claude/.claude/skills/prompt-engineering/   original — model-facing text, the defect lens
+lessons/.config/lessons/agent-tooling/      ours — what measured sessions added on top:
+                                            examples over prose, answer in the engine,
+                                            cold readers, the doctrine gap
+claude/.claude/skills/<skill>/SKILL.md      the skill-specific gist + pointers up the stack
+```
+
+A rule about *how to write any agent-facing document* goes in the lesson,
+never into `writing-for-agents` (managed). A rule about *one skill's* domain
+goes in that skill. Lessons are not skills — no frontmatter, not invokable,
+reached only by a pointer from a skill or snippet — and `lessons/CLAUDE.md`
+carries the conversion rules between the two forms.
 
 ## Vendored bundled skills
 

@@ -114,3 +114,16 @@ correctness cost, not an approval cost. The per-session query path (#11) rests
 on the nonce-resolution measurement alone. Worth remembering as a general
 pattern: a rule justified by two independent arguments should be re-derived
 when one is withdrawn, not assumed safe because the other remains.
+
+## 2026-08-29 — usage-analysis passes (session `2c06f903`, dotfiles)
+
+Read from four earlier passes that mined one tool's usage (`d1a2fe7d` envoy,
+`54711f30`/`e96abdd5` triage toolkit, `b5f5e59f` handoff-sweep) plus this
+session's own rounds:
+
+| Friction | Evidence | Fix |
+|---|---|---|
+| `?` positional params fail: `Unknown named parameter '0'` — and the skill recommended them | this session's first query; `d1a2fe7d` first query, retried with `${self}` inlined | Query rule now names the working form (`:x` + object), verified against 0.2.5 |
+| Continuation summaries and Codex briefs match `role='user'` and pollute a "user corrections" facet | this session's user-voice facet: 4 of the top 4 hits were `/review` briefs or `This session is being continued…` | Query rule names both exclusions |
+| Every usage pass rebuilt the same tally (calls / distinct sessions per subcommand, error class, re-roll, workaround-with-preceding-question) from scratch | 8 scripts in `d1a2fe7d`, 13 in `54711f30`, 4 in `e96abdd5` | Facet script inlined once in `improve-tool/MINE.md`; the skill points at it |
+

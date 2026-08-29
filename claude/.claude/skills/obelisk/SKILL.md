@@ -138,8 +138,9 @@ start time. `sql()` is the escalation for exact joins and aggregations.
   full path.
 - `sql()`'s read-only guard scans the whole statement text, string literals
   included: `'update-docs'` or `'insert-mode'` inside quotes is rejected as a
-  write. Bind such values with `?` params (or build the literal in JS) instead
-  of inlining them.
+  write. Bind such values as **named** params — ``sql(`… WHERE skill = :x`, { x: 'update-docs' })`` —
+  or build the literal in JS. A positional array (`?`, `[value]`) fails with
+  `Unknown named parameter '0'`.
 - FTS `MATCH` chokes on hyphens and punctuation: quote the tokenized phrase
   (`search('"two words"')`) or drop to SQL `LIKE '%two-words%'` for literal
   punctuation.
@@ -149,7 +150,16 @@ start time. `sql()` is the escalation for exact joins and aggregations.
   Once the terms are that lean, a scoped empty is an answer — report it plainly
   and broaden only when asked.
 - Real user input is `role='user' AND content_type='text'`; `thinking` rows are
-  trace material, never user-visible conclusions. Raw SQL over conversation
+  trace material, never user-visible conclusions. Two more rows wear the user
+  role: context-continuation summaries (`text LIKE 'This session is being
+  continued%'`) and the briefs a dispatching session hands a Codex voice
+  (`source='codex'`) — a "what did the user say" facet excludes both.
+- Tool usage is a count over `tool_calls`: `name='Bash' AND input_json LIKE
+  '%<cli> %'`, the command read with `JSON.parse(input_json).command`, tallied
+  in JS as `calls / distinct sessions` per subcommand or flag. The assistant
+  text just before a call (a correlated `SELECT … ORDER BY timestamp DESC
+  LIMIT 1` on the call's message timestamp) is the question the call was
+  answering. The full facet script lives in `../improve-tool/MINE.md`. Raw SQL over conversation
   evidence carries `COALESCE(m.is_meta,0)=0` (helpers already exclude meta).
 - Counts come from SQL `COUNT`/`GROUP BY` computed in the script, never from
   eyeballing returned rows.

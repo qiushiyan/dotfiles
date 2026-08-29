@@ -32,6 +32,7 @@ Each doc opens with a **"## The bar"** section (skimmable imperatives), then exp
 - [`codebase-design/`](codebase-design/README.md) — module design vocabulary and structural patterns.
 - [`testing/`](testing/README.md) — test discipline, mocking strategy, Vitest reference.
 - [`collaboration/`](collaboration/README.md) — cross-agent working discipline: the review-lens stance for judging another engineer's change.
+- [`agent-tooling/`](agent-tooling/README.md) — what usage history taught about tools whose user is an agent: patterns by example, the answer in the engine, cold-reader verification.
 
 ## Staying in sync with upstream
 
