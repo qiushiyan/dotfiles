@@ -1,7 +1,8 @@
 # Usage-analysis script
 
 The facet script for one tool's usage history — every past pass rebuilt it
-by hand. Pick the variant for the engine's output kind — **consumed output**
+by hand, and every pass adds a facet the script lacked: read these for the
+query shape, then write the one this engine needs. Pick the variant for the engine's output kind — **consumed output**
 (a CLI: the script below), **findings** (lint, audit, test suite, review: the
 reporting variant), or **a document** (CLAUDE.md, an onboarding skill: the
 document variant) — fill the constants, run it as one obelisk round, then

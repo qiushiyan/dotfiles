@@ -17,6 +17,12 @@ over that history; the passes themselves are the provenance below.
   of "look it up, don't guess". Text carries what no example can — the
   why, the trigger and its skip condition, the judgment call. The section
   below says what makes an example worth its lines.
+- **Show the high-leverage pattern, not every case.** A few examples that
+  carry the gist teach a reader to write the one they need; a covering set
+  teaches them to search for a match and stall when none fits. Say so in
+  the text — "patterns, not coverage" — so the reader knows inventing is
+  expected. Both first improve-tool runs invented their deciding facet
+  from MINE.md's shapes; that is the mechanism working, not a gap.
 - **A stated rule that agents still break is not fixed by restating it.**
   The model's prior beat the prose once and will again. Move the answer
   to where the prior cannot act: the engine accepts the input the agent

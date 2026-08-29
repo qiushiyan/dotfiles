@@ -56,7 +56,10 @@ the receipts behind every rule below.
      correction states intent, an error only states cost.
    - **the seed**, expanded vertically with `thread()` / `context()`.
 
-   When an output's shape is in question, run a **live trial** of the
+   The scripts are patterns, not coverage: each facet shows the query shape
+   that decided a past pass, and the facet that decides this one is usually
+   one you write against this engine — both first runs did, and those
+   facets became the variants. When an output's shape is in question, run a **live trial** of the
    engine's read commands into the scratchpad and measure what the agent
    sees — a dump's size is not in the index. Done when every facet has a
    count or a measured empty, written as `calls / distinct sessions`.
