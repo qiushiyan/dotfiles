@@ -16,7 +16,6 @@ alias handoffs="cd ~/dev/.handoffs && nvim ."
 alias gitconfig="git config --global --edit"
 alias ohmyzsh="code ~/.oh-my-zsh"
 alias cspellconfig="code ~/.cspell/custom-dictionary-user.txt"
-alias zshreload="exec zsh -l"
 
 # --------------------------------------------------------------------
 # Tmux

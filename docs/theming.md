@@ -16,7 +16,8 @@ prompt, Claude statusline, tmux, Neovim, Ghostty — and how switching works.
 - **`theme-set <name>`** writes the name and fans out reloads;
   **`prefix t`** in tmux is the picker that calls it.
 - Supported themes: `flexoki_light`, `catppuccin_mocha`, `tailwind_light`,
-  `tokyo_night_moon`, `gruvbox_dark`, `vitesse_light_soft`.
+  `tokyo_night_moon`, `gruvbox_dark`, `vitesse_light_soft`, `night_owl`,
+  `orng_light`.
 
 ## Model 1 — a name in a file, a palette per tool
 
@@ -62,9 +63,9 @@ is the load-bearing mental model:
 | Neovim | each instance polls the file and re-applies `:colorscheme` | ✅ (instances older than the watcher need a restart) |
 | Claude statusline | re-renders constantly, reads the file each draw | ✅ |
 | Ghostty | include is rewritten, but **macOS has no external config reload** (the `SIGUSR2` reload is Linux-only) | ⚠️ press **⌘⇧,** |
-| zsh prompt / `ls` colors | per-shell env, fixed at startup | ⚠️ new shells, or `exec zsh` |
+| zsh prompt / `ls` colors | `_theme_sync` precmd re-reads the file before each prompt and re-applies on change | ✅ (next prompt; a shell held by a foreground command catches up when it returns) |
 
-Three consequences worth internalizing:
+Four consequences worth internalizing:
 
 - **The statusline reads the file, not the env, on purpose.** A running Claude
   session inherited a now-stale `$TERMINAL_THEME` from its launching shell;
@@ -84,6 +85,18 @@ Three consequences worth internalizing:
   it's easy to "optimize" back in without noticing.
 - **Ghostty can't be driven on macOS.** `theme-set` makes the *content* correct
   immediately; the *reload* is a manual keystroke. This is accepted, not a bug.
+- **A running shell catches up on its own, but only at a prompt.** `theme.zsh`
+  wraps everything it owns (`TERMINAL_THEME`, `LSCOLORS`, the autosuggest
+  style, delta/difftastic mode) in `_theme_apply` and registers a `_theme_sync`
+  precmd that re-reads the file and re-applies only when the name changed. It
+  is registered from `.zshenv`, so it sits in `precmd_functions` ahead of
+  oh-my-posh's `_omp_precmd` (registered at the end of `.zshrc`); omp spawns
+  its renderer with the shell's current env each prompt, so the very next
+  prompt already uses the new palette. The case that bought this: switching
+  themes from `prefix t` while `claude` held a shell in the foreground — that
+  shell drew its first post-exit prompt in the old palette until `exec zsh`.
+  Cost is one builtin `read` + a compare per prompt (~25 µs); the hook is
+  interactive-only. `zsh/.config/zsh/tests/theme-sync.test.zsh` pins it.
 
 ## Ghostty: the include seam
 

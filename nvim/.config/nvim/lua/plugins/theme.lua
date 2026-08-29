@@ -25,6 +25,17 @@ return {
     opts = { contrast = "" }, -- "" = medium (#282828), matching Ghostty "Gruvbox Dark" + morhetz
   },
   {
+    "oxfist/night-owl.nvim",
+    -- Same pattern as the others: always installed so the live-theme watcher can
+    -- swap to it, eager only when active. Plugin-only (no hand-rolled colors/
+    -- file); registers the "night-owl" colorscheme — Sarah Drasner's Night Owl,
+    -- the same palette as the Zed "Night Owl" theme and Ghostty's built-in
+    -- "Night Owl" (bg #011627 / #021727, fg #d6deeb).
+    priority = 1000,
+    lazy = theme.name ~= "night_owl",
+    opts = {},
+  },
+  {
     "blazkowolf/gruber-darker.nvim",
     -- Neovim-only colorscheme, deliberately NOT in config.theme's terminal map: it
     -- has no `$TERMINAL_THEME` counterpart, so it never starts eagerly and the

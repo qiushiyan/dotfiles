@@ -62,6 +62,26 @@
         "green": "#1e754f",
         "peach": "#a65e2b",
         "red": "#ab5959"
+      },
+      "night_owl": {
+        "os": "#5f7e97",
+        "closer": "p:os",
+        "pink": "#c792ea",
+        "lavender": "#d6deeb",
+        "blue": "#7fdbca",
+        "green": "#addb67",
+        "peach": "#f78c6c",
+        "red": "#ef5350"
+      },
+      "orng_light": {
+        "os": "#8a8a8a",
+        "closer": "p:os",
+        "pink": "#c94d24",
+        "lavender": "#c94d24",
+        "blue": "#318795",
+        "green": "#317b46",
+        "peach": "#EC5B2B",
+        "red": "#d1383d"
       }
     }
   },

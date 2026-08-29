@@ -11,11 +11,16 @@ background-blur-radius = 25
 
 
 # font-family = Berkeley Mono
+# font-family = R Maple Mono NF CN
+# ^ so1ve's Maple Mono 7.9 build with cv/ss variants frozen in; hand-installed
+#   in ~/Library/Fonts (not brew). Tried 2026-08-28, went back to Dank Mono. If
+#   it becomes the primary again: drop the three Dank tunings below and turn
+#   off the CJK codepoint-map -- it covers 汉字 itself at a true 1:2.
 font-family = DankMono Nerd Font Mono
 # Dank Mono's bold is ~12% heavier than its regular and it ships no bold-italic
 # at all, so emphasis barely reads here. That is a property of the family, not a
 # misconfiguration -- measurements and the levers: docs/ghostty-fonts.md
-font-size = 21
+font-size = 22
 font-thicken = true
 adjust-cell-width = -2%
 # One number serving two scripts. Ghostty centers the glyph in the taller cell, so

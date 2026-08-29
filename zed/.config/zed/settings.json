@@ -35,7 +35,7 @@
     "provider": "copilot"
   },
   "icon_theme": {
-    "mode": "light",
+    "mode": "dark",
     "light": "Catppuccin Mocha",
     "dark": "Catppuccin Mocha"
   },
@@ -70,8 +70,8 @@
   },
   "base_keymap": "VSCode",
   "theme": {
-    "mode": "dark",
-    "light": "Vitesse Refined Light Soft",
+    "mode": "light",
+    "light": "orng Light",
     "dark": "Gruber Darker"
   },
   "vim_mode": true,
@@ -248,6 +248,51 @@
     "min_line_number_digits": 2
   },
   "theme_overrides": {
+    // orng Light ships inverted from the reference screenshot: peach editor,
+    // white chrome. Flip it — white editor, warm peach chrome — and swap the
+    // neutral grey selection/border colours for warm ones.
+    "orng Light": {
+      // chrome
+      "background": "#FDF5EF",
+      "surface.background": "#FDF5EF",
+      "elevated_surface.background": "#FFFBF8",
+      "panel.background": "#FDF5EF",
+      "title_bar.background": "#FDF5EF",
+      "toolbar.background": "#FFFFFF",
+      "tab_bar.background": "#FDF5EF",
+      "tab.active_background": "#FFFFFF",
+      "tab.inactive_background": "#FDF5EF",
+      "status_bar.background": "#FDF5EF",
+      // editor
+      "editor.background": "#FFFFFF",
+      "editor.gutter.background": "#FFFFFF",
+      "editor.active_line.background": "#FDF1EA",
+      "editor.line_number": "#C4B5AC",
+      "editor.active_line_number": "#1a1a1a",
+      "editor.wrap_guide": "#EAD9CD",
+      "editor.active_wrap_guide": "#E0C9BA",
+      "terminal.background": "#FFFFFF",
+      // borders: warm, low contrast
+      "border": "#EADBD1",
+      "border.variant": "#F2E6DD",
+      "border.disabled": "#EADBD1",
+      "pane_group.border": "#EADBD1",
+      "scrollbar.track.border": "#F2E6DD",
+      "scrollbar.thumb.background": "#D9C6B94C",
+      "scrollbar.thumb.border": "#E3D2C6",
+      "scrollbar.thumb.hover_background": "#C9B3A3",
+      // selection / hover states: peach tint instead of grey
+      "element.background": "#F8ECE3",
+      "element.hover": "#F6E4D8",
+      "element.active": "#F3DCCE",
+      "element.selected": "#F8E8DD",
+      "element.disabled": "#F8ECE3",
+      "ghost_element.hover": "#F8ECE3",
+      "ghost_element.active": "#F3DCCE",
+      "ghost_element.selected": "#FBEBE2",
+      "ghost_element.disabled": "#F8ECE3",
+      "drop_target.background": "#EC5B2B33"
+    },
     "Gruber Darker": {
       "syntax": {
         "title": {

@@ -35,6 +35,8 @@ local map = {
   tokyo_night_moon = { colorscheme = "tokyonight-moon",          background = "dark"  },
   gruvbox_dark     = { colorscheme = "gruvbox",                  background = "dark"  },
   vitesse_light_soft = { colorscheme = "vitesse-light-soft",     background = "light" },
+  night_owl        = { colorscheme = "night-owl",                background = "dark"  },
+  orng_light       = { colorscheme = "orng-light",               background = "light" },
 }
 
 M.name = resolve()

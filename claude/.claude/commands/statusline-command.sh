@@ -63,6 +63,17 @@ case "$THEME" in
         PINK=$'\033[38;2;211;134;155m'      # Purple #d3869b
         LAVENDER=$'\033[38;2;131;165;152m'  # Blue #83a598
         ;;
+    night_owl)
+        # Deep navy bg (#011627) — Night Owl's pastel accents read well on it.
+        # GREEN is the signature lime (#addb67, its ANSI-yellow slot), not the
+        # neon terminal green #22da6e, which glares against the navy.
+        CYAN=$'\033[38;2;127;219;202m'      # Bright cyan #7fdbca
+        GREEN=$'\033[38;2;173;219;103m'     # Lime #addb67
+        YELLOW=$'\033[38;2;255;235;149m'    # Bright yellow #ffeb95
+        RED=$'\033[38;2;239;83;80m'         # Red #ef5350
+        PINK=$'\033[38;2;199;146;234m'      # Magenta #c792ea
+        LAVENDER=$'\033[38;2;130;170;255m'  # Blue #82aaff
+        ;;
     vitesse_light_soft)
         # Soft cream bg (#f1f0e9) — Vitesse's muted dark accents for contrast.
         # YELLOW is the darker Vitesse gold (#998418, its property color), not
@@ -73,6 +84,17 @@ case "$THEME" in
         RED=$'\033[38;2;171;89;89m'         # Red #ab5959
         PINK=$'\033[38;2;161;56;101m'       # Magenta #a13865
         LAVENDER=$'\033[38;2;41;106;163m'   # Blue #296aa3
+        ;;
+    orng_light)
+        # Peach paper bg (#fff7f1) — orng's saturated accents, one step deeper
+        # where the terminal value washes out. GREEN is the dim green (#317b46),
+        # not the terminal green #3d9a57, which goes pale on the warm bg.
+        CYAN=$'\033[38;2;49;135;149m'       # Cyan #318795
+        GREEN=$'\033[38;2;49;123;70m'       # Dim green #317b46
+        YELLOW=$'\033[38;2;176;133;31m'     # Gold #b0851f
+        RED=$'\033[38;2;209;56;61m'         # Red #d1383d
+        PINK=$'\033[38;2;236;91;43m'        # Orange accent #EC5B2B
+        LAVENDER=$'\033[38;2;0;98;209m'     # String blue #0062d1
         ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2

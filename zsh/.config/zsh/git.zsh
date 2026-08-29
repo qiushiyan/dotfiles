@@ -600,13 +600,16 @@ gopen() {
     # Detached HEAD — open the exact commit.
     url="$base/tree/$(git rev-parse --short HEAD 2>/dev/null)"
   else
-    # On the remote? Prefer the upstream's branch name; fall back to a
-    # same-named origin/<branch> tracking ref. Both are local (no network).
-    up=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null)
-    if [[ -n "$up" ]]; then
-      rbranch=${up#*/}
-    elif git rev-parse --verify --quiet "refs/remotes/origin/$branch" >/dev/null; then
+    # On the remote? Prefer a same-named origin/<branch> tracking ref, then
+    # the upstream's name. Same-name first because that is what `git push`
+    # targets under push.default=current, and a renamed local branch keeps
+    # its old upstream (branch.<name>.merge) — following that would point at
+    # the old remote branch and its old PR. Both checks are local (no network).
+    if git rev-parse --verify --quiet "refs/remotes/origin/$branch" >/dev/null; then
       rbranch=$branch
+    else
+      up=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null)
+      [[ -n "$up" ]] && rbranch=${up#*/}
     fi
 
     if [[ -n "$rbranch" ]]; then
@@ -621,20 +624,33 @@ gopen() {
 
       if (( ! force_tree )) && [[ "$branch" != "$default_branch" ]] && command -v gh >/dev/null 2>&1; then
         # PR lookup is the one unavoidable network call. Cache its result in
-        # branch.<name>.gopen-pr as "<pushed-sha> <url-or-dash>" so repeats are
-        # instant. Key on the pushed tip: a hit only counts while it matches, so
-        # pushing new commits auto-invalidates. Caches "no PR" (a dash) too, so a
-        # PR-less feature branch is fast on repeat. --refresh forces a re-query.
-        local key_sha cached pr_url
+        # branch.<name>.gopen-pr as "<pushed-sha> <epoch> <url-or-dash>" so
+        # repeats are instant. A hit needs both: the pushed tip still matching
+        # (pushing new commits auto-invalidates) AND age under the TTL — a PR
+        # being closed, merged, or a fresh one opened on the same tip changes
+        # nothing in git, so the sha alone can never notice it; the TTL is what
+        # bounds how long a stale PR can be served. Caches "no PR" (a dash) too,
+        # so a PR-less feature branch is fast on repeat. --refresh forces a
+        # re-query.
+        local key_sha cached pr_url now
+        local -a hit
+        local -i ttl=600
+        zmodload -F zsh/datetime p:EPOCHSECONDS 2>/dev/null
+        now=${EPOCHSECONDS:-$(date +%s)}
         key_sha=$(git rev-parse --verify --quiet "refs/remotes/origin/$rbranch" 2>/dev/null)
         [[ -z "$key_sha" ]] && key_sha=$(git rev-parse HEAD 2>/dev/null)
         (( refresh )) || cached=$(git config --get "branch.$branch.gopen-pr" 2>/dev/null)
+        hit=(${=cached})   # an old two-field entry fails the arity check below
 
-        if [[ -n "$cached" && "${cached%% *}" == "$key_sha" ]]; then
-          [[ "${cached#* }" != "-" ]] && url="${cached#* }"   # fresh hit, no network
+        if (( ${#hit} == 3 )) && [[ "$hit[1]" == "$key_sha" ]] && (( now - hit[2] < ttl )); then
+          [[ "$hit[3]" != "-" ]] && url="$hit[3]"   # fresh hit, no network
         else
-          pr_url=$(gh pr view "$branch" --json url --jq .url 2>/dev/null)
-          git config "branch.$branch.gopen-pr" "${key_sha} ${pr_url:--}"
+          # Open PRs only, newest first, by the *remote* branch name (a PR's
+          # head is a remote ref): `gh pr view <branch>` happily returns a
+          # closed or merged PR, which is exactly the stale link to avoid.
+          pr_url=$(gh pr list --head "$rbranch" --state open --limit 1 \
+                     --json url --jq '.[0].url // empty' 2>/dev/null)
+          git config "branch.$branch.gopen-pr" "${key_sha} ${now} ${pr_url:--}"
           [[ -n "$pr_url" ]] && url="$pr_url"
         fi
       fi
@@ -694,8 +710,10 @@ Resolution:
   branch on origin     the branch's file tree
   local-only branch    offers to push -u, then a PR-create page
 
-The PR lookup (the only network call) is cached per branch, keyed on the
-pushed tip, so repeats are instant and a new push re-checks automatically.
+The PR lookup (the only network call) is cached per branch for 10 minutes,
+keyed on the pushed tip, so repeats are instant, a new push re-checks at
+once, and a PR closed or opened without a push is picked up within the TTL
+(or immediately with --refresh).
 
 Options:
   -n, --print   print the URL instead of opening it

@@ -149,6 +149,34 @@ function M.get_palette()
       -- mint bar_bg below).
       bar_bg = "#e4eae0",
     }
+  elseif scheme:match("^orng") then
+    -- orng Light (colors/orng-light.lua), ported from the Zed "orng" extension,
+    -- mapped onto the catppuccin-shaped table ui.lua consumes.
+    return {
+      base = "#fff7f1",
+      mantle = "#faefe7",
+      crust = "#f3e6dc",
+      surface0 = "#f0ddd0",
+      surface1 = "#d9c6b9",
+      surface2 = "#b8b8b8",
+      text = "#1a1a1a",
+      subtext0 = "#6b6b6b",
+      subtext1 = "#4a4a4a",
+      overlay0 = "#a0a0a0",
+      overlay1 = "#8a8a8a",
+      blue = "#0062d1",
+      green = "#317b46",
+      red = "#d1383d",
+      yellow = "#b0851f",
+      mauve = "#c94d24",
+      teal = "#318795",
+      pink = "#ec5b2b",
+      sky = "#4ba3b0",
+      -- Pale peach band for the lualine bar: accent-tinted so it reads as an
+      -- intentional band on the peach paper (the orng analogue of vitesse's
+      -- sage bar_bg above).
+      bar_bg = "#fbe6da",
+    }
   elseif scheme:match("^flexoki") then
     local p = flexoki_palette()
     -- flexoki-cyan-50: subtle mint-cream tint, the only off-paper accent in
@@ -186,6 +214,37 @@ function M.get_palette()
       -- #282828 editor bg so the statusline/tabline reads as an intentional
       -- band (the gruvbox analogue of flexoki's bar_bg tint above).
       bar_bg = "#3c3836",
+    }
+  elseif scheme:match("^night%-owl") then
+    -- night-owl.nvim's palette (lua/night-owl/palette.lua, plus the Night Owl
+    -- terminal accents) mapped onto the catppuccin-shaped table ui.lua consumes.
+    -- Without this branch "night-owl" falls through to the catppuccin else-arm
+    -- and the lualine bar inherits mocha's #181825, a purple-navy that clashes
+    -- with Night Owl's teal-navy #011627.
+    return {
+      base = "#011627", -- editor bg
+      mantle = "#01111d", -- tab_inactive_bg
+      crust = "#010d18", -- dark
+      surface0 = "#0b2942", -- tab_active_bg
+      surface1 = "#1d3b53", -- visual
+      surface2 = "#395a75", -- blue7
+      text = "#d6deeb", -- fg
+      subtext0 = "#7e97ac", -- gray6
+      subtext1 = "#b2ccd6", -- blue12
+      overlay0 = "#4b6479", -- line_number_fg
+      overlay1 = "#5f7e97", -- ui_border
+      blue = "#82aaff",
+      green = "#addb67", -- signature lime (ANSI yellow slot)
+      red = "#ef5350",
+      yellow = "#ffeb95", -- bright yellow
+      mauve = "#c792ea",
+      teal = "#7fdbca",
+      pink = "#c792ea",
+      sky = "#21c7a8",
+      -- Elevated navy band for the lualine bar: the plugin's active-tab bg, one
+      -- step up from the #011627 editor bg so the statusline/tabline reads as an
+      -- intentional band (the Night Owl analogue of gruvbox's bar_bg above).
+      bar_bg = "#0b2942",
     }
   else
     -- catppuccin or any other theme with catppuccin palettes

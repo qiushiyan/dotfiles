@@ -12,7 +12,8 @@
 #   theme-set <name>     switch to <name>
 #
 # Reload is not uniform: tmux / neovim / Claude statusline update live, ghostty
-# is manual (⌘⇧, — macOS has no external config reload), shells next-launch.
+# is manual (⌘⇧, — macOS has no external config reload), shells catch up at
+# their next prompt via a precmd hook in theme.zsh.
 # See docs/theming.md for the full matrix and the system model.
 
 set -euo pipefail
@@ -23,7 +24,7 @@ TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 
 # Canonical names. Keep in sync with the per-app case statements (theme.zsh,
 # statusline-command.sh, zen.omp.json, nvim config/theme.lua, tmux.conf).
-THEMES=(flexoki_light catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft)
+THEMES=(flexoki_light catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft night_owl orng_light)
 
 # --- per-theme ghostty field set ---------------------------------------------
 # Emit the ghostty config line(s) a theme owns. The whole include file is
@@ -48,6 +49,8 @@ ghostty_block() {
     tokyo_night_moon) printf 'theme = TokyoNight Moon\nbold-color = #ffc777\n' ;;
     gruvbox_dark)     printf 'theme = Gruvbox Dark\nbold-color = #fabd2f\n' ;;
     vitesse_light_soft) printf 'theme = vitesse-light-soft\nbold-color = #1c6b48\n' ;;
+    night_owl)        printf 'theme = Night Owl\nbold-color = #ffeb95\n' ;;
+    orng_light)       printf 'theme = orng-light\nbold-color = #c94d24\n' ;;
   esac
 }
 
@@ -90,8 +93,8 @@ main() {
   # server snapshots TERMINAL_THEME at launch and seeds it into every new pane, so
   # without it new panes keep inheriting the stale value and shells render the old
   # theme inside tmux (theme.zsh now reads the file regardless, but this keeps
-  # tmux's own env honest for any other consumer). Existing shells still need
-  # `exec zsh`.
+  # tmux's own env honest for any other consumer). Existing shells re-read the
+  # file from a precmd hook, so they catch up at their next prompt.
   local tmux_msg="skipped (no server)"
   if command -v tmux >/dev/null 2>&1 && tmux info >/dev/null 2>&1; then
     tmux set-environment -g TERMINAL_THEME "$name" 2>/dev/null || true
@@ -109,7 +112,7 @@ main() {
   printf '  nvim:    live (file watcher)\n'
   printf '  claude:  live (statusline re-render)\n'
   printf '  ghostty: include written — press ⌘⇧, in ghostty to reload\n'
-  printf '  shells:  new shells inherit; run `exec zsh` to refresh this one\n'
+  printf '  shells:  live (theme.zsh precmd re-reads the file before each prompt)\n'
 }
 
 main "$@"

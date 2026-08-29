@@ -99,7 +99,7 @@ One feature, several packages; editing one side without the other breaks it.
 ## Docs
 
 ```
-docs/doc-loop.md               the session loop (onboarding → consult/review → update-docs → handoff)
+docs/doc-loop.md               the convention for coding agent sessions (onboarding → consult/review → update-docs → handoff)
 docs/agent-skills.md           skill ownership tiers · Claude ⊇ Codex layout · lessons
 docs/theming.md                themes
 docs/claude-accounts.md        accounts
