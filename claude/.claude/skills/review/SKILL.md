@@ -57,7 +57,7 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    ```sh
    envoy turn --provider codex --prompt-file <brief> --baseline <base-sha> \
-     --timeout-min 30 --label review --coordinate-file <scratchpad>/review.coords
+     --timeout-min 30 --label review --coordinate-file <fresh>
    ```
 
    For `full`, the cap is 60 minutes and the shape follows one question: did a consult in this session weigh the design this range implements?
@@ -66,14 +66,14 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    ```sh
    envoy turn --provider codex --prompt-file <brief> --baseline <base-sha> \
-     --timeout-min 60 --label review --coordinate-file <scratchpad>/review.coords
+     --timeout-min 60 --label review --coordinate-file <fresh>
    ```
 
    A consult exists — both voices as one fan-out, the consult session continued beside a cold one:
 
    ```sh
    envoy fan --prompt-file <brief> --baseline <base-sha> \
-     --with-from <consult-job-dir> --with codex --timeout-min 60 --label review --coordinate-file <scratchpad>/review.coords
+     --with-from <consult-job-dir> --with codex --timeout-min 60 --label review --coordinate-file <fresh>
    ```
 
    `<consult-job-dir>` is a *turn's* directory. A consult that ran as a fan-out holds one session per member, so seat exactly one of them warm — the voice whose position the implementation followed, named in the consult's synthesis — by its member directory (`<consult-out-dir>/codex`). Seating every member warm is the user's call, one `--with-from` per member.
@@ -84,7 +84,7 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    Collapse to the single cold turn when the user names one voice, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex --with claude:opus`).
 
-   `--baseline` makes collection print the reviewed range alongside the findings. Read the coordinate file once, relay out-dir and watch, then return.
+   `--baseline` makes collection print the reviewed range alongside the findings. `<fresh>` and the coordinate read are DISPATCH.md's loop; relay out-dir and watch, then return.
 
 5. **Judge pass on collection.** `envoy collect <out-dir>` prints the findings (once — a persisted output is read afterwards). Verify every finding against the actual code — read the cited lines, retrace the claimed failure path — before accepting it: reviewers state hallucinated issues with the same confidence as real ones. Weight by position, never by count: the warm voice endorsing the design it helped shape is expected and earns nothing, and agreement between reviewers earns nothing either.
 

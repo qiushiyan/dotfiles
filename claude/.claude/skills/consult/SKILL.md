@@ -40,16 +40,16 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 3. **Dispatch** as one fan-out, 30-minute cap — the same brief to every voice, one task that finishes once:
 
    ```sh
-   envoy fan --prompt-file <brief> --with codex --with claude:opus --timeout-min 30 --label consult --coordinate-file <scratchpad>/consult.coords
+   envoy fan --prompt-file <brief> --with codex --with claude:opus --timeout-min 30 --label consult --coordinate-file <fresh>
    ```
 
    Two voices is the default because independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names; where they name none, codex plus one Claude model. Collapse to a single turn when the user asks for one voice, or when the question is narrow enough that a second read buys nothing:
 
    ```sh
-   envoy turn --provider codex --prompt-file <brief> --timeout-min 30 --label consult --coordinate-file <scratchpad>/consult.coords
+   envoy turn --provider codex --prompt-file <brief> --timeout-min 30 --label consult --coordinate-file <fresh>
    ```
 
-   Read the coordinate file once, relay out-dir and watch, then return.
+   `<fresh>` and the coordinate read are DISPATCH.md's loop; relay out-dir and watch, then return.
 
 4. **Collect** on the task-completion notification — `envoy collect <out-dir>` prints the status block and `result.md`; for a fan-out it prints every voice in one block, split by model (once — a persisted output is read afterwards). Done when every dispatched voice is collected or explicitly accounted for — a `partial` fan-out means one voice returned nothing, and that voice's section says what to do about it.
 
