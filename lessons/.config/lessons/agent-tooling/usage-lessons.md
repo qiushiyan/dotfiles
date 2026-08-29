@@ -22,6 +22,13 @@ over that history; the passes themselves are the provenance below.
   to where the prior cannot act: the engine accepts the input the agent
   holds, the error prints the nearest match, the output ships a digest —
   or a worked example shows the right shape.
+- **Behavior is not intent.** A pattern that recurs in the history is
+  either a workaround the user tolerates or the thing they have been
+  fighting, and the index cannot tell which. Interview before promoting;
+  a correction the user typed outranks any count.
+- **Smallest edit per signal, after the first pass.** A rewrite is for
+  instructions that predate their engine; every later change is the
+  smallest edit that captures one signal, named in the commit.
 - **Measure the doctrine gap before writing doctrine.** Count the door the
   instructions present against the door agents take (calls / distinct
   sessions). What agents rebuild by hand in every session — a join, a
@@ -119,6 +126,17 @@ same job in one call instead of two — a rule that looked earned, measured,
 and evidence-backed, and was buying a benefit that did not exist. When a
 rule's only justification is the allowlist, delete the rule with the
 allowlist.
+
+## Feedback compounds only if it is captured and re-read
+
+Feedback to an agent normally dies with the session. Here it does not — the
+session index keeps every correction the user typed, at no extra cost to
+them — but a correction is only as findable as its wording, and a keyword
+sweep for "wrong" or "again" drowns in briefs and snippets. A one-word
+marker (`friction:`) in the correction makes it mined verbatim. The other
+half of compounding is re-measurement: a pass that records each friction's
+count beside its fix lets the next pass ask whether the fix held, which is
+the only evidence a rule has earned its place.
 
 ## Observed, not inferred
 

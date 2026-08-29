@@ -35,8 +35,11 @@ for what past passes established about writing the instruction layer.
 
    Done when the engine, its install state, and the signatures are written.
 
-2. **Mine.** One batched obelisk script per round from [`MINE.md`](MINE.md).
-   Its facets are fixed because every past pass converged on them:
+2. **Mine.** Start with the previous pass: the engine's evidence log names
+   the frictions it fixed and their counts — re-measure those first, since a
+   fix that did not hold is the top of the new ledger. Then one batched
+   obelisk script per round from [`MINE.md`](MINE.md). Its facets are fixed
+   because every past pass converged on them:
 
    - **usage shape** — calls and distinct sessions per subcommand and flag.
      This ranks everything after it, and it measures the **doctrine gap**:
@@ -46,7 +49,9 @@ for what past passes established about writing the instruction layer.
    - **workarounds** — ad-hoc `python`/`jq`/`sleep` loops over engine
      output, each with the assistant text just before it: the question the
      agent was answering by hand is the command that does not exist yet.
-   - **user voice** — the user's corrections in sessions that used the tool.
+   - **user voice** — the user's corrections in sessions that used the tool,
+     and any `friction:` markers they left. This facet outranks every count:
+     a correction states intent, an error only states cost.
    - **the seed**, expanded vertically with `thread()` / `context()`.
 
    When an output's shape is in question, run a **live trial** of the
@@ -57,8 +62,9 @@ for what past passes established about writing the instruction layer.
 3. **Write the friction ledger** — `<scratchpad>/<tool>-frictions.md`: the
    usage-shape table, then frictions ranked by measured cost, each with
    its count, session-id receipts, what the instructions already say about
-   it, and candidate fixes tagged **engine** or **instructions**. Two rules
-   decide the tag:
+   it, the **reading** — what the pattern most likely means, marked
+   *observed* or *inferred* — and candidate fixes tagged **engine** or
+   **instructions**. Two rules decide the tag:
 
    - A rule the instructions already state and agents still break is not
      fixed by restating it. The model's prior beat the prose once and will
@@ -78,11 +84,22 @@ for what past passes established about writing the instruction layer.
    user's laptop leaving wifi. Done when each of the top three frictions
    answers "how many, and where" with a number and ids.
 
-4. **Put the ledger on trial.** Present it; the user's answers fold in — a
-   stall that was not a failure, a pattern they want promoted. When a fix
-   changes the engine's contract, run `/consult` in approach mode with the
-   ledger as the position: past rounds reversed a "missing commands"
-   reading into a seam fix. Done when the user says build.
+4. **Interview the user on the ledger.** The index records what agents
+   did; only the user knows what they wanted, and a recurring pattern is
+   as likely the thing they have been fighting as the thing to promote —
+   agents polling an engine in `sleep` loops read as a case for a `wait`
+   command, and the user rejected it. Walk the top frictions and ask, for
+   each: **pattern or anti-pattern** — promote it into the engine, or fix
+   the cause so it stops? For a doctrine gap: change the doctrine, or
+   enforce it? Then two questions the ledger cannot raise: what they
+   *avoid* doing with this tool today, and where they want it to go — a
+   vision reorders the ledger more than any count. Put every *inferred*
+   reading to them as a question, and say plainly what stays uncertain
+   after the answers. When a fix changes the engine's contract, run
+   `/consult` in approach mode with the interviewed ledger as the
+   position: past rounds reversed a "missing commands" reading into a seam
+   fix. Done when each top friction carries a human verdict — promote, fix
+   the cause, or leave — and the user says build.
 
 5. **Build engine first, instructions second.** Instructions describe
    engine behaviour, so they are written only against an installed engine:
@@ -101,8 +118,12 @@ for what past passes established about writing the instruction layer.
    code example with its output shape, and prose only where prose is due
    (the why, the trigger and skip condition, the judgment); a trap table
    beats a paragraph of "look it up"; every rule traces to a ledger line or a rulebook rule, and what
-   traces to neither is on the cut list. Done when the rewrite has been run
-   through the prompt-engineering defect list as its exit check.
+   traces to neither is on the cut list. A full rewrite is for the first
+   pass over a tool, or one whose instructions predate the engine; after
+   that, each pass makes the **smallest edit that captures each signal**,
+   and the commit names the signal it came from, so the next reader can
+   judge the change against its evidence. Done when the changes have been
+   run through the prompt-engineering defect list as the exit check.
 
 7. **Verify with cold readers, then review.** One background agent per
    route through the instructions, from [`COLD-READER.md`](COLD-READER.md):
@@ -113,9 +134,10 @@ for what past passes established about writing the instruction layer.
 
 8. **Record and report.** Append a dated entry to the engine's evidence log
    (`EVIDENCE.md` or `LESSONS.md`, whichever the repo keeps; start one
-   only when none exists): one mining pass per entry, a few lines with
-   session-id receipts and the lesson that survived. Offer the obelisk
-   memory. Report the usage shape, the frictions by rank with what landed
+   only when none exists): one mining pass per entry — the date, the corpus
+   size, each friction's count, the verdict it got, and the lesson that
+   survived — written so the next pass can re-run the count and see whether
+   the fix held. Offer the obelisk memory. Report the usage shape, the frictions by rank with what landed
    on which layer, what was handed off, and the receipts.
 
 ## Altitude

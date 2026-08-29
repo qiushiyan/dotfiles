@@ -64,7 +64,12 @@ out.workarounds = sql(`
     AND (tc.input_json LIKE '%python%' OR tc.input_json LIKE '%jq %' OR tc.input_json LIKE '%sleep %' OR tc.input_json LIKE '%until %')
   ORDER BY m.timestamp DESC LIMIT 10`);
 
-// E. user voice — corrections in sessions that used the skill
+// E. user voice — corrections in sessions that used the skill; explicit markers first
+out.friction_markers = sql(`
+  SELECT m.session_id sid, m.uuid, substr(m.text,1,300) text FROM messages m
+  WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.source='claude'
+    AND m.text LIKE '%friction:%' AND (m.text LIKE '%${cli.trim()}%' OR m.text LIKE '%${skill}%')
+  ORDER BY m.timestamp DESC LIMIT 15`);
 out.user_voice = sql(`
   SELECT m.session_id sid, m.uuid, substr(m.text,1,240) text FROM messages m
   WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.session_id <> '${self}'
@@ -77,7 +82,11 @@ out.user_voice = sql(`
 return out;
 ```
 
-Read the user-voice facet with the corpus in mind: a hit that repeats verbatim
+The user-voice facet is the one that states intent, and it is the noisiest
+to search for. A `friction:` marker in the user's own correction ("friction:
+review made me assemble the resume command by hand") is mined verbatim and
+costs one word to leave; the keyword sweep is the fallback for sessions
+without one. Read the keyword sweep with the corpus in mind: a hit that repeats verbatim
 across sessions is a standing snippet (`/review codex full review. While you
 are waiting…`), not a correction — drop the term that matched it and re-run.
 
