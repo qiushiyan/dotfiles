@@ -39,4 +39,4 @@ Three operations. Pick by intent, not by which tool is nearest:
 
 ## maintain — the checkpoint
 
-Run `~/wiki/scripts/lint.sh`; report every flag with a proposed fix, fix only what the user confirms (mechanically safe repairs — broken links, stale provenance shas, index drift — may be applied directly, each named in the report). After snippet-store changes anywhere, `~/wiki/scripts/snippet-inventory.sh` regenerates the inventory.
+Run `~/wiki/scripts/lint.sh`; report every flag with a proposed fix, fix only what the user confirms (mechanically safe repairs — broken links, index drift, a renamed card pointer — may be applied directly, each named in the report). After snippet-store changes anywhere, `~/wiki/scripts/snippet-inventory.sh` regenerates the inventory.
