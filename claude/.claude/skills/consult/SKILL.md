@@ -40,18 +40,18 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 3. **Dispatch** as one fan-out, 30-minute cap — the same brief to every voice, one task that finishes once:
 
    ```sh
-   envoy fan --prompt-file <brief> --with codex --with claude:opus --timeout-min 30 --label consult
+   envoy fan --prompt-file <brief> --with codex --with claude:opus --timeout-min 30 --label consult --coordinate-file <scratchpad>/consult.coords
    ```
 
    Two voices is the default because independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names; where they name none, codex plus one Claude model. Collapse to a single turn when the user asks for one voice, or when the question is narrow enough that a second read buys nothing:
 
    ```sh
-   envoy turn --provider codex --prompt-file <brief> --timeout-min 30 --label consult
+   envoy turn --provider codex --prompt-file <brief> --timeout-min 30 --label consult --coordinate-file <scratchpad>/consult.coords
    ```
 
-   Relay the coordinate block, then return.
+   Read the coordinate file once, relay out-dir and watch, then return.
 
-4. **Collect** on the task-completion notification — `envoy collect <out-dir>` prints the status block and `result.md`; for a fan-out it prints every voice in one block, split by model. Done when every dispatched voice is collected or explicitly accounted for — a `partial` fan-out means one voice returned nothing, and that voice's section says what to do about it.
+4. **Collect** on the task-completion notification — `envoy collect <out-dir>` prints the status block and `result.md`; for a fan-out it prints every voice in one block, split by model (once — a persisted output is read afterwards). Done when every dispatched voice is collected or explicitly accounted for — a `partial` fan-out means one voice returned nothing, and that voice's section says what to do about it.
 
 5. **Analyze critically**, point by point: valid → adopt it; wrong → say why (missing context, wrong optimization target, or technically incorrect). A voice that restated the goal differently than you framed it found something before it designed anything — settle that disagreement first, since every design judgment downstream of it is being made against a different target. A fundamental disagreement you cannot resolve → present both positions to the user for judgment; silently deferring to the voice and silently overriding it are equal failures.
 
@@ -69,4 +69,4 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
    envoy fan --resume-from <out-dir> --prompt-file round2.md --timeout-min 30 --label consult-r2
    ```
 
-7. **Synthesize** for the user: where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and any unresolved judgment calls. A `diagnosis` round leads with the cause — confirmed, refuted, or replaced, what settled it, and the blind read's delta, including when it converged — before anything about the fix. Name the out-dir in the synthesis: the session stays continuable, and when /review later covers the implementation of this design, its default folds this voice in warm (`--with-from <out-dir>`) beside a cold one.
+7. **Synthesize** for the user: where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and any unresolved judgment calls. A `diagnosis` round leads with the cause — confirmed, refuted, or replaced, what settled it, and the blind read's delta, including when it converged — before anything about the fix. Name the out-dir in the synthesis — and, for a fan-out, each member's directory (`<out-dir>/codex`, `<out-dir>/claude-opus`): the sessions stay continuable, and when /review later covers the implementation of this design, its default seats one of those voices warm (`--with-from <member-dir>`) beside a cold one, so the synthesis also says which voice's position the design followed.

@@ -57,7 +57,7 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    ```sh
    envoy turn --provider codex --prompt-file <brief> --baseline <base-sha> \
-     --timeout-min 30 --label review
+     --timeout-min 30 --label review --coordinate-file <scratchpad>/review.coords
    ```
 
    For `full`, the cap is 60 minutes and the shape follows one question: did a consult in this session weigh the design this range implements?
@@ -66,15 +66,17 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    ```sh
    envoy turn --provider codex --prompt-file <brief> --baseline <base-sha> \
-     --timeout-min 60 --label review
+     --timeout-min 60 --label review --coordinate-file <scratchpad>/review.coords
    ```
 
    A consult exists — both voices as one fan-out, the consult session continued beside a cold one:
 
    ```sh
    envoy fan --prompt-file <brief> --baseline <base-sha> \
-     --with-from <consult-out-dir> --with codex --timeout-min 60 --label review
+     --with-from <consult-job-dir> --with codex --timeout-min 60 --label review --coordinate-file <scratchpad>/review.coords
    ```
+
+   `<consult-job-dir>` is a *turn's* directory. A consult that ran as a fan-out holds one session per member, so seat exactly one of them warm — the voice whose position the implementation followed, named in the consult's synthesis — by its member directory (`<consult-out-dir>/codex`). Seating every member warm is the user's call, one `--with-from` per member.
 
    Warm and cold buy different findings, which is why the pair is the default rather than either alone. The warm voice holds the consult's full context: it is the best judge of follow-through — did the implementation integrate what was agreed, did it dodge the traps its rounds discussed — and, having committed to the design in its own context, a poor judge of the design itself (anchoring to prior positions is measured model behavior, not a hypothetical). The cold voice is the reverse: the unanchored, strategic read this skill exists to buy. The brief stays the complete cold brief; the warm voice re-reads cheaply what it already holds.
 
@@ -82,9 +84,9 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    Collapse to the single cold turn when the user names one voice, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex --with claude:opus`).
 
-   `--baseline` makes collection print the reviewed range alongside the findings. Relay the coordinate block, then return.
+   `--baseline` makes collection print the reviewed range alongside the findings. Read the coordinate file once, relay out-dir and watch, then return.
 
-5. **Judge pass on collection.** `envoy collect <out-dir>` prints the findings. Verify every finding against the actual code — read the cited lines, retrace the claimed failure path — before accepting it: reviewers state hallucinated issues with the same confidence as real ones. Weight by position, never by count: the warm voice endorsing the design it helped shape is expected and earns nothing, and agreement between reviewers earns nothing either.
+5. **Judge pass on collection.** `envoy collect <out-dir>` prints the findings (once — a persisted output is read afterwards). Verify every finding against the actual code — read the cited lines, retrace the claimed failure path — before accepting it: reviewers state hallucinated issues with the same confidence as real ones. Weight by position, never by count: the warm voice endorsing the design it helped shape is expected and earns nothing, and agreement between reviewers earns nothing either.
 
    For a critical or moderate finding that alleges wrong behavior, reading alone is not verification — you retrace the code with the same mental model that wrote the bug. Pin it with a test before thinking about any fix: a new case, or an existing one sharpened to actually reach the cited path. **Red** — failing for the claimed reason — confirms the finding and becomes the regression test the fix must green; green, when the test genuinely exercises the cited path, is the strongest rebuttal evidence there is.
 
