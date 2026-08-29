@@ -40,7 +40,8 @@ the receipts behind every rule below.
 2. **Mine.** First the previous pass: the engine's evidence log names the
    frictions it fixed and their counts — re-measure those, since a fix that
    did not hold tops the new ledger. Then one batched obelisk script per
-   round from [`MINE.md`](MINE.md), whose facets are fixed:
+   round from [`MINE.md`](MINE.md), in the variant for the engine's output
+   kind — consumed output, findings, or a document — whose facets are fixed:
 
    - **usage shape** — calls and distinct sessions per subcommand and flag.
      This ranks everything after it, and it measures the **doctrine gap**:
@@ -81,17 +82,26 @@ the receipts behind every rule below.
 
 4. **Interview the user on the ledger.** The index records what agents
    did; only the user knows what they wanted, and a recurring pattern is as
-   likely the thing they have been fighting as the thing to promote. For
-   each top friction ask **pattern or anti-pattern** — promote it into the
-   engine, or fix the cause so it stops; for a doctrine gap, change the
-   doctrine or enforce it. Then the two questions the ledger cannot raise:
-   what they *avoid* doing with this tool today, and where they want it to
-   go — a vision reorders the ledger more than any count. Put every
-   *inferred* reading to them as a question, and name what stays uncertain
-   after the answers. When a fix changes the engine's contract, run
-   `/consult` in approach mode with the interviewed ledger as the position.
-   Done when each top friction carries a human verdict — promote, fix the
-   cause, or leave — and the user says build.
+   likely the thing they have been fighting as the thing to promote. The
+   request is the first interview: read it for verdicts before asking —
+   "packing too many route details" already judges a friction. For each
+   top friction it leaves open ask **pattern or anti-pattern** — promote it
+   into the engine, or fix the cause so it stops; for a doctrine gap,
+   change the doctrine or enforce it. Then the two questions the ledger
+   cannot raise: what they *avoid* doing with this tool today, and where
+   they want it to go — a vision reorders the ledger more than any count.
+   Put every *inferred* reading to them as a question, and name what stays
+   uncertain after the answers.
+
+   The user is often not live. Then each open verdict is written into the
+   ledger as `assumed: <verdict>, reversible`, the build proceeds, and the
+   recap lists the assumed verdicts first so one reply flips them. The one
+   real stop is a verdict that changes what is built rather than how it is
+   worded — an engine contract change, deleting something with external
+   consumers; for those, and whenever a fix changes the engine's contract,
+   run `/consult` in approach mode with the ledger as the position. Done
+   when each top friction carries a verdict — the user's, or an assumed one
+   marked as such in the ledger.
 
 5. **Build engine first, instructions second.** Instructions describe
    engine behaviour, so they are written only against an installed engine:

@@ -34,6 +34,19 @@ over that history; the passes themselves are the provenance below.
   sessions). What agents rebuild by hand in every session — a join, a
   loop over an output file, a poll — is the command that does not exist
   yet.
+- **The facets follow the engine's output kind.** Consumed output (a CLI)
+  is measured by drive cost — subcommands, errors, re-rolls, workarounds.
+  Findings (lint, audit, tests, review) are measured downstream: what the
+  repair changed — a class repaired by ±1-line bookkeeping measures the
+  world, not the tool (wiki lint: 229 of ~265 flags, `c37919b5`). A
+  document is measured by what came after it was read — pointer hit-rate,
+  and the Explore prompts spawned inside its window (`1780f1fe`). On the
+  wrong facet set every count collapses to "N calls, no flags".
+- **The request is the first interview.** Read it for verdicts before
+  asking, and when the user is not live write each open verdict as
+  `assumed:`, build, and put the assumptions first in the recap — a
+  blocking interview in an autonomous session stalls the whole pass
+  (`1780f1fe`), while a live one settles the ledger in a turn (`c37919b5`).
 - **Read the top failure class against the engine's code before calling
   it discipline.** More than once the dominant error was an engine branch
   that dropped its own helpful message.
