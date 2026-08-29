@@ -7,6 +7,10 @@ argument-hint: <the tool: a skill path, CLI, doc, or snippet> [its engine] [a se
 
 # Improve a tool from its usage
 
+You are improving an agent-facing tool — a skill, CLI, script, snippet, or
+doc — from the record of the sessions that used it, so the next agent pays
+less to get the same work done.
+
 An **agent-facing tool** has two layers: the **engine** — the CLI, scripts, or
 code that does the work — and the **instructions** — the skill body, doc, or
 snippet that tells an agent how to drive it. A pure-instruction tool's engine
@@ -41,7 +45,7 @@ the receipts behind every rule below.
    frictions it fixed and their counts — re-measure those, since a fix that
    did not hold tops the new ledger. Then one batched obelisk script per
    round from [`MINE.md`](MINE.md), in the variant for the engine's output
-   kind — consumed output, findings, or a document — whose facets are fixed:
+   kind — consumed output, findings, or a document. The facets:
 
    - **usage shape** — calls and distinct sessions per subcommand and flag.
      This ranks everything after it, and it measures the **doctrine gap**:
@@ -56,13 +60,14 @@ the receipts behind every rule below.
      correction states intent, an error only states cost.
    - **the seed**, expanded vertically with `thread()` / `context()`.
 
-   The scripts are patterns, not coverage: each facet shows the query shape
-   that decided a past pass, and the facet that decides this one is usually
-   one you write against this engine — both first runs did, and those
-   facets became the variants. When an output's shape is in question, run a **live trial** of the
-   engine's read commands into the scratchpad and measure what the agent
-   sees — a dump's size is not in the index. Done when every facet has a
-   count or a measured empty, written as `calls / distinct sessions`.
+   The scripts are patterns, not coverage: each facet shows the query
+   shape that decided a past pass, and the facet that decides this one is
+   usually one you write against this engine — every variant in MINE.md
+   began that way. When an output's shape is in question, run a **live
+   trial** of the engine's read commands into the scratchpad and measure
+   what the agent sees — a dump's size is not in the index. Done when every
+   facet has a count or a measured empty, written as `calls / distinct
+   sessions`.
 
 3. **Write the friction ledger** — `<scratchpad>/<tool>-frictions.md`: the
    usage-shape table, then frictions ranked by measured cost. Each carries
@@ -101,8 +106,8 @@ the receipts behind every rule below.
    recap lists the assumed verdicts first so one reply flips them. The one
    real stop is a verdict that changes what is built rather than how it is
    worded — an engine contract change, deleting something with external
-   consumers; for those, and whenever a fix changes the engine's contract,
-   run `/consult` in approach mode with the ledger as the position. Done
+   consumers. For those, run `/consult` in approach mode with the ledger
+   as the position before building. Done
    when each top friction carries a verdict — the user's, or an assumed one
    marked as such in the ledger.
 

@@ -1,14 +1,14 @@
 # Cold-reader prompt
 
-One dispatch per route through the instructions, run as background agents in
-parallel. A subagent spawned inside a project receives that project's
+One dispatch per route through the instructions, run as background agents
+in parallel. A subagent spawned inside a project receives that project's
 `CLAUDE.md` from the harness at spawn — a copy that can be older than disk —
-and two of three readers in one pass judged the injected copy without ever
-opening the file. The prompt therefore names the file to read and says the
-injected copy is not it; a report that quotes headings the file no longer has
-is a report on the wrong version and is re-run. Fill every `<…>`; the scenario is concrete (one runId, one
+and judges that copy unless told otherwise. The prompt therefore names the
+file to read and says the injected copy is not it; a report that quotes
+headings the file no longer has is a report on the wrong version and is
+re-run. Fill every `<…>`: the scenario is concrete (one runId, one
 complaint, one PR), the reading order is the order the skill itself imposes,
-and the agent holds no credentials so it reads and greps but never runs the
+and the agent holds no credentials, so it reads and greps but never runs the
 engine.
 
 ```

@@ -1,17 +1,19 @@
 # Usage-analysis script
 
-The facet script for one tool's usage history — every past pass rebuilt it
-by hand, and every pass adds a facet the script lacked: read these for the
-query shape, then write the one this engine needs. Pick the variant for the engine's output kind — **consumed output**
-(a CLI: the script below), **findings** (lint, audit, test suite, review: the
-reporting variant), or **a document** (CLAUDE.md, an onboarding skill: the
+The facet scripts for one tool's usage history. Every past pass rebuilt
+its script by hand and added a facet the previous one lacked: read these for
+the query shape, then write the one this engine needs.
+
+Pick the variant for the engine's output kind — **consumed output** (a CLI:
+the script below), **findings** (lint, audit, test suite, review: the
+reporting variant), or **a document** (`CLAUDE.md`, an onboarding skill: the
 document variant) — fill the constants, run it as one obelisk round, then
-expand what it surfaces. Obelisk's query rules apply in full — one
+expand what it surfaces. Obelisk's query rules apply in full: one
 `/tmp/obq-<session-id>.mjs` path for the whole session, `self` filtered out,
-`LIKE` for anything with punctuation, named params only (`:x` with an object;
-a positional array fails). Run every round into a file and slice it with
-`jq`: the harness truncates Bash output at 10 k and a facet that overflows is
-then a `jq` away instead of a re-run.
+`LIKE` for anything with punctuation, named params only (`:x` with an
+object; a positional array fails). Run every round into a file and slice it
+with `jq` — the harness truncates Bash output at 10 k, and a facet that
+overflows is then a `jq` away instead of a re-run.
 
 ```bash
 obelisk --query $Q > $S/mine.json && jq -c 'to_entries[] | {(.key): (.value|length)}' $S/mine.json
