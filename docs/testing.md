@@ -9,6 +9,9 @@ bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
 bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W2 W10 …]
 zsh  zsh/.config/zsh/tests/claude-sessions.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
+zsh  zsh/.config/zsh/tests/theme-sync.test.zsh                   # runs whole
+zsh  zsh/.config/zsh/tests/cwd-guard.test.zsh                    # runs whole
+zsh  zsh/.config/zsh/tests/stow-reach.test.zsh                   # runs whole
 ```
 
 The first two cover the tmux pane control plane and the Claude context chip, and
@@ -19,7 +22,18 @@ resolution, base freshness); the fourth covers the shared-sessions toolkit
 reindex verification) against a throwaway `$HOME` with stubbed
 `pgrep`/`lsof`/`claude`/`obelisk`; the fifth pins the startup-option state
 non-interactive shells inherit from `.zshenv` (see the `EQUALS` entry in
-`zsh.md`), by starting a real `zsh -c` with `ZDOTDIR` on the working tree.
+`zsh.md`), by starting a real `zsh -c` with `ZDOTDIR` on the working tree; the
+sixth pins the `theme.zsh` live-switch contract (startup reads the file, the
+`_theme_sync` precmd re-applies on change, and it registers ahead of the prompt
+renderer) by sourcing the working-tree module into an interactive `zsh -f`
+against a throwaway `$HOME`; the seventh pins `cwd-guard.zsh` (an interactive
+shell started in a deleted directory is moved to `~` before any prompt, a
+non-interactive one is left alone, `zshreload` relocates to the nearest surviving
+ancestor first) by running its probes from a directory the case has just
+deleted; the eighth pins CLAUDE.md red line 2 — `claude/.claude/CLAUDE.md` is
+empty and no `<pkg>/CLAUDE.md` would stow to `~/CLAUDE.md` unless its
+`.stow-local-ignore` excludes it — by reading the working tree only, so it
+needs no sandbox.
 
 The chip suite drives the real `statusline-command.sh` from the **working tree**
 rather than the stowed copy, which is what lets it grade a branch instead of

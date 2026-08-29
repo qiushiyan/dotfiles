@@ -24,7 +24,8 @@ Three ways to wreck live state; none raises an error at the time.
    the global memory prepended to every request in every project. Any other
    `<pkg>/CLAUDE.md` stows to `~/CLAUDE.md` with the same reach unless the
    package's `.stow-local-ignore` excludes it (`tabtype/` does); Claude
-   configuration is documented in `docs/`.
+   configuration is documented in `docs/`. Pinned by
+   `zsh/.config/zsh/tests/stow-reach.test.zsh`.
 3. **A test that escapes its sandbox corrupts live state**, and a green suite
    that tested nothing looks like a passing one → `docs/testing.md` before
    adding a case.
