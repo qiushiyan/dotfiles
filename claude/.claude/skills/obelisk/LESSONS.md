@@ -127,3 +127,17 @@ session's own rounds:
 | Continuation summaries and Codex briefs match `role='user'` and pollute a "user corrections" facet | this session's user-voice facet: 4 of the top 4 hits were `/review` briefs or `This session is being continued…` | Query rule names both exclusions |
 | Every usage pass rebuilt the same tally (calls / distinct sessions per subcommand, error class, re-roll, workaround-with-preceding-question) from scratch | 8 scripts in `d1a2fe7d`, 13 in `54711f30`, 4 in `e96abdd5` | Facet script inlined once in `improve-tool/MINE.md`; the skill points at it |
 
+
+## 2026-08-29 upstream refresh (pin `3226391` -> `109b8b1`, CLI 0.2.5 -> 0.2.5)
+
+Upstream's only change since the last pin is a new `deepseek` source (DeepSeek
+Harness: `source='deepseek'`, `deepseek:`-prefixed ids, subagent logs folded
+into the parent as sidechain messages) in `SKILL.md`, `api-reference.md` and
+`schema.md`. `@obelisk-apps/cli` is still 0.2.5 on npm and its dist has zero
+`deepseek` hits, so the docs describe a runtime that is not released yet.
+Nothing in the hot schema moved (same CLI), so it was not re-verified.
+
+Every prior LESSONS item re-checked: none touches source enumeration; #9 is
+the only one affected and it widens trivially (DeepSeek joins Kimi in the
+"not on this machine" list in the body's Escalation references). Pristine copy
+replaced under `.upstream/` and `references/`; body otherwise untouched.

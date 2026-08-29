@@ -221,8 +221,9 @@ return remember({
 
 ## Escalation references
 
-Upstream docs, still valid. Their Kimi and visibility material does not apply
-here (no Kimi rows; every row visible), and Pi is 3 sessions out of 1273.
+Upstream docs, still valid. Their Kimi, DeepSeek and visibility material does
+not apply here (no Kimi or DeepSeek rows — the installed 0.2.5 CLI does not
+even index DeepSeek; every row visible), and Pi is 3 sessions out of 1273.
 
 | Read | when |
 |---|---|
