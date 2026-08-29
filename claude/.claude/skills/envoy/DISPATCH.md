@@ -41,47 +41,49 @@ Between dispatch and the notification the turn is on its own: no polling, no tai
 
 ## Patterns
 
+`<fresh>` is a coordinate file allocated for that dispatch alone, as the loop does (`mktemp`).
+
 ```sh
 # the default: one codex turn, the user's provider config picks the model
-envoy turn --provider codex --prompt-file brief.md --timeout-min 30 --label consult
+envoy turn --provider codex --prompt-file brief.md --timeout-min 30 --label consult --coordinate-file <fresh>
 
 # a claude turn — the user names the model; yours is not a default
-envoy turn --provider claude --model opus --prompt-file brief.md --timeout-min 60 --label review
+envoy turn --provider claude --model opus --prompt-file brief.md --timeout-min 60 --label review --coordinate-file <fresh>
 
 # effort, when the user names one
-envoy turn --provider codex --effort xhigh --prompt-file brief.md --timeout-min 60
+envoy turn --provider codex --effort xhigh --prompt-file brief.md --timeout-min 60 --coordinate-file <fresh>
 
 # one brief, two model families — one background task, one collect
-envoy fan --prompt-file brief.md --with codex --with claude:opus --timeout-min 30 --label consult
+envoy fan --prompt-file brief.md --with codex --with claude:opus --timeout-min 30 --label consult --coordinate-file <fresh>
 
 # a fan-out member is provider[:model[:effort]] — two models of one family
-envoy fan --prompt-file brief.md --with claude:opus:high --with claude:sonnet --timeout-min 30
+envoy fan --prompt-file brief.md --with claude:opus:high --with claude:sonnet --timeout-min 30 --coordinate-file <fresh>
 
 # a turn that writes code, anchored for the review diff
 envoy turn --provider codex --allow-write --baseline "$(git rev-parse HEAD)" \
-  --prompt-file prompt.md --timeout-min 180 --label delegate
+  --prompt-file prompt.md --timeout-min 180 --label delegate --coordinate-file <fresh>
 
 # a turn in a worktree, so the user keeps editing meanwhile
 envoy turn --provider codex --allow-write --cwd ../wt-feature ...
 
 # round 2 — same session, NEW prompt file (collect prints this command for
-# you; add the coordinate file — every background dispatch takes one)
-envoy turn --provider codex --resume <session> --prompt-file round2.md --timeout-min 30 --coordinate-file $C
+# you; every background dispatch takes its own coordinate file)
+envoy turn --provider codex --resume <session> --prompt-file round2.md --timeout-min 30 --coordinate-file <fresh>
 
 # round 2 for a fan-out — the whole set on one NEW prompt, as one new fan-out
 # (roster, sessions, cwd, baseline all read from the original's records)
-envoy fan --resume-from <fan-out-dir> --prompt-file round2.md --timeout-min 30 --coordinate-file $C
+envoy fan --resume-from <fan-out-dir> --prompt-file round2.md --timeout-min 30 --coordinate-file <fresh>
 
 # a later phase continues an earlier phase's session (a review picking up a
 # consult, say) — session and settings read from the finished job's records,
 # so nothing depends on a remembered session id that may have gone stale
-envoy turn --resume-from <consult-out-dir> --prompt-file review-brief.md --timeout-min 60 --label review
+envoy turn --resume-from <consult-out-dir> --prompt-file review-brief.md --timeout-min 60 --label review --coordinate-file <fresh>
 
 # a warm voice beside a cold one: one member continues a finished job's
 # session, the rest start cold — one fan-out, one collect. A consult that
 # ran as a fan-out holds one session per member, so the flag names a member
 # dir (<consult-out-dir>/codex)
-envoy fan --prompt-file review-brief.md --with-from <consult-out-dir>/codex --with claude:opus --timeout-min 60 --label review
+envoy fan --prompt-file review-brief.md --with-from <consult-out-dir>/codex --with claude:opus --timeout-min 60 --label review --coordinate-file <fresh>
 
 # rare: a supplement for an already-dispatched job ("forgot to mention X")
 envoy steer --prompt-file supplement.md <out-dir>   # out-dir omitted = newest job
