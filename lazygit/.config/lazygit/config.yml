@@ -9,5 +9,5 @@
 # the DELTA_FEATURES env var (zsh/theme.zsh), so lazygit's diffs match plain
 # `git diff` and follow $TERMINAL_THEME automatically.
 git:
-  pagers:
-    - pager: delta --paging=never
+  diffRenderers:
+    - command: delta --paging=never

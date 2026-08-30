@@ -10,7 +10,7 @@ description: >
 
 # wiki
 
-`~/wiki` is a private git repo of markdown topic pages about Qiushi. `~/wiki/CLAUDE.md` holds the conventions and iron rules — read it before writing there. `~/wiki/index.md` is the one-screen map: navigate from it, then grep (filenames are self-documenting).
+`~/wiki` is a private git repo of markdown topic pages about Qiushi. `~/wiki/CLAUDE.md` holds the page-writing rules and the never-list — read it before writing there. `~/wiki/index.md` is the one-screen map: navigate from it, then grep (filenames are self-documenting).
 
 Three operations; pick by intent.
 
@@ -22,7 +22,7 @@ Three operations; pick by intent.
 
 ## ingest — write new material back
 
-1. Read what the wiki already records about the object (index → grep, including any propagation table naming it) and, for a store or repo, its current state. A decision that contradicts the recorded state is written as a change from that state, not as a fresh fact.
+1. Read what the wiki already records about the object (index → grep, including any propagation table naming it) and, for a store or repo, its current state. If the material ends a stage (bought, ruled, walked, installed), rewrite the section to its outcome first — shape and `> Stage:` marker syntax under *State, not history* in `~/wiki/CLAUDE.md` — then record the new fact as a change from what was recorded, never as a fresh fact.
 2. Classify: a fact or decision changes a topic page; undistilled material becomes an inbox item; an original document goes through `/add-source`.
 3. Update the affected topic pages, respecting their update-trigger lines; a locked snapshot in another repo gets a one-line pointer, never a rewrite.
 4. Material touching connected dev projects: the fan-out guide in `~/wiki/projects/index.md` names the targets; each target page's propagation table sets the row shape (`projects/snippets.md` for snippet-family changes, which also rerun `~/wiki/scripts/snippet-inventory.sh`).
@@ -30,4 +30,4 @@ Three operations; pick by intent.
 
 ## maintain — the checkpoint
 
-Run `~/wiki/scripts/lint.sh`; the *maintain* rule in `~/wiki/CLAUDE.md` says what to report, what to repair directly, and what waits.
+Run `~/wiki/scripts/lint.sh`; the *Session start* line in `~/wiki/CLAUDE.md` says what to report, what to repair directly, and what waits.
