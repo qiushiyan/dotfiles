@@ -66,7 +66,11 @@ and name the coupling decision: an extension of an existing concept, or
 intentionally independent?
 
 A before/after view of the changed flow often makes the change crisp — adapt
-the format (tree, prose, diagram) to what fits.
+the format (tree, prose, diagram) to what fits. Small is enough:
+
+    Current:  submit → validate → save → confirm
+    Desired:  submit → validate → save → fire webhook → confirm
+                                         (new; failure retries, never blocks confirm)
 
 **Technical sections** — the shape of the build:
 
