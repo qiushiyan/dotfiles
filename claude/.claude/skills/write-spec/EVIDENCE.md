@@ -118,12 +118,15 @@ consult-r2, 10 findings, none foundational), committed the revision
 separately, and reported path + SHAs + what settled. The manual
 choreography this skill replaced ran 3–4 user turns; here it was one.
 
-Watch item, not fixed (N=1, no failure signal): **none of the six
-SPEC-BAR lessons were read**, on a change with real design shape (a
-read-policy layer, a discriminated result type). The goal-review reword
-("scale the reading to where the novelty lives") may scale to zero too
-easily — the external consult supplied the design bar this time. Count
-lesson read-rate by novelty in the next pass before touching the wording.
+Friction, fixed: **none of the six SPEC-BAR lessons were read**, on a
+change with real design shape (a read-policy layer, a discriminated result
+type). The goal-review reword ("scale the reading to where the novelty
+lives") scaled to zero on its first run. User verdict (2026-09-01, stated
+as conviction, not measurement): normal runs should read most of the
+lessons; trimming is the exception. Reading-list intro reworded to make
+reading the default. Next pass still counts lesson read-rate — now to
+check the strengthened wording lands, and whether the lessons measurably
+earn it.
 
 Re-measure next pass: does the default choreography hold without riders;
 warm-vs-fresh consult branch taken correctly; do split proposals persist in

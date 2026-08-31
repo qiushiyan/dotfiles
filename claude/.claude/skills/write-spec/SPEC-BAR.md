@@ -7,9 +7,11 @@ beats exhaustive sections, and every section earns its place.
 
 ## Read these first
 
-Scale the reading to where the change's novelty lives — a contained
-behavioral change may need only the testing bars; a restructure needs all
-four design lessons. If a path is missing, ask rather than guessing.
+Read these before writing — they are the vocabulary the spec's decisions
+are made in, and a spec written without them tends to look complete while
+deciding less. A normal run reads most of them; trimming is the exception,
+for a genuinely contained change (a small behavioral fix may need only the
+testing bars). If a path is missing, ask rather than guessing.
 
 **Read closely.** The spec decides module structure, interfaces, and where
 seams fall; these are the vocabulary those decisions are made in.
