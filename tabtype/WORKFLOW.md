@@ -38,7 +38,7 @@ The full arc covers a single feature from problem framing through PR. Most steps
 
 ## Implementation stage
 
-14. _(no snippet)_ Implementation. The implementer writes code per the approved plan, doing the actual red-green-refactor cycles.
+14. **`implement-spec`** → implementer. Kicks off the build: reread the settled spec and the critical files the change touches to rebuild the mental model from the actual code, then implement end to end (the actual red-green-refactor cycles). Doc updates are deferred until I say.
 
 ### Mid-point checkpoint _(optional — for large implementations, e.g. 10+ slices)_
 
@@ -83,6 +83,8 @@ When the work is large, I manually pause the implementer at a commit partway thr
 - **`brief-for-rewind`** / **`resume-from-brief`** — the pair for reclaiming context by _rewinding_ rather than compacting, when a task took far more runs than expected and the window is now heavy with the debugging journey. Rewind the chat history to an earlier checkpoint but **not** the code, so the working implementation survives. `brief-for-rewind` → the agent that did the work, while it still remembers everything: it writes a short first-person brief covering only the delta since the checkpoint — end state (never the rounds), the hard-won findings, a durable anchor per claim, what's parked, a few cheap checks, and the remaining work. `resume-from-brief` → the rewound agent, with the brief pasted at `$0`: take it as given, orient against the real diff, run only the listed checks, and continue. Unlike `compact-*`, nothing is summarized in place — you choose the checkpoint, and the brief is the only thing that crosses it.
 
 - **`step-back`** — a lightweight, mid-stream `think-holistic`. Reach for it when you forgot to open with `think-holistic`, or when the agent has landed on a first-impression analysis and you want it to reconsider before committing. Where `think-holistic` fights a cold start (read the code, don't guess), this fights anchoring: treat the first take as a hypothesis and try to break it — reground where it's inferring, restate the real problem, zoom out to structure (local change vs. structure-in-the-way, preparatory refactoring), and weigh a genuinely different approach. Lighter because the model is already partway grounded.
+
+- **`consult-verify`** / **`review-verify`** — fill the wait on a cross-agent round with independent evidence instead of idling. `consult-verify` fires a `/consult` diagnosis round and, while it runs, has the agent reproduce the symptom with a throwaway spike (per the global `spike` skill, adapted from design questions to reproduction) to challenge its own diagnosis — reproduce and verify only, no fix. `review-verify` fires a `/review` full review and, while it runs, re-proves the intended behavior with spikes, reporting expected vs. actual. A project can shadow the pair with a heavier local verification rig (planlab's `loopy-consult-verify` / `loopy-review-verify` bind the same pattern to `pl-loopy-verify`).
 
 - **`list-assumptions`** — when you suspect the agent is guessing about data, intent, or system state. Forces categorization into verified / likely / speculative.
 

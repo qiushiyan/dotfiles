@@ -325,6 +325,14 @@ Round-2 reviewer feedback on the plan below. Apply valid points and update. Disa
 
 $0'''
 
+# ── Implementation ────────────────────────────────────
+
+[[snippets]]
+key = "implement-spec"
+expand = '''
+Reread the settled spec and the critical files this change touches to rebuild your mental model from
+the actual code, then implement end to end. Defer doc updates — I'll say when.'''
+
 # ── Direct build (skip spec/plan) ─────────────────────
 
 [[snippets]]
@@ -590,6 +598,16 @@ Branch-specific focus:
 $0'''
 
 # ── Standalone helpers ────────────────────────────────
+
+[[snippets]]
+key = "consult-verify"
+expand = '''
+/consult run a consultation round with codex in diagnosis mode to pin the root cause. While you are waiting, reproduce the symptom with a throwaway spike — read /Users/qiushi/dotfiles/claude/.claude/skills/spike/SKILL.md for the discipline (the real thing under test, a thin harness, a verdict carried by the run's output), adapted here to reproduction rather than a design question. Use the run as a chance to challenge your previous diagnosis and verify the real root cause. Reproduce and verify only — no fix yet.'''
+
+[[snippets]]
+key = "review-verify"
+expand = '''
+/review codex full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read /Users/qiushi/dotfiles/claude/.claude/skills/spike/SKILL.md for the discipline (the real thing under test, a thin harness, a verdict carried by the run's output), adapted here to proving the implemented behavior rather than settling a design question. Report expected vs. actual.'''
 
 [[snippets]]
 key = "compact-inflight"
