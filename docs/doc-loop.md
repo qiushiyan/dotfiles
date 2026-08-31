@@ -12,9 +12,10 @@ All checkpoints are user-triggered by design — the skills never fire themselve
 
 ```
 /onboarding <topic>          ← first prompt: spine reads + topic-scoped deep dive
-    /consult                 ← position taken, then fresh voices judge it → the plan
-    /spike                   ← optional: throwaway code settles what the plan rests on
-    …implement…              ← the host builds from the synthesis
+    /consult                 ← position taken, then fresh voices judge it → the settled direction
+    /spike                   ← optional: throwaway code settles what the direction rests on
+    /write-spec              ← the direction becomes a committed spec + validation consult
+    …implement…              ← the host builds from the spec
     /review                  ← a cold session judges the committed range → the PR
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)
 /handoff [next: …]           ← lessons + a brief in ~/dev/.handoffs, itself the next first prompt
@@ -40,12 +41,18 @@ voice is a peer, not an authority.
   requirements through _first_ and lands on a position it would defend; only then
   do the voices weigh in. Design mode keeps that position out of the brief so the
   voices design unanchored; review mode puts it in as the artifact under review.
-  Output: the plan, plus an out-dir that stays continuable.
+  Output: the settled direction, plus an out-dir that stays continuable.
 - **`/spike`** — optional, only when asked. Throwaway code on a simplified
   foundation, where the thing under test stays real and everything around it is
-  faked, settling one question the plan leans on that reading cannot answer.
-  Output: a verdict that amends the plan — or kills it, and sends the shape back
-  to `/consult`.
+  faked, settling one question the direction leans on that reading cannot
+  answer. Output: a verdict that amends the direction — or kills it, and sends
+  the shape back to `/consult`.
+- **`/write-spec`** — the settled direction becomes a committed spec. One
+  composite user-triggered checkpoint: write, commit, then a validation
+  consult — warm (continuing this session's consult) when one ran, fresh
+  otherwise — with skill arguments overriding the defaults ("don't commit",
+  "skip validation"). It ends by reporting; stage transitions stay the
+  user's call. The `;;write-spec` snippet remains the paste-in escape hatch.
 - **`/review`** — after the range is committed. Fresh-eyes when nothing outside
   the implementation ever judged the design; spec-anchored when a consult or an
   approved spec settled it. A consult in this session means the review defaults
@@ -56,7 +63,7 @@ voice is a peer, not an authority.
 Implementation between them is ordinarily the host's, straight from the
 synthesis — `/delegate` is the alternative, and the reason `/review` asks where
 the implementation report came from. Compacting is safest at the phase joins,
-after the plan is written and after the range is committed: the artifact each
+after the spec is written and after the range is committed: the artifact each
 phase leaves is what makes the context it consumed disposable, which is the same
 reason a distilled artifact beats a long session.
 
