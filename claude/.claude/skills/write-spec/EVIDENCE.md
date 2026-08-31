@@ -101,7 +101,10 @@ form-submission tree (the prose and the structure/API sketch carry the
 pattern). Escalated, recommended keep: rebuilding SPEC-BAR as an outcome
 rubric instead of a document anatomy — the anatomy is the user's measured
 formula; revisit only if specs come back formally complete but
-over-sectioned.
+over-sectioned. The first-party doctrine behind the objection, a sketch of
+the rubric variant, and the switch/hold evidence bar are researched in
+`RESEARCH-goal-driven-specs.md` (2026-09-01): verdict hold-until-trigger,
+then migrate by deletion-with-evals.
 
 Re-measure next pass: does the default choreography hold without riders;
 warm-vs-fresh consult branch taken correctly; do split proposals persist in
