@@ -23,11 +23,9 @@ waiting on their word; "skip validation" ends the run at the report.
 1. **Ground, then interview if uncertain.** Reread the modules the change
    touches — the spec's problem and approach are grounded in actual code,
    not memory. Then, if product questions or design uncertainty remain,
-   interview the user before writing — everything in one batch, clustered by
-   topic (defer only a follow-up that a pending answer would decide or
-   reshape), each question decidable from its text alone: why it matters,
-   what it means in plain product terms, the options with their implications
-   for the real user, and your recommendation. A **blocking technical
+   interview the user before writing — everything in one batch, each
+   question carrying why it matters, the options with their implications for
+   the real user, and your recommendation. A **blocking technical
    unknown** that only running code can settle is not an interview question:
    name the spike that would settle it and stop — the user decides whether
    to run it before the spec is worth writing.
@@ -36,9 +34,11 @@ waiting on their word; "skip validation" ends the run at the report.
    follow the existing convention, and read the project's
    `documentation-standards.md` or specs-directory README first when one
    exists; ask only when no convention exists. The writing bar is
-   [SPEC-BAR.md](SPEC-BAR.md) — the document's shape, the target shape, and
-   the finish checks. Read it before writing; the spec is done when it holds
-   to that bar, with Emphasis and Scope below deciding where the depth goes.
+   [SPEC-BAR.md](SPEC-BAR.md) — read it before writing. Where the two meet,
+   the project's convention governs names, order, and format; SPEC-BAR
+   governs what the spec must decide and when it is done, and its layout is
+   the fallback when the project has none. Emphasis and Scope below decide
+   where the depth goes.
 
 3. **Commit the spec** on the current branch — the spec file alone, its own
    commit, nothing else staged.

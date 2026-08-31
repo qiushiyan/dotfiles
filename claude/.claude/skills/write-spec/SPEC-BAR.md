@@ -65,21 +65,8 @@ Distinguish current from desired (what's preserved versus what's changing),
 and name the coupling decision: an extension of an existing concept, or
 intentionally independent?
 
-A tree-style before/after often makes the change crisp — adapt the format
-(tree, prose, diagram) to what fits:
-
-    Current:
-      User submits form
-      └─ Validation runs
-         └─ Record saved
-            └─ Confirmation shown
-
-    Desired:
-      User submits form
-      └─ Validation runs
-         └─ Record saved
-            └─ Webhook fired
-            └─ Confirmation shown
+A before/after view of the changed flow often makes the change crisp — adapt
+the format (tree, prose, diagram) to what fits.
 
 **Technical sections** — the shape of the build:
 

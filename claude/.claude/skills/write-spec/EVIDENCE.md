@@ -91,6 +91,18 @@ author needs it without a file hop; the lesson adds why + exemplar); the
 frontmatter defaults line (human-facing gallery text); the vague-verbs
 enumeration (trigger vocabulary).
 
+Goal review (codex, cold, out-dir 20260831-235200-review): verdict
+"partly" — the phase runs end to end, but SKILL step 2's follow-the-project
+convention and SPEC-BAR's own anatomy had no precedence. Fixed: convention
+governs names/order/format, SPEC-BAR governs decisions and doneness, its
+layout the fallback. Also trimmed on its findings: the interview recipe's
+clustering/anatomy scripting (batch discipline kept), the generic
+form-submission tree (the prose and the structure/API sketch carry the
+pattern). Escalated, recommended keep: rebuilding SPEC-BAR as an outcome
+rubric instead of a document anatomy — the anatomy is the user's measured
+formula; revisit only if specs come back formally complete but
+over-sectioned.
+
 Re-measure next pass: does the default choreography hold without riders;
 warm-vs-fresh consult branch taken correctly; do split proposals persist in
 consult rounds (if so, escalate the lesson pointer into /consult's brief
