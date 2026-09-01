@@ -104,6 +104,7 @@ docs/agent-skills.md           skill ownership tiers · Claude ⊇ Codex layout 
 docs/theming.md                themes
 docs/claude-accounts.md        accounts
 docs/zsh.md                    shell
+docs/macmini.md                the colleague's Mac mini reached by `ssh macmini` — specs, disks, etiquette
 tmux/.config/tmux/workflow.md  tmux day to day; roadmap.md indexes the tmux design docs
 ```
 
