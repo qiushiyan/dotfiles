@@ -81,8 +81,9 @@ Why these forms: per-user installs can't collide with his `~/.nvm` /
 `~/.cargo`; the native Claude installer is Anthropic's recommended path (npm
 still works but isn't the primary tested route); the pnpm standalone script is
 the documented default and doesn't depend on node. `~/.zshrc` is the only
-config file so far — brew shellenv, `~/.local/bin`, then the lines nvm and
-pnpm appended. Not stowed from this repo; it's a four-line file.
+config file so far — brew shellenv, `~/.local/bin`, the lines nvm and
+pnpm appended, and `alias x="claude --dangerously-skip-permissions"` (a
+plain alias; no headroom on the mini, so no account switching). Not stowed from this repo; it's a four-line file.
 
 Not installed: codex, uv, go, rust, tmux, nvim. Add here when they land.
 
