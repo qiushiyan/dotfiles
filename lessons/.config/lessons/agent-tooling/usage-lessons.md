@@ -32,9 +32,20 @@ over that history; the passes themselves are the provenance below.
   either a workaround the user tolerates or the thing they have been
   fighting, and the index cannot tell which. Interview before promoting;
   a correction the user typed outranks any count.
-- **Smallest edit per signal, after the first pass.** A rewrite is for
+- **A shape change is designed before it is built.** Verdicts on
+  frictions are not a verdict on the fix: a new surface, a deletion with
+  consumers, an engine contract is put to the user as a design first,
+  live or not. One pass took answered verdicts as a go, built a skill,
+  deleted the snippet it replaced, and was reverted in full — "I want to
+  hear about your designs first" (`39f2bf85`).
+- **Smallest edit per signal, then one holistic read.** A rewrite is for
   instructions that predate their engine; every later change is the
-  smallest edit that captures one signal, named in the commit.
+  smallest edit that captures one signal, named in the commit. Signal
+  edits accrete, so the pass ends by reading every touched file as one
+  whole against the rulebooks — the user asked for exactly that read
+  after 6 of 6 improve-tool runs (`c37919b5`, `1780f1fe`, `03b5e91a`,
+  `39f2bf85`, `af44333d`, `c699709b`), every time in the words "concise
+  but informative".
 - **Measure the doctrine gap before writing doctrine.** Count the door the
   instructions present against the door agents take (calls / distinct
   sessions). What agents rebuild by hand in every session — a join, a
@@ -47,7 +58,12 @@ over that history; the passes themselves are the provenance below.
   world, not the tool (wiki lint: 229 of ~265 flags, `c37919b5`). A
   document is measured by what came after it was read — pointer hit-rate,
   and the Explore prompts spawned inside its window (`1780f1fe`). On the
-  wrong facet set every count collapses to "N calls, no flags".
+  wrong facet set every count collapses to "N calls, no flags". Every
+  kind shares one outcome facet: the user's next turn after the tool ran,
+  read by position, since the corrections that decide a pass ("please
+  revert", "go ahead" ×9 two minutes after each report) never name the
+  tool. Three of six runs invented it before MINE.md carried it
+  (`1780f1fe`, `39f2bf85`, `c699709b`).
 - **The request is the first interview.** Read it for verdicts before
   asking, and when the user is not live write each open verdict as
   `assumed:`, build, and put the assumptions first in the recap — a
@@ -73,6 +89,21 @@ over that history; the passes themselves are the provenance below.
   measured friction nor a rulebook principle is sprawl; the engine's
   evidence log keeps the receipts so the next pass can re-check whether
   the fix held.
+
+## Open: goals over procedure
+
+The user's stated direction for the smartest models is the opposite of a
+step list: "describe the goals clearly along with the conventions and
+constraints, and not being overly instructional on the exact procedure"
+(`39f2bf85`), and the primary sources agree — "prefer general instructions
+over prescriptive steps", and examples "constrain them to a certain
+exploration space" (verified in
+`~/.claude/skills/write-spec/RESEARCH-goal-driven-specs.md`). That cuts
+against two things here: the eight numbered steps of the improve-tool
+process, and the "examples over prose" bar below. Neither has been
+re-measured against a goal-shaped variant; the user called it a future
+direction, not a change to make now. A pass that tries it should A/B the
+two shapes on the same seed and let the outcome facet decide.
 
 ## Examples over prose, and where prose is due
 
@@ -168,4 +199,5 @@ follow only from that.
 > _Lesson · distilled 2026-08-29 from the envoy CLI pass (`d1a2fe7d`), the
 > planlab triage-toolkit passes (`54711f30`, `e96abdd5`), the
 > handoff-sweep pass (`b5f5e59f`), and the obelisk skill's own
-> LESSONS.md. Applied by the `improve-tool` skill._
+> LESSONS.md; extended 2026-09-01 by the improve-tool bootstrap pass over
+> its own six runs (`3167ab18`). Applied by the `improve-tool` skill._

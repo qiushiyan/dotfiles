@@ -17,7 +17,7 @@ overflows is then a `jq` away instead of a re-run.
 
 ```bash
 obelisk --query $Q > $S/mine.json && jq -c 'to_entries[] | {(.key): (.value|length)}' $S/mine.json
-jq -r '.subcommands[] | [.k,.calls,.sessions] | @tsv' $S/mine.json     # one facet at a time, TSV for tables
+jq -r '.subcommands[] | [.k,.calls,.sessions] | @tsv' $S/mine.json | head -40   # one facet per command; a slice over the cap is re-sliced, not re-run
 ```
 
 ```js
@@ -77,20 +77,35 @@ out.workarounds = sql(`
     AND (tc.input_json LIKE '%python%' OR tc.input_json LIKE '%jq %' OR tc.input_json LIKE '%sleep %' OR tc.input_json LIKE '%until %')
   ORDER BY m.timestamp DESC LIMIT 10`);
 
-// E. user voice — corrections in sessions that used the skill; explicit markers first
+// E. user voice — corrections in the sessions that used the tool, scoped by session, never by
+// whether the text names the tool: the corrections that decide a pass ("please revert", "go ahead")
+// rarely do. Explicit markers first.
+const used = [...new Set(calls.map(r => r.sid))].map(s => `'${s}'`).join(',') || "''";
 out.friction_markers = sql(`
   SELECT m.session_id sid, m.uuid, substr(m.text,1,300) text FROM messages m
   WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.source='claude'
-    AND m.text LIKE '%friction:%' AND (m.text LIKE '%${cli.trim()}%' OR m.text LIKE '%${skill}%')
+    AND m.text LIKE '%friction:%' AND m.session_id IN (${used})
   ORDER BY m.timestamp DESC LIMIT 15`);
 out.user_voice = sql(`
   SELECT m.session_id sid, m.uuid, substr(m.text,1,240) text FROM messages m
-  WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.session_id <> '${self}'
+  WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.session_id IN (${used})
     AND m.source = 'claude' AND m.text NOT LIKE 'This session is being continued%'
-    AND (m.text LIKE '%${cli.trim()}%' OR m.text LIKE '%/${skill}%')
     AND (m.text LIKE '%why%' OR m.text LIKE '%stuck%' OR m.text LIKE '%wrong%' OR m.text LIKE '%didn''t%'
-      OR m.text LIKE '%again%' OR m.text LIKE '%forgot%' OR m.text LIKE '%wait%' OR m.text LIKE '%不%')
+      OR m.text LIKE '%again%' OR m.text LIKE '%revert%' OR m.text LIKE '%forgot%' OR m.text LIKE '%wait%' OR m.text LIKE '%不%')
   ORDER BY m.timestamp DESC LIMIT 10`);
+
+// F. what came next — the user's first turn after each engine call, read by position: the outcome
+// the index holds. A "go ahead" two minutes after every report is a stop that never changed anything;
+// a long turn is a correction or a redirect. For an invoked skill the anchor is the invocation row.
+const seenNext = new Set(); out.after = [];
+for (const r of calls) {
+  const n = sql(`SELECT uuid, timestamp ts, substr(text,1,160) t FROM messages WHERE session_id=:sid AND role='user' AND content_type='text'
+    AND COALESCE(is_meta,0)=0 AND timestamp > :ts AND text NOT LIKE 'This session is being continued%' ORDER BY timestamp LIMIT 1`, { sid: r.sid, ts: r.ts })[0];
+  if (!n || seenNext.has(n.uuid)) continue; seenNext.add(n.uuid);
+  out.after.push({ sid: r.sid.slice(0, 8), gapMin: Math.round((Date.parse(n.ts) - Date.parse(r.ts)) / 60000), len: n.t.length, t: n.t });
+}
+out.after_shape = tally(out.after, x => x.len <= 40 ? x.t.trim().toLowerCase() : 'long');   // "go ahead" ×9 is a finding
+out.after = out.after.filter(x => x.len > 40).slice(0, 12);
 
 return out;
 ```
@@ -188,6 +203,11 @@ session) to see which tasks the document says nothing about.
 
 For a tool with no CLI engine (a pure-instruction skill, a doc, a snippet),
 the Bash signature is the script path or nothing, and B collapses to A; the
-failure facet becomes the user-voice facet plus the `Edit`/`Write` targets
-the sessions touched — what the agent had to fix by hand is what the skill
-did not teach.
+failure facet becomes the user-voice facet plus the files the sessions
+touched — what the agent had to fix by hand is what the skill did not
+teach. Count those files across `Edit`/`Write` *and* Bash heredocs
+(`cat >`, `python3 - <<`, `sed -i`): with permissions bypassed, writes go
+through Bash, and the tool-name filter alone found 2 of 6 ledgers. A tool
+that is rarely invoked has its population elsewhere: the sessions that did
+its job without it — a sibling tool's runs, or the first-prompt task mix
+that matches its description — and what they did instead is the spec.

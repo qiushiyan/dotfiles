@@ -73,8 +73,10 @@ the receipts behind every rule below.
    usage-shape table, then frictions ranked by measured cost. Each carries
    its count, session-id receipts, what the instructions already say about
    it, a **reading** of what the pattern means marked *observed* or
-   *inferred*, and candidate fixes tagged **engine** or **instructions**.
-   Two rules decide the tag:
+   *inferred*, and candidate fixes tagged **engine** or **instructions**
+   and `shape: wording | shape` — a shape fix creates or deletes a surface
+   with consumers, or changes an engine contract. Two rules decide the
+   layer:
 
    - A rule the instructions already state and agents still break is not
      fixed by restating it — the model's prior beat the prose once and will
@@ -101,15 +103,17 @@ the receipts behind every rule below.
    Put every *inferred* reading to them as a question, and name what stays
    uncertain after the answers.
 
-   The user is often not live. Then each open verdict is written into the
-   ledger as `assumed: <verdict>, reversible`, the build proceeds, and the
-   recap lists the assumed verdicts first so one reply flips them. The one
-   real stop is a verdict that changes what is built rather than how it is
-   worded — an engine contract change, deleting something with external
-   consumers. For those, run `/consult` in approach mode with the ledger
-   as the position before building. Done
-   when each top friction carries a verdict — the user's, or an assumed one
-   marked as such in the ledger.
+   A user who has replied in this session is live: ask, and wait. When
+   they are not, each open `wording` verdict is written into the ledger as
+   `assumed: <verdict>, reversible` and the build proceeds; the recap marks
+   those rows so one reply flips them. A `shape` fix is never assumed: its
+   design — what is created, deleted, or changed, and why — goes to the
+   user before any edit, live or not, and to `/consult` in approach mode
+   with the ledger as the position and the search signatures plus
+   [`MINE.md`](MINE.md) in the brief, so the consultant re-mines instead of
+   taking the ledger on faith. Done when each top friction carries a
+   verdict — the user's, or an assumed one marked as such in the ledger —
+   and no `shape` fix rests on an assumption.
 
 5. **Build engine first, instructions second.** Instructions describe
    engine behaviour, so they are written only against an installed engine:
@@ -128,24 +132,30 @@ the receipts behind every rule below.
    for a first pass, or instructions that predate their engine; every later
    pass makes the **smallest edit that captures each signal**, and the
    commit names the signal, so the next reader can judge the change against
-   its evidence. Done when every change traces to a ledger line or a
-   rulebook rule and has been run through the prompt-engineering defect
-   list as the exit check.
+   its evidence. Signal edits accrete, so the step ends with the
+   **holistic pass**: every touched file read once more as one whole
+   against both rulebooks — concise but informative, the hot path visible,
+   no line that only makes sense beside the signal that added it — as its
+   own commit. Done when every change traces to a ledger line or a
+   rulebook rule, and every touched file has had its holistic read.
 
 7. **Verify with cold readers, then review.** One background agent per
    route through the instructions, from [`COLD-READER.md`](COLD-READER.md):
    the files from disk and nothing else in context, a concrete scenario, no
    engine calls, a ranked report. Fix what they stall on and re-read after
-   the fix. Then `/review full` on the commits. Done when a cold reader runs
-   the scenario without guessing a flag, path, field, or file.
+   the fix. Then `/review goal` on the commits — did the surface land as
+   one whole; a change of a few lines that two readers already cleared may
+   skip it, said in the recap. Done when a cold reader runs the scenario
+   without guessing a flag, path, field, or file.
 
 8. **Record and report.** Append a dated entry to the engine's evidence log
    (`EVIDENCE.md` or `LESSONS.md`, whichever the repo keeps; start one only
    when none exists): one mining pass per entry — date, corpus size, each
    friction's count and verdict, the lesson that survived — written so the
-   next pass can re-run the count. Offer the obelisk memory. Report the
-   usage shape, the frictions by rank with what landed on which layer, what
-   was handed off, and the receipts.
+   next pass can re-run the count. Offer the obelisk memory. Report as one
+   table — friction · count · verdict (the user's, or `assumed`) · what
+   landed on which layer or was handed off — the usage shape above it and
+   the receipts beside each row, so the whole pass reads from one message.
 
 ## Altitude
 
