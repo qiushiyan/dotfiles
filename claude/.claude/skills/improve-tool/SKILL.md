@@ -160,9 +160,13 @@ the receipts behind every rule below.
 
 8. **Record and report.** Append a dated entry to the engine's evidence log
    (`EVIDENCE.md` or `LESSONS.md`, whichever the repo keeps; start one only
-   when none exists): one mining pass per entry — date, corpus size, each
-   friction's count and verdict, the lesson that survived — written so the
-   next pass can re-run the count. Offer the obelisk memory. Report as one
+   when none exists): one mining pass per entry — date, the corpus and the
+   search signatures that selected it, each friction's count with the facet
+   and constants that produced it (`F after_shape, cli='brief ', since
+   2026-08-26`), its verdict and the layer it landed on, the lesson that
+   survived, and the window the next pass should measure — a count without
+   its predicate cannot be re-run, only approximated. Offer the obelisk
+   memory. Report as one
    table — friction · count · verdict (the user's, or `assumed`) · what
    landed on which layer or was handed off — the usage shape above it and
    the receipts beside each row, so the whole pass reads from one message.

@@ -30,6 +30,15 @@ snippet → skill), `af44333d` (spike), `c699709b` (distill-handoffs + brief);
 4 of them after the 08-29 fixes. Doors: slash 5/6, by-path 1/6. Session
 `3167ab18`; ledger `improve-tool-frictions.md` in its scratchpad.
 
+Measurement: runs = sessions with `messages.skill='improve-tool'` or
+`<command-name>/improve-tool` or `skills/improve-tool` in user text, `self`
+excluded; per run, Bash rows after the invocation (`obelisk --query` calls,
+`is_error`, `length(content) >= 10000`), `Agent` rows whose input contains
+"cold reader", user turns after the invocation (`role='user' AND
+content_type='text'`, continuation summaries excluded) read by position.
+The holistic-pass count is those user turns naming writing-for-agents or
+prompt-engineering. Next window: runs after 2026-09-01.
+
 Re-measure of 08-29: the file+jq mining fix held (raw obelisk overflow 0/4,
 was 2/2; one residual jq slice in `c699709b`); the reporting and document
 variants were not stalled on (0/4); step 4 no longer blocks (0/4) but
