@@ -52,6 +52,16 @@ confirmed by the corpus; replay of the seed scenario over cold-reading —
 unmeasured (cold readers preceded edits in 5/6 runs, no run replayed), left
 as a proposal.
 
+Cold readers (2: a CLI + skill run with the user live for an hour; a
+rarely-invoked skill with the user asleep) stalled on: no named variant for a
+no-engine tool (the answer was tail prose in MINE.md); no rule for a candidate
+fix a mined correction already rejects; the not-live branch silent on what
+happens to a shape design; `$S` and the output-dir fragment never filled in
+MINE.md; facet F for skill invocations as a comment, not code; no re-measure
+branch when the seed is already in the log; no route from doc-loop.md. All
+fixed (`3fbeccc`). Both readers cut the same restated lessons; cut. Goal
+review: one cold codex voice, out-dir `20260901-220410-review`.
+
 Lessons that survived → usage-lessons.md ("smallest edit per signal, then
 one holistic read", "a shape change is designed before it is built", the
 outcome facet, the open goals-over-procedure note).
