@@ -7,15 +7,15 @@ the query shape, then write the one this engine needs.
 Pick the variant for the engine's output kind — **consumed output** (a CLI:
 the script below), **findings** (lint, audit, test suite, review: the
 reporting variant), or **a document** (`CLAUDE.md`, an onboarding skill: the
-document variant) — fill the constants, run it as one obelisk round, then
-expand what it surfaces. Obelisk's query rules apply in full: one
-`/tmp/obq-<session-id>.mjs` path for the whole session, `self` filtered out,
-`LIKE` for anything with punctuation, named params only (`:x` with an
-object; a positional array fails). Run every round into a file and slice it
-with `jq` — the harness truncates Bash output at 10 k, and a facet that
-overflows is then a `jq` away instead of a re-run.
+document variant), or **no engine** (a pure-instruction skill, a snippet:
+the last section) — fill the constants, run it as one obelisk round, then
+expand what it surfaces. Obelisk's query rules apply in full. Run every
+round into a file and slice it with `jq` — the harness truncates Bash
+output at 10 k, and a facet that overflows is then a `jq` away instead of
+a re-run.
 
 ```bash
+S=<your scratchpad directory>; Q=/tmp/obq-<session-id>.mjs
 obelisk --query $Q > $S/mine.json && jq -c 'to_entries[] | {(.key): (.value|length)}' $S/mine.json
 jq -r '.subcommands[] | [.k,.calls,.sessions] | @tsv' $S/mine.json | head -40   # one facet per command; a slice over the cap is re-sliced, not re-run
 ```
@@ -25,7 +25,8 @@ const self  = '<your session id — the UUID directory in your scratchpad path>'
 const cli   = 'envoy ';                 // the engine's Bash signature, trailing space included
 const skill = 'review';                 // messages.skill value and /name
 const path  = 'skills/review/SKILL.md'; // how the user invokes it by path
-const since = '2026-08-01';
+const outdir = '.local/state/envoy/';   // the engine's state dir or output files, as a path fragment
+const since = '2026-08-01';             // the previous pass's date, from the evidence log
 const out   = {};
 
 // A. population — who used it, how often, through which door
@@ -55,6 +56,7 @@ const tally = (rows, keyOf) => {
 const shellNoise = t => /^(2>|&&|\|{1,2}|>|;|"|\$|`)/.test(t);
 out.subcommands = tally(calls, r => { const i = cmdOf(r).indexOf(cli); if (i < 0) return '';
   return cmdOf(r).slice(i + cli.length).split(/\s+/).filter(t => t && !shellNoise(t)).slice(0, 2).join(' '); });
+// tallied in JS on purpose: a subcommand named `delete` or `update` inside a SQL LIKE trips the read-only guard — bind it as :x
 out.flags       = tally(calls.flatMap(r => (cmdOf(r).match(/--[a-z-]+/g) || []).map(f => ({ sid: r.sid, f }))), r => r.f);
 
 // C. failures — error classes, re-rolls, truncated reads
@@ -64,7 +66,7 @@ for (const r of calls) { const c = cmdOf(r); seen.set(c, (seen.get(c) || 0) + 1)
 out.rerolls = [...seen].filter(([, n]) => n > 1).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([c, n]) => ({ n, cmd: c.slice(0, 120) }));
 out.truncated_reads = sql(`
   SELECT COUNT(*) n, COUNT(DISTINCT tc.session_id) sessions FROM tool_calls tc JOIN tool_results tr ON tr.tool_use_id = tc.id
-  WHERE tc.name='Read' AND tc.file_path LIKE '%<engine output dir fragment>%' AND length(tr.content) >= 10000`);
+  WHERE tc.name='Read' AND tc.file_path LIKE '%${outdir}%' AND length(tr.content) >= 10000`);
 
 // D. workarounds — ad-hoc processing of engine output, and the question behind it
 out.workarounds = sql(`
@@ -73,7 +75,7 @@ out.workarounds = sql(`
        AND p.timestamp < m.timestamp ORDER BY p.timestamp DESC LIMIT 1) asked
   FROM tool_calls tc JOIN messages m ON m.uuid = tc.message_uuid
   WHERE tc.name='Bash' AND tc.session_id <> '${self}' AND m.timestamp > '${since}'
-    AND (tc.input_json LIKE '%<engine output dir fragment>%')
+    AND (tc.input_json LIKE '%${outdir}%')
     AND (tc.input_json LIKE '%python%' OR tc.input_json LIKE '%jq %' OR tc.input_json LIKE '%sleep %' OR tc.input_json LIKE '%until %')
   ORDER BY m.timestamp DESC LIMIT 10`);
 
@@ -96,11 +98,13 @@ const voice = sql(`
 out.user_voice = voice.filter(v => v.n === 1).slice(0, 10);                          // a correction is typed once
 out.standing   = voice.filter(v => v.n > 1).sort((a, b) => b.n - a.n).slice(0, 6);   // a snippet recurs: what the user says every time
 
-// F. what came next — the user's first turn after each engine call, read by position: the outcome
-// the index holds. A "go ahead" two minutes after every report is a stop that never changed anything;
-// a long turn is a correction or a redirect. For an invoked skill the anchor is the invocation row.
+// F. what came next — the user's first turn after each engine call or skill invocation, read by
+// position: the outcome the index holds. A "go ahead" two minutes after every report is a stop that
+// never changed anything; a long turn is a correction or a redirect.
+const invRows = sql(`SELECT m.session_id sid, m.timestamp ts FROM messages m WHERE m.role='user' AND COALESCE(m.is_meta,0)=0
+  AND m.session_id <> '${self}' AND m.timestamp > '${since}' AND (m.skill = '${skill}' OR m.text LIKE '%${path}%')`);
 const seenNext = new Set(); out.after = [];
-for (const r of calls) {
+for (const r of [...calls, ...invRows]) {
   const n = sql(`SELECT uuid, timestamp ts, substr(text,1,160) t FROM messages WHERE session_id=:sid AND role='user' AND content_type='text'
     AND COALESCE(is_meta,0)=0 AND timestamp > :ts AND text NOT LIKE 'This session is being continued%' ORDER BY timestamp LIMIT 1`, { sid: r.sid, ts: r.ts })[0];
   if (!n || seenNext.has(n.uuid)) continue; seenNext.add(n.uuid);
@@ -112,15 +116,11 @@ out.after = out.after.filter(x => x.len > 40).slice(0, 12);
 return out;
 ```
 
-The user-voice facet is the one that states intent, and it is the noisiest
-to search for. A `friction:` marker in the user's own correction ("friction:
-review made me assemble the resume command by hand") is mined verbatim and
-costs one word to leave; the keyword sweep is the fallback for sessions
-without one. Read the keyword sweep with the corpus in mind: a hit that repeats verbatim
-across sessions is a standing snippet (`/review codex full review. While you
-are waiting…`), not a correction — the facet groups by text prefix so it
-arrives with its count: `user_voice` holds what was typed once, `standing`
-what the user says every time.
+The user-voice facet is the one that states intent. A `friction:` marker in
+the user's own correction is mined verbatim; the keyword sweep is the
+fallback, grouped by text prefix so a hit arrives with its count:
+`user_voice` holds what was typed once, `standing` what the user says every
+time (`/review codex full review. While you are waiting…`).
 
 Follow-up rounds expand vertically: `context(uuid)` on a user-voice hit, the
 full `thread(sid)` of the seed session, `raw(uuid, { offset, limit })` when a
@@ -205,7 +205,7 @@ and read rarely is a route the document does not route to. Pair either
 measure with the first-prompt task mix (`MIN(timestamp)` user text per
 session) to see which tasks the document says nothing about.
 
-For a tool with no CLI engine (a pure-instruction skill, a doc, a snippet),
+For a tool with **no engine** (a pure-instruction skill, a doc, a snippet),
 the Bash signature is the script path or nothing, and B collapses to A; the
 failure facet becomes the user-voice facet plus the files the sessions
 touched — what the agent had to fix by hand is what the skill did not

@@ -137,6 +137,11 @@ verify → a _fix-the-generator_ step that patches the project's standards or
 update-docs skill whenever a rot class recurs. It defers to each project's
 `documentation-standards.md`, including its protected exceptions.
 
+A complaint about a tool the loop runs — `brief`, a skill, obelisk, a
+snippet — is `/improve-tool <tool> [engine] [the complaint]`: a mining pass
+over the sessions that used it, its verdicts interviewed, its rules landing
+in `lessons/agent-tooling/usage-lessons.md`.
+
 ## Principles
 
 - **Docs lead, code follows; sessions evaporate.** Anything worth keeping lands
