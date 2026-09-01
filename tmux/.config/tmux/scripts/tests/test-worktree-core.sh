@@ -225,6 +225,23 @@ CASE=W20; want "$@" && ok W20 "1" "$(git -C "$REPO" for-each-ref --format='%(ref
 C "$REPO" wt_prune_backups 0 >/dev/null
 CASE=W21; want "$@" && ok W21 "1" "$(git -C "$REPO" for-each-ref --format='%(refname)' refs/wt-trash | wc -l | tr -d ' ')"
 
+# --- the slot guard -----------------------------------------------------------
+#
+# wt_slot_free is the last line before `git worktree add`, shared by create,
+# gwt and the popup (brief classifies the same slot first, with more context).
+# Free means absent or an empty real directory — git accepts that. Anything
+# that may hold a session's work is refused; nothing here deletes.
+SLOT="$SANDBOX/slot"; mkdir -p "$SLOT/empty" "$SLOT/full" "$SLOT/dark"
+: > "$SLOT/full/f"; : > "$SLOT/file"; ln -s "$SLOT/full" "$SLOT/link"; chmod 000 "$SLOT/dark"
+CASE=W30; want "$@" && ok W30 yes "$(Cq "$REPO" wt_slot_free "$SLOT/absent")"
+CASE=W31; want "$@" && ok W31 yes "$(Cq "$REPO" wt_slot_free "$SLOT/empty")"
+CASE=W32; want "$@" && ok W32 no  "$(Cq "$REPO" wt_slot_free "$SLOT/full")"
+CASE=W33; want "$@" && ok W33 no  "$(Cq "$REPO" wt_slot_free "$SLOT/file")"
+CASE=W34; want "$@" && ok W34 no  "$(Cq "$REPO" wt_slot_free "$SLOT/link")"
+# W35  An unreadable directory lists as nothing; "nothing" must not mean free.
+CASE=W35; want "$@" && ok W35 no  "$(Cq "$REPO" wt_slot_free "$SLOT/dark")"
+chmod 755 "$SLOT/dark"
+
 # --- sandbox guard ------------------------------------------------------------
 
 # W12  Every case above ran with HOME redirected. Without that, wt_worktree_root

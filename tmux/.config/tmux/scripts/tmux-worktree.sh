@@ -284,7 +284,7 @@ create_worktree() {
   fi
   path="$wt_root/$name"
   win="$(win_name "$name")"
-  if [ -e "$path" ]; then echo "path already exists: $path"; sleep 1.5; return 1; fi
+  if ! wt_slot_free "$path"; then echo "path already exists: $path"; sleep 1.5; return 1; fi
   base="$(wt_default_base)"
   mkdir -p "$(dirname "$path")"
   # wt_add resolves the name and picks the verb itself: existing local branch →

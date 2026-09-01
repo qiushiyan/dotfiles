@@ -13,14 +13,14 @@ before touching anything near them: **Deciding what counts as merged**,
 **Everything per-worktree runs in parallel**, **Removal keeps a way back**, and
 the gotcha on window identity.
 
-## Two front-ends, one core
+## Three front-ends, one core
 
 The git-worktree logic itself — the `~/dev/.worktrees/<repo>/<branch>` path
 convention, base resolution, the `worktree add` new-branch dance (with the
-existing-branch fallback), the gitignored-file seeding, package-manager
-detection, and reap candidacy (`wt_reap_candidates`) — lives in
+existing-branch fallback), the slot guard, the gitignored-file seeding,
+package-manager detection, and reap candidacy (`wt_reap_candidates`) — lives in
 **`scripts/worktree-core.sh`**, which is **tmux-free** and sourced by this
-popup. Two front-ends wrap it:
+popup. Three front-ends wrap it:
 
 - **`tmux-worktree.sh`** (this popup) — the heavyweight surface: an fzf
   switch/create/remove UI that opens each worktree in its **own tmux window** and
@@ -30,6 +30,13 @@ popup. Two front-ends wrap it:
   pane**. No new window, no dependency install. It runs `worktree-core.sh create`
   (which prints only the new path to stdout) as a subprocess and `cd`s there — the
   `cd` is the whole reason it's a shell function, not a call to the core's CLI.
+- **`brief start`** (`~/dev/brief`) — the handoff binary places a worktree for
+  a brief's branch through the same CLI: `resolve` first (what the name already
+  refers to — local, one remote, several, or nothing), then `create`, passing
+  `--new` only on a verdict of nothing so the bounded fetch is paid once. It
+  classifies the slot itself beforehand, with context the core lacks (the
+  brief, the folder), and refuses with a mend; the core's guard is the last
+  line, not the diagnosis.
 
 Keep the split clean: **pure git logic goes in the core; anything that talks to
 tmux stays in the popup wrapper.** The popup's `maybe_copy_files` /
@@ -264,7 +271,8 @@ gets deleted. `wt_trim_merged_cache` caps the file at popup startup.
 
 Tests: `tests/test-worktree-core.sh` (W1–W5 are one case per merge style plus the
 must-stay-NO case; W10 pins the truncated-`FETCH_HEAD` trap; W22/W23 poison the
-memo to prove it is really read, and really keyed on both shas).
+memo to prove it is really read, and really keyed on both shas; W30–W35 are the
+slot guard, W35 the unreadable directory that must not read as empty).
 
 ## Everything per-worktree runs in parallel
 
@@ -369,8 +377,13 @@ the trash directory (`wt_prune_backups`, `@worktree_backup_days`, default 30;
 - **Repo grouping is just the toplevel basename — no special cases.** A repo
   whose main checkout sits in a `main/` subdir (e.g. `~/dev/planlab/main`) groups
   under `~/dev/.worktrees/main/`. Accepted on purpose (simplicity over a prettier
-  folder name); if two such repos ever collide on a branch name, create refuses
-  with "path already exists" — no data loss.
+  folder name); if two such repos ever collide on a branch name, the slot guard
+  refuses — no data loss.
+- **The slot guard (`wt_slot_free`) deletes nothing.** A slot is free when it is
+  absent or an empty real directory (`git worktree add` accepts that); a file, a
+  symlink, an unreadable directory, or anything non-empty is refused, because a
+  directory left behind by a pruned registration may hold a session's only copy
+  of its work. Every creator — `create`, `gwt`, the popup — passes through it.
 - **Windows are found by PATH first, name second — and removal reaches into
   other sessions.** A window's name is the branch with `/`→`-`, which is neither
   injective (`feat/x` and `feat-x` produce the same name, so switching to one

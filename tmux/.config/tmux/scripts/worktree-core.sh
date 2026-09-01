@@ -35,6 +35,20 @@ wt_worktree_root() {
   printf '%s\n' "$HOME/dev/.worktrees/$(basename "$(wt_main_worktree 2>/dev/null)")"
 }
 
+# A slot is free when nothing is there, or an empty real directory is — git
+# worktree add accepts an empty directory. Anything else (files, a symlink, a
+# non-empty directory git no longer registers) is refused: it may be the only
+# copy of a session's work, and no caller here deletes on the user's behalf.
+wt_slot_free() {
+  local path="$1" entries
+  [ -e "$path" ] || [ -L "$path" ] || return 0
+  [ -d "$path" ] && [ ! -L "$path" ] || return 1
+  # ls failing (unreadable) must not read as empty — that is the one answer
+  # that would let git worktree add try to write into it.
+  entries="$(ls -A "$path" 2>/dev/null)" || return 1
+  [ -z "$entries" ]
+}
+
 # The main (first) worktree — canonical home for gitignored files we seed from.
 wt_main_worktree() {
   git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}'
@@ -581,7 +595,7 @@ _wt_core_create() {
   [ -n "$base" ] || base="$(wt_default_base)"
 
   local path; path="$(wt_worktree_root)/$branch"
-  [ -e "$path" ] && { printf 'create: path already exists: %s\n' "$path" >&2; return 1; }
+  wt_slot_free "$path" || { printf 'create: path already exists: %s\n' "$path" >&2; return 1; }
   mkdir -p "$(dirname "$path")"
   wt_add "$branch" "$base" "$path" "$force_new" || return 1
   if [ "$copy" -eq 1 ]; then
