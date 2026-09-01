@@ -76,6 +76,7 @@ tooling too. System `git` is Apple's 2.50.1, `python3` the CLT's 3.9.
 | node | v24.20.0 (LTS, `default` alias) | `nvm install --lts` | `~/.nvm/versions/node/` | `nvm install --lts && nvm alias default lts/*` |
 | pnpm | 11.25.0 | standalone `get.pnpm.io/install.sh` | `~/Library/pnpm` (macOS default) | `pnpm self-update` |
 | Claude Code | 2.1.252 | native `claude.ai/install.sh` | `~/.local/share/claude`, launcher `~/.local/bin/claude` | auto-updates |
+| Codex CLI | 0.152.0 | official `chatgpt.com/codex/install.sh` | `~/.codex/packages`, launcher `~/.local/bin/codex` (PATH line it added to `~/.zprofile` is redundant with `.zshrc` but harmless) | `codex update` or re-run installer |
 
 Why these forms: per-user installs can't collide with his `~/.nvm` /
 `~/.cargo`; the native Claude installer is Anthropic's recommended path (npm
@@ -85,7 +86,7 @@ config file so far — brew shellenv, `~/.local/bin`, the lines nvm and
 pnpm appended, and `alias x="claude --dangerously-skip-permissions"` (a
 plain alias; no headroom on the mini, so no account switching). Not stowed from this repo; it's a four-line file.
 
-Not installed: codex, uv, go, rust, tmux, nvim. Add here when they land.
+Not installed: uv, go, rust, tmux, nvim. Add here when they land.
 
 ## Etiquette
 
