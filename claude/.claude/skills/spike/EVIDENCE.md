@@ -29,9 +29,10 @@ runs ~50 sessions; the skill ran 4. Signatures: `messages.skill='spike'`,
 - **F3 · real data under-taught** — user (`521c800d` 15:18): spike "with real
   data or queried from a production database". Fixed: step 2 names the data in
   the real/faked line, conditioned on the claim being about specific data.
-- **F4 · discoverability (4 invocations)** — `assumed: keep
-  disable-model-invocation` (snippets are the designed doors); description
-  widened instead. Reversible.
+- **F4 · discoverability (4 invocations)** — verdict **confirmed by user**
+  (2026-09-01): keep `disable-model-invocation`; explicit reference and the
+  consult/review-verify snippets are the intended doors. Description widened
+  instead.
 
 **Cold readers** (one per route, post-edit): verification route stalled on
 baseline-for-merged-change and on step 1's write-that-test escape routing the
