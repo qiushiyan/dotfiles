@@ -39,7 +39,7 @@ the receipts behind every rule below.
 
    | to find | signature |
    |---|---|
-   | invocations | `messages.skill`, `/<name>` in user text, and the tool's **absolute path** in user text — skills here are invoked by path as often as by slash |
+   | invocations | `messages.skill`, `/<name>` and the tool's **absolute path** in user text — match all three; skills are invoked by path too |
    | engine calls | `tool_calls.name='Bash' AND input_json LIKE '%<cli> %'`; the engine's state dirs and output files |
    | the seed | the session, worktree, or complaint the user named; none named → the latest invocation |
 
@@ -66,8 +66,9 @@ the receipts behind every rule below.
      output, each with the assistant text just before it: the question the
      agent was answering by hand is the command that does not exist yet.
    - **user voice** — the user's corrections in sessions that used the tool,
-     `friction:` markers first. This facet outranks every count: a
-     correction states intent, an error only states cost.
+     `friction:` markers (the user's own tag on a correction) first. This
+     facet outranks every count: a correction states intent, an error only
+     states cost.
    - **what came next** — the user's first turn after each engine call or
      invocation, read by position: a two-minute "go ahead" after every
      report is a stop that changed nothing; a long turn is the correction,
@@ -85,9 +86,9 @@ the receipts behind every rule below.
    it, a **reading** of what the pattern means marked *observed* or
    *inferred*, and candidate fixes, each tagged with its layer —
    **engine** or **instructions** — and its shape — `wording`, or `shape`
-   when it creates or deletes a surface with consumers
-   (`grep -rn 'skills/<name>' tabtype/ docs/ claude/` finds them) or changes
-   an engine contract. The layer follows the usage lessons: a rule agents
+   when it creates or deletes a surface with consumers (`grep -rn` for its
+   name across the repo and the snippets that point at it) or changes an
+   engine contract. The layer follows the usage lessons: a rule agents
    still break moves into the engine or a worked example, and the top
    failure class is read against the engine's code before it is called
    discipline. Done when each of the top three frictions answers "how many,
@@ -128,9 +129,9 @@ the receipts behind every rule below.
 5. **Build engine first, instructions second.** Instructions describe
    engine behaviour, so they are written only against an installed engine:
    change → tests → install (a version bump where the engine has one) →
-   verify `-h` → then the instructions. When the engine repo is the user's side, write its
-   handoff with `/handoff` and stop at the boundary; the instruction round
-   starts when they report it shipped. Done when every engine item is
+   verify `-h` → then the instructions. When the engine repo is the user's
+   side, write its handoff with `/handoff` and stop at the boundary; the
+   instruction round starts when they report it shipped. Done when every engine item is
    landed or handed off.
 
 6. **Change the instructions** under
@@ -156,7 +157,8 @@ the receipts behind every rule below.
    the fix. Then `/review goal` on the commits — did the surface land as
    one whole; a change of a few lines that two readers already cleared may
    skip it, said in the recap. Done when a cold reader runs the scenario
-   without guessing a flag, path, field, or file.
+   without guessing a flag, path, field, or file, and every review finding
+   carries a verdict.
 
 8. **Record and report.** Append a dated entry to the engine's evidence log
    (`EVIDENCE.md` or `LESSONS.md`, whichever the repo keeps; start one only
@@ -166,7 +168,7 @@ the receipts behind every rule below.
    2026-08-26`), its verdict and the layer it landed on, the lesson that
    survived, and the window the next pass should measure — a count without
    its predicate cannot be re-run, only approximated. Offer the obelisk
-   memory. Report as one
-   table — friction · count · verdict (the user's, or `assumed`) · what
-   landed on which layer or was handed off — the usage shape above it and
-   the receipts beside each row, so the whole pass reads from one message.
+   memory. Report as one table — friction · count · verdict (the user's,
+   `assumed`, or `rejected`) · what landed on which layer or was handed
+   off — the usage shape above it and the receipts beside each row, so the
+   whole pass reads from one message.

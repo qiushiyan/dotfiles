@@ -116,8 +116,9 @@ out.after = out.after.filter(x => x.len > 40).slice(0, 12);
 return out;
 ```
 
-The user-voice facet is the one that states intent. A `friction:` marker in
-the user's own correction is mined verbatim; the keyword sweep is the
+The user-voice facet is the one that states intent. A `friction:` marker —
+the user's one-word tag on a correction ("friction: review made me assemble
+the resume command by hand") — is mined verbatim; the keyword sweep is the
 fallback, grouped by text prefix so a hit arrives with its count:
 `user_voice` holds what was typed once, `standing` what the user says every
 time (`/review codex full review. While you are waiting…`).
@@ -134,7 +135,8 @@ per finding class, what did the repair change? A repair that touched only the
 line the finding named (a sha, a count, a date) is bookkeeping; a class whose
 repairs are mostly bookkeeping measures the world, not the tool, and is the
 ledger's top line. The user's turn after the report ("处理 card drift 吧",
-repeated) is that class in the user's voice, and the keyword sweep misses it.
+repeated) is that class in the user's voice — facet F's short-turn tally
+holds it.
 
 ```js
 // finding classes from the engine's own output, then the repairs and user turns that followed
@@ -211,7 +213,7 @@ failure facet becomes the user-voice facet plus the files the sessions
 touched — what the agent had to fix by hand is what the skill did not
 teach. Count those files across `Edit`/`Write` *and* Bash heredocs
 (`cat >`, `python3 - <<`, `sed -i`): with permissions bypassed, writes go
-through Bash, and the tool-name filter alone found 2 of 6 ledgers. A tool
+through Bash, and a count over the edit tools alone undercounts. A tool
 that is rarely invoked has its population elsewhere: the sessions that did
 its job without it — a sibling tool's runs, or the first-prompt task mix
 that matches its description — and what they did instead is the spec.
