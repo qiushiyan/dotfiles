@@ -86,13 +86,15 @@ out.friction_markers = sql(`
   WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.source='claude'
     AND m.text LIKE '%friction:%' AND m.session_id IN (${used})
   ORDER BY m.timestamp DESC LIMIT 15`);
-out.user_voice = sql(`
-  SELECT m.session_id sid, m.uuid, substr(m.text,1,240) text FROM messages m
+const voice = sql(`
+  SELECT COUNT(*) n, COUNT(DISTINCT m.session_id) sessions, MIN(m.session_id) sid, MIN(m.uuid) uuid, substr(m.text,1,240) text FROM messages m
   WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.session_id IN (${used})
-    AND m.source = 'claude' AND m.text NOT LIKE 'This session is being continued%'
+    AND m.source = 'claude' AND m.text NOT LIKE 'This session is being continued%' AND m.text NOT LIKE '<command-%'
     AND (m.text LIKE '%why%' OR m.text LIKE '%stuck%' OR m.text LIKE '%wrong%' OR m.text LIKE '%didn''t%'
       OR m.text LIKE '%again%' OR m.text LIKE '%revert%' OR m.text LIKE '%forgot%' OR m.text LIKE '%wait%' OR m.text LIKE '%不%')
-  ORDER BY m.timestamp DESC LIMIT 10`);
+  GROUP BY substr(m.text,1,80) ORDER BY MAX(m.timestamp) DESC LIMIT 60`);
+out.user_voice = voice.filter(v => v.n === 1).slice(0, 10);                          // a correction is typed once
+out.standing   = voice.filter(v => v.n > 1).sort((a, b) => b.n - a.n).slice(0, 6);   // a snippet recurs: what the user says every time
 
 // F. what came next — the user's first turn after each engine call, read by position: the outcome
 // the index holds. A "go ahead" two minutes after every report is a stop that never changed anything;
@@ -116,7 +118,9 @@ review made me assemble the resume command by hand") is mined verbatim and
 costs one word to leave; the keyword sweep is the fallback for sessions
 without one. Read the keyword sweep with the corpus in mind: a hit that repeats verbatim
 across sessions is a standing snippet (`/review codex full review. While you
-are waiting…`), not a correction — drop the term that matched it and re-run.
+are waiting…`), not a correction — the facet groups by text prefix so it
+arrives with its count: `user_voice` holds what was typed once, `standing`
+what the user says every time.
 
 Follow-up rounds expand vertically: `context(uuid)` on a user-voice hit, the
 full `thread(sid)` of the seed session, `raw(uuid, { offset, limit })` when a
