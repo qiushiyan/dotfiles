@@ -58,6 +58,10 @@ the receipts behind every rule below.
    - **user voice** — the user's corrections in sessions that used the tool,
      `friction:` markers first. This facet outranks every count: a
      correction states intent, an error only states cost.
+   - **what came next** — the user's first turn after each engine call or
+     invocation, read by position: a two-minute "go ahead" after every
+     report is a stop that changed nothing; a long turn is the correction,
+     and it rarely names the tool.
    - **the seed**, expanded vertically with `thread()` / `context()`.
 
    The scripts are patterns, not coverage: each facet shows the query
@@ -73,10 +77,10 @@ the receipts behind every rule below.
    usage-shape table, then frictions ranked by measured cost. Each carries
    its count, session-id receipts, what the instructions already say about
    it, a **reading** of what the pattern means marked *observed* or
-   *inferred*, and candidate fixes tagged **engine** or **instructions**
-   and `shape: wording | shape` — a shape fix creates or deletes a surface
-   with consumers, or changes an engine contract. Two rules decide the
-   layer:
+   *inferred*, and candidate fixes, each tagged with its layer —
+   **engine** or **instructions** — and its shape — `wording`, or `shape`
+   when it creates or deletes a surface with consumers or changes an
+   engine contract. Two rules decide the layer:
 
    - A rule the instructions already state and agents still break is not
      fixed by restating it — the model's prior beat the prose once and will
