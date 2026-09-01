@@ -60,17 +60,31 @@ Neighbours on T7: `autoandy/`, `planlab-build/`, `andy/`, `max/` — leave alone
 - Other human accounts: `andy`, `max`. SMB Public folders are shared with
   guest access — don't put anything private in `~/Public`.
 
-## Toolchain (as of survey)
+## Toolchain
 
-Homebrew 6.0.19 at `/opt/homebrew` — **not on PATH for a fresh account**;
-add `eval "$(/opt/homebrew/bin/brew shellenv)"` to `~/.zshrc` first. Already
-installed via brew: `gh`, `git-lfs`, `fzf`, `btop`, `caddy`, `ffmpeg`,
-`postgresql@17` client tools, `aws`, `cloc`, `container`, numpy/numba.
+**Shared (Homebrew 6.0.19 at `/opt/homebrew`, owned by the colleague):** on our
+PATH read-only via `brew shellenv` in `~/.zshrc` — `gh`, `git-lfs`, `fzf`,
+`btop`, `caddy`, `ffmpeg`, `postgresql@17` clients, `aws`, `cloc`. Never
+`brew install` here: it is his install and a version bump would hit his
+tooling too. System `git` is Apple's 2.50.1, `python3` the CLT's 3.9.
 
-Not installed system-wide: **node/pnpm/bun, uv, go, rust, tmux, nvim, claude,
-codex**. The owner has per-user `nvm`, `cargo` and `~/.local/bin`; install my
-own copies under my home (or on T7) rather than borrowing. System `git` is
-Apple's 2.50.1; `python3` is the CLT's 3.9.
+**Ours (installed 2026-09-01, all under `$HOME`, no sudo):**
+
+| tool | version | how | where | update |
+|---|---|---|---|---|
+| nvm | 0.40.7 | upstream `install.sh` | `~/.nvm` | re-run installer |
+| node | v24.20.0 (LTS, `default` alias) | `nvm install --lts` | `~/.nvm/versions/node/` | `nvm install --lts && nvm alias default lts/*` |
+| pnpm | 11.25.0 | standalone `get.pnpm.io/install.sh` | `~/Library/pnpm` (macOS default) | `pnpm self-update` |
+| Claude Code | 2.1.252 | native `claude.ai/install.sh` | `~/.local/share/claude`, launcher `~/.local/bin/claude` | auto-updates |
+
+Why these forms: per-user installs can't collide with his `~/.nvm` /
+`~/.cargo`; the native Claude installer is Anthropic's recommended path (npm
+still works but isn't the primary tested route); the pnpm standalone script is
+the documented default and doesn't depend on node. `~/.zshrc` is the only
+config file so far — brew shellenv, `~/.local/bin`, then the lines nvm and
+pnpm appended. Not stowed from this repo; it's a four-line file.
+
+Not installed: codex, uv, go, rust, tmux, nvim. Add here when they land.
 
 ## Etiquette
 
@@ -81,9 +95,9 @@ Apple's 2.50.1; `python3` is the CLT's 3.9.
 - Change the initial password the owner handed over (`passwd`) — it travelled
   in chat.
 
-## Setting it up for development (todo)
+## Next steps
 
-Nothing beyond the SSH key exists on the mini yet. When the time comes:
-brew shellenv → stow a minimal subset of these dotfiles (zsh, tmux, nvim) →
-node via a version manager into `$HOME` → clone repos into
-`/Volumes/T7/qiushiyan`. Record the choices here as they land.
+`claude` is installed but not logged in — first `ssh macmini` then `claude`
+to authenticate in the browser flow. Repos go in `/Volumes/T7/qiushiyan`.
+Consider stowing a zsh/tmux subset of these dotfiles once the minimal
+`.zshrc` starts to feel thin.
