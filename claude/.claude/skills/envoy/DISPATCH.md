@@ -60,8 +60,9 @@ envoy turn --provider codex --effort xhigh --prompt-file brief.md --timeout-min 
 # one brief, two model families — one background task, one collect
 envoy fan --prompt-file brief.md --with codex --with claude:opus --timeout-min 30 --label consult --coordinate-file <fresh>
 
-# a fan-out member is provider[:model[:effort]] — two models of one family
-envoy fan --prompt-file brief.md --with claude:opus:high --with claude:sonnet --timeout-min 30 --coordinate-file <fresh>
+# a fan-out member is provider[:model[:effort]] — two models of one family; the model
+# slot takes a pinned id (claude-fable-5-1) or a provider alias (opus = its latest Opus)
+envoy fan --prompt-file brief.md --with claude:claude-fable-5-1:high --with claude:opus --timeout-min 30 --coordinate-file <fresh>
 
 # a turn that writes code, anchored for the review diff
 envoy turn --provider codex --allow-write --baseline "$(git rev-parse HEAD)" \
