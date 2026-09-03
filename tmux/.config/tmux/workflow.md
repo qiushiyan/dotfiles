@@ -161,6 +161,7 @@ A vendored, flash.nvim-style tool in `scripts/easyjump/` (see its `DESIGN.md`) �
 - **`prefix u`** — fuzzy-pick any URL from the visible scrollback and open it in the browser. (`Shift+Ctrl+click` opens one directly, bypassing tmux's mouse.)
 - **`prefix y`** — copy "this pane's path" to the clipboard: when the pane is running Neovim, the **absolute path of the focused file**; otherwise the pane's **working directory** (read from the foreground process, so it's right even mid-session inside an agent or build — no need to interrupt what's running). **`prefix Y`** is the same but copies the file path **relative to nvim's cwd**. Neovim publishes the paths into pane-scoped `@yank_path`/`@yank_path_rel` options (the `TmuxYankPath` block in nvim's `autocmds.lua`) and withdraws them when the focused buffer isn't a copyable file — dashboards, pickers, terminals, `.git/` edit files, Claude's Ctrl+G prompt files all fall back to the cwd. Over SSH it copies the local path, not the remote one.
 - **`prefix g`** — open this pane's repo on **GitHub**: the PR thread when the branch has one, otherwise the branch's file tree (a detached HEAD opens its commit). Same resolution as the `gopen` shell command, and read from the same live cwd `prefix y`'s fallback uses — so a pane sitting in a worktree opens *that* worktree's branch, and it works without interrupting whatever is running in the pane. On a branch GitHub has never seen it asks first, then pushes `-u` and opens the PR-create page.
+- **`prefix b`** — **dev-server preview**: prompts for a URL (pre-filled `localhost:3000`; a bare port works) and opens it in a [terminal-browser](https://github.com/zenbu-labs/terminal-browser) pane — real Chromium rendered pixel-accurately in the terminal via the kitty graphics protocol. First press opens a split to the right; pressing again while that browser is open adds the URL as a *tab* in it rather than another split. Close it like any pane, or `terminal-browser shutdown` to kill the shared browser process.
 - **`prefix t`** — **theme picker**: pick a terminal theme and it switches everywhere at once — shell colors, prompt, this status bar, and Neovim (Ghostty needs a manual `⌘⇧,` reload on macOS). See `docs/theming.md`.
 - **`Ctrl+L`** — clear the screen like normal; if there's a pane to the right with nothing to clear, it jumps there instead. **`prefix C-k`** clears the screen *and* wipes scrollback.
 - **`prefix r`** — reload the tmux config after editing it.
@@ -204,7 +205,7 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 
 **Jump (flash-style)** — `prefix s` (or `C-s` in copy mode) → type to search · label to jump · `Enter` nearest · `Esc` cancel
 
-**Misc** — detach `prefix d` · reload `prefix r` · theme picker `prefix t` · clear `Ctrl+L` / `prefix C-k` · URL picker `prefix u` · copy path `prefix y`/`Y` · open repo on GitHub `prefix g` · save/restore `prefix C-s`/`prefix C-r`
+**Misc** — detach `prefix d` · reload `prefix r` · theme picker `prefix t` · clear `Ctrl+L` / `prefix C-k` · URL picker `prefix u` · browser preview `prefix b` · copy path `prefix y`/`Y` · open repo on GitHub `prefix g` · save/restore `prefix C-s`/`prefix C-r`
 
 **From outside tmux**
 

@@ -14,7 +14,6 @@
       "PushNotification",
       "RemoteTrigger",
       "ReportFindings",
-      "ScheduleWakeup",
       "AskUserQuestion",
       "CronCreate",
       "CronDelete",
@@ -22,7 +21,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "fable[1m]",
   "disableClaudeAiConnectors": true,
   "disableBundledSkills": true,
   "hooks": {
@@ -133,6 +132,9 @@
   "effortLevel": "high",
   "modelSettings": {
     "claude-fable-5": {
+      "effortLevel": "medium"
+    },
+    "claude-fable-5-1": {
       "effortLevel": "high"
     }
   },

@@ -75,7 +75,16 @@ over that history; the passes themselves are the provenance below.
 - **Instructions describe an installed engine.** Engine change, tests,
   version bump, install, `-h` verified — then the prose. A line that
   describes a behaviour the binary on the machine lacks is a trap of the
-  instructions' own making.
+  instructions' own making. The harness's tool set is part of the engine:
+  pl-handle-code-review told agents to `ScheduleWakeup`, a tool on the
+  user's deny list, and 41 of 41 sessions that reached WAITING invented a
+  wait instead — a sixth of them invented none and the user re-triggered
+  by hand (2026-09-02 pass). Before writing a tool name into a skill,
+  grep `permissions.deny` in the user's settings and count its calls in
+  the index — and then *ask*: that deny was a mistake, the owner
+  re-enabled the tool, and the fallback doctrine built around its absence
+  was reverted the same day. A missing tool is a question for the user
+  before it is a design constraint.
 - **Verify with a cold reader per route.** An agent with nothing in
   context but the files, a concrete scenario, and no credentials reports
   the first line where it would guess a flag, path, field, or file. Two
