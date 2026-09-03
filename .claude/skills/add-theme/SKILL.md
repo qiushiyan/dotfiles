@@ -61,31 +61,24 @@ built-in keeps its spaced name in theme-set (`theme = Rose Pine Dawn`).
     lazy.nvim merges fragments of one plugin. The spec is the `night-owl.nvim`
     entry's shape — `priority = 1000`, `lazy = theme.name ~= "<name>"` — plus
     `name = "<name>"` as the catppuccin entry has, so the lock file keys it
-    predictably. Install with `nvim --headless "+Lazy! install" +qa`. The lock
-    file is usually already dirty with other plugins' bumps: the theme's hunk is
-    the one added entry, staged alone with `git add -p` at commit time. The
+    predictably. Install with `nvim --headless "+Lazy! install" +qa`; the
     colorscheme name is what the plugin registers: `ls
     ~/.local/share/nvim/lazy/<name>/colors`.
 
 ## 4. Patch the six shared files
 
-One script, one run: it fails on any anchor that is not exactly once in its
-file before writing anything. The anchors are structural — the `*)` fallthrough
-arms, the closing of each list — so they hold across ports. The values are forest_night's: a port replaces the
-NAME line, the colors and the comments, nothing else. Light and dark differ in
-five places, and a Ghostty built-in in one more:
+One script, one run; it stops before writing if any anchor is not exactly
+once in its file. The anchors are structural (the `*)` fallthroughs, each
+list's closing) and survive every port, so a port replaces the NAME line, the
+colors and the comments, nothing else. Light and dark differ in five places:
 
 | | dark | light |
 |---|---|---|
 | theme.lua `background` (`BG` in the script) | `"dark"` | `"light"` |
-| theme-set `theme =` | the `themes/` file name (`forest-night`); a built-in keeps its spaced name (`Rose Pine Dawn`) | same |
 | theme-set `bold-color` | warmer and brighter than fg — the bright yellow (`#FFB74D`) | deeper and more saturated than fg (orng `#c94d24`) |
 | zsh arm | `LSCOLORS='Gxfxcx…'`, `di=1;36`, `fg=8`, `+dark-mode` / `dark` | `LSCOLORS='exfxcx…'`, `di=34`, `fg=242`, `+light-mode` / `light` — copy `orng_light)` whole |
 | oh-my-posh `lavender` | the fg | the `pink` value |
 | tmux `session=` (the pill) | `@thm_green` | `@thm_surface_1` — the green is too dark for the ink icon |
-
-The statusline's six slots owe contrast on the background, so an accent that
-washes out is swapped for an in-family hue.
 
 ```bash
 cd ~/dotfiles && python3 - <<'PY'
