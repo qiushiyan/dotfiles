@@ -128,10 +128,3 @@ colour does the job instead → `docs/ghostty-fonts.md`.
 - The file watcher lives in `lua/config/autocmds.lua` (polls, not `fs_event` —
   the latter goes stale on macOS atomic renames). The name→colorscheme map is in
   `lua/config/theme.lua`; `lua/config/palette.lua` feeds the custom statusline.
-
-## Adding or removing a theme
-
-The recipe is the project skill `/add-theme` (`.claude/skills/add-theme/SKILL.md`):
-one touch per tool, the exemplar to copy for each, the proof commands, and the
-commit. Removing one is the reverse of its commit — `git revert` — since every
-theme's files land in a single commit.
