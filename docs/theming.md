@@ -15,9 +15,8 @@ prompt, Claude statusline, tmux, Neovim, Ghostty — and how switching works.
   authored per tool, not generated from a central spec.
 - **`theme-set <name>`** writes the name and fans out reloads;
   **`prefix t`** in tmux is the picker that calls it.
-- Supported themes: `flexoki_light`, `catppuccin_mocha`, `tailwind_light`,
-  `tokyo_night_moon`, `gruvbox_dark`, `vitesse_light_soft`, `night_owl`,
-  `orng_light`.
+- The valid names are the `THEMES` array in `theme-set` (`theme-set` with no
+  argument prints them); adding one is `/add-theme`.
 
 ## Model 1 — a name in a file, a palette per tool
 
@@ -40,7 +39,7 @@ table.
 tools generate every app's colors from one scheme spec. Here the palettes are
 hand-tuned and the tool count is small (~6), so a generator adds a dependency
 and takes away the hand-tuning while buying nothing. The cost is that adding a
-theme touches each tool once (see *Adding a theme*).
+theme touches each tool once (the `/add-theme` skill walks them).
 
 ## Model 2 — the control plane
 
@@ -130,39 +129,9 @@ colour does the job instead → `docs/ghostty-fonts.md`.
   the latter goes stale on macOS atomic renames). The name→colorscheme map is in
   `lua/config/theme.lua`; `lua/config/palette.lua` feeds the custom statusline.
 
-## Adding a theme
+## Adding or removing a theme
 
-Mechanical, one touch per tool — the cost of hand-tuned palettes. For `<name>`:
-
-1. `theme-set` — add to `THEMES` and `ghostty_block()` (the block owes a `theme`
-   *and* a `bold-color` picked from the new palette).
-2. zsh — a `case` arm in `theme.zsh` (copy the nearest light/dark arm — the
-   light arms differ only in comments).
-3. statusline — a `case` arm (six color slots) in `statusline-command.sh`. The
-   slots owe contrast against the theme's bg, not fidelity to its terminal
-   palette — swap in a darker in-family hue when an accent washes out (vitesse
-   uses its property gold `#998418`, not its terminal yellow).
-4. oh-my-posh — a `palettes.list` entry in `zen.omp.json` (light themes map
-   `lavender` to the `pink` value).
-5. tmux — `themes/<name>_tmux.conf` + a branch in the selector `case` in
-   `tmux.conf`. Copy the nearest exemplar — `flexoki_tmux.conf` (light) or
-   `tokyo_night_moon_tmux.conf` (dark); the slot semantics live in each file's
-   header. The selector branch also owes a `session=` pill color: `@thm_green`
-   normally, the theme's pale `surface_1` when its accent is too dark for the
-   ink icon fg (tailwind, vitesse).
-6. Neovim — a `map` entry in `config/theme.lua` + a colorscheme (a `colors/` file or a plugin spec) **and** a matching `scheme:match` branch in `config/palette.lua` (return the theme's colors mapped onto the catppuccin-shaped table, including a `bar_bg`). Skip the palette branch and the lualine statusline silently falls through to the catppuccin else-arm — e.g. gruvbox inheriting mocha's navy `#181825` bar.
-7. Ghostty — a palette in `themes/` (or a built-in name). Check the directory
-   first — it holds palettes no theme is wired to yet.
-8. Add a `display-menu` row to the `prefix t` binding.
-9. Add the name to the *Supported themes* list in this doc's TL;DR.
-
-After editing the oh-my-posh config, run `oh-my-posh cache clear` once — it caches
-the parsed config and won't see a newly added palette otherwise.
-
-Then prove the whole addition, not just the files touched:
-
-```bash
-bash -n <theme-set, statusline-command.sh>; zsh -n theme.zsh; jq . zen.omp.json
-nvim --clean --headless "+set rtp+=$HOME/.config/nvim" "+colorscheme <scheme>" +q
-theme-set <name>    # must report "tmux: reloaded (+env)", not "source-file failed"
-```
+The recipe is the project skill `/add-theme` (`.claude/skills/add-theme/SKILL.md`):
+one touch per tool, the exemplar to copy for each, the proof commands, and the
+commit. Removing one is the reverse of its commit — `git revert` — since every
+theme's files land in a single commit.

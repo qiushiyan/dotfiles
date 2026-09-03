@@ -7,6 +7,8 @@ Claude-only skill is simply one with no Codex symlink.
 
 ```
 claude/.claude/skills/<name>/          # source of truth — real directories
+.claude/skills/<name>/                 # this repo's own project skills (add-theme) — Claude Code only,
+                                       # loaded when the session runs inside dotfiles
 codex/.codex/skills/<name>             # relative symlink → ../../../claude/.claude/skills/<name>
 codex/.codex/skills/keep-codex-fast/   # real dir — the declared Codex-only exception
 codex/.codex/skills/.system/           # Codex's bundled skills — gitignored, not ours
