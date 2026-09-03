@@ -37,8 +37,8 @@ Three ways to wreck live state; none raises an error at the time.
 - Commit directly on `main`; pushes to `main` are the user's to run.
 - **"What's my shortcut / how do I…"** is a read: the tool's config plus
   `tmux/.config/tmux/workflow.md`; nothing is edited.
-- **Adding or porting a theme** (recurring): `/add-theme`
-  (`.claude/skills/add-theme/SKILL.md`) is the recipe — nine per-tool surfaces,
+- **Adding or porting a theme** (recurring): `/add-theme` (`$add-theme` in
+  Codex; `.claude/skills/add-theme/SKILL.md`) is the recipe — nine per-tool surfaces,
   one commit; `docs/theming.md` is the system model behind it.
 - **Editing `zsh/`** startup order, anything `.zshrc` sources, or a shell
   slowness complaint → `docs/zsh.md` first. `gopen` (`git.zsh`) is also tmux
@@ -103,6 +103,7 @@ docs/doc-loop.md               the convention for coding agent sessions (onboard
 docs/agent-skills.md           skill ownership tiers · Claude ⊇ Codex layout · lessons
 docs/theming.md                themes
 docs/claude-accounts.md        accounts
+docs/bypass-cd-read-guard.md   temporary hook: why bypass sessions refuse `cd DIR; grep <relative>`, and when to delete it
 docs/zsh.md                    shell
 docs/macmini.md                the colleague's Mac mini reached by `ssh macmini` — specs, disks, etiquette
 tmux/.config/tmux/workflow.md  tmux day to day; roadmap.md indexes the tmux design docs
