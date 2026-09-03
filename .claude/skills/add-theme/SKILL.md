@@ -190,3 +190,13 @@ git commit -m "theme: $NAME — <source>, <the contrast calls made>"
 
 The report names the source and the contrast calls. A rejected theme is
 `git revert` of that one commit.
+
+## Optional: Apple Terminal.app
+
+Terminal.app is not one of the nine live-switched surfaces: its profiles are
+static imports. When the user explicitly asks for Terminal.app, create and
+activate a matching `.terminal` profile after the main port. Follow
+[`docs/terminal-app-themes.md`](../../../docs/terminal-app-themes.md); its helper
+reuses the Ghostty palette, preserves an existing profile's font/layout settings,
+and avoids hand-writing archived `NSColor` data. Include the profile in the theme
+commit when it was requested up front, or commit it alone when added later.
