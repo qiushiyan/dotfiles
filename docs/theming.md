@@ -37,7 +37,7 @@ table.
 
 **Why per-tool palettes and not a generator** (base16 / tinty / pywal): those
 tools generate every app's colors from one scheme spec. Here the palettes are
-hand-tuned and the tool count is small (~6), so a generator adds a dependency
+hand-tuned and the tool set is deliberately small, so a generator adds a dependency
 and takes away the hand-tuning while buying nothing. The cost is that adding a
 theme touches each tool once (the `/add-theme` skill walks them).
 

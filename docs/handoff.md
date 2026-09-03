@@ -27,9 +27,8 @@ The loop is split so that staleness cannot misroute a session:
   needs its `cd` to stick, so the wrapper passes `--cd-file` and applies what
   lands there. Everything else is a straight exec of `~/.local/bin/brief`.
 
-`tmux/.config/tmux/scripts/worktree-core.sh` is the fourth party: it owns
-worktree creation, shared with `gwt` and the tmux popup, and `brief start`
-execs it rather than duplicating it.
+The shared worktree boundary is `tmux/.config/tmux/scripts/worktree-core.sh`.
+It owns worktree creation for `gwt`, the tmux popup, and `brief start`.
 
 ## It *is* the next first prompt
 
@@ -54,12 +53,18 @@ cleanup checks both names. The cold-read test a slug has to pass lives in
 ## Where briefs live
 
 `~/dev/.handoffs/<project>/<slug>.md` — central, outside every worktree, a
-sibling of `~/dev/.worktrees`. Living outside git entirely means the folder
-needs no ignore rules, and its per-project folders double as the archive:
-retirement is a rename to `.md.done`, never a delete, because the text has no
-version control to survive in. `_clusters.md` beside them is hand-maintained
-and holds only what the listing cannot derive — what each cluster means, and
-the order to work them in.
+sibling of `~/dev/.worktrees`. Living outside git keeps one brief visible from
+every worktree.
+
+```text
+work landed + durable knowledge has an owner → brief delete <slug>
+live successor needs a unique passage          → brief retire <slug> --reason "kept: …"
+premise died but useful work remains            → rewrite forward, then delete the old brief
+```
+
+The kept `.md.done` form is the exception, not the archive. `_clusters.md`
+names live clusters and their order; retirement removes the slug from it in the
+same change.
 
 **Honesty floor:** a session that taught nothing transferable hands off state
 and next move, and nothing else.

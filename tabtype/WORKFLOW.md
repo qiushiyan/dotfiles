@@ -1,99 +1,103 @@
-# Daily Workflow
+# TabType workflow
 
-This is the list of prompts I use daily when developing with two AI coding agents — one acting as **implementer** (drafts specs, plans, code) and one as **reviewer** (critiques each artifact). I paste responses between them using snippets defined in `.config/tabtype/config.toml`.
+The snippets in `tabtype/.config/tabtype/config.toml` support a flexible
+analysis → design → implementation → review arc. The config owns exact prompt
+text and available keys; this page owns sequence. `DESIGN.md` explains why the
+families are shaped this way.
 
-The full arc covers a single feature from problem framing through PR. Most steps can be skipped or repeated depending on the task; the helpers at the end fit anywhere.
+The skill-based loop in `docs/doc-loop.md` is the default for projects that
+provide those skills. Use these snippets when working manually across agents or
+when one focused prompt is lighter than a full skill run.
 
-## Spec stage
+## 1. Frame and settle the direction
 
-1. **`think-holistic`** → **both** agents in parallel. Frames the problem and proposes 2–3 approaches grounded in the actual code, before committing to a direction. Usually the first prompt of a session.
+```text
+think-holistic → both agents when independent designs are valuable
+compare-notes  → implementer synthesizes the second analysis
+step-back      → pressure-test an anchored first take
+risk-check     → isolate hot-path, user-surface, and core-logic risk
+```
 
-2. **`compare-notes`** → implementer. After both agents respond to `think-holistic`, paste the reviewer's analysis at the end of `compare-notes` and send to the implementer to synthesize the two views before committing to a direction.
+Use `elaborate-questions` when a question cannot be decided without hidden
+session context.
 
-3. **`write-spec`** → implementer. With a direction settled, the implementer writes the spec to `docs/specs/`. The spec is half-technical: product goals and behaviors on top; module boundaries, seams, the target shape (file structure, public API, wiring), and test standards below. The interface is chosen here — the implementer designs it twice and records the discards. It defers line-level edits, per-case test enumeration and fixtures, doc plans, and precise commit order.
+## 2. Write the design
 
-4. **`review-spec`** → reviewer. Critiques the spec using the section-scoped altitude lens (product tier at product altitude, technical tier at design altitude), runs a pre-mortem, and audits whether the target shape was *chosen* or merely *first*. Output is structured feedback, ending in an "Optional polish" section of exact before → after replacements.
+`write-spec` turns the settled direction into a project-local spec. It owns
+product behavior, boundaries, target shape, and test strategy. Review the spec
+through `/consult` or the project's review convention.
 
-5. **`update-spec`** → implementer. Paste the reviewer's feedback at `$0`. The implementer assesses each point (validity → update or pushback) and revises the spec.
+Before implementation:
 
-6. _(common for nontrivial specs)_ **`review-spec-again`** → reviewer. Re-checks whether the round-1 feedback was actually integrated, or hand-waved.
+```text
+compact-for-impl → keep the settled design and why
+reread-context   → rebuild file-level understanding from source
+```
 
-7. _(common for nontrivial specs)_ **`update-spec-again`** → implementer. Round-2 feedback applied inline, no formal validity gate. Focus is converging.
+## 3. Plan when the work needs one
 
-## Stage transition
+```text
+tdd-plan       → vertical red/green/refactor slices
+start-plan     → non-TDD sequence with a verification story
+review-plan    → reviewer judges tactics against the settled design
+update-plan    → implementer integrates the review
+*-plan-again   → optional convergence pass
+```
 
-8. **`compact-for-plan`** → implementer. Just before the plan stage. Invokes `/compact` with a structured prompt that preserves the settled spec, architectural direction, and rationale while dropping brainstorming alternatives, cross-agent synthesis, and round-1 critiques. Shifts the implementer from creative-divergent mode to focused-execution mode.
+Small work may move directly from the spec to implementation.
 
-9. **`reread-context`** → implementer. After the compaction, reread the files the change touches to rebuild the mental model from the actual code (real data/control flow, existing constraints, the seams the work will build on) — the compaction deliberately dropped that file-level detail. No code yet; this grounds whatever comes next, whether or not a formal plan follows.
+## 4. Implement
 
-## Plan stage
+Choose the entry that matches the artifact available:
 
-10. **`tdd-plan`** (or `start-plan` for non-TDD work) → implementer. With the spec settled — its module shape, seams, and test standards already fixed — the implementer writes the tactics it deferred: vertical slices, specific test cases, helper sketches, fixture shape, line-level references for existing code. Stops short of full code bodies, and never redraws the spec's structure.
+```text
+implement-spec   → build from a settled spec
+implement-direct → build a bounded change without a separate spec
+```
 
-11. **`review-plan`** → reviewer. Critiques the plan against the TDD and architecture skills, applies the altitude lens.
+For a large build, pause at a committed boundary:
 
-12. **`update-plan`** → implementer. Paste feedback at `$0`. The plan gets revised.
+```text
+midpoint-status → review-midpoint → respond-midpoint → user go-ahead → continue
+```
 
-13. _(rare)_ **`review-plan-again`** / **`update-plan-again`** → round-2 for plans. Usually one iteration suffices.
+## 5. Review and converge
 
-## Implementation stage
+```text
+compact-for-review
+  → implementation-handoff
+  → review-implementation
+  → respond-review
+  → user approves changes
+  → review-implementation-again
+  → respond-review-again
+```
 
-14. **`implement-spec`** → implementer. Kicks off the build: reread the settled spec and the critical files the change touches to rebuild the mental model from the actual code, then implement end to end (the actual red-green-refactor cycles). Doc updates are deferred until I say.
+`commits-summary` supplies a lighter context block when the full handoff is not
+needed. `review-verify` and `consult-verify` spend an agent wait on independent
+reproduction rather than idle time.
 
-### Mid-point checkpoint _(optional — for large implementations, e.g. 10+ slices)_
+## 6. Wrap up
 
-When the work is large, I manually pause the implementer at a commit partway through (say slice 4 or 5) and run a checkpoint review before it continues. Catching a structural problem here is far cheaper than at the final review, and it compounds across every remaining slice.
+```text
+compact-for-cleanup → pr-description → optional find-similar-bugs
+```
 
-15. **`midpoint-status`** → implementer. The paused implementer reports where it is: slices done, slices left, and — most usefully — deviations and surprises against the plan. A status snapshot, not a self-review.
+Use `handoff-for-review` instead of merging when the branch needs a fresh
+adversarial session.
 
-16. **`review-midpoint`** → reviewer. Paste the status at `$0`. The reviewer does two jobs: reviews the completed slices (weighting foundational issues that will compound) and guides the rest (gotchas, plan course-corrections, reuse tips). Unreached slices are intentionally undone, not defects.
+## Helpers
 
-17. **`respond-midpoint`** → implementer. Paste the review at `$0`. The implementer triages each point into fix-now / fold-into-remaining-slices / disagree — **no code changes yet** — then summarizes the updated plan and waits for my go-ahead. After I greenlight, it fixes the now-problems first, then resumes the remaining slices.
+| Need | Snippet |
+|---|---|
+| Compact the same in-flight task | `compact-inflight` |
+| Generate a session-specific compaction instruction | `generate-compact` |
+| Replace a long debugging history with a deliberate handoff | `brief-for-rewind` → `resume-from-brief` |
+| Expose guesses | `list-assumptions` |
+| Walk one concrete runtime path | `trace-execution` |
+| Adapt general guidance to the repository | `smart-adapt-skills` |
+| Reframe difficulty around impact and uncertainty | `technical-difficulty` |
+| Choose current platform/library primitives deliberately | `use-latest-stack` |
+| Triage external review feedback | `handle-review` |
 
-18. _(optional — after a long implementation, when context is heavy)_ **`compact-for-review`** → implementer. Before the review cycle, `/compact` to a focused window: keep the implementation status, the load-bearing mental model and critical files, and the key decisions + why — drop the step-by-step build process. Readies the implementer to write a sharp handoff and respond to review from first principles. Usually the review that follows is `review-implementation`, but not always.
-
-19. **`implementation-handoff`** → implementer. With the work finished, the implementer writes a structured handoff: what changed and why, a change map with the load-bearing files marked, key decisions and tradeoffs, deviations from the plan, test coverage, and — critically — where the reviewer should look hardest. It orients the review and shifts the framing to the person who knows the code best. Supersedes the bare `commits-summary` as the review's context block.
-
-20. **`review-implementation`** → reviewer. Round-1 code review. Paste the handoff at `$0` for context. The reviewer reads the review lens (`~/.config/lessons/collaboration/review-lens.md`) for its stance — step back before the local fix, the additive-bias bar on requested tests, over-building, grade the code not the account of it — and the snippet adds only this run's lens: solves-the-problem, test quality, plan deviation, and the settled-spec fence.
-
-21. **`respond-review`** → implementer. Paste reviewer feedback at `$0`. The implementer analyzes each point first — **no code changes yet**. The analysis-first gate matters here because code changes are expensive.
-
-22. _(no snippet — manual prompt)_ "Go ahead and apply." After reviewing the analysis, I tell the implementer to make the agreed changes.
-
-23. **`review-implementation-again`** → reviewer. Round-2 code review on the updated implementation. Focus shifts to "was the previous feedback actually addressed?"
-
-24. **`respond-review-again`** → implementer. Paste round-2 feedback at `$0`. The implementer applies fixes inline, no analysis gate — this round is about converging.
-
-## Wrap-up
-
-25. _(optional — when the session is running long)_ **`compact-for-cleanup`** → implementer. When implementation is essentially done and polished but small non-blocking tasks remain (docs, minor fixes, cleanup), `/compact` to a focused window on the finished code: preserves what was built and the leftover task list, drops the whole spec → plan → review journey. Unlike `compact-for-plan`, nothing about planning follows — you just work the remaining tasks.
-
-26. **`pr-description`** → implementer. Drafts the PR description aimed at a technical colleague who won't read the diff.
-
-27. _(optional)_ **`find-similar-bugs`** → implementer. Before committing, sweeps the codebase for other places likely to have the same bug pattern.
-
-28. _(instead of merging — when the branch isn't trusted yet)_ **`handoff-for-review`** → implementer (Claude Code). Fires the global `/handoff` skill in **review posture**: the baton pins the next session to this same branch and worktree with an adversarial re-verify stance — the architecture of the accreted fixes, the module design and extraction candidates, and why edge cases kept escaping green tests. Type the branch-specific focus at `$0`; merging waits until the review session clears it.
-
-## Helpers that fit anywhere
-
-- **`compact-inflight`** — when context is running long mid-work but the same task continues right after, not at a stage boundary. Unlike `compact-for-plan`/`compact-for-review`/`compact-for-cleanup`, which each keep what the _next stage_ consumes, this keeps the _in-flight state_ — what's in progress, decisions made and why, live repo facts — and drops the journey. Also the right one to reach for when resuming after a compaction got interrupted mid-slice.
-
-- **`generate-compact`** — the meta-move over the fixed `compact-*` cuts. Rather than picking a template, you ask the model — which holds the session — to *write* the compaction prompt: a tailored `/compact` instruction naming the specific threads to keep and cut, which you paste back to run. Aimed at the handoff your future self would want (the branch state, decisions + why, durable anchors, traps, and what's next — both on this branch and parked for later; journey dropped), but tailored to what this session actually holds. Distinct from `brief-for-rewind`, which writes the handoff itself — here the model writes the *instruction* and the compaction pass writes the handoff. Reach for it when you want a sharper cut than the fixed templates give.
-
-- **`brief-for-rewind`** / **`resume-from-brief`** — the pair for reclaiming context by _rewinding_ rather than compacting, when a task took far more runs than expected and the window is now heavy with the debugging journey. Rewind the chat history to an earlier checkpoint but **not** the code, so the working implementation survives. `brief-for-rewind` → the agent that did the work, while it still remembers everything: it writes a short first-person brief covering only the delta since the checkpoint — end state (never the rounds), the hard-won findings, a durable anchor per claim, what's parked, a few cheap checks, and the remaining work. `resume-from-brief` → the rewound agent, with the brief pasted at `$0`: take it as given, orient against the real diff, run only the listed checks, and continue. Unlike `compact-*`, nothing is summarized in place — you choose the checkpoint, and the brief is the only thing that crosses it.
-
-- **`step-back`** — a lightweight, mid-stream `think-holistic`. Reach for it when you forgot to open with `think-holistic`, or when the agent has landed on a first-impression analysis and you want it to reconsider before committing. Where `think-holistic` fights a cold start (read the code, don't guess), this fights anchoring: treat the first take as a hypothesis and try to break it — reground where it's inferring, restate the real problem, zoom out to structure (local change vs. structure-in-the-way, preparatory refactoring), and weigh a genuinely different approach. Lighter because the model is already partway grounded.
-
-- **`consult-verify`** / **`review-verify`** — fill the wait on a cross-agent round with independent evidence instead of idling. `consult-verify` fires a `/consult` diagnosis round and, while it runs, has the agent reproduce the symptom with a throwaway spike (per the global `spike` skill, adapted from design questions to reproduction) to challenge its own diagnosis — reproduce and verify only, no fix. `review-verify` fires a `/review` full review and, while it runs, re-proves the intended behavior with spikes, reporting expected vs. actual. A project can shadow the pair with a heavier local verification rig (planlab's `loopy-consult-verify` / `loopy-review-verify` bind the same pattern to `pl-loopy-verify`).
-
-- **`list-assumptions`** — when you suspect the agent is guessing about data, intent, or system state. Forces categorization into verified / likely / speculative.
-
-- **`trace-execution`** — when you need to understand an existing code path step-by-step. Useful before refactors or when debugging unfamiliar territory.
-
-- **`commits-summary`** — standalone context block to bring any agent up to speed on a series of commits without making them review commit-by-commit.
-
-- **`smart-adapt-skills`** — meta reminder when an agent is using skill files: adapt the principles, don't apply pedantically.
-
-- **`technical-difficulty`** — reframes what "hard" means when discussing scope or complexity (impact and uncertainty, not lines changed).
-
-- **`handle-review`** — triage attitude for external PR reviews (GitHub apps like Claude/Cursor); pairs with a skill that fetches them. The spine: pin claims of wrong behavior with a test before fixing (red confirms and becomes the regression test; green rebuts — the act-now cousin of `respond-review`'s analysis-only test reflection), fix what's right (possibly better than suggested), drop what isn't (with a quick why), and bring product-level feedback to the human instead of acting on it. A confirmed bug also asks why the suite sat green over it — coverage gap or weak test. Ends with a fixed/dropped/flagged rundown plus how the tests changed.
+Search `key =` in the config for the full inventory and current prompt text.

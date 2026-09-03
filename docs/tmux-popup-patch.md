@@ -3,7 +3,9 @@
 **Status: temporary carry.** Homebrew's `tmux` is replaced by
 `qiushiyan/local/tmux-popupfix` — stock tmux 3.7b plus one backported/extended
 fix. Retire it (see below) once an upstream release after 3.7b fixes popups
-under `status-position top`.
+under `status-position top`. Upstream's 3.8 change log names broad redraw fixes
+around status lines, popups, and floating panes, but not this exact coordinate
+case; the reproduction harness remains the retirement gate.
 
 ## The bug it fixes
 
@@ -68,6 +70,5 @@ coordinate fix; if unclear, install and rerun the harness above):
 2. Brewfile: restore `brew "tmux"`, drop the `qiushiyan/local` tap line
 3. Delete this file and `docs/tmux-popupfix.rb`; `brew untap qiushiyan/local`
 
-Not reported upstream yet (as of 2026-08). If reporting: the repro above,
-against master, with `status-position top` — reference PR #4920, whose fix
-this extends to the status-top case.
+If reporting the exact case, use the repro above against master with
+`status-position top` and reference PR #4920, whose fix this extends.

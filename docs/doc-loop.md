@@ -30,42 +30,23 @@ update-docs skill) — never the reverse.
 
 ## The work loop — consult → build → review
 
-The bookends carry knowledge across sessions; these three carry **independent
-judgment** into one. Their shared invariant: whoever authored a thing never gets
-to be its only judge — of the design (`/consult`) or of the code (`/review`).
-Both dispatch fresh sessions through `envoy`; both make the host verify every
-finding against the code and answer to the user for each verdict, because a
-voice is a peer, not an authority.
+The bookends carry knowledge between sessions; the work loop introduces
+independent judgment inside one. An artifact's author is never its only judge.
 
-- **`/consult`** — before code. The host works the user's answers and new
-  requirements through _first_ and lands on a position it would defend; only then
-  do the voices weigh in. Design mode keeps that position out of the brief so the
-  voices design unanchored; review mode puts it in as the artifact under review.
-  Output: the settled direction, plus an out-dir that stays continuable.
-- **`/spike`** — optional, only when asked. Throwaway code on a simplified
-  foundation, where the thing under test stays real and everything around it is
-  faked, settling one question the direction leans on that reading cannot
-  answer. Output: a verdict that amends the direction — or kills it, and sends
-  the shape back to `/consult`.
-- **`/write-spec`** — the settled direction becomes a committed spec. One
-  composite user-triggered checkpoint: write, commit, then a validation
-  consult — warm (continuing this session's consult) when one ran, fresh
-  otherwise — with skill arguments overriding the defaults ("don't commit",
-  "skip validation"). It ends by reporting; stage transitions stay the
-  user's call. The `;;write-spec` snippet remains the paste-in escape hatch.
-- **`/review`** — after the range is committed. Fresh-eyes when nothing outside
-  the implementation ever judged the design; spec-anchored when a consult or an
-  approved spec settled it. A consult in this session means the review defaults
-  to a fan-out: that voice warm (`--with-from <out-dir>`, the best judge of
-  follow-through) beside a cold one (the strategic read). Naming the consult
-  out-dir in the synthesis is what keeps that seam available.
+| Checkpoint | Input → output |
+|---|---|
+| `/consult` | host position → independent designs → settled direction + continuable out-dir |
+| `/spike` | one technical uncertainty → executable evidence → verdict that amends the direction |
+| `/write-spec` | settled direction → committed design → validation consult |
+| `/review` | committed range + design anchor → verified findings → merge verdict |
 
-Implementation between them is ordinarily the host's, straight from the
-synthesis — `/delegate` is the alternative, and the reason `/review` asks where
-the implementation report came from. Compacting is safest at the phase joins,
-after the spec is written and after the range is committed: the artifact each
-phase leaves is what makes the context it consumed disposable, which is the same
-reason a distilled artifact beats a long session.
+The host verifies outside findings against source; a peer is evidence, not
+authority. Implementation is ordinarily the host's, with `/delegate` as the
+explicit alternative. The `;;write-spec` snippet remains the paste-in escape
+hatch.
+
+Compact at artifact boundaries. Once a spec or committed range carries the
+state, the exploration that produced it is disposable.
 
 ## The commands, by project
 
@@ -98,22 +79,10 @@ Where the machinery lives and which repo owns which half: `docs/handoff.md`.
 
 ## The doc shape that keeps onboarding cheap
 
-Onboarding cost is doc-tree shape, not skill wording. Each project encodes this
-contract in its own `documentation-standards.md`, enforced by its update-docs
-verify step; this repo has no such file, so these paragraphs are its contract
-and the global skills' standards apply:
-
-- **Spine / satellites.** The always-read Phase-1 set carries the mental model —
-  principles, vocabulary, workflows, invariants; mechanism lives in topic
-  satellites that onboarding Phase 2 routes to. A spine section that grows past
-  its mental model is a split waiting to happen.
-- **Budget: ~100KB (`wc -c`) for the Phase-1 set** — roughly 25k tokens, well
-  under 10% of the window after overhead. The update-docs skill's verify step
-  measures it and must flag an overrun, naming the split candidate, even when the
-  split is deferred. Exceeding it is allowed only as a recorded decision, never
-  as drift.
-- **duet is the reference implementation**, and itell already has the shape —
-  both separate repos, so their satellite names live there rather than here.
+`docs/documentation-standards.md` owns the spine/satellite model, hot-path
+budget, protected set, and verification checks. This loop supplies the cadence:
+`/update-docs` reconciles one change; `/distill-docs` periodically reconciles
+the tree.
 
 ## The periodic passes — `/distill-docs` and `/distill-handoffs`
 
@@ -123,19 +92,17 @@ cannot see: `/update-docs` ↔ `/distill-docs` over the doc tree,
 mostly as a **closeout** — from the branch that just merged, deleting the
 brief that spawned it and settling only the briefs that named it — and, from
 the default branch, as the whole-folder reconcile; `docs/handoff.md` places
-its machinery. The docs twin:
+its machinery.
 
-Update-docs is diff-scoped, so cross-doc duplication and rot in untouched files
-accumulate in the seams no matter how disciplined the per-change passes are —
-duet accumulated duplicate copies of one key list, and two shipped specs left
-sitting beside the design docs, across many update-docs runs. Run the global
-`/distill-docs` when update-docs' budget check flags an overrun, and otherwise
-weekly as a standing slot — at that cadence most runs find little, and a pass
-that reports a clean tree is the point rather than a wasted one:
-mechanical sweeps and a delegated redundancy map → owner-confirmed surgery →
-verify → a _fix-the-generator_ step that patches the project's standards or
-update-docs skill whenever a rot class recurs. It defers to each project's
-`documentation-standards.md`, including its protected exceptions.
+Update-docs is diff-scoped; distill-docs catches tree-wide duplication, stale
+proposals, and misplaced mechanism. Run it when the hot-path budget flags an
+overrun and otherwise in the weekly standing slot:
+
+```text
+sweep + redundancy map → owner-confirmed surgery → verify → fix the generator
+```
+
+Both passes defer to `docs/documentation-standards.md`.
 
 A complaint about a tool the loop runs — `brief`, a skill, obelisk, a
 snippet — is `/improve-tool <tool> [engine] [the complaint]`: a mining pass
@@ -144,14 +111,13 @@ in `lessons/agent-tooling/usage-lessons.md`.
 
 ## Principles
 
-- **Docs lead, code follows; sessions evaporate.** Anything worth keeping lands
-  in the docs (durable, shared) or the handoff (session-to-session bridge) —
-  never only in a transcript.
-- **Every edit nets tighter.** Adding content is the moment to cut; deletion is
-  maintenance; spotlight the load-bearing, let the code hold the inventory.
-- **Point, don't pre-chew.** Onboarding and handoffs hand the next session
-  pointers and claims-to-verify, not answers — verification is what makes the
-  knowledge its own.
-- **Wrap up at task boundaries, not context exhaustion.** Past ~50% window, write
-  the brief first (it needs the session's memory) and run the doc pass fresh (it
-  only needs the diff).
+```text
+session knowledge → docs (durable model) or handoff (next-session state)
+artifact boundary → compact or hand off
+changed behavior → update-docs
+merged branch → distill-handoffs
+```
+
+Point to claims the next session can verify. Wrap up at task boundaries; when
+context is already heavy, write the brief before the doc pass because only the
+brief needs this session's memory.

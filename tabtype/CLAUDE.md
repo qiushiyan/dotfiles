@@ -1,75 +1,35 @@
-This folder is a Stow package for **TabType**, a text-expansion tool. `.config/tabtype/config.toml` is the live config — it's symlinked to `~/.config/tabtype/config.toml` by the parent dotfiles Stow setup, so edits here change the running app immediately.
+# TabType prompt snippets
 
-The `snippets` array holds the prompt templates the user pastes into AI coding tools (Claude Code, Codex, etc.) via the `;;` trigger. These snippets — not TabType itself — are the substance of the file, and most work future agents do here will be revising or adding them. They encode a deliberate two-agent, three-stage development workflow.
+This Stow package owns the live TabType config at
+`tabtype/.config/tabtype/config.toml`. Edits take effect immediately.
 
-## The workflow encoded by the snippets
+The `snippets` array is the product: prompt templates pasted into Claude Code,
+Codex, and other coding agents through the `;;` trigger.
 
-The user runs two coding agents in parallel: one **implementer** (drafts specs, plans, code) and one **reviewer** (critiques each artifact). Snippets get pasted between them across a **spec → plan → implementation** arc, with draft / review / update cycles at each stage and an optional round-2 for follow-on revisions.
+## Model
 
-Prefix convention: `review-*` is always sent to the reviewer; `update-*` and `respond-*` are sent to the implementer. The `-again` suffix marks a round-2 variant (re-doing the same operation on the updated artifact).
+```text
+reason about the problem → settle a design → plan tactics → implement → review
+         optional peer input ↗                         ↘ handoff or cleanup
+```
 
-For the full daily flow — every snippet in the typical order it gets used, plus the standalone helpers and when they fit — see [WORKFLOW.md](WORKFLOW.md).
+`WORKFLOW.md` owns the order and invocation of snippets. `DESIGN.md` owns the
+prompt patterns and altitude rules. Read only the branch being edited.
 
-## Design patterns to preserve
+## Invariants
 
-When revising or adding snippets, these patterns recur and carry the workflow's intent:
-
-**Stage altitude lens** (in `review-spec`, `review-plan`). Each artifact has a deliberate level of detail, and the reviewer is given a lens so they critique at the right altitude. The two stages shape it differently, because the spec has two tiers and the plan has one:
-
-- **Spec** (`review-spec`) — a **section-scoped** lens. The spec runs top-down, product sections above technical sections, and each tier reviews at its own altitude: a missing behavior is a product-section gap; module boundaries, seams, the target shape, and the test strategy are fair game in the technical sections; code bodies, per-case test enumeration, fixtures, line-level edit plans, and commit order are intentionally deferred. Module design pressed at the product tier is below altitude — judge it in the technical sections instead.
-- **Plan** (`review-plan`) — a **flat three-part** lens, since the plan is one altitude throughout:
-  1. Vagueness about things the plan _intentionally_ defers (full code bodies) — don't ask for more.
-  2. Vagueness about things the plan _should_ answer — flag it.
-  3. Technical content the plan _does_ propose — fair game to critique; propose better.
-
-  The plan defers _only_ full code bodies. Test cases, helper internals, fixture shape, and line-level references for existing code _are_ in the plan and are reviewable.
-
-**The spec is half-technical, and the interface is chosen there.** The spec's technical tier owes the module boundaries, the seams, the **target shape** (file structure, public API, integration wiring), and the **test standards** (which behaviors matter, and for each the strategy — through which interface, what gets faked at which boundary). It reads the design lessons closely (`deep-modules`, `composition`, `design-it-twice`, `deepening`) and skims the testing lessons' `## The bar` as a lens. The plan is then purely tactical: slices, sequencing, specific test cases and fixtures, line-level anchors.
-
-The load-bearing ordering rule: **`design-it-twice` belongs to the spec, not the plan.** The interface gets committed in the spec's target-shape section, and `tdd-plan` tells the implementer to follow the settled spec — so a design-it-twice gate in the plan fires after the decision it exists to inform. The spec sketches three shapes different in kind, commits one, and records the discards in a short "Shapes considered" note (the winner, not the menu) — which `review-spec` then audits: was the shape _chosen_, or merely _first_?
-
-**"What not to include" guardrails** (in `write-spec`, `tdd-plan`). Each draft snippet explicitly names what gets designed at a _later_ stage, to stop the agent from prematurely committing to details (e.g., the spec doesn't include doc-update plans because those happen post-implementation).
-
-**Round-2 review** (`review-implementation-again`, `review-plan-again`). Re-check after the drafter applies feedback — focus is "was the concern actually addressed, or hand-waved?" Apply the same altitude lens; don't relitigate settled points.
-
-**Reflect-before-change for code feedback** (`respond-review`). The drafter analyzes critique _before_ touching code. Spec/plan use direct `update-*` snippets since text is cheap to revise; code uses the reflect pattern because code changes are more expensive. Round-2 (`respond-review-again`) drops the analysis gate and applies inline, since the work is narrower and the goal is converging.
-
-**Mid-point checkpoint** (`midpoint-status`, `review-midpoint`, `respond-midpoint`). For large implementations (10+ slices), the implementer is paused partway to report status, the reviewer critiques the work-so-far _and_ guides the rest, then the implementer triages the feedback before resuming. Two ideas specialize the altitude lens here:
-
-- **Time axis** — slices not yet reached are _intentionally undone_, not defects; the reviewer must not flag them as missing (the temporal analogue of "don't ask for more on deferred things").
-- **Early-correction leverage** — foundational/structural problems are weighted _highest_ because they compound across every remaining slice, while local nits defer to the final `review-implementation`.
-
-The response reuses the reflect-before-change gate from `respond-review`, but its triage is forward-looking: each point sorts into fix-now / fold-into-remaining-slices / disagree. No `-again` round-2 variants — a checkpoint is one-shot; you fix and continue.
-
-**Review-aligned handoff** (`implementation-handoff`). When the implementer reports finished work to orient the reviewer, the report's sections mirror `review-implementation`'s evaluation axes — what/why, change map, key decisions, deviations, tests, where-to-look-hardest — so each thing the reviewer is about to assess is pre-loaded. It's a guided map, _not a self-review_: the implementer marks the riskiest/most-complex changes (shifting the framing burden to whoever knows the code best) but does **not** grade quality — that's the reviewer's job. It supersedes the thin `commits-summary` as the final review's context block, feeding `review-implementation`'s `$0` directly. The general principle: a report snippet should be shaped by the review snippet it feeds.
-
-**Step back, then right-size** (`review-implementation`). The code-review lens guards two opposite failures. Tactical narrowing: accepting the implementation's framing and optimizing inside it — a local optimum — so the lens opens by demanding a step-back (would a new module or helper, a shared extraction, a redesigned contract, or different wiring dissolve the problem?) before any local fix is endorsed. Additive bias: improving by adding — defensive branches for impossible states, speculative abstraction, reflexively requested tests — so right-sizing flags over-building and a deletable test counts as a finding. The two aren't in tension; both push toward the design where complexity disappears. The settled-spec fence bounds the step-back: shape of the code, never approved decisions.
-
-**Tests as a cross-cutting concern.** Test thinking isn't confined to the plan/TDD stage — it threads through the whole arc, each phase at its own altitude. Match the prompt to the phase: don't ask for test cases where they're intentionally deferred, and don't let them silently drop where they're due.
-
-- **Spec** (`write-spec`, `review-spec`) — the **test standards**: name the behaviors that matter, and for each the strategy — through which interface, what gets faked at which boundary. Mocking is a *design* decision (a mock of your own module is a signal to fix the interface), so the boundary is settled here; the specific cases and fixtures are deferred. The spec skims the testing lessons' `## The bar` as a lens; it never writes an assertion, so `vitest.md` stays out of it.
-- **Plan** (`tdd-plan`, `review-plan`) — test cases and fixtures are first-class and reviewable, against the standards the spec already set. This is where the testing lessons are read in full. Non-TDD plans (`start-plan`) still owe a verification story per phase.
-- **Implementation review** (`review-implementation`, `implementation-handoff`) — test quality is an explicit evaluation axis and a reported section.
-- **Responding to review** (`respond-review`) — a finding is a signal about test quality: diagnose coverage-gap vs. weak-test, then plan add / strengthen / delete. `review-implementation-again` then verifies those test changes actually held up.
-- **Mid-point checkpoint** (`midpoint-status`, `review-midpoint`, `respond-midpoint`) — test state is surfaced for the completed slices, reviewed, and any fallout triaged into fix-now / fold-into-a-slice.
-
-When adding or revising a snippet, ask whether its phase has a test angle and pitch it at that phase's altitude.
-
-**Compaction is shaped by the next phase** (`compact-for-plan`, `compact-for-review`, `compact-for-cleanup`). Compaction snippets reset context at a stage boundary — they preserve the settled artifact and drop the journey that produced it. Each is tuned to what the _next_ phase consumes, so each keeps a different slice:
-
-- `compact-for-plan` keeps the spec, architectural direction, and _why_ — planning builds on them — and drops brainstorming, cross-agent synthesis, and round-1 critiques.
-- `compact-for-review` keeps the implementation status, the load-bearing mental model and critical files, the decisions + _why_, and the distilled friction points (what fought back, and whether the difficulty was the problem's or the design's) — the reviewer will probe them — and drops the step-by-step build process.
-- `compact-for-cleanup` keeps the finished code's state and the leftover task list — finishing builds on them — and drops the whole spec → plan → review journey.
-
-The pair around the review boundary shows the principle sharply: `compact-for-review` _retains_ the decision rationale (you must defend it under review) that `compact-for-cleanup` _discards_ (finishing doesn't relitigate it). The load-bearing rule when adding another: preserve only what the work _after_ the compaction consumes; everything else is noise.
-
-`compact-inflight` (standalone helper) is the cousin for a pause that _isn't_ a stage boundary — the same task continues immediately after, so there's no "next phase" to tune for. It keeps the work's live state (what's in progress, decisions made and why, live repo facts) instead of a settled artifact, but drops the journey the same way the boundary compacts do.
-
-`generate-compact` is the meta-move over that whole family. Instead of you picking a fixed cut, it asks the model — which holds the session — to *write* the compaction prompt: a tailored `/compact` instruction naming the specific threads this session must keep and cut, which you paste back to run. It aims that instruction at the same target the fixed cuts do — the handoff your future self would want, built from the goal, where the branch stands, the decisions + why, durable anchors, the traps, the friction, and what's next (both on this branch and parked for a follow-up), with the journey dropped — but names *which* decisions and files instead of gesturing at categories. The two-level indirection is what makes it a meta-prompt rather than a handoff: it generates the *instruction*, and the compaction pass generates the handoff. That's the line between it and `brief-for-rewind`, whose output crosses the boundary directly with no second pass. Reach for it over a fixed `compact-*` when you want the cut tailored to what this session actually holds.
-
-**Rewind is the other way to reclaim context** (`brief-for-rewind`, `resume-from-brief`). Compaction summarizes the window in place and you take what the model chooses to keep; rewinding drops the history back to a checkpoint _you_ pick while leaving the code, commits, and deploys untouched, so the only thing crossing the boundary is a brief the agent writes on purpose. It's the right tool when a task took far more runs than expected — the window is heavy with a debugging journey that a working implementation has already superseded. The pair splits along posture vs. content: `resume-from-brief` is a fixed frame (take it as given, orient against the real diff, run only the listed checks) and never varies, while `brief-for-rewind` carries everything session-specific, including those checks. Keeping the posture out of the generated text is deliberate — an agent at a heavy context writing its own acceptance terms writes weaker ones. Neither prompt mentions the rewind: the brief reads as the user reporting work, because telling an agent its history was erased invites it to wonder what else is missing and go re-exploring, which is the cost the rewind exists to avoid.
-
-Choosing rule: `compact-for-*` at a stage boundary, `compact-inflight` when the pause is mid-work, `generate-compact` when you'd rather the model tailor the cut to the session than use a fixed template, and the rewind pair when the journey that filled the window is finished work you'd rather replace with its conclusion.
+- **Artifact altitude:** the spec owns behavior, boundaries, target shape, and
+  test strategy; the plan owns slices, cases, fixtures, and line-level anchors;
+  implementation owns code bodies.
+- **Design before tactics:** `design-it-twice` runs while shaping the spec, not
+  after an interface has already been committed.
+- **Independent judgment:** an author does not supply the only review of its
+  design or code. A report or handoff orients the reviewer; it does not grade
+  the work.
+- **Reflect before expensive change:** code-review responses assess findings and
+  test implications before editing. Narrow round-two fixes may apply inline.
+- **Context follows the next phase:** compaction keeps what the next action
+  consumes and drops the journey that produced it.
 
 ## Snippet schema
 
@@ -81,17 +41,27 @@ text with literal newlines
 and $0 cursor'''
 ```
 
-- `key` triggers via `;;key`; the `;;` trigger is set at the top of the file.
-- `expand` uses TOML literal multi-line strings (`'''…'''`) — content is verbatim, no escape processing. Place the closing `'''` on the last content line to avoid an extra trailing newline. For short single-line snippets, a basic string (`expand = "…"`) is fine.
-- `$0` marks where the cursor lands after expansion (used wherever the user is about to paste reviewer feedback: `update-*`, `respond-*`, `review-*-again`).
-- A `---` separator with a blank line before `$0` is the convention for snippets that need a visual separator before the pasted content.
+- `key` expands through `;;key`.
+- `expand` uses a TOML literal multiline string; the closing `'''` sits on the
+  last content line to avoid an extra newline.
+- `$0` marks pasted input or the final cursor position.
+- A blank line, `---`, then `$0` separates instructions from pasted material.
 
-Naming convention: stage artifacts follow `write-X` (implementer creates), `review-X` (reviewer critiques), `update-X` / `respond-X` (implementer revises based on critique), and `review-X-again` / `update-X-again` / `respond-X-again` for the round-2 variant. Implementer-produced status reports take a descriptive `-status` / `-handoff` name (`midpoint-status`, `implementation-handoff`). Standalone snippets use descriptive names (`think-holistic`, `find-similar-bugs`).
+Names describe direction:
+
+```text
+write-X / start-X / implement-X → author creates
+review-X                        → reviewer judges
+update-X / respond-X            → author integrates feedback
+*-again                         → convergence pass
+*-status / *-handoff            → context for another agent
+```
 
 ## Editing
 
-Edits to `.config/tabtype/config.toml` are live in TabType immediately via the Stow symlink — no reload needed. After editing, validate TOML:
+Treat the config as the inventory: search its `key =` lines rather than copying
+the list into this file. After editing:
 
 ```bash
-python3 -c "import tomllib; tomllib.load(open('.config/tabtype/config.toml', 'rb'))"
+python3 -c "import tomllib; tomllib.load(open('tabtype/.config/tabtype/config.toml', 'rb'))"
 ```

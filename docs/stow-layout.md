@@ -49,10 +49,10 @@ Two rules follow:
 - **`claude/.claude/CLAUDE.md` stays empty.** It stows to `~/.claude/CLAUDE.md`,
   which is that same global memory. Document Claude configuration in an ordinary
   `docs/` file instead, and link it from the map in the root `CLAUDE.md`.
-- **Package-local guidance needs a `.stow-local-ignore` entry.**
-  `tabtype/CLAUDE.md` is real, useful, package-scoped guidance; it stays out of
-  `$HOME` because `tabtype/.stow-local-ignore` lists it. Any package adding its
-  own `CLAUDE.md` needs the same entry.
+- **Package-local guidance needs a `.stow-local-ignore` entry.** TabType lists
+  `CLAUDE.md`, `WORKFLOW.md`, and `DESIGN.md`, so its repo-local docs stay out of
+  `$HOME`. Any package adding a root-level instruction or satellite must add the
+  corresponding ignore before restowing.
 
 ## Adding a file
 

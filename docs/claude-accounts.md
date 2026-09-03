@@ -6,42 +6,19 @@ lives.
 
 ## TL;DR
 
-- **`x`** — Claude with permissions bypassed, on the default account (the
-  board's enter sets it). **`x-<name>`** (`x-qiushi`, `x-yan`, …) starts one
-  session on that account and nothing more — bare `x`'s target is
-  untouched. Every launcher routes through
-  `headroom launch`, which validates the account and owns
-  `CLAUDE_CONFIG_DIR` — an inherited value (a tmux server started inside a
-  Claude session) can never re-route a launch, and corrupt routing state
-  refuses instead of silently becoming the primary.
-- **`x-check`** — ≡ `headroom check`; verifies the machinery after a Claude
-  Code update. Bare `headroom` is the usage board itself (`← x` marks where
-  bare `x` currently points).
-- **`x-select`** — session picker (`headroom sessions`): every session on
-  the machine in one list, project-local (this repo, worktrees included) on
-  top. Enter continues a session *in its own project dir, on the account
-  that last drove it* — headroom enters the dir and execs claude itself;
-  the wrapper only cds afterwards from an advisory file, so the cd sticks
-  once the session ends. `x-accounts`' choice only steers new sessions. `x`
-  re-homes the selected session to the current account instead; `/` search,
-  `r` rename, `dd` delete, space preview. (`headroom resume`, the old
-  decision-line spelling, is a permanent tombstone: if x-select prints a
-  stale-shell message, run `exec zsh`.)
-- **`x-accounts`** (alias **`x-acc`**) — account board: choose where bare
-  `x` goes next off the live usage bars. Enter repins and exits — no
-  session starts until you type `x`, so "change the default" and "start a
-  session" stay separate decisions.
-- **Sessions are machine-global** — the picker (and native `x --resume`)
-  from any account lists every session on the machine; which account
-  recorded a conversation never matters for *seeing* it. Which account
-  *resumes* it follows the session's owner: the account that last drove it,
-  re-routable per session with one key. Accounts stay auth/quota lanes,
-  never history silos. `claude-sessions-check` verifies the sharing
-  machinery.
-- **`claude-account-add <email>`** (alias **`x-account-add`**), then that
-  account's `x-<name>` and `/login` — onboard a new subscription.
-- Pieces: launchers in `zsh/.config/zsh/claude.zsh` (this repo); the
-  dashboard/picker engine is **headroom**, a separate Go project (see below).
+```text
+x                 → launch on the board's default account
+x-<name>          → one launch on a named account; default unchanged
+x-accounts / x-acc → choose the default account; no launch
+x-select          → resume in the session's project and owning account
+x-check           → verify routing after a Claude Code update
+```
+
+Every launcher delegates routing and validation to `headroom launch`; wrappers
+never set `CLAUDE_CONFIG_DIR` themselves. Accounts are auth/quota lanes.
+Sessions are machine-global and remain visible from every lane.
+
+Account lifecycle commands and failure recovery live under **Use patterns**.
 
 ## The engine: headroom
 
@@ -117,26 +94,11 @@ Everything derives from that tree:
 - **Which lane is a running session on, and how much is left in it?** Its
   tmux pane border says so — the context chip
   (`yan 5h:23 Fable:15 opus-5[1m] ✳ 37%`) leads with the account's email local
-  part, or the full email when two lanes share one, the same ambiguity rule
-  as the `x-<name>` short aliases, and follows it with that account's 5-hour
-  and **model-scoped weekly** limits. The 5-hour figure rides in on Claude
-  Code's own statusline payload; the weekly does not exist there (the payload
-  carries only the all-models figure, routinely far below the scoped one that
-  actually stops work), so it comes from `headroom limits` by way of a small
-  cache file — `claude-quota-refresh.sh` keeps it warm, the render path only
-  ever reads it. The board (`x-acc`) stays the place for the full breakdown
-  across every account; the chip answers for the one lane in front of you.
-  Details of the drawing, the shed order and the staleness rule:
-  `tmux/.config/tmux/workflow.md` § The Claude context chip.
-  **Every lane is labeled, the primary
-  included.** Only the *source* differs: an extra is named by the
-  `CLAUDE_CONFIG_DIR` headroom set at launch, which is its email, while the
-  primary — the one account with no dir to be named by — is read from
-  `~/.claude.json`. Uniqueness is judged across the primary and the account
-  dirs together, and a `CLAUDE_CONFIG_DIR` pointing outside
-  `~/.claude-accounts/` wears that dir's basename rather than borrowing the
-  primary's identity. Rendering and the narrow-pane shedding order:
-  `tmux/.config/tmux/workflow.md`.
+  part, or the full email when two lanes share one, and follows it with that
+  lane's 5-hour and model-scoped weekly limits. `x-acc` remains the complete
+  board; the chip answers only for the pane in front of you. Rendering, quota
+  sources, identity fallbacks, freshness, and shedding live in
+  `tmux/.config/tmux/scripts/context-chip.md`.
 - **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
   headroom off the live board, then type `x`; bare `x` targets it from then
   on. For a one-off session on another account without moving `x`, that
@@ -180,10 +142,10 @@ Everything derives from that tree:
   stranded ones; `claude-account-remove <name>.lock` (or a plain `rm -rf`
   with no claude running) deletes the debris.
 - **Stale token** on a rarely-used account: the board says so — run that
-  account's `x-<name>` once. Only Claude Code refreshes tokens; the engine
-  never touches login or quota state (its own files are `.current` and
-  `state.json`, and its only vendor-state writes are the session picker's
-  explicit rename/delete).
+  account's `x-<name>` once. Claude Code alone refreshes tokens. Headroom's
+  routine paths write only `.current`, `state.json`, and explicit session
+  rename/delete operations; account removal is the one path that deletes a
+  vendor credential from Keychain.
 - **After a Claude Code update**, or when the board misbehaves:
   `x-check` — a FAIL line names which reverse-engineered assumption
   broke. Run `claude-sessions-check` alongside it for the session-sharing

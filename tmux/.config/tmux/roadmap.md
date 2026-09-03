@@ -1,32 +1,17 @@
 # tmux: features not yet built
 
-A backlog of tmux improvements worth building, with enough notes to pick any one
-up later. Shipped items live in the docs that own them, not here — this file is
-only what is still open:
+A backlog of tmux improvements worth building. Open items follow this route to
+the current design and dormant reference docs:
 
 ```
 scripts/worktree.md      the worktree popup (prefix W) + the gh PR picker
-scripts/agent-notify.md  agent-done dots and the ◷ badge
-scripts/float-pane.md    floating zoom (prefix z) + pane mode (prefix p)
+scripts/agent-notify.md  dormant agent-done reference
+scripts/float-pane.md    floating zoom and restore
+scripts/pane-mode.md     pane mode (prefix p)
 workflow.md              how all of it is meant to be used
 ```
 
 ---
-
-## Codex agent-done wiring
-
-**What:** the agent-done dot and `◷ N` badge fire for Claude Code but not Codex,
-so a Codex pane finishing goes unnoticed.
-
-**Why it is still open:** Codex has a single `notify` slot in `config.toml` and
-it is already occupied by the Computer Use app. Wiring ours means a wrapper that
-calls ours then execs the original — that needs a decision before doing, not just
-implementation time.
-
-**Mechanism:** Codex invokes `notify` on `agent-turn-complete` with a JSON
-payload; the receiving end already exists (`scripts/tmux-agent-done.sh`).
-
-**Effort:** small, once the wrapper question is settled.
 
 ## Hint copy (tmux-fingers)
 
@@ -39,13 +24,22 @@ a *typed search string* to move the cursor — flash.nvim-style. Hint-copy label
 **Why:** grab paths, SHAs, and error locations out of agent/test output without
 the mouse.
 
-**Mechanism:** install `Morantron/tmux-fingers` (Crystal) via TPM; configure match
-regexes and keys. (Chosen over the once-default `fcsonline/tmux-thumbs`: as of
-2026-06 fingers leads on stars (1.4k vs 1.1k), was updated this month vs ~2yr
-stale, and carries 8 open issues vs 48 — the "thumbs = the modern Rust rewrite"
-framing has inverted.)
+**Mechanism:** evaluate the maintained hint-copy plugins when implementing, then
+configure match regexes and keys through TPM. Popularity and activity snapshots
+are evidence to re-check, not design to cache here.
 
 **Effort:** small (install + config).
+
+## Preserve easyjump syntax colour
+
+**What:** keep captured ANSI foreground colours while dimming the easyjump
+backdrop. The current overlay intentionally repaints it as one grey.
+
+**Design constraint:** labels and the current match must retain fixed contrast
+on both light and dark themes. Parse `capture-pane -e`; transform foregrounds;
+leave label, match, and current attributes owned by `scripts/easyjump/easyjump.py`.
+
+**Effort:** medium; ANSI state and wide-character offsets need focused tests.
 
 ## Persistent floating scratch terminal
 
@@ -74,7 +68,8 @@ building.
 ## Notes
 
 - Items that extend the worktree popup should follow its design guidelines
-  (`scripts/worktree.md`): one surface per concept, lean on built-in safety, pass
-  tmux context (session, path) in as args rather than inferring it.
+  (`scripts/worktree.md`): one surface per concept and built-in safety first.
+  `display-popup -d` supplies the repo path; the script self-detects the session
+  because formats do not expand in the popup command argument.
 - For pane-driving automation, `tmux-scripting.md` documents `send-keys` /
   `capture-pane` / `tmux-wait-for-text`.

@@ -256,53 +256,9 @@ keeps the last good save, and the user gets a message saying why.
 
 ## Pane mode
 
-One rule for `h/j/k/l`: **push the pane that way. If something is there, trade
-places. If nothing is there, become the wall.**
-
-The edge guard is load-bearing, not a nicety: tmux's directional targets **wrap**,
-so `{left-of}` from the leftmost pane resolves to the *rightmost* one. An
-unguarded `swap-pane -t '{left-of}'` — what `tmux-tilish` does — silently swaps
-with the pane on the opposite side. `#{pane_at_<dir>}` distinguishes "there is a
-neighbour" from "I am against that wall". A pane already spanning the requested
-edge no-ops, since re-running the relocation churns pane order for no visible
-change.
-
-Relocation always targets an explicit **sibling pane**: `-t <window>` on
-join/move-pane resolves to that window's *active* pane, which is usually the
-source itself → `source and target panes must be different`.
-
-### Undo is a journal, not `select-layout -o`
-
-`-o` undoes the last *geometry* change, but a swap changes pane **identity** at
-identical geometry, so it cannot reverse a push — and replaying a layout string
-has the same identity blindness. `u` pops a per-window journal of
-`(ordered pane ids, layout)` pairs.
-
-**Its scope is pushes only.** `m`/`M` and `b` are not journalled: a cross-window
-move can destroy the very window an undo record would live on, and the record
-shape cannot describe a move between two windows. Doing it properly means a
-cross-window move transaction, a much larger feature than this mode needs.
-
-The record is **validated before it is consumed** — a push neither adds nor
-removes panes, so it only applies while the window holds exactly the same set. If
-a pane has since died or been split, `u` refuses and keeps the record; replaying
-it would swap some panes, skip the missing ones, ignore a failed layout, and
-discard the record either way.
-
-The relocation bindings deliberately use `run-shell` **without `-b`**. The mode
-re-enters its table immediately, so ordinary fast repeats launch overlapping
-scripts and the journal's read-modify-write loses entries — two concurrent pushes
-record one. Plain `run-shell` puts them on tmux's command queue, which serializes
-them. Float keeps `-b`, since its popup blocks by design.
-
-### Mark and move
-
-`m` marks, `M` moves the current pane to the mark. The mark is server-global and
-can be replaced between the two, so it is re-resolved immediately before use.
-
-`-s` is **mandatory** on the move: with `-s` omitted and a mark present,
-`join-pane`/`move-pane` use *the marked pane as the source* (man tmux) — the
-exact opposite move.
+Directional push, the identity-aware undo journal, and mark-and-move are an
+independent control surface. Their model and verification live in
+`pane-mode.md`.
 
 ## Native floating panes are filtered everywhere
 

@@ -77,14 +77,20 @@ case_no_package_claude_md_reaches_home() {
   return $rc
 }
 
-case_ignore_file_actually_matches() {  # guards the guard: tabtype's ignore must keep working
-  ignored tabtype CLAUDE.md || { print "tabtype/.stow-local-ignore no longer excludes CLAUDE.md"; return 1 }
+case_tabtype_docs_stay_repo_local() {
+  local doc
+  for doc in CLAUDE.md WORKFLOW.md DESIGN.md; do
+    ignored tabtype "$doc" || {
+      print "tabtype/.stow-local-ignore no longer excludes $doc"
+      return 1
+    }
+  done
   return 0
 }
 
 t "claude/.claude/CLAUDE.md is empty"                      case_global_memory_empty
 t "no <pkg>/CLAUDE.md stows to ~/CLAUDE.md"                case_no_package_claude_md_reaches_home
-t "tabtype/.stow-local-ignore still excludes CLAUDE.md"   case_ignore_file_actually_matches
+t "tabtype package docs stay out of HOME"                  case_tabtype_docs_stay_repo_local
 
 print -r -- "stow-reach.test: $PASS passed, $FAIL failed"
 (( FAIL == 0 ))

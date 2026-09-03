@@ -95,33 +95,9 @@ bright palette variant. It still reads better than the weight ever did.
   one typographic family, so `font-style-bold = ExtraBold` buys +61% with no
   typeface change — at the cost of Dank Mono's cursive italic, which is the
   whole reason to be on it.
-
-### Future direction — build the weight the family never shipped
-
-The only route to real weight contrast *without* leaving Dank Mono is to
-manufacture the missing face: embolden Dank Mono Bold, install it as its own
-style, point `font-family-bold` at it. Not built — recorded so the next attempt
-starts from the findings rather than from scratch.
-
-1. `brew install fontforge` (not currently installed).
-2. `Element → Styles → Change Weight` on
-   `~/Library/Fonts/DankMonoNerdFontMono-Bold.otf`, driven by `fontforge -script`
-   so the build is repeatable rather than a one-off GUI session.
-3. Distinct style name, install to `~/Library/Fonts`, confirm with
-   `ghostty +show-face --style=bold`.
-4. Target ~+40% ink over regular (0.46 → ~0.65 on the scale above). Measure with
-   the same fontTools `AreaPen` pass; the whole point is that eyeballing weight
-   is what produced a 12% bold in the first place.
-
-Three things that make it more than an afternoon:
-
-- **Thin strokes balloon** as weight is added, so it is iterate-and-measure.
-  Extrapolating from a hairline keeps fine features fine.
-- **The artifact cannot live in this repo** — a binary, derived from a commercial
-  font, in a public repo. It is a local-only build, so it needs a `MIGRATION.md`
-  note and a re-run on any new machine.
-- **Dank Mono is commercial.** Whether modification is permitted is a EULA
-  question to settle before building, not after.
+- **Manufacture a heavier face** is deliberately not a live plan. The result
+  would be a local binary derived from a commercial font, outside Homebrew and
+  this public repo; EULA and reproducibility costs outweigh the gain.
 
 ## CJK — the fallback's line height sets the size
 

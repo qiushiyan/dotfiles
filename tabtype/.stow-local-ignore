@@ -4,3 +4,4 @@
 # loads TabType-only guidance into every project. Only .config/ should be stowed.
 CLAUDE\.md
 WORKFLOW\.md
+DESIGN\.md

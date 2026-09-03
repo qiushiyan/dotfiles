@@ -42,17 +42,15 @@ The worktree popup names windows after their branch automatically; rename ad-hoc
 
 ## The Claude context chip
 
-A pane running Claude Code shows the session's **account**, that account's **two quota numbers**, the **model** and the session's **context usage** on the **top-right of its border** (`yan 5h:23 Fable:15 opus-5[1m] ✳ 37%`), the context percentage green → yellow (≥50%) → red (≥90%) and everything else muted beside it, independent of whatever title sits top-left. The order is by **scope**: the account and its quotas on the left, the model and the context percentage — this session's own facts — on the right, with the model between them so three numbers never run together.
+A Claude pane shows **account · 5-hour · model-weekly · model · context** on
+the top-right border (`yan 5h:23 Fable:15 opus-5[1m] ✳ 37%`). Each percentage
+draws muted → yellow → red as it becomes urgent. Narrow panes shed calm shared
+quota first and context last; an urgent quota survives the shed.
 
-The model is the id Claude Code reports with its `claude-` prefix dropped — `fable-5`, `opus-5[1m]` — otherwise unprettified, and it tracks a mid-session `/model` switch. The account is which quota lane the session burns (docs/claude-accounts.md): the email local part (the full email when two accounts share one), drawn for **every** lane — an extra is named by the `~/.claude-accounts/` dir in the env headroom built at launch, the primary by the email in `~/.claude.json`, since it launches with no such dir and was otherwise the one account the chip stayed silent about.
-
-**The two quota numbers** are `5h:NN`, the account's 5-hour limit, and `Fable:NN`, its **model-scoped weekly** — no `%` on either, which keeps them distinct from the context percentage. They colour on their own values: muted below 50, yellow from 50, red from 90, so an untroubled border stays untroubled and colour there only ever means "look at this one". The 5-hour figure is free — Claude Code puts it in the payload it hands the statusline on every render. The weekly is not: the payload carries only the *all-models* weekly, which routinely sits far below the scoped one that actually stops work (94% against 54% on one lane the day this shipped), so the scoped figure comes from **headroom** — `claude-quota-refresh.sh`, spawned detached by the statusline when its last attempt has aged past five minutes and no sibling pane holds the lock, leaves it in `~/.cache/claude-ctx/<lane>.quota` for the render path to read with a single shell builtin. Nothing on the render path ever waits for it.
-
-An old weekly reading is still drawn, on purpose: **inside a live window usage only climbs**, so an aged figure understates and is safe. Once its window has *rolled over* the same figure describes a window nobody is spending against — a low number there would read as headroom that may not exist — so it disappears instead, as it does when the refresher could not read a trustworthy number at all. The chip never shows a `0` it isn't sure of.
-
-The chip is **responsive**: as the pane narrows it sheds by priority — the account below 55 columns, the model below 40, the context percentage never. The quota pair goes **first**, below 75, because it is the only part of the chip that is redundant across panes (three panes on one lane draw the same two numbers three times). It is also the only part that can turn urgent, so severity buys it back: a number at ≥50 survives to 40 columns and one at ≥85 draws at any width, each judged on its own value — so a Fable at 94 rides down to a sliver while a calm 5-hour drops out from under it. Widths are tuned to a 221-column client: a half-split (~110) and a third (~73) keep the full chip, a quarter (~55) drops the quota unless it is hot. Pure display — nothing is republished on the way back up.
-
-Claude's statusline script derives all of it on every render and republishes the pane-local options (`@claude_ctx`, `@claude_ctx_model`, `@claude_ctx_account`, `@claude_ctx_5h`, `@claude_ctx_wk`, `@claude_ctx_wk_model`) only when one of them changed; the context percentage alone decides whether the chip exists, so a session that reports no model, or no rate limits at all (API billing), just shows the number. The border row appears when a Claude session goes live in the window and drops when nothing needs it anymore (session ends, pane closes, labels cleared). Cleanup is belt-and-suspenders — Claude's `SessionEnd` hook for normal exits, a zsh `precmd` sweep for hard kills (a `C-z`-suspended claude keeps its chip), a `pane-exited` hook for closed panes, and the break/join/move verbs reconciling after a pane relocation — all funneling through `tmux-claude-ctx.sh`, the single owner of turning borders off. A per-pane tombstone keeps a dying session's last in-flight render from resurrecting a chip that cleanup just removed; it holds only until the same conversation legitimately starts again — resuming keeps the session id, and the `SessionStart` hook discharges the tombstone — so a same-pane resume gets its chip back. Mechanics and format gotchas: the "pane borders" block in `tmux.conf`.
+The account is the quota lane, not a generic process label. The weekly number
+comes from headroom because Claude's payload lacks the model-scoped limit.
+Mechanics, cache freshness, responsive thresholds, and cleanup ownership:
+`scripts/context-chip.md`.
 
 ## Starting a new task on its own branch (worktrees)
 
@@ -62,7 +60,7 @@ You want to work on a feature without disturbing `main` or another agent — giv
 - Type a branch name and press **`ctrl-n`** → it creates `~/dev/.worktrees/<repo>/<branch>`, opens a window named after the branch, seeds gitignored files (`.env*` …) from the main worktree, and runs the Node install (by lockfile) chained with the post-create command — default `x`, so the agent is already starting when you land. (`@worktree_auto_install off` / `@worktree_post_create_cmd off` to disable.)
 - Press **`enter`** on a listed worktree to jump to its window (created if it doesn't exist yet).
 - Mark several with **`tab`** (or all with **`ctrl-a`**) and press **`ctrl-x`** to remove them as one confirmed batch — deletion is instant (trash-and-sweep: the `rm -rf` happens in the background), dirty ones need an extra explicit discard, and branch deletion is offered in aggregate.
-- Press **`ctrl-g`** to *reap*: batch-remove every clean worktree already merged into the default base — end-of-week cleanup in three keystrokes. (Squash-merged branches don't count as merged; remove those with `ctrl-x`.)
+- Press **`ctrl-g`** to *reap*: batch-remove every clean worktree whose content has reached the default base, including squash and rebase merges — end-of-week cleanup in three keystrokes.
 - Press **`ctrl-p`** to pick an open GitHub PR and check it out into a fresh worktree (`ctrl-o` opens it in the browser instead).
 
 One worktree per window keeps parallel agents from stepping on each other. (See `scripts/worktree.md` for the design.)
@@ -76,7 +74,11 @@ Within a project you'll have a few windows — worktrees, a notes window, a long
 - **Reorder:** `Shift-Left` / `Shift-Right` (no prefix) slide the current window left/right.
 - **Rename:** `prefix m`. **Close:** `prefix x` (asks to confirm — it's a whole task).
 
-When the terminal narrows past `@window_collapse_width` (default 80 cols), inactive tabs **collapse to just their number badge** so a row of worktrees stops crowding the bar; the current window keeps its full name, and a waiting agent's badge still shows (yellow instead of aqua). They expand again as you widen — it's live, no reload. Tune with `tmux set -g @window_collapse_width <cols>` (`0` disables).
+When the terminal narrows past `@window_collapse_width` (default 80 cols),
+inactive tabs **collapse to just their number badge** so a row of worktrees
+stops crowding the bar; the current window keeps its full name. They expand as
+you widen — live, without reload. Tune with
+`tmux set -g @window_collapse_width <cols>` (`0` disables).
 
 ## Seeing tools side by side (panes = splits)
 
@@ -114,16 +116,8 @@ remember.
 prefix keys are deliberately switched off so a stray `prefix x` can't kill
 something behind the overlay.
 
-Design notes and failure handling: `scripts/float-pane.md`.
-
-## Knowing when a background agent is done (agent-done dots)
-
-You've got several Claude/Codex agents running in windows you're not watching.
-
-- When an agent **finishes or wants input** in a background window, a soft **yellow dot** appears on that window's chip and a **`◷ N`** badge in the top-right corner counts how many windows are waiting on you.
-- Switch to the window (`prefix C-h`/`C-l`/`Tab`, or the worktree popup) and its dot clears; the badge ticks down.
-
-It's an ambient "unread" badge, not an interrupt — glance at the bar, triage, move on. (Driven by Claude Code's hooks; see `scripts/agent-notify.md`.)
+Float and restore design: `scripts/float-pane.md`. Directional push, undo, and
+mark-and-move: `scripts/pane-mode.md`.
 
 ## Reading back & copying output (copy mode)
 

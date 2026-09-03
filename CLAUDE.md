@@ -45,22 +45,10 @@ Three ways to wreck live state; none raises an error at the time.
   `prefix g` via `scripts/tmux-gopen.sh`, which sources `git.zsh`
   non-interactively — keep it free of zle and rc dependencies.
 - **Skill, lesson, or agent-doc work** — the most common task here. The
-  session loop is `docs/doc-loop.md`; which of the four ownership tiers a
-  skill is in decides whether its body may be edited and where a rule lands
-  → `docs/agent-skills.md`. Installing from the `skills` CLI, the only form
-  that works in this repo:
-
-  ```bash
-  ls claude/.claude/skills/<name>            # exists → this is an update, not an install
-  npx skills add mattpocock/skills@resolving-merge-conflicts -g -a claude-code --copy -y
-  npx skills update <name> -g -y             # one skill at a time; it always re-creates a
-                                             # dangling ../../.agents/skills link → recovery in agent-skills.md
-  ln -s ../../../claude/.claude/skills/<name> codex/.codex/skills/<name>   # Codex, by hand
-  ```
-
-  Done when the skill is a real directory under `claude/.claude/skills/`,
-  `~/.agents/skills/` holds no copy of it, and the Codex link (if any)
-  resolves. `-a codex` makes a divergent copy; the symlink is the only form.
+  session loop is `docs/doc-loop.md`; the skill's ownership tier decides
+  whether its body may be edited and where a rule lands
+  → `docs/agent-skills.md`. Its **Installing** section owns the CLI recipe and
+  the Codex-link invariant.
 
 ## Package layout
 
@@ -73,7 +61,7 @@ codex/     ~/.codex/            Codex CLI config; its skills symlink into claude
 zsh/       ~/.zshrc, ~/.zshenv, ~/.config/zsh/
 tmux/      ~/.config/tmux/      tmux 3.7b — scripts, plugins, design docs
 nvim/      ~/.config/nvim/      LazyVim-based
-tabtype/   ~/.config/tabtype/   the ;; prompt snippets — its own CLAUDE.md + WORKFLOW.md
+tabtype/   ~/.config/tabtype/   the ;; prompt snippets — its own package docs
 lessons/   ~/.config/lessons/   durable rules skills and snippets point at; not skills
 scripts/   ~/.local/bin/, ~/Library/LaunchAgents/
 ```
@@ -87,9 +75,9 @@ One feature, several packages; editing one side without the other breaks it.
   `tmux/.config/tmux/workflow.md`; the weekly quota comes from `headroom` →
   `docs/claude-accounts.md`.
 - **tmux pane control** — `prefix z` floats, `prefix Z` scratch popup,
-  `prefix p` moves; a float relocates the pane into a holder session, so read
-  `tmux/.config/tmux/scripts/float-pane.md` before touching
-  `tmux-float-pane.sh`, `tmux-pane-relocate.sh`, or the pane/float key tables.
+  `prefix p` moves. Floating or relocation work reads
+  `tmux/.config/tmux/scripts/float-pane.md`; pane-mode bindings and undo read
+  `tmux/.config/tmux/scripts/pane-mode.md`.
 - **Claude accounts** — the `x*` launchers in `zsh/.config/zsh/claude.zsh` wrap
   headroom (`~/dev/headroom`) and ccclean (`~/dev/ccclean`), which live outside
   this repo and are usually where a fix belongs → `docs/claude-accounts.md`.
@@ -100,6 +88,7 @@ One feature, several packages; editing one side without the other breaks it.
 
 ```
 docs/doc-loop.md               the convention for coding agent sessions (onboarding → consult/review → update-docs → handoff)
+docs/documentation-standards.md doc shape, protected echoes, budget, verification
 docs/agent-skills.md           skill ownership tiers · Claude ⊇ Codex layout · lessons
 docs/theming.md                themes
 docs/claude-accounts.md        accounts
@@ -110,5 +99,5 @@ tmux/.config/tmux/workflow.md  tmux day to day; roadmap.md indexes the tmux desi
 ```
 
 One file per topic under `docs/` (`ls docs/` before calling something
-undocumented); `docs/superpowers/` is dated history, not live. Each doc routes
-to its own satellites.
+undocumented). Git holds shipped proposals; live docs route only to current
+design, runbooks, and their satellites.

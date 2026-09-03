@@ -15,29 +15,22 @@ zsh  zsh/.config/zsh/tests/stow-reach.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/bypass-cd-read-guard.test.zsh         # runs whole
 ```
 
-The first two cover the tmux pane control plane and the Claude context chip, and
-both build throwaway tmux servers on their own sockets; the third covers the
-tmux-free git logic behind the worktree popup (what counts as merged, base
-resolution, base freshness); the fourth covers the shared-sessions toolkit
-(launcher enforcement of the projects topology, migration abort paths, obelisk
-reindex verification) against a throwaway `$HOME` with stubbed
-`pgrep`/`lsof`/`claude`/`obelisk`; the fifth pins the startup-option state
-non-interactive shells inherit from `.zshenv` (see the `EQUALS` entry in
-`zsh.md`), by starting a real `zsh -c` with `ZDOTDIR` on the working tree; the
-sixth pins the `theme.zsh` live-switch contract (startup reads the file, the
-`_theme_sync` precmd re-applies on change, and it registers ahead of the prompt
-renderer) by sourcing the working-tree module into an interactive `zsh -f`
-against a throwaway `$HOME`; the seventh pins `cwd-guard.zsh` (an interactive
-shell started in a deleted directory is moved to `~` before any prompt, a
-non-interactive one is left alone, `zshreload` relocates to the nearest surviving
-ancestor first) by running its probes from a directory the case has just
-deleted; the eighth pins CLAUDE.md red line 2 — `claude/.claude/CLAUDE.md` is
-empty and no `<pkg>/CLAUDE.md` would stow to `~/CLAUDE.md` unless its
-`.stow-local-ignore` excludes it — by reading the working tree only, so it
-needs no sandbox; the ninth pins the temporary `bypass-cd-read-guard.sh`
-hook (`docs/bypass-cd-read-guard.md`) by piping synthetic PreToolUse
-payloads into the working-tree script — it reads stdin and writes stderr
-only, so it needs no sandbox either.
+Each suite owns one boundary:
+
+| Suite | Contract |
+|---|---|
+| pane control | float, restore, and pane-mode transactions on an isolated tmux socket |
+| context chip | publication, shedding, cleanup, and quota refresh without the live cache |
+| worktree core | tmux-free base, slot, merge, snapshot, and reap rules |
+| Claude sessions | shared-store topology and repair against a throwaway `$HOME` |
+| startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
+| theme sync | startup + precmd switching against a throwaway `$HOME` |
+| cwd guard | deleted-directory recovery without touching the caller |
+| Stow reach | root-memory and package-ignore invariants from the working tree |
+| bypass guard | dormant hook logic through synthetic PreToolUse payloads |
+
+The table is a routing map. Case ids and complete behavior inventories stay in
+the suites.
 
 The chip suite drives the real `statusline-command.sh` from the **working tree**
 rather than the stowed copy, which is what lets it grade a branch instead of

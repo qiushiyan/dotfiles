@@ -4,9 +4,10 @@ A flash.nvim-style jump for tmux copy mode: press a key, type characters to
 search, and every match on screen gets a label live as you type — press the
 label to land the copy-mode cursor there (and start a selection for copy).
 
-This is a **vendored fork** of [`roy2220/easyjump.tmux`](https://github.com/roy2220/easyjump.tmux),
-not the upstream plugin. `UPSTREAM-README.md` is the original readme for
-reference.
+This is a **vendored fork** of
+[`roy2220/easyjump.tmux`](https://github.com/roy2220/easyjump.tmux), not the
+upstream plugin. Git preserves the imported source; this file records the delta
+that must survive an upstream refresh.
 
 ## Why a fork (and why it lives here)
 
@@ -82,10 +83,9 @@ the launcher.
 
 ## Known limitations (v1)
 
-- **Backdrop loses syntax colour.** v1 flattens the backdrop to one grey
-  (chosen for simplicity). A colour-preserving backdrop (parse `capture-pane -e`
-  SGR codes, dim each foreground) is the planned stretch — see git history /
-  conversation.
+- **Backdrop loses syntax colour.** The overlay intentionally flattens the
+  backdrop to one grey. A colour-preserving version is tracked in
+  `../../roadmap.md`.
 - **Key-name detection** for `Enter`/`Escape`/`BSpace` depends on what
   `command-prompt -k` reports per terminal; the loop accepts a few aliases
   (`C-m`, `C-c`/`C-g`, `C-h`/`DC`/`C-?`). Adjust in `interactive` if a key
@@ -107,5 +107,5 @@ re-apply our changes. We also removed upstream's mouse mode (`Mode`,
 `--cursor-pos` presets, since the launcher only drives copy mode. Our additions
 live in: `parse_args` (extra `--*-attrs`, `--autojump`), `Screen.overlay`/
 `draw`/`render`/`raw`, `read_key`/`key_to_char`/`continuation_chars`,
-`generate_labels`, `rank_positions`, `assign_labels` (reuse + skip-current), and
+`generate_labels`, `rank_positions`, `assign_labels` (reuse + label-current), and
 `interactive`/`main`.
