@@ -75,10 +75,11 @@
 # for a human prompt when a command does `cd DIR;` (anything but a pure
 # `&&` chain) and then greps/rgs/diffs/gits/cps/mvs a relative path while
 # any `Read(...)` deny rule is loaded (planlab commits Read(./.env)). `--setting-sources user,local` silences
-# that by not loading project settings — rejected 2026-09-03 because it also
-# drops the project's plugins, allow list and .mcp.json, so an `x` session
-# would no longer inherit settings the way every other Claude Code session
-# does. The fix lives in claude/.claude/hooks/bypass-cd-read-guard.sh
+# that by not loading project settings — rejected 2026-09-03 because the
+# project source also carries the project's skills, commands, agents,
+# plugins, allow list and .mcp.json: an `x` session would lose every
+# project skill and `/` completion, and stop inheriting settings the way
+# every other Claude Code session does. The fix lives in claude/.claude/hooks/bypass-cd-read-guard.sh
 # instead: in bypass mode it refuses that command shape with a message
 # telling the model to re-issue it, so the prompt is never reached. Its
 # retirement test is in docs/bypass-cd-read-guard.md.

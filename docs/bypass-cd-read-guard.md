@@ -68,7 +68,7 @@ fired several times an hour.
 
 | Option | Why not |
 |---|---|
-| `--setting-sources user,local` on the bypass launchers | Silences it (project settings never load, so no `Read()` rule), but an `x` session then stops inheriting the project's plugins, allow list and `.mcp.json` — a different settings hierarchy from every other Claude Code session on the repo |
+| `--setting-sources user,local` on the bypass launchers | Silences it (project settings never load, so no `Read()` rule), but the project *source* also carries the project's `.claude/skills/`, `.claude/commands/`, agents, plugins, allow list and `.mcp.json`: an `x` session then loses every project skill (verified: `add-theme` vanishes from the startup manifest; `/` completion shows global skills only), a different world from every other Claude Code session on the repo. It was live in `claude.zsh` for ~20 min on 2026-09-03; shells that sourced the file then kept the flag until `exec zsh` |
 | `PreToolUse` hook returning `allow` | Does not clear this check (verified) |
 | `PreToolUse` hook rewriting the command via `updatedInput` to strip the redundant `cd` | Works, but a stripped `cd` is not provably inert (`OLDPWD`, logical vs physical cwd through a symlink, a `cd` that would have failed), the transcript would show a command that never ran, and it only covers the cwd-targeting shape |
 | Dropping the `Read()` rules from planlab's settings | Team file; the rules protect prompted sessions |
