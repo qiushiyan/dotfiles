@@ -7,6 +7,8 @@ argument-hint: [nothing on a feature branch → close out this branch; `folder` 
 
 # Sweep the brief folder
 
+**Defer to the project first.** If the repo ships its own sweep skill (check `.claude/skills/` for one that names this skill — planlab's is `pl-loopy-handoff-distill`), run that: it carries what this skill cannot know — where the project keeps status, how it reads production, what a merged PR owes besides its brief — and points back here for the passes, verdicts and retirement below. Its additions run after step 1 of whichever pass fires, and its report section follows this skill's report.
+
 Handoff briefs live under `~/dev/.handoffs/<project>/`, one per next session, each written by a session that saw only its own PR. What a brief *asks for* usually survives; what it *says about the world* drifts. The sweep owns the cross-brief view — a premise that shipped, a gate that discharged, two briefs on one seam — and keeps the folder a **task board**: `_clusters.md` plus the listing say what to do next, and finished work is gone.
 
 ## Pick the pass
