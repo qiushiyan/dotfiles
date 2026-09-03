@@ -37,10 +37,9 @@ Three ways to wreck live state; none raises an error at the time.
 - Commit directly on `main`; pushes to `main` are the user's to run.
 - **"What's my shortcut / how do I…"** is a read: the tool's config plus
   `tmux/.config/tmux/workflow.md`; nothing is edited.
-- **Adding or porting a theme** (recurring): `/add-theme`, the project skill
-  at `.claude/skills/add-theme/SKILL.md`, is the recipe — one `$TERMINAL_THEME`
-  value fans out to nine per-tool surfaces, and the skill ends with the theme
-  switched on and committed. `docs/theming.md` is the system model behind it.
+- **Adding or porting a theme** (recurring): `/add-theme`
+  (`.claude/skills/add-theme/SKILL.md`) is the recipe — nine per-tool surfaces,
+  one commit; `docs/theming.md` is the system model behind it.
 - **Editing `zsh/`** startup order, anything `.zshrc` sources, or a shell
   slowness complaint → `docs/zsh.md` first. `gopen` (`git.zsh`) is also tmux
   `prefix g` via `scripts/tmux-gopen.sh`, which sources `git.zsh`

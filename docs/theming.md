@@ -120,8 +120,8 @@ colour does the job instead → `docs/ghostty-fonts.md`.
 ## Neovim specifics
 
 - Colorschemes come from two places: **plugin themes** (catppuccin, flexoki) and
-  **hand-rolled files** in `colors/` (the Tailwind variants, ported from the Zed
-  theme's UI + syntax tokens).
+  **hand-rolled files** in `colors/` (ported from a Zed or VS Code theme's UI +
+  syntax tokens).
 - The plugin themes are **un-gated** (all installed; the active one eager, the
   rest lazy) so the watcher can swap *any* direction — lazy.nvim's
   `ColorSchemePre` autoloads the matching plugin on `:colorscheme`.

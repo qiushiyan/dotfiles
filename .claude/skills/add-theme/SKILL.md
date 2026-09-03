@@ -14,9 +14,9 @@ judge, and one commit holds exactly its files. A tool that does not pick the
 switch up → `docs/theming.md`.
 
 Copy the nearest **exemplar**: `git show 94f49f9` is a complete dark port
-(`forest_night`, hand-rolled Neovim scheme); `night_owl` is the dark plugin
-port and `orng_light` the light one — their files carry the same names as
-the ones below. Every value stays in-family — the theme's own tokens — and
+(`forest_night`, hand-rolled Neovim scheme); `night_owl` (dark, plugin scheme)
+and `orng_light` (light) are the others — `grep -rn orng_light` finds every arm.
+Every value stays in-family — the theme's own tokens — and
 where a token fails contrast on the theme's background, take a darker or
 lighter hue from the same theme and say which in the comment beside it.
 
@@ -69,8 +69,9 @@ built-in keeps its spaced name in theme-set (`theme = Rose Pine Dawn`).
 
 One script, one run: it fails on any anchor that is not exactly once in its
 file before writing anything. The anchors are structural — the `*)` fallthrough
-arms, the closing of each list — so they hold across ports; only the header
-and the colors change. Light and dark differ in four places:
+arms, the closing of each list — so they hold across ports. The values are forest_night's: a port replaces the
+NAME line, the colors and the comments, nothing else. Light and dark differ in
+four places:
 
 | | dark | light |
 |---|---|---|
