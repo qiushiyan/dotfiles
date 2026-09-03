@@ -243,25 +243,8 @@ t7b() {
         "$atr$att$([ "$h" -ge 45 ] && echo tall)" "11tall"
 }
 
-# ---------------------------------------------------------------------------
-# T8 — marked-pane inversion. join/move-pane with -s omitted uses the MARKED
-# pane as source, i.e. the exact opposite move.
-# ---------------------------------------------------------------------------
-t8() {
-    fresh; W=$(T display -p -t t '#{window_id}')
-    T split-window -v -t "$W"; sleep 0.2
-    T new-window -t t; sleep 0.3
-    W2=$(T display -p -t t '#{window_id}')
-    target=$(T list-panes -t "$W2" -F '#{pane_id}' | head -1)
-    mover=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
-    T select-pane -t "$target" -m            # mark a pane in the OTHER window
-    R "$RELOC" marked "$mover" >/dev/null 2>&1
-    sleep 0.5
-    moved_in_w2=$(T list-panes -t "$W2" -F '#{pane_id}' | grep -c "$mover" || true)
-    target_stayed=$(T list-panes -t "$W2" -F '#{pane_id}' | grep -c "$target" || true)
-    check "T8 the CURRENT pane moved to the mark (not the reverse)" \
-        "$moved_in_w2$target_stayed" "11"
-}
+# (T8, the marked-pane inversion on the retired `marked` verb, lives on as T31:
+# the same trap on the put path.)
 
 # ---------------------------------------------------------------------------
 # T9/T10/T11 — key surface. Needs a real client, so an outer tmux provides the
@@ -279,7 +262,7 @@ t10() {
     T switch-client -c "$C" -T panes; sleep 0.4
     check "T10 entered the panes table" "$(T display -p -t "$C" '#{client_key_table}')" "panes"
 
-    O send-keys -t o g; sleep 0.8          # 'g' is unbound in the panes table
+    O send-keys -t o .; sleep 0.8          # '.' is unbound in the panes table
     check "T10 an unbound key exits the mode (cannot trap)" \
         "$(T display -p -t "$C" '#{client_key_table}')" "root"
 
@@ -359,6 +342,19 @@ t11() {
         "$(printf '%s' "$bbind" | grep -c 'switch-client -T panes' || true)" "0"
     check "T11 push DOES re-enter the mode (sticky)" \
         "$(printf '%s' "$hbind" | grep -c 'switch-client -T panes' || true)" "1"
+    # hold leaves the mode (the next thing is window navigation); put and
+    # release stay (the next thing is hjkl placement); the picker's popup
+    # blocks, so the script — not the binding — re-enters afterwards.
+    check "T11 hold does not re-enter the mode" \
+        "$(T list-keys -T panes | awk '$4=="g"' | grep -c 'switch-client -T panes' || true)" "0"
+    check "T11 put re-enters the mode" \
+        "$(T list-keys -T panes | awk '$4=="p"' | grep -c 'switch-client -T panes' || true)" "1"
+    check "T11 release re-enters the mode" \
+        "$(T list-keys -T panes | awk '$4=="G"' | grep -c 'switch-client -T panes' || true)" "1"
+    check "T11 pick does not re-enter the mode in the binding" \
+        "$(T list-keys -T panes | awk '$4=="w"' | grep -c 'switch-client -T panes' || true)" "0"
+    check "T11 pick is backgrounded (display-popup blocks its issuer)" \
+        "$(T list-keys -T panes | awk '$4=="w"' | grep -c 'run-shell -b' || true)" "1"
 }
 
 # ---------------------------------------------------------------------------
@@ -858,10 +854,344 @@ t27() {
     kill -9 "$ghost" 2>/dev/null                    # stopped process; would outlive the suite
 }
 
+# ---------------------------------------------------------------------------
+# T28 — hold lifecycle. The hold is ONE pane id in a private global option; a
+# second hold replaces it; a refused hold (a native float) leaves the existing
+# hold alone; release is idempotent.
+# ---------------------------------------------------------------------------
+t28() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    a=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
+    b=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
+    R "$RELOC" hold "$a" >/dev/null 2>&1
+    check "T28 hold stores the pane id only" "$(T show -gqv @pane_hold)" "$a"
+    check "T28 hold writes a display label" \
+        "$([ -n "$(T show -gqv @pane_hold_label)" ] && echo yes)" "yes"
+    R "$RELOC" hold "$b" >/dev/null 2>&1
+    check "T28 a second hold replaces the first" "$(T show -gqv @pane_hold)" "$b"
+    T new-pane -t "$W" 2>/dev/null; sleep 0.4
+    fl=$(T list-panes -t "$W" -f '#{==:#{pane_floating_flag},1}' -F '#{pane_id}')
+    R "$RELOC" hold "$fl" >/dev/null 2>&1
+    check "T28 holding a native float is refused and keeps the previous hold" \
+        "$(T show -gqv @pane_hold)" "$b"
+    R "$RELOC" release >/dev/null 2>&1
+    check "T28 release clears the hold" "[$(T show -gqv @pane_hold)][$(T show -gqv @pane_hold_label)]" "[][]"
+    R "$RELOC" release >/dev/null 2>&1
+    check "T28 release is idempotent" "[$(T show -gqv @pane_hold)]" "[]"
+}
+
+# ---------------------------------------------------------------------------
+# T29 — the puts that must NOT move anything, and which of them clear the
+# hold: empty (no-op, nothing to clear), the held pane gone (clears), same
+# window (clears), and a split made after the hold (still valid — the hold is
+# the pane, not its window's shape).
+# ---------------------------------------------------------------------------
+t29() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.2
+    T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
+    t2=$(T display -p -t "$W2" '#{pane_id}')
+    l2=$(layout "$W2")
+    R "$RELOC" put "$t2" >/dev/null 2>&1; sleep 0.3
+    check "T29 empty put moves nothing" "$(layout "$W2")" "$l2"
+
+    a=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
+    R "$RELOC" hold "$a" >/dev/null 2>&1
+    T kill-pane -t "$a"; sleep 0.3
+    R "$RELOC" put "$t2" >/dev/null 2>&1; sleep 0.3
+    check "T29 a dead held pane clears the hold on put" "[$(T show -gqv @pane_hold)]" "[]"
+    check "T29 ...and moves nothing" "$(layout "$W2")" "$l2"
+
+    T split-window -h -t "$W2"; sleep 0.3
+    x=$(T list-panes -t "$W2" -F '#{pane_id}' | head -1)
+    y=$(T list-panes -t "$W2" -F '#{pane_id}' | tail -1)
+    lb=$(layout "$W2"); ob=$(tiled "$W2")
+    R "$RELOC" hold "$x" >/dev/null 2>&1
+    R "$RELOC" put "$y" >/dev/null 2>&1; sleep 0.3
+    check "T29 same-window put changes nothing" "$(tiled "$W2")$(layout "$W2")" "$ob$lb"
+    check "T29 same-window put releases the hold" "[$(T show -gqv @pane_hold)]" "[]"
+
+    # hold, then split the held pane's window: the hold survives and puts
+    b=$(T display -p -t "$W" '#{pane_id}')
+    R "$RELOC" hold "$b" >/dev/null 2>&1
+    T split-window -v -t "$W"; sleep 0.3
+    R "$RELOC" put "$y" >/dev/null 2>&1; sleep 0.4
+    check "T29 a hold survives a split in its window" \
+        "$(tiled "$W2" | grep -c "$b" || true)" "1"
+}
+
+# ---------------------------------------------------------------------------
+# T30 — placement. The held pane lands as the full-height RIGHT column and is
+# active, whether the target has one pane or several; the source window's only
+# pane leaving closes that window.
+# ---------------------------------------------------------------------------
+t30() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.2
+    T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W2"; sleep 0.2
+    p=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
+    t2=$(T display -p -t "$W2" '#{pane_id}')
+    R "$RELOC" hold "$p" >/dev/null 2>&1
+    R "$RELOC" put "$t2" >/dev/null 2>&1; sleep 0.4
+    geo=$(T display -p -t "$p" '#{pane_at_right}#{pane_at_top}#{pane_at_bottom}')
+    check "T30 multi-pane target: full-height right column" "$geo" "111"
+    check "T30 the moved pane is the active one" "$(T display -p -t "$W2" '#{pane_id}')" "$p"
+    check "T30 the session's current window is the target" "$(T display -p -t t '#{window_id}')" "$W2"
+    check "T30 hold cleared after a successful put" "[$(T show -gqv @pane_hold)]" "[]"
+
+    # one-pane target, and the source's only pane: the source window closes
+    T new-window -t t; sleep 0.3; W3=$(T display -p -t t '#{window_id}')
+    t3=$(T display -p -t "$W3" '#{pane_id}')
+    only=$(T display -p -t "$W" '#{pane_id}')
+    check "T30 (premise) source window has one pane" "$(tiled "$W" | wc -w | tr -d ' ')" "1"
+    R "$RELOC" hold "$only" >/dev/null 2>&1
+    R "$RELOC" put "$t3" >/dev/null 2>&1; sleep 0.4
+    check "T30 one-pane target: ordinary two-column split" \
+        "$(T display -p -t "$only" '#{pane_at_right}#{pane_at_left}') $(T display -p -t "$t3" '#{pane_at_left}#{pane_at_right}')" "10 10"
+    check "T30 the emptied source window closed" \
+        "$(T list-windows -t t -F '#{window_id}' | grep -c "^$W\$" || true)" "0"
+}
+
+# ---------------------------------------------------------------------------
+# T31 — the mark trap, on the new path. With an unrelated pane MARKED, put must
+# still move the HELD pane (move-pane without -s would move the marked one).
+# ---------------------------------------------------------------------------
+t31() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.2
+    T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
+    held=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
+    marked=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
+    t2=$(T display -p -t "$W2" '#{pane_id}')
+    T select-pane -t "$marked" -m
+    R "$RELOC" hold "$held" >/dev/null 2>&1
+    R "$RELOC" put "$t2" >/dev/null 2>&1; sleep 0.4
+    check "T31 the held pane moved, the marked one stayed" \
+        "$(tiled "$W2" | grep -c "$held" || true)$(tiled "$W" | grep -c "$marked" || true)" "11"
+}
+
+# ---------------------------------------------------------------------------
+# T32 — float collision. A held pane floated by prefix z is inside a holder
+# session with restore metadata; put must refuse AND keep the hold, so closing
+# the float makes it usable again. A native float as the held pane clears; a
+# native float as the destination is refused.
+# ---------------------------------------------------------------------------
+t32() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.2
+    T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
+    t2=$(T display -p -t "$W2" '#{pane_id}')
+    p=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
+    R "$RELOC" hold "$p" >/dev/null 2>&1
+    RS "$FLOAT" toggle "$p" >/dev/null 2>&1 &
+    sleep 2
+    check "T32 (premise) held pane is floated" "$(tiled "$W" | grep -c "$p" || true)" "0"
+    R "$RELOC" put "$t2" >/dev/null 2>&1; sleep 0.4
+    check "T32 put refuses a floated held pane" "$(tiled "$W2" | grep -c "$p" || true)" "0"
+    check "T32 ...and keeps the hold" "$(T show -gqv @pane_hold)" "$p"
+    R "$FLOAT" restore "$p" >/dev/null 2>&1; sleep 0.5
+    R "$RELOC" put "$t2" >/dev/null 2>&1; sleep 0.4
+    check "T32 put succeeds once the float is closed" "$(tiled "$W2" | grep -c "$p" || true)" "1"
+
+    # a native float in the hold slot: can never be put — cleared
+    T new-pane -t "$W2" 2>/dev/null; sleep 0.4
+    fl=$(T list-panes -t "$W2" -f '#{==:#{pane_floating_flag},1}' -F '#{pane_id}')
+    T set -g @pane_hold "$fl"
+    R "$RELOC" put "$(T display -p -t "$W" '#{pane_id}')" >/dev/null 2>&1; sleep 0.3
+    check "T32 a native-float hold is cleared on put" "[$(T show -gqv @pane_hold)]" "[]"
+
+    # a native float as the DESTINATION pane: refused, hold kept
+    q=$(T display -p -t "$W" '#{pane_id}')
+    R "$RELOC" hold "$q" >/dev/null 2>&1
+    R "$RELOC" put "$fl" >/dev/null 2>&1; sleep 0.3
+    check "T32 a native-float destination is refused" "$(tiled "$W2" | grep -c "$q" || true)" "0"
+    check "T32 ...and the hold is kept" "$(T show -gqv @pane_hold)" "$q"
+}
+
+# ---------------------------------------------------------------------------
+# T33 — a put and a break invalidate the push journal on both ends. Without
+# this, journal_pop reaches a record whose pane set no longer matches, refuses
+# it, keeps it, and `u` is stuck there forever.
+# ---------------------------------------------------------------------------
+t33() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
+    T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W2"; sleep 0.3
+    # push resolves {left-of} against the CURRENT pane (a binding always runs
+    # there), so each push is made in its own window as the current one
+    T select-window -t "$W2"; T select-pane -t "$(T list-panes -t "$W2" -F '#{pane_id}' | tail -1)"
+    R "$RELOC" push left "$(T list-panes -t "$W2" -F '#{pane_id}' | tail -1)" >/dev/null 2>&1; sleep 0.3
+    T select-window -t "$W"; T select-pane -t "$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)"
+    R "$RELOC" push left "$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)" >/dev/null 2>&1; sleep 0.3
+    check "T33 (premise) both windows have journal records" \
+        "$(T show -wqv -t "$W" @pane_journal | grep -c . || true)$(T show -wqv -t "$W2" @pane_journal | grep -c . || true)" "11"
+    p=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
+    R "$RELOC" hold "$p" >/dev/null 2>&1
+    R "$RELOC" put "$(T display -p -t "$W2" '#{pane_id}')" >/dev/null 2>&1; sleep 0.4
+    check "T33 put clears the source window's journal" "[$(T show -wqv -t "$W" @pane_journal)]" "[]"
+    check "T33 put clears the target window's journal" "[$(T show -wqv -t "$W2" @pane_journal)]" "[]"
+
+    T select-window -t "$W"; T select-pane -t "$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)"
+    R "$RELOC" push left "$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)" >/dev/null 2>&1; sleep 0.3
+    check "T33 (premise) a fresh record before break" "$(T show -wqv -t "$W" @pane_journal | grep -c . || true)" "1"
+    R "$RELOC" break "$(T list-panes -t "$W" -F '#{pane_id}' | head -1)" >/dev/null 2>&1; sleep 0.4
+    check "T33 break clears the source window's journal" "[$(T show -wqv -t "$W" @pane_journal)]" "[]"
+    check "T33 break made a new window" "$(T list-windows -t t | wc -l | tr -d ' ')" "3"
+}
+
+# ---------------------------------------------------------------------------
+# T34 — the key surface and the status row, on a real client. g leaves the
+# mode and the spare row says what is held through ordinary window navigation;
+# p puts and stays in the mode; G stays; m/M are gone; at 80 columns the
+# compact cheat sheet still names the hold verbs.
+# ---------------------------------------------------------------------------
+t34() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.2
+    T new-window -t t; sleep 0.2; W2=$(T display -p -t t '#{window_id}')
+    T select-window -t "$W"; sleep 0.2
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T34 client attached" "no client"; return; fi
+    check "T34 m and M are retired" "$(T list-keys -T panes | awk '$4=="m"||$4=="M"' | wc -l | tr -d ' ')" "0"
+
+    p=$(T display -p -t "$W" '#{pane_id}')
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o g; sleep 1
+    check "T34 g leaves the mode" "$(T display -p -c "$C" '#{client_key_table}')" "root"
+    check "T34 g held the pane" "$(T show -gqv @pane_hold)" "$p"
+    row() { O capture-pane -p -t o | sed -n 2p; }
+    check "T34 the row shows the hold outside the mode" "$(row | grep -c 'HOLDING' || true)" "1"
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o C-l; sleep 1     # ordinary window nav
+    check "T34 navigated to the other window" "$(T display -p -c "$C" '#{window_id}')" "$W2"
+    check "T34 the hold survives window navigation" "$(row | grep -c 'HOLDING' || true)" "1"
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o p; sleep 1.2
+    check "T34 p put the pane here" "$(tiled "$W2" | grep -c "$p" || true)" "1"
+    check "T34 p stays in the mode" "$(T display -p -c "$C" '#{client_key_table}')" "panes"
+    check "T34 the row is the cheat sheet again (redrawn after re-entry)" "$(row | grep -c 'p put' || true)" "1"
+    O send-keys -t o G; sleep 0.8
+    check "T34 G stays in the mode" "$(T display -p -c "$C" '#{client_key_table}')" "panes"
+    O send-keys -t o Escape; sleep 0.5
+
+    # 80 columns: the compact row
+    O kill-server 2>/dev/null; sleep 0.3
+    O -f /dev/null new-session -d -s o -x 80 -y 24
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 1
+    r=$(row)
+    check "T34 80-col row names hold and put" "$(printf '%s' "$r" | grep -c 'g hold.*p put.*w pick' || true)" "1"
+    check "T34 80-col row is not truncated" "$(printf '%s' "$r" | grep -c 'Esc done' || true)" "1"
+    O send-keys -t o Escape; sleep 0.3
+}
+
+# ---------------------------------------------------------------------------
+# T35 — the picker, end to end on a real client: w opens the popup with the
+# other window and a preview of it; Enter moves this pane there, lands beside
+# it, and returns to pane mode.
+# ---------------------------------------------------------------------------
+t35() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.2
+    T new-window -t t -n zebra; sleep 0.2; W2=$(T display -p -t t '#{window_id}')
+    T send-keys -t "$W2" 'echo PREVIEW-SENTINEL' Enter; sleep 0.3
+    T select-window -t "$W"; sleep 0.2
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T35 client attached" "no client"; return; fi
+    p=$(T display -p -t "$W" '#{pane_id}')
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w; sleep 3
+    cap=$(O capture-pane -p -t o)
+    # the fzf row is "<index>: zebra  · 1 pane"; the bare name also sits in the
+    # status bar's window list, so match the row's own shape
+    check "T35 popup lists the other window" "$(printf '%s' "$cap" | grep -c 'zebra  · 1 pane' || true)" "1"
+    check "T35 preview shows the target's content" \
+        "$([ "$(printf '%s' "$cap" | grep -c 'PREVIEW-SENTINEL' || true)" -ge 1 ] && echo yes)" "yes"
+    O send-keys -t o Enter; sleep 2
+    check "T35 Enter moved the pane there" "$(tiled "$W2" | grep -c "$p" || true)" "1"
+    check "T35 landed in the target window" "$(T display -p -c "$C" '#{window_id}')" "$W2"
+    check "T35 the moved pane is active" "$(T display -p -c "$C" '#{pane_id}')" "$p"
+    check "T35 back in pane mode" "$(T display -p -c "$C" '#{client_key_table}')" "panes"
+    O send-keys -t o Escape; sleep 0.3
+}
+
+# ---------------------------------------------------------------------------
+# T36 — picker cancellation and the hold race. Esc moves nothing and leaves an
+# earlier hold alone. The picker carries its source as an argument: a hold
+# replaced while the popup is open must not change what Enter moves.
+# ---------------------------------------------------------------------------
+t36() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.2
+    T new-window -t t; sleep 0.2; W2=$(T display -p -t t '#{window_id}')
+    T select-window -t "$W"; sleep 0.2
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T36 client attached" "no client"; return; fi
+    src=$(T display -p -t "$W" '#{pane_id}')
+    other=$(T list-panes -t "$W" -F '#{pane_id}' | grep -v "^$src\$" | head -1)
+    T set -g @pane_hold "$other"                       # an earlier hold, unrelated
+    l1=$(layout "$W"); l2=$(layout "$W2")
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w; sleep 2.5
+    O send-keys -t o Escape; sleep 1.5
+    check "T36 Esc moves nothing" "$(layout "$W")$(layout "$W2")" "$l1$l2"
+    check "T36 Esc leaves the earlier hold alone" "$(T show -gqv @pane_hold)" "$other"
+    check "T36 Esc returns to pane mode" "$(T display -p -c "$C" '#{client_key_table}')" "panes"
+    O send-keys -t o Escape; sleep 0.3
+
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w; sleep 2.5
+    T set -g @pane_hold "$other"                       # replaced while the popup is up
+    O send-keys -t o Enter; sleep 2
+    check "T36 Enter moved the captured source, not the hold" \
+        "$(tiled "$W2" | grep -c "$src" || true)$(tiled "$W" | grep -c "$other" || true)" "11"
+    check "T36 the replacement hold is untouched" "$(T show -gqv @pane_hold)" "$other"
+    O send-keys -t o Escape; sleep 0.3
+}
+
+# ---------------------------------------------------------------------------
+# T37 — picker scope: this session's windows, never the source window, never
+# another session; and with no other window there is no popup — the mode is
+# simply re-entered.
+# ---------------------------------------------------------------------------
+t37() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T new-window -t t -n other; sleep 0.2; W2=$(T display -p -t t '#{window_id}')
+    T new-session -d -s t2 -x 200 -y 50; sleep 0.2
+    T select-window -t "$W"
+    p=$(T display -p -t "$W" '#{pane_id}')
+    # `targets` is exactly what pick-ui feeds fzf
+    listed=$(R "$RELOC" targets "$p" 2>/dev/null | cut -f1 | tr '\n' ' ')
+    check "T37 lists only the other window of this session" "$listed" "$W2 "
+
+    T kill-window -t "$W2"; sleep 0.3
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T37 client attached" "no client"; return; fi
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w; sleep 1.5
+    check "T37 no other window: no popup" "$(O capture-pane -p -t o | grep -c 'move pane to' || true)" "0"
+    check "T37 no other window: back in pane mode" "$(T display -p -c "$C" '#{client_key_table}')" "panes"
+    O send-keys -t o Escape; sleep 0.3
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
-for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t8 t9 t10 t11 t14 \
-         t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24 t25 t26 t27; do
+for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t9 t10 t11 t14 \
+         t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24 t25 t26 t27 \
+         t28 t29 t30 t31 t32 t33 t34 t35 t36 t37; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done
