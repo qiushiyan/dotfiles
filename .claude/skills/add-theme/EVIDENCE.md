@@ -34,3 +34,26 @@ after 2026-09-03, invoked as `/add-theme` (`messages.skill='add-theme'` or
 
 Nothing landed on the engine. User's vision: none withheld — "there isn't
 much that I avoid doing"; removal and light themes are not costly.
+
+Cold readers (3 Claude subagents, files on disk only): a Zed dark port with a
+hand-rolled scheme and a Ghostty built-in light port with a plugin scheme
+before the fix, the plugin route again after it. Both first readers stalled at
+one line — the patch script's anchors were "the last arm", and the exemplar
+port had just become it (3 anchors already 0×) — fixed by structural anchors
+(`ed39017`), proven with throwaway runs. The re-read found the hardcoded
+`background = "dark"`, the dirty lock file swept in by a path-scoped `git add`,
+and the plugin spec shape named an entry without `name =` (`739e686`). Goal
+review: one cold codex voice, out-dir `20260903-110430-review`, verdict
+*partly*: the doc's trailing add/remove section was still procedure (deleted,
+`4d35647`); the Codex route is dead — AGENTS.md is CLAUDE.md, which routes to a
+skill only Claude Code can load (Codex scans `.agents/skills` up the repo
+ancestry, per `codex-rs/ext/skills/src/host_roots.rs`). Open, the user's call:
+a `.agents/skills/add-theme` symlink to the Claude directory.
+
+Lessons that survived: a worked patch script anchors on lines that survive its
+own example landing (the `*)` fallthrough, a list's closing brace), never on
+"the last arm"; a skill proven by running its own example with a throwaway
+name catches what three readers of the text did not (the `BG` hardcode
+surfaced only on the light run). Next pass measures ports after 2026-09-03:
+tool calls, errors and minutes per port, and whether any port re-derived the
+patch by hand.
