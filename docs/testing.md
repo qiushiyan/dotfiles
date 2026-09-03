@@ -12,6 +12,7 @@ zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/theme-sync.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/cwd-guard.test.zsh                    # runs whole
 zsh  zsh/.config/zsh/tests/stow-reach.test.zsh                   # runs whole
+zsh  zsh/.config/zsh/tests/bypass-cd-read-guard.test.zsh         # runs whole
 ```
 
 The first two cover the tmux pane control plane and the Claude context chip, and
@@ -33,7 +34,10 @@ ancestor first) by running its probes from a directory the case has just
 deleted; the eighth pins CLAUDE.md red line 2 — `claude/.claude/CLAUDE.md` is
 empty and no `<pkg>/CLAUDE.md` would stow to `~/CLAUDE.md` unless its
 `.stow-local-ignore` excludes it — by reading the working tree only, so it
-needs no sandbox.
+needs no sandbox; the ninth pins the temporary `bypass-cd-read-guard.sh`
+hook (`docs/bypass-cd-read-guard.md`) by piping synthetic PreToolUse
+payloads into the working-tree script — it reads stdin and writes stderr
+only, so it needs no sandbox either.
 
 The chip suite drives the real `statusline-command.sh` from the **working tree**
 rather than the stowed copy, which is what lets it grade a branch instead of

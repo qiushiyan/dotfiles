@@ -68,8 +68,23 @@
 # included — set  "permissions": { "defaultMode": "bypassPermissions" }  in
 # claude/.claude/settings.json (shared by all accounts). PreToolUse hooks
 # such as block-dangerous-git.sh still fire and block in bypass mode.
-
+#
+# Every bypass launcher passes CLAUDE_X_BYPASS, one array, so a flag lands
+# on all of them or none. Bypass is not the whole story: permissions.deny
+# rules survive it, and Claude Code 2.1.259 added a Bash check that stops
+# for a human prompt when a command does `cd DIR;` (anything but a pure
+# `&&` chain) and then greps/rgs/diffs/gits/cps/mvs a relative path while
+# any `Read(...)` deny rule is loaded (planlab commits Read(./.env)). `--setting-sources user,local` silences
+# that by not loading project settings — rejected 2026-09-03 because it also
+# drops the project's plugins, allow list and .mcp.json, so an `x` session
+# would no longer inherit settings the way every other Claude Code session
+# does. The fix lives in claude/.claude/hooks/bypass-cd-read-guard.sh
+# instead: in bypass mode it refuses that command shape with a message
+# telling the model to re-issue it, so the prompt is never reached. Its
+# retirement test is in docs/bypass-cd-read-guard.md.
+#
 typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
+typeset -ga CLAUDE_X_BYPASS=(--dangerously-skip-permissions)
 typeset -g CLAUDE_PRIMARY_NAME="qiushi"   # x-qiushi ≡ default ~/.claude
 # headroom derives the primary's name from the logged-in email unless told;
 # pin it to ours so `.current`, `--account qiushi` and x-qiushi agree even
@@ -151,7 +166,7 @@ x-select() {
   fi
   local tmp rc dir
   tmp=$(mktemp -d "${${TMPDIR:-/tmp}%/}/x-select.XXXXXX") || return
-  headroom sessions --cd-file "$tmp/cwd" -- --dangerously-skip-permissions "$@"
+  headroom sessions --cd-file "$tmp/cwd" -- "${CLAUDE_X_BYPASS[@]}" "$@"
   rc=$?
   if [[ -s "$tmp/cwd" ]]; then
     dir="$(<"$tmp/cwd")"
@@ -214,7 +229,7 @@ _claude_launch() {
 # is what moves it).
 x() {
   emulate -L zsh
-  _claude_launch "" --dangerously-skip-permissions "$@"
+  _claude_launch "" "${CLAUDE_X_BYPASS[@]}" "$@"
 }
 
 # Prompted (no bypass) session on any account; bare `x`'s target untouched.
@@ -282,7 +297,7 @@ _claude_gen_launchers() {
   for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
     [[ "${d:t}" == *.lock ]] && continue
     email="${d:t}" name="${email%%@*}"
-    functions[x-$email]="_claude_launch ${(q)email} --dangerously-skip-permissions \"\$@\""
+    functions[x-$email]="_claude_launch ${(q)email} \"\${CLAUDE_X_BYPASS[@]}\" \"\$@\""
     if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]] && (( ! ${CLAUDE_X_RESERVED[(Ie)$name]} )); then
       if (( count[$name] == 1 )); then
         functions[x-$name]="x-${(q)email} \"\$@\""
@@ -293,6 +308,6 @@ _claude_gen_launchers() {
       fi
     fi
   done
-  functions[x-$CLAUDE_PRIMARY_NAME]="_claude_launch $CLAUDE_PRIMARY_NAME --dangerously-skip-permissions \"\$@\""
+  functions[x-$CLAUDE_PRIMARY_NAME]="_claude_launch $CLAUDE_PRIMARY_NAME \"\${CLAUDE_X_BYPASS[@]}\" \"\$@\""
 }
 _claude_gen_launchers

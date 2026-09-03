@@ -233,4 +233,6 @@ Everything derives from that tree:
 - Bypass-everything, if ever wanted, belongs in `settings.json`
   (`"permissions": { "defaultMode": "bypassPermissions" }`), not in wrappers
   around the `claude` command. PreToolUse hooks still fire and block in
-  bypass mode.
+  bypass mode — and `permissions.deny` rules survive it too, which is why
+  `docs/bypass-cd-read-guard.md` exists (a temporary hook for a 2.1.259
+  prompt that bypass mode does not skip).
