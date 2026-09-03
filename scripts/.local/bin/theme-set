@@ -24,7 +24,7 @@ TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 
 # Canonical names. Keep in sync with the per-app case statements (theme.zsh,
 # statusline-command.sh, zen.omp.json, nvim config/theme.lua, tmux.conf).
-THEMES=(flexoki_light catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft night_owl orng_light)
+THEMES=(flexoki_light catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft night_owl orng_light forest_night)
 
 # --- per-theme ghostty field set ---------------------------------------------
 # Emit the ghostty config line(s) a theme owns. The whole include file is
@@ -51,6 +51,7 @@ ghostty_block() {
     vitesse_light_soft) printf 'theme = vitesse-light-soft\nbold-color = #1c6b48\n' ;;
     night_owl)        printf 'theme = Night Owl\nbold-color = #ffeb95\n' ;;
     orng_light)       printf 'theme = orng-light\nbold-color = #c94d24\n' ;;
+    forest_night)     printf 'theme = forest-night\nbold-color = #FFB74D\n' ;;
   esac
 }
 

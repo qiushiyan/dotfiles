@@ -96,6 +96,18 @@ case "$THEME" in
         PINK=$'\033[38;2;236;91;43m'        # Orange accent #EC5B2B
         LAVENDER=$'\033[38;2;0;98;209m'     # String blue #0062d1
         ;;
+    forest_night)
+        # Blue-slate bg (#1a2125) — Forest Night's accents read well on it.
+        # RED is the theme's rosy error/deleted color (#c78a7a, its bright-red
+        # slot, 5.7:1), not the hot-pink terminal red #E91E63, which sits at
+        # 3.7:1 and reads as magenta beside PINK.
+        CYAN=$'\033[38;2;78;205;196m'       # Teal #4ECDC4
+        GREEN=$'\033[38;2;143;188;143m'     # Sage accent #8FBC8F
+        YELLOW=$'\033[38;2;243;156;18m'     # Amber #F39C12
+        RED=$'\033[38;2;199;138;122m'       # Rose #c78a7a
+        PINK=$'\033[38;2;155;89;182m'       # Purple #9B59B6
+        LAVENDER=$'\033[38;2;102;217;239m'  # Sky blue #66D9EF
+        ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2
         exit 1

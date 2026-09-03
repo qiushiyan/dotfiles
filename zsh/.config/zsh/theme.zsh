@@ -136,6 +136,17 @@ case "$TERMINAL_THEME" in
         export DELTA_FEATURES='+light-mode'
         export DFT_BACKGROUND='light'
         ;;
+    forest_night)
+        # Blue-slate bg (#1a2125): bold/bright dir for emphasis, same as the other dark arms.
+        export LSCOLORS='Gxfxcxdxbxegedabagacad'
+        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+        # fg=8 maps to the ghostty palette's #6b7280 (the theme's dark_foreground,
+        # chosen over the VS Code #4a5568 bright-black for exactly this) — legible on the slate.
+        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+        # delta (git pager) + difftastic follow the same light/dark choice.
+        export DELTA_FEATURES='+dark-mode'
+        export DFT_BACKGROUND='dark'
+        ;;
     *)
         print -ru2 "theme.zsh: unknown TERMINAL_THEME '$TERMINAL_THEME'"
         ;;

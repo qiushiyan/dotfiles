@@ -37,6 +37,7 @@ local map = {
   vitesse_light_soft = { colorscheme = "vitesse-light-soft",     background = "light" },
   night_owl        = { colorscheme = "night-owl",                background = "dark"  },
   orng_light       = { colorscheme = "orng-light",               background = "light" },
+  forest_night     = { colorscheme = "forest-night",             background = "dark"  },
 }
 
 M.name = resolve()

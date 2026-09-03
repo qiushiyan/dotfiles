@@ -1,0 +1,27 @@
+# Forest Night — Ethereal (ForrestKnight), from the Omarchy theme's colors.toml.
+# Normal slots are the VS Code theme's terminal.ansi* values; bright slots are
+# the Omarchy bright_* set. Bright black is the theme's dark_foreground #6b7280,
+# not the VS Code #4a5568 — that one sits at ~2.3:1 on the slate and makes the
+# zsh-autosuggestions inline text (fg=8) near-invisible.
+palette = 0=#14191c
+palette = 1=#E91E63
+palette = 2=#8FBC8F
+palette = 3=#F39C12
+palette = 4=#4ECDC4
+palette = 5=#9B59B6
+palette = 6=#4ECDC4
+palette = 7=#a8b3bd
+palette = 8=#6b7280
+palette = 9=#c78a7a
+palette = 10=#8FBC8F
+palette = 11=#FFB74D
+palette = 12=#66D9EF
+palette = 13=#9B59B6
+palette = 14=#66D9EF
+palette = 15=#ffffff
+background = #1a2125
+foreground = #c9d1d9
+cursor-color = #6b8fa3
+cursor-text = #1a2125
+selection-background = #3a4a55
+selection-foreground = #c9d1d9

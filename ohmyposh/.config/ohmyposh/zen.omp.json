@@ -82,6 +82,16 @@
         "green": "#317b46",
         "peach": "#EC5B2B",
         "red": "#d1383d"
+      },
+      "forest_night": {
+        "os": "#6b7280",
+        "closer": "p:os",
+        "pink": "#9B59B6",
+        "lavender": "#c9d1d9",
+        "blue": "#4ECDC4",
+        "green": "#8FBC8F",
+        "peach": "#E67E22",
+        "red": "#E91E63"
       }
     }
   },

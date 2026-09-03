@@ -177,6 +177,35 @@ function M.get_palette()
       -- sage bar_bg above).
       bar_bg = "#fbe6da",
     }
+  elseif scheme:match("^forest%-night") then
+    -- Forest Night (colors/forest-night.lua), ported from the VS Code theme,
+    -- mapped onto the catppuccin-shaped table ui.lua consumes. Surfaces are
+    -- the Omarchy colors.toml background/foreground scale.
+    return {
+      base = "#1a2125", -- background
+      mantle = "#14191c", -- dark_background
+      crust = "#0d1113", -- darker_background
+      surface0 = "#222a30", -- lighter_background
+      surface1 = "#3a4a55", -- selection
+      surface2 = "#4a5568", -- muted
+      text = "#c9d1d9", -- foreground
+      subtext0 = "#6b7280", -- dark_foreground
+      subtext1 = "#a8b3bd", -- light_foreground
+      overlay0 = "#4a5568",
+      overlay1 = "#6b7280",
+      blue = "#66D9EF",
+      green = "#8FBC8F", -- sage accent
+      red = "#c78a7a", -- the editor error/deleted rose, not the hot-pink ANSI red
+      yellow = "#F39C12",
+      mauve = "#9B59B6",
+      teal = "#4ECDC4",
+      pink = "#9B59B6",
+      sky = "#4ECDC4",
+      -- Elevated slate band for the lualine bar: lighter_background, one step
+      -- up from the #1a2125 editor bg so the statusline/tabline reads as an
+      -- intentional band (the Forest Night analogue of night_owl's bar_bg).
+      bar_bg = "#222a30",
+    }
   elseif scheme:match("^flexoki") then
     local p = flexoki_palette()
     -- flexoki-cyan-50: subtle mint-cream tint, the only off-paper accent in
