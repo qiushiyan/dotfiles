@@ -75,6 +75,14 @@ this is a full handoff, a brief-only stop, or a doc pass with no brief at all;
 and the slug names the **next** session's branch, so one token serves as brief,
 branch, worktree and PR lookup key.
 
+The pointer's last line names the **pickup gate** — `build` or `design`,
+`claude/.claude/skills/handoff/pickup/` — which fixes the receiving session's
+first turn: no edits; a re-grounding written for the user, who picks a brief
+up days after writing it; the brief's premises checked against the code;
+and the next move named, usually `/consult`. `design` puts the problem and
+the approach on trial (a fix brief's claimed cause included); `build` takes
+the direction as settled and tries the premises and the scope.
+
 Where the machinery lives and which repo owns which half: `docs/handoff.md`.
 
 ## The doc shape that keeps onboarding cheap

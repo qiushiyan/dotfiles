@@ -98,6 +98,26 @@ over that history; the passes themselves are the provenance below.
   measured friction nor a rulebook principle is sprawl; the engine's
   evidence log keeps the receipts so the next pass can re-check whether
   the fix held.
+- **Name the first reader of an output, and their state.** A first-turn
+  contract that said "in plain terms, for a reader who no longer remembers
+  this brief" still produced packets at the consult's altitude — 6 of 40
+  pickups were answered with "what exactly are we building?" or "explain
+  in plain terms", and the user kept a snippet for it (pickup-gate pass,
+  2026-09-04). The instruction named the register but not the reader: the
+  human who wrote the brief a week ago and has lost the thread. Say who
+  reads it first and in what state, then show the register with an
+  avoid/target pair lifted from the corpus — the shown paragraph teaches
+  what the stated rule did not.
+- **A verdict line that always says the same thing is ceremony.** Build
+  pickups closed on "framing holds" 9 of 9 times while the premise table
+  above it carried falsified entries in 6 of them; the user never read the
+  line. Lead with the outcome only when it changes something (a reframe
+  opens the packet); otherwise let the evidence table be the verdict.
+- **A mindset scoped to one turn does not carry.** The CEO-briefing format
+  for questions lived in the pickup gate; the user's snippet asking for it
+  fired later in the same sessions, after review and implementation
+  reports, never after the packet. A behaviour wanted all session needs a
+  home the whole session reads, not the first turn's contract.
 
 ## Open: goals over procedure
 

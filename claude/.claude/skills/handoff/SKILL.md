@@ -56,7 +56,7 @@ brief new <slug> --pickup build|design [--cluster <workstream>]
 
 prints the file it scaffolded, folder created, with `anchored:` and `base:` already stamped from the repo — leave those two alone and fill the rest.
 
-**`--pickup` names how the next session's first turn runs**, and `brief start` refuses to launch a brief without it. `build` only when the approach is already reviewed — a spec the user approved, a consult record, a PR to continue; otherwise `design`. The gate each value fires is [`pickup/build.md`](pickup/build.md) / [`pickup/design.md`](pickup/design.md): the receiving session ends its first turn on that gate's contract — a plain-terms restatement, the premises checked, a verdict — before any edit. Read the gate you chose before writing `## At pickup`, since that section is its input.
+**`--pickup` names how the next session's first turn runs**, and `brief start` refuses to launch a brief without it. `build` only when the approach is already reviewed — a spec the user approved, a consult record, a PR to continue; otherwise `design`. The gate each value fires is [`pickup/build.md`](pickup/build.md) / [`pickup/design.md`](pickup/design.md): the receiving session ends its first turn on that gate's contract — a re-grounding written for the user who has lost the thread, the premises checked, the next move named (usually a consult) — before any edit. Neither gate skips the consult; `build` only narrows what it asks. Read the gate you chose before writing `## At pickup`, since that section is its input.
 
 **`<slug>` is the branch the next session will work on**, not the one this session worked on: one token for the file, the branch, and the worktree. Write it as you'd write the branch, because it is the branch. [`SLUG-NAMING.md`](SLUG-NAMING.md) carries the **cold-read test** it has to pass — a place and an outcome, in words the tree already uses; read it before you choose, and note that a project skill wrapping this one may bind it to that project's own vocabulary.
 
@@ -113,7 +113,8 @@ Body rules:
   - <one to three total>
 
   Proposed approach:                                      <!-- design only -->
-  - <what changes, where, and the bet it makes>
+  - <what changes, where, and the bet it makes — for a fix, open with the
+    claimed cause: what was observed, then the chain inferred from it>
   - optimizes for: <goal or constraint>
   - accepts: <known cost or capability given up>
   - weakest support or contrary evidence: <evidence, unresolved assumption,
