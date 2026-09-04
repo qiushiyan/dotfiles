@@ -206,6 +206,22 @@ and evidence-backed, and was buying a benefit that did not exist. When a
 rule's only justification is the allowlist, delete the rule with the
 allowlist.
 
+## A cost belongs to the layer whose invariant, met, would make it vanish
+
+A pipeline of tools — docs, a brief, an onboarding skill, a gate, a CLI,
+the human's workflow — shows one symptom at every layer, and the nearest
+neighbour of the symptom is rarely its owner. Whole-file reads in pickups
+looked like a `sed` rule for the onboarding skill; the layers said
+otherwise: the brief transmitted claims without the result that produced
+them (five briefs falsified at pickup with zero drift), and the status doc
+had no exit rule (43 KB of dated outcomes read whole). Write each layer's
+one invariant in the ledger header, then ask of every cost which invariant,
+kept, would remove it — and check the answer with the writer/reader pair
+(78 % of the reader's doc reads were the writer's; 33 % of its code reads),
+not with the symptom's location. A fix on the wrong layer is faithfully
+followed and changes nothing (three gate rewrites, cost unchanged).
+Pipeline pass 2026-09-04, `abd24d95`.
+
 ## Feedback compounds only if it is captured and re-read
 
 Feedback to an agent normally dies with the session. Here it does not — the

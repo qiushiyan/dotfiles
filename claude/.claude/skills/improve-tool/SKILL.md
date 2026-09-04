@@ -91,7 +91,11 @@ the receipts behind every rule below.
    engine contract. The layer follows the usage lessons: a rule agents
    still break moves into the engine or a worked example, and the top
    failure class is read against the engine's code before it is called
-   discipline. Done when each of the top three frictions answers "how many,
+   discipline. When the tool is one stage of a pipeline, write each
+   stage's one invariant in the ledger header and assign a cost to the
+   stage whose invariant, kept, would remove it — the symptom's nearest
+   neighbour is rarely its owner (usage lessons § A cost belongs to the
+   layer). Done when each of the top three frictions answers "how many,
    and where" with a number and ids, and every reading says which of the
    two it is — three frictions with counts, per-session detail left in the
    index.
