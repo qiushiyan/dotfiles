@@ -135,9 +135,10 @@ the receipts behind every rule below.
    landed or handed off.
 
 6. **Change the instructions** under
-   [`../writing-for-agents/SKILL.md`](../writing-for-agents/SKILL.md),
-   [`../prompt-engineering/SKILL.md`](../prompt-engineering/SKILL.md), and
-   the usage lessons as the tool-specific lens — in one line: teach the hot
+   [`../prompt-engineering/SKILL.md`](../prompt-engineering/SKILL.md) — the
+   one rulebook for model-facing text; skill frontmatter and invocation are
+   [`../writing-for-agents/SKILL-MECHANICS.md`](../writing-for-agents/SKILL-MECHANICS.md) —
+   and the usage lessons as the tool-specific lens — in one line: teach the hot
    path and the rare hard-to-discover case, each as a real code example
    with its output shape, prose only where prose is due. A full rewrite is
    for a first pass, or instructions that predate their engine; every later

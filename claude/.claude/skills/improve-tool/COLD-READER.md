@@ -25,7 +25,7 @@ context already holds a CLAUDE.md, ignore it; the file on disk is the one
 under review: (1) <entry route or router>,
 (2) <the instructions>, (3) only the parts of <satellite> you would actually
 reach for. Then read the rulebook
-/Users/qiushi/dotfiles/claude/.claude/skills/writing-for-agents/SKILL.md and
+/Users/qiushi/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md and
 judge the files against it.
 
 Report (≤ 90 lines, no edits to any file):

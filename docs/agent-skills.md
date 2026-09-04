@@ -126,7 +126,7 @@ tier decides where an improvement is allowed to land. The tell is the lockfile
 
 | tier | tell | edit policy | where our own lessons about it go |
 |---|---|---|---|
-| **Managed** — installed from upstream and kept current (`writing-for-agents`, `codebase-design`, `research`, …) | in the lockfile, no `.upstream/` | never edit the body; `skills update` reverts it silently (it did: the local `## Tool access` section of `writing-for-agents` was lost on 2026-08-29 and now lives in `lessons/agent-tooling/`). Behaviour changes go through `skillOverrides` (above) | a lesson under `lessons/` that the consuming skill points at (`agent-tooling/usage-lessons.md` is the writing-for-agents companion) |
+| **Managed** — installed from upstream and kept current (`writing-for-agents`, `codebase-design`, `research`, …) | in the lockfile, no `.upstream/` | never edit the body; `skills update` reverts it silently (it did: the local `## Tool access` section of `writing-for-agents` was lost on 2026-08-29 and now lives in `lessons/agent-tooling/`). Behaviour changes go through `skillOverrides` (above) | a lesson under `lessons/` that the consuming skill points at (`agent-tooling/usage-lessons.md` is the rulebook's companion) |
 | **Customized** — upstream pinned beside a rewritten body (`obelisk`) | `.upstream/PINNED.txt` + `LESSONS.md` in the skill dir | edit the body freely; upgrade by hand per `PINNED.txt`, re-checking every `LESSONS.md` item against the new upstream | in the skill's own `LESSONS.md` (receipts) and body (rules) |
 | **Original** — ours (`review`, `consult`, `improve-tool`, `handoff`, …) | in neither | edit freely | in the body, or in a lesson when several skills share the rule |
 | **Vendored bundled** — a copy of a Claude Code built-in (`artifact-design`) | listed in the section below | treat as managed by hand: refresh from the CLI, don't customize | — |
@@ -147,17 +147,21 @@ Guidance for writing agent-facing text is layered, and the layer decides the
 file:
 
 ```
-claude/.claude/skills/writing-for-agents/   managed — structure, pointers, leading words   (upstream's)
-claude/.claude/skills/prompt-engineering/   original — model-facing text, the defect lens
+claude/.claude/skills/prompt-engineering/   original — the one rulebook: model-facing text,
+                                            structure, pointers, the revision pass
+claude/.claude/skills/writing-for-agents/   managed — reached only for SKILL-MECHANICS.md
+                                            (frontmatter, invocation, routers); its
+                                            general rules are folded into the rulebook
 lessons/.config/lessons/agent-tooling/      ours — what measured sessions added on top:
                                             examples over prose, answer in the engine,
                                             cold readers, the doctrine gap
 claude/.claude/skills/<skill>/SKILL.md      the skill-specific gist + pointers up the stack
 ```
 
-A rule about *how to write any agent-facing document* goes in the lesson,
-never into `writing-for-agents` (managed). A rule about *one skill's* domain
-goes in that skill. Lessons are not skills — no frontmatter, not invokable,
+A general rule about *how to write any agent-facing document* goes in the
+rulebook (original, editable); one that only measured sessions could supply
+goes in the lesson; never into `writing-for-agents` (managed). A rule about
+*one skill's* domain goes in that skill. Lessons are not skills — no frontmatter, not invokable,
 reached only by a pointer from a skill or snippet — and `lessons/.config/lessons/CLAUDE.md`
 carries the conversion rules between the two forms.
 

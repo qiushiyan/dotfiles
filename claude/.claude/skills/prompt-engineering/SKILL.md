@@ -1,247 +1,229 @@
 ---
 name: prompt-engineering
-description: Prompt-engineering rulebook for model-facing text — system prompts, agent instructions, tool definitions and results, skill bodies, context layout. Use when writing a new prompt or tool surface, or when improving or reviewing an existing one.
+description: The one rulebook for model-facing text — system prompts, skill and agent bodies, CLAUDE.md and AGENTS.md, snippets, tool descriptions, results and errors, and the layout of the context window. Use when writing any of those, or as the revision pass over the surfaces a session touched. Skill frontmatter, invocation, and routers are writing-for-agents' SKILL-MECHANICS.md.
 ---
 
-# Prompt engineering
-
-Distilled, provider-agnostic guidance for two jobs that share one rulebook:
-
-1. **Writing** a new prompt, instruction block, or tool definition.
-2. **Improving** an existing one.
-
-The principles are the same either way. When writing, use them as a design guide. When improving, use them as a defect lens — read the target against the principles and the [Common defects](#common-defects-the-improvement-lens) list, then propose each change _with the reason it helps_. [`references/before-after.md`](references/before-after.md) shows the move on concrete worked examples. There is no hard line between the two jobs; improving is just writing with a draft already in front of you — and the lens is the writing job's exit check: before reporting done on model-facing text you wrote or changed, run your own changes through the review pass. A defect is cheapest the turn it's written; caught a session later, it has already steered an agent.
-
-**The reader of every word you write is the model.** Optimize for how a model reads, not for how a human documents a system.
-
-This guide is organized around the three things you shape when you build with a model — and you rarely touch one without the others:
-
-- **Prompt design** — how the model should _behave_.
-- **Context engineering** — what the model _knows_ this turn.
-- **Tool design** — what the model can _do_.
-
----
-
-## First principles
-
-These six carry the rest. Most specific rules are a corollary of one of them.
-
-- **Solve it in code first.** An instruction is a probabilistic lever — followed most runs, at a price in attention every run; code executes every time and costs the window nothing. Asking the model to guarantee what a mechanism could is a category error, so before writing (or strengthening) a rule, walk the ladder: **eliminate** — restructure so the problem can't occur or the step happens by itself (a hook blocks the command, the schema rejects the value, the formatter runs on save); failing that, **inform** — when a real decision remains, compute what the system already knows and place it at the decision point (the date, the branch, the failing test) instead of leaving the model to recall or derive it; only then **instruct**. What's left for prose is what only prose can carry: judgment. The boundary cuts both ways — a rule with no legitimate exceptions belongs to a mechanism, and hard-blocking a genuine judgment call is the same mistake inverted ([warn-once-then-allow](#results-nudge-the-next-step-mini-context)).
-- **Write for the model, not the developer.** The most common defect is developer-facing framing leaking into model-facing text — architecture commentary, mechanism explanations, implementation rationale, and the quieter one: internal names, product concepts, and domain terms that mean something to _you_ but nothing to the model. It needs to know neither _how the system works_ nor _what you call its parts_ — only _what to do_. Read each line and ask: does this help the model act, or does it only land because I built this? Cut plumbing outright; for a term that carries meaning only for you, swap in the plain thing it stands for. (The per-term form of this is the familiar-term test under the cold-reader principle below.)
-- **Explain the why.** A model generalizes from a reason far better than from a bare rule — it will apply the intent to cases you never anticipated. A constraint stated as a bare prohibition invites creative violation; the same constraint stated as a framework _with its motivation_ becomes part of how the model reasons.
-- **Minimal but complete.** Aim for the smallest set of information that fully specifies the behavior you want — nothing accidental, nothing missing. Minimal does not mean short; it means no padding. Over-specification breeds brittleness and overtriggering; under-specification yields generic output.
-- **Everything is prompt surface.** Tool names, parameter names, descriptions, result text, and error messages all consume the model's attention and steer its behavior. Treat them with the same care as the system prompt.
-- **The cold-reader test.** The artifact is read _standalone_, by a model with none of your conversation — and your authoring context skews you two ways at once (both are the curse of knowledge, sharpest exactly when your context is richest). You _under-supply_ the basics — what this thing is, the system it belongs to — because they're obvious to you: anchor the identity first, then read it cold — if a fresh reader saw _only_ this, would they know what it is and what to do? And you _over-supply_ your own vocabulary: run the **familiar-term test** on every internal name, product concept, or domain term — _does this help the model act, or is it here only because I know what it means?_ Make it a deliberate test, not a recognition rule — your own jargon never _feels_ like jargon — and when a term fails, replace it with the plain thing it stands for: name the work, not the label you filed it under. The test strips _your_ vocabulary, not the domain's: the standard terms of the task's own field — the ones its practitioners speak — help the model act, so a failed internal name is replaced by the field's term for it when one exists, and by plain language only when none does.
-
----
-
-## Prompt design
-
-How the model should behave. An instruction lands through three stacked levers, and the sections below run in that order:
-
-- **Form** — where an instruction sits and how it's set off from everything around it.
-- **Substance** — what it says: specific, positive, motivated, at the right altitude.
-- **Reinforcement** — what's shown or repeated: examples and designed echoes.
-
-When a behavior isn't landing, work the stack in order — placement and structure first, then the wording, and only then reinforcement: repetition papers over what a rewrite would cure. Sometimes the fix isn't in this prompt at all but on another surface at the right moment — see [Steer at the right surface](#steer-at-the-right-surface) — and sometimes in no prose at all: an exceptionless behavior is bought outright in code ([solve it in code first](#first-principles)).
-
-### Form — structure and placement
-
-- **Long content first, the task last.** Put documents, templates, and other longform context at the _top_; put the instruction/question in a block at the _end_. Models attend most reliably to the beginning and end of a context and degrade on material buried in the middle (the _lost-in-the-middle_ effect), so a load-bearing instruction must not live mid-context. On long multi-document inputs this ordering measurably improves quality.
-- **Delimit content types** so data is unambiguous from instructions. XML-style tags (`<context>…</context>`), Markdown headings, and fenced blocks all work — what matters is that the delimiting is clear and consistent, not which characters you use (this guide's examples use XML-style tags as one convention, not a requirement). Use descriptive names; nest when the content is hierarchical.
-- A reliable order for a system prompt: **role/context → task → detailed instructions → output format.**
-
-### Form — one world per rendered prompt
-
-When prompts are assembled from configuration — templates, modes, feature flags, per-deployment variants — **branch in the composer, not in the prose**. The model should read only the instructions that apply to _this_ configuration, and shouldn't be able to tell other modes exist: conditional prose ("if X mode, …; otherwise …") makes it parse configuration state, hedges the instruction, and spends attention on branches that don't apply. Where configurations diverge in what the model should _do_, give each value its own dedicated fragment; share prose only when it's genuinely identical across values — prefer forking a fragment over parameterizing it into hedged generality.
-
-### Substance — specific and concrete
-
-- **State the output contract** — format, length, style, what "done" looks like. The less the model has to guess, the more likely you get what you want. If you want it to go above and beyond, say so explicitly; it won't infer ambition. And give every mandated section a skip condition: a section the model must always fill ("end with an optional-improvements list") gets fabricated content on the days there's nothing real to report — "if none, say none" costs one line and removes the pressure to invent.
-- **For behavioral instructions, specify trigger + action + skip condition** — _when_ it should fire, _what_ to do, and _when not to_. The skip condition is what prevents overtriggering, and is the part people forget.
-- **Cut generic directives.** "Be helpful," "be proactive," "ask good questions" are noise — the model already tries to do these. If you can't name the trigger, the action, and the skip condition, the instruction isn't ready to add.
-- **A role line sets voice, not competence.** A role/persona line focuses **tone, voice, audience, and output style** — use it for that, and one line is often enough. Don't rely on "you are an expert…" to improve factual accuracy or reasoning; that doesn't reliably help and can pull the model into style-following mode.
-
-### Substance — framework over prohibition; positive over negative
-
-- **Prefer the positive path.** Tell the model what _to do_, not what to avoid. Negation forces the model to first surface the very concept it's meant to suppress (the "pink elephant" problem), and larger models can actually do _worse_ on negated instructions. Reframe "don't ask generic questions" as "ask only when you can name the concrete decision that hinges on the answer."
-- **Reserve `never`/`do not` for hard safety boundaries** — destructive commands, data loss — where a positive rephrase would be vaguer and the cost of violation is severe. Negation as the _primary_ steering mechanism is fragile; a prompt full of "do not" reads like a list of things the model now knows it _could_ do.
-
-### Substance — calibrate emphasis
-
-Dial back `CRITICAL:`, `you MUST`, ALL-CAPS, "exactly once." Modern models are highly instruction-responsive and _overtrigger_ on aggressive emphasis — language meant to fix undertriggering on older models now backfires. Write normal imperatives. Reserve strong language for a genuine hard constraint backed by a real, observed failure mode — not as precaution.
-
-### Substance — right altitude
-
-- Write **strong heuristics, not brittle if-else logic, and not vague platitudes.** Encode the expert _strategy_; leave the model judgment room where you don't actually care about the specifics. "Think carefully about whether the loop has converged before continuing" beats a hand-authored decision tree — and survives cases the tree didn't foresee.
-- **Prefer general instructions over prescriptive step lists.** Use numbered steps only when order or completeness genuinely matters.
-
-### Reinforcement — examples
-
-Examples are the highest-leverage tool for tone, format, and judgment that rules alone struggle to pin down — the pictures worth a thousand words.
-
-**Shown beats said.** A model imitates what it's shown more strongly than it follows what it's told — when prose and a nearby example disagree, the example usually wins. That makes every example an instruction, and an unvetted one an instruction you never meant to give. When output ignores a rule, audit the examples in reach before strengthening the rule.
-
-- Wrap them in `<example>` / `<examples>` tags so the model distinguishes them from instructions.
-- Make them **relevant** (mirror the real use case) and **diverse** (cover edge cases; vary enough that the model doesn't overfit to one surface pattern).
-- **Offer examples at more than one size.** A complete worked example is the strongest teacher but fires only when the need matches it; smaller composable pieces — a section, a pattern, one call done well — cover the needs no full example anticipated. A corpus spanning sizes beats more examples at one size.
-- A handful is the sweet spot — enough to show the pattern, not so many they dominate the prompt or cause overfitting.
-- **Anti-examples displace; positive examples teach.** Include an avoid-case (`type="avoid"`) where the model would otherwise reproduce the generic default you're displacing — but the positive cases carry the pattern, so lead with the target behavior and judge the set as a whole by what it teaches.
-- **A code sample inside a prompt is code.** It ships bugs like any other source, and it's typically the one snippet nothing type-checks or executes. Wire prompt-embedded samples into the same checks as the codebase, or generate them from a source that is checked. And correctness is only half the bar: the model reproduces a sample's idioms wholesale, so a correct-but-sloppy example teaches sloppiness. Hold examples to the standard you want reproduced — when several authors contribute them, write that standard down as a rubric so one bar holds.
-
-> Reasoning models frequently need few or no examples for _judgment_ — reach for them when rules aren't landing, not by default. Style-bound generative output (code in a house system, copy in a house voice) is the standing exception: there quality tracks the examples the model can see far more than the rules it's given, and the example set is the real spec.
-
-### Reinforcement — echoes
-
-Repetition is a real compliance lever — and the most expensive one, so it comes after the others: clear structure the model can navigate and a framework with its motivation often lift compliance without a second copy. When a rule has earned an echo:
-
-- **Recap policy at the bottom.** Models follow instructions best at the very top and very bottom of a prompt, so the genuine policy points governing a long prompt earn a concise closing recap — a checklist restatement of the highest-stakes rules, not a re-explanation.
-- **Restate a hard constraint where it's acted on** — briefly, at the surface where the tempted action would actually happen.
-- Echoes need not be verbatim; they do need to be designed — each copy should say why its spot needs it and which home it echoes (the one-home discipline: [Steer at the right surface](#steer-at-the-right-surface)).
-
-### Reasoning models and long-horizon behavior
-
-This guide targets modern reasoning models, and many prompts drive an agent across many turns.
-
-- **Let the model reason; don't script its thinking.** Give a clear goal, strong constraints, and an explicit output contract, then let it work — don't hand-author step-by-step "think first" scaffolding or over-specify intermediate steps (it wastes reasoning budget and can fight the model's own plan). Ask it to **verify its answer against the success criteria** before finishing — and for high-stakes work, have a fresh-context evaluator that never saw the work being built grade it against a rubric, since agents reliably over-rate their own output. (Hand-written chain-of-thought is mainly a crutch for older non-reasoning models, where it does help — add it back if you target those.)
-- **Counter premature termination.** Tell long-running agents to keep going until the task is genuinely resolved, and to research or decide on the most reasonable path rather than handing back at the first sign of uncertainty. Declaring victory on partial progress is the cardinal long-horizon failure.
-- **Make action defaults steerable.** Scale eagerness to the cost of being wrong: act-then-report for reversible actions, ask-first for consequential or irreversible ones. Set explicit tool-call budgets and stop conditions, and give an escape hatch ("if you can't determine X, proceed with your best assumption and note it").
-
----
-
-## Context engineering
-
-What the model knows this turn. Instructions tell it how to behave and tools say what it can do; context is the information you place in — and keep out of — its window. **The window is a finite budget, not free space**, and the most common agent failure is not clumsy wording but the right information missing, or buried under noise.
-
-- **Treat the window as a finite budget.** Aim for the smallest set of high-signal tokens that does the job. Model quality degrades as the window fills — measurably, and often well before the advertised limit (_context rot_) — so padding "just in case" actively hurts. More context is not safer context.
-- **Load just-in-time.** Hold lightweight references — file paths, IDs, queries — and pull full content at runtime via tools, instead of pre-loading everything you might need. Metadata (names, directory structure, timestamps) is high-signal navigation in its own right.
-- **Disclose progressively.** Load in tiers: a lightweight menu or index first, full detail only when the task matches it. (Same shape as a phase-scoped tool menu, or the `note` in a tool result — show what's relevant now, keep identifiers for the rest.)
-- **What retrieval returns, the model will imitate.** Fetched artifacts — templates, neighboring code, prior outputs — land as examples, not just information (shown beats said). Curating the corpus retrieval draws from is context engineering: a sloppy artifact surfaced this turn is a style rule you never wrote.
-- **Keep the prefix stable.** Placement inside the window follows the same edge rule as any prompt ([Form — structure and placement](#form--structure-and-placement)); the window-level addition is the cache: keep the prompt _prefix_ stable and let variable, per-request content ride at the end, so the cache hits the static portion and you don't pay to re-read it every turn.
-- **Externalize state; compact at the boundary.** For work that spans many turns or survives compaction, keep state in durable artifacts _outside_ the window — a plan/todo file, structured JSON for status, git for checkpoints — and read enough back on a fresh window to continue. As the window fills, summarize and reinitialize: preserve decisions, open problems, and load-bearing detail; drop redundant tool output. Tell the agent its context is managed automatically so it doesn't wrap up early to save budget.
-
----
-
-## Steer at the right surface
-
-The system prompt is not the only — or always the best — place to steer behavior. It's read once, early; by the time the model is on its fifth tool call, the system prompt is far away in context. A behavior that must happen _at a specific moment_ is more reliably driven by a nudge that lands at that moment.
-
-Use each surface for what it does best, and **give each behavior one home; echo it only on purpose**. Copies that accrete by accident drift apart when one is updated, and a model reading three variants of a rule may overtrigger. Deliberate echoes are the designed exception — reinforcement of a rule that keeps its home (how to spend them: [Reinforcement — echoes](#reinforcement--echoes)). The test for keeping a copy is that you can say why _this_ surface needs it and which home it echoes; when consolidating, remove the accidental copies and keep the designed ones — the target is drift and noise, not repetition itself.
-
-| Surface                | Best for                                        | The question it answers                                 |
-| ---------------------- | ----------------------------------------------- | ------------------------------------------------------- |
-| System prompt          | General principles, posture, durable policy     | "How should I approach this in general?"                |
-| Tool description       | That tool's mechanics, when/when-not to call it | "How do I use this specific tool?"                      |
-| Tool result text       | Moment-specific nudges (see below)              | "What should I do right now, given what just happened?" |
-| Subagent output format | What the parent gets to act on                  | "What structured result should I hand back?"            |
-
-Tool result text is the **most underused, highest-signal** surface — it's read at the exact moment the model decides its next action. When system-prompt guidance isn't landing, the first question is: "is there a tool result that fires at the right moment where a nudge would be more effective?"
-
-The complement that bounds result-surface teaching: **a result carries per-call state and the next action; invariant procedure lives in the durable prompt.** Agents compact — teaching that exists only in a tool result is discarded with the turn that carried it, leaving later turns referencing a procedure the model no longer holds. If the same procedural text would ride every result, relocate it to the system prompt and let the result say only what's specific to this call.
-
----
-
-## Tool design
-
-What the model can do. The through-line: **everything the agent sees through a tool is prompt** — name, description, parameters, results, errors. Engineer it like prompt text, because it is.
-
-### Few thoughtful tools, not API wrappers
-
-- Build a few tools targeting whole **workflows**, consolidating multiple operations behind one call — `schedule_event` instead of `list_users` + `list_events` + `create_event`. More tools don't yield better outcomes, and ambiguous overlap between tools actively hurts selection.
-- The test: **if a human engineer can't say which tool applies in a situation, the model can't either.** Keep the active set small and the boundaries clean; namespace related tools by service/resource (`calendar_search`, `calendar_create`) when there are many.
-
-### Descriptions surface the implicit
-
-- Write the description **as if onboarding a new teammate.** Make explicit what the model cannot discover on its own: query formats, niche terminology, how resources relate, lifecycle facts.
-- **Unambiguous parameter names** (`user_id`, not `user`). **Strict, typed schemas**; use **enums to teach usage patterns** — a `mode: steer | follow_up` parameter teaches the two patterns through the schema itself, no prose rule needed. The schema is the tool's affordances: shape it so the right use is the natural use.
-- _What_ the tool is belongs in the description; _when_ to call it (and when not to, among overlapping tools) belongs in the system prompt.
-
-### Return meaningful context
-
-- Prefer **semantic, human-legible fields** over opaque identifiers — `name`, `file_type`, not `uuid`, `mime_type`. Semantic content informs the model's next action; opaque IDs don't, and resolving IDs to names measurably reduces hallucination.
-- **Meet the model's vocabulary.** A retrieval tool that matches only your names fails silently — the agent asks for analytics, the artifact is filed under dashboard, and the miss reads as absence. Expand synonyms, forgive near-misses, and index artifacts by what they contain, not just what they're titled. The familiar-term test's tooling complement: rename what you can; make retrieval absorb the gap where you can't.
-- **Assert only what this layer observed** — in success as much as in error. "All items validated" is an overclaim when validation happens in another layer or fails open; say what verifiably happened here — accepted, submitted, written — and no more. A result that claims more than its layer can see teaches the model to skip verification it still needs.
-- **Be token-efficient.** Pagination, filtering, truncation, sensible defaults. Return what the model needs to act on, not everything the backend has. Route bulky data the model needn't read around the model, not through it.
-- **Progressive disclosure.** Offer a verbosity control (`concise | detailed`), or return identifiers and load full bodies on demand — so the result surface stays focused.
-- **No universal best format.** JSON, XML, or Markdown — pick per task and verify by trying it.
-
-### Errors prescribe the recovery path
-
-An error result is a steering opportunity, not a stack trace. **Name the failure layer, say what it implies, and prescribe the next action**, so the agent doesn't improvise recovery:
-
-> The {service} call failed at the infrastructure layer ({detail}); your input was never processed, so this is not a content problem. Retry the identical call once; if it fails again, stop and report to the user rather than continuing.
-
-Validation errors should communicate the **specific fix** ("expected `role` to be `implementer` or `reviewer`"), never opaque codes. And the error must reach the _model_ (in the result it reads), or it can't self-correct and will retry the same mistake blindly.
-
-Three constraints keep prescriptions honest:
-
-- **An error may only prescribe what it can prove.** "Your input was never processed — retry" is the right message only when that's verifiably true; the same words after a partially-completed operation license a duplicate. Split the result on what actually happened (never-started → retry; partially-done → resume or inspect, don't re-send). The discriminator is the _action the message licenses_ — the wrong one corrupts state a retry can't fix.
-- **Write each error against the condition that fires it.** One message shared across call-sites drifts toward describing the most common cause — and then steers every other failure down the wrong recovery path. Check the emitting site: the text should describe what _that_ path actually ruled in, not what usually goes wrong.
-- **Keep the detail slot concise.** Extract the underlying failure's reason line, never the raw dump — an error that prescribes recovery from inside a 30KB log has defeated its own purpose.
-
-### Results nudge the next step (mini-context)
-
-The highest-leverage tool-design pattern. When a result changes what the agent should do next, **the result text says so explicitly, with the reason** — a "mini-context" that steers the model down the intended path at exactly the moment it matters:
-
-> The user is away, so your question is queued and the run is pausing. End your turn with a one-line status — anything you do past this point happens without the answer you just asked for. The run resumes when they reply.
-
-When the result recommends a move, calibrate it to the result's strength — a strong match earns "start from this," a weak one "treat it as a reference and compose the rest." A recommendation that overstates its confidence is unearned certainty on the success path.
-
-Two specialized variants:
-
-- **Warn-once-then-allow** — for an action that's _usually but not always_ wrong. The first attempt returns a steering error naming the why and the alternatives; an identical repeat call passes. Judgment keeps the override; the harness just makes it deliberate. Prefer this over a hard block whenever the rule has legitimate exceptions — a hard block tries to replace judgment with a mechanism.
-- **Reactive state-triggered nudge** — fire _once at a threshold_ (not on every call), on the existing result surface, and give the _reason_ the threshold matters, not just a count. (This is how a harness "system reminder" works.)
-
-### Tool design is eval-driven
-
-Tool ergonomics can't be fully predicted up front because agents are non-deterministic. Iterate: prototype, run **realistic multi-call scenarios**, read the transcripts — _what the agent omits or fumbles is as informative as what it does_ — then refine. Small description changes can shift behavior a lot, so don't bikeshed naming or response format in the abstract; decide it with an eval.
-
----
-
-## Common defects (the improvement lens)
-
-A review pass has a shape; run it in order rather than free-scanning:
-
-1. **Inventory the model-facing surfaces** — prompts, tool descriptions, results, errors, skill and agent files. Code comments, test names, log lines, and UI copy are human-facing: out of scope, however untidy. While inventorying, mark which artifacts are **templates**: a rendered prompt should be concrete, but a template covering many instances is deliberately hedged ("the feature added or bug fixed"), and the hedge is load-bearing — concreteness happens at fill-in time, and "fixing" a hedge into one instance's specifics breaks every other instance.
-2. **Sweep for stale text.** After a behavior change, the highest-yield defect is usually not in the text you were pointed at but in the surfaces that still _describe the old behavior_ — a skill or fragment teaching what the system no longer does.
-3. **Read each surface against the defect list below.** Report every finding as the defect's name plus the concrete fix — a named defect is checkable; "this could be clearer" is not.
-4. **Verify, don't just edit.** Run whatever pins the surfaces you touched — prompt-text tests, rendering snapshots, the suite. And **pin load-bearing truth claims with tests**: when prompt or result text asserts a fact about system behavior ("only sets the comparison reference", "accepted by the host"), a test should assert the text says exactly that and no more — a truthfulness fix without a pin drifts back.
-5. **Report the deliberate keeps.** Anything that looks like a defect but survives on purpose — a sanctioned echo, a load-bearing hedge, an earned `never` — gets named with its reason, so the next pass doesn't "fix" it.
-
-The defect list. Each maps to a principle above; the fix is in parentheses.
-
-- **Prompted mechanics** — a rule pleading for what code could guarantee: "never push to main" instead of a hook that blocks it, "always run the formatter" instead of one that runs on save, a plea to remember what the harness could inject. It spends attention every turn and still fails probabilistically. (Solve it in code: eliminate the possibility or inject the computed fact; keep prose for the judgment calls.)
-- **Assumed conversational context** — the artifact opens mid-stream: specifics, options, or sub-rules without first naming what the thing _is_ and the system it belongs to, because the author held that in-session and a cold reader won't. The inverse of developer-facing framing — too little identity, not too much mechanism. (Add a one- or two-line "what this is" anchor up front, then go specific.)
-- **Mechanism narration** — "this works by…", "the system will…", "the result arrives as…". (Replace with the action and its trigger.)
-- **Incident narration in durable surfaces** — a rule still teaching from the case that motivated it: session details, ticket numbers, the specific user who hit it. The incident is evidence for _you_; the model needs the generalized reason. (State the rule with its general why; the case file belongs in the project's records, not the prompt.)
-- **Familiar-term leak** — an internal name, product concept, or domain term that's load-bearing in your head but inert to the model; it slips past the developer-facing scan because it's neither _mechanism_ nor _missing identity_ — it's over-supplied vocabulary, a third axis. The recognition rule can't catch it (your own jargon never feels like jargon). (Run the familiar-term test: does it help the model act, or only signal to you? Replace with the domain's own term, or plain language if the field has none.)
-- **Generic directives** — "be helpful," "stay responsive." (Replace with trigger + action + skip, or cut.)
-- **Negation as the main lever** — a pile of "do not" rules. (Reframe as the positive path; keep "never" only for hard safety.)
-- **Aggressive emphasis** — CRITICAL/MUST/ALL-CAPS not backed by an observed failure. (Normalize to a plain imperative.)
-- **Defensive over-prompting** — rules guarding against problems never actually seen. (Cut; add rules when a failure recurs, not preemptively.)
-- **Buried instructions** — a load-bearing instruction in the middle of long content. (Move it to the end, or repeat it there.)
-- **Context bloat / pre-loading everything** — stuffing all possibly-relevant material into the window up front. (Hold references and load just-in-time; keep the prefix small and stable.)
-- **Everything in the system prompt** — moment-specific behavior crammed into the always-on prompt. (Move it to a tool-result nudge that fires at the moment.)
-- **Accidental duplication across surfaces** — the same rule accreted in the system prompt, a tool description, and a result, no copy able to say why it exists. (One home per behavior; keep only deliberate echoes.)
-- **Conflicting rules with no precedence** — two instructions that can collide, left for the model to reconcile; the winner is arbitrary, often just whichever came last. (Decide the precedence yourself: state the rule once with its exception folded in.)
-- **Rule–example conflict** — prose commands one thing while an example beside it (or an artifact retrieval serves up) shows another; the model follows the shown thing. (Shown beats said: fix the example first, then see whether the rule is still needed.)
-- **Config-conditional prose** — rendered instructions that branch on modes the model can't see ("if the posture is X, …; otherwise …"). (Branch in the composer; a dedicated fragment per value.)
-- **Unearned certainty** — a success line or recovery prescription asserting what the emitting layer can't verify ("all inputs validated"; "never processed — retry"), licensing skipped verification or destructive re-work. (Assert what provably happened at this layer; prescribe only the action that's safe under it.)
-- **Volatile facts in durable prompts** — live lists, counts, sizes, version numbers hardcoded into a prompt that outlives them; they rot silently. (Derive at render time, point at a source the model can read, or cut.)
-- **Opaque tool returns and errors** — UUIDs, raw blobs, stack traces, bare error codes. (Semantic fields; recovery-prescribing errors.)
-
----
-
-## Before → after
-
-The worked examples — a behavioral instruction block rewritten, a bloated window slimmed, a tool redesigned end to end, an error result made prescriptive — live in [`references/before-after.md`](references/before-after.md). Load it when writing a surface from scratch, or when a defect is named but the fix isn't obvious; for a routine review pass the defect list above is enough.
-
----
-
-## One rulebook, many projects
-
-This skill is the general rulebook. A project doing sustained prompt work tends to grow a local prompting guide — keep the layers split:
-
-- **The local guide carries what only that project can know**: its inventory of prompt surfaces, its domain register (which field's vocabulary is the target language, which internal names never ship), its hard mechanical constraints, and the observed evidence behind each local rule. For the general rules it defers here rather than duplicating; its one sanctioned overlap is a short checklist restatement of the highest-stakes rules.
-- **Read both when the project has one.** This rulebook gives the rules; the local guide gives the calibrations — it, not this file, answers which terms pass the familiar-term test there.
-- **Promote what generalizes.** When a local lesson stops being project-specific, move it into this rulebook in general form and delete the local copy; the local guide keeps the project instance and its evidence.
+# Writing for the model
+
+The one rulebook for anything a model reads: a system prompt, a skill or
+agent body, a `CLAUDE.md`, a snippet, a tool's description, result, or
+error, and the shape of the window they all land in. Read it before writing
+one of those, or as the revision pass over the surfaces a session touched.
+A project with its own house layer (planlab's `docs/loopy/prompting-guide.md`)
+binds these rules to its vocabulary and evidence and answers the
+calibrations; read both when one exists. **The reader of every word you
+write is the model** — optimize for how a model reads, not for how a person
+documents a system.
+
+## The philosophy
+
+A capable model does its best work from a clear description of the goal,
+the constraints that bound it, and the conventions of the place — not from
+a procedure for reaching it. A procedure spends attention every turn,
+fights the model's own plan, and breaks on the case it did not foresee. So
+name the goal and what done looks like; state each constraint with the
+reason behind it, because a reason generalizes where a bare rule invites
+creative violation; leave the method to the model, and write steps only
+where order genuinely matters. A surface improved this way usually comes
+out shorter — by keeping what changes the reader's next action and leaving
+out the rest, never by compressing sentences into fragments, arrow chains,
+or labels.
+
+## The bar — rules that hold on every surface
+
+- **Cold reader.** The artifact is read standalone by a model with none of
+  your conversation. Anchor what the thing is and the system it belongs to
+  in the first lines, then go specific. Your authoring context skews you
+  both ways: you under-supply the basics because they are obvious to you,
+  and you over-supply your own vocabulary. Run the **familiar-term test** on
+  every internal name and product concept — does it help the model act, or
+  is it here because you know what it means? A term that fails is replaced
+  by the field's own word, or plain language when the field has none. The
+  domain's standard terms stay: they are what the user says.
+- **Give the reason.** The model performs better when it knows what the
+  request is for and who it serves. "I'm working on X for Y; they need Z;
+  with that in mind: the request" beats the request alone, and a rule with
+  its why is applied to cases the rule never named.
+- **Solve it in code first.** An instruction is a probabilistic lever paid
+  for every turn; a mechanism executes every time and costs the window
+  nothing. Before writing or strengthening a rule: **eliminate** the
+  possibility (a hook, a schema, a formatter on save); failing that,
+  **inform** — compute what the system already knows and place it at the
+  decision point; only then **instruct**. Prose is for judgment. The
+  boundary cuts both ways: hard-blocking a genuine judgment call is the
+  same mistake inverted.
+- **One home per behaviour.** Give each rule one authoritative place and
+  echo it only on purpose, naming which home the echo serves — copies that
+  accrete by accident drift apart and over-trigger. When a prompt is
+  assembled from modes or flags, branch in the composer, never in the
+  prose: the model reads one world and cannot tell other modes exist.
+- **Positive path; trigger, action, skip.** Say what to do. Negation
+  drags the forbidden behaviour into context and half-reads as a
+  suggestion; keep `never` for hard safety boundaries. A behavioural rule
+  carries when it fires, what it does, and when not to — the skip
+  condition is what stops over-triggering, and a mandated output section
+  carries its skip ("if none, say none") so nothing gets invented to fill
+  it.
+- **Earned emphasis.** `CRITICAL`, `MUST`, all-caps, and "exactly once"
+  make modern models over-trigger. Write plain imperatives; reserve strong
+  language for a hard constraint behind an observed failure you can cite.
+- **Shown beats said.** A model imitates what it is shown more strongly
+  than it follows what it is told, so every example is an instruction and
+  an unvetted one is an instruction you never meant. Wrap examples in
+  `<example>` tags, hold them to the standard you want reproduced, and
+  vet them first when output ignores a rule. Reasoning models need few or
+  no examples for judgment; reach for one where rules are not landing or
+  the output is style-bound, and add an avoid-case only where the model
+  would otherwise reproduce the default you are displacing. What retrieval
+  returns is an example too: a sloppy artifact surfaced this turn is a
+  style rule you never wrote.
+- **Prove what you prescribe.** A success line or an error may assert only
+  what its layer observed — "accepted", "written", never "all inputs
+  validated" from a layer that cannot see validation. An overclaim licenses
+  the model to skip verification it still needs or to retry an operation
+  that half-completed. Pin load-bearing truth claims with a test that
+  asserts the text says exactly that and no more.
+- **Right altitude.** Encode the expert's strategy as strong heuristics,
+  not a decision tree and not a platitude. Let the model reason: a clear
+  goal, strong constraints, an explicit output contract, then room to work.
+  Never ask the model to echo or transcribe its reasoning in the response —
+  on current models that instruction is a refusal class; ask for the
+  conclusion with its evidence.
+- **Completion criteria.** End every step, and every body of rules, on a
+  condition the model can tell done from not-done by — "every modified
+  model accounted for", not "understanding reached". Clarity resists
+  premature completion; demand drives the legwork.
+- **Re-ground the human.** A final message, a packet, a report is the
+  reader's first look at work they did not watch. Lead with the outcome,
+  then the one or two things you need from them, each explained as if new;
+  leave behind the vocabulary built while working. Before reporting
+  progress, audit each claim against a tool result from the session and
+  say plainly what is verified and what is not.
+- **Pause only where the work needs the user.** A destructive or
+  irreversible action, a real scope change, or input only they hold. When
+  the user is describing a problem or thinking aloud, the deliverable is
+  the assessment. Otherwise act, and end the turn only when the work is
+  complete or blocked.
+- **Hunt no-ops and sediment.** An instruction the model already obeys by
+  default pays load to say nothing; delete the whole sentence rather than
+  trim it. Stale layers settle because adding feels safe and removing feels
+  risky — check every line for relevance to what the document does today.
+
+## What differs by surface
+
+**Instructions — a prompt, a skill body, a doc.** Long content first and the
+task last, since attention is strongest at the edges of context and weakest
+in the middle; a reliable order is role → task → instructions → output
+format, with content types delimited so data is never mistaken for
+instruction. State the output contract: format, length, what done looks
+like. A role line sets voice and audience, not competence. Every document
+spends one of two budgets — **context load** when it is always in the
+window, **cognitive load** on the human who must remember it exists — so a
+**context pointer** (a skill description, a line in `CLAUDE.md` naming a
+doc) is front-loaded on its trigger word, carries one trigger per genuinely
+distinct branch, and stops there; material only some branches reach goes
+behind the pointer. Within a file, keep a concept's definition, rules, and
+caveats under one heading. Repeat a **leading word** — a compact concept
+the model already holds (*lesson*, *tight*, *red*) — as a token, never as a
+sentence, so it anchors the behaviour cheaply; a coined word buys no prior.
+Split a document only when the cut earns it: by sequence when later steps
+tempt the model to rush the current one, and only across a real context
+boundary.
+
+**Context — what the model holds this turn.** The window is a finite budget
+and quality degrades as it fills, well before the advertised limit; the
+most common agent failure is the right information missing or buried, not
+clumsy wording. Hold lightweight references — paths, ids, queries — and
+load full content just in time; disclose in tiers, an index first and the
+detail when the task matches. Keep the prefix stable so the cache hits the
+static portion, and let per-request content ride at the end. For work that
+outlives a window, keep state in durable artifacts outside it and tell the
+agent its context is managed, so it does not wrap up early to save budget.
+
+**Tools — what the model acts through.** Everything the agent sees through
+a tool is prompt: name, parameters, description, result, error. Build a
+few tools around whole workflows rather than wrapping an API; if an
+engineer cannot say which tool applies, the model cannot either. The
+description onboards a new teammate — query formats, terminology, how
+resources relate — and *when* to call it lives in the system prompt.
+Unambiguous parameter names; enums that teach the usage patterns through
+the schema. Return semantic, human-legible fields over opaque ids, meet the
+model's vocabulary in retrieval, and route bulky data the model need not
+read around it. An error names the failure layer, says what it implies, and
+prescribes the next action — written against the condition that fires it,
+prescribing only what that path can prove, with the reason line and never
+the dump. The result surface is read at the exact moment the model decides
+its next action, so when a result changes what should happen next it says
+so with the reason; an action that is usually but not always wrong gets
+warn-once-then-allow rather than a hard block; a threshold nudge fires
+once, with why the threshold matters. Tool ergonomics are settled by
+running realistic multi-call scenarios and reading what the agent fumbles,
+not by debate.
+
+## The revision pass
+
+The standing pass over the model-facing surfaces a session touched, run
+before shipping. In order:
+
+1. **Inventory by reader.** Tag every touched surface: the model, a judge,
+   or a human. Human-facing text is ordinary writing and stays out.
+   Mark templates: a hedge that covers many instances is load-bearing, and
+   "fixing" it into one instance's specifics breaks the others.
+2. **Sweep for stale text.** After a behaviour change the highest-yield
+   defect is usually a surface still describing the old behaviour, not the
+   text you were pointed at.
+3. **Cut before you add.** Remove plumbing and mechanism narration ("this
+   works by…"), incident narration (the ticket, the session, the user who
+   hit it — the model needs the general reason), procedure the model would
+   derive from the goal, no-ops, accidental duplicates, generic directives,
+   rules guarding failures never seen, and unearned emphasis. Then
+   **transform** rather than cut where a fact is wearing a plumbing
+   costume:
+
+   <example type="avoid">
+   The way this works: each worker runs in its own background session spawned over RPC, and results arrive as follow-up messages on the event bus, so don't block waiting on them. (A worker turn can take several minutes.)
+   </example>
+
+   <example>
+   A worker turn takes several minutes, so send one complete, well-formed request rather than a stream of small ones, and keep making progress elsewhere while it runs.
+   </example>
+
+   The RPC and the event bus were plumbing and went; "several minutes" was
+   a fact the model acts on and became the instruction, which also gave
+   "don't block" its positive form.
+4. **Then the defect lens** on what remains, each named with its fix:
+   *assumed conversational context* (opens mid-stream — add the identity
+   anchor); *familiar-term leak* (replace with the field's term); *negation
+   as the lever* (reframe to the positive path); *rule–example conflict*
+   (shown beats said — fix the example first); *conflicting rules with no
+   precedence* (state the rule once with its exception folded in);
+   *config-conditional prose* (branch in the composer); *unearned
+   certainty* (assert what this layer observed); *volatile facts in a
+   durable prompt* (derive at render time or point at a source); *buried
+   instruction* (move to the end, or repeat it there on purpose); *opaque
+   returns and errors* (semantic fields, prescriptive recovery).
+5. **Verify and record.** Run whatever pins the touched surfaces and add a
+   pin for each truth claim. Read every touched file once more as one
+   whole, cold. Name the deliberate keeps — a sanctioned echo, a
+   load-bearing hedge, an earned `never` — with their reasons, so the next
+   pass does not undo them.
+
+Done when a cold reader would know from the first lines what each surface
+is and what to do, every keep carries its reason, every truth claim has its
+pin, and the surface is usually shorter than before — longer only where a
+named gap was filled.
+
+## Pointers
+
+- Skill frontmatter, model- versus user-invocation, and router skills:
+  `../writing-for-agents/SKILL-MECHANICS.md`.
+- Tools whose instructions are shaped by usage history — what to teach,
+  what to move into the engine, cold readers:
+  `~/.config/lessons/agent-tooling/usage-lessons.md`.
+- Model-specific behaviours of the current Claude generation — long turns,
+  effort, refusal classes, memory scaffolding: the Fable prompting guide at
+  `references/fable-prompting-guide.md` in the dotfiles repo.
+- A project's house layer, when it has one, answers the calibrations: which
+  terms pass the familiar-term test there, which emphasis is earned, where
+  its surfaces live. General lessons graduate up into this file; the house
+  layer keeps the instance and its evidence.

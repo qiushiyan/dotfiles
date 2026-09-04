@@ -72,10 +72,10 @@ skimmable `## The bar` on top with the depth beneath it.
   (Vitest 4.1). Deleting correct content is the costlier error.
 - **Hunt no-ops sentence by sentence.** A diagram or list restating the sentence
   above it is load without signal; delete the sentence rather than trim its words.
-- Read `/prompt-engineering` (model-facing text) and `/writing-for-agents`
-  (structure, leading words, progressive disclosure) before a revision pass. Both
-  apply — a lesson is prompt surface — but neither licenses turning a lesson into
-  a manual. It stays descriptive.
+- Read `/prompt-engineering` — the one rulebook for model-facing text,
+  structure and pointers included — before a revision pass. A lesson is prompt
+  surface, but the rulebook never licenses turning a lesson into a manual. It
+  stays descriptive.
 
 ## Lineage
 
