@@ -59,3 +59,5 @@ Design objection open for the user: re-ground-the-human and pause-only-where-
 needed are runtime policies for agents that act or report across turns, not
 universal rules for tool schemas or errors — move them under the Instructions
 surface with that trigger.
+Decided by the user: moved — both policies now sit under the Instructions
+surface, triggered on "an agent that acts or reports across turns".

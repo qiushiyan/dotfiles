@@ -97,18 +97,6 @@ or labels.
   condition the model can tell done from not-done by — "every modified
   model accounted for", not "understanding reached". Clarity resists
   premature completion; demand drives the legwork.
-- **Re-ground the human** (the Fable guide's rule, echoed here because
-  every closing surface needs it). A final message, a packet, a report is
-  the reader's first look at work they did not watch. Lead with the
-  outcome, then the one or two things you need from them, each explained
-  as if new; leave behind the vocabulary built while working. Before
-  reporting progress, audit each claim against a tool result from the
-  session and say plainly what is verified and what is not.
-- **Pause only where the work needs the user.** A destructive or
-  irreversible action, a real scope change, or input only they hold. When
-  the user is describing a problem or thinking aloud, the deliverable is
-  the assessment. Otherwise act, and end the turn only when the work is
-  complete or blocked.
 - **No-ops and sediment.** An instruction the model already obeys by
   default pays load to say nothing; delete the sentence rather than trim
   it. Whether a line is a no-op is model-relative and is settled by running
@@ -140,6 +128,19 @@ one trigger per genuinely distinct branch, and stops there. Repeat a
 behaviour cheaply; a coined word buys no prior. Split a document only when
 the cut earns it: by sequence when later steps tempt the model to rush the
 current one, and only across a real context boundary.
+
+Two policies belong in any instruction for an agent that acts or reports
+across turns, and nowhere else (both are the Fable guide's, echoed here
+because every such instruction needs them). **Re-ground the human:** a
+final message, a packet, a report is the reader's first look at work they
+did not watch — lead with the outcome, then the one or two things you need
+from them, each explained as if new, leaving behind the vocabulary built
+while working; before reporting progress, audit each claim against a tool
+result from the session and say plainly what is verified and what is not.
+**Pause only where the work needs the user:** a destructive or irreversible
+action, a real scope change, or input only they hold; when the user is
+describing a problem or thinking aloud, the deliverable is the assessment;
+otherwise act, and end the turn only when the work is complete or blocked.
 
 **Context — what the model holds this turn.** The window is a finite budget
 and quality degrades as it fills, well before the advertised limit; the
