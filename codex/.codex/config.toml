@@ -201,13 +201,23 @@ js_repl = false
 hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
 
-[marketplaces.openai-bundled]
-source_type = "local"
-source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
-
-[marketplaces.openai-primary-runtime]
-source_type = "local"
-source = "/Users/qiushi/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+[tui]
+# Two visual layers: the footer identifies the Git work, context usage, and
+# committed branch diff; the pane border adds a convention-aware path and
+# carries session/runtime health. Codex owns the changing runtime values, so
+# no rollout-log parsing is involved.
+status_line = [
+  "git-branch",
+  "pull-request-number",
+  "context-used",
+  "branch-changes",
+]
+terminal_title = [
+  "context-used",
+  "five-hour-limit",
+  "weekly-limit",
+  "model-with-reasoning",
+]
 
 [plugins."documents@openai-primary-runtime"]
 enabled = true
@@ -248,9 +258,17 @@ enabled = true
 [plugins."sites@openai-bundled"]
 enabled = true
 
+[marketplaces.openai-primary-runtime]
+source_type = "local"
+source = "/Users/qiushi/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
 [tui.model_availability_nux]
 "gpt-5.5" = 4
 "gpt-5.6-sol" = 4
+
+[marketplaces.openai-bundled]
+source_type = "local"
+source = "/Users/qiushi/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [desktop]
 ambient-suggestions-enabled = false
