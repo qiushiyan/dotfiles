@@ -1,8 +1,19 @@
 #!/bin/bash
 # PreToolUse(Bash) — bypass-mode sessions only.
 #
+# DORMANT since 2026-09-03 — kept as a reference implementation, not in use.
+# The trigger condition went away on the planlab side: develop commit
+# 6920151d7c dropped every `Read(...)` deny rule from the repo's shared
+# `.claude/settings.json`, so the Claude Code check this guards against no
+# longer has a rule to arm it. The `exit 0` below (BYPASS_CD_READ_GUARD_ACTIVE)
+# short-circuits the hook before it reads the command; the logic under it is
+# untouched and still pinned by the test suite, which sets that variable.
+# To re-arm it (a repo with a Read() deny rule comes back while Claude Code
+# still has the bug): comment out that line. Full retirement steps and the
+# upstream check: docs/bypass-cd-read-guard.md.
+#
 # Claude Code 2.1.259 added a Bash safety check: while any `Read(...)` deny
-# rule is loaded (the planlab repo commits `Read(./.env)`), a command that
+# rule is loaded (the planlab repo used to commit `Read(./.env)`), a command that
 # does `cd DIR` and later greps/rgs/diffs/gits/cps/mvs a RELATIVE path stops
 # for a human "only you can approve" prompt — in bypass mode too, and a
 # PreToolUse `allow` cannot clear it. The analyzer follows the cwd only
@@ -21,6 +32,11 @@
 #
 # Heuristic, not a parser — false positives cost a retry, false negatives
 # cost a stalled session, so it leans toward denying.
+
+# Dormant: pass everything through unless explicitly armed (see header).
+# Comment out this line to re-enable the guard. Stdin is drained first so
+# the writer never sees a broken pipe.
+[ "${BYPASS_CD_READ_GUARD_ACTIVE:-0}" = "1" ] || { cat >/dev/null; exit 0; }
 
 INPUT=$(cat)
 MODE=$(printf '%s' "$INPUT" | jq -r '.permission_mode // empty') || exit 0

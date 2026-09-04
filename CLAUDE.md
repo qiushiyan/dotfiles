@@ -92,7 +92,7 @@ docs/documentation-standards.md doc shape, protected echoes, budget, verificatio
 docs/agent-skills.md           skill ownership tiers · Claude ⊇ Codex layout · lessons
 docs/theming.md                themes
 docs/claude-accounts.md        accounts
-docs/bypass-cd-read-guard.md   temporary hook: why bypass sessions refuse `cd DIR; grep <relative>`, and when to delete it
+docs/bypass-cd-read-guard.md   dormant hook (reference only): the 2.1.259 `cd DIR; grep <relative>` guard, why it is off, when to re-arm or delete it
 docs/zsh.md                    shell
 docs/macmini.md                the colleague's Mac mini reached by `ssh macmini` — specs, disks, etiquette
 tmux/.config/tmux/workflow.md  tmux day to day; roadmap.md indexes the tmux design docs

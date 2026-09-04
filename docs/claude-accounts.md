@@ -196,5 +196,6 @@ Everything derives from that tree:
   (`"permissions": { "defaultMode": "bypassPermissions" }`), not in wrappers
   around the `claude` command. PreToolUse hooks still fire and block in
   bypass mode — and `permissions.deny` rules survive it too, which is why
-  `docs/bypass-cd-read-guard.md` exists (a temporary hook for a 2.1.259
-  prompt that bypass mode does not skip).
+  `docs/bypass-cd-read-guard.md` exists (a hook for a 2.1.259 prompt that
+  bypass mode does not skip; dormant since planlab dropped its `Read()`
+  deny rules, kept as a reference implementation).

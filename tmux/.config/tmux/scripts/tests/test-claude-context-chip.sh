@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# test-claude-context-chip.sh — the pinned traps for the Claude context chip:
-# what Claude's statusline publishes onto a pane border, and what tears it down.
+# test-claude-context-chip.sh — the pinned traps for the agent pane border:
+# what Claude's statusline publishes, what tears it down, and which other pane
+# owners keep the shared border row alive.
 #
 # The chip has no user-visible failure alarm — a stale model id or a chip that
 # stopped updating looks exactly like a correct one, and the two halves that
@@ -26,6 +27,7 @@ REPO=$(cd "$HERE/../../../../.." && pwd)
 STATUSLINE="$REPO/claude/.claude/commands/statusline-command.sh"
 CTX="$REPO/tmux/.config/tmux/scripts/tmux-claude-ctx.sh"
 CONF="$REPO/tmux/.config/tmux/tmux.conf"
+ZUTIL="$REPO/zsh/.config/zsh/tmux-utils.zsh"
 
 PASS=0; FAIL=0; FAILED=""
 T() { tmux -L "$SOCK" "$@"; }
@@ -157,6 +159,7 @@ primary_login() {
 
 opt()    { T show -pqv -t "$PANE" "$1"; }
 status() { T show -wv -t "$WIN" pane-border-status 2>/dev/null; }
+effective_status() { T show -wAv -t "$WIN" pane-border-status 2>/dev/null; }
 # What the border actually draws, styles stripped. Only "#[...]" is a style —
 # the sanitizer strips the leading # from anything hostile in a model id, so a
 # bracket that survives here is content, and visible as such.
@@ -765,9 +768,78 @@ c22() {
     rm -rf "$SANDBOX_HOME/.claude-accounts" "$SANDBOX_HOME/.cache" "$stub" "$marker"
 }
 
+# ---------------------------------------------------------------------------
+# C23 — Codex uses its native terminal-title surface for runtime information
+# and publishes its compact path separately. The path leads, so normal terminal
+# clipping sheds the model at the right edge first.
+# ---------------------------------------------------------------------------
+c23() {
+    fresh || return
+    T set -p -t "$PANE" @codex_active 1
+    T set -p -t "$PANE" @codex_path planlab/main
+    T select-pane -t "$PANE" -T 'ctx 12% · weekly 58% left · gpt-5.6-sol high fast'
+    env HOME="$SANDBOX_HOME" TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" \
+        bash "$CTX" reconcile "$PANE"
+    check "C23 a live Codex title owns the border row" "$(status)" "top"
+    local drawn=no
+    case $(border) in
+        *' planlab/main │ ctx 12% · weekly 58% left · gpt-5.6-sol high fast '*) drawn=yes ;;
+    esac
+    check "C23 path leads the native runtime title" "$drawn" "yes"
+
+    T set -p -u -t "$PANE" @codex_active
+    T set -p -u -t "$PANE" @codex_path
+    env HOME="$SANDBOX_HOME" TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" \
+        bash "$CTX" reconcile "$PANE"
+    check "C23 Codex exit releases the border row" "$(effective_status)" "off"
+}
+
+# ---------------------------------------------------------------------------
+# C24 — the interactive zsh wrapper owns exactly Codex's process lifetime. A
+# fake codex (sleep) makes both edges observable without starting a real agent
+# or touching the live tmux socket.
+# ---------------------------------------------------------------------------
+c24() {
+    fresh || return
+    mkdir -p "$SANDBOX/bin"
+    ln -sf /bin/sleep "$SANDBOX/bin/codex"
+
+    local main="$SANDBOX_HOME/dev/planlab/main"
+    local worktree="$SANDBOX_HOME/dev/.worktrees/main/feat/eval-invoker-production-parity"
+    git init -q "$main"
+    git -C "$main" -c user.name=test -c user.email=test@example.invalid \
+        commit -q --allow-empty -m root
+    git -C "$main" worktree add -q -b feat/eval-invoker-production-parity "$worktree"
+
+    local cmd marker="" path=""
+    printf -v cmd \
+        "cd '%s' && env HOME='%s' PATH='%s/bin:/opt/homebrew/bin:/usr/bin:/bin' zsh -f -ic \"source '%s'; codex 1; sleep 100000\"" \
+        "$worktree" "$SANDBOX_HOME" "$SANDBOX" "$ZUTIL"
+    T respawn-pane -k -t "$PANE" "$cmd"
+    for _ in $(seq 1 20); do
+        marker=$(opt @codex_active)
+        [ "$marker" = 1 ] && break
+        sleep 0.1
+    done
+    check "C24 wrapper marks Codex's lifetime" "$marker" "1"
+    path=$(opt @codex_path)
+    check "C24 worktree path resolves to its main checkout" "$path" "planlab/main"
+    check "C24 wrapper raises the border" "$(effective_status)" "top"
+
+    for _ in $(seq 1 30); do
+        marker=$(opt @codex_active)
+        [ -z "$marker" ] && break
+        sleep 0.1
+    done
+    sleep 0.2
+    check "C24 wrapper clears its marker on exit" "$marker" ""
+    check "C24 wrapper clears its path on exit" "$(opt @codex_path)" ""
+    check "C24 wrapper reconciles the border on exit" "$(effective_status)" "off"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

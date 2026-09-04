@@ -79,10 +79,12 @@
 # project source also carries the project's skills, commands, agents,
 # plugins, allow list and .mcp.json: an `x` session would lose every
 # project skill and `/` completion, and stop inheriting settings the way
-# every other Claude Code session does. The fix lives in claude/.claude/hooks/bypass-cd-read-guard.sh
-# instead: in bypass mode it refuses that command shape with a message
-# telling the model to re-issue it, so the prompt is never reached. Its
-# retirement test is in docs/bypass-cd-read-guard.md.
+# every other Claude Code session does. The fix lived in claude/.claude/hooks/bypass-cd-read-guard.sh
+# instead: in bypass mode it refused that command shape with a message
+# telling the model to re-issue it, so the prompt was never reached. That
+# hook is dormant since 2026-09-03 (planlab dropped its Read() deny rules,
+# so the prompt no longer arms); it stays as a reference implementation.
+# Re-arming and retirement: docs/bypass-cd-read-guard.md.
 #
 typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
 typeset -ga CLAUDE_X_BYPASS=(--dangerously-skip-permissions)

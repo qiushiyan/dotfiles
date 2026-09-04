@@ -64,8 +64,9 @@
 # BEFORE the unsets, and reads the recorded sid server-side via set-option -F.
 #
 # The border row itself — pane-border-status — is WINDOW-scoped with several
-# interested parties (manually named panes, Claude panes), so no producer ever
-# flips it OFF directly: each updates its own pane's markers and calls
+# interested parties (manually named panes, Claude panes, and Codex panes whose
+# native terminal title carries runtime state), so no producer ever flips it
+# OFF directly: each updates its own pane's markers and calls
 # `reconcile`, which recomputes the whole window. Flipping it ON eagerly
 # (rename-pane alias, statusline publish) is safe — that always matches what
 # reconcile would compute.
@@ -113,7 +114,9 @@
 #                       settled state cannot. (tmux still has no
 #                       after-break/join-pane hooks, hence caller-level.)
 #
-# "Named" is detected via allow-set-title==0: the rename-pane alias sets the
+# Codex's interactive zsh wrapper holds @codex_active=1 while its TUI owns the
+# pane; Codex itself updates pane_title through its native terminal-title
+# surface. "Named" is detected via allow-set-title==0: the rename-pane alias sets the
 # pane-local option off (that's what freezes the label against OSC repaints,
 # see tmux.conf), and nothing else in this config touches it — the effective
 # value doubles as the marker. If a global `allow-set-title off` ever lands,
@@ -129,13 +132,13 @@ set -u
 SELF="$HOME/.config/tmux/scripts/tmux-claude-ctx.sh"
 
 reconcile_window() {
-    local win="$1" want=off n ast cur
-    while IFS=' ' read -r n ast; do
-        if [ "${n:-0}" != 0 ] || [ "${ast:-1}" = 0 ]; then
+    local win="$1" want=off n ast codex cur
+    while IFS=' ' read -r n ast codex; do
+        if [ "${n:-0}" != 0 ] || [ "${ast:-1}" = 0 ] || [ "${codex:-0}" = 1 ]; then
             want=top
             break
         fi
-    done < <(tmux list-panes -t "$win" -F '#{n:@claude_ctx} #{allow-set-title}' 2>/dev/null)
+    done < <(tmux list-panes -t "$win" -F '#{n:@claude_ctx} #{allow-set-title} #{@codex_active}' 2>/dev/null)
     # write only on change — set-option triggers redraw work even when the
     # value is unchanged. -A folds in the inherited (global) value.
     cur=$(tmux show -wAv -t "$win" pane-border-status 2>/dev/null)

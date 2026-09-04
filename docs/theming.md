@@ -49,7 +49,8 @@ Ghostty include, and re-sources tmux. It is UI-agnostic on purpose: the tmux
 `prefix t` menu, the CLI, and anything added later all call the same script.
 
 The picker is a native tmux `display-menu` bound to `prefix t` (overrides
-clock-mode) — defined in `tmux.conf`.
+clock-mode) — defined in `tmux.conf`. It opens with the current theme selected;
+the palette loader maps the canonical theme name to `display-menu -C`'s row.
 
 ## Model 3 — reload is not uniform; Ghostty is the weak link
 

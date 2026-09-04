@@ -394,11 +394,28 @@ if [ $? -eq 0 ] && [ -n "$GIT_OUTPUT" ]; then
       END { print s, u, q }
     ')"
 
+    # Line-diff summary (+added -removed) replaces the old unstaged FILE count.
+    # `git diff HEAD --numstat` walks tracked files once and covers staged AND
+    # unstaged changes together without double-counting a file touched in both
+    # (two separate calls — one for the index, one for the worktree — would sum
+    # a modified-then-staged file's lines twice). Untracked files carry no diff
+    # against HEAD and stay represented by the separate "?N" count below.
+    DIFF_STATS=$(git -C "$CURRENT_DIR" --no-optional-locks diff HEAD --numstat 2>/dev/null)
+    read -r DIFF_ADDED DIFF_REMOVED <<< "$(echo "$DIFF_STATS" | awk '
+      BEGIN { a=0; d=0 }
+      $1 ~ /^[0-9]+$/ { a+=$1 }
+      $2 ~ /^[0-9]+$/ { d+=$2 }
+      END { print a, d }
+    ')"
+
     # Build git status string - only show non-zero counts. GIT_PLAIN mirrors the
     # visible text (no ANSI) so the wrapper can measure its width.
     GIT_STATUS=""; GIT_PLAIN=""
     [ "$STAGED" -gt 0 ] 2>/dev/null && { GIT_STATUS="${GIT_STATUS}${GREEN}+${STAGED}${RESET} "; GIT_PLAIN="${GIT_PLAIN}+${STAGED} "; }
-    [ "$UNSTAGED" -gt 0 ] 2>/dev/null && { GIT_STATUS="${GIT_STATUS}${YELLOW}~${UNSTAGED}${RESET} "; GIT_PLAIN="${GIT_PLAIN}~${UNSTAGED} "; }
+    if [ "${DIFF_ADDED:-0}" -gt 0 ] 2>/dev/null || [ "${DIFF_REMOVED:-0}" -gt 0 ] 2>/dev/null; then
+        GIT_STATUS="${GIT_STATUS}${GREEN}+${DIFF_ADDED}${RESET} ${RED}-${DIFF_REMOVED}${RESET} "
+        GIT_PLAIN="${GIT_PLAIN}+${DIFF_ADDED} -${DIFF_REMOVED} "
+    fi
     [ "$UNTRACKED" -gt 0 ] 2>/dev/null && { GIT_STATUS="${GIT_STATUS}?${UNTRACKED} "; GIT_PLAIN="${GIT_PLAIN}?${UNTRACKED} "; }
     GIT_STATUS="${GIT_STATUS% }"; GIT_PLAIN="${GIT_PLAIN% }"  # trim trailing space
 fi

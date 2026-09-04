@@ -1,7 +1,10 @@
 #!/usr/bin/env zsh
-# Pins claude/.claude/hooks/bypass-cd-read-guard.sh — the temporary workaround
-# for Claude Code 2.1.259's "after a cd ... a Read() deny rule is configured;
-# only you can approve" prompt reaching bypass-mode sessions. Drives the
+# Pins claude/.claude/hooks/bypass-cd-read-guard.sh — the (now dormant)
+# workaround for Claude Code 2.1.259's "after a cd ... a Read() deny rule is
+# configured; only you can approve" prompt reaching bypass-mode sessions. The
+# hook is a reference implementation since 2026-09-03: it exits 0 unless
+# BYPASS_CD_READ_GUARD_ACTIVE=1, which this suite exports so the logic stays
+# pinned; the first case pins the dormant default itself. Drives the
 # WORKING-TREE hook with synthetic PreToolUse payloads on stdin; the hook
 # reads stdin and writes stderr only, so no sandbox is needed. Exit 2 = the
 # hook refused the command (Claude Code shows the model the stderr text),
@@ -22,6 +25,20 @@ CWD="/tmp/proj"
 typeset -i PASS=0 FAIL=0
 
 [[ -x "$HOOK" ]] || { print -u2 "bypass-cd-read-guard.test: no executable hook at $HOOK"; exit 1 }
+
+# --- dormant by default: the sharpest refused shape passes through unarmed --
+rc=0
+jq -cn --arg c "cd $CWD; grep -n spec docs/x.md" --arg d "$CWD" \
+   '{permission_mode:"bypassPermissions",cwd:$d,tool_name:"Bash",tool_input:{command:$c}}' \
+   | "$HOOK" >/dev/null 2>&1 || rc=$?
+if (( rc == 0 )); then
+  (( PASS++ )) || true; print -r -- "PASS (0) dormant: unarmed hook passes the refused shape through"
+else
+  (( FAIL++ )) || true; print -r -- "FAIL want=0 got=$rc  dormant default"
+fi
+
+# Everything below exercises the reference implementation.
+export BYPASS_CD_READ_GUARD_ACTIVE=1
 
 # t <want-exit> <permission_mode> <command>
 t() {

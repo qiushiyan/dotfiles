@@ -52,6 +52,15 @@ comes from headroom because Claude's payload lacks the model-scoped limit.
 Mechanics, cache freshness, responsive thresholds, and cleanup ownership:
 `scripts/context-chip.md`.
 
+## Codex status surfaces
+
+Codex keeps **branch · PR** in its footer. In tmux, the top border shows
+**compact workspace path │ context · 5-hour · weekly · model/reasoning/priority**,
+ordered so narrow panes lose the rarely changed model group first. Paths use
+the same convention as Claude (`~/dev/.worktrees/main/feat/x` →
+`planlab/main`). The ordered native fields live in `[tui]` in
+`~/.codex/config.toml`; implementation details stay with the code.
+
 ## Starting a new task on its own branch (worktrees)
 
 You want to work on a feature without disturbing `main` or another agent — give it an isolated checkout.
