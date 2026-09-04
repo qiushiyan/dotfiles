@@ -50,7 +50,7 @@ verdict and no verdict line is written.
 
 ## 3. Scope test
 <the next PR's boundary as the spec or PR the brief points at draws it, against what the code already holds: fold forward | unbundle | right as drawn — with the cost of the wrong boundary>
-First cut: <the smallest change that makes the load-bearing premise observable — a red test, a probe, a spike>
+First cut: <the smallest change that makes the load-bearing premise observable — a red test, a probe, a spike> | none needed — <the evidence in section 2 already observes it>
 
 ## 4. Decisions needed
 <a product fork that verification exposed, or a parked fork whose case the drift shows has now landed, in the form below> | none
@@ -94,7 +94,9 @@ argue for unbundling. Either is a recommendation to the human with the
 cost of the wrong boundary stated; the direction itself stays. The first
 cut is the build equivalent of a red test: the smallest change that turns
 the load-bearing premise into something observable, so the session that
-implements starts from evidence rather than from the plan's word.
+implements starts from evidence rather than from the plan's word. When
+section 2 already observed the premise directly — a source read, a query —
+there is nothing to cut first, and the slot says so.
 
 **Write each fork as if briefing a CEO** who decides from your words
 alone, not from the code or the session behind them: why it matters now,
