@@ -33,6 +33,8 @@ codex/.codex/*
 !codex/.codex/AGENTS.md
 !codex/.codex/prompts/
 !codex/.codex/skills/
+!codex/.codex/themes/
+!codex/.codex/themes/*.tmTheme
 # ...but skip the bundled system skills (Codex reinstalls these).
 codex/.codex/skills/.system/
 

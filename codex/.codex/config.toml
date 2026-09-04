@@ -202,6 +202,9 @@ hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
 
 [tui]
+# Codex has no bundled Tokyo Night theme. Load the custom TextMate theme from
+# ~/.codex/themes/tokyo-night-moon.tmTheme instead of auto-detecting a light one.
+theme = "tokyo-night-moon"
 # Two visual layers: the footer identifies the Git work, context usage, and
 # committed branch diff; the pane border adds a convention-aware path and
 # carries session/runtime health. Codex owns the changing runtime values, so
