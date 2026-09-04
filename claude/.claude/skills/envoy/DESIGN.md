@@ -38,6 +38,8 @@ duet instead. Don't grow the engine.
   That is what lets the engine stay judgment-free.
 - **No model substitution, ever.** No `--model`/`--effort` → the provider's
   own config governs. The host never picks a model the user didn't name.
+  The current Codex recommendation and its config owner live in
+  [DISPATCH.md](DISPATCH.md); the engine carries no model default of its own.
 - **Independence picks the default provider.** The host is usually Claude
   Code, so a codex sidekick buys cross-family review for free; both bill a
   flat subscription, so cost isn't the tiebreaker. Default codex; claude is

@@ -4,6 +4,8 @@
 
 A turn starts **cold**: it has none of this conversation. Everything it needs lives in the prompt file.
 
+**Codex default: `gpt-6-astra`.** `codex/.codex/config.toml` in dotfiles (linked as `~/.codex/config.toml`) owns the model and reasoning effort. The default patterns below omit `--model` and `--effort` to inherit that config, including `--with codex` in a fan-out. Honour an explicit user override; continuations keep their recorded settings. Consult, review, and delegate share this recommendation.
+
 ## The loop
 
 ```sh
@@ -48,8 +50,12 @@ until grep -q '"endedAt": "' <out-dir>/group.json; do sleep 30; done            
 `<fresh>` is a coordinate file allocated for that dispatch alone, as the loop does (`mktemp`).
 
 ```sh
-# the default: one codex turn, the user's provider config picks the model
+# the default: one codex turn, inheriting gpt-6-astra from the user's config
 envoy turn --provider codex --prompt-file brief.md --timeout-min 30 --label consult --coordinate-file <fresh>
+
+# pin Astra when the command must select it independently of provider config
+envoy turn --provider codex --model gpt-6-astra --prompt-file brief.md --timeout-min 30 --coordinate-file <fresh>
+# the corresponding fan-out member: --with codex:gpt-6-astra
 
 # a claude turn — the user names the model; yours is not a default
 envoy turn --provider claude --model opus --prompt-file brief.md --timeout-min 60 --label review --coordinate-file <fresh>
