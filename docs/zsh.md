@@ -37,7 +37,7 @@ zsh/.config/zsh/
   toolchain.zsh    # cheap PATH setup (default Node via nvm, no subprocess)
   aliases.zsh
   git.zsh          # git aliases, gopen/worktree helpers (also tmux prefix g), deferred completion registration
-  nav.zsh
+  nav.zsh          # n, take, drop, y, fcd, p/pp (planlab checkout; PLANLAB_DIR)
   utils.zsh        # gitclean, loc, n, take, dotadd, …
   theme.zsh        # the $TERMINAL_THEME switch
   cwd-guard.zsh    # deleted-cwd defenses: _cwd_guard at startup, zshreload (tests/ has its harness)

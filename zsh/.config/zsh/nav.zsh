@@ -65,6 +65,25 @@ drop() {
 }
 
 # --------------------------------------------------------------------
+# p / pp - Jump to the planlab checkout; pp also pulls
+# --------------------------------------------------------------------
+# Functions rather than aliases so the path lives in one place, `p` can
+# take a subpath (`p apps/web`), and `pp` stops at a failed cd instead of
+# pulling whatever repo you were in. `pp` shadows Homebrew nss's
+# certificate printer; `command pp` still reaches it.
+: ${PLANLAB_DIR:=$HOME/dev/planlab/main}
+
+p() {
+  emulate -L zsh
+  cd -- "$PLANLAB_DIR/${1:-}"
+}
+
+pp() {
+  emulate -L zsh
+  p "$@" && git pull
+}
+
+# --------------------------------------------------------------------
 # y - Yazi file manager with directory tracking
 # --------------------------------------------------------------------
 y() {
