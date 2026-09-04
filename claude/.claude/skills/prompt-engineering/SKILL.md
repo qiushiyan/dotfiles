@@ -81,8 +81,10 @@ or labels.
   validated" from a layer that cannot see validation. An overclaim licenses
   the model to skip verification it still needs or to retry an operation
   that half-completed. A **truth claim** is any line asserting what a
-  mechanism does — a command's behaviour, a path, a result's wording; pin
-  it with a test that asserts the text says exactly that and no more.
+  mechanism does — a command's behaviour, a path, a result's wording.
+  Verify each at its source; where the surface has a harness, pin the
+  load-bearing ones with a test that asserts the text says exactly that
+  and no more, since an unpinned truth drifts back.
 - **Right altitude.** Encode the expert's strategy as strong heuristics,
   not a decision tree. Let the model reason: a clear goal, strong
   constraints, an explicit output contract, then room to work. Ask for
@@ -109,8 +111,12 @@ or labels.
   complete or blocked.
 - **No-ops and sediment.** An instruction the model already obeys by
   default pays load to say nothing; delete the sentence rather than trim
-  it. Stale layers settle because adding feels safe and removing feels
-  risky — check every line for relevance to what the document does today.
+  it. Whether a line is a no-op is model-relative and is settled by running
+  the document — a cold reader, or the surface's own tests — not by
+  intuition; a terse line that looks redundant may be the one holding a
+  behaviour. Stale layers settle because adding feels safe and removing
+  feels risky — check every line for relevance to what the document does
+  today.
 
 ## What differs by surface
 

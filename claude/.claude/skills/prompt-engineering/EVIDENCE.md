@@ -46,3 +46,16 @@ use against the trimmed lens (a rule named in < 5 sessions is a cut
 candidate); reads of `SKILL-MECHANICS.md` after the fold (the only reason
 writing-for-agents is still reached); whether the planlab house guide's
 "pair with /writing-for-agents" line was updated.
+
+Cold readers (revision route over `handoff/pickup/build.md` + `consult/DIAGNOSIS-BRIEF.md`;
+authoring route, a new user-invoked skill): fixes in `260955b`. Goal review
+(codex, cold, `~/.local/state/envoy/jobs/dotfiles-4f711dad/20260904-143102-review`,
+3 min): partly landed — centralization and philosophy achieved; two defects
+fixed after it: the bar's truth-claim rule mandated a test for any claim
+while step 5 pinned only where a harness exists (one rule now: verify at the
+source, pin the load-bearing ones where a harness exists); the no-op cut had
+no evidentiary test (now model-relative, settled by running the document).
+Design objection open for the user: re-ground-the-human and pause-only-where-
+needed are runtime policies for agents that act or report across turns, not
+universal rules for tool schemas or errors — move them under the Instructions
+surface with that trigger.
