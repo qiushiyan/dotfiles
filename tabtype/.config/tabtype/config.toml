@@ -610,6 +610,11 @@ expand = '''
 /review codex full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read /Users/qiushi/dotfiles/claude/.claude/skills/spike/SKILL.md for the discipline (the real thing under test, a thin harness, a verdict carried by the run's output); this is its around-a-change moment, one spike per claimed behavior. Report expected vs. actual.'''
 
 [[snippets]]
+key = "prompt-check"
+expand = '''
+Review and revise the model-facing surfaces this session touched — prompts, skill bodies, CLAUDE.md, snippets, tool descriptions, results and errors — against /Users/qiushi/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md, running its revision pass. Report each finding as a named defect with its fix, and each deliberate keep with its reason; say plainly if nothing needs changing.'''
+
+[[snippets]]
 key = "compact-inflight"
 expand = '''
 /compact This compaction lands mid-work — the same task continues right after it, so compact for **continuing**, not for a stage transition: keep the work's live state, drop the journey.
