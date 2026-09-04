@@ -61,3 +61,9 @@ universal rules for tool schemas or errors — move them under the Instructions
 surface with that trigger.
 Decided by the user: moved — both policies now sit under the Instructions
 surface, triggered on "an agent that acts or reports across turns".
+
+Fold baseline for the upstream sibling: `writing-for-agents` at folder hash
+`ad2925850efb8973a72d2e666f7a975f9a2d4a9b` (lockfile `updatedAt` 2026-08-29),
+absorbed in `bfb4b83`. The sync procedure is `docs/agent-skills.md` § "The
+rulebook and its upstream sibling"; the next sync records its hash and
+per-hunk verdicts here.

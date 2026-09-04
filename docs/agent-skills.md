@@ -161,7 +161,67 @@ claude/.claude/skills/<skill>/SKILL.md      the skill-specific gist + pointers u
 A general rule about *how to write any agent-facing document* goes in the
 rulebook (original, editable); one that only measured sessions could supply
 goes in the lesson; never into `writing-for-agents` (managed). A rule about
-*one skill's* domain goes in that skill. Lessons are not skills — no frontmatter, not invokable,
+*one skill's* domain goes in that skill.
+
+### The rulebook and its upstream sibling — how they stay in sync
+
+Two files, one direction of flow. `prompt-engineering/SKILL.md` is ours and
+is the **one home** for general writing rules; `writing-for-agents/` is
+installed from `mattpocock/skills` (lockfile `skillPath`
+`skills/productivity/writing-for-agents/SKILL.md`) and is reached only for
+`SKILL-MECHANICS.md` — frontmatter, model- versus user-invocation, router
+skills. On 2026-09-04 (dotfiles `bfb4b83`) the rulebook absorbed the
+sibling's transferable rules — context pointers, the two loads, the
+steps/reference ladder, leading words, completion criteria, no-ops, the
+environment as a source of truth — as they stood at upstream folder hash
+`ad2925850efb8973a72d2e666f7a975f9a2d4a9b` (lockfile `updatedAt`
+2026-08-29). That hash is the **fold baseline**: everything upstream adds
+after it is unreviewed until the sync below runs.
+
+Rules never flow the other way. A general rule discovered here goes into
+the rulebook, not into the sibling (managed: `skills update` reverts it);
+a project's house guide graduates its general lessons up into the rulebook
+and keeps the instance. The sibling's own body is never edited, so a
+`skills update` can never conflict with our work — the only thing it can do
+is carry new rules the rulebook has not judged yet.
+
+**The sync, monthly or when a pass on the rulebook runs:**
+
+```bash
+S=claude/.claude/skills/writing-for-agents
+BEFORE=$(git log -1 --format=%h -- $S)              # last synced state
+npx skills update writing-for-agents -g -y          # then the recovery block under Installing
+git diff $BEFORE -- $S                               # the upstream delta, read whole
+```
+
+Triage every hunk of that delta into one of three bins, and write the
+verdict into `prompt-engineering/EVIDENCE.md` with the new folder hash from
+`~/.agents/.skill-lock.json`:
+
+1. **Graduate** — a general writing rule that is new or sharper than the
+   rulebook's version. It enters the rulebook rewritten in the rulebook's
+   register and under the section it belongs to (the bar, a surface, the
+   revision pass), never pasted. Then run the rulebook's own revision pass
+   on the rulebook: an upstream addition is a reason to be better, not
+   longer.
+2. **Mechanics** — anything about frontmatter, invocation, or routers.
+   Nothing to do; `SKILL-MECHANICS.md` is read directly.
+3. **Covered or rejected** — the rulebook already carries it, or it
+   contradicts a measured lesson or an owner decision. One line in the
+   evidence log saying which, so the next sync does not re-judge it.
+
+Commit the sibling's update and the rulebook's change separately, so the
+upstream delta stays readable in history. Close with the pointer check:
+
+```bash
+grep -rn "writing-for-agents" --exclude-dir=.git . | grep -v "skills/writing-for-agents/"
+```
+
+Every hit should name `SKILL-MECHANICS.md` or the ownership rules above;
+a hit that sends a reader to the sibling's body for a general rule is a
+pointer the fold missed. The previous sync's baseline and verdicts are the
+newest entry in `prompt-engineering/EVIDENCE.md`; a sync that finds an
+empty delta is recorded there too, as a measured empty. Lessons are not skills — no frontmatter, not invokable,
 reached only by a pointer from a skill or snippet — and `lessons/.config/lessons/CLAUDE.md`
 carries the conversion rules between the two forms.
 
