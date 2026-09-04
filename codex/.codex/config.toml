@@ -205,6 +205,7 @@ suppress_unstable_features_warning = true
 # Codex has no bundled Tokyo Night theme. Load the custom TextMate theme from
 # ~/.codex/themes/tokyo-night-moon.tmTheme instead of auto-detecting a light one.
 theme = "tokyo-night-moon"
+vim_mode_default = true
 # Two visual layers: the footer identifies the Git work, context usage, and
 # committed branch diff; the pane border adds a convention-aware path and
 # carries session/runtime health. Codex owns the changing runtime values, so
