@@ -94,7 +94,7 @@ Head rules — each is the residue of a real failure:
 - **`none` stands alone.** A real gate once hid for weeks inside "none — but #5181 must be deployed" and read as no-gate; anything beyond a bare `none` *is* a gate — give it its own `- ` item.
 - `blocked-by:` carries **world-state gates** the next reader can verify — "a prod deploy carrying #5181", "green nightly at k=3" — one per item. Always answered: `none` is an assertion that you looked.
 - `collides-with:` names **sibling briefs**, `<slug> · <why>`; a collision with no slug (a path predicate, a person's strand) is written as prose. `none` costs nothing and says you looked.
-- `paths:` scopes the drift check the next session runs — list exactly the repo-relative paths this brief's claims live in.
+- `paths:` lists the repo-relative paths this brief's claims live in. Drift scans the files and symbols cited by `## At pickup`; `paths:` is its fallback when no usable claim citations exist. Unresolved citations and live queries stay explicit checks, never a clean Git verdict.
 - `run:` is the invocation the pickup fires: the project's onboarding skill plus its short route. Omit the field where the project has none — the goal then stands as the opening directive itself.
 - `cluster:` joins the folder's workstreams; with no siblings it is load for nothing.
 - `pickup:` is `build` or `design` — the test is above; the sweep may flip it when a design brief's approach settles.

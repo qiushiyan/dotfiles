@@ -13,7 +13,7 @@ The loop is split so that staleness cannot misroute a session:
 
 - **`~/dev/brief`** (a separate repo, not stowed) — the `brief` CLI: the
   project-folder scheme, the fenced head grammar, the git/gh join, worktree
-  placement, and the two-line pointer. Anything whose staleness could send a
+  placement, and the pickup pointer. Anything whose staleness could send a
   session to the wrong branch lives here, behind one parser. **Read its
   `CLAUDE.md` before changing any surface this repo consumes** — it carries
   the mental model and lists every consumer, these packages among them.
@@ -25,7 +25,9 @@ The loop is split so that staleness cannot misroute a session:
 - **`zsh/.config/zsh/git.zsh`** (here) — the `brief()` wrapper and its
   completion. It holds only what a parent shell alone can do: `brief start`
   needs its `cd` to stick, so the wrapper passes `--cd-file` and applies what
-  lands there. Everything else is a straight exec of `~/.local/bin/brief`.
+  lands there. The binary also works without the wrapper: standalone `start`
+  prints a quoted `cd` command. Everything else is a straight exec of
+  `~/.local/bin/brief`.
 
 The shared worktree boundary is `tmux/.config/tmux/scripts/worktree-core.sh`.
 It owns worktree creation for `gwt`, the tmux popup, and `brief start`.
@@ -33,11 +35,20 @@ It owns worktree creation for `gwt`, the tmux popup, and `brief start`.
 ## It *is* the next first prompt
 
 Not a document about the work. `brief start <slug>` places the worktree and
-hands the session its opening pointer — the invocation and the goal on line 1,
-the brief's path on line 2 — so the receiving agent reads the file itself.
+hands the session its opening pointer — the invocation and goal, the brief's
+path, a literal `~/.local/bin/brief drift <slug>` command, and the pickup gate
+as the final line — so the receiving agent reads the file itself.
 Everything follows from that: paths inside a brief stay repo-relative so they
 survive the worktree switch, and the text calls itself "this brief" because it
 outlives its filename.
+
+`drift`, `show` and `check` accept that brief path from a checkout of its
+project. Drift reports PRs touching the At-pickup citations, with `--show`
+for the touching commits' stats; `paths:` is the fallback when no citations
+can be resolved. Missing references and live queries remain checks by hand.
+An unchanged citation does not prove a claim true. `check` warns when a claim
+lacks its observed result or an explicit unverified explanation; old claims
+remain readable and the warning does not block launch.
 
 ## The slug is the *next* session's branch
 

@@ -66,7 +66,8 @@ project's own skill or `documentation-standards.md` when present.
 
 The brief **is** the next session's first prompt, not a document about the work:
 `brief start <slug>` places the worktree and hands the session its pointer —
-the invocation and the goal on line 1, the file's path on line 2. It lands at
+the invocation and goal, the file's path, a literal drift command, and the
+pickup gate last. It lands at
 `~/dev/.handoffs/<project>/<slug>.md`, outside every worktree and outside git,
 carrying state, lessons and dead-ends with their _why_, and first moves.
 
