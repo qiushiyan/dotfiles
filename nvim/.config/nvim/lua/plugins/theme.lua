@@ -19,7 +19,7 @@ return {
     -- Same pattern as the others: always installed so the live-theme watcher can
     -- swap to it, eager only when active. Plugin-only (no hand-rolled colors/
     -- file); registers the "gruvbox" colorscheme and reads vim.o.background,
-    -- which flexoki's init / the watcher set to "dark" for gruvbox_dark.
+    -- which config.options / the watcher set to "dark" for gruvbox_dark.
     priority = 1000,
     lazy = theme.name ~= "gruvbox_dark",
     opts = { contrast = "" }, -- "" = medium (#282828), matching Ghostty "Gruvbox Dark" + morhetz
@@ -34,34 +34,6 @@ return {
     priority = 1000,
     lazy = theme.name ~= "night_owl",
     opts = {},
-  },
-  {
-    "blazkowolf/gruber-darker.nvim",
-    -- Neovim-only colorscheme, deliberately NOT in config.theme's terminal map: it
-    -- has no `$TERMINAL_THEME` counterpart, so it never starts eagerly and the
-    -- live-swap watcher (config/autocmds.lua) never targets it. Installed but lazy;
-    -- LazyVim's ColorSchemePre autoloads it on demand when you run
-    -- `:colorscheme gruber-darker`. (The next `theme-set` swaps nvim back to the
-    -- mapped terminal theme.) Defaults already italicize strings/comments/folds,
-    -- which mirrors the Zed "Gruber Darker" look this is ported from.
-    priority = 1000,
-    lazy = true,
-    -- Match the Zed config's `syntax.title` override: paint markdown section
-    -- headers gruber yellow (#ffdd33) instead of upstream's quartz/blue. The
-    -- per-level @markup.heading.N.markdown groups cover both raw treesitter
-    -- headings and render-markdown.nvim (its RenderMarkdownH1..H6 link to them);
-    -- the base @markup.heading is left alone so table headers don't go yellow.
-    -- Registered in init() so it's armed before any `:colorscheme gruber-darker`.
-    init = function()
-      vim.api.nvim_create_autocmd("ColorScheme", {
-        pattern = "gruber-darker",
-        callback = function()
-          for level = 1, 6 do
-            vim.api.nvim_set_hl(0, ("@markup.heading.%d.markdown"):format(level), { fg = "#ffdd33" })
-          end
-        end,
-      })
-    end,
   },
   {
     "rose-pine/neovim",
@@ -91,25 +63,6 @@ return {
         which_key = true,
       },
     },
-  },
-  {
-    "kepano/flexoki-neovim",
-    name = "flexoki",
-    -- Same pattern as catppuccin: always installed, eager only when active.
-    priority = 1000,
-    lazy = theme.name ~= "flexoki_light",
-    init = function()
-      vim.o.background = theme.background
-    end,
-    -- flexoki here only ever stands in for flexoki_light, so pin the light
-    -- variant (theme.background is captured once at startup and would be wrong
-    -- if the watcher swaps in flexoki from a dark startup theme).
-    opts = {
-      variant = "light",
-    },
-    config = function(_, opts)
-      require("flexoki").setup(opts)
-    end,
   },
   {
     "LazyVim/LazyVim",

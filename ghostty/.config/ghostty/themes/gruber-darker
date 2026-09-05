@@ -1,0 +1,25 @@
+# Gruber Darker — th0jensen/gruber-darker.zed 0.0.8, installed Zed palette.
+# Bright black uses text.disabled #808080 (4.50:1 on #181818), replacing the
+# near-invisible ANSI #282828 (1.20:1). Selection flattens #737373b3 onto bg.
+background = #181818
+foreground = #e4e4ef
+cursor-color = #ffdd33
+selection-background = #585858
+selection-foreground = #e4e4ef
+
+palette = 0=#000000
+palette = 1=#f43841
+palette = 2=#73c936
+palette = 3=#ffdd33
+palette = 4=#96a6c8
+palette = 5=#9e95c7
+palette = 6=#4ec9b0
+palette = 7=#e4e4ef
+palette = 8=#808080
+palette = 9=#ff4f58
+palette = 10=#73c936
+palette = 11=#ffdd33
+palette = 12=#96a6c8
+palette = 13=#9e95c7
+palette = 14=#4ec9b0
+palette = 15=#f4f4ff

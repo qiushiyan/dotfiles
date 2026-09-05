@@ -144,7 +144,7 @@ p.write_text("\n".join(lines)); print("patched menu row")
 # Neovim: the name → colorscheme map, and a palette branch for the lualine bar
 patch("nvim/.config/nvim/lua/config/theme.lua", "\n}\n\nM.name = resolve()",
       f'\n  {NAME} = {{ colorscheme = "{DASHED}", background = "{BG}" }},\n}}\n\nM.name = resolve()')
-patch("nvim/.config/nvim/lua/config/palette.lua", '  elseif scheme:match("^flexoki") then',
+patch("nvim/.config/nvim/lua/config/palette.lua", '  elseif scheme:match("^gruvbox") then',
       f'  elseif scheme:match("^{LUA_PAT}") then\n'
       '    return {\n'
       '      base = "#1a2125", mantle = "#14191c", crust = "#0d1113",\n'
@@ -154,7 +154,7 @@ patch("nvim/.config/nvim/lua/config/palette.lua", '  elseif scheme:match("^flexo
       '      mauve = "#9B59B6", teal = "#4ECDC4", pink = "#9B59B6", sky = "#4ECDC4",\n'
       '      bar_bg = "#222a30", -- one step up from base, so the statusline reads as a band\n'
       '    }\n'
-      '  elseif scheme:match("^flexoki") then')
+      '  elseif scheme:match("^gruvbox") then')
 PY
 ```
 

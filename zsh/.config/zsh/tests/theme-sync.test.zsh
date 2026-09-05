@@ -61,7 +61,7 @@ $1
 exit" }
 
 test_sandbox_holds() {
-  sandbox flexoki_light
+  sandbox gruber_darker
   eq "$H" "$(probe 'print -r -- $HOME')" "\$HOME inside the probe"
 }
 
@@ -74,7 +74,7 @@ test_file_beats_inherited_env() {
 
 # The hook is registered in interactive shells, and only there.
 test_hook_registered_interactive_only() {
-  sandbox flexoki_light
+  sandbox gruber_darker
   eq "yes" "$(probe '(( $precmd_functions[(I)_theme_sync] )) && print yes || print no')" "interactive" || return 1
   eq "no" "$(HOME="$H" command zsh -f -c "source $MOD; (( \$precmd_functions[(I)_theme_sync] )) && print yes || print no")" "non-interactive"
 }
@@ -95,7 +95,7 @@ night_owl Gxfxcxdxbxegedabagacad +dark-mode" "$out" "before/after a file change"
 # A hook registered after ours (as oh-my-posh's _omp_precmd is, from the end
 # of .zshrc) runs after ours, so it sees the refreshed value.
 test_sync_runs_before_later_hooks() {
-  sandbox flexoki_light
+  sandbox gruber_darker
   eq "night_owl" "$(probe 'autoload -Uz add-zsh-hook
 _fake_omp() { print -r -- "$TERMINAL_THEME" }
 add-zsh-hook precmd _fake_omp

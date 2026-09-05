@@ -1,17 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
   "palettes": {
-    "template": "{{ if .Env.TERMINAL_THEME }}{{ .Env.TERMINAL_THEME }}{{ else }}flexoki_light{{ end }}",
+    "template": "{{ if .Env.TERMINAL_THEME }}{{ .Env.TERMINAL_THEME }}{{ else }}gruber_darker{{ end }}",
     "list": {
-      "flexoki_light": {
-        "os": "#878580",
+      "gruber_darker": {
+        "os": "#808080",
         "closer": "p:os",
-        "pink": "#a02f6f",
-        "lavender": "#a02f6f",
-        "blue":  "#205ea6",
-        "green": "#66800b",
-        "peach": "#ad8301",
-        "red": "#af3029"
+        "pink": "#9e95c7",
+        "lavender": "#e4e4ef",
+        "blue": "#96a6c8",
+        "green": "#ffdd33",
+        "peach": "#cc8c3c",
+        "red": "#f43841"
       },
       "catppuccin_mocha": {
         "os": "#ACB0BE",

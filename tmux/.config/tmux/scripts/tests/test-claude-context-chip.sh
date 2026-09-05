@@ -123,7 +123,7 @@ pub() {
     # network, and write the user's live ~/.cache — the C9 guard catches that,
     # and it caught it once for real. C22 is where the spawn itself is tested,
     # by pointing this at a stub instead of clearing it.
-    printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME=flexoki_light \
+    printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME=gruber_darker \
         CLAUDE_CTX_REFRESH_CMD="${REFRESH_CMD-}" \
         TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$STATUSLINE" >/dev/null 2>&1
     sleep 0.4   # the accepted branch reconciles the border in the background

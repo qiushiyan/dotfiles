@@ -1,57 +1,5 @@
 local M = {}
 
--- Flexoki exports a flat palette via require("flexoki.palette").palette();
--- we remap its keys onto the catppuccin-shaped table that ui.lua expects.
-local function flexoki_palette()
-  local ok, fp = pcall(require, "flexoki.palette")
-  if ok and fp.palette then
-    local p = fp.palette()
-    return {
-      base     = p["bg"],
-      mantle   = p["ui"],
-      crust    = p["bg-2"],
-      surface0 = p["ui-2"],
-      surface1 = p["ui-3"],
-      surface2 = p["tx-3"],
-      text     = p["tx"],
-      subtext0 = p["tx-2"],
-      subtext1 = p["tx-2"],
-      overlay0 = p["tx-3"],
-      overlay1 = p["tx-3"],
-      blue     = p["bl"],
-      green    = p["gr"],
-      red      = p["re"],
-      yellow   = p["ye"],
-      mauve    = p["pu"],
-      teal     = p["cy"],
-      pink     = p["ma"],
-      sky      = p["bl-2"],
-    }
-  end
-  -- hardcoded fallback (flexoki light)
-  return {
-    base     = "#FFFCF0",
-    mantle   = "#E6E4D9",
-    crust    = "#F2F0E5",
-    surface0 = "#DAD8CE",
-    surface1 = "#CECDC3",
-    surface2 = "#B7B5AC",
-    text     = "#100F0F",
-    subtext0 = "#6F6E69",
-    subtext1 = "#6F6E69",
-    overlay0 = "#B7B5AC",
-    overlay1 = "#B7B5AC",
-    blue     = "#205EA6",
-    green    = "#66800B",
-    red      = "#AF3029",
-    yellow   = "#AD8301",
-    mauve    = "#5E409D",
-    teal     = "#24837B",
-    pink     = "#A02F6F",
-    sky      = "#4385BE",
-  }
-end
-
 function M.get_palette()
   local scheme = vim.g.colors_name or ""
 
@@ -145,8 +93,7 @@ function M.get_palette()
       pink = "#a13865",
       sky = "#2993a3",
       -- Pale sage band for the lualine bar: green-tinted so it reads as an
-      -- intentional accent on the cream bg (the vitesse analogue of flexoki's
-      -- mint bar_bg below).
+      -- intentional accent on the cream bg.
       bar_bg = "#e4eae0",
     }
   elseif scheme:match("^orng") then
@@ -215,13 +162,15 @@ function M.get_palette()
       mauve = "#c98c97", teal = "#9eb8b2", pink = "#ddb0b8", sky = "#c2d5d0",
       bar_bg = "#362d30", -- upstream coffee surface, elevated above the syrup editor
     }
-  elseif scheme:match("^flexoki") then
-    local p = flexoki_palette()
-    -- flexoki-cyan-50: subtle mint-cream tint, the only off-paper accent in
-    -- flexoki's base table. Different hue from neutral grays so UI bars read
-    -- as intentional accents rather than washed-out cream.
-    p.bar_bg = "#EBF2E7"
-    return p
+  elseif scheme:match("^gruber%-darker") then
+    return {
+      base = "#181818", mantle = "#0e0e0e", crust = "#000000",
+      surface0 = "#202020", surface1 = "#303030", surface2 = "#545454",
+      text = "#e4e4ef", subtext0 = "#808080", subtext1 = "#95a99f", overlay0 = "#545454", overlay1 = "#808080",
+      blue = "#96a6c8", green = "#73c936", red = "#f43841", yellow = "#ffdd33",
+      mauve = "#9e95c7", teal = "#4ec9b0", pink = "#9e95c7", sky = "#96a6c8",
+      bar_bg = "#202020", -- Zed status/tab bar surface
+    }
   elseif scheme:match("^gruvbox") then
     -- gruvbox.nvim's dark-medium palette mapped onto the catppuccin-shaped
     -- table ui.lua consumes. Without this branch the "gruvbox" colorscheme name
@@ -250,7 +199,7 @@ function M.get_palette()
       sky = "#458588", -- neutral_blue
       -- Elevated warm band for the lualine bar: dark1, one step up from the
       -- #282828 editor bg so the statusline/tabline reads as an intentional
-      -- band (the gruvbox analogue of flexoki's bar_bg tint above).
+      -- band.
       bar_bg = "#3c3836",
     }
   elseif scheme:match("^night%-owl") then

@@ -15,7 +15,7 @@ THEME=""
 if [ -r "$HOME/.config/terminal-theme" ]; then
     THEME=$(tr -d '[:space:]' < "$HOME/.config/terminal-theme")
 fi
-THEME="${THEME:-${TERMINAL_THEME:-flexoki_light}}"
+THEME="${THEME:-${TERMINAL_THEME:-gruber_darker}}"
 
 # 24-bit truecolor escape: $'\033[38;2;R;G;Bm'
 case "$THEME" in
@@ -27,14 +27,14 @@ case "$THEME" in
         PINK=$'\033[38;2;245;194;231m'      # Pink #F5C2E7
         LAVENDER=$'\033[38;2;180;190;254m'  # Lavender #B4BEFE
         ;;
-    flexoki_light)
-        # Light cream bg (#fffcf0) needs the darker palette entries (0-7) for contrast
-        CYAN=$'\033[38;2;36;131;123m'       # Cyan #24837b
-        GREEN=$'\033[38;2;102;128;11m'      # Green #66800b
-        YELLOW=$'\033[38;2;173;131;1m'      # Yellow #ad8301
-        RED=$'\033[38;2;175;48;41m'         # Red #af3029
-        PINK=$'\033[38;2;160;47;111m'       # Magenta #a02f6f
-        LAVENDER=$'\033[38;2;32;94;166m'    # Blue #205ea6
+    gruber_darker)
+        # Zed Gruber Darker accents on #181818.
+        CYAN=$'\033[38;2;78;201;176m'  # #4ec9b0
+        GREEN=$'\033[38;2;115;201;54m'  # #73c936
+        YELLOW=$'\033[38;2;255;221;51m'  # #ffdd33
+        RED=$'\033[38;2;244;56;65m'  # #f43841
+        PINK=$'\033[38;2;158;149;199m'  # #9e95c7
+        LAVENDER=$'\033[38;2;150;166;200m'  # #96a6c8
         ;;
     tailwind_light)
         # Light white bg (#ffffff) — Tailwind's darker (non-bright) accents for contrast

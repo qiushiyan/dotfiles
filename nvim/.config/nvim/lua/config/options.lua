@@ -98,3 +98,6 @@ if vim.g.neovide then
   -- https://youtu.be/33gQ9p-Zp0I
   vim.g.neovide_input_macos_option_key_is_meta = "only_right"
 end
+
+-- Apply the terminal theme mode before LazyVim loads its colorscheme.
+vim.o.background = require("config.theme").background

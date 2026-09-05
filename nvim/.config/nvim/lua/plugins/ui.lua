@@ -26,8 +26,8 @@ return {
       -- Auto-select palette based on current colorscheme
       local colors = require("config.palette").get_palette()
 
-      -- Bar bg: each palette can expose a `bar_bg` accent (flexoki uses
-      -- cyan-50 #EBF2E7 — a soft mint tint, different hue from neutral gray).
+      -- Bar bg: each palette can expose a `bar_bg` surface (Gruber uses
+      -- the Zed status/tab bar charcoal #202020).
       -- Falls back to `mantle` for themes that don't define one.
       local bar_bg = colors.bar_bg or colors.mantle
 

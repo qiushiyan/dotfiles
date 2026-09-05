@@ -31,27 +31,18 @@ _theme_apply() {
     if [[ -r "$HOME/.config/terminal-theme" ]] && read -r _t < "$HOME/.config/terminal-theme"; then
         TERMINAL_THEME=${_t//[[:space:]]/}
     fi
-    : "${TERMINAL_THEME:=flexoki_light}"
+    : "${TERMINAL_THEME:=gruber_darker}"
     export TERMINAL_THEME
 
 case "$TERMINAL_THEME" in
-    flexoki_light)
-        # Cream bg: prefer non-bold dark hues. Letters: a-h = ANSI 30-37,
-        # A-H = bold variants, x = default. 11 (fg,bg) pairs: dir, link,
-        # socket, pipe, exec, block, char, suid, sgid, sticky+ow, ow.
-        # dir=blue, link=magenta, socket=green, pipe=yellow, exec=red.
-        export LSCOLORS='exfxcxdxbxegedabagacad'
-        export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # zsh-autosuggestions' grayed inline suggestion. The plugin's default
-        # fg=8 maps to flexoki's #b7b5ac here — near-invisible on the #fffcf0
-        # paper bg (worsened by background-opacity). A darker fixed grayscale
-        # (242 = #6c6c6c, not remapped by the theme) reads clearly while
-        # staying muted. .zshrc loads the plugin after this, and it only
-        # applies its fg=8 default when this is unset.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+light-mode'
-        export DFT_BACKGROUND='light'
+    gruber_darker)
+        # Gruber charcoal: bold cyan directories; readable source gray suggestions.
+        export LSCOLORS='Gxfxcxdxbxegedabagacad'
+        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+        # #808080 replaces Zed's near-black ANSI slot 8, for 4.50:1 contrast.
+        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+        export DELTA_FEATURES='+dark-mode'
+        export DFT_BACKGROUND='dark'
         ;;
     catppuccin_mocha)
         # Dark bg: bold/bright dir for emphasis. Matches oh-my-zsh's
@@ -66,9 +57,9 @@ case "$TERMINAL_THEME" in
         export DFT_BACKGROUND='dark'
         ;;
     tailwind_light)
-        # White bg (#ffffff), like flexoki_light: non-bold dark hues. The
+        # White bg (#ffffff), like the other light themes: non-bold dark hues. The
         # LSCOLORS/LS_COLORS codes index the terminal's 16-color palette, which
-        # ghostty's tailwind-light-contrast theme supplies, so the flexoki_light
+        # ghostty's tailwind-light-contrast theme supplies, so the light-theme
         # strings carry over unchanged.
         export LSCOLORS='exfxcxdxbxegedabagacad'
         export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
@@ -101,9 +92,9 @@ case "$TERMINAL_THEME" in
         export DFT_BACKGROUND='dark'
         ;;
     vitesse_light_soft)
-        # Soft cream bg (#f1f0e9), like flexoki_light: non-bold dark hues. The
+        # Soft cream bg (#f1f0e9), like the other light themes: non-bold dark hues. The
         # codes index the 16-color palette ghostty's vitesse-light-soft theme
-        # supplies, so the flexoki_light strings carry over unchanged.
+        # supplies, so the light-theme strings carry over unchanged.
         export LSCOLORS='exfxcxdxbxegedabagacad'
         export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
         # fg=8 maps to vitesse's #aaaaaa — too faint on the cream bg; the fixed
@@ -124,9 +115,9 @@ case "$TERMINAL_THEME" in
         export DFT_BACKGROUND='dark'
         ;;
     orng_light)
-        # Peach paper bg (#fff7f1), like flexoki_light: non-bold dark hues. The
+        # Peach paper bg (#fff7f1), like the other light themes: non-bold dark hues. The
         # codes index the 16-color palette ghostty's orng-light theme supplies
-        # (dir = its string blue #0062d1), so the flexoki_light strings carry over.
+        # (dir = its string blue #0062d1), so the light-theme strings carry over.
         export LSCOLORS='exfxcxdxbxegedabagacad'
         export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
         # fg=8 maps to orng's #8a8a8a — borderline on the peach bg; the fixed

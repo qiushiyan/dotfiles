@@ -15,6 +15,7 @@ prompt, Claude statusline, tmux, Neovim, Ghostty — and how switching works.
   authored per tool, not generated from a central spec.
 - **`theme-set <name>`** writes the name and fans out reloads;
   **`prefix t`** in tmux is the picker that calls it.
+- The default when no selection exists is `gruber_darker`.
 - The valid names are the `THEMES` array in `theme-set` (`theme-set` with no
   argument prints them); adding one is `/add-theme`.
 
@@ -120,9 +121,13 @@ colour does the job instead → `docs/ghostty-fonts.md`.
 
 ## Neovim specifics
 
-- Colorschemes come from two places: **plugin themes** (catppuccin, flexoki) and
+- Colorschemes come from two places: **plugin themes** (catppuccin, gruvbox) and
   **hand-rolled files** in `colors/` (ported from a Zed or VS Code theme's UI +
   syntax tokens).
+- Gruber Darker is a local port of the installed Zed extension (0.0.8), including
+  the Zed settings' yellow Markdown titles and italic syntax. It replaces the
+  earlier Neovim-only plugin. `config/options.lua` applies the selected
+  light/dark mode before a colorscheme loads, independently of theme plugins.
 - The plugin themes are **un-gated** (all installed; the active one eager, the
   rest lazy) so the watcher can swap *any* direction — lazy.nvim's
   `ColorSchemePre` autoloads the matching plugin on `:colorscheme`.

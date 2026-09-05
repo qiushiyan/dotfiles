@@ -1,5 +1,5 @@
--- Resolves the active terminal theme (env → ~/.config/terminal-theme →
--- flexoki_light) and maps it to a colorscheme + background. The live-swap
+-- Resolves the active terminal theme (~/.config/terminal-theme → env →
+-- gruber_darker) and maps it to a colorscheme + background. The live-swap
 -- watcher in config/autocmds.lua reuses M.map. See docs/theming.md.
 
 local M = {}
@@ -25,11 +25,11 @@ local function resolve()
   if name then return name end
   local env = vim.env.TERMINAL_THEME
   if env and env ~= "" then return env end
-  return "flexoki_light"
+  return "gruber_darker"
 end
 
 local map = {
-  flexoki_light    = { colorscheme = "flexoki-light",            background = "light" },
+  gruber_darker    = { colorscheme = "gruber-darker",            background = "dark"  },
   catppuccin_mocha = { colorscheme = "catppuccin",               background = "dark"  },
   tailwind_light   = { colorscheme = "tailwind-light-contrast",  background = "light" },
   tokyo_night_moon = { colorscheme = "tokyonight-moon",          background = "dark"  },
@@ -45,11 +45,11 @@ M.name = resolve()
 local entry = map[M.name]
 if not entry then
   vim.notify(
-    ("config.theme: unknown TERMINAL_THEME '%s', falling back to flexoki_light"):format(M.name),
+    ("config.theme: unknown TERMINAL_THEME '%s', falling back to gruber_darker"):format(M.name),
     vim.log.levels.WARN
   )
-  M.name = "flexoki_light"
-  entry = map.flexoki_light
+  M.name = "gruber_darker"
+  entry = map.gruber_darker
 end
 
 M.colorscheme = entry.colorscheme
