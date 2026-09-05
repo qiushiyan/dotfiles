@@ -42,6 +42,7 @@ end
 return {
   {
     "nvim-mini/mini.files",
+    enabled = false, -- Snacks Explorer trial; keep this configuration for switching back.
     lazy = false,
     opts = {
       content = {
@@ -131,7 +132,7 @@ return {
     },
   },
   -- LazyVim auto-imports the editor.neo-tree extra as the default explorer on
-  -- installs with install_version < 8; mini.files above is our explorer, so
+  -- installs with install_version < 8; Snacks is our trial explorer, so
   -- keep neo-tree disabled or lazy will install and load it.
   { "nvim-neo-tree/neo-tree.nvim", enabled = false },
 }

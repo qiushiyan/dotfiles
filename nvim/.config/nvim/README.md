@@ -96,25 +96,18 @@ Toggle current terminal `ctrl + /`
 
 ### File Explorer
 
-- with `mini.files`
+Snacks Explorer is enabled for a trial; mini.files and Neo-tree are disabled.
 
-  - edit file systems like a buffer, add a new line, delete a new, etc.
+- `<leader>e`: explorer at project root; `<leader>E`: explorer at cwd.
+- `a`: create file or directory (end directory names with `/`).
+- `r`: rename; `d`: delete; `<Tab>`: select files for an operation.
+- `m` / `c`: move / copy selected files to the current directory.
+- `H` / `I`: toggle hidden / ignored files; `P`: toggle preview.
 
-  - `=` save
-
-  - `,` reset
-
-- with neo-tree
-
-  - `a` or `n`: create file or directory
-
-    - alternatively use a `mkdir.nvim` command `:save path/to/file.txt`
-
-  - `m`: move file or directory
-  - `d`: delete file or directory
-  - `r`: rename file or directory
-  - `/` search file
-  - `shift + p` toggle preview
+To restore mini.files, replace `editor.snacks_explorer` with `editor.mini-files`
+in `lazyvim.json`, remove `enabled = false` from the mini.files spec in
+`lua/plugins/file-explorer.lua`, and restart Neovim. Its previous mappings and
+settings are preserved (`=` synchronizes edits; `,` resets navigation).
 
 - delete current file with command `:!rm %`
 
