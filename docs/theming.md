@@ -118,13 +118,6 @@ since going brighter on white loses contrast. It exists because Dank Mono's bold
 is only ~12% heavier than its regular, so weight alone can't mark emphasis and
 colour does the job instead → `docs/ghostty-fonts.md`.
 
-Waffle Cat also sets `background-image` to its bundled **Lakeside Camp** car
-wallpaper in `ghostty/.config/ghostty/backgrounds/`, centered with `cover`
-fitting and image opacity `0.25`. The image blends into the theme's background;
-the shared window opacity still applies. Its `ghostty_block()` arm owns these
-settings, so switching to another theme clears the wallpaper. Reload Ghostty
-with **⌘⇧,** after switching or adjusting the image settings.
-
 ## Neovim specifics
 
 - Colorschemes come from two places: **plugin themes** (catppuccin, flexoki) and
