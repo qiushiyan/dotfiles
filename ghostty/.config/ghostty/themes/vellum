@@ -1,0 +1,29 @@
+# Vellum — white paper, neutral ink, one ochre accent. A hybrid: bg/fg/amber
+# sampled from an Aaron Francis screenshot (white #ffffff, ink #1f2022, table
+# headers #cb953d), grays from Tailwind's neutral scale, the chromatic ANSI
+# slots from Tailwind's 700/600 steps (the same family tailwind-light draws on).
+# Contrast calls: the sampled amber is 2.7:1 on white, so it is the *bright*
+# yellow only (headers, badges); the normal yellow and the accent are the
+# deeper ochre #9a6a18 (4.7:1). Slot 8 (zsh autosuggestion) is neutral-500
+# #737373 (4.7:1). Cyan is cyan-800 #007595 because cyan-700 is 3.6:1 on white.
+palette = 0=#1f2022
+palette = 1=#c10007
+palette = 2=#008236
+palette = 3=#9a6a18
+palette = 4=#1447e6
+palette = 5=#7008e7
+palette = 6=#007595
+palette = 7=#d4d4d4
+palette = 8=#737373
+palette = 9=#e7000b
+palette = 10=#00a63e
+palette = 11=#cb953d
+palette = 12=#155dfc
+palette = 13=#7f22fe
+palette = 14=#0092b8
+palette = 15=#ffffff
+background = #ffffff
+foreground = #1f2022
+cursor-color = #9a6a18
+selection-background = #f5ead8
+selection-foreground = #1f2022

@@ -117,6 +117,17 @@ case "$THEME" in
         PINK=$'\033[38;2;201;140;151m'  # magenta #c98c97
         LAVENDER=$'\033[38;2;200;125;42m'  # accent #c87d2a
         ;;
+    vellum)
+        # White paper bg (#ffffff). PINK (branch) is the text-safe ochre accent
+        # #9a6a18, not the sampled amber #cb953d (2.7:1 on white); YELLOW
+        # (context warning) is Tailwind amber-700 so warnings read as orange.
+        CYAN=$'\033[38;2;0;117;149m'        # Cyan-800 #007595
+        GREEN=$'\033[38;2;0;130;54m'        # Green-700 #008236
+        YELLOW=$'\033[38;2;187;77;0m'       # Amber-700 #bb4d00
+        RED=$'\033[38;2;193;0;7m'           # Red-700 #c10007
+        PINK=$'\033[38;2;154;106;24m'       # Ochre accent #9a6a18
+        LAVENDER=$'\033[38;2;20;71;230m'    # Blue-700 #1447e6
+        ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2
         exit 1

@@ -102,6 +102,16 @@
         "green": "#e4c56d",
         "peach": "#df9850",
         "red": "#cf7358"
+      },
+      "vellum": {
+        "os": "#737373",
+        "closer": "p:os",
+        "pink": "#9a6a18",
+        "lavender": "#9a6a18",
+        "blue": "#1447e6",
+        "green": "#008236",
+        "peach": "#bb4d00",
+        "red": "#c10007"
       }
     }
   },

@@ -171,6 +171,19 @@ function M.get_palette()
       mauve = "#9e95c7", teal = "#4ec9b0", pink = "#9e95c7", sky = "#96a6c8",
       bar_bg = "#202020", -- Zed status/tab bar surface
     }
+  elseif scheme:match("^vellum") then
+    -- Vellum (colors/vellum.lua): white paper, neutral ink, ochre accent.
+    -- Surfaces are Tailwind's neutral scale; hues its 700 steps.
+    return {
+      base = "#ffffff", mantle = "#fafafa", crust = "#f5f5f5",
+      surface0 = "#e5e5e5", surface1 = "#d4d4d4", surface2 = "#a1a1a1",
+      text = "#1f2022", subtext0 = "#525252", subtext1 = "#404040", overlay0 = "#a1a1a1", overlay1 = "#737373",
+      blue = "#1447e6", green = "#008236", red = "#c10007", yellow = "#9a6a18",
+      mauve = "#9a6a18", teal = "#007595", pink = "#cb953d", sky = "#0092b8",
+      -- Pale amber band for the lualine bar (amber 20/80 white): the one warm
+      -- note on the white page, so the statusline reads as an intentional band.
+      bar_bg = "#f5ead8",
+    }
   elseif scheme:match("^gruvbox") then
     -- gruvbox.nvim's dark-medium palette mapped onto the catppuccin-shaped
     -- table ui.lua consumes. Without this branch the "gruvbox" colorscheme name
