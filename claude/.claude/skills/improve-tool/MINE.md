@@ -217,3 +217,31 @@ through Bash, and a count over the edit tools alone undercounts. A tool
 that is rarely invoked has its population elsewhere: the sessions that did
 its job without it — a sibling tool's runs, or the first-prompt task mix
 that matches its description — and what they did instead is the spec.
+
+## The pipeline variant — the writer/reader pair
+
+For a tool whose output one session writes and another consumes (a handoff
+brief, a spec, a status page), the population is pairs, not sessions. Build
+each pair, then measure what the reader paid that the writer had already
+paid:
+
+- **the reader's window** — from the user message that carries the pointer
+  (the brief's path, or `/<onboarding-skill>`) to the first user turn after
+  it; `messages.input_tokens` on the window's last assistant row is the
+  context the first turn consumed.
+- **the writer** — the session whose `tool_calls` wrote the brief's path
+  (`name IN ('Write','Edit') AND input_json LIKE '%<slug>.md%'`).
+- **reads, both sides** — `Read` calls by path, plus the paths inside Bash
+  `cat` / `sed -n` / `head` / `tail` commands (a bypassed-permissions
+  session reads through Bash, and a `Read`-only count halves the answer),
+  each classified by stage: core doc, route, brief, gate, other doc, code.
+- **overlap** — the reader's read paths ∩ the writer's, by stage; the share
+  says which stage's invariant would have carried the fact.
+- **falsifications** — the reader's assistant text where a claim is called
+  falsified (the gate's own words, `falsif%`), joined to the brief's anchor
+  sha: `git log <anchor>..<pickup> -- <cited paths>` empty means the claim
+  was wrong when written.
+
+Report the pair table as `pairs · reader tokens · overlap by stage ·
+falsified (drift / zero-drift)`; the zero-drift column is the writer's
+count, and it is the one the next pass re-measures.

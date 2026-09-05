@@ -43,7 +43,17 @@ the receipts behind every rule below.
    | engine calls | `tool_calls.name='Bash' AND input_json LIKE '%<cli> %'`; the engine's state dirs and output files |
    | the seed | the session, worktree, or complaint the user named; none named → the latest invocation |
 
-   Done when the engine, its install state, and the signatures are written.
+   When the tool is one stage of a **pipeline** — a doc tree, a brief
+   writer, an onboarding skill, a pickup gate, a CLI, the human's own
+   workflow — map every stage, and write each stage's one invariant in the
+   ledger header beside the signatures: the contract that, kept, would make
+   that stage's costs vanish (a brief: a claim carries what its check
+   returned at the anchor; a status page: it holds only items with an owed
+   read; a CLI: a question every pickup asks is one command). Step 3
+   assigns each cost to the stage whose invariant owns it.
+
+   Done when the engine, its install state, the signatures — and, for a
+   pipeline, every stage with its invariant — are written.
 
 2. **Mine.** First the previous pass: the engine's evidence log names the
    frictions it fixed and their counts — re-measure those, since a fix that
@@ -73,6 +83,13 @@ the receipts behind every rule below.
      invocation, read by position: a two-minute "go ahead" after every
      report is a stop that changed nothing; a long turn is the correction,
      and it rarely names the tool.
+   - **the writer/reader pair** — for a pipeline whose output one session
+     writes and another consumes: the reads the consumer made that the
+     producer had already made, and each claim the consumer falsified split
+     by whether its source changed between the anchor and the pickup. The
+     overlap says which stage owns the read cost; a falsification with zero
+     drift belongs to the writer, not the reader (MINE.md, the pipeline
+     variant).
    - **the seed**, expanded vertically with `thread()` / `context()`.
 
    When an output's shape is in question, run a **live trial** of the
@@ -91,13 +108,10 @@ the receipts behind every rule below.
    engine contract. The layer follows the usage lessons: a rule agents
    still break moves into the engine or a worked example, and the top
    failure class is read against the engine's code before it is called
-   discipline. When the tool is one stage of a pipeline, write each
-   stage's one invariant in the ledger header (a brief: a claim carries what
-   its check returned at the anchor; a status page: it holds only items with
-   an owed read) and assign a cost to the
-   stage whose invariant, kept, would remove it — the symptom's nearest
-   neighbour is rarely its owner (usage lessons § A cost belongs to the
-   layer). Done when each of the top three frictions answers "how many,
+   discipline. A pipeline's cost goes to the stage whose invariant, kept, would remove
+   it (step 1's header), never to the symptom's nearest neighbour — a fix
+   there is faithfully followed and changes nothing (usage lessons § A cost
+   belongs to the layer). Done when each of the top three frictions answers "how many,
    and where" with a number and ids, and every reading says which of the
    two it is — three frictions with counts, per-session detail left in the
    index.
