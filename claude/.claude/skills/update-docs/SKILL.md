@@ -70,9 +70,8 @@ A change has landed. Bring the project's docs back in line with it so that a sen
 6. **Verify** every doc you touched:
 
    - re-read it end-to-end as a cold reader: does it hand over the mental model without a tour of the files?
-   - cross-references resolve; paths are repo-root-relative; no source pasted (prose or pseudo-code call chains are fine);
-   - grep the docs tree for the basename of anything you moved, renamed, or deleted — every hit resolves;
-   - grep for each concept the change replaced — a surviving mention passes the future-need test in *Describe the current state*.
+   - grep the docs tree for the basename of anything you moved, renamed, or deleted, and for each concept the change replaced — every hit resolves, or passes the future-need test in *Describe the current state*;
+   - last, the check block under *Before you commit* — its greps see what a re-read does not.
 
 7. **Check the surfaces above the docs.** An onboarding or bootstrap skill, if the project has one: a new top-level doc its routing misses, a renamed doc on its always-read list, a drifted path — routine edits inside an existing doc leave it alone. `CLAUDE.md` / `AGENTS.md` is paid on every request, so it holds load-bearing facts plus a map of where to read the rest; it changes only when a cross-cutting rule appeared or one's framing rotted, which most branches don't do.
 
@@ -116,7 +115,20 @@ Organize by kind of content, not by feature churn:
 
 - **Design / architecture docs** say what is true today — updated in place, never appended to.
 - **Specs, plans, roadmaps** are proposals. When one ships, distill its surviving decisions into the design doc it touches and prune or archive the proposal; a shipped spec left "for history" leaves two docs describing one subsystem with no way to tell which is live.
-- **Status and rationale** (a README status line, an open-questions log) is the home for "shipped vs not" and "why this way", keeping those markers out of the design docs.
+- **Status pages hold only the open ledger** — one per active initiative, and status lives only there: the facts that move with a rollout, the dated items whose follow-up read is still owed, and the owed list. An item enters only while it carries an owed read and leaves when the read lands; a landed change with nothing owed never enters (its trace is the spec or issue record it shipped with). So a page only shrinks between landings; one with a paragraph per event or a history section is the smell, and it is what gets read whole at every pickup. The shape:
+
+  ```markdown
+  - **<date> — <what is now true> (#PR, merged <date> as <sha>).** <one sentence>.
+    As-built: <doc § heading>. Records: <issue or spec>. **Closing read owed** —
+    ready when: <observable condition — a serving sha, an elapsed window, the first
+    qualifying event>. Read: <predicate>.
+  ```
+
+  The condition lets a later session take the read without the writer's memory; the landed block (predicate · window · result · verdict · follow-on) replaces the spec's `## Owed` line or closes the issue record, and the item leaves.
+- **Evidence tiers** (`specs/`, `issues/`, `records/`, `research/`) are reference behind settled decisions: dated filenames (`YYYY-MM-DD-kebab-name.md`), deleted only after distilling, edited after merge only for a spec's marks (§ As built; the `## Owed` line replaced; the status header when a later spec overturns it). The filename is the index entry, nothing keeps a roster, and an item earns prominence by citation from the live doc where its lesson applies.
+- **A live initiative** — a tree for a system that is partly built — keeps its status, its proposal and its present apart: the README header is the one status home and carries a standing **What is live** block naming, per module doc, the sections that describe running code, proposal fragments named as exceptions inline; module docs are present tense for what runs; what does not run yet is a slice's spec, folded into the module doc at merge. Epistemic state (chosen, disputed, superseded) lives in a decisions ledger and delivery state (unbuilt, serving, verified) in the header — a "settled" never means it runs. A number or heading is an address once cited: numbering never shifts, and a superseded entry keeps its number with a pointer to its successor.
+
+Every live doc is reachable from the map (the README's tree or a route): an unrouted doc is invisible to readers and to a diff-scoped update, so it rots.
 
 ### When docs need updating
 
@@ -136,10 +148,41 @@ The reader is a senior engineer who will read the code. Re-listing what the code
 - A table row, an index entry, a structure-map line is earned, not automatic: fold a secondary change into an existing entry; add one only when a reader needs it to navigate. A specialized deep-dive doc is linked from its owning subsystem doc and stays out of the map.
 - No live counts ("seven handlers"). A cardinal number rots silently, drifts between docs, and nobody navigates by it. Name the few that matter.
 - Draw a flow rather than narrate it: an indented tree or an arrow chain (`request → middleware → handler`) beats a long sentence threading the same path.
+- A table is earned only when rows cross two or more axes a reader compares cell-wise; a sectioned list serves the rest.
+- **A section answers one question, and a fact is findable by the question that needs it.** A session should read to the depth of its question, never the whole file to be safe; a section that grew to hold several families is split by family once they stop churning. The always-read set — whatever every session opens first — has a byte budget (`wc -c`), and mechanism moves to a satellite the map names when the core doc crosses it.
+- **A lessons entry is a seam guard, not a story**: the invariant (bold, one sentence), the hazard in the present tense, the guard that pins it (a test or symbol), the record that bought it. An entry a named test already pins is one line pointing at the test.
 
 ### Consolidation — adding is an opportunity to simplify
 
 Every touch leaves the doc tighter, so its size stays stable as the system grows: re-read the whole doc, not just the section you're editing; merge overlap instead of writing a second description; combine small related sections and restructure when the reading order has gone disjoint; cut what drifted into implementation detail back to the mental model; edit in place rather than appending. Deletion is half the work — a branch that adds thirty lines and deletes none of the newly redundant prose has done the other half only.
+
+### Before you commit
+
+Each rule above still gets broken, because the violation is invisible at the point of writing. Stage first (`git add -A`) so a new doc is diffed too, then:
+
+```bash
+# every `<doc>.md § Heading` you touched, or that names a doc you renamed in, resolves
+grep -rn '§ <the heading>' --include='*.md' . ; grep -n '^#\+ <the heading>' <the cited doc>
+
+# no cardinal number entered a live doc ("three" → "four" is not the fix; name the members)
+git diff --cached -- '*.md' | grep -nE '^\+.*\b(two|three|four|five|six|seven) [a-z]+'
+
+# no changelog disguise entered a live doc
+git diff --cached -U0 -- 'docs/**/*.md' | grep -E '^\+[^+]' \
+  | grep -nE 'no longer|previously|used to|formerly|before this|was replaced|is now'
+
+# no PR number, date-as-narrative, or confidence boilerplate entered an architecture doc
+git diff --cached -U0 -- 'docs/*.md' | grep -E '^\+[^+]' | grep -nE '#[0-9]{3,}\b|\b(since|as of|on) 20[0-9]{2}-'
+
+# a status page holds only open items: every dated item carries an owed read
+for p in <status pages>; do echo "$p items=$(grep -cE '^- \*\*20' $p) owed=$(grep -c 'Closing read owed' $p)"; done
+```
+
+A hit on a status page or in an evidence tier is fine; a hit in an architecture doc is a sentence to rewrite in the present tense with the evidence cited by record. An `items` count above `owed` is an item that landed and did not leave.
+
+### The standards file itself
+
+Rules accrete one incident at a time. A new rule enters as a line in the check block or a worked example first, and as prose only when neither can carry it; a rule that already exists and was still broken gets a check, not a second statement. A project's standards file stays around 10 KB — past that it is read once and skimmed forever.
 
 ### Maintenance cadence
 
