@@ -219,7 +219,10 @@ one invariant in the ledger header, then ask of every cost which invariant,
 kept, would remove it — and check the answer with the writer/reader pair
 (78 % of the reader's doc reads were the writer's; 33 % of its code reads),
 not with the symptom's location. A fix on the wrong layer is faithfully
-followed and changes nothing (three gate rewrites, cost unchanged).
+followed and changes nothing (three gate rewrites, cost unchanged). A
+cost with two owners — read volume is the doc's size and the route's
+selection — is split by the invariant each holds, never assigned whole to
+the nearer one.
 Pipeline pass 2026-09-04, `abd24d95`.
 
 ## Feedback compounds only if it is captured and re-read
