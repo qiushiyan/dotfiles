@@ -206,6 +206,15 @@ function M.get_palette()
       -- intentional band (the Forest Night analogue of night_owl's bar_bg).
       bar_bg = "#222a30",
     }
+  elseif scheme:match("^waffle%-cat") then
+    return {
+      base = "#292025", mantle = "#1f181c", crust = "#151013",
+      surface0 = "#362d30", surface1 = "#6b5650", surface2 = "#a58c82",
+      text = "#fff4d8", subtext0 = "#a58c82", subtext1 = "#fff4d8", overlay0 = "#6b5650", overlay1 = "#a58c82",
+      blue = "#c87d2a", green = "#9fad68", red = "#cf7358", yellow = "#e4c56d",
+      mauve = "#c98c97", teal = "#9eb8b2", pink = "#ddb0b8", sky = "#c2d5d0",
+      bar_bg = "#362d30", -- upstream coffee surface, elevated above the syrup editor
+    }
   elseif scheme:match("^flexoki") then
     local p = flexoki_palette()
     -- flexoki-cyan-50: subtle mint-cream tint, the only off-paper accent in

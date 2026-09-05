@@ -1,0 +1,25 @@
+# Waffle Cat — OldJobobo/omarchy-waffle-cat-theme, colors.toml at 8ffff576d47c.
+# Slot 8 is upstream oat #a58c82: 5.03:1 on the syrup background.
+background = #292025
+foreground = #fff4d8
+cursor-color = #fffaf0
+cursor-text = #292025
+selection-background = #6b5650
+selection-foreground = #fff4d8
+
+palette = 0=#292025
+palette = 1=#cf7358
+palette = 2=#9fad68
+palette = 3=#c8964b
+palette = 4=#c87d2a
+palette = 5=#c98c97
+palette = 6=#9eb8b2
+palette = 7=#fff4d8
+palette = 8=#a58c82
+palette = 9=#e58a70
+palette = 10=#b9c97f
+palette = 11=#e4c56d
+palette = 12=#df9850
+palette = 13=#ddb0b8
+palette = 14=#c2d5d0
+palette = 15=#fffaf0

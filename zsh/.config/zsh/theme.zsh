@@ -147,6 +147,15 @@ case "$TERMINAL_THEME" in
         export DELTA_FEATURES='+dark-mode'
         export DFT_BACKGROUND='dark'
         ;;
+    waffle_cat)
+        # Syrup bg; ANSI blue is honey, so bold directories stay warm.
+        export LSCOLORS='Exfxcxdxbxegedabagacad'
+        export LS_COLORS='di=1;34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+        # Upstream oat #a58c82 is 5.03:1 on #292025; no bright-black substitution.
+        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+        export DELTA_FEATURES='+dark-mode'
+        export DFT_BACKGROUND='dark'
+        ;;
     *)
         print -ru2 "theme.zsh: unknown TERMINAL_THEME '$TERMINAL_THEME'"
         ;;

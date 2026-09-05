@@ -92,6 +92,16 @@
         "green": "#8FBC8F",
         "peach": "#E67E22",
         "red": "#E91E63"
+      },
+      "waffle_cat": {
+        "os": "#a58c82",
+        "closer": "p:os",
+        "pink": "#c98c97",
+        "lavender": "#fff4d8",
+        "blue": "#c87d2a",
+        "green": "#e4c56d",
+        "peach": "#df9850",
+        "red": "#cf7358"
       }
     }
   },

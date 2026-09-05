@@ -38,6 +38,7 @@ local map = {
   night_owl        = { colorscheme = "night-owl",                background = "dark"  },
   orng_light       = { colorscheme = "orng-light",               background = "light" },
   forest_night     = { colorscheme = "forest-night",             background = "dark"  },
+  waffle_cat = { colorscheme = "waffle-cat", background = "dark" },
 }
 
 M.name = resolve()
