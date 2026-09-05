@@ -41,8 +41,47 @@ end
 
 return {
   {
+    "FylerOrg/fyler.nvim",
+    lazy = false,
+    dependencies = { "nvim-mini/mini.icons" },
+    opts = function()
+      local patterns = {}
+      for _, names in ipairs({ mf_ignore_dirs, mf_ignore_files }) do
+        for _, name in ipairs(vim.fn.sort(vim.tbl_keys(names))) do
+          table.insert(patterns, "/" .. vim.pesc(name) .. "$")
+        end
+      end
+      return {
+        kind = "split_left_most",
+        follow_root_dir = false,
+        use_as_default_explorer = true,
+        integrations = { icon = "mini_icons" },
+        extensions = { trash = { enabled = true }, watcher = {} },
+        ui = {
+          hidden_items = { switches = {}, patterns = patterns },
+          indent_guides = true,
+        },
+      }
+    end,
+    keys = {
+      {
+        "<leader>e",
+        function() require("fyler").toggle({ root_path = LazyVim.root() }) end,
+        desc = "Explorer Fyler (root dir)",
+      },
+      {
+        "<leader>E",
+        function() require("fyler").toggle({ root_path = vim.uv.cwd() }) end,
+        desc = "Explorer Fyler (cwd)",
+      },
+      { "<leader>fe", "<leader>e", desc = "Explorer Fyler (root dir)", remap = true },
+      { "<leader>fE", "<leader>E", desc = "Explorer Fyler (cwd)", remap = true },
+    },
+  },
+  {
     "folke/snacks.nvim",
     opts = function(_, opts)
+      opts.explorer = { enabled = false }
       opts.picker = opts.picker or {}
       opts.picker.sources = opts.picker.sources or {}
       local explorer = opts.picker.sources.explorer or {}
@@ -60,7 +99,7 @@ return {
   },
   {
     "nvim-mini/mini.files",
-    enabled = false, -- Snacks Explorer trial; keep this configuration for switching back.
+    enabled = false, -- Fyler trial; keep this configuration for switching back.
     lazy = false,
     opts = {
       content = {
@@ -150,7 +189,7 @@ return {
     },
   },
   -- LazyVim auto-imports the editor.neo-tree extra as the default explorer on
-  -- installs with install_version < 8; Snacks is our trial explorer, so
+  -- installs with install_version < 8; Fyler is our trial explorer, so
   -- keep neo-tree disabled or lazy will install and load it.
   { "nvim-neo-tree/neo-tree.nvim", enabled = false },
 }

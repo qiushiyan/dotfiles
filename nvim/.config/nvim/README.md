@@ -96,23 +96,23 @@ Toggle current terminal `ctrl + /`
 
 ### File Explorer
 
-Snacks Explorer is enabled for a trial; mini.files and Neo-tree are disabled.
+Fyler is enabled for a trial; mini.files, Snacks Explorer, and Neo-tree are disabled.
+Snacks' other features remain enabled.
 
-- `<leader>e`: explorer at project root; `<leader>E`: explorer at cwd.
-- `a`: create file or directory (end directory names with `/`).
-- `r`: rename; `d`: delete; `<Tab>`: select files for an operation.
-- `m` / `c`: move / copy selected files to the current directory.
-- `H` / `I`: toggle hidden / ignored files; `P`: toggle preview.
+- `<leader>e`: toggle explorer at project root; `<leader>E`: toggle at cwd.
+- Edit names and lines with normal buffer commands; `:w` reviews/applies changes.
+- `<CR>`: open file or expand directory; `<BS>`: collapse parent directory.
+- `-`: go to parent directory; `.`: enter directory under cursor; `q`: close.
+- `g.`: toggle the exclusion list; dotfiles are visible by default.
 
-Dotfiles and Git-ignored entries are visible by default, with the mini.files
-exclusion names reused (such as `.git`, `.next`, `node_modules`, and `.DS_Store`).
-These explicit exclusions stay hidden when toggling `H` or `I` and apply only to
-the explorer, not other file pickers.
+The mini.files exclusion names are reused (such as `.git`, `.next`,
+`node_modules`, and `.DS_Store`). Deletions use Fyler's trash extension.
 
-To restore mini.files, replace `editor.snacks_explorer` with `editor.mini-files`
-in `lazyvim.json`, remove `enabled = false` from the mini.files spec in
-`lua/plugins/file-explorer.lua`, and restart Neovim. Its previous mappings and
-settings are preserved (`=` synchronizes edits; `,` resets navigation).
+To restore mini.files, disable the Fyler spec, enable the mini.files spec in
+`lua/plugins/file-explorer.lua`, and add `editor.mini-files` to the extras in
+`lazyvim.json`. To restore Snacks Explorer, disable Fyler, enable Snacks'
+`opts.explorer`, and add `editor.snacks_explorer` to the extras. Restart Neovim
+for either switch. Both previous configurations are preserved.
 
 - delete current file with command `:!rm %`
 
