@@ -124,6 +124,8 @@ colour does the job instead → `docs/ghostty-fonts.md`.
 - Colorschemes come from two places: **plugin themes** (catppuccin, gruvbox) and
   **hand-rolled files** in `colors/` (ported from a Zed or VS Code theme's UI +
   syntax tokens).
+- Vellum defines Snacks picker hidden/ignored paths, Git markers, and result
+  counts explicitly; their default `NonText` link is too pale for readable text.
 - Gruber Darker is a local port of the installed Zed extension (0.0.8), including
   the Zed settings' yellow Markdown titles and italic syntax. It replaces the
   earlier Neovim-only plugin. `config/options.lua` applies the selected

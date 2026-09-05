@@ -290,6 +290,13 @@ hi("TelescopePromptTitle", { fg = c.on_accent, bg = c.ochre })
 hi("TelescopeResultsTitle", { fg = c.on_accent, bg = c.blue })
 hi("TelescopePreviewTitle", { fg = c.on_accent, bg = c.teal })
 
+-- Snacks: names and status text need more contrast than NonText's border gray.
+hi("SnacksPickerPathHidden", { fg = c.fg_dim })
+hi("SnacksPickerPathIgnored", { fg = c.fg_muted })
+hi("SnacksPickerGitStatusIgnored", { fg = c.fg_muted })
+hi("SnacksPickerGitStatusUntracked", { fg = c.git_add })
+hi("SnacksPickerTotals", { fg = c.fg_muted })
+
 -- Lazy
 hi("LazyButton", { fg = c.fg, bg = c.bg_highlight })
 hi("LazyButtonActive", { fg = c.on_accent, bg = c.ochre })
