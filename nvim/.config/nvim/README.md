@@ -96,23 +96,24 @@ Toggle current terminal `ctrl + /`
 
 ### File Explorer
 
-Fyler is enabled for a trial; mini.files, Snacks Explorer, and Neo-tree are disabled.
-Snacks' other features remain enabled.
+mini.files is the active explorer. Fyler and Snacks Explorer are disabled, with
+both trial configurations retained in `lua/plugins/file-explorer.lua`.
 
-- `<leader>e`: toggle explorer at project root; `<leader>E`: toggle at cwd.
-- Edit names and lines with normal buffer commands; `:w` reviews/applies changes.
-- `<CR>`: open file or expand directory; `<BS>`: collapse parent directory.
-- `-`: go to parent directory; `.`: enter directory under cursor; `q`: close.
-- `g.`: toggle the exclusion list; dotfiles are visible by default.
+- `<leader>e`: open at the current file's directory; `<leader>E`: toggle at cwd.
+- Edit names and lines with normal buffer commands; `=` synchronizes changes.
+- `<CR>`: open and close explorer; `l`: open while keeping explorer available.
+- `h`: go out; `q`: close; `,`: reset navigation.
+- Dotfiles are visible except the configured exclusion names (such as `.git`,
+  `.next`, `node_modules`, and `.DS_Store`).
 
-The mini.files exclusion names are reused (such as `.git`, `.next`,
-`node_modules`, and `.DS_Store`). Deletions use Fyler's trash extension.
+To revisit Fyler, disable mini.files and enable Fyler in `file-explorer.lua`,
+then remove `editor.mini-files` from the extras in `lazyvim.json`. Its 35% width
+and filtering configuration are preserved. To revisit Snacks Explorer, disable
+mini.files, enable Snacks' `opts.explorer`, and replace `editor.mini-files` with
+`editor.snacks_explorer` in the extras. Restart Neovim after switching.
 
-To restore mini.files, disable the Fyler spec, enable the mini.files spec in
-`lua/plugins/file-explorer.lua`, and add `editor.mini-files` to the extras in
-`lazyvim.json`. To restore Snacks Explorer, disable Fyler, enable Snacks'
-`opts.explorer`, and add `editor.snacks_explorer` to the extras. Restart Neovim
-for either switch. Both previous configurations are preserved.
+Snacks' other modules remain in use; only its explorer is disabled. Fyler can
+be cleaned from the installed plugins without deleting its saved configuration.
 
 - delete current file with command `:!rm %`
 

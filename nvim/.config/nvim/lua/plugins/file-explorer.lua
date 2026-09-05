@@ -42,6 +42,7 @@ end
 return {
   {
     "FylerOrg/fyler.nvim",
+    enabled = false, -- Trial configuration retained for later.
     lazy = false,
     dependencies = { "nvim-mini/mini.icons" },
     opts = function()
@@ -100,7 +101,7 @@ return {
   },
   {
     "nvim-mini/mini.files",
-    enabled = false, -- Fyler trial; keep this configuration for switching back.
+    enabled = true,
     lazy = false,
     opts = {
       content = {
@@ -190,7 +191,7 @@ return {
     },
   },
   -- LazyVim auto-imports the editor.neo-tree extra as the default explorer on
-  -- installs with install_version < 8; Fyler is our trial explorer, so
+  -- installs with install_version < 8; mini.files is our explorer, so
   -- keep neo-tree disabled or lazy will install and load it.
   { "nvim-neo-tree/neo-tree.nvim", enabled = false },
 }
