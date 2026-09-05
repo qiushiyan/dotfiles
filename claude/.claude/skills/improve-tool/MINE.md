@@ -1,8 +1,7 @@
 # Usage-analysis script
 
-The facet scripts for one tool's usage history. Every past pass rebuilt
-its script by hand and added a facet the previous one lacked: read these for
-the query shape, then write the one this engine needs.
+The facet scripts for one tool's usage history: read these for the query
+shape, then write the one this engine needs — patterns, not coverage.
 
 Pick the variant for the engine's output kind — **consumed output** (a CLI:
 the script below), **findings** (lint, audit, test suite, review: the
@@ -241,6 +240,32 @@ paid:
   falsified (the gate's own words, `falsif%`), joined to the brief's anchor
   sha: `git log <anchor>..<pickup> -- <cited paths>` empty means the claim
   was wrong when written.
+
+The pair measures, in the script's own style (one round, sliced with `jq`):
+
+```js
+const briefDir = '.handoffs/<project>/';          // the writer's output, as a path fragment
+const pointer  = '/<onboarding-skill>';           // what the reader's first message carries
+const stage = f => /README\.md$|agent\.md$/.test(f) ? 'core' : /routes\//.test(f) ? 'route'
+  : f.includes(briefDir) ? 'brief' : /pickup\//.test(f) ? 'gate' : /docs\//.test(f) ? 'doc' : 'code';
+const pathsOf = tc => { const j = JSON.parse(tc.input_json);            // Read → file_path; Bash → the paths in cat/sed -n/head/tail
+  return tc.name === 'Read' ? [j.file_path] : (j.command || '').match(/\S+\.(md|ts|go|sh)\b/g) || []; };
+// G. pairs — a reader window per pointer message; the writer is whoever wrote that brief's file
+const readers = sql(`SELECT m.session_id sid, m.uuid, m.timestamp ts, m.text FROM messages m
+  WHERE m.role='user' AND m.text LIKE '%${briefDir}%' AND m.text LIKE '%${pointer}%' AND m.timestamp > '${since}'`);
+out.pairs = readers.map(r => {
+  const slug = (r.text.match(new RegExp(briefDir + '([\\w/-]+)\\.md')) || [])[1];
+  const writer = sql(`SELECT session_id sid FROM tool_calls WHERE name IN ('Write','Edit') AND input_json LIKE '%${slug}.md%' ORDER BY id LIMIT 1`)[0];
+  const next = sql(`SELECT timestamp ts FROM messages WHERE session_id='${r.sid}' AND role='user' AND timestamp > '${r.ts}' ORDER BY timestamp LIMIT 1`)[0];
+  const reads = sid => new Set(sql(`SELECT tc.name, tc.input_json FROM tool_calls tc JOIN messages m ON m.uuid = tc.message_uuid
+    WHERE tc.session_id='${sid}' AND tc.name IN ('Read','Bash')`).flatMap(pathsOf));
+  const rd = reads(r.sid), wr = writer ? reads(writer.sid) : new Set();
+  const overlap = {}; for (const f of rd) if (wr.has(f)) overlap[stage(f)] = (overlap[stage(f)] || 0) + 1;
+  const falsified = sql(`SELECT COUNT(*) n FROM messages WHERE session_id='${r.sid}' AND role='assistant'
+    AND timestamp <= '${next ? next.ts : r.ts}' AND text LIKE '%falsif%'`)[0].n;
+  return { slug, reader: r.sid, writer: writer && writer.sid, overlap, falsified };   // drift: git log <anchor>..<pickup> -- <cited paths>, by hand
+});
+```
 
 Report the pair table as `pairs · reader tokens · overlap by stage ·
 falsified (drift / zero-drift)`; the zero-drift column is the writer's

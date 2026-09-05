@@ -19,23 +19,24 @@ CLI's instructions are its `-h` and its errors. Every fix lands on one layer
 or the other.
 
 Reading: [`../obelisk/SKILL.md`](../obelisk/SKILL.md) — the session index —
-before the first query; the engine's evidence log (`EVIDENCE.md` beside the
-instructions, or the repo's `LESSONS.md`) for the previous pass;
+before the first query; the engine repo's evidence log (`EVIDENCE.md` or
+`LESSONS.md`; a tool with no engine keeps it beside the instructions) for
+the previous pass;
 [`MINE.md`](MINE.md) for the usage-analysis script; [`COLD-READER.md`](COLD-READER.md)
 for the verification prompt; `~/.config/lessons/agent-tooling/usage-lessons.md`
-for what past passes established about writing the instruction layer, with
-the receipts behind every rule below.
+for what past passes established about writing the instruction layer.
 
 ## Process
 
 1. **Map the surface.** Read the instructions and every satellite they
    point at. Name the engine and where it lives — often another repo — and
    check it is installed at its HEAD: the binary the instructions name is
-   newer than the engine's last commit (`ls -l` against
-   `git log -1 --format=%ci`; an engine with no version flag has its mtime
-   as the version). Instructions written against an uninstalled engine are
-   a finding on their own. Write the **search signatures** into the ledger
-   header — copied from the previous pass's evidence entry when one exists:
+   newer than the last commit that touched the engine's code (`ls -l`
+   against `git log -1 --format=%ci -- <code dirs>`; an evidence-log commit
+   rebuilds nothing, and an engine with no version flag has its mtime as
+   the version). Instructions written against an uninstalled engine are
+   a finding on their own. Write the **search signatures** into the friction
+   ledger's header (`<scratchpad>/<tool>-frictions.md`, step 3) — copied from the previous pass's evidence entry when one exists:
 
    | to find | signature |
    |---|---|
@@ -58,14 +59,16 @@ the receipts behind every rule below.
 2. **Mine.** First the previous pass: the engine's evidence log names the
    frictions it fixed and their counts — re-measure those, since a fix that
    did not hold tops the new ledger. When that log's last entry already
-   carries the seed, this pass is a re-measure: `since` is the entry's date,
-   the ledger opens with the post-fix count, and a window with no sessions
-   yet is a measured empty, reported as such. Then one batched obelisk
+   carries the seed and its verdict landed, this pass is a re-measure:
+   `since` is the entry's date, the ledger opens with the post-fix count,
+   and a window with no sessions yet is a measured empty, reported as such.
+   When the verdict was handed off and the engine's code has not moved
+   since (`git log -1 -- <code dirs>` older than the entry), the pass is
+   that handoff — `brief start <slug>` it — and the re-measure follows its
+   release. Then one batched obelisk
    script per round from [`MINE.md`](MINE.md), in the variant for the
    engine's output kind — consumed output, findings, a document, or no
-   engine (a pure-instruction skill: the files its sessions touched are the
-   failure facet, and a rarely-invoked tool's population is the sessions
-   that did its job without it). The facets:
+   engine (MINE.md's last sections). The facets:
 
    - **usage shape** — calls and distinct sessions per subcommand and flag.
      This ranks everything after it, and it measures the **doctrine gap**:
@@ -105,18 +108,17 @@ the receipts behind every rule below.
    **engine** or **instructions** — and its shape — `wording`, or `shape`
    when it creates or deletes a surface with consumers (`grep -rn` for its
    name across the repo and the snippets that point at it) or changes an
-   engine contract. The layer follows the usage lessons: a rule agents
+   engine contract. The layer follows the usage lessons (§ The bar): a rule agents
    still break moves into the engine or a worked example, and the top
    failure class is read against the engine's code before it is called
-   discipline. A pipeline's cost goes to the stage whose invariant, kept, would remove
-   it (step 1's header), never to the symptom's nearest neighbour — a fix
-   there is faithfully followed and changes nothing (usage lessons § A cost
-   belongs to the layer). Done when each of the top three frictions answers "how many,
+   discipline. A pipeline's cost goes to the stage whose invariant, kept,
+   would remove it (step 1's header); the symptom's nearest neighbour
+   rarely owns it (usage lessons § A cost belongs to the layer). Done when each of the top three frictions answers "how many,
    and where" with a number and ids, and every reading says which of the
    two it is — three frictions with counts, per-session detail left in the
    index.
 
-4. **Interview the user on the ledger.** Behaviour is not intent. The
+4. **Interview the user on the ledger.** The
    request and the mined corrections are the first interview: read both
    for verdicts before asking — "packing too many route details" already
    judges a friction, and a candidate fix a past correction already rejects
@@ -136,8 +138,8 @@ the receipts behind every rule below.
 
    **Not live** — each open `wording` verdict is written into the ledger as
    `assumed: <verdict>, reversible`, the build proceeds, and the recap
-   marks those rows so one reply flips them. A `shape` fix is never
-   assumed: nothing of it is built. Its design — what is created, deleted,
+   marks those rows so one reply flips them. A `shape` fix waits for
+   a verdict: its design — what is created, deleted,
    or changed, and why — goes to `/consult` in approach mode with the
    ledger as the position and the search signatures plus
    [`MINE.md`](MINE.md) in the brief, so the consultant re-mines instead of
@@ -149,9 +151,10 @@ the receipts behind every rule below.
 5. **Build engine first, instructions second.** Instructions describe
    engine behaviour, so they are written only against an installed engine:
    change → tests → install (a version bump where the engine has one) →
-   verify `-h` → then the instructions. When the engine repo is the user's
-   side, write its handoff with `/handoff` and stop at the boundary; the
-   instruction round starts when they report it shipped. Done when every engine item is
+   verify `-h` → then the instructions (usage lessons § The bar). When the
+   engine is a repo this session may not edit — another worktree, a build
+   it cannot run — write its handoff with `/handoff` and stop at the
+   boundary; the instruction round starts when it ships. Done when every engine item is
    landed or handed off.
 
 6. **Change the instructions** under
@@ -163,7 +166,7 @@ the receipts behind every rule below.
    with its output shape, prose only where prose is due. A full rewrite is
    for a first pass, or instructions that predate their engine; every later
    pass makes the **smallest edit that captures each signal**, and the
-   commit names the signal, so the next reader can judge the change against
+   commit names the signal (usage lessons § The bar), so the next reader can judge the change against
    its evidence. Signal edits accrete, so the step ends with the
    **holistic pass**: every touched file read once more as one whole
    against both rulebooks — concise but informative, the hot path visible,

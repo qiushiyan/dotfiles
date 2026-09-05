@@ -1,14 +1,13 @@
 ---
 name: update-docs
 description: Update a project's documentation after a change lands, so the docs still give a senior engineer the mental model of the system. Use when the user wants docs updated to reflect recent or shipped changes, or brought back in line with the code. Defers to a repo's own update-docs skill or documentation-standards.md when present; otherwise the global standards in ~/dotfiles/docs/documentation-standards.md.
-allowed-tools: Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git merge-base:*), Bash(git symbolic-ref:*), Bash(git show-ref:*), Bash(git branch:*), Read, Write, Edit, Glob, Grep, Agent
 ---
 
 # Update documentation from the diff
 
 A change has landed. Bring the project's docs back in line with it so that a senior engineer — human or agent — can still pick up the system's **mental model** without reading every file: architecture, intent, relationships, load-bearing constraints. Docs describe how to think about the system; the code carries the rest.
 
-**The project's own rules win.** If the repo has an `update-docs` skill or a `documentation-standards.md` (anywhere under `docs/`), read it and follow it. Where the project is silent, the standards are `~/dotfiles/docs/documentation-standards.md` ([Documentation standards](#documentation-standards) below).
+**Read the standards now.** The repo's own `update-docs` skill or `documentation-standards.md` (anywhere under `docs/`) where one exists; otherwise `~/dotfiles/docs/documentation-standards.md`. Steps 3, 5 and 6 cite its sections by heading.
 
 ## Workflow
 
@@ -27,7 +26,7 @@ A change has landed. Bring the project's docs back in line with it so that a sen
    git status --short
    ```
 
-   On the base branch itself this is just the working-tree diff, which is still right. Second pass in one session: diff from the end of the previous pass, not the whole range.
+   On the base branch with a clean tree — the user says the branch merged and `git log $BASE..HEAD` is empty — diff the merge itself: `git log --merges -1`, then `git diff <merge>^1 <merge>`, or `git diff $BASE_BRANCH...<branch>` while the ref exists. When git disagrees with the user's account (the branch is not merged, the diff is empty), say so before planning. A second pass in one session records the sha the first pass diffed from and diffs from it.
 
    Read the diff for what changes how a developer thinks about the system: new modules, endpoints, jobs, schemas, or config; changed interfaces or control flow between components; removed or renamed concepts; changed behavior or policy.
 
@@ -39,7 +38,7 @@ A change has landed. Bring the project's docs back in line with it so that a sen
 
    - create a doc file (a page, a route, a status surface);
    - delete, archive, move, or rename a doc file — pruning a shipped spec included;
-   - touch `CLAUDE.md` / `AGENTS.md` or an onboarding skill's always-read list;
+   - add or remove a rule in `CLAUDE.md` / `AGENTS.md`, or change an onboarding skill's always-read list — rewording an existing line there to match the code is an in-place edit and starts now;
    - reorganize the tree (split a hub, merge folders, restructure an index);
    - settle a doc/code disagreement by changing the described design rather than the wording.
 
@@ -65,20 +64,13 @@ A change has landed. Bring the project's docs back in line with it so that a sen
 
    With nothing gated, the plan ends on "starting now".
 
-5. **Write the updates** to the standards, the gated items once confirmed. Two moves carry this step: **consolidation** — every doc you touch ends tighter, not longer — and **distillation** — a shipped spec's surviving decisions move into the durable doc and the spec goes. When the change alters the system's shape, update the structure map and the always-loaded file as well; both are curated, and an entry there is earned (the standards' § What earns documentation).
+5. **Write the updates** to the standards, the gated items once confirmed: every touched doc ends tighter (§ Writing standards), a shipped proposal's decisions move into the durable doc and the proposal goes (§ Documentation shape). When the change alters the system's shape, the index and the always-loaded file change too; an entry there is earned (§ What earns documentation).
 
 6. **Verify** every doc you touched:
 
    - re-read it end-to-end as a cold reader: does it hand over the mental model without a tour of the files?
-   - grep the docs tree for the basename of anything you moved, renamed, or deleted, and for each concept the change replaced — every hit resolves, or passes the standards' future-need test;
-   - last, the standards' check block (§ Before you commit a doc change) — its greps see what a re-read does not.
+   - the standards' check block (§ Before you commit a doc change) — its greps see what a re-read does not. Skip the status-page loop where the tree has no status page; where the design doc is `CLAUDE.md` and there is no `docs/`, the design-doc checks scan `CLAUDE.md`.
 
-7. **Check the surfaces above the docs.** An onboarding or bootstrap skill, if the project has one: a new top-level doc its routing misses, a renamed doc on its always-read list, a drifted path — routine edits inside an existing doc leave it alone. `CLAUDE.md` / `AGENTS.md` is paid on every request, so it holds load-bearing facts plus a map of where to read the rest; it changes only when a cross-cutting rule appeared or one's framing rotted, which most branches don't do.
+7. **Check the surfaces above the docs.** An onboarding or bootstrap skill, if the project has one: a new top-level doc its routing misses, a renamed doc on its always-read list, a drifted path — routine edits inside an existing doc leave it alone. `CLAUDE.md` / `AGENTS.md` (the standards' § The hot path) changes only when a cross-cutting rule appeared or one's framing rotted, which most branches don't do.
 
 Close with what you updated, deleted, and left alone, with the reason for each.
-
----
-
-## Documentation standards
-
-The rules are one file, `~/dotfiles/docs/documentation-standards.md`: what each kind of doc is for, the status-page item and its owed read, the hot-path budget, what earns documentation, the writing rules, the significance tiers step 3 uses, and the check block step 6 ends on. Read it before step 3. A project's own `documentation-standards.md` overrides it.
