@@ -52,7 +52,10 @@ ghostty_block() {
     night_owl)        printf 'theme = Night Owl\nbold-color = #ffeb95\n' ;;
     orng_light)       printf 'theme = orng-light\nbold-color = #c94d24\n' ;;
     forest_night)     printf 'theme = forest-night\nbold-color = #FFB74D\n' ;;
-    waffle_cat)      printf 'theme = waffle-cat\nbold-color = #e4c56d\n' ;;
+    waffle_cat)
+      # Lakeside Camp: subdued over syrup brown, cropped to fill each terminal.
+      printf 'theme = waffle-cat\nbold-color = #e4c56d\nbackground-image = %s/.config/ghostty/backgrounds/waffle-cat-lakeside-camp.jpg\nbackground-image-opacity = 0.25\nbackground-image-position = center\nbackground-image-fit = cover\nbackground-image-repeat = false\n' "$HOME"
+      ;;
   esac
 }
 
