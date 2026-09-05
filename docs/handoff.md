@@ -13,10 +13,9 @@ The loop is split so that staleness cannot misroute a session:
 
 - **`~/dev/brief`** (a separate repo, not stowed) — the `brief` CLI: the
   project-folder scheme, the fenced head grammar, the git/gh join, worktree
-  placement, and the pickup pointer. Anything whose staleness could send a
-  session to the wrong branch lives here, behind one parser. **Read its
-  `CLAUDE.md` before changing any surface this repo consumes** — it carries
-  the mental model and lists every consumer, these packages among them.
+  placement, and the pickup pointer. **Read its `CLAUDE.md` before changing
+  any surface this repo consumes** — it carries the mental model and consumer
+  discovery rule.
 - **`claude/.claude/skills/{handoff,distill-handoffs}/`** (here) — the judgment
   half: what a brief says, when one is earned, what a sweep verdict is. Prose
   only; the mechanism is the CLI (`brief closeout` is the sweep's input,
@@ -32,23 +31,26 @@ The loop is split so that staleness cannot misroute a session:
 The shared worktree boundary is `tmux/.config/tmux/scripts/worktree-core.sh`.
 It owns worktree creation for `gwt`, the tmux popup, and `brief start`.
 
-## It *is* the next first prompt
+## The next session's first prompt
 
-Not a document about the work. `brief start <slug>` places the worktree and
-hands the session its opening pointer — the invocation and goal, the brief's
-path, a literal `~/.local/bin/brief drift <slug>` command, and the pickup gate
-as the final line — so the receiving agent reads the file itself.
-Everything follows from that: paths inside a brief stay repo-relative so they
-survive the worktree switch, and the text calls itself "this brief" because it
-outlives its filename.
+`brief start <slug>` places the worktree and gives the receiving agent a
+pointer: invocation and goal, brief path, literal drift command, and pickup
+gate last. The agent reads the brief itself. Its paths are repo-relative so
+they survive the worktree switch; its prose calls itself "this brief" because
+it outlives its filename.
 
-`drift`, `show` and `check` accept that brief path from a checkout of its
-project. Drift reports PRs touching the At-pickup citations, with `--show`
-for the touching commits' stats; `paths:` is the fallback when no citations
-can be resolved. Missing references and live queries remain checks by hand.
-An unchanged citation does not prove a claim true. `check` warns when a claim
-lacks its observed result or an explicit unverified explanation; old claims
-remain readable and the warning does not block launch.
+`drift`, `show` and `check` accept the pointer's brief path from a checkout of
+its project. Drift attributes PRs to At-pickup citations; `--show` includes
+the touching commits' full stats. File citations count any file change.
+Directories and globs scope symbol searches: attribution requires an added
+or removed line containing a cited symbol. Without a symbol, those scopes
+remain unscanned. Bare symbols identify occurrence files and count file changes.
+
+`paths:` supplies fallback history when no claim citations can be scanned.
+Missing references and live queries require their own checks; a no-match
+result applies only to the reported scope. `check` warns when
+a live claim lacks an observed result or explicit unverified explanation;
+that warning leaves pickup available.
 
 ## The slug is the *next* session's branch
 
