@@ -60,7 +60,8 @@ state, the exploration that produced it is disposable.
 
 Global skills live in `claude/.claude/skills/{update-docs,handoff}/` (this repo);
 project skills in each repo's `.claude/skills/`. Both globals defer to a
-project's own skill or `documentation-standards.md` when present.
+project's own skill or `documentation-standards.md` when present, and read
+`docs/documentation-standards.md` here otherwise.
 
 ## The handoff (`/handoff`, `~/dev/.handoffs`)
 

@@ -1,113 +1,90 @@
 # Documentation standards
 
-Write for a smart model that will inspect the repository. Documentation carries
-the **mental model**: ownership, boundaries, invariants, decisions, and traps the
-environment cannot reveal. Code, config, directory listings, and `--help` own
-their inventories.
+Write for a smart model that will inspect the repository. Documentation carries the **mental model** — ownership, boundaries, invariants, decisions, and the traps the environment cannot reveal; code, config, directory listings and `--help` own their inventories. These standards govern this repository's docs and are the fallback for any project without a `documentation-standards.md` of its own: `/update-docs` and `/distill-docs` read them before editing. A project's own standards win where they exist.
 
-## Shape
+## Documentation shape
 
-- **Spine first.** A first-read document keeps the vocabulary, workflow, and
-  load-bearing constraints. Mechanism used by one branch moves to a satellite.
-- **One home per meaning.** A summary may point to its owner; it does not retell
-  the mechanism. Change the owner once, then follow its inbound pointers.
-- **Patterns over tours.** Prefer compact relationships an agent can execute:
+Each kind of content has one job, and a doc is one kind:
 
-  ```text
-  symptom → owner → invariant → check
-  stale Codex pane path → codex/.codex/config.toml [tui] → narrow panes shed stable fields first
-                         → open Codex in a half- and quarter-width pane
+- **Design docs** say what is true today — present tense, edited in place, never appended to. When a proposal ships, its surviving decisions fold in here and the proposal is deleted, so no two docs describe one subsystem. Docs lead, code follows: a doc/code disagreement is a doc bug or a design regression, resolved explicitly, never by silently matching either side.
+- **Runbooks** are ordered actions with a checkable result; exact commands live here, not in a design summary.
+- **Proposals** (`specs/`, `plans/`, roadmaps) are explicitly unbuilt work and open decisions. They never serve as a live design dependency.
+- **Status pages hold only the open ledger** — one per active initiative, and status lives only there: the facts that move with a rollout, the dated items whose follow-up read is still owed, and the owed list. An item enters only while it carries an owed read and leaves when the read lands; a landed change that owes nothing never enters, since its trace is the spec or issue record it shipped with. A page therefore only shrinks between landings; one with a paragraph per event, or a history section, is the smell — and it is what gets read whole at every pickup.
+
+  ```markdown
+  - **<date> — <what is now true> (#PR, merged <date> as <sha>).** <one sentence>.
+    As-built: <doc § heading>. Records: <issue or spec>. **Closing read owed** —
+    ready when: <observable condition — a serving sha, an elapsed window, the first
+    qualifying event>. Read: <predicate>.
   ```
 
-- **Present state.** Git holds the journey. Design docs say what is true now;
-  proposals say what is unbuilt. When a proposal ships, distill its surviving
-  decisions into the design owner and delete it.
-- **Current names.** Use repo-root-relative paths and real searchable nouns.
-  Point at source with a line-sized description; leave signatures and complete
-  option lists in source.
+  The condition lets a later session take the read without the writer's memory; the landed block (predicate · window · result · verdict · follow-on) replaces the spec's `## Owed` line or closes the issue record, and the item leaves.
+- **Evidence tiers** (`specs/`, `issues/`, `records/`, `research/`) are reference behind settled decisions: dated filenames (`YYYY-MM-DD-kebab-name.md`), deleted only after distilling, edited after merge only for a spec's marks (§ As built; the `## Owed` line replaced; the status header when a later spec overturns it). The filename is the index entry, nothing keeps a roster, and an item earns prominence by citation from the live doc where its lesson applies.
+- **An index** is a curated route, never a directory dump; every live doc is reachable from it, since an unrouted doc is invisible to readers and to a diff-scoped update, and rots.
 
-## Hot path
+**A live initiative** — a tree for a system that is partly built — keeps its status, its proposal and its present apart. The README header is the one status home and carries a standing **What is live** block naming, per module doc, the sections that describe running code, with proposal fragments named as exceptions inline; module docs are present tense for what runs; what does not run yet is a slice's spec, folded into the module doc at merge. Epistemic state (chosen, disputed, superseded) lives in a decisions ledger and delivery state (unbuilt, serving, verified) in the header — a "settled" never means it runs. A number or a heading is an address once anything cites it: numbering never shifts, and a superseded entry keeps its number with a pointer to its successor.
 
-The hot path is paid before a session chooses its work:
+## The hot path
 
-1. root `CLAUDE.md` / `AGENTS.md`;
-2. a package-local instruction file while working in that package;
-3. the landing page a root pointer tells the reader to open first.
+The hot path is what a session pays before it chooses its work: the root `CLAUDE.md` / `AGENTS.md`, a package-local instruction file while working there, and the landing page a root pointer names first. Hot prose earns its bytes by preventing a wrong edit: conclusions and pointers there, proof and recovery detail on demand. The first-read budget is about **100 KB** (`wc -c`); measure a changed hot document by section, and a section that became mostly mechanism is a split candidate however small the file.
 
-Hot prose earns its bytes by preventing a wrong edit. Keep conclusions and
-pointers there; put proof, recovery detail, and edge cases on demand. Measure a
-changed hot document by section. A section that becomes mostly mechanism is a
-split candidate even when the whole file is small.
-
-The approximate first-read budget is **100 KB (`wc -c`)**. This repo has no
-mandatory onboarding set, so report the unconditional root cost separately from
-package-local and landing-page costs.
+**Spine first, one home per meaning.** A first-read document keeps the vocabulary, the workflow and the load-bearing constraints; mechanism used by one branch of work moves to a satellite the spine names. A summary may point at its owner; it does not retell the mechanism. **A section answers one question, and a fact is findable by the question that needs it**, so a session reads to the depth of its question and never the whole file to be safe; a section that grew to hold several families is split by family once they stop churning.
 
 ## What earns documentation
 
-- a cross-package flow or ownership boundary;
-- an invariant whose violation damages live state;
-- a non-obvious decision and the alternative it beats;
-- an operational sequence a filename or command cannot supply;
-- evidence needed to reproduce or retire a workaround.
-
-Use a compact rule before prose. Examples:
+A cross-package flow or ownership boundary; an invariant whose violation damages live state; a non-obvious decision and the alternative it beats; an operational sequence a filename or command cannot supply; the evidence needed to reproduce or retire a workaround. Prefer a compact relationship an agent can execute over a tour:
 
 ```text
-Codex status: config.toml owns fields; tmux owns only the border presentation.
-Test isolation: suite socket + throwaway HOME + guard case.
-Stow safety: real target directory → per-item links; absent directory → dangerous fold.
+symptom → owner → invariant → check
+stale Codex pane path → codex/.codex/config.toml [tui] → narrow panes shed stable fields first
+                       → open Codex in a half- and quarter-width pane
 ```
 
-Implementation inventories do not earn a cache. In particular:
+Inventories do not earn a cache: name a suite's responsibility rather than its ordinal, the few config surfaces that form a boundary rather than every option, and no live count unless the number is itself the invariant. A directory tree is a mental-model device — indented under the directory name, inline comments, naming what a reader must know exists — and a file add or rename does not earn a tree edit. A table is earned only when rows cross two or more axes a reader compares cell-wise. A **lessons entry** is a seam guard, not a story: the invariant (bold, one sentence), the hazard in the present tense, the guard that pins it (a test or symbol), the record that bought it — and one line pointing at the test when a named test already pins it.
 
-- name a test suite's responsibility, not its ordinal place in a list;
-- name the few config surfaces that form a boundary, not every option;
-- avoid live counts unless the number is itself the invariant;
-- keep exact commands in runbooks, not in architecture summaries.
+## Writing standards
 
-## Document roles
+- **Present state.** Git holds the journey; a live doc has no "added X", "as of Y". The diff leaks in with a present-tense disguise — "B, not A", "replaces A", "no longer" — every word true, the sentence shaped like the change. The **future-need test** for any trace of the before-state: will a reader who never saw A need it? Usually not; A earns a mention only while it still bites today, stated as a present hazard, or while a transition is mid-flight.
+- **Current names.** Repo-root-relative paths, real searchable nouns, no absolute paths; point at source with a line-sized description and leave signatures and option lists in source. Planned or unproven behaviour is marked (a status line, a spec, an open question), never stated as fact.
+- Every edit re-reads the whole doc, merges overlap instead of adding a second description, folds new information into the section it belongs in, and cuts what drifted into implementation detail — a doc that gains ten lines should usually shed five.
 
-- **Design:** present-tense model and invariants; edited in place.
-- **Runbook:** ordered actions with a checkable result; exact commands allowed.
-- **Proposal/roadmap:** explicitly unbuilt work and open decisions.
-- **Evidence/status:** dated observations whose date changes their meaning.
-- **Index:** a curated route, not a directory dump.
+## When docs need updating
 
-Dated `specs/`, `plans/`, `records/`, and `researches/` are evidence. They never
-serve as a live design dependency. Delete shipped plans after their durable
-decisions have an owner; retain a record only while a live retirement or
-reproduction check needs it.
+- **None** — bug fixes, internal refactors, tests, dependency bumps.
+- **Module-level** — a new function, flow or option inside an existing subsystem: the one doc that owns it.
+- **Architecture-level** — a new subsystem, boundary, integration or policy: the index, possibly a new doc, the status page's owed read, a proposal distilled — and the doc *structure* reconsidered, not a wording patch at the point of change.
 
-## Protected set
+## Before you commit a doc change
 
-These deliberate echoes survive distillation:
+Each rule above still gets broken, because the violation is invisible at the point of writing. Stage first (`git add -A`) so a new doc is diffed too, then:
 
-- the three red-line summaries in root `CLAUDE.md`; their details live in
-  `docs/stow-layout.md` and `docs/testing.md`;
-- short user-facing behavior summaries and the cheat sheet in
-  `tmux/.config/tmux/workflow.md`; design mechanics live in satellites;
-- dated measurements in `docs/ghostty-fonts.md`, the Mac mini status snapshot,
-  and temporary workaround status/retirement probes;
-- short suite commands in `docs/testing.md` and exact commands in migration or
-  recovery runbooks.
+```bash
+# every `<doc>.md § Heading` you touched, or that names a doc you renamed in, resolves
+grep -rn '§ <the heading>' --include='*.md' . ; grep -n '^#\+ <the heading>' <the cited doc>
 
-Protection covers the meaning, not accumulated narration. Evidence stays dated;
-the live conclusion before it stays concise.
+# no cardinal number entered a live doc ("three" → "four" is not the fix; name the members)
+git diff --cached -- '*.md' | grep -nE '^\+.*\b(two|three|four|five|six|seven) [a-z]+'
 
-## Verification
+# no changelog disguise entered a live doc
+git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' \
+  | grep -nE 'no longer|previously|used to|formerly|before this|was replaced|is now'
 
-For every documentation change:
+# no PR number, date-as-narrative or confidence boilerplate entered a design doc
+git diff --cached -U0 -- 'docs/*.md' | grep -E '^\+[^+]' | grep -nE '#[0-9]{3,}\b|\b(since|as of|on) 20[0-9]{2}-'
 
-1. Re-read each modified document as one narrative.
-2. Resolve every moved basename, heading, and repo-relative path.
-3. Grep live docs for deleted proposal paths and superseded terms.
-4. Compare status claims with their owning config or executable path.
-5. Measure hot sections and the whole tree separately.
-6. Confirm the protected set still states the same constraints.
+# no live doc routes to a proposal
+git grep -nE 'docs/[^ )]*/(specs|plans)/' -- 'docs/*.md' 'CLAUDE.md'
 
-For recurring rot, strengthen the check rather than restating the rule:
+# a status page holds only open items: every dated item carries an owed read
+for p in <status pages>; do echo "$p items=$(grep -cE '^- \*\*20' $p) owed=$(grep -c 'Closing read owed' $p)"; done
+```
 
-- live docs must not route to `docs/**/specs/` or `docs/**/plans/`;
-- an early feature-disable gate must be reflected in its workflow and design doc;
-- test documentation must not identify suites as “first”, “eighth”, and so on.
+A hit on a status page or in an evidence tier is fine; a hit in a design doc is a sentence to rewrite in the present tense with the evidence cited by record. An `items` count above `owed` is an item that landed and did not leave. Then re-read each modified doc as one narrative, resolve every moved basename and path, and grep live docs for each superseded term.
+
+## This repository
+
+No mandatory onboarding set, so the root `CLAUDE.md` cost is reported apart from package-local and landing-page costs. The **protected set** — echoes a distillation keeps in meaning, not in narration: the red-line summaries in the root `CLAUDE.md` (details: `docs/stow-layout.md`, `docs/testing.md`); the cheat sheet in `tmux/.config/tmux/workflow.md`; the dated measurements in `docs/ghostty-fonts.md`, the Mac mini status snapshot and workaround probes; the suite commands in `docs/testing.md` and the exact commands in migration and recovery runbooks. Rot with a check rather than a restated rule: a suite is never identified by ordinal; a feature-disable gate is reflected in its workflow and design doc.
+
+## This file
+
+Rules accrete one incident at a time. A new rule enters as a line in the check block or a worked example first, and as prose only when neither can carry it; a rule that already exists and was still broken gets a check, not a second statement. The file stays under ~10 KB. Review it, the doc skills and the tree's shape every few months or after a major model release — guardrails written for an older model become friction for a newer one, and removing stale guidance weighs the same as adding new.

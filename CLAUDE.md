@@ -88,7 +88,7 @@ One feature, several packages; editing one side without the other breaks it.
 
 ```
 docs/doc-loop.md               the convention for coding agent sessions (onboarding → consult/review → update-docs → handoff)
-docs/documentation-standards.md doc shape, protected echoes, budget, verification
+docs/documentation-standards.md the doc standards — this repo's and the global fallback: shape, status pages, hot path, the check block
 docs/agent-skills.md           skill ownership tiers · Claude ⊇ Codex layout · lessons
 docs/theming.md                themes
 docs/claude-accounts.md        accounts
