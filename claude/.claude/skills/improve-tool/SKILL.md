@@ -92,7 +92,9 @@ the receipts behind every rule below.
    still break moves into the engine or a worked example, and the top
    failure class is read against the engine's code before it is called
    discipline. When the tool is one stage of a pipeline, write each
-   stage's one invariant in the ledger header and assign a cost to the
+   stage's one invariant in the ledger header (a brief: a claim carries what
+   its check returned at the anchor; a status page: it holds only items with
+   an owed read) and assign a cost to the
    stage whose invariant, kept, would remove it — the symptom's nearest
    neighbour is rarely its owner (usage lessons § A cost belongs to the
    layer). Done when each of the top three frictions answers "how many,

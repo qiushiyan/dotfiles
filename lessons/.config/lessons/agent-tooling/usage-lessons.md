@@ -211,19 +211,29 @@ allowlist.
 A pipeline of tools — docs, a brief, an onboarding skill, a gate, a CLI,
 the human's workflow — shows one symptom at every layer, and the nearest
 neighbour of the symptom is rarely its owner. Whole-file reads in pickups
-looked like a `sed` rule for the onboarding skill; the layers said
-otherwise: the brief transmitted claims without the result that produced
-them (five briefs falsified at pickup with zero drift), and the status doc
-had no exit rule (43 KB of dated outcomes read whole). Write each layer's
-one invariant in the ledger header, then ask of every cost which invariant,
-kept, would remove it — and check the answer with the writer/reader pair
-(78 % of the reader's doc reads were the writer's; 33 % of its code reads),
-not with the symptom's location. A fix on the wrong layer is faithfully
-followed and changes nothing (three gate rewrites, cost unchanged). A
-cost with two owners — read volume is the doc's size and the route's
-selection — is split by the invariant each holds, never assigned whole to
-the nearer one.
-Pipeline pass 2026-09-04, `abd24d95`.
+looked like a rule for the onboarding skill ("read by section"); the owners
+were the brief, which transmitted claims without the result that produced
+them, and the status doc, which had no exit rule. Write each layer's one
+invariant first, then ask of every cost which invariant, kept, would remove
+it. The pipeline pass's invariants, as the shape to copy:
+
+- docs: every fact a pickup needs is addressable by the question that needs it;
+- brief: a claim carries what its check returned at the anchor;
+- onboarding skill: a minimal map, read to the depth of the question;
+- gate: what to judge and the evidence standard, never how to read;
+- CLI: a question every pickup asks is one command;
+- human workflow: design → consult → spec → compact → build.
+
+Check the assignment with the writer/reader pair, not the symptom's
+location: for each cost the reader paid, find the writer session that held
+the fact and ask whether its layer's invariant, kept, would have carried it
+(in the pass, most of the reader's doc reads were reads the writer had
+already made). A fix on the wrong layer is faithfully followed and changes
+nothing (three gate rewrites, cost unchanged). A cost with two owners —
+read volume is the doc's size and the route's selection — is split by the
+invariant each holds, never assigned whole to the nearer one. Pipeline pass
+2026-09-04, `abd24d95`; the counts with their predicates:
+`~/dev/brief/EVIDENCE.md`, the 2026-09-04 entry.
 
 ## Feedback compounds only if it is captured and re-read
 
