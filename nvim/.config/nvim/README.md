@@ -104,6 +104,11 @@ Snacks Explorer is enabled for a trial; mini.files and Neo-tree are disabled.
 - `m` / `c`: move / copy selected files to the current directory.
 - `H` / `I`: toggle hidden / ignored files; `P`: toggle preview.
 
+Dotfiles and Git-ignored entries are visible by default, with the mini.files
+exclusion names reused (such as `.git`, `.next`, `node_modules`, and `.DS_Store`).
+These explicit exclusions stay hidden when toggling `H` or `I` and apply only to
+the explorer, not other file pickers.
+
 To restore mini.files, replace `editor.snacks_explorer` with `editor.mini-files`
 in `lazyvim.json`, remove `enabled = false` from the mini.files spec in
 `lua/plugins/file-explorer.lua`, and restart Neovim. Its previous mappings and

@@ -41,6 +41,24 @@ end
 
 return {
   {
+    "folke/snacks.nvim",
+    opts = function(_, opts)
+      opts.picker = opts.picker or {}
+      opts.picker.sources = opts.picker.sources or {}
+      local explorer = opts.picker.sources.explorer or {}
+      opts.picker.sources.explorer = explorer
+      -- Like mini.files: show dotfiles and Git-ignored entries except our explicit list.
+      explorer.hidden = true
+      explorer.ignored = true
+      explorer.exclude = explorer.exclude or {}
+      for _, names in ipairs({ mf_ignore_dirs, mf_ignore_files }) do
+        for _, name in ipairs(vim.fn.sort(vim.tbl_keys(names))) do
+          table.insert(explorer.exclude, "**/" .. name)
+        end
+      end
+    end,
+  },
+  {
     "nvim-mini/mini.files",
     enabled = false, -- Snacks Explorer trial; keep this configuration for switching back.
     lazy = false,
