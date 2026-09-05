@@ -53,7 +53,7 @@ return {
       end
       return {
         kind = "split_left_most",
-        kind_presets = { split_left_most = { width = "30%" } },
+        kind_presets = { split_left_most = { width = "35%" } },
         follow_root_dir = false,
         use_as_default_explorer = true,
         integrations = { icon = "mini_icons" },
