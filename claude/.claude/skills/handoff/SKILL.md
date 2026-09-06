@@ -184,3 +184,23 @@ When this skill runs INSIDE a steward-driven build step (the prompt carries a
 writer), the rule above does not apply: the outer session writes the marker
 once, at the end of its step, by the step prompt's own outcome rule, and this
 skill writes nothing at `STEWARD_MARKER`.
+
+## Continuation mode — the brief between two sessions on one branch
+
+Invoked with `continuation` in its arguments, this skill writes the brief a
+fresh session opens with to continue the same work on the same branch: the
+steward's compaction step, where a spec has been settled and the session
+that wrote it is about to be replaced by one that implements it. What
+changes against the full mode: the branch already exists and the next
+session works on it, so no slug is chosen and no worktree is named; the
+destination is the path the caller names, not `~/dev/.handoffs/`; no queue
+entry is made and no `brief` command runs (`brief new`, `brief check`, the
+listing); no pickup gate is named, since the next session opens on the
+step prompt the steward composes, which carries this brief whole; the doc
+pass is deferred to the step that syncs the docs after the review. What
+stays: the harvest (step 3) and the body's four sections, the point-rather-
+than-pre-chew rule, repo-relative paths, the ~150-line ceiling, and the
+head's fields kept to what a continuation can fill (`goal`, `paths`,
+`rests-on`, `blocked-by`, `collides-with`; no `run`, `anchored`, `base`,
+`cluster` or `pickup`). Done when the file at the destination reads cold as
+the first thing a session with none of this context opens.

@@ -1,6 +1,12 @@
 ---
 name: review
 description: "Code-review the branch's committed work through a cold AI session, at the altitude the round buys — quick (did anything break), full (is it built right), goal (did we build the right thing, once rounds have already run) — then judge and apply the findings."
+requires:
+  - user:envoy/DISPATCH.md
+  - lessons:collaboration/review-lens.md
+  - lessons:codebase-design/deep-modules.md
+  - lessons:codebase-design/deepening.md
+  - lessons:codebase-design/composition.md
 ---
 
 # Review — independent review of committed work
@@ -121,4 +127,15 @@ When this skill runs INSIDE a steward-driven build step (the prompt carries a
 "Settling this step" section naming the outer session as the marker's sole
 writer), the rule above does not apply: the outer session writes the marker
 once, at the end of its step, by the step prompt's own outcome rule, and this
-skill writes nothing at `STEWARD_MARKER`.
+skill writes nothing at `STEWARD_MARKER`. Three of the moves above change
+shape there. A dirty tree at step 1 is never a question: changes this
+session made are committed as the round's own work before the range is
+fixed, and changes it did not make are reported as a finding in the
+verdict file and left alone. The seats, the round number and the brief's
+material come from the review manifest the step prompt carries — one turn
+per seat, a warm seat resuming the directory the manifest names — and the
+round's judgement (step 5) is written into the verdict file in the
+contract's shape rather than reported to a user. Step 7's round-two
+decision is not this session's: the steward reads the verdict file, sends
+the next round with this round's account, and settles or asks from the
+file, so this session runs exactly one round and stops.

@@ -1,6 +1,9 @@
 ---
 name: consult
 description: "Put this session's thinking on trial before a fresh AI session (codex or claude) — diagnosis (is the cause right, before the fix) or approach (is this the shape to build) — then synthesize the deltas."
+requires:
+  - user:envoy/DISPATCH.md
+  - lessons:codebase-design/deep-modules.md
 ---
 
 # Consult — independent second opinions
@@ -70,3 +73,16 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
    ```
 
 7. **Synthesize** for the user: where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and any unresolved judgment calls. A `diagnosis` round leads with the cause — confirmed, refuted, or replaced, what settled it, and the blind read's delta, including when it converged — before anything about the fix. Name the out-dir in the synthesis — and, for a fan-out, each member's directory (`<out-dir>/codex`, `<out-dir>/claude-opus`): the sessions stay continuable, and when /review later covers the implementation of this design, its default seats one of those voices warm (`--with-from <member-dir>`) beside a cold one, so the synthesis also says which voice's position the design followed.
+
+## Inside a steward-driven build step
+
+When `STEWARD_MARKER` is set and the prompt carries a "Settling this step"
+section, this skill runs inside one step of an unattended build: the
+dispatch runs in the foreground to completion as DISPATCH.md's driven rule
+says, the voices are exactly what the invoking skill's arguments name (one
+Codex turn by default, a continued one when a prior job directory is
+supplied), and step 7's synthesis is written for the step's own record
+rather than a user. A fundamental disagreement step 5 cannot resolve is not
+escalated in conversation: it is handed back to the invoking skill as a
+foundational objection, which makes it the step's `ask`. This skill never
+writes the marker.

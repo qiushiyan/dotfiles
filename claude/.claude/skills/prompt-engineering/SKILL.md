@@ -1,6 +1,9 @@
 ---
 name: prompt-engineering
 description: The one rulebook for model-facing text — prompts, skill and agent bodies, CLAUDE.md, snippets, tool descriptions and results, and the context window. Use when writing or revising any of them. Skill frontmatter and invocation are writing-for-agents' SKILL-MECHANICS.md.
+requires:
+  - user:writing-for-agents/SKILL-MECHANICS.md
+  - lessons:agent-tooling/usage-lessons.md
 ---
 
 # Writing for the model
@@ -244,7 +247,7 @@ longer only where a named gap was filled.
   `~/.config/lessons/agent-tooling/usage-lessons.md`.
 - Model-specific behaviours of the current Claude generation — long turns,
   effort, refusal classes, memory scaffolding:
-  `/Users/qiushi/dotfiles/references/fable-prompting-guide.md`.
+  `~/dotfiles/references/fable-prompting-guide.md`.
 - A project's own prompting guide, when its `CLAUDE.md` names one (planlab:
   `docs/loopy/prompting-guide.md`), answers the calibrations for that
   repo: which terms pass the familiar-term test there, which emphasis is

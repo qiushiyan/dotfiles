@@ -2,6 +2,15 @@
 name: write-spec
 description: Promote the settled direction into a committed spec and run a validation consult. Defaults — commit + validation consult; override by argument ("don't commit", "skip validation").
 disable-model-invocation: true
+requires:
+  - user:consult
+  - lessons:codebase-design/deep-modules.md
+  - lessons:codebase-design/design-it-twice.md
+  - lessons:codebase-design/deepening.md
+  - lessons:codebase-design/composition.md
+  - lessons:testing/tdd-loop.md
+  - lessons:testing/mocking-and-fixtures.md
+  - lessons:collaboration/pr-boundaries.md
 ---
 
 # Write a spec
@@ -109,4 +118,13 @@ When this skill runs INSIDE a steward-driven build step (the prompt carries a
 "Settling this step" section naming the outer session as the marker's sole
 writer), the rule above does not apply: the outer session writes the marker
 once, at the end of its step, by the step prompt's own outcome rule, and this
-skill writes nothing at `STEWARD_MARKER`.
+skill writes nothing at `STEWARD_MARKER`. The session is headless and no
+person answers mid-step, so every stopping point above becomes that marker:
+an interview the grounding leaves unresolved, a blocking spike, a validation
+disagreement that needs the user's call — each is the step's `ask`, with the
+question written as the interview would have put it (why it matters, the
+options, the recommendation), after the spec as it stands is committed.
+Everything else the step decides alone and records under `defaults`. The
+validation runs as the arguments name it — the voices, single turn or
+fan-out, fresh or continued — in the foreground to completion, and its job
+directory is what the step publishes.

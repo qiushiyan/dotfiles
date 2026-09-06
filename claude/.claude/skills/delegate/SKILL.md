@@ -2,6 +2,9 @@
 name: delegate
 description: "Hand implementation of a written spec to a chosen model (codex or claude) in a background session, then review the result."
 disable-model-invocation: true
+requires:
+  - user:envoy/DISPATCH.md
+  - lessons:collaboration/review-lens.md
 ---
 
 # Delegate — implement a spec with a background session
