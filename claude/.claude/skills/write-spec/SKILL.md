@@ -95,3 +95,18 @@ produce — benefits from the seam. State the PR boundary and the phases
 explicitly in the spec, so a consult voice or an implementing session
 doesn't quietly re-split it. The reasoning behind the default:
 `~/.config/lessons/collaboration/pr-boundaries.md`.
+
+## The steward's marker
+
+When `STEWARD_MARKER` is set, this session holds one step of a tracked task
+and ends it by writing the marker: the recipe is `../steward-marker.md`. This
+step's `outcome` is `advance` only when validation did not materially change
+the approved approach; a consult round that raised a foundational objection
+the user has not resolved, or a spec that departs from the approved option,
+is `ask`, with the departure named in the question.
+
+When this skill runs INSIDE a steward-driven build step (the prompt carries a
+"Settling this step" section naming the outer session as the marker's sole
+writer), the rule above does not apply: the outer session writes the marker
+once, at the end of its step, by the step prompt's own outcome rule, and this
+skill writes nothing at `STEWARD_MARKER`.

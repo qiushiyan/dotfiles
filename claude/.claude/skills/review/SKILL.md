@@ -107,3 +107,18 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 7. **Round 2, when the fixes were substantive** — a `full` instrument. `quick` and `goal` default to no second round: quick's fixes are verified by the tests that pinned them, and goal's findings are either decisions for the user or a reason to run a different mode, neither of which a follow-up to the same voice settles. Run one anyway only when the user asks. For `full`: send a per-finding summary of what changed — rebuttals included — into the same session (`envoy collect` prints the resume command — add a fresh `--coordinate-file`; a fan-out of reviewers continues whole: `envoy fan --resume-from <out-dir> --prompt-file round2.md --coordinate-file <fresh>`). The question is narrow: was each point actually integrated or hand-waved, and did the fixes regress anything? Converging, not relitigating. For light fixes, handing the user the takeover command is the cheap substitute.
 
 8. **Report** to the user: the question this round bought and the mode that bought it, the verdict finding by finding (fixed / rebutted with the reason / escalated as foundational), what the fixes changed, the check results, and the resume + takeover commands from collection.
+
+## The steward's marker
+
+When `STEWARD_MARKER` is set, this session holds one step of a tracked task
+and ends it by writing the marker: the recipe is `../steward-marker.md`. This
+step's `outcome` is `advance` only when the closing round read every fix and
+reported nothing new and no regression with the checks green; a foundational
+objection the user has not decided, or a round budget spent with findings
+still owed, is `ask`, with the finding named in the question.
+
+When this skill runs INSIDE a steward-driven build step (the prompt carries a
+"Settling this step" section naming the outer session as the marker's sole
+writer), the rule above does not apply: the outer session writes the marker
+once, at the end of its step, by the step prompt's own outcome rule, and this
+skill writes nothing at `STEWARD_MARKER`.

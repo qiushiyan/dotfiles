@@ -170,3 +170,17 @@ Show the user, together:
   It places the worktree (or, in review posture, re-enters the existing one) and hands the session its opening pointer — nothing to copy, nothing to remember.
 
 Handed off means: one command, next session running.
+
+## The steward's marker
+
+When `STEWARD_MARKER` is set, this session holds one step of a tracked task
+and ends it by writing the marker: the recipe is `../steward-marker.md`. This
+step's `outcome` is `advance` only when the sync stayed in place: no doc
+created, moved or deleted, no settled decision changed, no PR boundary moved.
+Anything wider is `ask`, with the change named in the question.
+
+When this skill runs INSIDE a steward-driven build step (the prompt carries a
+"Settling this step" section naming the outer session as the marker's sole
+writer), the rule above does not apply: the outer session writes the marker
+once, at the end of its step, by the step prompt's own outcome rule, and this
+skill writes nothing at `STEWARD_MARKER`.
