@@ -36,14 +36,17 @@ jq -n \
   ledger can judge the default later; build it with `--argjson defaults` from a
   `jq -n` of its own, and leave it `[]` when you decided nothing alone.
 - `files` names every output file the step's prompt asks for, written beside
-  the marker, each keyed by its name with its SHA-256 as the value; the driver
-  verifies each before the marker counts, so write the files first and the
-  marker last. Leave it out when the step names none.
+  the marker, each keyed by its name with its SHA-256 as the value; both doors
+  a marker comes through verify each before the marker counts, so write the
+  files first and the marker last. Leave it out when the step names none.
 - A skill run inside a steward-driven build step never writes the marker: the
   step prompt names the outer session as its sole writer, and that session
   writes it once, at the end.
 - A session attached from another machine submits the same bytes to the store
-  with `ssh <host> steward marker submit < "$STEWARD_MARKER"`.
+  with `ssh <host> steward marker submit < "$STEWARD_MARKER"`. The files the
+  marker names are hashed on the host, beside the marker path `attach`
+  printed: copy them there (`scp`) before submitting, or the door refuses the
+  marker as naming files nobody wrote.
 
 **Skip.** `STEWARD_MARKER` unset: nothing here applies, and the skill runs
 exactly as it does today.
