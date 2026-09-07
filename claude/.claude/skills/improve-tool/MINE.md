@@ -9,9 +9,19 @@ reporting variant), or **a document** (`CLAUDE.md`, an onboarding skill: the
 document variant), or **no engine** (a pure-instruction skill, a snippet:
 the last section) — fill the constants, run it as one obelisk round, then
 expand what it surfaces. Obelisk's query rules apply in full. Run every
-round into a file and slice it with `jq` — the harness truncates Bash
-output at 10 k, and a facet that overflows is then a `jq` away instead of
-a re-run.
+round into a file and read bounded slices with `jq`, so an oversized facet
+can be re-sliced without repeating the query. The acting harness's output
+limit and Obelisk's stored-text limit are different measurements.
+
+Before counting patterns, classify signature hits as actual uses, quoted
+instructions, continuations, delegated work, or adjacent tasks. Read the
+invocation and relevant follow-up in context; provider and role fields alone
+do not establish human authorship. Keep connected runs linked for provenance,
+not counted as independent support. The examples below discover candidates;
+refine their predicates for the confirmed cohort and task window before
+reporting rates. Report both population and sample sizes, dates, exclusions,
+and missing follow-through. Preserve an exact query and its constants beside
+the local ledger so another pass can reproduce the denominator.
 
 ```bash
 S=<your scratchpad directory>; Q=/tmp/obq-<session-id>.mjs
@@ -25,7 +35,7 @@ const cli   = 'envoy ';                 // the engine's Bash signature, trailing
 const skill = 'review';                 // messages.skill value and /name
 const path  = 'skills/review/SKILL.md'; // how the user invokes it by path
 const outdir = '.local/state/envoy/';   // the engine's state dir or output files, as a path fragment
-const since = '2026-08-01';             // the previous pass's date, from the evidence log
+const since = '2026-08-01';             // verified fix date for the comparison window
 const out   = {};
 
 // A. population — who used it, how often, through which door
@@ -58,14 +68,16 @@ out.subcommands = tally(calls, r => { const i = cmdOf(r).indexOf(cli); if (i < 0
 // tallied in JS on purpose: a subcommand named `delete` or `update` inside a SQL LIKE trips the read-only guard — bind it as :x
 out.flags       = tally(calls.flatMap(r => (cmdOf(r).match(/--[a-z-]+/g) || []).map(f => ({ sid: r.sid, f }))), r => r.f);
 
-// C. failures — error classes, re-rolls, truncated reads
+// C. candidates — errors, repeated commands, index-capped reads; inspect context before classifying failures
 out.errors = tally(calls.filter(r => r.is_error), r => (r.content || '').replace(/\s+/g, ' ').slice(0, 90));
 const seen = new Map();
 for (const r of calls) { const c = cmdOf(r); seen.set(c, (seen.get(c) || 0) + 1); }
 out.rerolls = [...seen].filter(([, n]) => n > 1).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([c, n]) => ({ n, cmd: c.slice(0, 120) }));
-out.truncated_reads = sql(`
+out.index_capped_reads = sql(`
   SELECT COUNT(*) n, COUNT(DISTINCT tc.session_id) sessions FROM tool_calls tc JOIN tool_results tr ON tr.tool_use_id = tc.id
-  WHERE tc.name='Read' AND tc.file_path LIKE '%${outdir}%' AND length(tr.content) >= 10000`);
+  JOIN messages m ON m.uuid = tc.message_uuid
+  WHERE tc.name='Read' AND tc.file_path LIKE '%${outdir}%' AND length(tr.content) >= 10000
+    AND tc.session_id <> '${self}' AND m.timestamp > '${since}'`);
 
 // D. workarounds — ad-hoc processing of engine output, and the question behind it
 out.workarounds = sql(`
@@ -94,23 +106,24 @@ const voice = sql(`
     AND (m.text LIKE '%why%' OR m.text LIKE '%stuck%' OR m.text LIKE '%wrong%' OR m.text LIKE '%didn''t%'
       OR m.text LIKE '%again%' OR m.text LIKE '%revert%' OR m.text LIKE '%forgot%' OR m.text LIKE '%wait%' OR m.text LIKE '%不%')
   GROUP BY substr(m.text,1,80) ORDER BY MAX(m.timestamp) DESC LIMIT 60`);
-out.user_voice = voice.filter(v => v.n === 1).slice(0, 10);                          // a correction is typed once
-out.standing   = voice.filter(v => v.n > 1).sort((a, b) => b.n - a.n).slice(0, 6);   // a snippet recurs: what the user says every time
+out.user_voice = voice.filter(v => v.n === 1).slice(0, 10);                          // single matching prefix; inspect whether it is a correction
+out.standing   = voice.filter(v => v.n > 1).sort((a, b) => b.n - a.n).slice(0, 6);   // repeated prefix; inspect duplicates and provenance
 
 // F. what came next — the user's first turn after each engine call or skill invocation, read by
-// position: the outcome the index holds. A "go ahead" two minutes after every report is a stop that
-// never changed anything; a long turn is a correction or a redirect.
+// position: candidates for outcome analysis. Read the preceding report to distinguish approval,
+// clarification, correction, and restart; message length and delay do not establish wasted work.
 const invRows = sql(`SELECT m.session_id sid, m.timestamp ts FROM messages m WHERE m.role='user' AND COALESCE(m.is_meta,0)=0
-  AND m.session_id <> '${self}' AND m.timestamp > '${since}' AND (m.skill = '${skill}' OR m.text LIKE '%${path}%')`);
+  AND m.session_id <> '${self}' AND m.timestamp > '${since}' AND (m.skill = '${skill}' OR m.text LIKE '%/${skill}%' OR m.text LIKE '%${path}%')`);
 const seenNext = new Set(); out.after = [];
 for (const r of [...calls, ...invRows]) {
   const n = sql(`SELECT uuid, timestamp ts, substr(text,1,160) t FROM messages WHERE session_id=:sid AND role='user' AND content_type='text'
     AND COALESCE(is_meta,0)=0 AND timestamp > :ts AND text NOT LIKE 'This session is being continued%' ORDER BY timestamp LIMIT 1`, { sid: r.sid, ts: r.ts })[0];
   if (!n || seenNext.has(n.uuid)) continue; seenNext.add(n.uuid);
-  out.after.push({ sid: r.sid.slice(0, 8), gapMin: Math.round((Date.parse(n.ts) - Date.parse(r.ts)) / 60000), len: n.t.length, t: n.t });
+  out.after.push({ sid: r.sid, uuid: n.uuid, ts: n.ts, gapMin: Math.round((Date.parse(n.ts) - Date.parse(r.ts)) / 60000), len: n.t.length, t: n.t });
 }
-out.after_shape = tally(out.after, x => x.len <= 40 ? x.t.trim().toLowerCase() : 'long');   // "go ahead" ×9 is a finding
-out.after = out.after.filter(x => x.len > 40).slice(0, 12);
+out.after_shape = tally(out.after, x => x.len <= 40 ? x.t.trim().toLowerCase() : 'long');   // length buckets select excerpts; they are not verdicts
+out.after = [...out.after.filter(x => x.len <= 40).slice(0, 6),
+             ...out.after.filter(x => x.len > 40).slice(0, 6)]; // retain receipts for both buckets
 
 return out;
 ```
@@ -119,11 +132,11 @@ The user-voice facet is the one that states intent. A `friction:` marker —
 the user's one-word tag on a correction ("friction: review made me assemble
 the resume command by hand") — is mined verbatim; the keyword sweep is the
 fallback, grouped by text prefix so a hit arrives with its count:
-`user_voice` holds what was typed once, `standing` what the user says every
-time (`/review codex full review. While you are waiting…`).
+`user_voice` and `standing` are candidate buckets by prefix frequency, not
+proof of unique corrections or standing preferences.
 
 Follow-up rounds expand vertically: `context(uuid)` on a user-voice hit, the
-full `thread(sid)` of the seed session, `raw(uuid, { offset, limit })` when a
+bounded `thread(sid)` projection of the seed session, `raw(uuid, { offset, limit })` when a
 truncated tool result hides the error text. The skill body's own claims are
 also queries — "agents call `describe` before guessing a column" is a count,
 and the count tells you whether the rule is working.
@@ -209,13 +222,15 @@ session) to see which tasks the document says nothing about.
 For a tool with **no engine** (a pure-instruction skill, a doc, a snippet),
 the Bash signature is the script path or nothing, and B collapses to A; the
 failure facet becomes the user-voice facet plus the files the sessions
-touched — what the agent had to fix by hand is what the skill did not
-teach. Count those files across `Edit`/`Write` *and* Bash heredocs
+touched. Inspect why the repair was needed: it can expose an instruction
+gap, useful adaptation, or a defect elsewhere in the workflow. Count files
+across `Edit`/`Write` *and* Bash heredocs
 (`cat >`, `python3 - <<`, `sed -i`): with permissions bypassed, writes go
-through Bash, and a count over the edit tools alone undercounts. A tool
-that is rarely invoked has its population elsewhere: the sessions that did
-its job without it — a sibling tool's runs, or the first-prompt task mix
-that matches its description — and what they did instead is the spec.
+through Bash, and a count over the edit tools alone undercounts. For an
+adoption or missing-capability question, comparable tasks done without the
+tool can reveal alternatives worth testing, within the authorized scope.
+Sparse usage can still justify a verified local repair; it does not itself
+require a wider search or make every workaround a requirement.
 
 ## The pipeline variant — the writer/reader pair
 

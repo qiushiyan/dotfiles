@@ -2,8 +2,8 @@
 
 A tool whose user is an agent has an **engine** (the code that does the work)
 and an **instruction layer** (the skill, doc, `-h`, or snippet that says how
-to drive it). Session history is the only honest account of where the pair
-costs its user. These are the lessons that survived several mining passes
+to drive it). Session history is a partial record of what the pair helped
+produce and what its use cost; outcomes and causes need corroboration. These are the lessons that survived several mining passes
 over that history; the passes themselves are the provenance below.
 
 ## The bar

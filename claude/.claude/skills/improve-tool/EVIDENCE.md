@@ -74,3 +74,79 @@ review: one cold codex voice, out-dir `20260901-220410-review`.
 Lessons that survived → usage-lessons.md ("smallest edit per signal, then
 one holistic read", "a shape change is designed before it is built", the
 outcome facet, the open goals-over-procedure note).
+
+## 2026-09-07 — bootstrap: evidence discipline and outcome preservation
+
+Purpose: improve model-facing workflows without mistaking fewer calls,
+shorter prompts, or repeated activity for better work. The user's supplied
+screenshot motivated this pass; its principles are design input, not mined
+proof. Source image: https://pbs.twimg.com/media/HRe1Lx9aIAALrNj.jpg
+
+**Coverage.** Obelisk broad discovery returned 23 matching user-role rows
+across 20 sessions, 2026-08-29–2026-09-05 (16 Claude, 4 Codex). Classified by
+entry message: 12 explicit invocations, 5 delegated consult/review sessions
+(4 Codex, 1 Claude), 1 continuation-led bootstrap history, and 2 adjacent
+analysis/follow-through sessions. Delegated work and continuations are not
+independent uses. All 20 candidate entries were inspected; relevant user
+turns were projected at up to 20 per session, then seven selected corrections
+expanded with adjacent assistant text. This is targeted sampling, not a
+complete outcome audit. The current session was excluded.
+
+**Reproduction.** Discovery predicate: `role='user'`,
+`COALESCE(is_meta,0)=0`, `COALESCE(is_sidechain,0)=0`, current session excluded,
+and `skill='improve-tool' OR text LIKE '%/improve-tool%' OR text LIKE
+'%skills/improve-tool%'`; group by session. Confirmed invocation predicate:
+`text LIKE '%<command-name>/improve-tool</command-name>%'` with those filters;
+count distinct sessions, inspect entries rather than treating every matching
+body as another invocation. Exact queries and bounded output remain local at
+`/tmp/improve-tool-01a07c80/`; this entry preserves the predicates and receipts
+because scratch output is temporary.
+
+**Previous-fix check.** Cutoff is commit `9567cda`,
+`2026-09-01T21:15:54Z`, not midnight on the evidence-entry date. Five later
+explicit invocations: `d8d04a4f`, `eae57373`, `f198f15b`, `07144497`,
+`abd24d95`. Their loaded skill bodies all include the holistic-pass rule.
+After each invocation, Bash calls whose `input_json LIKE '%obelisk%--query%'`
+number 41 across 5 sessions. One error is a downstream jq null-iteration
+failure (`eae57373`, `toolu_01Pkm259SJC1s5LueQmLSsE5`), not evidence that
+Obelisk failed. Four stored results reach 10,000 characters across 2 sessions
+(`07144497`, `abd24d95`); this measures index-capped records, not original
+harness overflow. The older overflow count is not directly comparable.
+Three sessions contain an explicit later prompting-pass request
+(`d8d04a4f/5fc12a08`, `eae57373/4f7bf022`, `f198f15b/51bfdfcb`);
+requests alone do not establish omission, so no stronger mandate was added.
+
+| finding | evidence and limits | verdict / layer |
+|---|---|---|
+| broad signature counts mix independent uses with other material | 8 of 20 candidates are not explicit invocations; review briefs occur in both providers. This is one reproduced query defect, not eight workflow failures. | User-authorized consolidation: classify the cohort before counting, retain exact predicates and full follow-up receipts. Instructions: MINE.md and skill sampling guidance. |
+| observed cost does not establish its cause or value | One of five newer runs: `d8d04a4f/1121896f` (09-02) states the disabled tool was accidental and rejects fallback machinery. `f198f15b/0d42e94d` (09-03) says theme removal is not costly enough to need extra machinery. `abd24d95/c8421c93` (09-04) explicitly protects useful verification while questioning the proposed owner of its cost. These are different decisions, not one repeated defect. | Preserve engine-first reasoning, add alternative explanations and successful counterexamples, and rank by outcome with a quality guardrail. Instructions; shared lesson introduction now calls history partial. |
+| a follow-up is evidence to interpret, not a verdict encoded by length or timing | Requests for decision explanations in `d8d04a4f/a8abefec` (09-02) and `eae57373/9a3541b0` (09-03); theme-run acceptance `f198f15b/0d42e94d` is a counterexample to treating all approvals as pointless stops. Two clarification cases do not establish recurrence. | Explain consequential choices plainly, ask only unresolved questions, reuse authorization, preserve short-message receipts. Instructions. |
+
+The latest adjacent follow-through, `402389c4`, was inspected separately:
+`f72e3788` (09-06) asks whether optional reading would harm output quality;
+`b35d0c4c` challenges an explanation connecting permission settings to
+truncation. The following assistant defends that explanation. This pass
+neither verifies nor calls it false; an assistant's explanation is a claim,
+not a mechanism test. This distinction is now explicit in the skill.
+
+**Validation and deliberate keeps.** Two independent cold readers exercised
+a sparse documentation case and a CLI case with a rejected design. Both
+classified silence as unknown and clipped index text as insufficient evidence
+of agent-visible overflow. Their findings corrected the no-engine branch,
+mtime-as-version overclaim, discarded follow-up receipts, automatic expansion
+from rare uses, and reopening authorized choices. Existing engine-before-docs
+ordering, stage ownership, rejected-design receipts, and holistic review stay.
+The three-session threshold applies to recurrence claims, not a verified
+single defect. The 45-session and 30-day bounds are starting budgets and
+review windows, not required sample sizes or an automatic scheduled job.
+
+**Next comparison.** First action: apply the revised instructions in the next
+improve-tool run. Review up to five independent uses by 2026-10-07, extending
+the window if needed. Check three outcomes: (1) all reported rates have a
+classified cohort and recoverable receipts; (2) each recommended change names
+an observable benefit and preserved quality; (3) questions identify a real
+unresolved decision. Baseline defects are the discovery query and instruction
+examples above, not a historical failure-rate estimate. Revise if the new
+wording causes redundant permission gates, forced findings, unjustified
+history expansion, or removal of useful verification. Runtime improvement is
+unproven until those uses exist; no 30-day savings estimate is claimed.
