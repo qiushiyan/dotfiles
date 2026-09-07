@@ -28,29 +28,30 @@ over that history; the passes themselves are the provenance below.
   to where the prior cannot act: the engine accepts the input the agent
   holds, the error prints the nearest match, the output ships a digest —
   or a worked example shows the right shape.
-- **Behavior is not intent.** A pattern that recurs in the history is
-  either a workaround the user tolerates or the thing they have been
-  fighting, and the index cannot tell which. Interview before promoting;
-  a correction the user typed outranks any count.
+- **Behavior is not intent.** A pattern that recurs in the history
+  may be useful practice, a tolerated workaround, or something the user
+  has been fighting. Read the request and corrections for intent; ask when
+  that remains unresolved before promoting the behavior.
 - **A shape change is designed before it is built.** Verdicts on
   frictions are not a verdict on the fix: a new surface, a deletion with
-  consumers, an engine contract is put to the user as a design first,
-  live or not. One pass took answered verdicts as a go, built a skill,
-  deleted the snippet it replaced, and was reverted in full — "I want to
+  consumers, or an engine contract needs a concrete design within the
+  user's authorization. Approval of the problem alone does not authorize
+  an expansion of scope. One pass took answered verdicts as a go, built a
+  skill, deleted the snippet it replaced, and was reverted in full — "I want to
   hear about your designs first" (`39f2bf85`).
-- **Smallest edit per signal, then one holistic read.** A rewrite is for
-  instructions that predate their engine; every later change is the
-  smallest edit that captures one signal, named in the commit. Signal
-  edits accrete, so the pass ends by reading every touched file as one
-  whole against the rulebooks — the user asked for exactly that read
+- **Smallest coherent change, then one holistic read.** Prefer a focused
+  repair for an isolated signal. When accumulated rules obscure the goal
+  or instructions predate their engine, a structural rewrite may be the
+  coherent repair. Name its evidence in the commit. Read every touched file
+  as one whole against the rulebooks — the user asked for exactly that read
   after 6 of 6 improve-tool runs (`c37919b5`, `1780f1fe`, `03b5e91a`,
   `39f2bf85`, `af44333d`, `c699709b`), every time in the words "concise
   but informative".
 - **Measure the doctrine gap before writing doctrine.** Count the door the
   instructions present against the door agents take (calls / distinct
   sessions). What agents rebuild by hand in every session — a join, a
-  loop over an output file, a poll — is the command that does not exist
-  yet.
+  loop over an output file, a poll — suggests a missing capability to test
+  against the value of adaptation and the cost of another maintained tool.
 - **The facets follow the engine's output kind.** Consumed output (a CLI)
   is measured by drive cost — subcommands, errors, re-rolls, workarounds.
   Findings (lint, audit, tests, review) are measured downstream: what the
@@ -119,20 +120,20 @@ over that history; the passes themselves are the provenance below.
   reports, never after the packet. A behaviour wanted all session needs a
   home the whole session reads, not the first turn's contract.
 
-## Open: goals over procedure
+## Goals over procedure
 
-The user's stated direction for the smartest models is the opposite of a
-step list: "describe the goals clearly along with the conventions and
-constraints, and not being overly instructional on the exact procedure"
-(`39f2bf85`), and the primary sources agree — "prefer general instructions
-over prescriptive steps", and examples "constrain them to a certain
-exploration space" (verified in
-`~/.claude/skills/write-spec/RESEARCH-goal-driven-specs.md`). That cuts
-against two things here: the eight numbered steps of the improve-tool
-process, and the "examples over prose" bar below. Neither has been
-re-measured against a goal-shaped variant; the user called it a future
-direction, not a change to make now. A pass that tries it should A/B the
-two shapes on the same seed and let the outcome facet decide.
+The user's direction is to describe goals, conventions, and constraints while
+leaving capable models room to choose the method (`39f2bf85`, reaffirmed in
+the 2026-09-07 improve-tool revision). The general rule lives in
+`prompt-engineering/SKILL.md`. Improve-tool now uses that structure; its query
+examples remain reference for difficult joins and evidence selection. Ordered
+instructions remain where a dependency requires them, such as verifying an
+installed engine before documenting its behavior.
+
+Whether this produces better real sessions remains a measurement question.
+Compare outcomes on comparable uses, including supported fixes, preserved
+quality, and avoidable requests for clarification. A shorter skill or a
+reader's preference alone cannot establish the gain.
 
 ## Examples over prose, and where prose is due
 

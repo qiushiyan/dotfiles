@@ -116,8 +116,9 @@ Both passes defer to `docs/documentation-standards.md`.
 
 A complaint about a tool the loop runs — `brief`, a skill, obelisk, a
 snippet — is `/improve-tool <tool> [engine] [the complaint]`: a mining pass
-over the sessions that used it, its verdicts interviewed, its rules landing
-in `lessons/agent-tooling/usage-lessons.md`.
+over the sessions that used it, with supported changes made in the owning
+tool and remeasured in later uses. Shared lessons belong in
+`lessons/agent-tooling/usage-lessons.md`.
 
 ## Principles
 

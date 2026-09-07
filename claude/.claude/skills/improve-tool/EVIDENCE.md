@@ -161,3 +161,52 @@ about shell reads halving counts. All four JavaScript examples pass syntax
 checks and the skill's relative links resolve. Mining queries ran against
 Obelisk; specialized example changes were syntax- and read-verified, not
 replayed against a new pipeline corpus. No runtime benefit is inferred.
+
+### Same-day structural revision — goals and constraints
+
+The user then authorized a broader improvement against the general prompting
+guide, with judgment where its defaults do not fit. This revision reuses the
+bootstrap evidence above; it is not another mining pass or evidence that the
+first revision improved runtime outcomes.
+
+Replaced the eight-stage checklist with purpose, evidence standards, owning
+layer, and delivery criteria. The entrypoint shrank from 2,111 to 1,245 words.
+The cold-reader prompt now asks the reader to exercise judgment in a concrete
+scenario; it requests exact commands only for executable recipes and accepts
+no findings. Query mechanics remain in MINE.md. The shared usage lessons and
+doc-loop pointer were aligned with the resulting workflow.
+
+Deliberate changes from the previous shape:
+
+- No fixed 45-session budget or 30-day default: scope follows the question,
+  unresolved alternatives, and enough comparable uses. The specific next
+  comparison proposed above remains a valid plan for this pass.
+- No mandatory interview, separate holistic-read commit, or automatic closing
+  review: each needs a decision, coherent change, or unresolved verification
+  question to justify it. The holistic read itself stays because its six-run
+  history supports it.
+- Reorganization is allowed when accumulated rules obscure the purpose;
+  smallest-edit doctrine should not preserve a bad structure indefinitely.
+- The three-independent-session floor remains a conservative reporting rule,
+  not proof of causality or a barrier to fixing one verified defect.
+- Engine verification before dependent instructions, archived content as data,
+  source checks for falsifications, rejected-design decisions, and unknown
+  outcomes remain constraints. Query examples stay because they supply
+  non-obvious joins and evidence-selection patterns rather than a judgment
+  procedure the model must imitate.
+
+Two independent readers first exercised the revised files, then compared the
+previous entrypoint for lost behavior. Sparse documentation use: distinguished
+two actual uses from a review and continuation, fixed a verified local route
+without a new permission gate, and left the silent outcome unknown. CLI and
+handoff workflow: preserved the existing uninstalled handoff, required source
+verification before blaming the writer, kept a rejected surface rejected,
+and left dependent instructions pending. Neither found lost behavior in its
+scenario. The pipeline reader found a conflicting approval rule in the shared
+lesson; the lesson now uses the same scope-based authorization boundary.
+
+This is a read-only scenario comparison, not an end-to-end outcome A/B test.
+Relative links and unchanged frontmatter were checked; runtime improvement
+remains for the comparable-use measurement above. The prompting guide itself
+needed no new rule: the structural problem was in this skill's application
+of its existing principles.

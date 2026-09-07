@@ -1,50 +1,37 @@
-# Cold-reader prompt
+# Verify instructions with a cold reader
 
-One dispatch per route through the instructions, run as background agents
-in parallel. The prompt names the file to read from disk and says an
-injected `CLAUDE.md` is not it (the harness hands a subagent a copy that
-can be older than disk); a report quoting headings the file no longer has
-is on the wrong version and is re-run. Fill every `<…>`: the scenario is concrete (one runId, one
-complaint, one PR), the reading order is the order the skill itself imposes,
-and the agent holds no credentials, so it reads and greps but never runs the
-engine.
+Use an independent reader for each materially different route the change
+affects. Give it the files on disk and a concrete scenario, without your
+interpretation or intended answer. Include enough raw evidence to make the
+scenario answerable. Read-only simulation checks understanding; a runtime
+trial needs its own authorization and evidence.
 
-```
-You are a cold reader. Pretend you are an agent starting <the situation the
-tool serves> with NOTHING in context except what you read now. Repo: <path>
-(do not cd elsewhere; do not run any `<cli>` command — you hold no token;
-read-only file reads and greps of the repo are fine to verify a claim).
+<example>
+You are evaluating instructions from a fresh user's position. Read-only:
+inspect the named files and relevant references; do not edit, query session
+archives, or run the target engine.
 
-Scenario: <one concrete situation, in the user's words — "a teammate pastes
-one id from chat: can you tell me what broke?">
+Scenario: <the user's request and the minimum facts available to the agent>.
+Entry point: <path to the skill or router on disk>.
 
-Read the files from disk, in this order, as that agent would — if your
-context already holds a CLAUDE.md, ignore it; the file on disk is the one
-under review: (1) <entry route or router>,
-(2) <the instructions>, (3) only the parts of <satellite> you would actually
-reach for. Then read the rulebook
-~/.claude/skills/prompt-engineering/SKILL.md and
-judge the files against it.
+Use the instructions to explain what you would do, what you could conclude,
+what would require more evidence or user input, and when the task is complete.
+Give exact commands only where the instructions promise an executable recipe.
+Identify the first point where you would need to guess a path, field, flag,
+or decision. Read references when the scenario requires them.
 
-Report (≤ 90 lines, no edits to any file):
-1. THE SEQUENCE you would run, command by command, exactly as the skill
-   leads you — and the first point at which you would be unsure what to do
-   next, or would have to guess a flag, a path, a field, or a file. Quote
-   the line.
-2. WHAT WOULD HELP MOST: the 3–5 changes that would most reduce your chance
-   of going wrong or stalling, ranked. Each: the problem, the quoted line,
-   and a rewrite you would accept in ≤ 3 lines.
-3. CUT LIST: lines a cold agent does not need at that point — sprawl,
-   duplication, negations that should be positives, reference that belongs
-   behind a pointer, prose an existing code example already carries. Quote
-   each.
-4. ROUTE GAP: does <entry route> get you to <the instructions> at all? What one
-   line would.
-5. Anything the instructions claim that the repo contradicts — verify by grep
-   before saying so and cite file:line.
-Be blunt; "this is fine" per section is an acceptable answer when true.
-```
+Then evaluate the result against
+~/.claude/skills/prompt-engineering/SKILL.md. Report only supported defects,
+ranked by their effect on this task: quote the relevant file and line, explain
+the consequence, and suggest a minimal correction. Include unnecessary
+instructions and missing routes when they affect the scenario. Verify any
+claim that the repository contradicts the instructions before reporting it.
+No defects is an acceptable result. Keep the report under 700 words.
+</example>
 
-Read the reports against each other: a stall two readers hit at the same
-line is the first fix; a cut one reader proposes that another reader's
-sequence relied on is not a cut.
+Verify each finding against the files and the goal. A shared stall is strong
+evidence for a repair; a proposed cut another reader relied on needs closer
+inspection. Preserve rules that carry a real decision even if they look
+redundant in isolation. After fixes, reread the affected route. Report what
+this evaluation established without treating a planned sequence as a completed
+execution or proof of improved runtime outcomes.
