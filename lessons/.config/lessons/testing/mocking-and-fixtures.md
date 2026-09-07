@@ -309,7 +309,7 @@ For fixture **scoping** (`scope: 'file'`), **auto** fixtures, and inline `onTest
 
 ## Mock cleanup
 
-Always clean up mocks to prevent test pollution. Prefer global config over manual cleanup — set `restoreMocks`, `clearMocks`, `unstubEnvs`, and `unstubGlobals` in `vitest.config.ts` so you never think about it. The exact config block and the manual clearing hierarchy (`mockClear` vs `mockReset` vs `mockRestore`) are in [vitest.md](vitest.md#mock-clearing-hierarchy).
+Always clean up mocks to prevent test pollution. Prefer global config over manual cleanup — `clearMocks` is on by default (call history is wiped before every test, ahead of `beforeEach`), so set `restoreMocks`, `unstubEnvs`, and `unstubGlobals` in `vitest.config.ts` and never think about it again. The exact config block, the manual clearing hierarchy (`mockClear` vs `mockReset` vs `mockRestore`), and the one thing the default clear changes for you — never assert on calls recorded outside the test body or `beforeEach` — are in [vitest.md](vitest.md#mock-clearing-hierarchy).
 
 ---
 
