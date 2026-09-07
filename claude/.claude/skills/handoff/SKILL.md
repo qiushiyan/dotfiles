@@ -16,14 +16,14 @@ You're ending a working session. The docs keep the project's durable mental mode
 
 ## 1 — Gate: does this session earn a brief?
 
-A manufactured handoff sends the next session down a road nobody planned. `$ARGUMENTS` may already name the next goal — that answers this gate. Otherwise classify the ending:
+A manufactured handoff sends the next session down a road nobody planned. the invocation's arguments may already name the next goal — that answers this gate. Otherwise classify the ending:
 
 - **Thread continues** — work unfinished, or a known next milestone → full handoff: steps 2–5.
 - **Stopped mid-task** — context or time ran out before the work landed → the brief is the most valuable thing you can leave. Run steps 3–5 now and fold the doc pass into the brief's first moves.
 - **Done but not trusted** — the work is "complete" but the user's verdict is that it doesn't merge yet — edge cases kept surfacing after earlier "done" claims — and the next session re-reviews this branch's work before any merge → full handoff: steps 2–5 in **review posture** (step 4 defines it).
 - **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 alone and close by printing `/distill-handoffs` for the user: its closeout pass deletes the brief that spawned this branch (`<branch>` or `review-<branch>`) once the work has a durable home and settles the briefs that named it, within this branch's domain only. Only the user can invoke it, and this skill writes one brief without seeing the folder around it.
 
-Review posture is entered on the user's verdict — `$ARGUMENTS` or the session saying the branch isn't ready — never on your own read of the work. A clean ending with a natural next goal is a forward handoff: write it, no question. When the ending shows the *done but not trusted* signature but the verdict was never spoken — a large or bumpy branch, bugs found after green claims, no merge decision stated — settle the gate with one question: *merging this and moving on, or holding it for a review session?*
+Review posture is entered on the user's verdict — the invocation's arguments or the session saying the branch isn't ready — never on your own read of the work. A clean ending with a natural next goal is a forward handoff: write it, no question. When the ending shows the *done but not trusted* signature but the verdict was never spoken — a large or bumpy branch, bugs found after green claims, no merge decision stated — settle the gate with one question: *merging this and moving on, or holding it for a review session?*
 
 ## 2 — Doc pass
 
@@ -144,7 +144,7 @@ Point rather than pre-chew — a brief that hands the next session answers inste
 - A posture block opens the body, naming why trust broke — the concrete edge cases and bugs the user found after earlier "done" claims — and setting the stance: the next session treats each conclusion, this brief's included, as a claim to re-verify, and reads the accreted fixes adversarially — assume they hide more seams.
 - "Where things stand" carries the **review surface**: the mechanisms and workarounds this branch accreted, one line each, mechanism → home file — the shape to review, not re-derive. Verification state is claims, not facts: suite numbers come with "re-run before trusting".
 - `pickup:` is `build` — the review's first turn verifies and restates before it judges; the posture block, not the gate, sets the adversarial stance.
-- `goal:` names the review; unless `$ARGUMENTS` sets its own agenda, it carries the standing one — does the accretion compose or hide seams; what to extract and where the seams go; why the suite stayed green over the escaped edge cases, and the harness that would catch that class. First moves offers the user `/review` — a cold dispatched read to ride beside the session's own.
+- `goal:` names the review; unless the invocation's arguments sets its own agenda, it carries the standing one — does the accretion compose or hide seams; what to extract and where the seams go; why the suite stayed green over the escaped edge cases, and the harness that would catch that class. First moves offers the user `/review` — a cold dispatched read to ride beside the session's own.
 
 Done when the brief passes the cold-pickup test — every pointer resolves from inside the receiving worktree, nothing in it depends on this session or this file existing, and the filename names where the next session goes — and, mechanically:
 
@@ -171,36 +171,22 @@ Show the user, together:
 
 Handed off means: one command, next session running.
 
-## The steward's marker
-
-When `STEWARD_MARKER` is set, this session holds one step of a tracked task
-and ends it by writing the marker: the recipe is `../steward-marker.md`. This
-step's `outcome` is `advance` only when the sync stayed in place: no doc
-created, moved or deleted, no settled decision changed, no PR boundary moved.
-Anything wider is `ask`, with the change named in the question.
-
-When this skill runs INSIDE a steward-driven build step (the prompt carries a
-"Settling this step" section naming the outer session as the marker's sole
-writer), the rule above does not apply: the outer session writes the marker
-once, at the end of its step, by the step prompt's own outcome rule, and this
-skill writes nothing at `STEWARD_MARKER`.
-
 ## Continuation mode — the brief between two sessions on one branch
 
 Invoked with `continuation` in its arguments, this skill writes the brief a
-fresh session opens with to continue the same work on the same branch: the
-steward's compaction step, where a spec has been settled and the session
-that wrote it is about to be replaced by one that implements it. What
-changes against the full mode: the branch already exists and the next
-session works on it, so no slug is chosen and no worktree is named; the
-destination is the path the caller names, not `~/dev/.handoffs/`; no queue
-entry is made and no `brief` command runs (`brief new`, `brief check`, the
-listing); no pickup gate is named, since the next session opens on the
-step prompt the steward composes, which carries this brief whole; the doc
-pass is deferred to the step that syncs the docs after the review. What
-stays: the harvest (step 3) and the body's four sections, the point-rather-
-than-pre-chew rule, repo-relative paths, the ~150-line ceiling, and the
-head's fields kept to what a continuation can fill (`goal`, `paths`,
-`rests-on`, `blocked-by`, `collides-with`; no `run`, `anchored`, `base`,
-`cluster` or `pickup`). Done when the file at the destination reads cold as
-the first thing a session with none of this context opens.
+fresh session opens with to continue the same work on the same branch: a
+spec has been settled and the session that wrote it is about to be replaced
+by one that implements it. What changes against the full mode: the branch
+already exists and the next session works on it, so no slug is chosen and
+no worktree is named; the destination is the path the caller names, not
+`~/dev/.handoffs/`; no queue entry is made and no `brief` command runs
+(`brief new`, `brief check`, the listing); no pickup gate is named, since
+the next session opens on the prompt its caller composes, which carries
+this brief whole; the doc pass is deferred to whatever syncs the docs after
+the review. What stays: the harvest (step 3) and the body's four sections,
+the point-rather-than-pre-chew rule, repo-relative paths, the ~150-line
+ceiling, and the head's fields kept to what a continuation can fill
+(`goal`, `paths`, `rests-on`, `blocked-by`, `collides-with`; no `run`,
+`anchored`, `base`, `cluster` or `pickup`). Done when the file at the
+destination reads cold as the first thing a session with none of this
+context opens.
