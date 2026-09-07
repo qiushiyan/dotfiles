@@ -118,9 +118,9 @@ receipts and the minimum non-sensitive detail needed to re-check the finding.
      writes and another consumes: the reads the consumer made that the
      producer had already made, and each claim the consumer falsified split
      by whether its source changed between the anchor and the pickup. The
-     overlap says which stage owns the read cost; a falsification with zero
-     drift belongs to the writer, not the reader (MINE.md, the pipeline
-     variant).
+     overlap suggests where to investigate read cost. Attribute a verified
+     error to the writer only if it was wrong at the writing anchor, not
+     merely because a reader called it false (MINE.md, the pipeline variant).
    - **the seed**, expanded vertically with `thread()` / `context()`.
 
    When an output's shape is in question, run a **live trial** of the

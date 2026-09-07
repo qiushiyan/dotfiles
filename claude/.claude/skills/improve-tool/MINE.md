@@ -142,13 +142,11 @@ also queries — "agents call `describe` before guessing a column" is a count,
 and the count tells you whether the rule is working.
 
 For a **reporting engine** — lint, audit, a test suite, a review pass — the
-CLI facets collapse to "N calls, no flags, no errors". The cost is downstream:
-per finding class, what did the repair change? A repair that touched only the
-line the finding named (a sha, a count, a date) is bookkeeping; a class whose
-repairs are mostly bookkeeping measures the world, not the tool, and is the
-ledger's top line. The user's turn after the report ("处理 card drift 吧",
-repeated) is that class in the user's voice — facet F's short-turn tally
-holds it.
+CLI facets can miss the downstream outcome: per finding class, what did the
+repair improve? Inspect the consequence of the change, not its line count;
+a one-line correction can restore a critical fact. Repeated maintenance and
+the user's response to it suggest priorities to investigate, not automatic
+proof that the findings were noise.
 
 ```js
 // finding classes from the engine's own output, then the repairs and user turns that followed
@@ -178,7 +176,7 @@ project and the measure is **pointer hit-rate**: for each pointer, sessions
 whose edits fell in its branch against sessions that read its target. An
 invoked document (`/onboarding <goal>`) has a window — invocation to the next
 user turn — and three measures inside it: the docs read, the `Explore`
-prompts spawned (each one a question the document did not answer), and
+prompts spawned (questions whose need for exploration should be assessed), and
 whether the doc owning an edited area was read before the first edit there.
 
 ```js
@@ -215,9 +213,9 @@ out.windows = inv.map(r => {
 `read_before_edit` extends the window facet: for each doc cluster (`{ dirs:
 [...], docs: [...] }`), sessions that edited under `dirs` against sessions
 that read one of `docs` before the first such edit. A cluster edited often
-and read rarely is a route the document does not route to. Pair either
-measure with the first-prompt task mix (`MIN(timestamp)` user text per
-session) to see which tasks the document says nothing about.
+and read rarely is a candidate routing gap. Check reads through other tools,
+already-loaded context, and whether the task needed that document. Pair the
+measure with the first-prompt task mix to assess actual coverage.
 
 For a tool with **no engine** (a pure-instruction skill, a doc, a snippet),
 the Bash signature is the script path or nothing, and B collapses to A; the
@@ -242,21 +240,23 @@ paid:
 - **the reader's window** — from the user message that carries the pointer
   (the brief's path, or `/<onboarding-skill>`) to the first user turn after
   it; `messages.input_tokens` on the window's last assistant row is the
-  context the first turn consumed.
+  recorded input count; check provider and cache accounting before comparing it.
 - **the writer** — the session whose `tool_calls` wrote the brief's path
   (`name IN ('Write','Edit') AND input_json LIKE '%<slug>.md%'`).
 - **reads, both sides** — `Read` calls by path, plus the paths inside Bash
-  `cat` / `sed -n` / `head` / `tail` commands (a bypassed-permissions
-  session reads through Bash, and a `Read`-only count halves the answer),
+  `cat` / `sed -n` / `head` / `tail` commands; a `Read`-only count misses
+  shell reads,
   each classified by stage: core doc, route, brief, gate, other doc, code.
-- **overlap** — the reader's read paths ∩ the writer's, by stage; the share
-  says which stage's invariant would have carried the fact.
-- **falsifications** — the reader's assistant text where a claim is called
-  falsified (the gate's own words, `falsif%`), joined to the brief's anchor
-  sha: `git log <anchor>..<pickup> -- <cited paths>` empty means the claim
-  was wrong when written.
+- **overlap** — the reader's read paths ∩ the writer's, by stage. Check
+  whether the same fact was rebuilt unnecessarily or usefully reverified.
+- **claimed falsifications** — assistant text containing `falsif%` locates
+  claims to inspect. Verify each against the cited source at the writer's
+  anchor and the pickup revision. An empty `git log <anchor>..<pickup> --
+  <cited paths>` establishes no committed change in those paths, not that
+  the reader's accusation is true; runtime or external facts may also drift.
 
-The pair measures, in the script's own style (one round, sliced with `jq`):
+A pair-discovery sketch (one round, sliced with `jq`); confirm the exact
+artifact and writer before promoting a candidate pair into the ledger:
 
 ```js
 const briefDir = '.handoffs/<project>/';          // the writer's output, as a path fragment
@@ -267,21 +267,38 @@ const pathsOf = tc => { const j = JSON.parse(tc.input_json);            // Read 
   return tc.name === 'Read' ? [j.file_path] : (j.command || '').match(/\S+\.(md|ts|go|sh)\b/g) || []; };
 // G. pairs — a reader window per pointer message; the writer is whoever wrote that brief's file
 const readers = sql(`SELECT m.session_id sid, m.uuid, m.timestamp ts, m.text FROM messages m
-  WHERE m.role='user' AND m.text LIKE '%${briefDir}%' AND m.text LIKE '%${pointer}%' AND m.timestamp > '${since}'`);
+  WHERE m.role='user' AND COALESCE(m.is_meta,0)=0 AND COALESCE(m.is_sidechain,0)=0
+    AND m.session_id <> '${self}' AND m.text NOT LIKE 'This session is being continued%'
+    AND m.text LIKE '%${briefDir}%' AND m.text LIKE '%${pointer}%' AND m.timestamp > '${since}'`);
 out.pairs = readers.map(r => {
   const slug = (r.text.match(new RegExp(briefDir + '([\\w/-]+)\\.md')) || [])[1];
-  const writer = sql(`SELECT session_id sid FROM tool_calls WHERE name IN ('Write','Edit') AND input_json LIKE '%${slug}.md%' ORDER BY id LIMIT 1`)[0];
-  const next = sql(`SELECT timestamp ts FROM messages WHERE session_id='${r.sid}' AND role='user' AND timestamp > '${r.ts}' ORDER BY timestamp LIMIT 1`)[0];
-  const reads = sid => new Set(sql(`SELECT tc.name, tc.input_json FROM tool_calls tc JOIN messages m ON m.uuid = tc.message_uuid
-    WHERE tc.session_id='${sid}' AND tc.name IN ('Read','Bash')`).flatMap(pathsOf));
-  const rd = reads(r.sid), wr = writer ? reads(writer.sid) : new Set();
+  if (!slug) return { reader: r.sid, uuid: r.uuid, unclassified: 'No artifact path extracted' };
+  const writer = sql(`SELECT tc.session_id sid, m.timestamp ts FROM tool_calls tc
+    JOIN messages m ON m.uuid=tc.message_uuid
+    WHERE tc.name IN ('Write','Edit') AND tc.input_json LIKE :artifact AND m.timestamp < :pickup
+    ORDER BY m.timestamp DESC LIMIT 1`, { artifact: `%${slug}.md%`, pickup: r.ts })[0];
+  const next = sql(`SELECT timestamp ts FROM messages WHERE session_id=:sid AND role='user'
+    AND content_type='text' AND COALESCE(is_meta,0)=0 AND COALESCE(is_sidechain,0)=0
+    AND timestamp > :ts AND text NOT LIKE 'This session is being continued%'
+    AND text NOT LIKE '<command-%' AND text NOT LIKE 'Base directory for this skill:%'
+    ORDER BY timestamp LIMIT 1`, { sid: r.sid, ts: r.ts })[0];
+  const end = next?.ts || '9999'; // no follow-up: end of available evidence, outcome unknown
+  const reads = (sid, start, end) => new Set(sql(`SELECT tc.name, tc.input_json
+    FROM tool_calls tc JOIN messages m ON m.uuid = tc.message_uuid
+    WHERE tc.session_id=:sid AND tc.name IN ('Read','Bash')
+      AND m.timestamp >= :start AND m.timestamp < :end`, { sid, start, end }).flatMap(pathsOf));
+  const rd = reads(r.sid, r.ts, end), wr = writer ? reads(writer.sid, '', writer.ts) : new Set();
   const overlap = {}; for (const f of rd) if (wr.has(f)) overlap[stage(f)] = (overlap[stage(f)] || 0) + 1;
-  const falsified = sql(`SELECT COUNT(*) n FROM messages WHERE session_id='${r.sid}' AND role='assistant'
-    AND timestamp <= '${next ? next.ts : r.ts}' AND text LIKE '%falsif%'`)[0].n;
-  return { slug, reader: r.sid, writer: writer && writer.sid, overlap, falsified };   // drift: git log <anchor>..<pickup> -- <cited paths>, by hand
+  const mentions = sql(`SELECT uuid, timestamp, substr(text,1,240) text FROM messages
+    WHERE session_id=:sid AND role='assistant' AND content_type='text' AND COALESCE(is_meta,0)=0
+      AND timestamp >= :start AND timestamp < :end AND text LIKE '%falsif%' LIMIT 10`,
+    { sid: r.sid, start: r.ts, end });
+  return { slug, reader: r.sid, uuid: r.uuid, writer: writer?.sid, overlap,
+           followup_observed: !!next, falsification_candidates: mentions };
 });
 ```
 
-Report the pair table as `pairs · reader tokens · overlap by stage ·
-falsified (drift / zero-drift)`; the zero-drift column is the writer's
-count, and it is the one the next pass re-measures.
+Report confirmed pairs with reader tokens, overlap by stage, verified
+falsifications (changed source / wrong at anchor), and unresolved claims.
+Deduplicate claims before counting. Only a verified error at the anchor is
+attributed to the writer; keep unknowns out of that failure count.

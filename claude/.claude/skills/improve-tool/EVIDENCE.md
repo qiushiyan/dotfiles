@@ -150,3 +150,14 @@ examples above, not a historical failure-rate estimate. Revise if the new
 wording causes redundant permission gates, forced findings, unjustified
 history expansion, or removal of useful verification. Runtime improvement is
 unproven until those uses exist; no 30-day savings estimate is claimed.
+
+Final independent goal review of `fa6dfca`: substantially landed, with a
+remaining contradiction in specialized examples. Confirmed and corrected:
+one-line repairs and low read counts now prompt investigation rather than
+verdicts; assistant falsification mentions retain receipts and require source
+verification; reader overlap is bounded to the declared window instead of the
+entire session. The holistic pass also removed an unsupported fixed claim
+about shell reads halving counts. All four JavaScript examples pass syntax
+checks and the skill's relative links resolve. Mining queries ran against
+Obelisk; specialized example changes were syntax- and read-verified, not
+replayed against a new pipeline corpus. No runtime benefit is inferred.
