@@ -138,13 +138,14 @@ case "$THEME" in
         LAVENDER=$'\033[38;2;75;31;163m' # #4b1fa3
         ;;
     token_ultra_dark)
-        # Ultra semantic accents on warm charcoal; upstream hues unchanged.
+        # Ultra: quiet fg1 directory, signature peach branch; sage/gold/rose
+        # retain semantic status contrast on charcoal. All colors are upstream.
         CYAN=$'\033[38;2;126;188;187m' # #7ebcbb
         GREEN=$'\033[38;2;154;181;142m' # #9ab58e
         YELLOW=$'\033[38;2;247;201;136m' # #f7c988
         RED=$'\033[38;2;221;131;132m' # #dd8384
-        PINK=$'\033[38;2;178;150;203m' # #b296cb
-        LAVENDER=$'\033[38;2;138;165;187m' # #8aa5bb
+        PINK=$'\033[38;2;237;149;116m' # Branch: accent #ed9574
+        LAVENDER=$'\033[38;2;167;162;153m' # Directory: fg1 #a7a299
         ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2
