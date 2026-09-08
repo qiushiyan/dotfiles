@@ -47,6 +47,13 @@ over that history; the passes themselves are the provenance below.
   after 6 of 6 improve-tool runs (`c37919b5`, `1780f1fe`, `03b5e91a`,
   `39f2bf85`, `af44333d`, `c699709b`), every time in the words "concise
   but informative".
+- **A pre-read is measured by whether the turn it serves cites it.** An
+  onboarding read prepended to a triage turn "so the analysis can echo the
+  design" was checked by reading the triage reports: 0/22 cited a design doc,
+  in both the onboarded and the direct cohorts, and the route guessed before
+  the evidence matched the cause's home 5/17 times. The map a later phase
+  needs is named by the diagnosis, so the pipeline runs evidence first and
+  routes the read from its output (pl-loopy-debug pass, 2026-09-08).
 - **Measure the doctrine gap before writing doctrine.** Count the door the
   instructions present against the door agents take (calls / distinct
   sessions). What agents rebuild by hand in every session — a join, a
