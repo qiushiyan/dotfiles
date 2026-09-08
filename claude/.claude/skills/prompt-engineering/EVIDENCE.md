@@ -67,3 +67,68 @@ Fold baseline for the upstream sibling: `writing-for-agents` at folder hash
 absorbed in `bfb4b83`. The sync procedure is `docs/agent-skills.md` § "The
 rulebook and its upstream sibling"; the next sync records its hash and
 per-hunk verdicts here.
+
+## 2026-09-08 — second pass: the shape of a document
+
+Corpus: all time, self excluded, same invocation signatures as the first
+pass. Post-fold window 09-04 → 09-08: 51 invocations (45 by path, 6 slash).
+Structure ask = invoking prompt (claude, incl. the writing-for-agents
+pointer) LIKE `%structur%` OR `%formatting%` OR `%header%` OR `%mental
+model%`: 95 / 389 prompts, 71 / 181 sessions — an upper bound, since the
+predicate also matches quoted briefs; the phrasing recurs verbatim
+("structures, clear instructions, mental models, formatting and not verbose
+text", `e8b530f4/1d4896ad` 09-07; "minimal and clear formatting that
+contributes to clear instructions", `b5f5e59f/3c6935fb` 08-26). Skill
+openings read statically: first non-heading body line of every SKILL.md,
+dotfiles 47 and planlab 50. Web: the platform best-practices page, the
+Fable 5 / 5.1 / Opus 5 model pages, the skill-authoring page.
+Seed: the user — the loopy-debug skill "starts with 'to reproduce these bug
+reports'… Anthropic recommends defining the task first… task definition and
+project background, followed by the mindset, the methodology"
+(`5305d9d6/3c9d63c5`); then: no ten-part template, three layers as the
+usual shape, teach the shaping from goals and constraints.
+
+| friction | count | reading | verdict |
+|---|---|---|---|
+| skills open mid-stream — a mechanism, a trap, or a count of things in the anchor's seat | dotfiles ≈ 8 / 47, planlab ≈ 17 / 50; "Two/Three X" openers 10 across both | observed (static); the first version of pl-loopy-debug (08-10) also opened mid-stream, so the opener is an authoring prior, not a revision-pass cut | **instructions** — a `## The shape` section: three layers in reader order, formatting as the way layers show |
+| the rulebook said structure in one clause and showed none | 1 clause in a 249-word paragraph; 0 uses of header/bullet/formatting; The bar 11 bullets averaging 80 words | observed | the bar regrouped under three sub-heads; surfaces under sub-heads; the shape carries an avoid/target pair from the corrected skill |
+| the user compensates with a standing structure ask | 71 / 181 sessions (upper bound) | observed; same mechanism as "concise but informative" (first pass) | its vocabulary folded into the shape section |
+| the lens had no name for the two shapes | — | observed | *hook before anchor* replaces *assumed conversational context*; *flat hierarchy* added |
+| altitude rule had no account of when a fixed sequence is right | user: "you can still provide tutorials for step-by-step procedures" | design | the fragile-or-irreversible exception in **Right altitude**; the vendor pages' scaffolding removals (verification, re-check) added to the cut list |
+
+Decided by the user: no ten-part template in the guide; three layers as
+the usual shape, not a rule; a section in the rulebook, not a satellite
+(first pass: satellites went unread).
+
+Next pass should measure, after 2026-09-08: H2/H3 count and median
+paragraph length of skills edited under the rulebook (target: layers
+visible, bullets under ~60 words); the share of invoking prompts still
+carrying the structure ask (target: falling); the opener of any skill
+authored under the rulebook (target: layer one first); Edit-row delta
+sign per window, as before. Quality condition for reversal: revision
+passes that add headers without shortening, or skills whose first layer
+grows past a paragraph.
+
+Cold readers (two, fresh, read-only): authoring route — a new `dotadd-audit`
+skill from a blank file; revision route — the pass over `write-email` and
+`read-email`. Shared stalls, fixed: the surfaces section was itself a flat
+hierarchy (now one bullet per rule under sub-heads); "steps only where
+order matters" had three homes (layer two is the home; the altitude rule
+points at it); "Never ask for the latter" was a no-op after "refusal class"
+(deleted). Single-reader fixes: the output contract had three partial homes
+(one clause in layer one); the pass was undefined when pointed at files
+rather than a diff (now: every line is touched); the no-op cut in step 3
+conflicted with the bar's run-it-to-know rule (a doubtful no-op is marked,
+step 5's cold read settles it); *stale cache* added to the lens, and
+*hook before anchor* covers a missing first layer; the sibling-skill
+pointer said what to copy (frontmatter and header order, not method); the
+Fable guide is named where it is echoed; frontmatter's two house exceptions
+are labelled as exceptions. Not applied: a done-line after every section
+(the completion rule was narrowed instead to instructions the reader
+executes).
+
+Length: 2579 → 3050 words (`wc -w`, whole file). The named gap is the
+shape section with its example pair (≈ 450 words); the rest of the file is
+net flat after trimming every bar bullet. Deliberate keeps: the two Fable
+policies under Instructions (user decision, first pass); the step-3
+transform example; "never" in the composer rule and in "never the dump".
