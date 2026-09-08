@@ -101,15 +101,15 @@ it:
 "skillOverrides": { "emil-design-engineering": "user-invocable-only" }
 ```
 
-Verified working in the restricting direction: that skill carries a full
-model-facing trigger list and no frontmatter flag, and the override alone keeps
-it out of the model's skill list. **The re-enabling direction is unreliable** —
-an `"on"` override failed to bring a disabled skill back when last tested
-(v2.1.205), and the field is undocumented with open upstream bugs. So: use it to
-take a skill away from the model, and don't depend on it to give one back
-without re-testing. Global
-overrides go in `claude/.claude/settings.json`; a project-local one in a repo's
-own `.claude/settings.local.json` binds only inside that repo.
+The [documented override states](https://code.claude.com/docs/en/skills#override-skill-visibility-from-settings)
+are `on`, `name-only`, `user-invocable-only`, and `off`. A missing entry
+means `on`. `user-invocable-only` removes the skill's listing from model
+context while preserving explicit invocation; `off` also hides it from the
+slash menu and blocks invocation. Plugin skills use plugin controls instead.
+An `on` override does not bypass frontmatter, feature gates, or the bundled
+kill switch. Global overrides go in `claude/.claude/settings.json`; a
+project-local entry in `.claude/settings.local.json` binds only inside that
+repo. Bundled-skill policy and upgrade checks: `docs/bundled-skills.md`.
 
 The one real trap:
 
@@ -120,8 +120,8 @@ The one real trap:
 
 ## Ownership tiers — who may edit a skill, and where a lesson goes
 
-Every directory under `claude/.claude/skills/` is one of four things, and the
-tier decides where an improvement is allowed to land. The tell is the lockfile
+Each directory under `claude/.claude/skills/` has an ownership tier that
+decides where an improvement is allowed to land. The tell is the lockfile
 (`~/.agents/.skill-lock.json`) plus the presence of `.upstream/`.
 
 | tier | tell | edit policy | where our own lessons about it go |
@@ -129,7 +129,6 @@ tier decides where an improvement is allowed to land. The tell is the lockfile
 | **Managed** — installed from upstream and kept current (`writing-for-agents`, `codebase-design`, `research`, …) | in the lockfile, no `.upstream/` | never edit the body; `skills update` reverts it silently (it did: the local `## Tool access` section of `writing-for-agents` was lost on 2026-08-29 and now lives in `lessons/agent-tooling/`). Behaviour changes go through `skillOverrides` (above) | a lesson under `lessons/` that the consuming skill points at (`agent-tooling/usage-lessons.md` is the rulebook's companion) |
 | **Customized** — upstream pinned beside a rewritten body (`obelisk`) | `.upstream/PINNED.txt` + `LESSONS.md` in the skill dir | edit the body freely; upgrade by hand per `PINNED.txt`, re-checking every `LESSONS.md` item against the new upstream | in the skill's own `LESSONS.md` (receipts) and body (rules) |
 | **Original** — ours (`review`, `consult`, `improve-tool`, `handoff`, …) | in neither | edit freely | in the body, or in a lesson when several skills share the rule |
-| **Vendored bundled** — a copy of a Claude Code built-in (`artifact-design`) | listed in the section below | treat as managed by hand: refresh from the CLI, don't customize | — |
 
 **Trap: a customized skill that is still in the lockfile.** `obelisk` is
 both — installed by the CLI on 2026-07-20 and rewritten since, and its lock
@@ -225,9 +224,9 @@ empty delta is recorded there too, as a measured empty. Lessons are not skills �
 reached only by a pointer from a skill or snippet — and `lessons/.config/lessons/CLAUDE.md`
 carries the conversion rules between the two forms.
 
-## Vendored bundled skills
+## Bundled skills
 
-The kill switch has no supported per-skill exemption. A required bundled skill
-returns as a real user-skill directory, which shadows the bundled name and
-survives the switch. Refresh rules, extraction traps, and the current exception:
-`docs/vendored-bundled-skills.md`.
+Claude owns bundled skill bodies and supporting files. Keep them upstream;
+a personal copy with the same name shadows the bundled version and prevents
+updates from taking effect. Selective enablement, manual invocation, and
+upgrade checks: `docs/bundled-skills.md`.
