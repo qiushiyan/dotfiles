@@ -184,6 +184,17 @@ function M.get_palette()
       -- note on the white page, so the statusline reads as an intentional band.
       bar_bg = "#f5ead8",
     }
+  elseif scheme:match("^token%-meridian%-light") then
+    -- Meridian light surfaces and semantic hues from ThorstenRhau/token.
+    return {
+      base = "#fbf9f4", mantle = "#ecebe7", crust = "#e7e3dc",
+      surface0 = "#eae9e5", surface1 = "#dedbd3", surface2 = "#b5b2ab",
+      text = "#28323a", subtext0 = "#524b42", subtext1 = "#46535f",
+      overlay0 = "#a8a49c", overlay1 = "#43505c",
+      blue = "#0048b3", green = "#005f2f", red = "#286fc0", yellow = "#843900",
+      mauve = "#7a1f7a", teal = "#095b62", pink = "#7a1f7a", sky = "#236bb5",
+      bar_bg = "#ecebe7", -- bg1 distinguishes the statusline from paper.
+    }
   elseif scheme:match("^gruvbox") then
     -- gruvbox.nvim's dark-medium palette mapped onto the catppuccin-shaped
     -- table ui.lua consumes. Without this branch the "gruvbox" colorscheme name

@@ -128,6 +128,15 @@ case "$THEME" in
         PINK=$'\033[38;2;154;106;24m'       # Ochre accent #9a6a18
         LAVENDER=$'\033[38;2;20;71;230m'    # Blue-700 #1447e6
         ;;
+    token_meridian_light)
+        # Upstream semantic diagnostic blue, ochre warning, plum and violet accents.
+        CYAN=$'\033[38;2;9;91;98m' # #095b62
+        GREEN=$'\033[38;2;0;95;47m' # #005f2f
+        YELLOW=$'\033[38;2;132;57;0m' # #843900
+        RED=$'\033[38;2;40;111;192m' # #286fc0
+        PINK=$'\033[38;2;122;31;122m' # #7a1f7a
+        LAVENDER=$'\033[38;2;75;31;163m' # #4b1fa3
+        ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2
         exit 1

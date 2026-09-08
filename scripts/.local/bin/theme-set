@@ -24,7 +24,7 @@ TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 
 # Canonical names. Keep in sync with the per-app case statements (theme.zsh,
 # statusline-command.sh, zen.omp.json, nvim config/theme.lua, tmux.conf).
-THEMES=(gruber_darker catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft night_owl orng_light forest_night waffle_cat vellum)
+THEMES=(gruber_darker catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft night_owl orng_light forest_night waffle_cat vellum token_meridian_light)
 
 # --- per-theme ghostty field set ---------------------------------------------
 # Emit the ghostty config line(s) a theme owns. The whole include file is
@@ -54,6 +54,8 @@ ghostty_block() {
     forest_night)     printf 'theme = forest-night\nbold-color = #FFB74D\n' ;;
     waffle_cat)      printf 'theme = waffle-cat\nbold-color = #e4c56d\n' ;;
     vellum)           printf 'theme = vellum\nbold-color = #9a6a18\n' ;;
+    # Override the base config's fixed Moon background with Meridian paper.
+    token_meridian_light) printf 'theme = token-meridian-light\nbackground = #fbf9f4\nbold-color = #0048b3\n' ;;
   esac
 }
 

@@ -160,6 +160,14 @@ case "$TERMINAL_THEME" in
         export DELTA_FEATURES='+light-mode'
         export DFT_BACKGROUND='light'
         ;;
+    token_meridian_light)
+        # Meridian paper: non-bold ANSI blue directories, upstream comment ink suggestions.
+        export LSCOLORS='exfxcxdxbxegedabagacad'
+        export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+        export DELTA_FEATURES='+light-mode'
+        export DFT_BACKGROUND='light'
+        ;;
     *)
         print -ru2 "theme.zsh: unknown TERMINAL_THEME '$TERMINAL_THEME'"
         ;;

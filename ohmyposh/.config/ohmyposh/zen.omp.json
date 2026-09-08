@@ -112,6 +112,16 @@
         "green": "#008236",
         "peach": "#bb4d00",
         "red": "#c10007"
+      },
+      "token_meridian_light": {
+        "os": "#524b42",
+        "closer": "p:os",
+        "pink": "#7a1f7a",
+        "lavender": "#7a1f7a",
+        "blue": "#0048b3",
+        "green": "#005f2f",
+        "peach": "#843900",
+        "red": "#286fc0"
       }
     }
   },

@@ -40,6 +40,7 @@ local map = {
   forest_night     = { colorscheme = "forest-night",             background = "dark"  },
   waffle_cat = { colorscheme = "waffle-cat", background = "dark" },
   vellum           = { colorscheme = "vellum",                   background = "light" },
+  token_meridian_light = { colorscheme = "token-meridian-light", background = "light" },
 }
 
 M.name = resolve()
