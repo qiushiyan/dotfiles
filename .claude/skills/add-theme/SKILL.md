@@ -50,6 +50,10 @@ built-in keeps its spaced name in theme-set (`theme = Rose Pine Dawn`).
 - **tmux** `tmux/.config/tmux/themes/<name>_tmux.conf` — copy the exemplar;
   its header names each slot and the decisions (the two badge accents, the
   session pill, the active chip one step lighter than the inactive one).
+  `@thm_crust` on `@thm_yellow` is also the copy-mode selection; if that pair
+  is under ~4.5:1 (a light theme whose yellow is a deep ochre), set the
+  optional `@thm_mode_bg` as `vellum` does → `docs/theming.md`, Ghostty
+  section, for why the selection may never be bold.
 - **Neovim**, one of two:
   - hand-rolled `nvim/.config/nvim/colors/<name-dashed>.lua` — copy the
     exemplar group for group and map the source's token colors onto it

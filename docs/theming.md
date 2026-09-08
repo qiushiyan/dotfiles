@@ -119,6 +119,19 @@ since going brighter on white loses contrast. It exists because Dank Mono's bold
 is only ~12% heavier than its regular, so weight alone can't mark emphasis and
 colour does the job instead → `docs/ghostty-fonts.md`.
 
+⚠️ **A literal `bold-color` also rewrites bold text that names its own
+colour**, whenever that colour equals the terminal's default foreground
+(Ghostty's `Style.fg`: an RGB fg equal to the default is treated as the
+default). On every light theme the tmux `@thm_crust` *is* the Ghostty
+foreground, so a tmux style like `fg=#{@thm_crust},bg=…,bold` renders in the
+theme's bold-color, not in ink. That is how vellum's choose-tree row and
+copy-mode selection vanished: bold-color and the selection bg were both the
+ochre. Rules: no `bold` on a style whose fg is crust/fg over a colored bg
+(`mode-style` in `tmux.conf` lost its `bold` for this), and a theme whose
+yellow sits too close to ink sets `@thm_mode_bg` in its tmux palette (vellum
+uses its amber) — the force-load resets the slot to `@thm_yellow` on every
+switch, so it cannot leak.
+
 ## Neovim specifics
 
 - Colorschemes come from two places: **plugin themes** (catppuccin, gruvbox) and
