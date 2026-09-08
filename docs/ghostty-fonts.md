@@ -1,25 +1,70 @@
 # Ghostty fonts
 
-The font block looks misconfigured twice over and is correct both times.
+## Ownership and resolution
 
-- **Bold barely reads** — Dank Mono's bold is 12% heavier than its regular, and
-  every weight-side fix costs more than it buys, so emphasis rides on **colour**.
-- **汉字 came out small** — a CJK fallback is scaled by *its own line height*
-  against the primary's, so the fallback has to be chosen on that number rather
-  than on how the glyphs look in a specimen.
+`ghostty/.config/ghostty/config` owns the primary font, symbol fallbacks and CJK
+mapping. Read its font block for current families and size. Theme switching
+owns colours, including bold emphasis, independently of font selection
+(→ `docs/theming.md`).
 
-Both were settled by measurement, not impression. The method is at the bottom;
-it is the part worth keeping.
+**Repeated `font-family` entries append an ordered fallback list.** Reading
+only the last line misidentifies the primary. A Nerd Font fallback supplies
+missing icons without making the primary a patched Nerd Font. Keep intentional
+fallbacks labelled and experiments out of the live block. An empty family value
+resets the list; style-specific families have their own lists.
+[Ghostty reference](https://ghostty.org/docs/config/reference#font-family).
 
-## Bold barely reads
+Font resolution depends on glyph and style. `+show-config` and `+show-face`
+inspect what a new process loads; they do not query an existing window's state.
+Use them before inferring a family from a screenshot. Syntax validation alone
+cannot establish font availability or whether a requested style exists.
 
-**Dank Mono ships three faces and a bold 12% heavier than its regular**, so
-emphasis — Claude Code's tool names, `man` headings, a bold prompt segment —
-nearly disappears.
+## Verifying
 
-### The measurement
+The executable is `/Applications/Ghostty.app/Contents/MacOS/ghostty`;
+substitute that path for `ghostty` when it is absent from `PATH`.
 
-Ink coverage over `H n o e s`, normalized to em² (fontTools `AreaPen`):
+```bash
+ghostty +show-config                          # resolved families and settings
+ghostty +show-face --string=Bash --style=bold # family used for bold Latin
+ghostty +show-face --cp=0x4E2D                # CJK mapping
+ghostty +show-face --cp=0xF07C --style=bold   # Nerd icon coverage in bold
+ghostty +list-fonts                          # installed monospace families/styles
+ghostty +validate-config                     # syntax, not font availability
+```
+
+Check representative Latin, icons and CJK in `regular`, `bold`, `italic` and
+`bold_italic`. `+show-face` reports the typographic family, so it distinguishes
+families but cannot prove which weight within Berkeley Mono was selected.
+Mapped CJK families can work even when absent from the monospace font listing.
+Reload with **⌘⇧,**; codepoint-map changes require a new terminal surface.
+
+## Choosing a CJK fallback
+
+**Fallback size depends on the primary font's cell geometry.** Changing the
+primary invalidates tuning based on another family's line height and advance.
+Ghostty fits CJK glyphs to the primary's grid; increasing cell height adds
+vertical air. Choose a fallback using its metrics, then verify its rendered size.
+
+A mapped range with missing glyphs silently falls through. The codepoint map
+covers punctuation and compatibility ranges as well as common ideographs;
+keep those ranges when changing the target family. Edit the existing mapping
+when comparing fonts, since repeated mapping entries append.
+
+Sarasa **Term** is intentional: `—` and `…` have a 0.5 em advance that fits
+Ghostty's single-cell treatment of East Asian Ambiguous characters. Sarasa
+Mono gives them 1.0 em and can overrun the cell. Sarasa Fixed omits ligatures.
+The Homebrew Sarasa bundle is large, but keeping package-managed installation
+avoids maintaining a hand-downloaded SC-only font archive.
+
+## Measurement reference
+
+These measurements describe the tested fonts and Dank Mono cell configuration.
+They are evidence for future tuning, not defaults to copy into another family.
+
+### Weight contrast
+
+Ink coverage over `H n o e s`, normalized to em² with fontTools `AreaPen`:
 
 | face | ink | vs its own regular |
 |---|---|---|
@@ -30,205 +75,57 @@ Ink coverage over `H n o e s`, normalized to em² (fontTools `AreaPen`):
 | Berkeley Mono ExtraBold | 0.9428 | +61% |
 | Berkeley Mono Black | 1.0804 | +85% |
 
-A normal bold lands around +40%. Dank Mono's bold is lighter than Berkeley
-Mono's *regular*.
+Dank Mono has no weight above Bold and no native bold-italic face. Thickening
+all glyphs also thickens regular, which can reduce the perceived weight gap;
+`font-thicken-strength = 0` is the lightest thickening, not off.
+Borrowing Iosevka bold measured +65% but changed typeface within a sentence
+(0.50 adv/em versus Dank Mono's 0.55). Berkeley ExtraBold provides a heavier
+in-family option; a style name must be checked against the installed faces.
 
-### Two things the family simply lacks
+### CJK scaling with Dank Mono
 
-- **No weight above 700.** Ghostty's two in-family levers — `font-style-bold` (a
-  named style inside the family) and `font-variation-bold` (a variable weight
-  axis) — both need a family with somewhere heavier to go. Dank Mono is static
-  and tops out at Bold, so neither applies.
-- **No bold-italic face.** Ghostty synthesizes one (`font-synthetic-style`
-  defaults to `bold,italic,bold-italic`) or falls through to the
-  `IosevkaTerm Nerd Font` fallback line.
-
-### font-thicken works against it
-
-`font-thicken = true` runs at the default `font-thicken-strength = 255` — the
-maximum — and dilates *every* glyph. It adds weight to regular and bold alike,
-closing the small gap that exists. Lowering the strength widens the contrast;
-`0` is the lightest thickening, not off.
-
-### Rejected: borrowing bold from another family
-
-`font-family-bold = IosevkaTerm Nerd Font Mono` buys +65% and resolves cleanly,
-but bold then changes *typeface* mid-sentence — Iosevka is 0.50 adv/em against
-Dank Mono's 0.55, with a taller x-height. Tried, and reverted: the inconsistency
-read worse than the weak bold.
-
-### Traps
-
-- **Naming any `font-family-bold` replaces the inherited chain rather than
-  extending it** — the primary's fallbacks (Nerd icons, the CJK codepoint map)
-  are gone for bold unless re-appended. Repeated `font-family*` lines append; an
-  empty value resets.
-- **`font-style-bold` is never validated.** A wrong style string passes
-  `+validate-config` and silently falls back to whatever the family offers.
-- **The second `font-family = IosevkaTerm Nerd Font` line is live**, not
-  leftover — that repetition is what makes it a fallback.
-- **`+show-face` prints the *typographic* family**, so it cannot tell weights
-  within one family apart (every Berkeley Mono weight reports `Berkeley Mono`).
-  It does distinguish different families, which is what makes it useful here.
-
-### What ships instead: colour, not weight
-
-The weight problem is routed around rather than solved. Emphasis is marked by
-**`bold-color`, set per theme by `theme-set`** — `ghostty_block()` emits a
-literal colour from each theme's own palette beside its `theme` line
-(→ `docs/theming.md`).
-
-A **literal** colour rather than `bright` is the load-bearing choice: Ghostty's
-docs say only a literal "will always be used for the default bold text color",
-and bold drawn in the default foreground is most of what matters here. `bright`
-alone reaches only bold that already carries an ANSI colour.
-
-The cost, accepted: every bold in the terminal takes the colour — prompt
-segments, `man` headings, all of it — and coloured bold silently upgrades to its
-bright palette variant. It still reads better than the weight ever did.
-
-### Remaining levers, if colour stops being enough
-
-- **Lower `font-thicken-strength`** (untried). Free; recovers the compressed 12%
-  rather than creating contrast.
-- **Switch family.** Berkeley Mono is installed and publishes Thin→Black under
-  one typographic family, so `font-style-bold = ExtraBold` buys +61% with no
-  typeface change — at the cost of Dank Mono's cursive italic, which is the
-  whole reason to be on it.
-- **Manufacture a heavier face** is deliberately not a live plan. The result
-  would be a local binary derived from a commercial font, outside Homebrew and
-  this public repo; EULA and reproducibility costs outweigh the gain.
-
-## CJK — the fallback's line height sets the size
-
-A 汉字 occupies two cells, and the cells belong to the **primary** font. Ghostty
-fits the fallback glyph into that box with two clamps, each capped at 1:
+The model used to rank candidates caps each factor at 1:
 
 ```
 scale = min(1, primary line height ÷ fallback line height)
       × min(1, two cells ÷ CJK advance)
 ```
 
-Against the shipped primary — Dank Mono at 0.55 adv/em and 1.142 em line, with
-`adjust-cell-width = -2%` giving a 0.539 em cell and a **1.078 em** two-cell box:
+Dank Mono: 0.55 adv/em, 1.142 em line; `adjust-cell-width = -2%` gives a
+0.539 em cell and 1.078 em CJK box.
 
 | CJK fallback | CJK adv | line | scale | ink fills the box |
 |---|---|---|---|---|
 | Heiti SC *(system)* | 1.000 | 1.03 | 1.000 | 81% *(predicted)* |
 | LXGW WenKai Mono | 1.000 | 1.169 | 0.977 | **78%** *(measured)* |
-| **Sarasa Term SC** ← shipped | 1.000 | 1.250 | 0.914 | **78%** *(measured)* |
+| **Sarasa Term SC** | 1.000 | 1.250 | 0.914 | **78%** *(measured)* |
 | PingFang SC *(system)* | 1.000 | 1.400 | 0.816 | 67% *(predicted)* |
 | Maple Mono NF CN | 1.200 | 1.320 | 0.777 | **65%** *(measured)* |
 
-**A font named for CJK can be the worst pick.** Maple Mono NF CN is a 1:2 CJK
-coding font and rendered *smallest* of everything tried: its 1.2 em advance does
-not fit a 1.078 em box **and** its 1.320 em line is the tallest in the table, so
-both clamps fire and multiply. Sarasa is a whole tier better despite a *worse*
-line height than LXGW, because its glyphs are drawn larger inside the em.
+Maple hits both clamps. Sarasa and LXGW looked equally large despite the
+model predicting Sarasa 5% smaller: glyph outlines matter too. CJK ink height
+relative to Latin cap height measured 1.07× with Maple and 1.29× with the
+larger fallbacks; below roughly 1.2× read as undersized in this comparison.
+Using Sarasa Term SC as primary gave 0.5 em cells, unit scaling and 89% fill.
 
-That last row is why the model is a guide, not an oracle: it predicts Sarasa 5%
-smaller than LXGW, and on screen the two are indistinguishable. Rank with it,
-then look.
-
-### The one number that names the symptom
-
-**汉字 ink height ÷ Latin cap height: 1.07× under Maple, 1.29× after.** A CJK
-glyph barely taller than a capital letter is the entire "又小又扁" complaint.
-Below roughly 1.2× it reads as undersized whatever the typeface.
-
-### adjust-cell-height is pure air for CJK
-
-Ghostty **centres the glyph vertically** in the taller cell, so every point of
-`adjust-cell-height` becomes padding above and below 汉字:
+Vertical spacing measurements under Dank Mono:
 
 | value | line box | 汉字 ink of it | |
 |---|---|---|---|
 | 15% | 55px | 67% | tuned for Latin alone, before any of this |
-| **12%** | **54px** | **69%** | shipped |
+| **12%** | **54px** | **69%** | Dank Mono configuration |
 | 8% | 52px | 71% | tried; Latin read cramped |
 
-It buys nothing horizontally, and `adjust-cell-width` is the mirror image:
-widening the cell only widens the gap, because the width clamp is already
-satisfied at 1.0 em.
+Coverage probes found Maple at 7% of `U+FF00-U+FFEF` and 0% of
+`U+3400-U+4DBF`; missing glyphs reached Noto Serif CJK SC and PCMyungjo.
+Sarasa and LXGW covered 91–100% of the mapped ranges. The measured Sarasa
+bundle occupied 793 MB (480 faces, about 18% of the font directory); LXGW was
+24 MB. Recheck disk usage when considering font-package cleanup.
 
-**This is one number serving two scripts, so it stays a live tension.** Latin
-wants the leading; 汉字 want it gone. Ghostty has no per-font line-height
-override, so there is no configuration that ends the argument — 12% is a truce
-held by taste, not a solved problem. If Latin ever reads cramped, move it back up
-and accept squatter 汉字; the table says what each point costs.
+### Reproducing size measurements
 
-### The codepoint-map ranges were their own trap
-
-`U+4E00-U+9FFF,U+FF00-U+FFEF=Maple Mono NF CN` looked complete and was not.
-**A mapped range the font does not cover falls through in silence.**
-
-- Maple covers **7%** of `U+FF00-U+FFEF` and **0%** of `U+3400-U+4DBF`.
-- `U+3400-U+4DBF` (Ext A) landed in **Noto Serif CJK SC** — serif, mid-sentence.
-- `U+F900-U+FAFF` (compat ideographs) landed in **PCMyungjo** — a Korean font.
-- `U+3000-U+303F` (、。《》【】) was never mapped at all; it reached Maple through
-  the fallback chain rather than the map, which is luck, not configuration.
-
-The shipped range closes all four, and Sarasa and LXGW cover 91–100% of each:
-
-```
-U+2E80-U+303F,U+3400-U+4DBF,U+4E00-U+9FFF,U+F900-U+FAFF,U+FF00-U+FFEF
-```
-
-### Sarasa: Term, not Mono
-
-`Sarasa Mono SC` draws `—` and `…` full-width (1.0 em = two cells), but Ghostty
-counts East Asian Ambiguous as one cell, so they overrun their box.
-**`Sarasa Term SC`** draws them at 0.5 em, which is what the grid expects.
-`Sarasa Fixed SC` is the same again minus `calt` — no ligatures.
-
-### What Sarasa costs on disk
-
-`brew install --cask font-sarasa-gothic` drops a single **793 MB**
-`Sarasa-SuperTTC.ttc` into `~/Library/Fonts` — 480 faces, SC/TC/J/K crossed with
-Mono/Term/Fixed/Gothic/UI crossed with every weight, of which exactly one is
-used. It is ~18% of that directory.
-
-Left alone on purpose. The only way down is to hand-download the SC-only archive
-from the upstream release and drop out of Homebrew's management, which trades a
-reproducible `make brew` for disk that is not currently scarce. Worth revisiting
-only while actually reclaiming space — and if it does get retired, remember
-`font-lxgw-wenkai` (24 MB) is already installed and one `#` away from being the
-fallback again.
-
-### Rejected: a 1:2 family as the primary
-
-`font-family = Sarasa Term SC` makes the cell 0.5 em and two cells exactly
-1.0 em, so both clamps land on 1.0 and fill reaches 89% — the best number
-available. Not taken, for the same reason as the bold section: it costs Dank
-Mono's cursive italic, which is the whole reason to be on it.
-
-### The A/B block
-
-Three `font-codepoint-map` lines sit in the config with **exactly one live**;
-moving the `#` switches fallback in one edit. Repeated `font-codepoint-map` lines
-*append*, so two live lines mean two mappings, not a replacement.
-
-## Verifying
-
-```bash
-ghostty +show-face --string=Bash --style=bold   # which face bold resolves to
-ghostty +show-face --cp=0x4E2D                  # which face a CJK codepoint lands in
-ghostty +show-face --cp=0xF07C --style=bold     # icon coverage within bold
-ghostty +list-fonts | grep -v '^ '              # families — monospace only, so most
-                                                # CJK fonts never appear here even
-                                                # though a codepoint map can use them
-ghostty +validate-config                        # syntax only — not font availability
-```
-
-`ghostty` is not on `$PATH`; it lives at
-`/Applications/Ghostty.app/Contents/MacOS/ghostty`. macOS has no external config
-reload — press ⌘⇧, in Ghostty.
-
-**Size claims come from screenshot pixels, never from impressions.** Screenshot a
-retina window, threshold the image, and read ink runs by column and row: the CJK
-ink run against its pitch gives fill directly, row bands give the line box, and
-Latin cap height calibrates the em (`0.650 × font-size × 2` for Dank Mono).
-Ratios survive an unknown screenshot scale; absolute pixels do not.
-
-Eyeballing weight is what produced a 12% bold. Eyeballing size is what kept a
-65%-fill CJK font in place for months.
+Use screenshot pixels: threshold a Retina capture and read ink runs by column
+and row. CJK ink height against row pitch gives fill; Latin cap height
+calibrates em (`0.650 × font-size × 2` for Dank Mono). Ratios survive an
+unknown screenshot scale; absolute pixel counts do not. Re-measure after
+changing the primary, fallback or cell metrics.

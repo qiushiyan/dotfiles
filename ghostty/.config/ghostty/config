@@ -3,51 +3,20 @@
 # file (theme-set regenerates ~/.config/ghostty/auto/theme.ghostty). Do not set
 # `theme` here — leaving it out makes the include the single source of truth.
 # macOS has no external config reload, so after switching press ⌘⇧, to reload.
-# theme = Catppuccin Mocha
-background-opacity = 0.95
-background-blur-radius = 25
-# theme = TokyoNight
-# font-family = JetBrainsMono Nerd Font
 
-
-# font-family = Berkeley Mono
-# font-family = R Maple Mono NF CN
-# ^ so1ve's Maple Mono 7.9 build with cv/ss variants frozen in; hand-installed
-#   in ~/Library/Fonts (not brew). Tried 2026-08-28, went back to Dank Mono. If
-#   it becomes the primary again: drop the three Dank tunings below and turn
-#   off the CJK codepoint-map -- it covers 汉字 itself at a true 1:2.
-font-family = DankMono Nerd Font Mono
-# Dank Mono's bold is ~12% heavier than its regular and it ships no bold-italic
-# at all, so emphasis barely reads here. That is a property of the family, not a
-# misconfiguration -- measurements and the levers: docs/ghostty-fonts.md
+# -- fonts --------------------------------------------------------------------
+# Primary font. Repeated font-family lines APPEND ordered fallbacks; they do
+# not replace the first family. Verify resolution with ghostty +show-face.
+# Font selection lives here; theme-set manages colours only. See docs/ghostty-fonts.md.
+font-family = Berkeley Mono
+# Nerd Font symbols fall back to JetBrains; ordinary text uses Berkeley.
+font-family = JetBrainsMono Nerd Font Mono
 font-size = 22
-font-thicken = true
-adjust-cell-width = -2%
-# One number serving two scripts. Ghostty centers the glyph in the taller cell, so
-# every point here is air above and below 汉字: ink was 67% of the line box at the
-# 15% this sat at when it was tuned for Latin alone, 71% at 8%. 12% is the truce --
-# 汉字 at 69%, Latin barely tighter than it was. → docs/ghostty-fonts.md
-adjust-cell-height = 12%
+# Use native font metrics and the default unthickened rendering.
 
-# font-size = 24
-font-family = IosevkaTerm Nerd Font
-# font-thicken = true
-# adjust-cell-height = 20%
-# adjust-cell-width = -2%
-
-
-# font-codepoint-map = U+23FB-U+23FE,U+2665,U+26A1,U+2B58,U+E000-U+E00A,U+E0A0-U+E0A3,U+E0B0-U+E0D4,U+E200-U+E2A9,U+E300-U+E3E3,U+E5FA-U+E6AA,U+E700-U+E7C5,U+EA60-U+EBEB,U+F000-U+F2E0,U+F300-U+F32F,U+F400-U+F4A9,U+F500-U+F8FF,U+F0001-U+F1AF0=Symbols Nerd Font Mono
-
-# -- CJK -----------------------------------------------------------------------
-# A CJK fallback is shrunk by (primary line height / its own line height), so the
-# fallback's *line height* is most of what decides how big 汉字 come out. Measured
-# fill of the two-cell box: Sarasa 78%, LXGW 78%, Maple 65% -- Maple loses twice
-# over, its 1.2em advance not fitting the 1.078em box either. The ranges beyond
-# U+4E00 keep 、。《》 and the Ext-A / compat blocks from scattering into Noto
-# Serif and PCMyungjo. Exactly one line stays live -> docs/ghostty-fonts.md
-# font-codepoint-map = U+2E80-U+303F,U+3400-U+4DBF,U+4E00-U+9FFF,U+F900-U+FAFF,U+FF00-U+FFEF=LXGW WenKai Mono
+# Explicit CJK fallback, including punctuation and compatibility ideographs.
 font-codepoint-map = U+2E80-U+303F,U+3400-U+4DBF,U+4E00-U+9FFF,U+F900-U+FAFF,U+FF00-U+FFEF=Sarasa Term SC
-# font-codepoint-map = U+2E80-U+303F,U+3400-U+4DBF,U+4E00-U+9FFF,U+F900-U+FAFF,U+FF00-U+FFEF=Maple Mono NF CN
+
 clipboard-paste-protection = false
 
 copy-on-select = true
@@ -68,7 +37,9 @@ window-padding-balance = true
 window-padding-x = 4
 window-padding-y = 4
 window-save-state = always
-window-colorspace = "display-p3"
+window-colorspace = srgb
+# Match Terminal's Tokyo Night Moon background, converted from Generic RGB.
+background = #2d3146
 
 # custom-shader = shaders/cursor_frozen.glsl
 

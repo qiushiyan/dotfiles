@@ -36,11 +36,8 @@ table.
 | Neovim | reads file/env at startup, then watches the file | `nvim/.config/nvim/lua/config/theme.lua`, `colors/`, `lua/plugins/theme.lua` |
 | Ghostty | a generated include file | `ghostty/.config/ghostty/auto/theme.ghostty` (+ `themes/`, `config`) |
 
-**Why per-tool palettes and not a generator** (base16 / tinty / pywal): those
-tools generate every app's colors from one scheme spec. Here the palettes are
-hand-tuned and the tool set is deliberately small, so a generator adds a dependency
-and takes away the hand-tuning while buying nothing. The cost is that adding a
-theme touches each tool once (the `/add-theme` skill walks them).
+Per-tool palettes preserve hand-tuned contrast; a shared colour generator would
+remove that control. Theme additions follow `/add-theme`.
 
 ## Model 2 — the control plane
 
@@ -101,36 +98,43 @@ Four consequences worth internalizing:
 
 ## Ghostty: the include seam
 
-Ghostty's config can't read env vars and can't be reloaded externally on macOS.
-So `config-file = ?auto/theme.ghostty` at the bottom of `config` pulls in a
-**switcher-owned, gitignored** include (`auto/` is ignored — it never enters the
-repo). `theme-set` **fully regenerates** that include on every switch.
+`config-file = ?auto/theme.ghostty` pulls in a **switcher-owned, gitignored**
+include. `theme-set` fully regenerates it on every switch; manual edits there
+are disposable. Extend `ghostty_block()` for theme-specific settings.
 
-Full regeneration is also what makes Ghostty **multi-field**: a theme's block can
-set `background-opacity`, `background-blur-radius`, … not just `theme`. Rewriting
-the whole file means a field dropped from a theme can never linger as a stale
-key. Fields a theme omits fall back to the base values in `config` (the include
-is last, so it wins); extend `ghostty_block()` in `theme-set` to switch more.
+The include is last, so its explicit settings override base settings. Settings
+it omits inherit from the base config. Explicit colour overrides also take
+precedence over colours supplied by a theme: a fixed `background` in the base
+config persists across theme switches unless explicitly overridden. The base
+background is intentionally tuned to Terminal's Moon appearance; inspect it
+when another theme appears to retain the same background.
 
-Every theme sets `theme` and `bold-color`. **`bold-color` is per-theme
-because no single value works on both backgrounds** — dark themes take a warmer,
-brighter accent than their foreground, light themes a deeper, more saturated one,
-since going brighter on white loses contrast. It exists because Dank Mono's bold
-is only ~12% heavier than its regular, so weight alone can't mark emphasis and
-colour does the job instead → `docs/ghostty-fonts.md`.
+Font selection belongs to the base config → `docs/ghostty-fonts.md`.
+`bold-color` belongs to each theme: dark backgrounds need brighter emphasis,
+light backgrounds need deeper ink. A literal colour reaches default-foreground
+bold text; `bright` alone only affects text carrying ANSI colours.
 
-⚠️ **A literal `bold-color` also rewrites bold text that names its own
-colour**, whenever that colour equals the terminal's default foreground
-(Ghostty's `Style.fg`: an RGB fg equal to the default is treated as the
-default). On every light theme the tmux `@thm_crust` *is* the Ghostty
-foreground, so a tmux style like `fg=#{@thm_crust},bg=…,bold` renders in the
-theme's bold-color, not in ink. That is how vellum's choose-tree row and
-copy-mode selection vanished: bold-color and the selection bg were both the
-ochre. Rules: no `bold` on a style whose fg is crust/fg over a colored bg
-(`mode-style` in `tmux.conf` lost its `bold` for this), and a theme whose
-yellow sits too close to ink sets `@thm_mode_bg` in its tmux palette (vellum
-uses its amber) — the force-load resets the slot to `@thm_yellow` on every
-switch, so it cannot leak.
+**Literal `bold-color` can override an explicit text colour equal to the default
+foreground.** On light themes that includes tmux's `@thm_crust`. Avoid `bold`
+on crust/foreground text over coloured selections; use `@thm_mode_bg` for a
+selection colour with enough contrast. The palette loader resets that slot on
+switching, so a theme-specific selection cannot leak into another theme.
+
+## Comparing terminal colours
+
+**RGB values only identify a colour together with their colour space.**
+Ghostty uses sRGB here. Terminal profiles can store Apple Generic RGB colours:
+the inspected Moon background's `#222436` converts through macOS to roughly
+`#2d3146` in sRGB. Equal hex strings therefore do not establish a visual match;
+switching Ghostty between P3 and sRGB alone barely changes this dark background.
+Convert the profile's tagged colours into a common space before comparing them.
+[Apple colour spaces](https://developer.apple.com/documentation/appkit/nscolorspace/genericrgb),
+[Ghostty colour space](https://ghostty.org/docs/config/reference#window-colorspace).
+
+For tmux tab styling, use the theme's `@thm_window_*` slots rather than changing
+shared accents. Moon gives inactive tabs muted backgrounds and lavender text;
+the selected tab gets a purple badge and near-white name. The palette file owns
+the exact values. Keep the selected state distinct in brightness as well as hue.
 
 ## Neovim specifics
 
