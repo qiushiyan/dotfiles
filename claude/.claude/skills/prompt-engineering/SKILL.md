@@ -52,13 +52,14 @@ or grow one.
    to one concept lives under that concept; the tail carries the
    cross-cutting ones, where attention is strong again.
 
-A snippet, a tool description, or an error line is one layer; a prompt that
-carries data adds the data before the request. Formatting exists so the
-reader can see the layers: a header per layer or stage, a list for parallel
-items, prose for one argument, and no more structure than the content has —
-one paragraph hides a hierarchy, a header every three sentences invents
-one. Prompt style shapes output style, so a surface formatted the way you
-want the output to look teaches by example.
+A snippet, a tool description, or an error line is one layer; a prompt
+built around large source material keeps its opening and places the
+material between it and the request (under Instructions). Formatting
+exists so the reader can see the layers: a header per layer or stage, a
+list for parallel items, prose for one argument, and no more structure
+than the content has — one paragraph hides a hierarchy, a header every
+three sentences invents one. Prompt style shapes output style, so a
+surface formatted the way you want the output to look teaches by example.
 
 <example type="avoid">
 Two producers feed **#bug_reports**: `LoopyReport` rows (the row exists even when the Slack post failed) and `LoopyConversationAnalysis` rows. **Check `.source` before quoting `.problemStatement` as the user's words.** …
@@ -91,7 +92,7 @@ system, the input, and done, and the two producers become a fact inside it.
   only to the narrow bridge named in the shape. Ask for conclusions with
   their evidence. A written intermediate the workflow needs — a plan
   before the build — is output and fine to ask for; "show your thinking"
-  is a refusal class on current models.
+  can trigger a reasoning-extraction refusal on the Fable generation.
 - **Completion criteria.** End every step, and every set of instructions
   the reader executes, on a condition the model can tell done from
   not-done by — "every modified model accounted for", not "understanding
@@ -155,16 +156,15 @@ system, the input, and done, and the two producers become a fact inside it.
 
 ### Instructions — a prompt, a skill body, a doc
 
-- A prompt that carries data puts the data before the instructions and
-  the question last: attention is strongest at the edges of context and
-  weakest in the middle. Delimit content types so data is never mistaken
-  for instruction.
+- A prompt built around large source material — documents, transcripts,
+  data running to thousands of tokens — opens on the task, places the
+  material next, and puts the question last: attention is strongest at the
+  edges of context and weakest in the middle. Delimit content types so data
+  is never mistaken for instruction.
 - A role line sets voice and audience, not competence.
-- Sort every piece as a **step** (an ordered action), a **heuristic** (a
-  rule with its reason), or **reference** (consulted on demand): inline
-  what every run needs, push what only some runs reach behind a pointer
-  one level deep, and keep a concept's definition, rules, and caveats
-  under one heading.
+- Inline what every run needs, push what only some runs reach behind a
+  pointer one level deep, and keep a concept's definition, rules, and
+  caveats under one heading.
 - Every document spends **context load** if always in the window or
   **cognitive load** on the human who must remember it exists, so a
   **context pointer** (a skill description, a `CLAUDE.md` line naming a
@@ -265,21 +265,26 @@ when pointed at files, every line of them — run before shipping. In order:
    a fact the model acts on and became the instruction, which also gave
    "don't block" its positive form.
 4. **Then the defect lens** on what remains — each rule seen from its
-   failure side, named so a finding is checkable: *hook before anchor*
-   (opens on a mechanism, a trap, or a count of things, or has no first
-   layer at all — put layer one first); *flat hierarchy* (layers rendered
-   as one paragraph, or bullets that run to paragraphs — a header per
-   layer, a list for parallel items); *stale cache* (restates a `--help`,
-   a config, a listing — point at the source); *familiar-term leak*
-   (replace with the field's term); *negation as the lever* (reframe to
-   the positive path); *rule–example conflict* (shown beats said — fix the
-   example first); *conflicting rules with no precedence* (state the rule
-   once with its exception folded in); *config-conditional prose* (branch
-   in the composer); *unearned certainty* (assert what this layer
-   observed); *volatile facts in a durable prompt* (derive at render time
-   or point at a source); *buried instruction* (move to the end, or repeat
-   it there on purpose); *opaque returns and errors* (semantic fields,
-   prescriptive recovery).
+   failure side, named so a finding is checkable; the remedy is the bar
+   rule behind it:
+   - *hook before anchor* — opens on a mechanism, a trap, or a count of
+     things, or has no first layer at all;
+   - *flat hierarchy* — layers rendered as one paragraph, or bullets that
+     run to paragraphs;
+   - *stale cache* — restates a `--help`, a config, a listing;
+   - *familiar-term leak* — an internal name where the field has a word;
+   - *negation as the lever* — the rule is carried by what not to do;
+   - *rule–example conflict* — the example wins, so fix it first;
+   - *conflicting rules with no precedence* — state the rule once with
+     its exception folded in;
+   - *config-conditional prose* — a mode or flag branched in the text;
+   - *unearned certainty* — a claim its layer could not observe;
+   - *volatile facts in a durable prompt* — derive at render time or
+     point at a source;
+   - *buried instruction* — move it to the end, or repeat it there on
+     purpose;
+   - *opaque returns and errors* — ids without meaning, failures without
+     a next action.
 5. **Verify and record.** Check each truth claim against its source now;
    pin it with a test where a harness exists, otherwise say in the commit
    what you verified and how. Read every touched file once more as one

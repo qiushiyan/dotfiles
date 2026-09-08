@@ -132,3 +132,19 @@ shape section with its example pair (≈ 450 words); the rest of the file is
 net flat after trimming every bar bullet. Deliberate keeps: the two Fable
 policies under Instructions (user decision, first pass); the step-3
 transform example; "never" in the composer rule and in "never the dump".
+
+Goal review (codex, cold, `~/.local/state/envoy/jobs/dotfiles-4f711dad/20260908-120646-review`,
+2 min): achieved at the document level, no design objection, runtime
+unproven. Findings, all confirmed and fixed in the follow-up commit: the
+shape's task-first opening and the surfaces' data-first rule conflicted
+with no precedence, and the data-first rule had dropped the vendor page's
+large-input scope (now: a prompt built around large source material opens
+on the task, material next, question last; the shape points there);
+"refusal class on current models" overstated the Fable 5 page's "can
+trigger" (qualified); the step/heuristic/reference labels were a second
+classification beside the layers (labels cut, the instruction kept); the
+lens was itself a flat hierarchy with remedies restating the bar (now a
+list, remedies only where the bar does not carry them). Departures from
+the vendor pages the reviewer judged earned: no fixed example count;
+explicit formatting guidance; verification scaffolding removed per model
+rather than wholesale.
