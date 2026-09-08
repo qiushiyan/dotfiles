@@ -195,6 +195,17 @@ function M.get_palette()
       mauve = "#7a1f7a", teal = "#095b62", pink = "#7a1f7a", sky = "#236bb5",
       bar_bg = "#ecebe7", -- bg1 distinguishes the statusline from paper.
     }
+  elseif scheme:match("^token%-ultra%-dark") then
+    -- Ultra dark surfaces and semantic hues from ThorstenRhau/token.
+    return {
+      base = "#272724", mantle = "#1d1d1c", crust = "#181817",
+      surface0 = "#30302c", surface1 = "#383835", surface2 = "#3c3b36",
+      text = "#c5c1b8", subtext0 = "#a39d94", subtext1 = "#a7a299",
+      overlay0 = "#636360", overlay1 = "#8d8983",
+      blue = "#8aa5bb", green = "#9ab58e", red = "#dd8384", yellow = "#f7c988",
+      mauve = "#b296cb", teal = "#78aba4", pink = "#bea5d4", sky = "#88c0c0",
+      bar_bg = "#30302c", -- bg4 lifts the statusline above charcoal.
+    }
   elseif scheme:match("^gruvbox") then
     -- gruvbox.nvim's dark-medium palette mapped onto the catppuccin-shaped
     -- table ui.lua consumes. Without this branch the "gruvbox" colorscheme name

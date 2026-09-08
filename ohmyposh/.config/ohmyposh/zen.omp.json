@@ -122,6 +122,16 @@
         "green": "#005f2f",
         "peach": "#843900",
         "red": "#286fc0"
+      },
+      "token_ultra_dark": {
+        "os": "#8d8983",
+        "closer": "p:os",
+        "pink": "#b296cb",
+        "lavender": "#c5c1b8",
+        "blue": "#8aa5bb",
+        "green": "#9ab58e",
+        "peach": "#ed9574",
+        "red": "#dd8384"
       }
     }
   },

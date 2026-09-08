@@ -137,6 +137,15 @@ case "$THEME" in
         PINK=$'\033[38;2;122;31;122m' # #7a1f7a
         LAVENDER=$'\033[38;2;75;31;163m' # #4b1fa3
         ;;
+    token_ultra_dark)
+        # Ultra semantic accents on warm charcoal; upstream hues unchanged.
+        CYAN=$'\033[38;2;126;188;187m' # #7ebcbb
+        GREEN=$'\033[38;2;154;181;142m' # #9ab58e
+        YELLOW=$'\033[38;2;247;201;136m' # #f7c988
+        RED=$'\033[38;2;221;131;132m' # #dd8384
+        PINK=$'\033[38;2;178;150;203m' # #b296cb
+        LAVENDER=$'\033[38;2;138;165;187m' # #8aa5bb
+        ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2
         exit 1
