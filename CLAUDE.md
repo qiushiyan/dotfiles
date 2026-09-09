@@ -47,8 +47,32 @@ Three ways to wreck live state; none raises an error at the time.
 - **Skill, lesson, or agent-doc work** — the most common task here. The
   session loop is `docs/doc-loop.md`; the skill's ownership tier decides
   whether its body may be edited and where a rule lands
-  → `docs/agent-skills.md`. Its **Installing and updating** section owns the
-  CLI recipe and the shared-skill invariant.
+  → `docs/agent-skills.md`.
+
+## Installing and updating skills
+
+Personal skills are shared by Claude Code and Codex. Install upstream skills
+globally, explicitly selecting both agents:
+
+```bash
+npx skills@latest add <owner/repo> --skill <skill-name> -g -a claude-code codex -y
+```
+
+The existing folder links put the files in `claude/.claude/skills/` and CLI
+tracking in `claude/.agents/.skill-lock.json`. No `--copy`, per-skill symlinks,
+or restow is needed for these installs. Review and commit the skill files and
+lockfile changes together.
+
+Update managed skills with:
+
+```bash
+npx skills@latest update -g -y
+```
+
+Check for uncommitted skill edits first. Keep custom skills and forks outside
+the lockfile so updates cannot overwrite them. This quick reference mirrors
+`docs/agent-skills.md` **Installing and updating**, which owns the layout,
+invocation controls, and update caveats.
 
 ## Package layout
 
