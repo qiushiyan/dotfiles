@@ -28,15 +28,6 @@
       "installedAt": "2026-07-09T09:15:02.181Z",
       "updatedAt": "2026-09-09T08:52:44.740Z"
     },
-    "grill-me": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/mattpocock/skills.git",
-      "skillPath": "skills/productivity/grill-me/SKILL.md",
-      "skillFolderHash": "3df14e2d3a89459bf300614be9247e3ce74798f8",
-      "installedAt": "2026-07-09T09:15:06.715Z",
-      "updatedAt": "2026-09-09T08:52:45.566Z"
-    },
     "grill-with-docs": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -191,6 +182,16 @@
       "skillFolderHash": "af8a2304070a6f9a350e4222f5533d324da39816",
       "installedAt": "2026-09-09T08:54:01.010Z",
       "updatedAt": "2026-09-09T08:54:01.010Z"
+    },
+    "grilling": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "skillPath": "skills/productivity/grilling/SKILL.md",
+      "skillFolderHash": "f0732035b8b1b60ae39454e4191caef32fa91903",
+      "pluginName": "mattpocock-skills",
+      "installedAt": "2026-09-09T09:13:22.777Z",
+      "updatedAt": "2026-09-09T09:13:22.777Z"
     }
   },
   "dismissed": {

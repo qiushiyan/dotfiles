@@ -193,7 +193,6 @@
     "workflow-authoring": "off",
     "workshop": "user-invocable-only",
     "make-interfaces-feel-better": "user-invocable-only",
-    "find-docs": "user-invocable-only",
     "vitest": "user-invocable-only",
     "vercel-react-best-practices": "user-invocable-only"
   }

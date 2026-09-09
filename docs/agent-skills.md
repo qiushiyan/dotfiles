@@ -60,6 +60,19 @@ files as well as tracking; to stop managing a retained fork, remove only its
 entry from the JSON lockfile. The lock contains upstream skills, not an inventory
 of every custom or externally linked skill.
 
+## Shared procedures and composed skills
+
+`find-docs` is the upstream source of truth for documentation lookup. Claude's
+`rules/context7.md` and Codex's global `AGENTS.md` contain only pointers to that
+shared skill, so CLI instructions and query guidance update with its body.
+Keep its default invocation enabled; a manual-only override would prevent
+Claude from following the automatic documentation route.
+
+`grilling` owns Matt Pocock's interview workflow. `grill-with-docs` composes it
+with `domain-modeling` for glossary and ADR work. The upstream `grill-me` alias
+adds no behavior beyond `grilling`, so it is not installed. When updating a
+composed skill, check its named skill dependencies as well as its file hashes.
+
 ## Retained sources outside automatic updates
 
 - **`obelisk`** is customized; `.upstream/PINNED.txt` owns its manual upgrade

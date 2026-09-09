@@ -141,3 +141,40 @@ Every prior LESSONS item re-checked: none touches source enumeration; #9 is
 the only one affected and it widens trivially (DeepSeek joins Kimi in the
 "not on this machine" list in the body's Escalation references). Pristine copy
 replaced under `.upstream/` and `references/`; body otherwise untouched.
+
+## 2026-09-09 — invocation identity review (pin 109b8b1 → 2869861)
+
+**Keep the Claude-focused query workflow; adopt upstream changes only where
+the installed runtime supports them.** The owner reaffirmed the personalized
+examples and friction fixes. Upstream changes only SKILL.md: search nonces
+must be literal, and query identity can fall back to script content.
+
+The installed package is still 0.2.5. Its `dist/core/src/core.js`
+`executeQuery` passes only `invocation.invocationNonce` to
+`resolveInvokingSessionIdWithWait`; script content goes to the query sandbox,
+not the identity resolver. The CLI passes the expanded argv path as that
+nonce. The upstream fallback is therefore deferred until a runtime upgrade
+implements it; reading the new docs is not evidence the feature is installed.
+
+The installed `resolveInvokingSessionId` function was exercised unchanged
+against an in-memory SQLite fixture, with no live index or session access:
+
+- A literal search nonce in the indexed tool record resolves its session.
+- A shell-generated nonce whose expanded value is absent returns null.
+- A tool record with script content and only `$Q` does not resolve the path.
+- Adding the literal `Q=/tmp/…` assignment resolves the session.
+
+Adopted: a literal search-nonce example and an explanation of why the query
+path assignment must appear in the tool record. Qualified: the body's claim
+that round one always returns null; an already indexed literal path resolves.
+Retained: per-session path reuse, explicit self-exclusion, quoted heredocs,
+and bounded/batched query examples. These fixtures check resolver semantics,
+not Claude transcript timing; friction #11's live measurements remain evidence
+for path reuse, and #12's warning against a shared fixed path still applies.
+
+Every earlier lesson was checked against the upstream delta. #11–12 are the
+identity seam reviewed above. #1–10 and #13–14, the permission-premise correction,
+and the usage-analysis addendum concern schema, budgets, query behavior,
+source scope, permissions, or evidence selection; none is changed by this
+nonce-only delta. References are byte-identical to the previous pin. No CLI
+upgrade or live schema remeasurement was needed or performed.

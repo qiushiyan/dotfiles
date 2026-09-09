@@ -1,12 +1,17 @@
-Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 109b8b1 (2026-08-26),
-which the upstream repo publishes from tommy0103/obelisk @ 2feef9d.
-Verified byte-identical to this directory on 2026-08-29; ../references/ is a
-verbatim copy of references/ here.
-Companion CLI at pin time: @obelisk-apps/cli 0.2.5 (still npm latest on
-2026-08-29). This pin's only delta over 3226391 is a new `deepseek` source
-(DeepSeek Harness) in the docs; the released 0.2.5 CLI does not know it
-(0 hits in its dist), so the docs are ahead of the runtime until the next
-CLI release.
+Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 28698613aafbd279957e3231318838cbdbc1653f
+(2026-08-29), published from tommy0103/obelisk @ 55896aa.
+Verified byte-identical on 2026-09-09, excluding this PINNED.txt;
+../references/ is a verbatim copy of references/ here.
+Installed CLI verified from package metadata and source: @obelisk-apps/cli 0.2.5.
+
+The delta from 109b8b1 only changes invocation identity guidance in SKILL.md:
+literal search nonces and script-content fallback for hidden query paths.
+The literal-nonce guidance is adopted. Script-content fallback is ahead of the
+installed 0.2.5 runtime: executeQuery passes only invocationNonce to resolution.
+Keep the personalized per-session path, explicit session-id filtering, and
+bounded Claude-oriented query examples. LESSONS.md records the source check
+and isolated resolver probes. References and schema documentation are unchanged;
+no CLI upgrade or live schema remeasurement was performed in this docs-only pass.
 
 Installed via pnpm global only (/Users/qiushi/Library/pnpm/bin), deliberately:
 pnpm's bin directory survives node upgrades where an nvm-scoped npm global does
@@ -19,7 +24,7 @@ Pin the exact version when upgrading: pnpm's packument cache serves a stale
 `latest` for a day or so after a release, and `pnpm add -g
 @obelisk-apps/cli@latest` installed 0.2.4 while printing "0.2.5 is available".
 
-History: previous pin 3226391 (2026-08-24). Before that the skill lived in
+History: previous pins 109b8b1 (2026-08-26), 3226391 (2026-08-24). Before that the skill lived in
 tommy0103/obelisk skill-doc/ (pin 7c1b478, 2026-08-04). It now ships from its own docs-only repo.
 
 DO NOT run `obelisk install`. It shells out to `npx skills add
