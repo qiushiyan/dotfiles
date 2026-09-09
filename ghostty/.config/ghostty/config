@@ -11,7 +11,7 @@
 font-family = Berkeley Mono
 # Nerd Font symbols fall back to JetBrains; ordinary text uses Berkeley.
 font-family = JetBrainsMono Nerd Font Mono
-font-size = 22
+font-size = 21
 # Use native font metrics and the default unthickened rendering.
 
 # Explicit CJK fallback, including punctuation and compatibility ideographs.
