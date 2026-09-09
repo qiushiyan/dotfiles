@@ -73,10 +73,14 @@ with `domain-modeling` for glossary and ADR work. The upstream `grill-me` alias
 adds no behavior beyond `grilling`, so it is not installed. When updating a
 composed skill, check its named skill dependencies as well as its file hashes.
 
+`gh` comes from GitHub's official `cli/cli` repository and is CLI-managed.
+Use the shared Skills CLI installation/update workflow above so its source
+stays in the same lockfile as the other upstream skills.
+
 ## Retained sources outside automatic updates
 
 The [customization guide](skill-customizations.md) owns the purpose and update
-judgment for `obelisk`, `tailwind-best-practices`, and `gh-cli`, plus the writing
+judgment for `obelisk` and `tailwind-best-practices`, plus the writing
 rulebook's relationship to upstream. Read that entry before upgrading a local
 adaptation; its pin owns the commands and its lessons own the evidence.
 
@@ -137,7 +141,7 @@ notes above distinguish other forks from original work.
 | tier | tell | edit policy | where our own lessons about it go |
 |---|---|---|---|
 | **Managed** — installed from upstream and kept current (`writing-for-agents`, `codebase-design`, `research`, …) | in the lockfile, no `.upstream/` | never edit the body; `skills update` reverts it silently (it did: the local `## Tool access` section of `writing-for-agents` was lost on 2026-08-29 and now lives in `lessons/agent-tooling/`). Behaviour changes go through `skillOverrides` (above) | a lesson under `lessons/` that the consuming skill points at (`agent-tooling/usage-lessons.md` is the rulebook's companion) |
-| **Customized** — upstream-derived with local changes (`obelisk`, `gh-cli`) | a pin or documented provenance and local changes; absent from the lock | edit freely; upgrade by hand, using `PINNED.txt` and `LESSONS.md` where present | in the skill's own lessons and body |
+| **Customized** — upstream-derived with local changes (`obelisk`, `tailwind-best-practices`) | a pin or documented provenance and local changes; absent from the lock | edit freely; upgrade by hand, using `PINNED.txt` and `LESSONS.md` where present | in the skill's own lessons and body |
 | **Original** — ours (`review`, `consult`, `improve-tool`, `handoff`, …) | authored here, no managed upstream | edit freely | in the body, or in a lesson when several skills share the rule |
 
 ### Where a writing guideline lives

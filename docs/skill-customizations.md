@@ -88,21 +88,6 @@ this public repo; changing its publication or Git history is a separate task.
 Sources and receipts: [pin](../claude/.claude/skills/tailwind-best-practices/.upstream/PINNED.txt),
 [lessons](../claude/.claude/skills/tailwind-best-practices/LESSONS.md).
 
-## GitHub CLI reference
-
-**Purpose:** retain the practical command reference and local additions for
-noninteractive command use, pager behavior, structured output, and operational
-gotchas. This scope is evidenced by the current body and Git history; there is
-no separate owner-authored customization brief or pinned baseline.
-
-Its original source, `github/awesome-copilot`, [retired the skill](https://github.com/github/awesome-copilot/commit/352def3ca2a5).
-There is no current upstream skill to merge. Maintain concrete corrections
-against installed CLI behavior and official documentation. A replacement
-source requires a deliberate review of the local additions; a matching skill
-name does not establish continuity.
-
-Local reference: [gh-cli](../claude/.claude/skills/gh-cli/SKILL.md).
-
 ## The writing rulebook and its upstream reference
 
 `prompt-engineering` is locally authored, with selected rules absorbed from
