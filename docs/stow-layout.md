@@ -17,8 +17,8 @@ repo-only documentation and the gitignored local backup are never stowed.
 
 ## Directories that must stay real
 
-`~/.claude`, `~/.codex` and `~/.config/lazygit` are listed in `REAL_DIRS` in the
-Makefile, and `make install` / `make restow` `mkdir -p` them *before* running
+`~/.claude`, `~/.codex`, `~/.agents` and `~/.config/lazygit` are listed in
+`REAL_DIRS` in the Makefile. `make install` / `make restow` `mkdir -p` them *before* running
 `stow`. That ordering is the enforcement: Stow folds a package into an existing
 directory, but links the whole directory when it is absent.
 
@@ -37,6 +37,11 @@ Nothing errors at the time; the files simply appear as untracked additions.
 `<pkg>/.<app>/*` wholesale and then allow-list only the config that belongs in
 git. A folded directory would still be wrong, but its runtime state would not be
 committable by accident.
+
+The Claude package also stows `~/.agents/skills` as a link to the shared
+personal skills and `~/.agents/.skill-lock.json` as the tracked upstream lock.
+Other `.agents` state stays in the real home directory; [agent skills](agent-skills.md)
+owns installation and update behavior.
 
 ## `<pkg>/CLAUDE.md` stows to `~/CLAUDE.md`
 

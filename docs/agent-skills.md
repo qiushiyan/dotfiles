@@ -1,84 +1,82 @@
-# Agent skills: Claude Code ⊇ Codex
+# Agent skills: shared by Claude Code and Codex
 
-**The invariant: every skill Codex has, Claude Code has — never the reverse.**
-The only permitted exception is a skill _about_ Codex itself
-(`keep-codex-fast`), which lives as a real directory in the codex package. A
-Claude-only skill is simply one with no Codex symlink.
+**Claude Code and Codex use the same personal skill directory.** Real skill
+files live in `claude/.claude/skills/`; both agents and the Skills CLI resolve
+to that directory. A Claude-only installation is therefore visible to Codex
+without a second installation or a per-skill link.
 
-```
-claude/.claude/skills/<name>/          # source of truth — real directories
-.claude/skills/<name>/                 # this repo's own project skills (add-theme), loaded inside dotfiles
-.agents/skills/<name>                  # relative symlink → ../../.claude/skills/<name>, so Codex loads the
-                                       # same skill ($add-theme); neither dir is a stow package
-codex/.codex/skills/<name>             # relative symlink → ../../../claude/.claude/skills/<name>
-codex/.codex/skills/keep-codex-fast/   # real dir — the declared Codex-only exception
-codex/.codex/skills/.system/           # Codex's bundled skills — gitignored, not ours
-~/.agents/skills/                      # the `skills` CLI's store — should be empty; a dir here is a
-                                       # leftover copy, removed only after the repo has the real dir
+```text
+claude/.claude/skills/          # shared source of truth, stowed to ~/.claude/skills
+claude/.agents/skills           # symlink → ../.claude/skills; stowed to ~/.agents/skills
+claude/.agents/.skill-lock.json # CLI's global lock, stowed to ~/.agents/.skill-lock.json
+~/.codex/skills/.system/        # Codex-owned bundled skills; runtime-owned and separate
+.claude/skills/                 # repo-local skills, shared via .agents/skills → ../.claude/skills
 ```
 
-**Audit:** every entry under `codex/.codex/skills/` is either a symlink into
-`claude/.claude/skills/` or a declared Codex-only skill. Any other real
-directory is a bug — except `.system/`, Codex's own bundled skills, which it
-reinstalls and `.gitignore` excludes.
+`~/.claude`, `~/.codex`, and `~/.agents` remain real directories. Only the
+skills and lockfile are linked into the repo; runtime files stay outside it.
+`make install` / `make restow` enforce that boundary; see [Stow layout](stow-layout.md).
 
-## Why the links must stay inside the repo
+[Codex discovers `~/.agents/skills` and follows symlinked skill folders](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills).
+[Claude discovers `~/.claude/skills`](https://code.claude.com/docs/en/skills).
+Keep Codex's `.system` separate: it has its own lifecycle and can contain
+same-named bundled skills, such as `skill-creator`. Personal availability is
+shared; invocation controls and compatibility with agent-specific tools remain
+agent-specific. Plugin skills belong to their plugin managers, outside this tree.
 
-`~/.claude/skills` and `~/.codex/skills` are stow symlinks _into this repo_, so
-the kernel resolves a skill's relative symlink from its **real** repo location,
-not from `$HOME`. A link like `../../.agents/skills/X` therefore resolves to
-`dotfiles/claude/.agents/X` and dangles — this silently broke several skills.
-Both ends of the Codex links live in the repo, so they resolve correctly and
-survive stow, and being git-tracked they make "which skills Codex gets"
-versioned.
+## Installing and updating
 
-## Installing
-
-**Always install with `--copy`:**
+Use the [Skills CLI](https://github.com/vercel-labs/skills) with the two intended
+agents explicitly selected:
 
 ```bash
-npx skills add <owner/repo@skill> -g -a claude-code --copy -y
+npx skills@latest add <owner/repo> --skill <name> -g -a claude-code codex -y
+npx skills@latest update -g -y
 ```
 
-It writes a real directory straight into `claude/.claude/skills/`, leaves the
-CLI store empty, and still records a lockfile entry so `skills update` keeps
-working. Without `--copy` the CLI creates exactly the `../../.agents/skills/X`
-links that can never resolve here. Never pass `-a codex` — that makes a
-divergent copy; symlink instead.
+`upgrade` aliases `update`. Global scope matters: a bare noninteractive update
+inside a repo can select project scope. To restore a missing managed skill,
+repeat its `add` command using the source in the global lockfile; `update`
+checks upstream hashes and does not repair arbitrary local drift. `make install`
+restores the tracked bodies and lockfile without a network install.
 
-Then add the Codex symlink by hand if Codex should get the skill.
+The shared directory makes both copy and symlink installation modes work.
+Skills CLI 1.5.25 compares resolved paths before creating an agent link, so it
+keeps a real skill directory when Claude and the canonical store resolve to the
+same place. This was verified with an isolated installation and a global update.
+Keep that equality when changing the Stow layout: the CLI avoids replacing
+the skill with an agent link because both paths resolve to the same directory.
 
-**`skills update` has no `--copy` and re-creates the bad link.** Verified
-2026-08-29 updating `writing-for-agents`: the CLI replaced the real directory
-with `../../.agents/skills/<name>` (dangling from the repo) and put the files
-in `~/.agents/skills/<name>/`. Recovery, every time:
+Before an update, check `git status`; afterward, review the skill and lockfile
+diffs together. Every managed skill must have a resolving upstream `skillPath`.
+A successful update summary is insufficient: renamed or retired paths can be
+skipped. Reinstall a confirmed rename under its current name, then reconcile
+references. Keep custom forks out of the lockfile, because updates replace them.
 
-```bash
-S=claude/.claude/skills/<name>
-rm $S && cp -R ~/.agents/skills/<name> $S && rm -rf ~/.agents/skills/<name>
-git diff --stat $S     # read the upstream change before committing
-```
+`skills update` chooses detected agents when it reinstalls a skill; its update
+command has no agent-selection flag. Use explicit `add` commands above when
+installation must be limited to Claude and Codex. `skills remove` deletes skill
+files as well as tracking; to stop managing a retained fork, remove only its
+entry from the JSON lockfile. The lock contains upstream skills, not an inventory
+of every custom or externally linked skill.
 
-Scope updates to one skill (`npx skills update <name> -g -y`) — a bare
-`skills update` also touches every customized skill still in the lockfile
-(see Ownership tiers).
+## Retained sources outside automatic updates
 
-- **`skills remove` is all-or-nothing.** It deletes the store directory, the
-  lockfile entry, _and_ every agent copy. There is no prune-only command, so
-  never reach for it just to "clean the store".
-- **`~/.agents/.skill-lock.json` is not in this repo**, so CLI tracking does not
-  survive to a new machine — `make install` won't restore it.
-- **Forking a CLI-managed skill gets clobbered by `skills update`.** Editing the
-  frontmatter of anything in the lockfile is a fork the next update silently
-  reverts. Prefer a `skillOverrides` entry (below), which lives outside the file
-  and survives; keep a frontmatter fork only for what an override can't express,
-  and expect to re-apply it.
-- **A renamed upstream skill goes stale in silence.** When a skill is renamed
-  upstream, its lockfile `skillPath` starts 404ing and `skills update` no-ops on
-  it forever — no error, no warning, the local copy just frozen. (This is not
-  hypothetical: it happened to `writing-great-skills` → `writing-for-agents`.)
-  An update that reports success is not evidence the skill still exists
-  upstream; if one looks suspiciously unchanged, check the path by hand.
+- **`obelisk`** is customized; `.upstream/PINNED.txt` owns its manual upgrade
+  procedure. It is absent from the CLI lockfile.
+- **`gh-cli`** is a customized fork of `github/awesome-copilot`, with local pager
+  and practical-usage additions. Upstream [retired the skill](https://github.com/github/awesome-copilot/commit/352def3ca2a5)
+  rather than providing an update target. Preserve the local fork.
+- **`tailwind-best-practices`** has unverified provenance. The similarly named
+  `ofershap/tailwind-best-practices` is different content, so it is not an
+  established update source. Preserve this copy until its source is identified.
+- **External symlinks** are owned by the referenced projects or applications.
+  `terminal-browser` follows the installed app's default skill; local development
+  skills follow their `~/dev` projects. Their owners update the target files.
+
+`emil-design-engineering` is CLI-managed from `medoismail/claude-skills`: its
+entire directory matched that source byte-for-byte when tracking was recovered.
+This establishes the tracked source, not the identity of its original author.
 
 ## Controlling invocation
 
@@ -121,24 +119,16 @@ The one real trap:
 ## Ownership tiers — who may edit a skill, and where a lesson goes
 
 Each directory under `claude/.claude/skills/` has an ownership tier that
-decides where an improvement is allowed to land. The tell is the lockfile
-(`~/.agents/.skill-lock.json`) plus the presence of `.upstream/`.
+decides where an improvement is allowed to land. The lockfile
+(`claude/.agents/.skill-lock.json`) identifies managed skills. `.upstream/`
+identifies an explicitly pinned customization; history and the retained-source
+notes above distinguish other forks from original work.
 
 | tier | tell | edit policy | where our own lessons about it go |
 |---|---|---|---|
 | **Managed** — installed from upstream and kept current (`writing-for-agents`, `codebase-design`, `research`, …) | in the lockfile, no `.upstream/` | never edit the body; `skills update` reverts it silently (it did: the local `## Tool access` section of `writing-for-agents` was lost on 2026-08-29 and now lives in `lessons/agent-tooling/`). Behaviour changes go through `skillOverrides` (above) | a lesson under `lessons/` that the consuming skill points at (`agent-tooling/usage-lessons.md` is the rulebook's companion) |
-| **Customized** — upstream pinned beside a rewritten body (`obelisk`) | `.upstream/PINNED.txt` + `LESSONS.md` in the skill dir | edit the body freely; upgrade by hand per `PINNED.txt`, re-checking every `LESSONS.md` item against the new upstream | in the skill's own `LESSONS.md` (receipts) and body (rules) |
-| **Original** — ours (`review`, `consult`, `improve-tool`, `handoff`, …) | in neither | edit freely | in the body, or in a lesson when several skills share the rule |
-
-**Trap: a customized skill that is still in the lockfile.** `obelisk` is
-both — installed by the CLI on 2026-07-20 and rewritten since, and its lock
-entry's `skillPath` resolves on the current upstream repo, so `skills update`
-would overwrite the customized body with upstream's. `skills remove` cannot fix
-it (all-or-nothing — it deletes the directory). The safe move is to delete the
-`obelisk` entry from `~/.agents/.skill-lock.json` by hand, so the CLI forgets
-it and the `PINNED.txt` procedure is the only upgrade path. Until that is done,
-run `skills update` only after `git status` shows the skill tree clean, and
-diff before committing.
+| **Customized** — upstream-derived with local changes (`obelisk`, `gh-cli`) | a pin or documented provenance and local changes; absent from the lock | edit freely; upgrade by hand, using `PINNED.txt` and `LESSONS.md` where present | in the skill's own lessons and body |
+| **Original** — ours (`review`, `consult`, `improve-tool`, `handoff`, …) | authored here, no managed upstream | edit freely | in the body, or in a lesson when several skills share the rule |
 
 ### Where a writing guideline lives
 
@@ -189,7 +179,7 @@ is carry new rules the rulebook has not judged yet.
 ```bash
 S=claude/.claude/skills/writing-for-agents
 BEFORE=$(git log -1 --format=%h -- $S)              # last synced state
-npx skills update writing-for-agents -g -y          # then the recovery block under Installing
+npx skills@latest update writing-for-agents -g -y
 git diff $BEFORE -- $S                               # the upstream delta, read whole
 ```
 

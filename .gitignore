@@ -21,6 +21,12 @@ claude/.claude/*
 # ...but never the packaged skill exports (zip artifacts).
 claude/.claude/skills/**/*.skill
 
+# Shared personal skills and the CLI's global upstream lock only.
+# ~/.agents remains a real directory for any unrelated runtime state.
+claude/.agents/*
+!claude/.agents/skills
+!claude/.agents/.skill-lock.json
+
 # === Codex CLI (codex/.codex/) ===
 # ~/.codex is a real directory (like ~/.claude); only config is symlinked in
 # from here, so Codex's runtime state — sqlite DBs (logs ~160 MB), session

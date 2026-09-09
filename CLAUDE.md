@@ -15,8 +15,8 @@ The repo is **public**. Secrets live in `~/.secrets` (untracked, sourced by
 
 Three ways to wreck live state; none raises an error at the time.
 
-1. **`~/.claude`, `~/.codex`, `~/.config/lazygit` stay real directories, never
-   folded symlinks.** Tracked config is linked in per item; runtime state
+1. **`~/.claude`, `~/.codex`, `~/.agents`, `~/.config/lazygit` stay real
+   directories, never folded symlinks.** Tracked config is linked in per item; runtime state
    (`auth.json`, sessions) stays in `~/` and out of this public repo. Before
    changing `make install` or the `.gitignore` allow-lists that defend this →
    `docs/stow-layout.md`.
@@ -47,8 +47,8 @@ Three ways to wreck live state; none raises an error at the time.
 - **Skill, lesson, or agent-doc work** — the most common task here. The
   session loop is `docs/doc-loop.md`; the skill's ownership tier decides
   whether its body may be edited and where a rule lands
-  → `docs/agent-skills.md`. Its **Installing** section owns the CLI recipe and
-  the Codex-link invariant.
+  → `docs/agent-skills.md`. Its **Installing and updating** section owns the
+  CLI recipe and the shared-skill invariant.
 
 ## Package layout
 
@@ -57,7 +57,7 @@ aren't obvious from the name:
 
 ```
 claude/    ~/.claude/           settings.json, hooks, skills, agents, commands, rules
-codex/     ~/.codex/            Codex CLI config; its skills symlink into claude/
+codex/     ~/.codex/            Codex config; shared skills come from claude/.agents/
 zsh/       ~/.zshrc, ~/.zshenv, ~/.config/zsh/
 tmux/      ~/.config/tmux/      tmux 3.7b — scripts, plugins, design docs
 nvim/      ~/.config/nvim/      LazyVim-based
@@ -89,7 +89,7 @@ One feature, several packages; editing one side without the other breaks it.
 ```
 docs/doc-loop.md               the convention for coding agent sessions (onboarding → consult/review → update-docs → handoff)
 docs/documentation-standards.md the doc standards — this repo's and the global fallback: shape, status pages, hot path, the check block
-docs/agent-skills.md           skill ownership tiers · Claude ⊇ Codex layout · lessons
+docs/agent-skills.md           skill ownership tiers · shared Claude/Codex layout · lessons
 docs/theming.md                themes
 docs/claude-accounts.md        accounts
 docs/bypass-cd-read-guard.md   dormant hook (reference only): the 2.1.259 `cd DIR; grep <relative>` guard, why it is off, when to re-arm or delete it

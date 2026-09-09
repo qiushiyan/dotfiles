@@ -2,7 +2,7 @@
 name: improve-tool
 description: Improve an agent-facing tool (skill, CLI, script, snippet, doc) from the sessions that used it.
 disable-model-invocation: true
-argument-hint: <the tool: a skill path, CLI, doc, or snippet> [its engine] [a seed session, worktree, or complaint]
+argument-hint: "<the tool: a skill path, CLI, doc, or snippet> [its engine] [a seed session, worktree, or complaint]"
 ---
 
 # Improve a tool from its usage
