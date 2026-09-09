@@ -75,16 +75,11 @@ composed skill, check its named skill dependencies as well as its file hashes.
 
 ## Retained sources outside automatic updates
 
-- **`obelisk`** is customized; `.upstream/PINNED.txt` owns its manual upgrade
-  procedure. It is absent from the CLI lockfile.
-- **`gh-cli`** is a customized fork of `github/awesome-copilot`, with local pager
-  and practical-usage additions. Upstream [retired the skill](https://github.com/github/awesome-copilot/commit/352def3ca2a5)
-  rather than providing an update target. Preserve the local fork.
-- **`tailwind-best-practices`** is a customized adaptation of the purchased
-  `tailwindcss/insiders` rules. `.upstream/PINNED.txt` owns its manual update
-  procedure; `LESSONS.md` records the preservation constraints. The upstream
-  contents are gitignored, with only the pin tracked. Keep it outside the CLI
-  lockfile and restore its private baseline using authenticated GitHub access.
+The [customization guide](skill-customizations.md) owns the purpose and update
+judgment for `obelisk`, `tailwind-best-practices`, and `gh-cli`, plus the writing
+rulebook's relationship to upstream. Read that entry before upgrading a local
+adaptation; its pin owns the commands and its lessons own the evidence.
+
 - **External symlinks** are owned by the referenced projects or applications.
   `terminal-browser` follows the installed app's default skill; local development
   skills follow their `~/dev` projects. Their owners update the target files.

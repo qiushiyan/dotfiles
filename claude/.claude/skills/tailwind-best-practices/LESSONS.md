@@ -1,16 +1,14 @@
-# Tailwind skill maintenance
+# Tailwind skill maintenance evidence
 
-## Preserve the workflow adaptation
+The [customization guide](../../../../docs/skill-customizations.md#tailwind-best-practices)
+owns the purpose and preservation constraints. `.upstream/PINNED.txt` owns the
+source revision and update procedure.
 
-**The local SKILL.md is the maintained skill; the purchased rules are its
-upstream reference.** The owner confirmed on 2026-09-09 that this version is
-optimized for their workflows and should use the same manual-upgrade pattern
-as obelisk. Keep its structure and invocation policy when reviewing upstream
-changes; incorporate only changes that improve the adapted skill.
+## Initial baseline — 2026-09-09
 
-The upstream pin is in `.upstream/PINNED.txt`. The original source is a plain
-rules document, so keep it as reference material rather than adding a second
-invokable skill. Its full contents and candidate downloads remain gitignored.
+The owner identified `tailwindcss/insiders/rules/tailwind.md` as the purchased
+source and confirmed that the local skill is optimized for their workflows.
+They chose the same manual-upgrade pattern as obelisk. The initial pin changed
+neither the skill body nor its invocation metadata.
 
-The initial pin changes neither the skill body nor its invocation metadata.
-Future upgrade reviews record the upstream delta and adoption decisions here.
+Future reviews record the upstream delta, adoption decisions, and evidence here.

@@ -70,7 +70,9 @@ npx skills@latest update -g -y
 ```
 
 Check for uncommitted skill edits first. Keep custom skills and forks outside
-the lockfile so updates cannot overwrite them. This quick reference mirrors
+the lockfile so updates cannot overwrite them. Before updating an adapted
+skill, read its purpose and preservation constraints in `docs/skill-customizations.md`.
+This quick reference mirrors
 `docs/agent-skills.md` **Installing and updating**, which owns the layout,
 invocation controls, and update caveats.
 

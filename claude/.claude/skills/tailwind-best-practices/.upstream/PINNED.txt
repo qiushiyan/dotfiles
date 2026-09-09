@@ -1,3 +1,6 @@
+Before upgrading, read docs/skill-customizations.md in the dotfiles repo
+(the tailwind-best-practices entry). It owns the customization intent and preservation constraints.
+
 Private upstream baseline for the customized ../SKILL.md.
 
 Source: https://github.com/tailwindcss/insiders/blob/main/rules/tailwind.md

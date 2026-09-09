@@ -252,7 +252,8 @@ even index DeepSeek; every row visible), and Pi is 3 sessions out of 1273.
 `LESSONS.md` holds the friction analysis behind every rule above, with
 session-id receipts.
 
-Upgrade by the procedure in `PINNED.txt` — by hand, since `obelisk install`
+Before upgrading, read the Obelisk entry in `~/dotfiles/docs/skill-customizations.md`
+for the customization intent. Upgrade by `.upstream/PINNED.txt` — by hand, since `obelisk install`
 would overwrite this file. Every upgrade re-verifies the hot schema with
 `pragma_table_info` and re-checks each `LESSONS.md` item against the new
 version before anything is folded in here.

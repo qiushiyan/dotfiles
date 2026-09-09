@@ -1,3 +1,6 @@
+Before upgrading, read docs/skill-customizations.md in the dotfiles repo
+(the obelisk entry). It owns the customization intent and preservation constraints.
+
 Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 28698613aafbd279957e3231318838cbdbc1653f
 (2026-08-29), published from tommy0103/obelisk @ 55896aa.
 Verified byte-identical on 2026-09-09, excluding this PINNED.txt;
