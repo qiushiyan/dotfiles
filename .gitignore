@@ -20,6 +20,9 @@ claude/.claude/*
 !claude/.claude/skills/
 # ...but never the packaged skill exports (zip artifacts).
 claude/.claude/skills/**/*.skill
+# Purchased upstream material stays local; only its pin/procedure is public.
+claude/.claude/skills/tailwind-best-practices/.upstream/*
+!claude/.claude/skills/tailwind-best-practices/.upstream/PINNED.txt
 
 # Shared personal skills and the CLI's global upstream lock only.
 # ~/.agents remains a real directory for any unrelated runtime state.

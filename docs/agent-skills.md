@@ -67,9 +67,11 @@ of every custom or externally linked skill.
 - **`gh-cli`** is a customized fork of `github/awesome-copilot`, with local pager
   and practical-usage additions. Upstream [retired the skill](https://github.com/github/awesome-copilot/commit/352def3ca2a5)
   rather than providing an update target. Preserve the local fork.
-- **`tailwind-best-practices`** has unverified provenance. The similarly named
-  `ofershap/tailwind-best-practices` is different content, so it is not an
-  established update source. Preserve this copy until its source is identified.
+- **`tailwind-best-practices`** is a customized adaptation of the purchased
+  `tailwindcss/insiders` rules. `.upstream/PINNED.txt` owns its manual update
+  procedure; `LESSONS.md` records the preservation constraints. The upstream
+  contents are gitignored, with only the pin tracked. Keep it outside the CLI
+  lockfile and restore its private baseline using authenticated GitHub access.
 - **External symlinks** are owned by the referenced projects or applications.
   `terminal-browser` follows the installed app's default skill; local development
   skills follow their `~/dev` projects. Their owners update the target files.

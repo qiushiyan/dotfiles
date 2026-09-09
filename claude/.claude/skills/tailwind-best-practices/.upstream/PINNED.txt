@@ -1,0 +1,45 @@
+Private upstream baseline for the customized ../SKILL.md.
+
+Source: https://github.com/tailwindcss/insiders/blob/main/rules/tailwind.md
+Repository: tailwindcss/insiders (purchased, private access required)
+Path: rules/tailwind.md
+Commit: 176752669945da4b631df8625165df272cb2cb57
+Git blob SHA: 2bd9a5e6ad08b5a369b26bfd8c216fb51d999d24
+Checked: 2026-09-09
+
+The source file's history contains one commit, dated 2025-07-03. The local
+SKILL.md is an intentional workflow adaptation, not a verbatim copy. This
+baseline records the source checked; it does not assert that every upstream
+rule has been incorporated into the adaptation. See ../LESSONS.md.
+
+The raw tailwind.md and any candidate downloads under this directory are
+ignored by git. Only PINNED.txt is tracked here. On another machine, restore
+the baseline with authenticated GitHub access before comparing updates:
+
+  gh api -H 'Accept: application/vnd.github.raw+json' \
+    'repos/tailwindcss/insiders/contents/rules/tailwind.md?ref=176752669945da4b631df8625165df272cb2cb57' \
+    > tailwind.md
+  git hash-object tailwind.md
+
+Run these commands from this directory. The hash must equal Git blob SHA
+above; a failed download is not a restored baseline.
+
+Maintenance (alongside an upstream-skill update pass):
+
+1. Query the current file's blob SHA:
+   gh api 'repos/tailwindcss/insiders/contents/rules/tailwind.md?ref=main' --jq .sha
+   If it matches the pin, there is no upstream change to review. If access
+   fails, report the failed check and retain the existing baseline and skill.
+2. If changed, resolve the latest commit touching this path and download that
+   exact revision into candidate.md, leaving tailwind.md intact. Verify the
+   candidate's git hash-object against the API's blob SHA at that revision.
+3. Diff tailwind.md against candidate.md. Review the upstream delta against
+   ../SKILL.md and every constraint in ../LESSONS.md. Fold in useful changes
+   deliberately; do not replace the adapted skill with the upstream file.
+4. Record adopted or rejected changes in ../LESSONS.md. After review, replace
+   the local baseline with the candidate and update this pin's commit, blob
+   SHA, and checked date. Commit only the adaptation, lessons, and pin.
+
+Keep this skill out of the Skills CLI lockfile. The upstream is a rules file,
+not a separate invokable SKILL.md; creating another skill would duplicate
+invocation, and automatic replacement would discard the customization.
