@@ -118,6 +118,7 @@ docs/documentation-standards.md the doc standards — this repo's and the global
 docs/agent-skills.md           skill ownership tiers · shared Claude/Codex layout · lessons
 docs/theming.md                themes
 docs/claude-accounts.md        accounts
+docs/claude-autocompact.md     the auto-compact window: the token setting behind the 80% trigger, and why a percentage env var alone does nothing
 docs/bypass-cd-read-guard.md   dormant hook (reference only): the 2.1.259 `cd DIR; grep <relative>` guard, why it is off, when to re-arm or delete it
 docs/zsh.md                    shell
 docs/macmini.md                the colleague's Mac mini reached by `ssh macmini` — specs, disks, etiquette
