@@ -48,7 +48,8 @@ Keep that equality when changing the Stow layout: the CLI avoids replacing
 the skill with an agent link because both paths resolve to the same directory.
 
 Before an update, check `git status`; afterward, review the skill and lockfile
-diffs together. Every managed skill must have a resolving upstream `skillPath`.
+diffs together and run the invocation sync below. Every managed skill must have
+a resolving upstream `skillPath`.
 A successful update summary is insufficient: renamed or retired paths can be
 skipped. Reinstall a confirmed rename under its current name, then reconcile
 references. Keep custom forks out of the lockfile, because updates replace them.
@@ -94,12 +95,13 @@ This establishes the tracked source, not the identity of its original author.
 
 ## Controlling invocation
 
-Two mechanisms work, and which one you want depends on **who owns the file**.
+### Claude controls
 
-**Frontmatter — the default.** Documented, and verified in both directions:
+Which control to use depends on **who owns the file**. In Claude,
+frontmatter is the default for skills owned here:
 
 - `disable-model-invocation: true` → user-invoked only, and the description
-  leaves the model's context.
+  leaves Claude's model context.
 - `user-invocable: false` → the inverse (Claude-only).
 
 **`skillOverrides` in `settings.json` — for skills you don't own.** Editing the
@@ -129,6 +131,46 @@ The one real trap:
   visibility: the description still costs context, the model still tries and
   gets blocked, and you lose your own `/skill` invocation too. Deny is for tools
   (e.g. `NotebookEdit`), not skills.
+
+### Synchronizing Codex invocation
+
+Edit personal skill sources through `claude/.claude/skills/` and repo-local
+sources through `.claude/skills/`. Their `.agents/skills` aliases expose the
+same files to Codex. An external folder symlink points to its owning project's
+source; review and commit changes there.
+
+After any skill edit, installation, update, or removal:
+
+```bash
+skill-sync
+skill-sync --check
+```
+
+The command is stowed from `scripts/.local/bin/skill-sync`; before restowing,
+run it by that repository-relative path. It uses `uv` with a pinned YAML
+dependency and scans both Claude skill trees in this repository. For another
+project's skills, pass `--skills-dir /path/to/project/.claude/skills`.
+
+The Claude header is authoritative for `policy.allow_implicit_invocation` in
+each skill's `agents/openai.yaml`: `disable-model-invocation: true` produces
+`false`; an absent or false header restores `true`. Skills already using the
+automatic default need no metadata file. Other metadata and comments are
+preserved. Repeated runs leave synchronized files untouched; `--check` reports
+drift without writing and exits nonzero. Invalid YAML, non-boolean flags, broken
+links, or conflicting shared metadata targets abort validation before writes.
+
+[Codex's per-skill policy](https://learn.chatgpt.com/docs/build-skills#optional-metadata)
+keeps manual invocation available while excluding manual-only skills from the
+default skill declarations. Existing conversation context is not erased; use a
+fresh session to verify prompt savings. This sync translates frontmatter only;
+Claude's `skillOverrides` and plugin settings keep their separate scope.
+
+Commit generated metadata with the skill changes. For managed upstream skills,
+the derived policy field is the sole local exception to keeping their files
+upstream: installation or updates can overwrite it, and the sync reapplies it.
+External destinations are printed explicitly so their changes are committed in
+the owning repositories. The command does not modify skill bodies, settings,
+the lockfile, or symlinks.
 
 ## Ownership tiers — who may edit a skill, and where a lesson goes
 

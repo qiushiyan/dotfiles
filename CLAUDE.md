@@ -49,10 +49,20 @@ Three ways to wreck live state; none raises an error at the time.
   whether its body may be edited and where a rule lands
   → `docs/agent-skills.md`.
 
-## Installing and updating skills
+## Skill maintenance
 
-Personal skills are shared by Claude Code and Codex. Install upstream skills
-globally, explicitly selecting both agents:
+Personal skills are shared by Claude Code and Codex. Edit their source under
+`claude/.claude/skills/`; `~/.agents/skills` is a symlink alias. Externally linked
+skills belong to their source projects. Repo-local skills live in `.claude/skills/`.
+
+After any skill edit, install, update, or removal, run `skill-sync`, then
+`skill-sync --check`. It derives Codex's per-skill invocation policy from
+Claude's `disable-model-invocation` header. Review and commit generated
+`agents/openai.yaml` changes with the skill changes, including in external
+source repositories reported by the command. The header owns the policy;
+other `openai.yaml` metadata remains hand-editable.
+
+Install upstream skills globally, explicitly selecting both agents:
 
 ```bash
 npx skills@latest add <owner/repo> --skill <skill-name> -g -a claude-code codex -y
@@ -72,9 +82,8 @@ npx skills@latest update -g -y
 Check for uncommitted skill edits first. Keep custom skills and forks outside
 the lockfile so updates cannot overwrite them. Before updating an adapted
 skill, read its purpose and preservation constraints in `docs/skill-customizations.md`.
-This quick reference mirrors
-`docs/agent-skills.md` **Installing and updating**, which owns the layout,
-invocation controls, and update caveats.
+This quick reference mirrors `docs/agent-skills.md`, which owns installation,
+invocation synchronization, ownership tiers, and update caveats.
 
 ## Package layout
 

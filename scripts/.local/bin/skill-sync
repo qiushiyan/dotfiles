@@ -1,0 +1,166 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["ruamel.yaml==0.18.16"]
+# ///
+"""Mirror Claude skill frontmatter into Codex's per-skill invocation policy."""
+
+import argparse
+from copy import deepcopy
+from io import StringIO
+import os
+from pathlib import Path
+import stat
+import sys
+import tempfile
+
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.error import YAMLError
+
+
+FIELD = "allow_implicit_invocation"
+
+
+def yaml_parser():
+    parser = YAML()
+    parser.preserve_quotes = True
+    return parser
+
+
+def mapping(text, source):
+    value = yaml_parser().load(text)
+    if not isinstance(value, CommentedMap):
+        raise ValueError(f"{source}: expected a YAML mapping")
+    return value
+
+
+def allows_implicit(skill):
+    lines = skill.read_text().splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        raise ValueError(f"{skill}: missing YAML frontmatter")
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if end is None:
+        raise ValueError(f"{skill}: unterminated YAML frontmatter")
+    data = mapping("".join(lines[1:end]), skill)
+    disabled = data.get("disable-model-invocation", False)
+    if type(disabled) is not bool:
+        raise ValueError(f"{skill}: disable-model-invocation must be a YAML boolean")
+    return not disabled
+
+
+def render_metadata(before, desired, path):
+    data = mapping(before, path) if before.strip() else CommentedMap()
+    policy = data.get("policy", CommentedMap())
+    if not isinstance(policy, CommentedMap):
+        raise ValueError(f"{path}: policy must be a YAML mapping")
+    current = policy.get(FIELD, True)
+    if type(current) is not bool:
+        raise ValueError(f"{path}: policy.{FIELD} must be a YAML boolean")
+    if current == desired:
+        return before
+    # Detach an aliased policy so changing it cannot mutate another section.
+    policy = deepcopy(policy)
+    data["policy"] = policy
+    policy[FIELD] = desired
+    if FIELD not in policy.ca.items:
+        policy.yaml_add_eol_comment("Derived from SKILL.md by skill-sync", FIELD)
+    output = StringIO()
+    yaml_parser().dump(data, output)
+    return output.getvalue()
+
+
+def plan(roots):
+    changes = {}
+    seen = set()
+    destinations = {}
+    for root in roots:
+        root = root.expanduser().resolve(strict=True)
+        if not root.is_dir():
+            raise ValueError(f"{root}: expected a skill directory")
+        for entry in sorted(root.iterdir()):
+            if entry.name.startswith("."):
+                continue
+            if entry.is_symlink() and not entry.exists():
+                raise ValueError(f"{entry}: broken symlink")
+            skill = entry / "SKILL.md"
+            if not skill.exists():
+                if skill.is_symlink():
+                    raise ValueError(f"{skill}: broken symlink")
+                continue
+            source = skill.resolve(strict=True)
+            # Keep the folder's identity: a linked SKILL.md need not share metadata.
+            folder = entry.resolve(strict=True)
+            if folder in seen:
+                continue
+            seen.add(folder)
+            desired = allows_implicit(source)
+            agents = folder / "agents"
+            if agents.is_symlink() and not agents.exists():
+                raise ValueError(f"{agents}: broken symlink")
+            candidate = folder / "agents" / "openai.yaml"
+            if candidate.is_symlink() and not candidate.exists():
+                raise ValueError(f"{candidate}: broken symlink")
+            path = candidate.resolve()
+            if path in destinations and destinations[path] != desired:
+                raise ValueError(f"{path}: linked skills request conflicting invocation policies")
+            destinations[path] = desired
+            before = path.read_text() if path.exists() else ""
+            after = render_metadata(before, desired, path)
+            if after != before:
+                external = not path.is_relative_to(root)
+                changes[path] = (before, after, external)
+    return changes, len(seen)
+
+
+def write_atomic(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o644
+    fd, temporary = tempfile.mkstemp(prefix=".skill-sync-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w") as output:
+            output.write(content)
+        os.chmod(temporary, mode)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, epilog=(
+        "Requires uv (dependencies are cached). Exit: 0 synchronized, "
+        "1 drift with --check, 2 invalid input or write failure. "
+        "Follows external skill links and reports their resolved destinations."
+    ))
+    parser.add_argument("--check", action="store_true", help="report drift without writing")
+    parser.add_argument("--skills-dir", action="append", type=Path, help=(
+        "scan immediate skill folders here; repeat for multiple roots. "
+        "Defaults to dotfiles' personal and repository-local Claude skill trees."
+    ))
+    args = parser.parse_args()
+    repo = Path(__file__).resolve().parents[3]
+    roots = args.skills_dir or [repo / "claude/.claude/skills", repo / ".claude/skills"]
+    try:
+        # Validate the entire scan before writing any metadata.
+        changes, count = plan(roots)
+        if not count:
+            raise ValueError("no SKILL.md files found in the selected roots")
+        for path, (before, after, external) in changes.items():
+            if not args.check:
+                current = path.read_text() if path.exists() else ""
+                if current != before:
+                    raise ValueError(f"{path}: changed during scan; rerun skill-sync")
+                write_atomic(path, after)
+            verb = "would update" if args.check else "updated"
+            print(f"{verb} {path}" + (" [external: review/commit in owning repository]" if external else ""))
+        status = "need synchronization" if args.check else "updated"
+        print(f"{count} skills checked; {len(changes)} metadata files {status}.")
+        return 1 if args.check and changes else 0
+    except (OSError, ValueError, YAMLError) as error:
+        print(f"skill-sync: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

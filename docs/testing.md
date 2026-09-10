@@ -13,6 +13,7 @@ zsh  zsh/.config/zsh/tests/theme-sync.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/cwd-guard.test.zsh                    # runs whole
 zsh  zsh/.config/zsh/tests/stow-reach.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/bypass-cd-read-guard.test.zsh         # runs whole
+python3 scripts/.local/share/dotfiles/tests/test_skill_sync.py # requires uv
 ```
 
 Each suite owns one boundary:
@@ -28,6 +29,7 @@ Each suite owns one boundary:
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree |
 | bypass guard | dormant hook logic through synthetic PreToolUse payloads |
+| skill sync | invocation parity, metadata preservation, validation before writes, and symlink destinations in temporary skill trees |
 
 The table is a routing map. Case ids and complete behavior inventories stay in
 the suites.
