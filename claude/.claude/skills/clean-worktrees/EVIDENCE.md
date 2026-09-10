@@ -48,3 +48,26 @@ checkouts with and without the skill. This proves no selection-quality gain;
 the runner supplies repeatable execution and the measured concurrency benefit.
 The cold reader's one instruction conflict—an audit-only output versus the
 runner's execution-plan schema—was removed by limiting that schema to removal.
+
+## Audit collector and instruction revision
+
+The follow-up cold read moved the agent/runner responsibility split to the
+opening, shortened execution narration, clarified registrations with missing
+checkout paths, and required renewed eligibility checks after interruption.
+The skill is now 75 lines, including the new collector entry point.
+
+`audit.py` gathers Git, process, and activity evidence and writes a draft plan
+accepted by `remove.py`. Ten additional isolated CLI tests cover refreshed graph
+proof, inactive remote-backed tips, recent checkout/ignored-file activity, cached
+or failed probes, multiple repositories, detached checkouts, and missing paths.
+PR merge judgment remains outside the collector.
+
+Cold code review found that a narrowed fetch refspec can leave stale tracking
+refs untouched. The collector now compares individual ref objects with currently
+advertised remote branch heads. Two regression cases reject a deleted remote
+feature tip and a stale explicit integration ref despite a successful fetch.
+
+The combined suite passes all 20 tests in 13.00 seconds. A cached-only smoke
+audit of the live worktree root found 13 checkouts with no probe errors and zero
+proposed removals; it did not fetch or remove checkouts. The cold reader otherwise
+confirmed the updated ownership and retry instructions were clear.
