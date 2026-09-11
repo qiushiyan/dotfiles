@@ -53,7 +53,7 @@ state, the exploration that produced it is disposable.
 | Project | Onboard | Wrap up |
 |---|---|---|
 | duet | `/onboarding [harness \| providers \| prompts \| surface \| design]` | project `/update-docs`, global `/handoff` |
-| itell (`apps/platform`) | `/onboarding [topic]` | project `/update-docs`, global `/handoff` |
+| itell (`apps/platform`) | `/onboarding <problem or issue>` → analysis / proposal | project `/update-docs`, global `/handoff` |
 | planlab — Loopy agent/triage | `/pl-loopy-onboarding [agent \| triage]` | `/pl-loopy-update-docs` |
 | planlab — infra migration | `/pl-loopy-infra-onboarding [topic]` | `/pl-loopy-infra-handoff` (global `/handoff` defers to it) |
 | anywhere else | read the docs tree by hand | global `/update-docs`, global `/handoff` |
