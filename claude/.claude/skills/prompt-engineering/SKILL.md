@@ -234,8 +234,11 @@ when pointed at files, every line of them — run before shipping. In order:
 
 1. **Inventory by reader.** Tag every touched surface: the model acting, a
    model grading against a rubric, or a human. Human-facing text is
-   ordinary writing and stays out. Mark templates — a hedge covering many
-   instances is load-bearing, and "fixing" it to one instance breaks the
+   ordinary writing and stays out. Test task instructions with a concrete
+   input already in the executor's hands: what next action or judgment
+   does each sentence change? Translate requests to the artifact's author
+   into the executing reader's goal or constraints. Mark templates — a hedge
+   covering many instances is load-bearing, and "fixing" it to one instance breaks the
    others — and text quoted from a vendor guide, kept as tested rather
    than restyled.
 2. **Sweep for stale text.** Diff the touched surfaces. Grep the repo for

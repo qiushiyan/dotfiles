@@ -11,7 +11,7 @@ All checkpoints are user-triggered by design — the skills never fire themselve
 ## The loop
 
 ```
-/onboarding <topic>          ← first prompt: spine reads + topic-scoped deep dive
+/onboarding <project input>  ← project-specific context and first-turn contract
     /consult                 ← position taken, then fresh voices judge it → the settled direction
     /spike                   ← optional: throwaway code settles what the direction rests on
     /write-spec              ← the direction becomes a committed spec + validation consult
@@ -62,6 +62,10 @@ Global skills live in `claude/.claude/skills/{update-docs,handoff}/` (this repo)
 project skills in each repo's `.claude/skills/`. Both globals defer to a
 project's own skill or `documentation-standards.md` when present, and read
 `docs/documentation-standards.md` here otherwise.
+
+For an onboarding migration, read the [auto-routing guide](../lessons/.config/lessons/agent-tooling/onboarding-auto-routing.md):
+it covers sufficient context, the executing reader, preserved handoff contracts,
+and the platform experiment's traps and verification limits.
 
 ## The handoff (`/handoff`, `~/dev/.handoffs`)
 

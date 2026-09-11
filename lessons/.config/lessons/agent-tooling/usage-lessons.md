@@ -137,6 +137,10 @@ examples remain reference for difficult joins and evidence selection. Ordered
 instructions remain where a dependency requires them, such as verifying an
 installed engine before documenting its behavior.
 
+When migrating an onboarding skill, use [the auto-routing guide](onboarding-auto-routing.md)
+for the worked reader/author distinction, reading-selection design, and scenario
+checks. It records where the platform rewrite failed to apply these principles.
+
 Whether this produces better real sessions remains a measurement question.
 Compare outcomes on comparable uses, including supported fixes, preserved
 quality, and avoidable requests for clarification. A shorter skill or a
