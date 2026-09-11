@@ -147,6 +147,15 @@ case "$THEME" in
         PINK=$'\033[38;2;237;149;116m' # Branch: accent #ed9574
         LAVENDER=$'\033[38;2;167;162;153m' # Directory: fg1 #a7a299
         ;;
+    raindrop)
+        # Original cool tokens: ice warning and deletion-violet error; no warm hues.
+        CYAN=$'\033[38;2;46;217;255m' # #2ED9FF
+        GREEN=$'\033[38;2;26;214;181m' # #1AD6B5
+        YELLOW=$'\033[38;2;157;216;235m' # #9DD8EB
+        RED=$'\033[38;2;153;132;238m' # #9984EE
+        PINK=$'\033[38;2;153;132;238m' # #9984EE
+        LAVENDER=$'\033[38;2;157;216;235m' # #9DD8EB
+        ;;
     *)
         echo "statusline: unknown theme '$THEME'" >&2
         exit 1

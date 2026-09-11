@@ -206,6 +206,17 @@ function M.get_palette()
       mauve = "#b296cb", teal = "#78aba4", pink = "#bea5d4", sky = "#88c0c0",
       bar_bg = "#30302c", -- bg4 lifts the statusline above charcoal.
     }
+  elseif scheme == "raindrop" then
+    -- Ray.so dark frame + original cool syntax tokens; no warm accent family.
+    return {
+      base = "#152435", mantle = "#07152B", crust = "#07152B",
+      surface0 = "#24323F", surface1 = "#1A485D", surface2 = "#1A485D",
+      text = "#E4F2FF", subtext0 = "#6C808B", subtext1 = "#9DD8EB",
+      overlay0 = "#455764", overlay1 = "#6C808B",
+      blue = "#8EC7FB", green = "#1AD6B5", red = "#9984EE", yellow = "#9DD8EB",
+      mauve = "#9984EE", teal = "#1AD6B5", pink = "#9984EE", sky = "#2ED9FF",
+      bar_bg = "#24323F",
+    }
   elseif scheme:match("^gruvbox") then
     -- gruvbox.nvim's dark-medium palette mapped onto the catppuccin-shaped
     -- table ui.lua consumes. Without this branch the "gruvbox" colorscheme name

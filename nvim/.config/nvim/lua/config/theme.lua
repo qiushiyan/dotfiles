@@ -42,6 +42,7 @@ local map = {
   vellum           = { colorscheme = "vellum",                   background = "light" },
   token_meridian_light = { colorscheme = "token-meridian-light", background = "light" },
   token_ultra_dark = { colorscheme = "token-ultra-dark", background = "dark" },
+  raindrop = { colorscheme = "raindrop", background = "dark" },
 }
 
 M.name = resolve()

@@ -132,6 +132,16 @@
         "green": "#9ab58e",
         "peach": "#ed9574",
         "red": "#dd8384"
+      },
+      "raindrop": {
+        "os": "#6C808B",
+        "closer": "p:os",
+        "pink": "#9984EE",
+        "lavender": "#E4F2FF",
+        "blue": "#2ED9FF",
+        "green": "#1AD6B5",
+        "peach": "#9DD8EB",
+        "red": "#9984EE"
       }
     }
   },

@@ -1,0 +1,30 @@
+# Raindrop dark — Ray.so (Raycast)
+# Source: https://github.com/raycast/ray-so/blob/6738b5810b34a00ad58edac30686d43db22db90c/app/(navigation)/(code)/store/themes.ts#L1422-L1466
+# globals.css: dark frame is black at 75% over the #8EC7FB -> #1C55AA
+# gradient. Flat terminal bg uses its midpoint (#152435); the two endpoints
+# give elevated #24323F and mantle #07152B. Selection is keyword cyan at 20%.
+# Ray.so has no ANSI palette: violet diffDeleted fills red/magenta; ice blue
+# fills yellow. Bright variants reuse source tokens, keeping the cool palette.
+# Slot 8 is the original comment slate (3.82:1); ANSI blue is 4.03:1 on base,
+# with the gradient's #8EC7FB in bright blue for emphasis on raised surfaces.
+palette = 0=#07152B
+palette = 1=#9984EE
+palette = 2=#1AD6B5
+palette = 3=#9DD8EB
+palette = 4=#008BB7
+palette = 5=#9984EE
+palette = 6=#2ED9FF
+palette = 7=#9DD8EB
+palette = 8=#6C808B
+palette = 9=#9984EE
+palette = 10=#1AD6B5
+palette = 11=#E4F2FF
+palette = 12=#8EC7FB
+palette = 13=#9984EE
+palette = 14=#2ED9FF
+palette = 15=#E4F2FF
+background = #152435
+foreground = #E4F2FF
+cursor-color = #E4F2FF
+selection-background = #1A485D
+selection-foreground = #E4F2FF

@@ -24,7 +24,7 @@ TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 
 # Canonical names. Keep in sync with the per-app case statements (theme.zsh,
 # statusline-command.sh, zen.omp.json, nvim config/theme.lua, tmux.conf).
-THEMES=(gruber_darker catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft night_owl orng_light forest_night waffle_cat vellum token_meridian_light token_ultra_dark)
+THEMES=(gruber_darker catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft night_owl orng_light forest_night waffle_cat vellum token_meridian_light token_ultra_dark raindrop)
 
 # --- per-theme ghostty field set ---------------------------------------------
 # Emit the ghostty config line(s) a theme owns. The whole include file is
@@ -58,6 +58,9 @@ ghostty_block() {
     token_meridian_light) printf 'theme = token-meridian-light\nbackground = #fbf9f4\nbold-color = #0048b3\n' ;;
     # Override the fixed base background; Ultra uses warm charcoal.
     token_ultra_dark) printf 'theme = token-ultra-dark\nbackground = #272724\nbold-color = #f7c988\n' ;;
+    # Flat Ray.so frame; override the fixed Moon background. With no warm
+    # token, bold takes the theme's ice foreground instead of inventing yellow.
+    raindrop) printf 'theme = raindrop\nbackground = #152435\nbold-color = #9DD8EB\n' ;;
   esac
 }
 
