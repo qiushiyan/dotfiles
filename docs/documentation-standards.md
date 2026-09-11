@@ -2,7 +2,34 @@
 
 # Documentation standards
 
-Write for a smart model that will inspect the repository. Documentation carries the **mental model** — ownership, boundaries, invariants, decisions, and the traps the environment cannot reveal; code, config, directory listings and `--help` own their inventories. This file is the shared standard every project carries verbatim; each project **binds** it in its documentation entry point (the update-docs or handoff skill, or the docs index), naming its hot-path files and ceilings, evidence directories and status pages, proposal retention, the base its paths are written from, and its own checks. Read the bindings beside this file; where they narrow a rule, they win.
+Write for a smart model that will inspect the repository. Documentation carries the **mental model** — ownership, boundaries, invariants, decisions, and the traps the environment cannot reveal; code, config, directory listings and `--help` own their inventories. This file is the shared standard every project carries verbatim; each project **binds** it in its documentation entry point (the update-docs or handoff skill, or the docs index), naming its hot-path files and ceilings, evidence directories and status pages, proposal retention, the base its paths are written from, and its own checks. Read the bindings beside this file; where they narrow a rule, they win. The first section below is the rule agents break most often: structure the text for a reader of plain source, which almost always means a sectioned list where a table was about to appear.
+
+## Structure that reads in plain source
+
+This is the rule most often broken, because an agent reaches for a grid by reflex. **Structure follows how the reader uses the information.** The hierarchy is visible in plain source — an agent reads the file, not a rendering — and there is no more structure than the content has:
+
+- **a heading** per distinct reader question;
+- **a sectioned list** for independent entries, above all "when X, read Y" — a bold label, a colon, the entry — nested one level only where an entry has subordinate detail;
+- **a numbered list** where order matters;
+- **prose** for an argument and its reasons, since bullets drop the connectives that carry the reasoning;
+- **a table** where the reader compares the same short attributes across alternatives, cell by cell;
+- **a fenced block** for anything the reader runs or greps.
+
+<example type="avoid">
+| The question concerns | Read |
+| --- | --- |
+| Cohort analytics, who is included, who may view | `docs/dashboard/README.md` — Mental Model, Audience and Auth, Data Sources |
+| Admin preview or toolbar behavior | `docs/admin-tools.md` — Mental Model, Who Can Access, then Preview Mode |
+</example>
+
+<example>
+## Relevant knowledge
+
+- **Cohort analytics, who is included, who may view:** `docs/dashboard/README.md` — Mental Model, Audience and Auth, Data Sources
+- **Admin preview or toolbar behavior:** `docs/admin-tools.md` — Mental Model, Who Can Access, then Preview Mode
+</example>
+
+The rows were independent lookups, so the grid was carrying a list; the heading now names the reader's question and each entry reads whole in source. The check block below flags every new table for exactly this judgment.
 
 ## Documentation shape
 
@@ -52,29 +79,6 @@ What does not earn it:
 
 - **Present state.** Git holds the journey; a live doc has no "added X", "as of Y". The diff leaks in with a present-tense disguise — "B, not A", "replaces A", "no longer" — every word true, the sentence shaped like the change. The **future-need test** for any trace of the before-state: will a reader who never saw A need it? Usually not; A earns a mention only while it still bites today, stated as a present hazard, or while a transition is mid-flight. When a change closes a gap, sweep the tree for the sentence that described the gap.
 - **Current names.** Real searchable nouns; point at source with a line-sized description and leave signatures and option lists in source. Cite a repository file as a bare backticked path from the base the bindings name — an agent opens the path with its read tool, and link syntax adds nothing it can use. Planned or unproven behaviour is marked (a status line, a spec, an open question), never stated as fact.
-- **Structure follows how the reader uses the information.** The hierarchy is visible in plain source, and there is no more structure than the content has:
-  - **a heading** per distinct reader question;
-  - **a sectioned list** for independent entries, above all "when X, read Y" — a bold label, a colon, the entry — nested one level only where an entry has subordinate detail;
-  - **a numbered list** where order matters;
-  - **prose** for an argument and its reasons, since bullets drop the connectives that carry the reasoning;
-  - **a table** where the reader compares the same short attributes across alternatives, cell by cell;
-  - **a fenced block** for anything the reader runs or greps.
-
-  <example type="avoid">
-  | The question concerns | Read |
-  | --- | --- |
-  | Cohort analytics, who is included, who may view | `docs/dashboard/README.md` — Mental Model, Audience and Auth, Data Sources |
-  | Admin preview or toolbar behavior | `docs/admin-tools.md` — Mental Model, Who Can Access, then Preview Mode |
-  </example>
-
-  <example>
-  ## Relevant knowledge
-
-  - **Cohort analytics, who is included, who may view:** `docs/dashboard/README.md` — Mental Model, Audience and Auth, Data Sources
-  - **Admin preview or toolbar behavior:** `docs/admin-tools.md` — Mental Model, Who Can Access, then Preview Mode
-  </example>
-
-  The rows were independent lookups, so the grid was carrying a list; the heading now names the reader's question and each entry reads whole in source.
 - Every edit re-reads the whole doc, merges overlap instead of adding a second description, folds new information into the section it belongs in, and cuts what drifted into implementation detail — a doc that gains ten lines should usually shed five.
 
 ## When docs need updating
@@ -111,8 +115,15 @@ git grep -nE '(specs|plans|proposals|issues|records|research|adr)/[^ )]*\.md' --
 for p in <status pages>; do echo "$p items=$(grep -cE '^(> )?- \*\*20' $p) owed=$(grep -c 'Closing read owed' $p)"; done
 ```
 
-For the narrative greps, a hit on a status page or in an evidence tier is fine; in a design doc it is a sentence to rewrite in the present tense with the evidence cited by record. An `items` count above `owed` is an item that landed and did not leave. A table hit stays when the reader compares cells across rows, becomes a sectioned list when its rows are independent lookups, and is exempt inside a quoted avoid-example. A reference hit is fine when the target is cited in its role — a proposal as unbuilt, a retained record or decision as evidence, an authoring guide as a guide — and is a defect when a live doc leans on unbuilt work. Then run the project's own checks from its bindings, re-read each modified doc as one narrative, and grep live docs for each moved path and superseded term.
+What a hit means:
+
+- **A narrative grep** (cardinal, changelog, PR or date): fine on a status page or in an evidence tier; in a design doc, a sentence to rewrite in the present tense with the evidence cited by record.
+- **A table:** stays when the reader compares cells across rows; becomes a sectioned list when its rows are independent lookups; exempt inside a quoted avoid-example.
+- **A reference into a proposal or evidence directory:** fine when the target is cited in its role — a proposal as unbuilt, a retained record or decision as evidence, an authoring guide as a guide; a defect when a live doc leans on unbuilt work.
+- **`items` above `owed`:** an item that landed and did not leave.
+
+Then run the project's own checks from its bindings, re-read each modified doc as one narrative, and grep live docs for each moved path and superseded term.
 
 ## The standards file itself
 
-Rules accrete one incident at a time. A new rule enters as a line in the check block or a worked example first, and as prose only when neither can carry it; a rule that exists and was still broken gets a check, not a second statement. The file stays near 10 KB. Review it and the doc skills after a major model release: guardrails written for an older model become friction for a newer one, and removing stale guidance weighs the same as adding new.
+Rules accrete one incident at a time. A new rule enters as a line in the check block or a worked example first, and as prose only when neither can carry it; a rule that exists and was still broken gets a check, not a second statement. The file stays under ~13 KB; growth past that means a project binding leaked in or a rule is stated twice. Review it and the doc skills after a major model release: guardrails written for an older model become friction for a newer one, and removing stale guidance weighs the same as adding new.

@@ -64,7 +64,7 @@ A change has landed. Bring the project's docs back in line with it so that a sen
 
    With nothing gated, the plan ends on "starting now".
 
-5. **Write the updates** to the standards, the gated items once confirmed: every touched doc ends tighter (§ Writing standards), a shipped proposal's decisions move into the durable doc and the proposal is pruned or kept as a record as the project's bindings say (§ Documentation shape). When the change alters the system's shape, the index and the always-loaded file change too; an entry there is earned (§ What earns documentation).
+5. **Write the updates** to the standards, the gated items once confirmed: every touched doc ends tighter (§ Writing standards) and reads in plain source — a sectioned list where a table was about to appear (§ Structure that reads in plain source), a shipped proposal's decisions move into the durable doc and the proposal is pruned or kept as a record as the project's bindings say (§ Documentation shape). When the change alters the system's shape, the index and the always-loaded file change too; an entry there is earned (§ What earns documentation).
 
 6. **Verify** every doc you touched:
 
