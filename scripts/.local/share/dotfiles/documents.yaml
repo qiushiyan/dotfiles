@@ -1,0 +1,11 @@
+# Documents skill-sync copies verbatim from this repository into other checkouts.
+# `source` is relative to the dotfiles root; `repo` is a checkout root (its
+# `.git` may be a directory or a worktree file); `path` is relative to that root.
+# An absent checkout is skipped with a notice; a present one is kept in sync.
+documents:
+  - source: docs/documentation-standards.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: docs/loopy/documentation-standards.md
+      - repo: ~/dev/itell
+        path: apps/platform/docs/documentation-standards.md

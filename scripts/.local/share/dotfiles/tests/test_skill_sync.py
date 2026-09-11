@@ -156,6 +156,124 @@ class SkillSyncTest(unittest.TestCase):
         self.run_sync(expected=2)
         self.assertFalse(missing.exists())
 
+    # Document copies: the script's repository is the directory three levels
+    # above it, so a copy of the script inside a temporary layout makes that
+    # layout the repository and keeps the real manifest out of reach.
+    def install(self):
+        repo = self.base / "dotfiles"
+        script = repo / "scripts/.local/bin/skill-sync"
+        script.parent.mkdir(parents=True)
+        script.write_bytes(SCRIPT.read_bytes())
+        script.chmod(0o755)
+        (repo / "docs").mkdir()
+        (repo / "docs/standard.md").write_text("# Standard\n\nOne rule.\n")
+        return repo, script
+
+    def checkout(self, name, git=True):
+        root = self.base / name
+        root.mkdir()
+        if git:
+            (root / ".git").mkdir()
+        return root
+
+    def manifest(self, repo, destinations, source="docs/standard.md"):
+        path = repo / "scripts/.local/share/dotfiles/documents.yaml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = [f"documents:\n  - source: {source}\n    destinations:\n"]
+        for root, target in destinations:
+            lines.append(f"      - repo: {root}\n        path: {target}\n")
+        path.write_text("".join(lines))
+        return path
+
+    def run_script(self, script, *args, expected=0):
+        result = subprocess.run([str(script), *args], text=True, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+        return result
+
+    def test_skills_scope_never_reaches_documents(self):
+        self.skill("manual")
+        result = self.run_sync()
+        self.assertNotIn("documents checked", result.stdout)
+        self.assertIn("1 skills checked", result.stdout)
+
+    def test_documents_scope_copies_verbatim_and_reports_external(self):
+        repo, script = self.install()
+        target = self.checkout("project")
+        manifest = self.manifest(repo, [(target, "docs/nested/standard.md")])
+        copy = target / "docs/nested/standard.md"
+        self.run_script(script, "--documents", str(manifest), "--check", expected=1)
+        self.assertFalse(copy.parent.exists())
+        result = self.run_script(script, "--documents", str(manifest))
+        self.assertIn("[external:", result.stdout)
+        self.assertIn("1 documents checked; 1 copies updated", result.stdout)
+        self.assertNotIn("skills checked", result.stdout)
+        self.assertEqual(copy.read_bytes(), (repo / "docs/standard.md").read_bytes())
+        stamp = copy.stat().st_mtime_ns
+        self.run_script(script, "--documents", str(manifest))
+        self.run_script(script, "--documents", str(manifest), "--check")
+        self.assertEqual(copy.stat().st_mtime_ns, stamp)
+        copy.write_text("edited locally\n")
+        self.run_script(script, "--documents", str(manifest), "--check", expected=1)
+        self.run_script(script, "--documents", str(manifest))
+        self.assertEqual(copy.read_text(), "# Standard\n\nOne rule.\n")
+
+    def test_default_scope_runs_both_jobs_from_the_repository(self):
+        repo, script = self.install()
+        for tree in ("claude/.claude/skills/manual", ".claude/skills"):
+            (repo / tree).mkdir(parents=True)
+        (repo / "claude/.claude/skills/manual/SKILL.md").write_text(
+            "---\nname: manual\ndisable-model-invocation: true\n---\n"
+        )
+        target = self.checkout("project")
+        self.manifest(repo, [(target, "docs/standard.md")])
+        result = self.run_script(script)
+        self.assertIn("1 skills checked; 1 metadata files updated", result.stdout)
+        self.assertIn("1 documents checked; 1 copies updated", result.stdout)
+        self.assertTrue((repo / "claude/.claude/skills/manual/agents/openai.yaml").exists())
+        self.assertTrue((target / "docs/standard.md").exists())
+        self.run_script(script, "--check")
+
+    def test_absent_checkout_is_skipped_while_present_ones_sync(self):
+        repo, script = self.install()
+        present = self.checkout("present")
+        absent = self.base / "absent"
+        manifest = self.manifest(repo, [(absent, "docs/standard.md"), (present, "docs/standard.md")])
+        result = self.run_script(script, "--documents", str(manifest))
+        self.assertIn(f"skipped {absent}: checkout absent", result.stdout)
+        self.assertTrue((present / "docs/standard.md").exists())
+        self.assertFalse(absent.exists())
+        self.run_script(script, "--documents", str(manifest), "--check")
+
+    def test_invalid_manifest_aborts_every_job_before_writes(self):
+        repo, script = self.install()
+        skills = repo / "claude/.claude/skills"
+        (skills / "manual").mkdir(parents=True)
+        (skills / "manual/SKILL.md").write_text("---\nname: manual\ndisable-model-invocation: true\n---\n")
+        metadata = skills / "manual/agents/openai.yaml"
+        target = self.checkout("project")
+        bad = [
+            [(target, "../escape.md")],
+            [(target, "/tmp/absolute.md")],
+            [(self.checkout("plain", git=False), "docs/standard.md")],
+            [(target, "docs/standard.md"), (target, "docs/standard.md")],
+        ]
+        for destinations in bad:
+            manifest = self.manifest(repo, destinations)
+            self.run_script(script, "--skills-dir", str(skills), "--documents", str(manifest), expected=2)
+            self.assertFalse(metadata.exists())
+            self.assertFalse((target / "docs/standard.md").exists())
+        manifest = self.manifest(repo, [(target, "docs/standard.md")], source="docs/missing.md")
+        self.run_script(script, "--documents", str(manifest), expected=2)
+        (target / "docs").mkdir()
+        link = target / "docs/standard.md"
+        link.symlink_to(repo / "docs/standard.md")
+        manifest = self.manifest(repo, [(target, "docs/standard.md")])
+        self.run_script(script, "--documents", str(manifest), expected=2)
+        self.assertTrue(link.is_symlink())
+        link.unlink()
+        (repo / "scripts/.local/share/dotfiles/documents.yaml").write_text("documents: []\n")
+        self.run_script(script, "--documents", str(manifest), expected=2)
+
 
 if __name__ == "__main__":
     unittest.main()

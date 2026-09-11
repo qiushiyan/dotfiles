@@ -165,6 +165,16 @@ default skill declarations. Existing conversation context is not erased; use a
 fresh session to verify prompt savings. This sync translates frontmatter only;
 Claude's `skillOverrides` and plugin settings keep their separate scope.
 
+The same command broadcasts shared documents. `scripts/.local/share/dotfiles/documents.yaml`
+lists each source (today `docs/documentation-standards.md`) and the checkouts
+that carry a verbatim copy; the copies are refreshed on every run, `--check`
+reports a copy that drifted, and a checkout absent from this machine is
+skipped with a notice. `--skills-dir` and `--documents <manifest>` each scope
+the run to that one job, which is how the test suite keeps its temporary
+trees away from the live manifest. A copy is a tracked file in its project,
+so the run prints it as external: commit it there, on a branch, with the
+project's review.
+
 Commit generated metadata with the skill changes. For managed upstream skills,
 the derived policy field is the sole local exception to keeping their files
 upstream: installation or updates can overwrite it, and the sync reapplies it.

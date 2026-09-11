@@ -93,10 +93,32 @@ Where the machinery lives and which repo owns which half: `docs/handoff.md`.
 
 ## The doc shape that keeps onboarding cheap
 
-`docs/documentation-standards.md` owns the spine/satellite model, hot-path
-budget, protected set, and verification checks. This loop supplies the cadence:
-`/update-docs` reconciles one change; `/distill-docs` periodically reconciles
-the tree.
+`docs/documentation-standards.md` is the shared standard: the spine/satellite
+model, the hot-path budget, the writing rules and the check block. It is
+maintained here and copied verbatim into each project by `skill-sync`
+(`docs/agent-skills.md` § Synchronizing Codex invocation), so a rule changes
+here and nowhere else. This loop supplies the cadence: `/update-docs`
+reconciles one change; `/distill-docs` periodically reconciles the tree.
+
+The standard leaves each project to bind it in its documentation entry point.
+For this repository the bindings are:
+
+- **Hot path:** the root `CLAUDE.md` alone. There is no mandatory onboarding
+  set, so its cost is reported apart from package-local and landing-page costs,
+  under the shared first-read budget.
+- **Proposals and evidence:** a shipped proposal is deleted; Git holds it. The
+  tree keeps no status pages and no evidence tiers, so the check block's
+  status-page loop is skipped.
+- **Paths** are written from the repository root.
+- **The protected set** — echoes a distillation keeps in meaning, not in
+  narration: the red-line summaries in the root `CLAUDE.md` (details:
+  `docs/stow-layout.md`, `docs/testing.md`); the cheat sheet in
+  `tmux/.config/tmux/workflow.md`; the dated measurements in
+  `docs/ghostty-fonts.md`, the Mac mini status snapshot and workaround probes;
+  the suite commands in `docs/testing.md` and the exact commands in migration
+  and recovery runbooks. Rot with a check rather than a restated rule: a suite
+  is identified by its responsibility; a feature-disable gate is reflected in
+  its workflow and design doc.
 
 ## The periodic passes — `/distill-docs` and `/distill-handoffs`
 

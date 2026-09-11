@@ -78,8 +78,8 @@ npx skills@latest update -g -y
 The existing folder links handle these installs; no `--copy`, per-skill
 symlinks, or restow is needed.
 
-After any skill edit, install, update, or removal, run `skill-sync`, then
-`skill-sync --check`. Claude's `disable-model-invocation` header owns the
+After any skill edit, install, update, or removal, and after editing
+`docs/documentation-standards.md`, run `skill-sync`, then `skill-sync --check`. Claude's `disable-model-invocation` header owns the
 invocation policy; the command derives the per-skill Codex setting in
 `agents/openai.yaml`. Other metadata remains hand-editable. Review and commit
 skill, generated metadata, and lockfile changes together; commit external
@@ -108,8 +108,10 @@ Read the owning docs before changing a feature that spans packages:
 
 Keep one file per topic under `docs/`; inspect that directory before calling
 something undocumented. Live docs describe current design and runbooks;
-Git holds shipped proposals. `docs/documentation-standards.md` owns the shape
-and checks for documentation changes.
+Git holds shipped proposals. `docs/documentation-standards.md` is the shared
+standard, maintained here and copied into other projects by `skill-sync`; this
+repository's bindings and protected set are in `docs/doc-loop.md` § The doc
+shape that keeps onboarding cheap.
 
 Additional routes beyond the feature docs above:
 

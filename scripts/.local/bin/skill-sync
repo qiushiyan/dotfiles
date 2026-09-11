@@ -3,10 +3,12 @@
 # requires-python = ">=3.11"
 # dependencies = ["ruamel.yaml==0.18.16"]
 # ///
-"""Mirror Claude skill frontmatter into Codex's per-skill invocation policy."""
+"""Mirror Claude skill frontmatter into Codex's per-skill invocation policy,
+and copy broadcast documents from this repository into other checkouts."""
 
 import argparse
 from copy import deepcopy
+from dataclasses import dataclass
 from io import StringIO
 import os
 from pathlib import Path
@@ -15,11 +17,20 @@ import sys
 import tempfile
 
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import YAMLError
 
 
 FIELD = "allow_implicit_invocation"
+MANIFEST = "scripts/.local/share/dotfiles/documents.yaml"
+
+
+@dataclass
+class Change:
+    before: str
+    after: str
+    external: bool
+    kind: str  # "metadata" or "copy"
 
 
 def yaml_parser():
@@ -70,7 +81,7 @@ def render_metadata(before, desired, path):
     return output.getvalue()
 
 
-def plan(roots):
+def plan_skills(roots, repo):
     changes = {}
     seen = set()
     destinations = {}
@@ -108,9 +119,84 @@ def plan(roots):
             before = path.read_text() if path.exists() else ""
             after = render_metadata(before, desired, path)
             if after != before:
-                external = not path.is_relative_to(root)
-                changes[path] = (before, after, external)
-    return changes, len(seen)
+                changes[path] = Change(before, after, not path.is_relative_to(repo), "metadata")
+    if not seen:
+        raise ValueError("no SKILL.md files found in the selected roots")
+    return changes, len(seen), set(destinations)
+
+
+def relative_inside(value, field, manifest):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{manifest}: {field} must be a non-empty string")
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts:
+        raise ValueError(f"{manifest}: {field} {value!r} must stay inside its root")
+    return path
+
+
+def checkout_root(value, manifest):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{manifest}: repo must be a non-empty string")
+    repo = Path(value).expanduser()
+    if not repo.is_absolute():
+        raise ValueError(f"{manifest}: repo {value!r} must be an absolute path")
+    if not repo.exists():
+        return None
+    if not repo.is_dir() or not (repo / ".git").exists():
+        raise ValueError(f"{repo}: not a checkout root (no .git)")
+    return repo.resolve(strict=True)
+
+
+def plan_documents(manifest, repo, reserved):
+    """Plan verbatim copies. `reserved` holds outputs another job already owns."""
+    data = mapping(manifest.read_text(), manifest)
+    if set(data) != {"documents"} or not isinstance(data["documents"], CommentedSeq):
+        raise ValueError(f"{manifest}: expected one top-level key, documents, holding a list")
+    changes = {}
+    outputs = set(reserved)
+    skipped = []
+    count = 0
+    for item in data["documents"]:
+        if not isinstance(item, CommentedMap) or set(item) != {"source", "destinations"}:
+            raise ValueError(f"{manifest}: each document has exactly source and destinations")
+        source = repo / relative_inside(item["source"], "source", manifest)
+        if not source.is_file():
+            raise ValueError(f"{source}: source is not a file")
+        source = source.resolve(strict=True)
+        if not source.is_relative_to(repo):
+            raise ValueError(f"{source}: source resolves outside {repo}")
+        content = source.read_text()
+        destinations = item["destinations"]
+        if not isinstance(destinations, CommentedSeq) or not destinations:
+            raise ValueError(f"{manifest}: {item['source']} needs a non-empty destinations list")
+        count += 1
+        for destination in destinations:
+            if not isinstance(destination, CommentedMap) or set(destination) != {"repo", "path"}:
+                raise ValueError(f"{manifest}: each destination has exactly repo and path")
+            root = checkout_root(destination["repo"], manifest)
+            relative = relative_inside(destination["path"], "path", manifest)
+            if root is None:
+                skipped.append(Path(destination["repo"]).expanduser())
+                continue
+            target = root / relative
+            if target.is_symlink():
+                raise ValueError(f"{target}: destination is a symlink")
+            if target.exists() and not target.is_file():
+                raise ValueError(f"{target}: destination is not a file")
+            resolved = target.parent.resolve() / target.name
+            if not resolved.is_relative_to(root):
+                raise ValueError(f"{target}: destination resolves outside {root}")
+            if resolved == source:
+                raise ValueError(f"{target}: destination is its own source")
+            if resolved in outputs:
+                raise ValueError(f"{resolved}: written by more than one sync job")
+            outputs.add(resolved)
+            before = resolved.read_text() if resolved.exists() else ""
+            if before != content:
+                changes[resolved] = Change(before, content, not resolved.is_relative_to(repo), "copy")
+    if not count:
+        raise ValueError(f"{manifest}: no documents listed")
+    return changes, count, skipped
 
 
 def write_atomic(path, content):
@@ -130,32 +216,51 @@ def write_atomic(path, content):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         "Requires uv (dependencies are cached). Exit: 0 synchronized, "
-        "1 drift with --check, 2 invalid input or write failure. "
-        "Follows external skill links and reports their resolved destinations."
+        "1 drift with --check, 2 invalid input or write failure. With no scope "
+        "flag both jobs run on this repository's skill trees and document manifest; "
+        "a scope flag runs only the jobs it names. Destinations outside this "
+        "repository are reported for review and commit there."
     ))
     parser.add_argument("--check", action="store_true", help="report drift without writing")
     parser.add_argument("--skills-dir", action="append", type=Path, help=(
         "scan immediate skill folders here; repeat for multiple roots. "
         "Defaults to dotfiles' personal and repository-local Claude skill trees."
     ))
+    parser.add_argument("--documents", type=Path, metavar="MANIFEST", help=(
+        "copy the documents this manifest lists into their checkouts. "
+        f"Defaults to {MANIFEST} in dotfiles."
+    ))
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[3]
-    roots = args.skills_dir or [repo / "claude/.claude/skills", repo / ".claude/skills"]
+    scoped = args.skills_dir is not None or args.documents is not None
+    roots = args.skills_dir or ([] if scoped else [repo / "claude/.claude/skills", repo / ".claude/skills"])
+    manifest = args.documents or (None if scoped else repo / MANIFEST)
     try:
-        # Validate the entire scan before writing any metadata.
-        changes, count = plan(roots)
-        if not count:
-            raise ValueError("no SKILL.md files found in the selected roots")
-        for path, (before, after, external) in changes.items():
+        # Validate every job before writing anything from either.
+        changes = {}
+        summaries = []
+        outputs = set()
+        if roots:
+            skill_changes, count, outputs = plan_skills(roots, repo)
+            changes.update(skill_changes)
+            summaries.append((count, "skills checked", len(skill_changes), "metadata files"))
+        if manifest is not None:
+            doc_changes, count, skipped = plan_documents(manifest.expanduser().resolve(strict=True), repo, outputs)
+            changes.update(doc_changes)
+            for root in skipped:
+                print(f"skipped {root}: checkout absent")
+            summaries.append((count, "documents checked", len(doc_changes), "copies"))
+        for path, change in changes.items():
             if not args.check:
                 current = path.read_text() if path.exists() else ""
-                if current != before:
+                if current != change.before:
                     raise ValueError(f"{path}: changed during scan; rerun skill-sync")
-                write_atomic(path, after)
+                write_atomic(path, change.after)
             verb = "would update" if args.check else "updated"
-            print(f"{verb} {path}" + (" [external: review/commit in owning repository]" if external else ""))
+            print(f"{verb} {path}" + (" [external: review/commit in owning repository]" if change.external else ""))
         status = "need synchronization" if args.check else "updated"
-        print(f"{count} skills checked; {len(changes)} metadata files {status}.")
+        for count, checked, changed, noun in summaries:
+            print(f"{count} {checked}; {changed} {noun} {status}.")
         return 1 if args.check and changes else 0
     except (OSError, ValueError, YAMLError) as error:
         print(f"skill-sync: {error}", file=sys.stderr)

@@ -56,9 +56,11 @@ A snippet, a tool description, or an error line is one layer; a prompt
 built around large source material keeps its opening and places the
 material between it and the request (under Instructions). Formatting
 exists so the reader can see the layers: a header per layer or stage, a
-list for parallel items, prose for one argument, and no more structure
-than the content has — one paragraph hides a hierarchy, a header every
-three sentences invents one. Prompt style shapes output style, so a
+sectioned list for parallel items and lookups (a bold label, then the
+entry), a table only where the reader compares cells across rows, prose
+for one argument, and no more structure than the content has — one
+paragraph hides a hierarchy, a header every three sentences invents one,
+and a grid of independent entries hides a list. Prompt style shapes output style, so a
 surface formatted the way you want the output to look teaches by example.
 
 <example type="avoid">
@@ -274,6 +276,9 @@ when pointed at files, every line of them — run before shipping. In order:
      things, or has no first layer at all;
    - *flat hierarchy* — layers rendered as one paragraph, or bullets that
      run to paragraphs;
+   - *a lookup rendered as a grid* — a table whose rows are independent
+     entries the reader looks up one at a time; a sectioned list reads
+     whole in source;
    - *stale cache* — restates a `--help`, a config, a listing;
    - *familiar-term leak* — an internal name where the field has a word;
    - *negation as the lever* — the rule is carried by what not to do;
