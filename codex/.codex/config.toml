@@ -208,9 +208,9 @@ hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
 
 [tui]
-# Token Ultra Dark syntax palette, matching the terminal theme.
-# Loaded from ~/.codex/themes/token-ultra-dark.tmTheme.
-theme = "token-ultra-dark"
+# Token Meridian Light syntax palette, matching the terminal theme.
+# Loaded from ~/.codex/themes/token-meridian-light.tmTheme.
+theme = "token-meridian-light"
 vim_mode_default = true
 # Two visual layers: the footer identifies the Git work, context usage, and
 # committed branch diff; the pane border adds a convention-aware path and
