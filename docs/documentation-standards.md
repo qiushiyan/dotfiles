@@ -21,7 +21,7 @@ Each kind of content has one job, and a doc is one kind:
   ```
 
   The condition lets a later session take the read without the writer's memory; the landed block (predicate · window · result · verdict · follow-on) goes to the record, and the item leaves.
-- **Evidence tiers** (specs, issues, records, research) are reference behind settled decisions: dated filenames (`YYYY-MM-DD-kebab-name.md`), deleted only after distilling, edited after merge only for a spec's marks (§ As built; the owed line replaced; the status header when a later spec overturns it). The filename is the index entry, nothing keeps a roster, and an item earns prominence by citation from the live doc where its lesson applies.
+- **Evidence tiers** (specs, issues, records, research), where a project keeps them, are reference behind settled decisions: dated filenames (`YYYY-MM-DD-kebab-name.md`), deleted only after distilling, edited after merge only for the marks the project's bindings name. The filename is the index entry, nothing keeps a roster, and an item earns prominence by citation from the live doc where its lesson applies.
 - **An index** is a curated route, and every live doc is reachable from it: an unrouted doc is invisible to readers and to a diff-scoped update, and rots.
 
 **A live initiative** — a tree for a system that is partly built — keeps status, proposal and present apart: the README header carries a standing **What is live** block naming, per module doc, the sections that describe running code; what does not run yet is a slice's spec, folded in at merge. Epistemic state (chosen, disputed, superseded) lives in a decisions ledger, delivery state (unbuilt, serving, verified) in the header. A number or heading is an address once cited: numbering never shifts, and a superseded entry keeps its number with a pointer to its successor.
@@ -42,13 +42,23 @@ a run dies at claim time → the claim loop's deadline → a claim defers, it ne
                           → grep the journal for the deferral reason
 ```
 
-Inventories do not earn a cache: name a suite's responsibility rather than its ordinal, the few config surfaces that form a boundary rather than every option, and a count only where the number is itself the invariant. Every list in a live doc is a closed spotlight set with a stated criterion, never an append target. A directory tree is a mental-model device naming what a reader must know exists; a file add or rename does not earn a tree edit. A **lessons entry** is a seam guard, not a story: the invariant (bold, one sentence), the hazard in the present tense, the guard that pins it (a test or symbol), the record that bought it — and one line pointing at the test when a named test already pins it.
+What does not earn it:
+
+- **Inventories.** Name a suite's responsibility rather than its ordinal, the few config surfaces that form a boundary rather than every option, and a count only where the number is itself the invariant. Every list in a live doc is a closed spotlight set with a stated criterion, never an append target.
+- **A tree edit for a file add or rename.** A directory tree is a mental-model device naming what a reader must know exists.
+- **A story in a lessons entry.** An entry is a seam guard: the invariant (bold, one sentence), the hazard in the present tense, the guard that pins it (a test or symbol), the record that bought it — and one line pointing at the test when a named test already pins it.
 
 ## Writing standards
 
 - **Present state.** Git holds the journey; a live doc has no "added X", "as of Y". The diff leaks in with a present-tense disguise — "B, not A", "replaces A", "no longer" — every word true, the sentence shaped like the change. The **future-need test** for any trace of the before-state: will a reader who never saw A need it? Usually not; A earns a mention only while it still bites today, stated as a present hazard, or while a transition is mid-flight. When a change closes a gap, sweep the tree for the sentence that described the gap.
 - **Current names.** Real searchable nouns; point at source with a line-sized description and leave signatures and option lists in source. Cite a repository file as a bare backticked path from the base the bindings name — an agent opens the path with its read tool, and link syntax adds nothing it can use. Planned or unproven behaviour is marked (a status line, a spec, an open question), never stated as fact.
-- **Structure follows how the reader uses the information.** The hierarchy is visible in plain source, and there is no more structure than the content has. A heading per distinct reader question. A sectioned list for independent entries, above all "when X, read Y": a bold label, a colon, the entry; nest one level only where an entry has subordinate detail. A numbered list where order matters. Prose for an argument and its reasons — bullets drop the connectives that carry the reasoning. A table where the reader compares the same short attributes across alternatives, cell by cell. A fenced block for anything the reader runs or greps.
+- **Structure follows how the reader uses the information.** The hierarchy is visible in plain source, and there is no more structure than the content has:
+  - **a heading** per distinct reader question;
+  - **a sectioned list** for independent entries, above all "when X, read Y" — a bold label, a colon, the entry — nested one level only where an entry has subordinate detail;
+  - **a numbered list** where order matters;
+  - **prose** for an argument and its reasons, since bullets drop the connectives that carry the reasoning;
+  - **a table** where the reader compares the same short attributes across alternatives, cell by cell;
+  - **a fenced block** for anything the reader runs or greps.
 
   <example type="avoid">
   | The question concerns | Read |
@@ -91,18 +101,17 @@ git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' \
 # no PR number, date-as-narrative or confidence boilerplate entered a design doc
 git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' | grep -nE '#[0-9]{3,}\b|\b(since|as of|on) 20[0-9]{2}-'
 
-# a new table is a review candidate: it stays when the reader compares cells across rows;
-# a two-column table is almost always a sectioned list
-git diff --cached -U0 -- '*.md' | grep -nE '^\+\|( *:?-+:? *\|)+ *$'
+# every new table is a review candidate (see the disposition below the block)
+git diff --cached -U0 -- '*.md' | grep -nE '^\+\s*\|?\s*:?-+:?\s*(\|\s*:?-*:?\s*)+\|?\s*$'
 
-# a live doc that links into a proposal directory cites it as unbuilt, and leans on nothing there
-git grep -nE '(specs|plans)/[^ )]*\.md' -- '<live docs>'
+# every live-doc reference into a proposal or evidence directory is a candidate: what role does the target play?
+git grep -nE '(specs|plans|issues|records|research|adr)/[^ )]*\.md' -- '<live docs>'
 
 # a status page holds only open items: every dated item carries an owed read (skip where the tree has none)
 for p in <status pages>; do echo "$p items=$(grep -cE '^- \*\*20' $p) owed=$(grep -c 'Closing read owed' $p)"; done
 ```
 
-A hit on a status page or in an evidence tier is fine; in a design doc it is a sentence to rewrite in the present tense with the evidence cited by record. An `items` count above `owed` is an item that landed and did not leave. Then run the project's own checks from its bindings, re-read each modified doc as one narrative, and grep live docs for each moved path and superseded term.
+For the narrative greps, a hit on a status page or in an evidence tier is fine; in a design doc it is a sentence to rewrite in the present tense with the evidence cited by record. An `items` count above `owed` is an item that landed and did not leave. A table hit stays when the reader compares cells across rows, becomes a sectioned list when its rows are independent lookups, and is exempt inside a quoted avoid-example. A reference hit is fine when the target is cited in its role — a proposal as unbuilt, a retained record or decision as evidence, an authoring guide as a guide — and is a defect when a live doc leans on unbuilt work. Then run the project's own checks from its bindings, re-read each modified doc as one narrative, and grep live docs for each moved path and superseded term.
 
 ## The standards file itself
 

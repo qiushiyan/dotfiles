@@ -9,3 +9,5 @@ documents:
         path: docs/loopy/documentation-standards.md
       - repo: ~/dev/itell
         path: apps/platform/docs/documentation-standards.md
+      - repo: ~/dev/tabtype
+        path: docs/documentation-standards.md

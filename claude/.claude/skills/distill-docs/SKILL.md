@@ -11,7 +11,7 @@ allowed-tools: Bash(wc:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 
 You're running the periodic distillation pass over a project's documentation — the whole-tree complement to the per-change update-docs skill. Update-docs is diff-scoped: it reads only the docs a change overlaps, so duplication *across* docs, rot in files no recent diff touched, and structure that drifted over many small edits accumulate in the seams. This pass reads the tree whole, consolidates and prunes it, and patches the standards so the same rot can't come back. Typical triggers: the update-docs budget check flagged an overrun, or the weekly standing slot came round. At that cadence many runs will find little — reporting a clean tree is a real result, not a wasted pass.
 
-**The project's standards define "good".** Before anything else, read its `documentation-standards.md` (anywhere under the docs home), or the global `~/dotfiles/docs/documentation-standards.md` when it has none. The standards supply the writing rules — and, just as load-bearing, the **protected set**: sanctioned echoes ("this list deliberately duplicates…"), evidence-tag conventions, the spine/satellite shape, the budget. What counts as rot and what counts as protected both come from there; this skill only carries the process and the catalogue.
+**The project's standards define "good".** Before anything else, read its `documentation-standards.md` (anywhere under the docs home), or the global `~/dotfiles/docs/documentation-standards.md` when it has none, and then the project's **bindings** — the section its documentation entry point (update-docs or handoff skill, docs index; in dotfiles `docs/doc-loop.md`) devotes to the standard. The standard supplies the writing rules and the spine/satellite shape; the bindings supply what is load-bearing and local: the **protected set** (sanctioned echoes, evidence-tag conventions), the ceilings, and whether shipped proposals are pruned or retained. What counts as rot and what counts as protected both come from those two; this skill only carries the process and the catalogue.
 
 ## The hot path
 
@@ -64,7 +64,7 @@ Work doc by doc, finishing one before opening the next. The standards bind at th
 
 - **One home per meaning.** Every consolidation names the surviving copy and repoints the others; every deletion names the live copy that outlives it.
 - **Present tense, edited in place.** Restructure prose to describe what is true now; git holds the history.
-- **The protected set survives verbatim** — sanctioned echoes, evidence tags, each doc's voice. Distillation compresses meaning; it doesn't flatten register.
+- **The protected set survives in meaning** — sanctioned echoes, evidence tags, exact commands, dated measurements — as the bindings define it, and each doc keeps its voice. Distillation compresses meaning; it doesn't flatten register.
 - **Deletion is the win condition — the split is its partner.** Accumulated rot is usually whole sections and whole files, so a pass that only tightened sentences has skimmed the surface. Reserve deletion for content nothing needs; live content that only some sessions need earns a satellite instead (§The split).
 
 Done when every planned action landed, or was consciously dropped with a one-line reason.

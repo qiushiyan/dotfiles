@@ -1,4 +1,11 @@
-"""Exercise the installed command against temporary skill trees, never live skills."""
+"""Exercise the command against temporary trees, never live skills or projects.
+
+Every case runs a copy of the script from a temporary repository layout: the
+script locates its repository three levels above itself, so the copy reads the
+temporary manifest and can never reach the live one. A sentinel checkout, wired
+as that manifest's destination, would receive a copy if scope selection ever
+regressed; the skills-only cases assert it stays empty.
+"""
 
 from pathlib import Path
 import subprocess
@@ -16,6 +23,36 @@ class SkillSyncTest(unittest.TestCase):
         self.base = Path(self.temp.name)
         self.root = self.base / "skills"
         self.root.mkdir()
+        self.repo, self.script = self.install()
+        self.sentinel = self.checkout("sentinel")
+        self.manifest(self.repo, [(self.sentinel, "docs/standard.md")])
+
+    def install(self):
+        repo = self.base / "dotfiles"
+        script = repo / "scripts/.local/bin/skill-sync"
+        script.parent.mkdir(parents=True)
+        script.write_bytes(SCRIPT.read_bytes())
+        script.chmod(0o755)
+        (repo / ".git").mkdir()
+        (repo / "docs").mkdir()
+        (repo / "docs/standard.md").write_text("# Standard\n\nOne rule.\n")
+        return repo, script
+
+    def checkout(self, name, git=True):
+        root = self.base / name
+        root.mkdir()
+        if git:
+            (root / ".git").mkdir()
+        return root
+
+    def manifest(self, repo, destinations, source="docs/standard.md"):
+        path = repo / "scripts/.local/share/dotfiles/documents.yaml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = [f"documents:\n  - source: {source}\n    destinations:\n"]
+        for root, target in destinations:
+            lines.append(f"      - repo: {root}\n        path: {target}\n")
+        path.write_text("".join(lines))
+        return path
 
     def skill(self, name, header="disable-model-invocation: true", metadata=None):
         folder = self.root / name
@@ -29,10 +66,12 @@ class SkillSyncTest(unittest.TestCase):
         return folder / "agents/openai.yaml"
 
     def run_sync(self, *args, expected=0):
-        result = subprocess.run(
-            [str(SCRIPT), "--skills-dir", str(self.root), *args],
-            text=True, capture_output=True, timeout=30,
-        )
+        result = self.run_script(self.script, "--skills-dir", str(self.root), *args, expected=expected)
+        self.assertFalse((self.sentinel / "docs/standard.md").exists(), "a skills-only run copied a document")
+        return result
+
+    def run_script(self, script, *args, expected=0):
+        result = subprocess.run([str(script), *args], text=True, capture_output=True, timeout=30)
         self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
         return result
 
@@ -156,48 +195,16 @@ class SkillSyncTest(unittest.TestCase):
         self.run_sync(expected=2)
         self.assertFalse(missing.exists())
 
-    # Document copies: the script's repository is the directory three levels
-    # above it, so a copy of the script inside a temporary layout makes that
-    # layout the repository and keeps the real manifest out of reach.
-    def install(self):
-        repo = self.base / "dotfiles"
-        script = repo / "scripts/.local/bin/skill-sync"
-        script.parent.mkdir(parents=True)
-        script.write_bytes(SCRIPT.read_bytes())
-        script.chmod(0o755)
-        (repo / "docs").mkdir()
-        (repo / "docs/standard.md").write_text("# Standard\n\nOne rule.\n")
-        return repo, script
-
-    def checkout(self, name, git=True):
-        root = self.base / name
-        root.mkdir()
-        if git:
-            (root / ".git").mkdir()
-        return root
-
-    def manifest(self, repo, destinations, source="docs/standard.md"):
-        path = repo / "scripts/.local/share/dotfiles/documents.yaml"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        lines = [f"documents:\n  - source: {source}\n    destinations:\n"]
-        for root, target in destinations:
-            lines.append(f"      - repo: {root}\n        path: {target}\n")
-        path.write_text("".join(lines))
-        return path
-
-    def run_script(self, script, *args, expected=0):
-        result = subprocess.run([str(script), *args], text=True, capture_output=True, timeout=30)
-        self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
-        return result
-
     def test_skills_scope_never_reaches_documents(self):
         self.skill("manual")
         result = self.run_sync()
         self.assertNotIn("documents checked", result.stdout)
         self.assertIn("1 skills checked", result.stdout)
+        self.run_script(self.script, "--documents", str(self.repo / "scripts/.local/share/dotfiles/documents.yaml"))
+        self.assertTrue((self.sentinel / "docs/standard.md").exists())
 
     def test_documents_scope_copies_verbatim_and_reports_external(self):
-        repo, script = self.install()
+        repo, script = self.repo, self.script
         target = self.checkout("project")
         manifest = self.manifest(repo, [(target, "docs/nested/standard.md")])
         copy = target / "docs/nested/standard.md"
@@ -218,7 +225,7 @@ class SkillSyncTest(unittest.TestCase):
         self.assertEqual(copy.read_text(), "# Standard\n\nOne rule.\n")
 
     def test_default_scope_runs_both_jobs_from_the_repository(self):
-        repo, script = self.install()
+        repo, script = self.repo, self.script
         for tree in ("claude/.claude/skills/manual", ".claude/skills"):
             (repo / tree).mkdir(parents=True)
         (repo / "claude/.claude/skills/manual/SKILL.md").write_text(
@@ -234,7 +241,7 @@ class SkillSyncTest(unittest.TestCase):
         self.run_script(script, "--check")
 
     def test_absent_checkout_is_skipped_while_present_ones_sync(self):
-        repo, script = self.install()
+        repo, script = self.repo, self.script
         present = self.checkout("present")
         absent = self.base / "absent"
         manifest = self.manifest(repo, [(absent, "docs/standard.md"), (present, "docs/standard.md")])
@@ -245,7 +252,7 @@ class SkillSyncTest(unittest.TestCase):
         self.run_script(script, "--documents", str(manifest), "--check")
 
     def test_invalid_manifest_aborts_every_job_before_writes(self):
-        repo, script = self.install()
+        repo, script = self.repo, self.script
         skills = repo / "claude/.claude/skills"
         (skills / "manual").mkdir(parents=True)
         (skills / "manual/SKILL.md").write_text("---\nname: manual\ndisable-model-invocation: true\n---\n")
@@ -273,6 +280,40 @@ class SkillSyncTest(unittest.TestCase):
         link.unlink()
         (repo / "scripts/.local/share/dotfiles/documents.yaml").write_text("documents: []\n")
         self.run_script(script, "--documents", str(manifest), expected=2)
+
+    def test_copy_chains_and_source_overwrites_are_rejected(self):
+        repo, script = self.repo, self.script
+        (repo / "docs/second.md").write_text("second\n")
+        target = self.checkout("project")
+        manifest = repo / "scripts/.local/share/dotfiles/documents.yaml"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        # docs/standard.md -> docs/second.md (inside dotfiles) while docs/second.md is itself a source
+        manifest.write_text(
+            "documents:\n"
+            "  - source: docs/standard.md\n    destinations:\n"
+            f"      - repo: {repo}\n        path: docs/second.md\n"
+            "  - source: docs/second.md\n    destinations:\n"
+            f"      - repo: {target}\n        path: docs/second.md\n"
+        )
+        self.run_script(script, "--documents", str(manifest), expected=2)
+        self.assertEqual((repo / "docs/second.md").read_text(), "second\n")
+        self.assertFalse((target / "docs/second.md").exists())
+
+    def test_copies_carry_exact_bytes_and_empty_sources(self):
+        repo, script = self.repo, self.script
+        (repo / "docs/standard.md").write_bytes(b"A\r\nB\r\n")
+        (repo / "docs/empty.md").write_bytes(b"")
+        target = self.checkout("project")
+        manifest = self.manifest(repo, [(target, "docs/standard.md")])
+        manifest.write_text(manifest.read_text() + (
+            "  - source: docs/empty.md\n    destinations:\n"
+            f"      - repo: {target}\n        path: docs/empty.md\n"
+        ))
+        self.run_script(script, "--documents", str(manifest), "--check", expected=1)
+        self.run_script(script, "--documents", str(manifest))
+        self.assertEqual((target / "docs/standard.md").read_bytes(), b"A\r\nB\r\n")
+        self.assertTrue((target / "docs/empty.md").exists())
+        self.run_script(script, "--documents", str(manifest), "--check")
 
 
 if __name__ == "__main__":

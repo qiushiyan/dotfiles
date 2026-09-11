@@ -27,10 +27,9 @@ MANIFEST = "scripts/.local/share/dotfiles/documents.yaml"
 
 @dataclass
 class Change:
-    before: str
-    after: str
+    before: bytes | None  # None: the destination does not exist yet
+    after: bytes
     external: bool
-    kind: str  # "metadata" or "copy"
 
 
 def yaml_parser():
@@ -116,10 +115,10 @@ def plan_skills(roots, repo):
             if path in destinations and destinations[path] != desired:
                 raise ValueError(f"{path}: linked skills request conflicting invocation policies")
             destinations[path] = desired
-            before = path.read_text() if path.exists() else ""
-            after = render_metadata(before, desired, path)
-            if after != before:
-                changes[path] = Change(before, after, not path.is_relative_to(repo), "metadata")
+            before = path.read_bytes() if path.exists() else None
+            after = render_metadata(before.decode() if before is not None else "", desired, path)
+            if after.encode() != (before or b""):
+                changes[path] = Change(before, after.encode(), not path.is_relative_to(repo))
     if not seen:
         raise ValueError("no SKILL.md files found in the selected roots")
     return changes, len(seen), set(destinations)
@@ -152,10 +151,9 @@ def plan_documents(manifest, repo, reserved):
     data = mapping(manifest.read_text(), manifest)
     if set(data) != {"documents"} or not isinstance(data["documents"], CommentedSeq):
         raise ValueError(f"{manifest}: expected one top-level key, documents, holding a list")
-    changes = {}
-    outputs = set(reserved)
+    sources = {}
+    copies = []  # (source, destination) pairs, resolved
     skipped = []
-    count = 0
     for item in data["documents"]:
         if not isinstance(item, CommentedMap) or set(item) != {"source", "destinations"}:
             raise ValueError(f"{manifest}: each document has exactly source and destinations")
@@ -165,11 +163,12 @@ def plan_documents(manifest, repo, reserved):
         source = source.resolve(strict=True)
         if not source.is_relative_to(repo):
             raise ValueError(f"{source}: source resolves outside {repo}")
-        content = source.read_text()
+        if source in sources:
+            raise ValueError(f"{source}: declared as a source more than once")
+        sources[source] = source.read_bytes()
         destinations = item["destinations"]
         if not isinstance(destinations, CommentedSeq) or not destinations:
             raise ValueError(f"{manifest}: {item['source']} needs a non-empty destinations list")
-        count += 1
         for destination in destinations:
             if not isinstance(destination, CommentedMap) or set(destination) != {"repo", "path"}:
                 raise ValueError(f"{manifest}: each destination has exactly repo and path")
@@ -186,17 +185,27 @@ def plan_documents(manifest, repo, reserved):
             resolved = target.parent.resolve() / target.name
             if not resolved.is_relative_to(root):
                 raise ValueError(f"{target}: destination resolves outside {root}")
-            if resolved == source:
-                raise ValueError(f"{target}: destination is its own source")
-            if resolved in outputs:
-                raise ValueError(f"{resolved}: written by more than one sync job")
-            outputs.add(resolved)
-            before = resolved.read_text() if resolved.exists() else ""
-            if before != content:
-                changes[resolved] = Change(before, content, not resolved.is_relative_to(repo), "copy")
-    if not count:
+            copies.append((source, resolved))
+    if not sources:
         raise ValueError(f"{manifest}: no documents listed")
-    return changes, count, skipped
+    # Every source and output is known before any write is planned, so a copy
+    # can neither feed another copy nor overwrite a file another job owns.
+    outputs = set(reserved)
+    for source, resolved in copies:
+        if resolved in sources or resolved in reserved:
+            raise ValueError(f"{resolved}: a destination may not be a source or a metadata file")
+        if resolved in outputs:
+            raise ValueError(f"{resolved}: written by more than one sync job")
+        outputs.add(resolved)
+    for source in sources:
+        if source in reserved:
+            raise ValueError(f"{source}: a metadata file may not be a source")
+    changes = {}
+    for source, resolved in copies:
+        before = resolved.read_bytes() if resolved.exists() else None
+        if before != sources[source]:
+            changes[resolved] = Change(before, sources[source], not resolved.is_relative_to(repo))
+    return changes, len(sources), skipped
 
 
 def write_atomic(path, content):
@@ -204,7 +213,7 @@ def write_atomic(path, content):
     mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o644
     fd, temporary = tempfile.mkstemp(prefix=".skill-sync-", dir=path.parent)
     try:
-        with os.fdopen(fd, "w") as output:
+        with os.fdopen(fd, "wb") as output:
             output.write(content)
         os.chmod(temporary, mode)
         os.replace(temporary, path)
@@ -252,7 +261,7 @@ def main():
             summaries.append((count, "documents checked", len(doc_changes), "copies"))
         for path, change in changes.items():
             if not args.check:
-                current = path.read_text() if path.exists() else ""
+                current = path.read_bytes() if path.exists() else None
                 if current != change.before:
                     raise ValueError(f"{path}: changed during scan; rerun skill-sync")
                 write_atomic(path, change.after)

@@ -108,7 +108,8 @@ For this repository the bindings are:
   under the shared first-read budget.
 - **Proposals and evidence:** a shipped proposal is deleted; Git holds it. The
   tree keeps no status pages and no evidence tiers, so the check block's
-  status-page loop is skipped.
+  status-page loop is skipped and its `<live docs>` are `docs/*.md` and the
+  root `CLAUDE.md`.
 - **Paths** are written from the repository root.
 - **The protected set** — echoes a distillation keeps in meaning, not in
   narration: the red-line summaries in the root `CLAUDE.md` (details:
