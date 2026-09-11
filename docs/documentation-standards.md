@@ -71,11 +71,11 @@ Inventories do not earn a cache: name a suite's responsibility rather than its o
 
 - **None** — bug fixes, internal refactors, tests, dependency bumps.
 - **Module-level** — a new function, flow or option inside an existing subsystem: the one doc that owns it.
-- **Architecture-level** — a new subsystem, boundary, integration or policy: the index, possibly a new doc, the status page's owed read, a proposal distilled — and the doc *structure* reconsidered, not a wording patch at the point of change.
+- **Architecture-level** — a new subsystem, boundary, integration or policy: the index, possibly a new doc, the status page's owed read where the tree keeps one, a proposal distilled — and the doc *structure* reconsidered, not a wording patch at the point of change. A branch that straddles tiers takes the higher.
 
 ## Before you commit a doc change
 
-The violation is invisible at the point of writing. Stage the docs this change touched (`git add -- <paths>`, so a new doc is diffed too), then:
+The violation is invisible at the point of writing. Stage the docs this change touched (`git add -- <paths>`, so a new doc is diffed too), then run the block; `<live docs>` and `<status pages>` are the sets the project's bindings name:
 
 ```bash
 # every `<doc>.md § Heading` you touched, or that names a doc you renamed in, resolves
