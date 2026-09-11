@@ -124,7 +124,7 @@ What a hit means:
 - **A narrative grep** (cardinal, changelog, PR or date): fine on a status page or in an evidence tier; in a design doc, a sentence to rewrite in the present tense with the evidence cited by record.
 - **A table:** stays when the reader compares cells across rows; becomes a sectioned list when its rows are independent lookups; exempt inside a quoted avoid-example.
 - **A reference into a proposal or evidence directory:** fine when the target is cited in its role — a proposal as unbuilt, a retained record or decision as evidence, an authoring guide as a guide; a defect when a live doc leans on unbuilt work.
-- **`items` above `owed`:** an item that landed and did not leave.
+- **`items` and `owed` differ:** above, an item that landed and did not leave; below, an owed line with no dated item.
 
 Then run the project's own checks from its bindings, re-read each modified doc as one narrative, and grep live docs for each moved path and superseded term.
 
