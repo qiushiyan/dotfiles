@@ -16,17 +16,21 @@ This is the rule most often broken, because an agent reaches for a grid by refle
 - **a fenced block** for anything the reader runs or greps.
 
 <example type="avoid">
+```markdown
 | The question concerns | Read |
 | --- | --- |
 | Cohort analytics, who is included, who may view | `docs/dashboard/README.md` — Mental Model, Audience and Auth, Data Sources |
 | Admin preview or toolbar behavior | `docs/admin-tools.md` — Mental Model, Who Can Access, then Preview Mode |
+```
 </example>
 
 <example>
+```markdown
 ## Relevant knowledge
 
 - **Cohort analytics, who is included, who may view:** `docs/dashboard/README.md` — Mental Model, Audience and Auth, Data Sources
 - **Admin preview or toolbar behavior:** `docs/admin-tools.md` — Mental Model, Who Can Access, then Preview Mode
+```
 </example>
 
 The rows were independent lookups, so the grid was carrying a list; the heading now names the reader's question and each entry reads whole in source. The check block below flags every new table for exactly this judgment.
