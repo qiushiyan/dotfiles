@@ -105,10 +105,10 @@ git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' | grep -nE '#[0-9]{3,}\b|\b(
 git diff --cached -U0 -- '*.md' | grep -nE '^\+\s*\|?\s*:?-+:?\s*(\|\s*:?-*:?\s*)+\|?\s*$'
 
 # every live-doc reference into a proposal or evidence directory is a candidate: what role does the target play?
-git grep -nE '(specs|plans|issues|records|research|adr)/[^ )]*\.md' -- '<live docs>'
+git grep -nE '(specs|plans|proposals|issues|records|research|adr)/[^ )]*\.md' -- '<live docs>'
 
 # a status page holds only open items: every dated item carries an owed read (skip where the tree has none)
-for p in <status pages>; do echo "$p items=$(grep -cE '^- \*\*20' $p) owed=$(grep -c 'Closing read owed' $p)"; done
+for p in <status pages>; do echo "$p items=$(grep -cE '^(> )?- \*\*20' $p) owed=$(grep -c 'Closing read owed' $p)"; done
 ```
 
 For the narrative greps, a hit on a status page or in an evidence tier is fine; in a design doc it is a sentence to rewrite in the present tense with the evidence cited by record. An `items` count above `owed` is an item that landed and did not leave. A table hit stays when the reader compares cells across rows, becomes a sectioned list when its rows are independent lookups, and is exempt inside a quoted avoid-example. A reference hit is fine when the target is cited in its role — a proposal as unbuilt, a retained record or decision as evidence, an authoring guide as a guide — and is a defect when a live doc leans on unbuilt work. Then run the project's own checks from its bindings, re-read each modified doc as one narrative, and grep live docs for each moved path and superseded term.
