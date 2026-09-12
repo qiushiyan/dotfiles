@@ -79,24 +79,7 @@ bindkey -M vicmd '\e[108;5u' clear-screen   # Ctrl+L (CSI u)
 KEYTIMEOUT=10
 
 # --------------------------------------------------------------------
-# 2. PATH (all additions in one place)
-# --------------------------------------------------------------------
-export PATH="\
-$HOME/.config/tmux/plugins/tmuxifier/bin:\
-$HOME/.wasmtime/bin:\
-$HOME/.bun/bin:\
-$HOME/bin:\
-$HOME/bin/elixir-ls:\
-$HOME/.local/bin:\
-$HOME/.mix/escripts:\
-/opt/homebrew/opt/postgresql@16/bin:\
-/opt/homebrew/opt/openjdk@11/bin:\
-/usr/local/bin:\
-$HOME/Library/Android/sdk/platform-tools:\
-$PATH"
-
-# --------------------------------------------------------------------
-# 3. ENVIRONMENT VARIABLES
+# 2. ENVIRONMENT VARIABLES
 # --------------------------------------------------------------------
 export ZSH="$HOME/.oh-my-zsh"
 export VISUAL="nvim"
@@ -146,14 +129,14 @@ export ENABLE_LSP_TOOLS=1
 [ -f ~/.secrets ] && source ~/.secrets
 
 # --------------------------------------------------------------------
-# 4. OH-MY-ZSH
+# 3. OH-MY-ZSH
 # --------------------------------------------------------------------
 ZSH_THEME=""
 plugins=(history zsh-autosuggestions)
 source "$ZSH/oh-my-zsh.sh"
 
 # --------------------------------------------------------------------
-# 5. TOOL INIT (order matters — oh-my-posh must be last)
+# 4. TOOL INIT (order matters — oh-my-posh must be last)
 # --------------------------------------------------------------------
 source "$HOME/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
@@ -165,10 +148,9 @@ _git_zsh_register_completions
 eval "$(tmuxifier init -)"
 
 # nvm — lazy-loaded. toolchain.zsh resolved the default Node into $NVM_BIN;
-# re-assert it at the front of PATH here, since Homebrew's shellenv (run from
-# .zprofile, after toolchain.zsh) would otherwise let an unrelated Homebrew
-# `node` shadow it. Only the `nvm` command itself is deferred (~200ms saved).
-[[ -n "$NVM_BIN" ]] && path=("$NVM_BIN" $path)
+# re-apply the shared tool paths after login-shell and plugin setup, which
+# can reorder PATH. Only `nvm` itself is deferred (~200ms saved).
+[ -f "$HOME/.config/zsh/toolchain.zsh" ] && source "$HOME/.config/zsh/toolchain.zsh"
 nvm() {
   unfunction nvm
   . /opt/homebrew/opt/nvm/nvm.sh
@@ -187,26 +169,16 @@ source <(fzf --zsh)
 eval "$(zoxide init zsh)"
 
 # Google Cloud SDK
-[ -f "$HOME/google-cloud-sdk/path.zsh.inc" ] && source "$HOME/google-cloud-sdk/path.zsh.inc"
 [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ] && source "$HOME/google-cloud-sdk/completion.zsh.inc"
 
 # oh-my-posh (must be last — other tools can override shell integration)
 eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
 
 # --------------------------------------------------------------------
-# 6. ALIASES
+# 5. ALIASES
 # Aliases live in ~/.config/zsh/aliases.zsh (auto-sourced by .zshenv).
 # Add new aliases there, not here.
 # --------------------------------------------------------------------
-
-# pnpm
-export PNPM_HOME="/Users/qiushi/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME/bin:"*) ;;
-  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
-esac
-# pnpm end
-
 # Planlab Bedrock creds for the agent eval. Exports AWS_ACCESS_KEY_ID /
 # AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN from the pl-bedrock profile
 # so the @ai-sdk/amazon-bedrock provider (which doesn't read profiles)

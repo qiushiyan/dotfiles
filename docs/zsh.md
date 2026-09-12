@@ -1,8 +1,8 @@
 # Zsh configuration
 
-Package: `zsh/` → `~/.zshrc`, `~/.zshenv`, `~/.config/zsh/`.
+Package: `zsh/` → `~/.zshrc`, `~/.zshenv`, `~/.zlogin`, `~/.config/zsh/`.
 
-## The three startup files
+## Startup files
 
 Which file a change belongs in is most of the work, because each runs for a
 different kind of shell:
@@ -17,16 +17,29 @@ different kind of shell:
 - **`.zprofile`** — login shells only. Homebrew + OrbStack `shellenv`.
 - **`.zshrc`** — interactive shells only. oh-my-zsh, syntax highlighting,
   completions, Oh My Posh prompt, fzf/zoxide, the lazy `nvm` stub.
+- **`.zlogin`** — login shells only, after the other startup files. Reapplies
+  the shared tool paths so login profiles cannot shadow the selected Node.
 
-They load `.zshenv` → `.zprofile` → `.zshrc`.
+They load `.zshenv` → `.zprofile` → `.zshrc` → `.zlogin`, skipping files that
+do not apply to the shell's mode.
 
 **`~/.zprofile` is not in this repo.** Homebrew's and OrbStack's installers wrote
 it and own it, so it is machine-local state that `make install` does not
 recreate — a new machine gets it from running those installers, not from
 stowing. It matters to the load order anyway: its unconditional `brew shellenv`
-runs _after_ `toolchain.zsh` and re-prepends Homebrew's paths, which is exactly
-why `.zshrc` re-asserts `$NVM_BIN` at the front of `PATH` to keep nvm's Node
-ahead of any Homebrew `node`.
+runs _after_ `.zshenv` and re-prepends Homebrew's paths. `.zshrc` reapplies
+`toolchain.zsh` after plugin setup; `.zlogin` covers login shells, including
+non-interactive `zsh -lc` calls.
+
+`toolchain.zsh` owns CLI install directories for every shell mode. Add new
+tool paths there. Codex's `shell_environment_policy` inherits its parent
+environment without a static `PATH` override; `.zshenv` supplies the tool
+paths even when the app starts from the macOS GUI. A hard-coded Codex path
+list drifts as tools are installed. Parent inheritance alone cannot import
+exports or virtual environments activated in another terminal after startup.
+
+For diagnosis and recovery, see
+[Codex: CLI works in the terminal but is not found](codex-zsh-path-command-not-found.md).
 
 ## Modules
 
@@ -34,7 +47,7 @@ Sourced by `.zshenv`; `toolchain.zsh` first, then the rest in glob order.
 
 ```
 zsh/.config/zsh/
-  toolchain.zsh    # cheap PATH setup (default Node via nvm, no subprocess)
+  toolchain.zsh    # shared CLI paths, pnpm globals, default Node via nvm
   aliases.zsh
   git.zsh          # git aliases, gopen/worktree helpers (also tmux prefix g), deferred completion registration
   nav.zsh          # n, take, drop, y, fcd, p/pp (planlab checkout; PLANLAB_DIR)

@@ -2,6 +2,7 @@
 name: clean-worktrees
 description: Clean up merged or inactive Git worktrees, preserving unfinished work and local files. Use for worktree cleanup or the worktree portion of disk cleanup.
 argument-hint: "[root] [inactivity window] [audit only]"
+disable-model-invocation: true
 ---
 
 # Clean worktrees

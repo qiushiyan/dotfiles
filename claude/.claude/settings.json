@@ -21,7 +21,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "claude-fable-5-1[1m]",
   "disableClaudeAiConnectors": true,
   "skillOverrides": {
     "artifact-capabilities": "off",
@@ -186,15 +186,15 @@
       "effortLevel": "medium"
     },
     "claude-fable-5-1": {
-      "effortLevel": "high"
+      "effortLevel": "medium"
     }
   },
+  "autoCompactWindow": 833000,
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
   "editorMode": "vim",
   "verbose": true,
   "autoCompactEnabled": true,
-  "autoCompactWindow": 833000,
   "agentPushNotifEnabled": true
 }

@@ -331,7 +331,7 @@ $0'''
 key = "implement-spec"
 expand = '''
 Reread the settled spec and the critical files this change touches to rebuild your mental model from
-the actual code, then implement end to end. Defer doc updates — I'll say when.'''
+the actual code, then implement end to end, commit at major milestones along the way. Defer doc updates — I'll say when.'''
 
 # ── Direct build (skip spec/plan) ─────────────────────
 

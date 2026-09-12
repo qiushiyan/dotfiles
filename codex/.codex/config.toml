@@ -1,7 +1,7 @@
 
 disable_response_storage = true
 model = "gpt-6-astra"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "high"
 model_reasoning_summary = "concise"
 model_verbosity = "low"
 sandbox_mode = "danger-full-access"
@@ -11,11 +11,10 @@ service_tier = "priority"
 notify = ["/Users/qiushi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 
 [shell_environment_policy]
+inherit = "all"
 
 [shell_environment_policy.set]
-# Keep non-Node tool paths available in Codex command shells. The active
-# nvm-managed Node toolchain is resolved dynamically by zsh/.zshenv.
-PATH = "/Users/qiushi/google-cloud-sdk/bin:/Users/qiushi/.config/tmux/plugins/tmuxifier/bin:/Users/qiushi/.wasmtime/bin:/Users/qiushi/.bun/bin:/Users/qiushi/bin:/Users/qiushi/bin/elixir-ls:/Users/qiushi/.local/bin:/Users/qiushi/.mix/escripts:/opt/homebrew/opt/postgresql@16/bin:/opt/homebrew/opt/openjdk@11/bin:/opt/homebrew/opt/node@16/bin:/usr/local/bin:/Users/qiushi/Library/Android/sdk/platform-tools:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/qiushi/.cargo/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Codex.app/Contents/Resources"
+# Tool paths come from zsh/.config/zsh/toolchain.zsh via .zshenv.
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"
 
 [projects."/Users/qiushi"]
@@ -160,6 +159,9 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/qiushi/personal/videos"]
+trust_level = "trusted"
+
+[projects."/Users/qiushi/dev/.handoffs/planlab-main/spec/staging-large-schedule-capacity.evidence/research-2026-09-10/consult-verify"]
 trust_level = "trusted"
 
 [mcp_servers.context7]
