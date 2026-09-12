@@ -35,7 +35,7 @@ independent judgment inside one. An artifact's author is never its only judge.
 
 | Checkpoint | Input → output |
 |---|---|
-| `/consult` | host position → independent designs → settled direction + continuable out-dir |
+| `/consult` | host position → independent designs → settled direction + continuable job |
 | `/spike` | one technical uncertainty → executable evidence → verdict that amends the direction |
 | `/write-spec` | settled direction → committed design → validation consult |
 | `/review` | committed range + design anchor → verified findings → merge verdict |

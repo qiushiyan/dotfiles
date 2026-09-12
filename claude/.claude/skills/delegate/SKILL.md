@@ -26,12 +26,12 @@ The economics: your judgment at the ends — the spec before, the review after �
    envoy run delegate-r1 --with codex --allow-write --baseline <sha> --prompt-file <prompt> --timeout-min 180
    ```
 
-   `codex` alone inherits the model in the user's Codex config; use claude only when the user names it, with the model they name (`--with claude:<model>`). A worktree dispatch adds `--cwd <path>`. While it runs: keep discussing anything, but make no code edits in the delegate's tree — you would race it. If the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
+   `codex` alone inherits the model in the user's Codex config; a Claude voice runs only on a model the user names (`--with claude:<model>`). A worktree dispatch adds `--cwd <path>`. While it runs, keep discussing anything, but leave the delegate's tree alone — an edit there races it. If the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
 
 4. **Collect and verify** on the task-completion notification — `envoy collect delegate-r1` prints the handoff report plus the commits and diffstat since the baseline in one block; any other status prints a `next:` line; follow it. Where the report claims tests pass, re-run the project's checks yourself. Done when the report is read, every commit is enumerated, and the checks have been re-run.
 
 5. **Review the diff seriously**, in the review-lens stance (`~/.config/lessons/collaboration/review-lens.md`: step back before judging locally, judge how the change joins the design, the additive-bias bar on tests, over-building flagged) — correctness, spec-fit, structural quality (two questions: are the modules it added or reshaped **deep** — real behavior behind a small interface, not complexity relocated — and did it build on the right **foundation** — reshaping structure that fought the spec instead of piling the feature on top?), consistency with the codebase — starting from the report's where-to-look-hardest.
 
-   Route each finding: mechanical → fix it directly; substantive rework → send the findings into the same session as a fix round, which keeps its write intent — the `resume:` command collection printed, with a fresh name (`delegate-r2`) and the findings as its prompt file; a direction-level problem → the user decides.
+   Route each finding: mechanical → fix it directly; substantive rework → send the findings into the same session as a fix round, which keeps its write intent — collection's `resume:` command, with a fresh name (`delegate-r2`) and the findings as its prompt file; a direction-level problem → the user decides.
 
 6. **Report** to the user: what was delegated and to whom, diff stats, the review verdict finding by finding (fixed / sent back / dismissed with reason), and the job name, so the session stays continuable.

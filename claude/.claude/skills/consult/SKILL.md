@@ -16,11 +16,11 @@ You are the lead. Fresh sessions ("voices") give independent takes on a problem 
    What the position *is* follows what is on trial:
 
    - **A design choice** → the design you would ship tomorrow: what the goal now is, what you would build, the shape you discarded to get there, and which of your earlier conclusions the new input broke.
-   - **A causal claim** → the belief and its grounds: the causal chain you think explains the symptom, link by link; which links you *observed* and which you inferred; and the line that costs the most to write honestly — **what you never checked**. A session that has been debugging for an hour holds this implicitly and has usually never stated it; stating it is what makes it attackable.
+   - **A causal claim** → the belief and its grounds: the causal chain you think explains the symptom, link by link; which links you *observed* and which you inferred; and the line that costs the most to write honestly — **what you never checked**, which is what makes the claim attackable.
 
    Done when that paragraph exists, and — for a causal claim — when observed and inferred are separated in it.
 
-2. **Pick the mode, then write the brief.** One question divides them: **is a causal claim on trial?** With one, the cause is judged before the fix; without one, there is nothing to falsify and the shape is the whole question. Route on what the user's words say, wherever in the turn they fall: this skill is invoked by file path as readily as by `/consult`, so an arguments block is not always there to read.
+2. **Pick the mode, then write the brief** — one self-contained file in the session scratchpad, from the mode's template. One question divides the modes: **is a causal claim on trial?** With one, the cause is judged before the fix; without one, there is nothing to falsify and the shape is the whole question. Route on what the user's words say, wherever in the turn they fall: this skill is invoked by file path as readily as by `/consult`, so an arguments block is not always there to read.
 
    | the turn says | on trial | mode |
    |---|---|---|
@@ -43,15 +43,15 @@ You are the lead. Fresh sessions ("voices") give independent takes on a problem 
    envoy run consult-r1 --with codex --with claude:opus --prompt-file <brief> --timeout-min 30
    ```
 
-   Two voices buy what one cannot — independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names. `codex` alone inherits the model in the user's Codex config; a Claude voice is spelled `claude:<model>` (`claude:opus`, `claude:claude-fable-5-1`) and runs only on a model the user names — so where the user names no voice, the round is one codex turn, never a Claude model of your choosing. The single turn also fits a question narrow enough that a second read buys nothing:
+   Two voices buy what one cannot — independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names, however they name them. `codex` alone inherits the model in the user's Codex config; a Claude voice is spelled `claude:<model>` — "opus" is `claude:opus`, "fable" is `claude:claude-fable-5-1` — and runs only on a model the user named, so where they name no voice the round is one codex turn, never a Claude model of your choosing. The single turn also fits a question narrow enough that a second read buys nothing:
 
    ```sh
    envoy run consult-r1 --with codex --prompt-file <brief> --timeout-min 30
    ```
 
-   A job name is used once — a re-run after a refusal takes a fresh name — and if the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
+   If the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
 
-4. **Collect** on the task-completion notification — `envoy collect consult-r1` prints the status block and `result.md`; for a fan-out it prints every voice in one block, split by member — `codex`, `claude-opus`, `claude-claude-fable-5-1`: `<provider>` or `<provider>-<model>` (once — a persisted output is read afterwards). Any other status prints a `next:` line; follow it. Done when every dispatched voice is collected or explicitly accounted for — a `partial` fan-out means one voice returned nothing, and that voice's section says what to do about it.
+4. **Collect** on the task-completion notification — `envoy collect consult-r1` prints the status block and `result.md`; for a fan-out, one section per member, each headed with the member's name. Any other status prints a `next:` line instead — follow it. Done when every dispatched voice is collected or explicitly accounted for — a `partial` fan-out means one voice returned nothing, and that voice's section says what to do about it.
 
 5. **Analyze critically**, point by point: valid → adopt it; wrong → say why (missing context, wrong optimization target, or technically incorrect). A voice that restated the goal differently than you framed it found something before it designed anything — settle that disagreement first, since every design judgment downstream of it is being made against a different target. A fundamental disagreement you cannot resolve → present both positions to the user for judgment; silently deferring to the voice and silently overriding it are equal failures.
 
@@ -59,7 +59,7 @@ You are the lead. Fresh sessions ("voices") give independent takes on a problem 
 
    In `diagnosis`, read the **blind read** first and treat its **delta** against our hypothesis as the finding. Converging independently on the same cause is the strongest evidence this round can produce; landing elsewhere means one of you is weighing evidence the other isn't, and settling that comes before a word about the fix. A cause verdict is adopted by **running the falsifying observation**, never by agreeing with it — that observation is this mode's counterpart of the planned test case below, and step 6 is where its result goes back.
 
-   Adoption has a second half when the point names a trap the implementation could fall into — an edge case, a failure path, a contract that invites misuse. There is no code to pin it against yet, so pin it in the spec's test plan: add or sharpen the planned case that would catch exactly that trap, starting the plan if the spec lacks one. Prose absorbs a point and fades by implementation time; a planned case is what the eventual suite gets held against. Points with nothing executable behind them — naming, structure, scope, docs — are adopted as prose alone.
+   Adoption has a second half when the point names a trap the implementation could fall into — an edge case, a failure path, a contract that invites misuse. There is no code to pin it against yet, so pin it in the spec's test plan: add or sharpen the planned case that would catch exactly that trap, starting the plan if the spec lacks one — a planned case is what the eventual suite gets held against, where prose fades by implementation time. Points with nothing executable behind them — naming, structure, scope, docs — are adopted as prose alone.
 
    Done when every point carries a disposition: adopted (with its planned case where the trap was executable), rebutted with the reason, or escalated to the user.
 
