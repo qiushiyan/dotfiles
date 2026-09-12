@@ -16,10 +16,11 @@ an API.** Sessions are driven headless and read back as data, never
 
 ## Division of labor
 
-- **The engine (`envoy`)** is deterministic mechanism: one turn in, files
-  out, zero judgment — no retries, no review loops, no gates. Its help page
-  and the shared [DISPATCH.md](DISPATCH.md) carry all mechanics, so the
-  skill bodies never restate them.
+- **The engine (`envoy`)** is deterministic mechanism: one named job in,
+  files out, zero judgment — no retries, no review loops, no gates. Each
+  skill carries its own few dispatch lines (the 2026-09-12 pass measured a
+  shared mechanics doc being re-read on most invocations); `envoy -h` holds
+  the rest.
 - **The skills** are judgment procedures for the host: when to dispatch,
   what the prompt must contain, how to collect, verify, and route what
   comes back.
@@ -38,22 +39,21 @@ duet instead. Don't grow the engine.
   That is what lets the engine stay judgment-free.
 - **No model substitution, ever.** No `--model`/`--effort` → the provider's
   own config governs. The host never picks a model the user didn't name.
-  The current Codex recommendation and its config owner live in
-  [DISPATCH.md](DISPATCH.md); the engine carries no model default of its own.
+  The current Codex recommendation lives in `envoy -h` and the user's Codex
+  config; the engine carries no model default of its own.
 - **Independence picks the default provider.** The host is usually Claude
   Code, so a codex sidekick buys cross-family review for free; both bill a
   flat subscription, so cost isn't the tiebreaker. Default codex; claude is
   opt-in by name.
-- **One brief, one job.** Several takes on one brief are a single
-  `envoy fan` — one completion, so "one voice is back: wait or synthesize?"
-  never becomes a question the host holds. Recovery stays per voice (a
-  `partial` fan-out is acted on voice by voice); a follow-up round continues
-  the whole set with `fan --resume-from`, or not at all.
+- **One brief, one job.** Several takes on one brief are a single job with
+  several `--with` voices — one completion, so "one voice is back: wait or
+  synthesize?" never becomes a question the host holds. Recovery stays per
+  voice (a `partial` fan-out is acted on voice by voice); a follow-up round
+  continues the whole set (`--with @<job>`), or not at all.
 - **Background is the default posture**; collection is notification-driven.
-  Polling a background task is a smell — the one sanctioned read is the
-  coordinate block right after dispatch — and watch is observation, never a
-  completion signal: a quiet log means the model is thinking, and a busy one
-  still proves nothing about completion.
+  The caller names the job, so nothing is read back from the dispatch and
+  polling a background task is a smell; a quiet log means the model is
+  thinking, and a busy one still proves nothing about completion.
 - **Durable artifacts over stdout.** Files are authoritative; stdout is a
   convenience view of them.
 
@@ -77,8 +77,9 @@ duet instead. Don't grow the engine.
     escape hatch for foundational objections; an unfenced voice relitigates
     instead of executing.
 - **Round 2 resumes the same session** — fresh would restart from zero; a
-  fan-out continues whole. Optional: handing the user the takeover command
-  is the cheap substitute.
+  fan-out continues whole. The user never takes a session over by hand
+  (measured 2026-09-12: zero takeovers in the history), so no takeover
+  command is printed or relayed.
 
 ## /delegate — implement a written spec
 

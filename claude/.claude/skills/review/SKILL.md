@@ -2,7 +2,6 @@
 name: review
 description: "Code-review the branch's committed work through a cold AI session, at the altitude the round buys — quick (did anything break), full (is it built right), goal (did we build the right thing, once rounds have already run) — then judge and apply the findings."
 requires:
-  - user:envoy/DISPATCH.md
   - lessons:collaboration/review-lens.md
   - lessons:codebase-design/deep-modules.md
   - lessons:codebase-design/deepening.md
@@ -12,8 +11,6 @@ requires:
 # Review — independent review of committed work
 
 The mirror of /delegate: there the host reviews a delegate's commits; here a fresh session ("the reviewer") reviews commits the host or the user wrote. The invariant both serve: **whoever wrote the code never gets to be its only reviewer.** Every review carries a cold read — a session with no stake in the design under review; reviewers report findings, and the host verifies each one against the code, fixes what survives, and answers to the user for every verdict. The review being bought is **strategic, not tactical**: findings that step back and reshape the design — a new module, a shared extraction, a call path collapsed, different wiring — not optimizations inside the implementation's frame. The brief's posture section is what demands this, and it holds for every dispatch that reaches that far — `quick` is the deliberate exception, buying correctness and routing anything structural out through a single escalation line. How far back the reviewer is *allowed* to step, and how wide it reaches, is the brief's other choice — the mode in step 2.
-
-Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
 ## Process
 
@@ -39,7 +36,7 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    - **quick** → the facts block, nothing more. Assembly costing near-nothing *is* the saving; the lenses that remain cost what they always cost.
    - **fresh-eyes** → the facts block, and nothing else: operational limits, scope boundaries, external constraints the code can't reveal — facts about the world outside the diff, never justifications of choices inside it. Writing no report is the mode's real cost: the reviewer spends budget orienting itself, which is the same thing that buys the independence.
-   - **goal** → the facts block, plus **covered ground**, compiled and never recalled: the prior out-dirs in this session's scratchpad, the step-8 reports, and the fix commits, which carry their round coordinates for exactly this (step 6). Then the one line the compile can't produce — what those rounds did not reach.
+   - **goal** → the facts block, plus **covered ground**, compiled and never recalled: the prior rounds' jobs (`envoy collect review-r1`, `review-r2` …), the step-8 reports, and the fix commits, which carry their round coordinates for exactly this (step 6). Then the one line the compile can't produce — what those rounds did not reach.
    - **spec-anchored** → the implementation report, the map the brief hands the reviewer, sourced by provenance:
      - a /delegate built it → its handoff report from `result.md`, verbatim;
      - this session built it → write the report now: what & why, change map with the load-bearing files marked, key decisions, deviations from spec/plan, test coverage and its altitude, where to look hardest — including where building it fought back (multi-attempt fixes, code re-read before it could be trusted), stated as struggle, not defended. A guided map, **not a self-review** — point at risk and complexity; grading is the reviewer's job;
@@ -59,11 +56,10 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    Done when a cold reader could deliver the review without this conversation.
 
-4. **Dispatch**, anchored to the range. `quick` and `goal` are always **one cold voice, single turn** — 30-minute cap for quick, 45 for goal, never a fan-out. A warm voice there is not merely spare but wrong: it holds the design, which is the thing `goal` must judge without.
+4. **Dispatch**, anchored to the range, as one background Bash task, the job named for the round — `review-r1`, then `review-r2` — and return: the task completing is the completion signal, and nothing the dispatch prints needs relaying. `quick` and `goal` are always **one cold voice, single turn** — 30-minute cap for quick, 45 for goal, never a fan-out. A warm voice there is not merely spare but wrong: it holds the design, which is the thing `goal` must judge without.
 
    ```sh
-   envoy turn --provider codex --prompt-file <brief> --baseline <base-sha> \
-     --timeout-min 30 --label review --coordinate-file <fresh>
+   envoy run review-r1 --with codex --prompt-file <brief> --baseline <base-sha> --timeout-min 30
    ```
 
    For `full`, the cap is 60 minutes and the shape follows one question: did a consult in this session weigh the design this range implements?
@@ -71,28 +67,26 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
    No consult — one cold reviewer:
 
    ```sh
-   envoy turn --provider codex --prompt-file <brief> --baseline <base-sha> \
-     --timeout-min 60 --label review --coordinate-file <fresh>
+   envoy run review-r1 --with codex --prompt-file <brief> --baseline <base-sha> --timeout-min 60
    ```
 
    A consult exists — both voices as one fan-out, the consult session continued beside a cold one:
 
    ```sh
-   envoy fan --prompt-file <brief> --baseline <base-sha> \
-     --with-from <consult-job-dir> --with codex --timeout-min 60 --label review --coordinate-file <fresh>
+   envoy run review-r1 --with @consult-r1/codex --with codex --prompt-file <brief> --baseline <base-sha> --timeout-min 60
    ```
 
-   `<consult-job-dir>` is a *turn's* directory. A consult that ran as a fan-out holds one session per member, so seat exactly one of them warm — the voice whose position the implementation followed, named in the consult's synthesis — by its member directory (`<consult-out-dir>/codex`). Seating every member warm is the user's call, one `--with-from` per member.
+   `@consult-r1/codex` names the *member* whose position the implementation followed, as the consult's synthesis recorded it — a consult that ran as a fan-out holds one session per member, named `<provider>` or `<provider>-<model>` as its collect block prints them (`codex`, `claude-opus`), and `@consult-r1` alone would continue every member and seat no cold voice. Name the consult's latest round: after a round 2, `@consult-r2/codex`. Seating every member warm is the user's call, one `--with @<member>` each.
 
    Warm and cold buy different findings, which is why the pair is the default rather than either alone. The warm voice holds the consult's full context: it is the best judge of follow-through — did the implementation integrate what was agreed, did it dodge the traps its rounds discussed — and, having committed to the design in its own context, a poor judge of the design itself (anchoring to prior positions is measured model behavior, not a hypothetical). The cold voice is the reverse: the unanchored, strategic read this skill exists to buy. The brief stays the complete cold brief; the warm voice re-reads cheaply what it already holds.
 
-   A warm voice takes only a spec-anchored brief — it already holds the design, so there is nothing left to withhold from it. Fresh eyes on a design a consult shaped is therefore a *separate* cold turn with its own brief, never a member of that fan-out (one `envoy fan` carries one brief); run it when the user wants the design itself re-judged rather than its execution checked.
+   A warm voice takes only a spec-anchored brief — it already holds the design, so there is nothing left to withhold from it. Fresh eyes on a design a consult shaped is therefore a *separate* cold job with its own brief, never a member of that fan-out (one job carries one brief); run it when the user wants the design itself re-judged rather than its execution checked.
 
-   Collapse to the single cold turn when the user names one voice, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex --with claude:opus`).
+   Collapse to the single cold turn when the user names one voice, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex --with claude:opus`). `codex` alone inherits the model in the user's Codex config; a Claude voice runs only on a model the user names, spelled `claude:<model>` (`claude:opus`, `claude:claude-fable-5-1`).
 
-   `--baseline` makes collection print the reviewed range alongside the findings. `<fresh>` and the coordinate read are DISPATCH.md's loop; relay out-dir and watch, then return.
+   `--baseline` makes collection print the reviewed range alongside the findings. A job name is used once — a re-run after a refusal takes a fresh name — and if the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
 
-5. **Judge pass on collection.** `envoy collect <out-dir>` prints the findings (once — a persisted output is read afterwards). Verify every finding against the actual code — read the cited lines, retrace the claimed failure path — before accepting it: reviewers state hallucinated issues with the same confidence as real ones. Weight by position, never by count: the warm voice endorsing the design it helped shape is expected and earns nothing, and agreement between reviewers earns nothing either.
+5. **Judge pass on collection.** `envoy collect review-r1` prints the findings (once — a persisted output is read afterwards). A status other than `ok` prints one `next:` line instead; run that line, never the original brief again. Verify every finding against the actual code — read the cited lines, retrace the claimed failure path — before accepting it: reviewers state hallucinated issues with the same confidence as real ones. Weight by position, never by count: the warm voice endorsing the design it helped shape is expected and earns nothing, and agreement between reviewers earns nothing either.
 
    For a critical or moderate finding that alleges wrong behavior, reading alone is not verification — you retrace the code with the same mental model that wrote the bug. Pin it with a test before thinking about any fix: a new case, or an existing one sharpened to actually reach the cited path. **Red** — failing for the claimed reason — confirms the finding and becomes the regression test the fix must green; green, when the test genuinely exercises the cited path, is the strongest rebuttal evidence there is.
 
@@ -110,6 +104,11 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
 6. **Fix, and account for the tests.** Apply the confirmed criticals and moderates yourself — in this skill the host is the implementer; minors go by user preference. A `goal` round has no severity ladder to apply: its output is a verdict plus decisions, so what gets built is what the user authorizes, and applying a design objection unasked is the failure mode there. A `quick` round's unpinned-behaviour findings are fixed by writing the test, and that test lands in this step like any other. Design the fix from the finding, not from the red test: the cheapest change that greens it is usually the local patch the reviewer stepped past. A confirmed structural or compositional finding gets the actual reshape, not a shrunken local version of it and not a deferral to "future work" — a deferred composition finding ships the second mechanism, and the migration is never cheaper again than while the branch is open. Write the fix for the **next reader**, who will never see this review: comments and test titles carry the behavior and its reason in the present tense, while the round's coordinates (`(review r2)`, the finding id, the reviewer's name) and the changelog voice (`previously`, `used to`, `no longer`) go in the commit message and the step-7 summary. Those coordinates now have a second consumer: they are what a later `goal` round compiles its **covered ground** from, so a fix commit that drops them costs the closing read its floor. Every confirmed bug also indicts the suite — it was green over the bug: decide whether the step-5 test filled a coverage gap or must replace a weak test (wrong altitude, over-mocked, asserting internals), and add / strengthen / delete accordingly — a test whose subject the fix removed is a **tombstone**, deleted rather than inverted, since what earns the keep is the subject, not the polarity. Done when the project's checks are green over the fixes, the step-5 tests among them.
 
-7. **Round 2, when the fixes were substantive** — a `full` instrument. `quick` and `goal` default to no second round: quick's fixes are verified by the tests that pinned them, and goal's findings are either decisions for the user or a reason to run a different mode, neither of which a follow-up to the same voice settles. Run one anyway only when the user asks. For `full`: send a per-finding summary of what changed — rebuttals included — into the same session (`envoy collect` prints the resume command — add a fresh `--coordinate-file`; a fan-out of reviewers continues whole: `envoy fan --resume-from <out-dir> --prompt-file round2.md --coordinate-file <fresh>`). The question is narrow: was each point actually integrated or hand-waved, and did the fixes regress anything? Converging, not relitigating. For light fixes, handing the user the takeover command is the cheap substitute.
+7. **Round 2, when the fixes were substantive** — a `full` instrument. `quick` and `goal` default to no second round: quick's fixes are verified by the tests that pinned them, and goal's findings are either decisions for the user or a reason to run a different mode, neither of which a follow-up to the same voice settles. Run one anyway only when the user asks. For `full`: send a per-finding summary of what changed — rebuttals included — into the same session, one voice or a whole fan-out alike (collection prints this command):
 
-8. **Report** to the user: the question this round bought and the mode that bought it, the verdict finding by finding (fixed / rebutted with the reason / escalated as foundational), what the fixes changed, the check results, and the resume + takeover commands from collection.
+   ```sh
+   envoy run review-r2 --with @review-r1 --prompt-file round2.md --timeout-min 60
+   ```
+ The question is narrow: was each point actually integrated or hand-waved, and did the fixes regress anything? Converging, not relitigating. For light fixes, the tests that pinned them are the cheap substitute.
+
+8. **Report** to the user: the question this round bought and the mode that bought it, the verdict finding by finding (fixed / rebutted with the reason / escalated as foundational), what the fixes changed, the check results, and the job name, so the session stays continuable.

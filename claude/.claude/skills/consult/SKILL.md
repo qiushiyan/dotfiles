@@ -2,15 +2,12 @@
 name: consult
 description: "Put this session's thinking on trial before a fresh AI session (codex or claude) — diagnosis (is the cause right, before the fix) or approach (is this the shape to build) — then synthesize the deltas."
 requires:
-  - user:envoy/DISPATCH.md
   - lessons:codebase-design/deep-modules.md
 ---
 
 # Consult — independent second opinions
 
 You are the lead. Fresh sessions ("voices") give independent takes on a problem this conversation already understands; you collect their designs and synthesize. Voices are peers, not authorities — adopt what survives your scrutiny, push back on what doesn't.
-
-Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
 ## Process
 
@@ -40,21 +37,21 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    The codebase-design lesson pointers (`~/.config/lessons/codebase-design/…`) go out as the template writes them whenever module shape or an interface is at stake; trim them only when the question genuinely isn't about code structure. Any rulebook this session is working under goes out beside them by path — the voice works to the same bar the work will be held to. Done when a cold reader could act on the brief without this conversation, and when nothing above the diagnosis brief's blind read states a conclusion.
 
-3. **Dispatch** as one fan-out, 30-minute cap — the same brief to every voice, one task that finishes once:
+3. **Dispatch** as one fan-out, 30-minute cap — the same brief to every voice, one background Bash task, the job named for the round (`consult-r1`, then `consult-r2`), that finishes once; return as soon as it is running, since the task completing is the signal and nothing the dispatch prints needs relaying:
 
    ```sh
-   envoy fan --prompt-file <brief> --with codex --with claude:opus --timeout-min 30 --label consult --coordinate-file <fresh>
+   envoy run consult-r1 --with codex --with claude:opus --prompt-file <brief> --timeout-min 30
    ```
 
-   Two voices is the default because independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names; where they name none, codex plus one Claude model. Collapse to a single turn when the user asks for one voice, or when the question is narrow enough that a second read buys nothing:
+   Two voices is the default because independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names; where they name none, codex plus one Claude model. `codex` alone inherits the model in the user's Codex config; a Claude voice is spelled `claude:<model>` (`claude:opus`, `claude:claude-fable-5-1`) and runs only on a model the user names. Collapse to a single turn when the user asks for one voice, or when the question is narrow enough that a second read buys nothing:
 
    ```sh
-   envoy turn --provider codex --prompt-file <brief> --timeout-min 30 --label consult --coordinate-file <fresh>
+   envoy run consult-r1 --with codex --prompt-file <brief> --timeout-min 30
    ```
 
-   `<fresh>` and the coordinate read are DISPATCH.md's loop; relay out-dir and watch, then return.
+   A job name is used once — a re-run after a refusal takes a fresh name — and if the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
 
-4. **Collect** on the task-completion notification — `envoy collect <out-dir>` prints the status block and `result.md`; for a fan-out it prints every voice in one block, split by model (once — a persisted output is read afterwards). Done when every dispatched voice is collected or explicitly accounted for — a `partial` fan-out means one voice returned nothing, and that voice's section says what to do about it.
+4. **Collect** on the task-completion notification — `envoy collect consult-r1` prints the status block and `result.md`; for a fan-out it prints every voice in one block, split by member — `codex`, `claude-opus`, `claude-claude-fable-5-1`: `<provider>` or `<provider>-<model>` (once — a persisted output is read afterwards). A status other than `ok` prints one `next:` line; run that line, never the original brief again. Done when every dispatched voice is collected or explicitly accounted for — a `partial` fan-out means one voice returned nothing, and that voice's section says what to do about it.
 
 5. **Analyze critically**, point by point: valid → adopt it; wrong → say why (missing context, wrong optimization target, or technically incorrect). A voice that restated the goal differently than you framed it found something before it designed anything — settle that disagreement first, since every design judgment downstream of it is being made against a different target. A fundamental disagreement you cannot resolve → present both positions to the user for judgment; silently deferring to the voice and silently overriding it are equal failures.
 
@@ -66,10 +63,10 @@ Dispatching, patterns, and house rules: [DISPATCH.md](../envoy/DISPATCH.md).
 
    Done when every point carries a disposition: adopted (with its planned case where the trap was executable), rebutted with the reason, or escalated to the user.
 
-6. **Round 2** has three real triggers, beyond "depth warrants it". In `diagnosis`: **the falsifying observation coming back** — run the cheapest one the voice named, then send what you saw; that is the round where a hypothesis dies or survives, and it is worthless before the observation exists. Also in `diagnosis`, where a wrong cause would cost a whole implementation cycle: **split the blind read across the two turns** — round 1 carries the evidence with our hypothesis withheld entirely, round 2 sends it in, and the voice judges it against a reading it has already committed and cannot now un-see. In `approach`: a split fan-out, where the voices genuinely conflicted — send both positions back and ask each to argue against the other's. A fourth trigger arrives from outside: `/write-spec` continues a finished round with its spec as the updated proposal under critique — a legitimate round 2, same resume mechanics. Either way the payload is the host position or updated proposal, sent into the same session(s) for critique-and-confirm — the voices keep their round-1 context, where a fresh session would restart from zero. Done when the trigger that opened the round is answered: the observation reported, the withheld hypothesis judged, or the conflict resolved to one position or an explicit fork. One voice: `envoy collect` prints the resume command. A fan-out continues whole — still one task, one collect:
+6. **Round 2** has three real triggers, beyond "depth warrants it". In `diagnosis`: **the falsifying observation coming back** — run the cheapest one the voice named, then send what you saw; that is the round where a hypothesis dies or survives, and it is worthless before the observation exists. Also in `diagnosis`, where a wrong cause would cost a whole implementation cycle: **split the blind read across the two turns** — round 1 carries the evidence with our hypothesis withheld entirely, round 2 sends it in, and the voice judges it against a reading it has already committed and cannot now un-see. In `approach`: a split fan-out, where the voices genuinely conflicted — send both positions back and ask each to argue against the other's. A fourth trigger arrives from outside: `/write-spec` continues a finished round with its spec as the updated proposal under critique — a legitimate round 2, same resume mechanics. Either way the payload is the host position or updated proposal, sent into the same session(s) for critique-and-confirm — the voices keep their round-1 context, where a fresh session would restart from zero. Done when the trigger that opened the round is answered: the observation reported, the withheld hypothesis judged, or the conflict resolved to one position or an explicit fork. One voice or a whole fan-out continues the same way — still one task, one collect (collection prints this command):
 
    ```sh
-   envoy fan --resume-from <out-dir> --prompt-file round2.md --timeout-min 30 --label consult-r2 --coordinate-file <fresh>
+   envoy run consult-r2 --with @consult-r1 --prompt-file round2.md --timeout-min 30
    ```
 
-7. **Synthesize** for the user: where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and any unresolved judgment calls. A `diagnosis` round leads with the cause — confirmed, refuted, or replaced, what settled it, and the blind read's delta, including when it converged — before anything about the fix. Name the out-dir in the synthesis — and, for a fan-out, each member's directory (`<out-dir>/codex`, `<out-dir>/claude-opus`): the sessions stay continuable, and when /review later covers the implementation of this design, its default seats one of those voices warm (`--with-from <member-dir>`) beside a cold one, so the synthesis also says which voice's position the design followed.
+7. **Synthesize** for the user: where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and any unresolved judgment calls. A `diagnosis` round leads with the cause — confirmed, refuted, or replaced, what settled it, and the blind read's delta, including when it converged — before anything about the fix. Name the job in the synthesis — the latest round, and for a fan-out its members (`consult-r1/codex`, `consult-r1/claude-opus`; after a round 2, `consult-r2/codex`): the sessions stay continuable, and when /review later covers the implementation of this design, its default seats one of those voices warm (`--with @consult-r2/codex`) beside a cold one, so the synthesis also says which voice's position the design followed.
