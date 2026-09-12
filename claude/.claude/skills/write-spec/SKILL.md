@@ -54,11 +54,11 @@ waiting on their word; "skip validation" ends the run at the report.
 
 4. **Validation consult.** The spec goes before independent eyes:
 
-   - A prior consult round's out-dir is in reach (this session's synthesis,
-     or the handoff) → continue **that** consult as its round 2, the spec as
-     the updated proposal under critique — the voices keep their context and
-     judge follow-through. Mechanics live in `/consult` step 6; if the set
-     cannot resume, fall through to the fresh branch.
+   - A prior consult's latest job name is in reach (this session's
+     synthesis, or the handoff) → continue **that** job, the spec as the
+     updated proposal under critique — the voices keep their context and
+     judge follow-through. Mechanics live in `/consult` step 6; if the job
+     cannot continue, fall through to the fresh branch.
    - Otherwise → invoke `/consult` in approach mode, fresh, with the spec as
      the artifact under review.
 
@@ -67,7 +67,7 @@ waiting on their word; "skip validation" ends the run at the report.
    user's call → flag it clearly and stop instead of pushing through.
 
 5. **Report and stop.** The spec path, the commit SHAs (when committed), the
-   consult out-dir, then: what settled, what validation changed, what stayed
+   latest consult job name, then: what settled, what validation changed, what stayed
    open. The user decides what happens next.
 
 ## Emphasis — where does the load-bearing novelty live?

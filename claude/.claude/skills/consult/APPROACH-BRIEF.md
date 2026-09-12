@@ -65,13 +65,14 @@ listed above is open, the proposal included.
 Read `~/.config/lessons/codebase-design/deep-modules.md` closely — the shape
 under discussion is judged in its vocabulary: depth, seams, the deletion test,
 illegal states. Where an interface is being committed, design it twice
-(`design-it-twice.md`, same directory): sketch two or three shapes different in
+(`~/.config/lessons/codebase-design/design-it-twice.md`): sketch two or three shapes different in
 kind — write each one's constraint down first and hold the others out of view —
 compare on depth, locality, and seam placement, and land on the winner plus a
 line per discard, never a menu. When the change restructures an existing
-cluster, `deepening.md` decides whether a seam earns a port. Where the proposal
-joins an existing call path, `composition.md` decides whether it was absorbed
-or bolted on.
+cluster, `~/.config/lessons/codebase-design/deepening.md` decides whether a
+seam earns a port. Where the proposal joins an existing call path,
+`~/.config/lessons/codebase-design/composition.md` decides whether it was
+absorbed or bolted on.
 
 ## Read these, in this order
 
