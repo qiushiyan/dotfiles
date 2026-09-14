@@ -6,59 +6,48 @@ A section with nothing real to say gets deleted, not filled: an empty heading
 invites invented content. The fixed lines are distilled from briefs that
 worked; keep them unless this run genuinely contradicts them.
 
+The order is the instrument. The voice reads the goal, the constraints and
+the code, and sketches what it would build before it sees our position; the
+delta between its sketch and ours is the round's product, where a voice that
+starts from our design critiques inside its frame. Same-file ordering is a
+sequencing nudge, not blinding — the position is on the next page. SKILL.md
+step 6 says when "What we propose" is withheld from this brief and sent as
+round 2 into the same session instead.
+
 Where a causal claim sits under the question — a bug, a regression, a "why is
 it doing this" that a hypothesis already answers — DIAGNOSIS-BRIEF.md is the
 instrument: it puts the cause on trial before the fix, which this one does not.
-
-The degenerate case is a session with no position yet. Then "What we propose"
-is deleted rather than filled, and the voice designs from the choice and the
-constraints alone. That is rare — a consult usually has something to attack —
-but the brief works unchanged.
 -->
 
 # Consult: «the choice being made, one line»
 
 «One paragraph anchoring identity for a cold reader: what the project is, in
-plain terms, and the one or two facts about its state that the questions below
-depend on. The voice has none of your conversation — this paragraph is all the
+plain terms, and the one or two facts about its state that the choice below
+depends on. The voice has none of your conversation — this paragraph is all the
 orientation it gets.»
+
+## The goal, and what must be true
+
+«The outcome in the user's own terms — who it is for and what they can do once
+this is decided — rather than a mechanism. Then what any answer has to satisfy:
+the constraints from outside this session — compatibility, operational limits,
+a decision the user made, work already committed elsewhere. This session's own
+analysis is not a constraint; it goes under "What we propose", where the voice
+is meant to attack it.»
+
+Those constraints are fixed; on them your job is defects in the *execution* —
+internal consistency, gaps, edge cases. If you believe one is fatally flawed,
+flag it with concrete evidence (code paths, failure scenarios), clearly marked
+"foundational objection" — do not redesign it. Everything else is open.
 
 ## Posture — first principles, grounded
 
 Reason from first principles, grounded in the code you read — an analysis that
-doesn't cite the files it stands on is guessing. Name the real problem in your
-own words before answering the stated one; the question as asked is sometimes
-a symptom. Then judge any direction by how fully it solves that root problem
-on a clean structural footing, not by how little it disturbs: prefer the shape
-that makes the problem disappear over the patch that quiets it. A structural
-claim needs the code that proves it and the cost it carries.
-
-## The choice
-
-«What is being decided, and what has to be true once it is: the outcome in the
-user's terms rather than a mechanism, and the constraints any answer has to
-satisfy — compatibility, operational limits, work already committed elsewhere.»
-
-## What we propose
-
-«The position this session arrived at, stated as a design it would defend
-rather than a menu: the shape it would build, the vocabulary it introduces, and
-what already stands in the working tree versus what remains. The voice's job is
-to find where it breaks. Delete this section when the artifact under review is
-a file the reading list already points at — the artifact is the proposal then.»
-
-## What is actually settled
-
-«The fence rule decides what may go here. This session's own analysis is not
-it — that goes under "What we propose", where the voice is meant to attack it.
-Nothing left to list? Delete the section: an empty fence is better than a false
-one.»
-
-Those items are fixed; on them your job is defects in the *execution* —
-internal consistency, gaps, edge cases. If you believe a settled item is
-fatally flawed, flag it with concrete evidence (code paths, failure scenarios),
-clearly marked "foundational objection" — do not redesign it. Everything not
-listed above is open, the proposal included.
+doesn't cite the files it stands on is guessing. Judge any direction by how
+fully it solves the real problem on a clean structural footing, not by how
+little it disturbs: prefer the shape that makes the problem disappear over the
+patch that quiets it. A structural claim needs the code that proves it and the
+cost it carries.
 
 ## The design bar
 
@@ -76,39 +65,55 @@ absorbed or bolted on.
 
 ## Read these, in this order
 
-«Ordered reading list with absolute paths: the artifact(s) under review or the
-relevant code first, then the docs that carry the invariants, then any rulebook
+«Ordered reading list with absolute paths: the relevant code or the artifact
+under review first, then the docs that carry the invariants, then any rulebook
 this session is working under — a house guide, a project doc the user handed
 over — so the voice works to that bar rather than its own defaults. The voice
 reads them itself — never restate their content here.»
 
-## Concrete questions
+## Your sketch, before reading on
 
-«Numbered, specific probes — each answerable from the reading list. Name the
-places you already suspect are weakest; a voice pointed at a seam digs deeper
-than one asked to "review everything". Ask what should happen rather than
-offering a menu: a question shaped "A or B?" has already made the decision and
-leaves the voice only the picking.
+Write this down now, before reading past this heading: from the goal, the
+constraints and the code, what you would build — two or three sentences on the
+shape, the one alternative you would discard and why, and the place you are
+least sure of. This is a quick commitment, not the design-twice comparison;
+that comparison belongs in your output, after you have read our position.
+Report the sketch verbatim in your output. Where it differs from what
+follows is the most valuable thing this round produces, and it is unrecoverable
+once you have read on.
 
-The same trap wears a second costume — an example inside an open question. "Is
-this the right framing, or is the real problem something else (e.g. …)" reads
-as open and hands over the answer, and when the voice returns that answer
-neither of you can tell whether it was found or fed. Name the **area** you
-doubt; let the voice name what is wrong in it.»
+## What we propose
+
+«The position this session arrived at, as one paragraph it would defend rather
+than a design document: the shape it would build and the vocabulary it
+introduces, then the alternative it discarded and why. Delete this section
+when the artifact under review is a file the reading list already points at —
+the artifact is the proposal then — or when SKILL.md step 6 withholds it for
+round 2.»
+
+## Where we doubt it
+
+«Prose, not a questionnaire. Name the areas of the proposal you already
+suspect are weakest, and the few observations or counterexamples that could
+change the decision — a path traced at three points in time, a caller that
+would pay, a state the shape cannot represent. A probe earns its place by
+being able to defeat a load-bearing claim; a question that enumerates the
+proposal or carries its own answer ("is the real problem X, e.g. …") hands the
+voice the conclusion and leaves only the picking. Name the area you doubt; let
+the voice name what is wrong in it.»
 
 ## Output
 
-1. **The real problem, in your own words** — before you engage the proposal,
-   two or three sentences naming what you think is actually wrong. Where that
-   matches the framing above, say so plainly; where it differs, this is the
-   most valuable line in your reply. Write it from the code you read, not from
-   the questions you were asked.
-2. **Findings**, most severe first. For each: what, where
+1. **Your sketch** — verbatim, as written before you read our position.
+2. **Where you differ from us, and why** — from the goal restated in your own
+   words if it differs, through the shape. Where the sketches agree, one line;
+   where they don't, this is the finding — write it from the code you read,
+   not from the doubts we named.
+3. **Where ours breaks** — most severe first. For each: what, where
    (file/section/function), why it's a problem (concrete failure or
    contradiction), and the smallest fix consistent with the constraints above.
-   Where you would have built it differently, say so and what keeping ours
-   costs. "None" is a real answer here too.
-3. **Foundational objections** — a separate section, "none" said explicitly
+   "None" is a real answer.
+4. **Foundational objections** — a separate section, "none" said explicitly
    when it is empty.
 
 Be specific and terse; no praise padding.

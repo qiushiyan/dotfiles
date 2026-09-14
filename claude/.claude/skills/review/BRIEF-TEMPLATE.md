@@ -1,17 +1,19 @@
 <!--
-Brief template for /review in spec-anchored mode: the direction is settled, and
-the review hunts defects in its execution. Copy the body below into a scratchpad
-file and fill every «slot», deleting these comments — the reviewer reads a
-single coherent brief. A section with nothing real to say gets deleted, not
-filled: an empty heading invites invented content, and the skeleton is a
-checklist for you, not a shape the brief owes the reviewer. The fixed lines are
-distilled from review prompts that worked; keep them unless this run genuinely
-contradicts them.
+Brief template for /review in full mode: the deep read. The reviewer is handed
+the implementation's own map and hunts defects in the execution. Copy the body
+below into a scratchpad file and fill every «slot», deleting these comments —
+the reviewer reads a single coherent brief. A section with nothing real to say
+gets deleted, not filled: an empty heading invites invented content, and the
+skeleton is a checklist for you, not a shape the brief owes the reviewer. The
+fixed lines are distilled from review prompts that worked; keep them unless
+this run genuinely contradicts them.
 
-When nothing outside the implementation has ever judged this design, the fence
-below has nothing behind it — use FRESH-EYES-BRIEF.md instead. Don't blend the
-two: a brief that asks for first-principles judgment and also hands over the
-settled design gets neither.
+The fence below is legitimate only over what something outside this session
+has judged — a spec the user approved, a decision they made, a platform
+constraint. When nothing has, delete the section and say so under The work
+under review: everything is open, the design included. A fence over the
+session's own analysis asks the reviewer to critique the execution of a
+conclusion nobody has judged.
 -->
 
 # Review: «one-line description of the change»
@@ -33,10 +35,15 @@ decisions fenced below.
 
 - Branch `«branch»`, commits `«base-sha»..HEAD` — start from
   `git log «base-sha»..HEAD --stat`.
+- Read the files the diff touches and the files that touch them: blast radius
+  is answered outside the patch, so the diff alone cannot close it.
 - Judge the code, not an account of it: the spec, the commit messages, and the
   report below say what was intended; only the code says what happens. Where
   they disagree the code wins, and the disagreement is a finding.
 - Review only — do not change any code.
+- «When no fence follows: "Nothing about this change is settled by anything
+  outside the implementing session; the design is in scope, and a design
+  objection belongs in its own section below."»
 
 ## The foundation — decided, not up for relitigation
 
@@ -61,7 +68,9 @@ their content.»
 ## Evaluate
 
 - **Solves the problem** — does the implementation solve the spec's problem for the person using it, or just pass its own tests?
-- **Silent deviations** — planned tests that never appeared, promised helpers that don't exist, scope creep past the spec.
+- **Silent deviations** — planned tests that never appeared, promised helpers that don't exist, scope creep past the spec, a default flipped or a guard removed on a path the change did not claim.
+- **Blast radius** — for every signature, return shape, default, error mode, enum value, exported name, or config key the change touched: find the other callers and read them. This is the lens the author is worst placed to run and the one a small diff hides best.
+- **Does green mean anything?** Run **the revert test** on each behaviour this change added or altered: name the test that goes red if the change is reverted. A behaviour whose regression would matter with no such test is **unpinned** — the suite says nothing about it, and that is a finding whatever the coverage number says. Then run the same test on the tests the range itself touched, because three shapes stay green through anything: an assertion on a mock's return rather than the code's behaviour, an assertion on shape or call count rather than the value that actually changed, and — the common one — a test edited in the same commit so its expectation now matches the new output, which documents the change instead of pinning it. A test you request still owes the additive-bias bar: it names the bug it would catch.
 - **Test quality** — right altitude (behavior, not internals); covers the planned cases plus the obvious additions; survives plausible refactors; follows project test patterns. Weigh what the change did to the tests already there: a behavior it removed or reshaped can leave an existing test asserting something gone, now redundant, or pinned to internals that moved — flag those for deletion or rewrite, not silent survival.
 - **Structural quality** — read `~/.config/lessons/codebase-design/deep-modules.md` for the bar, and write structural findings in its vocabulary. When the change restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md` decides whether a seam earns a port, and replace-don't-layer for the moved tests.
 - **Composition — how this joins what was already there** — read `~/.config/lessons/codebase-design/composition.md` and run **the trace** it defines, then judge the join: did the concepts already in the codebase absorb the new case, or did it get its own route beside them? The settled direction fences the *what*, never the wiring — a decision to build X says nothing about whether X was bolted onto the existing call path or integrated into it, so this axis stays fully open even where the foundation is closed. Name the reshape and the concept it deletes, and only where a caller that exists today pays for it.
@@ -81,9 +90,11 @@ findings ordered by severity — **critical** (blocks merge) / **moderate**
 because the code works: structural regressions, accretion, and missed reshapes
 are critical, not minor. For each finding: what, where (file/function), the
 evidence (cite the code that proves it — a finding you can't point at code
-for doesn't get reported), and a concrete fix. End with a **Foundational
-objections** section. Say "none" explicitly for any empty severity tier and
-for that section when it is empty. Be specific and terse; no praise padding.
+for doesn't get reported), and a concrete fix. Then **Unpinned behaviour**:
+every behaviour the revert test found no test for, and every range-touched
+test that pins nothing, or "none". End with a **Foundational objections**
+section. Say "none" explicitly for any empty severity tier and for any section
+that is empty. Be specific and terse; no praise padding.
 
 ## Implementation report
 
