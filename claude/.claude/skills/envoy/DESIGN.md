@@ -4,7 +4,8 @@ The skill bodies say what to do; this file records **why** — the assumptions
 and rejected alternatives a future redesign needs but can't see in the skills
 themselves. Deliberately unlinked from any SKILL.md: runtime agents never
 need it. It describes current state only; the history behind it lives in the
-engine's evidence log (`~/dev/envoy/DESIGN.md`).
+engine's evidence log (`~/dev/envoy/DESIGN.md`) and the skills' own
+(`../review/EVIDENCE.md`, shared by review and consult).
 
 ## The governing lesson
 
@@ -73,18 +74,38 @@ duet instead. Don't grow the engine.
   sharing a blind spot or the brief's framing look exactly like voices
   confirming each other — and voices on different briefs are judged each
   against its own question, their overlapping claims compared on evidence.
-- Two modes with opposite information hygiene, one shared failure model
-  (*the voice anchored on what it should have judged*):
-  - **Design mode** — the host's proposal is withheld; an anchored voice
-    critiques instead of designing.
-  - **Review mode** — the artifact is handed over, but settled direction is
-    fenced off ("decided, not up for relitigation") with an evidence-gated
-    escape hatch for foundational objections; an unfenced voice relitigates
-    instead of executing.
+- **The brief's order is the instrument**, in both modes, against one
+  failure model (*the voice anchored on what it should have judged*). In
+  `diagnosis` the voice reads the observations and writes its blind read
+  before it sees the host's hypothesis; in `approach` it reads the goal, the
+  constraints and the code and sketches its own design before it sees the
+  host's position, which arrives as one paragraph to attack rather than a
+  design document. The delta between the voice's reading and the host's is
+  the product; a voice that starts from the host's design critiques inside
+  its frame and opens with "matches your framing" (measured 2026-09-14: 7 of
+  7 stored results). Same-file ordering is a sequencing nudge, not blinding,
+  so where a wrong answer would cost an implementation cycle the position is
+  withheld until round 2 in the same session.
+- **Probes falsify or they go.** A brief carries the areas the host doubts
+  and the few observations that could change the decision — a lost dispatch
+  traced at ten minutes, an hour and three hours once overturned a proposed
+  split. Numbered questionnaires that enumerate the proposal produce answers
+  in the brief's order and nothing outside it (measured 2026-09-14: 6–12
+  probes per brief, findings mapped one-to-one).
+- **The fence is legitimate only over what something outside the session
+  judged** — a user decision, a platform constraint. The host's own analysis,
+  the user agreeing with it included, goes in as the proposal; a fenced
+  conclusion nobody has judged comes back approved for the wrong problem.
 - **Round 2 resumes the same session** — fresh would restart from zero; a
   fan-out continues whole. The user never takes a session over by hand
   (measured 2026-09-12: zero takeovers in the history), so no takeover
   command is printed or relayed.
+- **The synthesis opens with the decision.** The user did not watch the
+  round and decides from the message alone, so each open judgment call goes
+  first, standalone and in product terms with a recommendation; the
+  disposition ledger follows. A synthesis ending on "your earlier questions
+  stand as before" sends the user back to reconstruct them (receipts in
+  `../review/EVIDENCE.md`, 2026-09-14).
 
 ## /delegate — implement a written spec
 
@@ -115,6 +136,18 @@ duet instead. Don't grow the engine.
 
 - **The mirror of /delegate, and the invariant both serve:** whoever wrote
   the code never gets to be its only reviewer.
+- **Two modes, named by what the reviewer is handed.** `goal` withholds the
+  design: the reviewer gets the goal in the user's terms, the facts outside
+  the diff, the standards, and an honest account of what has already judged
+  the range — "nothing" included — and writes its expectation before it
+  reads. It is the cheap independent read, before other rounds or after
+  them, and its structural lens is a switch for ranges that decide
+  structure. `full` hands over the implementation report and, where
+  something outside the session settled the direction, a fence; it hunts
+  execution defects, traces composition, audits whether green means
+  anything, and runs the round 2. Why these two and not a correctness-only
+  third, and why `goal` is not reserved for the closing read: the usage
+  evidence in `../review/EVIDENCE.md` (2026-09-14).
 - **The brief makes a warm review cold-startable.** An in-conversation
   reviewer holds the spec, plan, and range already; a fresh session must be
   handed them explicitly — authority paths, a settled-decisions fence, the
@@ -126,6 +159,11 @@ duet instead. Don't grow the engine.
   came from: delegate → its handoff report verbatim; host-built → written
   fresh in the handoff shape; user-built → reconstructed from commits and
   labeled as such.
+- **"Already judged" records what was examined, never immunity.** It stops
+  a cold read re-finding fixed defects and stops it assuming defects were
+  caught; a materially different counterexample reopens an item, and a
+  consult on the list is named by the question it judged, never its result,
+  since that result is the design `goal` withholds.
 - **Judge pass before any fix.** Findings hallucinate with full confidence;
   the host re-verifies each against the code. The host's conflict of
   interest cuts both ways: agreeable adoption and defensive rebuttal are
@@ -136,6 +174,10 @@ duet instead. Don't grow the engine.
   shape of the code, never settled product decisions.
 - **No agreement-weighting across multiple reviewers** — the host's judge
   pass already is the aggregator.
+- **The report opens with the decision**, for the same reason the consult
+  synthesis does: every foundational objection or design objection goes to
+  the user first, standalone and in product terms, and the verdict ledger
+  follows.
 
 ## Deliberately not built
 
