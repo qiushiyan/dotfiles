@@ -80,7 +80,13 @@ A fresh session ("the reviewer") reviews commits the host or the user wrote. The
 
    Warm judges follow-through — did the implementation integrate what was agreed, did it dodge the traps its rounds discussed — and, having committed to the design in its own context, is a poor judge of the design itself; cold buys the unanchored, strategic read this skill exists for. Both get the complete brief; the warm voice re-reads cheaply what it already holds.
 
-   A warm voice takes only a spec-anchored brief — it already holds the design, so there is nothing left to withhold from it. Fresh eyes on a design a consult shaped is therefore a *separate* cold job with its own brief, never a member of that fan-out (one job carries one brief); run it when the user wants the design itself re-judged rather than its execution checked.
+   A warm voice takes only a spec-anchored brief — it already holds the design, so there is nothing left to withhold from it. Fresh eyes on a design a consult shaped is a cold voice on its own fresh-eyes brief in the same fan-out, each brief attached to its voice; run it when the user wants the design itself re-judged as well as its execution checked:
+
+   ```sh
+   envoy run review-r1 --with @consult-r1/codex=<anchored-brief> --with codex=<fresh-eyes-brief> --baseline <base-sha> --timeout-min 60
+   ```
+
+   Two briefs, one job: the warm voice checks follow-through against the spec, the cold one derives what the feature should do with the design withheld, and one collect returns both. The withholding is what the separate file buys — a fresh-eyes section inside the anchored brief would hand the cold voice the design on the next page.
 
    Collapse to the single cold turn when the user names one voice, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex --with claude:opus`). `codex` alone inherits the model in the user's Codex config; a Claude voice runs only on a model the user names, spelled `claude:<model>` (`claude:opus`, `claude:claude-fable-5-1`).
 

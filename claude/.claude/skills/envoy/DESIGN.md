@@ -45,11 +45,15 @@ duet instead. Don't grow the engine.
   Code, so a codex sidekick buys cross-family review for free; both bill a
   flat subscription, so cost isn't the tiebreaker. Default codex; claude is
   opt-in by name.
-- **One brief, one job.** Several takes on one brief are a single job with
-  several `--with` voices — one completion, so "one voice is back: wait or
-  synthesize?" never becomes a question the host holds. Recovery stays per
-  voice (a `partial` fan-out is acted on voice by voice); a follow-up round
-  continues the whole set (`--with @<job>`), or not at all.
+- **One job, however many voices.** Several takes — on one brief, or each
+  voice on its own (`--with codex=survey.md --with claude:opus=critique.md`)
+  — are a single job with several `--with` voices: one completion, so "one
+  voice is back: wait or synthesize?" never becomes a question the host
+  holds. The fan-out absorbs the ledger, not the prompt; a voice given a
+  different job takes a different brief attached to its voice rather than a
+  paragraph inside a shared one, which a voice reads past. Recovery stays per voice (a
+  `partial` fan-out is acted on voice by voice); a follow-up round continues
+  the whole set (`--with @<job>`), or not at all.
 - **Background is the default posture**; collection is notification-driven.
   The caller names the job, so nothing is read back from the dispatch and
   polling a background task is a smell; a quiet log means the model is
@@ -63,11 +67,12 @@ duet instead. Don't grow the engine.
   is the host's synthesis — adopt what survives scrutiny, rebut with
   reasons, present unresolvable forks to the user. Silently deferring to the
   voice and silently overriding it are equal failures.
-- **Independence is the payload.** Every voice gets the same brief and never
+- **Independence is the payload.** Every voice gets its brief and never
   another voice's output; a fan-out keeps that true by construction. The
   host still judges point by point rather than counting agreement — voices
   sharing a blind spot or the brief's framing look exactly like voices
-  confirming each other.
+  confirming each other — and voices on different briefs are judged each
+  against its own question, their overlapping claims compared on evidence.
 - Two modes with opposite information hygiene, one shared failure model
   (*the voice anchored on what it should have judged*):
   - **Design mode** — the host's proposal is withheld; an anchored voice
