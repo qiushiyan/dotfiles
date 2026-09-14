@@ -136,6 +136,21 @@ shared accents. Moon gives inactive tabs muted backgrounds and lavender text;
 the selected tab gets a purple badge and near-white name. The palette file owns
 the exact values. Keep the selected state distinct in brightness as well as hue.
 
+Moon's pane dividers use heavy lines and continuous purple highlighting.
+`pane-border-indicators=off` disables tmux's half-divider coloring in two-pane
+windows; it preserves the active-pane color. The palette owns the geometry,
+reset on each switch. Normal tmux panes have shared dividers rather than a full
+outer frame; title rows remain owned by the pane-title/context-chip lifecycle.
+
+## Codex CLI syntax colors
+
+Codex's `tui.theme` independently selects a `.tmTheme` under `~/.codex/themes`.
+The Moon port matches the terminal palette. `theme-set` does not change this
+selection: use `/theme`
+in a running Codex CLI to preview and select it, or restart after editing
+`codex/.codex/config.toml`. It colors code blocks and diffs; terminal colors
+still supply the surrounding UI. See [Codex CLI customization](https://learn.chatgpt.com/docs/cli-customization).
+
 ## Neovim specifics
 
 - Colorschemes come from two places: **plugin themes** (catppuccin, gruvbox) and
