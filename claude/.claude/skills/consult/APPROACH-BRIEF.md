@@ -65,11 +65,13 @@ absorbed or bolted on.
 
 ## Read these, in this order
 
-«Ordered reading list with absolute paths: the relevant code or the artifact
-under review first, then the docs that carry the invariants, then any rulebook
-this session is working under — a house guide, a project doc the user handed
-over — so the voice works to that bar rather than its own defaults. The voice
-reads them itself — never restate their content here.»
+«Ordered reading list with absolute paths: the relevant code first, then the
+docs that carry the invariants, then any rulebook this session is working
+under — a house guide, a project doc the user handed over — so the voice works
+to that bar rather than its own defaults. The voice reads them itself — never
+restate their content here. An artifact that *is* the proposal — a spec, a
+design doc — is not listed here: it is named under "What we propose", after
+the sketch, so the voice commits before it opens it.»
 
 ## Your sketch, before reading on
 
@@ -86,10 +88,10 @@ once you have read on.
 
 «The position this session arrived at, as one paragraph it would defend rather
 than a design document: the shape it would build and the vocabulary it
-introduces, then the alternative it discarded and why. Delete this section
-when the artifact under review is a file the reading list already points at —
-the artifact is the proposal then — or when SKILL.md step 6 withholds it for
-round 2.»
+introduces, then the alternative it discarded and why. When the proposal is a
+file — a spec, a design doc — this section is its absolute path and one line
+on what it decides, and the voice opens it only now. Delete the section when
+SKILL.md step 6 withholds the position for round 2.»
 
 ## Where we doubt it
 

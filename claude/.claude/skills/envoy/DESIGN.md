@@ -82,16 +82,16 @@ duet instead. Don't grow the engine.
   host's position, which arrives as one paragraph to attack rather than a
   design document. The delta between the voice's reading and the host's is
   the product; a voice that starts from the host's design critiques inside
-  its frame and opens with "matches your framing" (measured 2026-09-14: 7 of
-  7 stored results). Same-file ordering is a sequencing nudge, not blinding,
-  so where a wrong answer would cost an implementation cycle the position is
-  withheld until round 2 in the same session.
+  its frame and opens with "matches your framing". Same-file ordering is a
+  sequencing nudge, not blinding, so where a wrong answer would cost an
+  implementation cycle the position is withheld until round 2 in the same
+  session.
 - **Probes falsify or they go.** A brief carries the areas the host doubts
   and the few observations that could change the decision — a lost dispatch
   traced at ten minutes, an hour and three hours once overturned a proposed
   split. Numbered questionnaires that enumerate the proposal produce answers
-  in the brief's order and nothing outside it (measured 2026-09-14: 6–12
-  probes per brief, findings mapped one-to-one).
+  in the brief's order and nothing outside it; the measurements behind both
+  claims are in `../review/EVIDENCE.md`.
 - **The fence is legitimate only over what something outside the session
   judged** — a user decision, a platform constraint. The host's own analysis,
   the user agreeing with it included, goes in as the proposal; a fenced

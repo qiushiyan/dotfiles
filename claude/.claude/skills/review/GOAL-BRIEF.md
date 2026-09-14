@@ -75,7 +75,8 @@ brief withholds; bot reviewers and what they reported; the suites that are
 green and what they cover. Then one line
 the compile can't produce: what none of them reached, and why. Where nothing
 has looked at this range yet, write exactly that — "Nothing has reviewed this
-range; the suite is green over it" is a complete section.»
+range" is a complete section, and a check result joins it only from a run on
+record.»
 
 This is a record of what was *examined*, never a claim that the result is
 right and never immunity: re-reporting an item as it stands spends the one

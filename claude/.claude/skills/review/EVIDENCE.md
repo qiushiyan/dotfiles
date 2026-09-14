@@ -83,3 +83,19 @@ duplicated between step 2 and the template. All six fixed; step 6 is the one
 home of the withhold trigger. Both readers verified the envoy commands against
 the CLI source. This is a read-only scenario check; no round has yet run on
 the revised briefs, and the outcome measures above remain pending.
+
+**First round on the revised briefs** (`dotfiles-4f711dad/review-r1`, goal
+mode, one cold Codex voice, 2 min, range `251730b..d3feee3`). Verdict
+"partly": short asks route and both report contracts hand over decisions;
+independence broke on one route. Confirmed and fixed: the approach brief
+listed the artifact under review in the reading list, so "consult this spec"
+exposed the proposal before the sketch (the artifact now lives under "What
+we propose", opened after the sketch); the goal brief's empty-history example
+asserted a green suite nothing had run (a check joins the section only from
+a run on record); the design doc repeated measurements the evidence log
+owns. Unpinned, and the next pass's first measures: unattended completion
+from a Codex host, a generated brief in which the user's goal survives and
+the sketch precedes the proposal, a synthesis whose claims were verified and
+whose decisions read standalone, and the consult-to-review handoff. This
+round exercised the goal brief itself: the reviewer wrote its expectation
+first, judged at altitude, and returned no line-level ladder.
