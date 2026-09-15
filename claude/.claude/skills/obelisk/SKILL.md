@@ -99,15 +99,15 @@ path — known before the first query, and the same id is the session's
 
 The query path doubles as an invocation nonce, so obelisk marks the session
 itself: `is_invoking: true` on `search()` hits and `sessions()` rows, and
-`overview().current.session_id`. In the installed CLI 0.2.5, resolution needs
+`overview().current.session_id`. Resolution needs
 a recent indexed record containing the literal path; it can return `null`
 while the record is missing or matches collide. Treat the marker as a bonus
 and rely on the scratchpad id. Upstream documents a script-content fallback
-for paths hidden behind variables, but 0.2.5 does not implement it.
+for paths hidden behind variables, but the verified runtime does not implement it.
 
 ## Hot schema
 
-Verified against CLI 0.2.5's installed schema in an isolated database via
+Verified against CLI 0.2.6-rc.0's installed schema in an isolated database via
 `pragma_table_info` on 2026-09-15. Guessed
 column names are the top historical failure class — trust this list over
 instinct:
@@ -140,12 +140,12 @@ start time. `sql()` is the escalation for exact joins and aggregations.
 
 - For "while working on X, did we discuss Y?", find X's session ids first,
   then search Y within each using `search(Y, { sessionId, limit: 10 })` in
-  one budgeted script. In CLI 0.2.5, `search` ignores `sessions: [...]`.
+  one budgeted script. `search` ignores `sessions: [...]`.
   An empty candidate set ends the search. Ground the conclusion in visible
   user/assistant text; independent global hits do not establish a connection.
-- The read-only guard keyword-scans the SQL: a SELECT containing `replace(...)`
-  is rejected because it matches `REPLACE INTO`. Trim and clean strings with
-  `substr()`, or in JS after fetching.
+- `sql()` accepts one read-only SELECT/WITH statement per call. Scalar
+  `replace()` and keyword-bearing literals are supported; split multiple
+  statements into separate calls.
 - Stored message text and tool content are truncated at 10k chars; a value of
   exactly 10 000 chars means truncated, not complete. `raw(uuid, { offset,
   limit })` windows the source JSONL when the full text matters.
@@ -153,10 +153,8 @@ start time. `sql()` is the escalation for exact joins and aggregations.
   mangling is inconsistent across CLI versions (`-dev--worktrees-` vs
   `-dev-.worktrees-`). Match a fragment (`'%short-name%'`), never a constructed
   full path.
-- `sql()`'s read-only guard scans the whole statement text, string literals
-  included: `'update-docs'` or `'insert-mode'` inside quotes is rejected as a
-  write. Bind such values as **named** params — ``sql(`… WHERE skill = :x`, { x: 'update-docs' })`` —
-  or build the literal in JS. A positional array (`?`, `[value]`) fails with
+- Bind values as **named** params — ``sql(`… WHERE skill = :x`, { x: 'update-docs' })``.
+  A positional array (`?`, `[value]`) fails with
   `Unknown named parameter '0'`.
 - FTS `MATCH` chokes on hyphens and punctuation: quote the tokenized phrase
   (`search('"two words"')`) or drop to SQL `LIKE '%two-words%'` for literal
@@ -238,8 +236,8 @@ return remember({
 
 ## Escalation references
 
-Upstream references can describe features ahead of the installed CLI 0.2.5,
-which indexes Claude, Codex, Kimi, and Pi, but not DeepSeek or OMP. Use their
+Upstream references can describe features ahead of the installed CLI,
+which indexes Claude, Codex, DeepSeek, Kimi, and Pi, but not OMP. Use their
 provider and visibility guidance only when the runtime and corpus support it.
 
 | Read | when |
@@ -259,7 +257,8 @@ provider and visibility guidance only when the runtime and corpus support it.
 session-id receipts.
 
 Before upgrading, read the Obelisk entry in `~/dotfiles/docs/skill-customizations.md`
-for the customization intent. Upgrade by `.upstream/PINNED.txt` — by hand, since `obelisk install`
-would overwrite this file. Every upgrade re-verifies the hot schema with
+for the customization intent. Upgrade both the CLI and the skill by
+`.upstream/PINNED.txt` — by hand, since `obelisk install` would overwrite this
+file. Every upgrade re-verifies the hot schema with
 `pragma_table_info` and re-checks each `LESSONS.md` item against the new
 version before anything is folded in here.

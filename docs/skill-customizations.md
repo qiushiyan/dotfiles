@@ -60,8 +60,11 @@ Broaden host coverage when there is a workflow that needs it. Keep infrequent
 details in the upstream references rather than expanding the main procedure.
 
 **Update judgment:** distinguish published documentation from installed CLI
-capabilities. For an identity-resolution change, check the runtime and the
-self-exclusion behavior before relaxing a guard. A synthetic resolver test
+capabilities. A skill upgrade includes checking and upgrading the pnpm-owned
+CLI, even if the upstream skill has no changes; the pin owns the commands.
+After the engine update, recheck the schema and the lessons against that
+runtime, retiring workarounds whose failures are fixed. For an identity-resolution
+change, check the runtime and self-exclusion behavior before relaxing a guard. A synthetic resolver test
 does not establish when Claude has persisted a live tool record. Preserve
 the query examples unless evidence shows a better way to achieve their goals.
 

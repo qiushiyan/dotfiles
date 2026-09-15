@@ -202,3 +202,34 @@ remain; #7's persistence workflow is unchanged; #9's host scope stays narrow.
 passes only invocationNonce to identity resolution. #1–2, #8, #13–14, the
 withdrawn permission premise, and the usage-analysis addendum are unaffected
 by this delta. No CLI upgrade or live schema/usage remeasurement was performed.
+
+## 2026-09-15 — engine upgrade (0.2.5 → 0.2.6-rc.0)
+
+The owner made engine upgrades part of upstream-skill maintenance. The skill
+pin remains b164d90; npm's latest engine is 0.2.6-rc.0. Installed that exact
+version with pnpm, keeping one installation. Skill hashes cannot establish
+engine currency; the shared maintenance guide and pin carry this requirement.
+
+Verified the installed `createQueryApi` against an in-memory database using
+its packaged schema, plus a CLI `--query` against a temporary HOME:
+
+- All six hot-schema column sets match the skill; a fresh index initializes
+  and answers a schema/count query.
+- Scalar `replace()` and literals such as `'update-docs'` succeed. The engine
+  classifies database effects rather than scanning keywords. Retired friction
+  #2 and the SQL-literal workaround from the usage-analysis addendum.
+- Writes and multiple statements are rejected; named parameters work, while
+  positional arrays still fail. Retained the named-parameter example.
+- Session-scoped search excludes unrelated sessions, meta input, and inactive
+  rows; `search` still ignores `sessions: [...]`.
+- The memory language guard rejects CJK queries. Literal invocation nonces
+  resolve in the fixture; absent nonces return null. Source inspection confirms
+  executeQuery still passes only invocationNonce to identity resolution.
+- The provider registry includes DeepSeek but not OMP. Updated that boundary
+  without expanding the Claude-focused workflow.
+
+Lessons #1, #3–5, #7–8, and #10–14 retain their schema, budgeting, batching,
+persistence, path, self-exclusion, query, and fresh-index purposes; #6 remains
+withdrawn. #9's narrow host scope stays deliberate. Runtime probes establish
+mechanics, not new usage measurements or live transcript timing; the per-session
+path and explicit self-exclusion remain. No live index rebuild was performed.

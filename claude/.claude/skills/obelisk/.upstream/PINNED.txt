@@ -4,16 +4,21 @@ Before upgrading, read docs/skill-customizations.md in the dotfiles repo
 Pinned from tommy0103/obelisk-skill skills/obelisk/ @ b164d907a305d20f5d57394fd726f7999a6d0980
 (2026-09-14). Reviewed and verified byte-identical on 2026-09-15,
 excluding this PINNED.txt; ../references/ is a verbatim copy of references/ here.
-Installed CLI remains @obelisk-apps/cli 0.2.5; no runtime upgrade performed.
+Installed CLI: @obelisk-apps/cli 0.2.6-rc.0, the npm latest release candidate
+verified on 2026-09-15. The skill pin and engine version are independent.
 
-The delta from 2869861 adds session-scoped topic correlation and OMP source /
-inactive-branch documentation. Adopted correlation with the verified
-search(Y, { sessionId }) form; search ignores a sessions array in 0.2.5.
-OMP remains reference-only: the installed provider registry has no OMP provider.
-The prior script-content identity fallback remains deferred. All six hot-schema
-column sets matched the installed schema through isolated pragma_table_info;
-no live index or transcript-timing remeasurement was performed. LESSONS.md
-records the per-delta decisions and isolated query probe.
+The skill delta from 2869861 adds session-scoped topic correlation and OMP
+source / inactive-branch documentation. Adopted correlation with the verified
+search(Y, { sessionId }) form; search ignores a sessions array. OMP remains
+reference-only: the installed provider registry has no OMP provider. DeepSeek
+is supported. The script-content identity fallback remains deferred.
+
+The engine fixes SQL keyword false positives: scalar replace() and quoted
+keywords work; one-statement and read-only boundaries remain enforced. The
+corresponding body workarounds are retired. All six hot-schema column sets
+matched the installed schema through isolated pragma_table_info. A CLI query
+also initialized and read a temporary index. No live index or transcript-timing
+remeasurement was performed. LESSONS.md records the probes and decisions.
 
 Installed via pnpm global only (/Users/qiushi/Library/pnpm/bin), deliberately:
 pnpm's bin directory survives node upgrades where an nvm-scoped npm global does
@@ -29,14 +34,32 @@ Pin the exact version when upgrading: pnpm's packument cache serves a stale
 History: previous pins 109b8b1 (2026-08-26), 3226391 (2026-08-24). Before that the skill lived in
 tommy0103/obelisk skill-doc/ (pin 7c1b478, 2026-08-04). It now ships from its own docs-only repo.
 
-DO NOT run `obelisk install`. It shells out to `npx skills add
-tommy0103/obelisk-skill`, which writes into ~/.claude/skills/obelisk and would
-overwrite the personalized ../SKILL.md. Upgrade by hand instead:
+Upgrade the engine during every skill-upgrade pass, even if the skill hash is
+unchanged. Resolve the registry's current version and dist-tags first, note
+whether the selected release is a prerelease, then install that exact version:
 
-  pnpm add -g @obelisk-apps/cli@<exact version>   # not @latest, see above
-  git clone https://github.com/tommy0103/obelisk-skill /tmp/obsk
-  diff -r /tmp/obsk/skills/obelisk .          # against this directory
-  # fold genuine improvements into ../SKILL.md, re-checking every LESSONS.md
-  # item against the new version; re-verify the hot schema with
-  # pragma_table_info against the new CLI; then replace this directory and
-  # ../references/ with the new pristine copy and update this file.
+  npm view @obelisk-apps/cli version dist-tags --json
+  pnpm add -g @obelisk-apps/cli@<exact version>
+  obelisk --version
+  type -a obelisk
+
+Keep the single pnpm installation. Verify the hot schema and affected helper
+behavior against the new runtime in an isolated database, then run a CLI query
+with a temporary HOME. Any live query must use incremental indexing; never
+use `obelisk --build` on the live index (docs/claude-sessions-store.md).
+Recheck every LESSONS.md item, remove workarounds whose failure is fixed, and
+record the installed engine version and verification limits here and there.
+
+DO NOT run `obelisk install`. It shells out to `npx skills add
+tommy0103/obelisk-skill`, which would overwrite the personalized ../SKILL.md.
+Refresh the skill by hand in a fresh temporary checkout:
+
+  git clone https://github.com/tommy0103/obelisk-skill <temporary-checkout>
+  diff -r --exclude=PINNED.txt <temporary-checkout>/skills/obelisk .
+
+Run the diff from this directory. Fold useful changes into ../SKILL.md under
+docs/skill-customizations.md; replace this directory and ../references/ with
+the new pristine copies, retaining this pin. Record the reviewed commit even
+when only part of its guidance is adopted. Run skill-sync and skill-sync --check
+from dotfiles after the skill review. A pass is complete when skill and engine
+are both current and verified, or a deferred update is explicitly recorded.

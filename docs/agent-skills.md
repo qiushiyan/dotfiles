@@ -53,6 +53,8 @@ a resolving upstream `skillPath`.
 A successful update summary is insufficient: renamed or retired paths can be
 skipped. Reinstall a confirmed rename under its current name, then reconcile
 references. Keep custom forks out of the lockfile, because updates replace them.
+An upstream-skill upgrade pass also updates its separately installed engine,
+even when the skill hash is unchanged; follow the engine inventory below.
 
 `skills update` chooses detected agents when it reinstalls a skill; its update
 command has no agent-selection flag. Use explicit `add` commands above when
@@ -60,6 +62,59 @@ installation must be limited to Claude and Codex. `skills remove` deletes skill
 files as well as tracking; to stop managing a retained fork, remove only its
 entry from the JSON lockfile. The lock contains upstream skills, not an inventory
 of every custom or externally linked skill.
+
+### Skills with engines
+
+The Skills CLI replaces skill files; it does not upgrade global packages or
+applications. For each engine-backed skill, check the active executable with
+`type -a`, resolve the current release from its owner, update through its
+existing package manager, and verify both the version and a small functional
+probe. Report skill and engine results separately, including any deferred
+engine update and why. A matching skill hash says nothing about engine currency.
+
+- **Obelisk:** the customized skill and `@obelisk-apps/cli` have separate
+  release streams. Upgrade the CLI with pnpm, then reconcile the skill with
+  the installed runtime. Its `.upstream/PINNED.txt` owns the exact procedure;
+  `docs/skill-customizations.md` owns what to preserve. A docs-only refresh
+  leaves this maintenance incomplete unless the engine is already current
+  or its update is explicitly deferred.
+- **agent-browser:** keep one global installation, owned by pnpm. The managed
+  `SKILL.md` is a discovery stub; the installed CLI serves the working guides
+  through `agent-browser skills get core`. Upgrading only the stub cannot
+  update those guides or the browser engine. Use the commands below, then
+  exercise open → snapshot → click in a fresh named session and close it.
+  Inspect duplicate installations with `type -a agent-browser`; remove any
+  npm-global copy from its owning Node prefix. Keep this machine policy here,
+  outside the upstream-owned stub.
+
+```bash
+agent_browser_version="$(npm view agent-browser version)"
+pnpm add -g "agent-browser@$agent_browser_version"
+agent-browser skills get core
+agent-browser install
+agent-browser --version
+type -a agent-browser
+```
+
+Other lifecycle patterns in the collection:
+
+- **terminal-browser:** the skill is linked into the installed app; the
+  app's `terminal-browser upgrade` owns both engine and skill. Preserve the
+  external link and use that updater when maintaining this skill.
+- **find-docs:** its engine is `ctx7`, invoked as `npx ctx7@latest` by the
+  skill, so there is no pinned global engine to upgrade in this setup.
+- **gh:** the managed skill documents the separately installed GitHub CLI.
+  Check `gh --version` and upgrade through its existing installer when the
+  skill requires newer commands; the Skills CLI cannot update it.
+- **Archify:** `bin/`, renderers, and viewer assets ship inside the managed
+  skill directory, so the skill update already updates its engine. Verify
+  with `node bin/archify.mjs doctor` from that directory. `skill-creator`
+  and `keep-codex-fast` likewise carry their helper scripts with the skill.
+- **Local project skills:** `explain-diff`, `greenflag-*`, and
+  `read-email`/`write-email` depend on the explain-diff, greenflag, and mailkit
+  engines. Their source links follow the owning checkouts; packaged binaries
+  can lag those files. Reconcile them through the owning project's release
+  or installation procedure when maintaining those skills.
 
 ## Shared procedures and composed skills
 
