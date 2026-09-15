@@ -99,3 +99,83 @@ the sketch precedes the proposal, a synthesis whose claims were verified and
 whose decisions read standalone, and the consult-to-review handoff. This
 round exercised the goal brief itself: the reviewer wrote its expectation
 first, judged at altitude, and returned no line-level ladder.
+
+## 2026-09-15 — tenets for the rest of a build
+
+**Request.** The user asks a voice for "high level design and guidelines",
+"tenets, principles, or guidelines for implementing the rest", and gets
+implementation tips back. Asked what the industry calls the thing wanted,
+and at which layer the fix belongs.
+
+**Corpus and predicates.** Obelisk, user turns (`role='user'`,
+`source='claude'`, non-meta), 2026-07-15..09-15; codex|consult|second
+opinion AND advice|guidance|guideline|principle|suggestion|high-level →
+220 turns / 171 sessions, nearly all briefs, cold-reader prompts, and the
+`implement-spec` boilerplate. Hand-classified two independent verbatim asks,
+both 2026-09-15: `b0b522b9/c3daa065` ("settle down the high level approaches
+and important guidelines … phase 2 and 3") and `8e4901ad/bf5282ee` ("high
+level design and guidelines for implement this"). Snippet uses:
+`review-midpoint` 13 (12 Codex pastes, 2026-06-06..07-07, none since),
+`respond-midpoint` 5 (..07-07), `midpoint-status` 1 (07-31).
+
+**Observed.** The M3 brief (`consult-r3-brief.md`) asked for "the short list
+a build session should hold to … each one line with the file or seam it
+protects"; its own list was "real Postgres for anything that takes a lock;
+harness fixtures always carry `authority` and `origin`". Codex returned ten
+lines, about seven file-level. The run-state brief (`consult-r1-brief.md`)
+asked for "seams touched, the invariants that must survive, the order of
+slices, the tests"; Codex returned mechanics, Opus returned a seven-item
+"Invariants that must survive" section, the only output matching the ask,
+and only because the item happened to name the word. Neither round drew a
+correction; the friction is the user's report plus the brief wording. The
+retired `review-midpoint` snippet asked for "Tips" by name.
+
+**Cause.** Instruction layer. No brief defined what a guideline is, so host
+and voice wrote at the altitude the rest of the brief works at. The
+milestone review had no home in the review skill after the snippet family
+went dormant. Guidance returned into the conversation had no pinned home;
+`compact-for-impl` preserves "the invariants the build must hold" but
+nothing upstream produced them.
+
+**Vocabulary (web, 2026-09-15).** Amazon *tenets* (take a stand, present
+tense, seven at most, "unless you know better ones"); architecturally
+significant decisions ("hard to make and costly to change"); Kaufman's
+"accidentally load bearing" as the selection test; "guardrails" means
+enforced policy in platform engineering, which is why asking for them buys
+rules; arXiv 2606.22528 "Governance Decay": constraints in context obeyed at
+0% violation, 30% after compaction (59% on some models), 0% when the
+constraint survives the summary. Rejected "invariant" as the headline word
+at the user's request; kept it inside the lesson where it is the CS term.
+
+**Changed.** `lessons/collaboration/tenets.md` (new: the bar, tenet-or-tip
+pair, provenance) and its README row. `review/BRIEF-TEMPLATE.md`: the
+rest-of-the-build bullet under Evaluate and its output item, both a switch.
+`review/SKILL.md`: the switch in step 3's scoping list; step 6 writes
+surviving tenets into the spec beside its phases. `tabtype`: `review-midpoint`
+and `respond-midpoint` deleted; `DESIGN.md` and `WORKFLOW.md` route the
+milestone round to `/review`. Not changed: `consult/APPROACH-BRIEF.md`, the
+user's open decision; `midpoint-status`, left with no skill consumer.
+
+**Next comparison.** The first full round on a milestone with the switch
+kept, starting with `feat/pipe-panel-source-and-spawn-sink` milestone 1.
+Measures: the tenets section's count (seven or fewer), file names in it
+(zero), whether each item names a reason, and whether the host wrote them
+into the spec in the fix commit. Success is a later phase in that session,
+or the next session after a compaction, citing a tenet at a decision the
+spec did not cover. Revise if the section returns file-level rules again
+(then the lesson's test is not doing the work and the brief needs the
+tenet-or-tip pair inline), or if the host skips the spec write.
+
+**Validation.** One cold reader on the revised template and skill, milestone
+scenario on the pipe-panel worktree, read-only, before commit. It picked
+full mode, kept the switch, and confirmed nothing would lead a reviewer to
+file-level rules under the tenets heading. Four defects, all fixed: the
+judge pass had no verdict class for tenets (step 5 now judges them by the
+lesson's bar and demotes failures to findings); the first milestone had no
+route because the template assumed a tenet set already existed (the set
+written is the first, and step 6 names the `## Tenets` heading and the
+no-fix commit case); the step-8 report contract omitted the tenets; the
+switch was stated in three places (the template comment cut). Also
+generalised the lesson's avoid example away from the module under review.
+No round has run on the revised brief; the outcome measures above are
+pending.

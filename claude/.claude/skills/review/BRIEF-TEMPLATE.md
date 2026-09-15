@@ -74,6 +74,7 @@ their content.»
 - **Test quality** — right altitude (behavior, not internals); covers the planned cases plus the obvious additions; survives plausible refactors; follows project test patterns. Weigh what the change did to the tests already there: a behavior it removed or reshaped can leave an existing test asserting something gone, now redundant, or pinned to internals that moved — flag those for deletion or rewrite, not silent survival.
 - **Structural quality** — read `~/.config/lessons/codebase-design/deep-modules.md` for the bar, and write structural findings in its vocabulary. When the change restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md` decides whether a seam earns a port, and replace-don't-layer for the moved tests.
 - **Composition — how this joins what was already there** — read `~/.config/lessons/codebase-design/composition.md` and run **the trace** it defines, then judge the join: did the concepts already in the codebase absorb the new case, or did it get its own route beside them? The settled direction fences the *what*, never the wiring — a decision to build X says nothing about whether X was bolted onto the existing call path or integrated into it, so this axis stays fully open even where the foundation is closed. Name the reshape and the concept it deletes, and only where a caller that exists today pays for it.
+- **The rest of the build** «keep only when the range is a milestone of a larger build; otherwise delete this bullet» — the phases after this range are intentionally unbuilt: their absence is never a finding, and a structural problem the remaining phases would inherit outranks a local defect in finished code, because it is cheapest to fix now. Then read `~/.config/lessons/collaboration/tenets.md` and write the tenets the remaining phases hold to, given the code as it now stands: the few load-bearing decisions, each a stand with its reason, no file names, seven at most. Where the spec carries a `## Tenets` section, strike any tenet this range has disproved and say why; where it carries none, the set you write is the first.
 
 ## Do not flag
 
@@ -92,9 +93,10 @@ are critical, not minor. For each finding: what, where (file/function), the
 evidence (cite the code that proves it — a finding you can't point at code
 for doesn't get reported), and a concrete fix. Then **Unpinned behaviour**:
 every behaviour the revert test found no test for, and every range-touched
-test that pins nothing, or "none". End with a **Foundational objections**
-section. Say "none" explicitly for any empty severity tier and for any section
-that is empty. Be specific and terse; no praise padding.
+test that pins nothing, or "none". «When the range is a milestone: then
+**Tenets for what remains**, in the lesson's form, struck tenets included.»
+End with a **Foundational objections** section. Say "none" explicitly for any
+empty severity tier and for any section that is empty. Be specific and terse; no praise padding.
 
 ## Implementation report
 

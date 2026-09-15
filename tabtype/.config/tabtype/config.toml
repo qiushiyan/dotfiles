@@ -391,59 +391,6 @@ Pausing mid-implementation for a checkpoint review. Summarize the current state 
 
 Ground it in the actual commits and code, not memory.'''
 
-[[snippets]]
-key = "review-midpoint"
-expand = '''
-Implementation is **paused mid-way** — only some slices are done; the rest are intentionally not built yet. Review the work so far AND set up the rest to go well. **Read the actual code, not just the status report below.**
-
-Read `~/.config/lessons/collaboration/review-lens.md` first and review in its stance — step back before endorsing a local fix, hold any test you'd request to its additive-bias bar, flag over-building.
-
-Two jobs:
-
-**1. Review what's done.**
-- **Correctness & tests** of completed slices — bugs, edge cases, test altitude.
-- **Foundation soundness** — everything left builds on this. Are the abstractions, seams, and data structures chosen so far going to *hold* for the remaining slices, or will they need to be torn up later? Code-judo, spaghetti growth, thin abstractions, leaky boundaries, wrong canonical layer — flag them now while they're cheap.
-- **Plan ↔ code tracking** — silent deviations, missing planned tests for *completed* slices.
-
-**2. Guide the rest.**
-- **Gotchas & traps** the remaining slices will hit given the current code — invariants to keep, sequencing hazards, places the existing shape fights what's coming.
-- **Plan course-correction** — given what the code actually revealed, does the remaining plan still hold? Re-sequence, re-scope, or reshape a slice if warranted — say so explicitly. A remaining slice that could *delete* something already written is a win; call it out.
-- **Tips** — existing helpers/patterns to reuse instead of reinventing.
-
-**Time-axis altitude lens:**
-- Slices not yet reached → **intentionally undone, do NOT flag as missing**.
-- A foundational/structural problem that will **compound** across the remaining slices → **highest priority** — catching it at slice 4 is far cheaper than at slice 12. Flag loudly.
-- A purely local nit in completed code that doesn't affect what's left → note briefly or leave it for the final review; **don't dwell**.
-
-**Per issue:** mark **fix-before-continuing** vs **fine to defer to the final review**, and give a concrete fix with file/function references.
-
-Status report from the implementer below for context.
-
----
-
-$0'''
-
-[[snippets]]
-key = "respond-midpoint"
-expand = '''
-Mid-point review feedback below. **Triage first — no code changes yet.** For each point:
-1. **Assess validity** — be honest, don't agree just to agree.
-2. **If valid, sort it:**
-   - **Fix before continuing** — foundational problems the remaining slices would build on top of. These get fixed first.
-   - **Fold into the remaining plan** — adjust, re-sequence, or re-scope upcoming slices; note which slice absorbs it.
-   - You may propose a better fix than suggested — explain why.
-3. **If you disagree:** explain from first principles why the current code or plan is right as-is.
-
-**Course-corrections to the remaining plan** — engage with the reframing, don't counter with a narrower local patch or defer a deletion as "future work."
-
-**Test fallout** — where a finding reveals a test gap in a completed slice, fix it alongside the now-problems; where it reshapes an upcoming slice, fold the test change into that slice's plan.
-
-Then summarize the updated plan: what you'll fix now, then the remaining slices in order. **Wait for my go-ahead before changing code.**
-
----
-
-$0'''
-
 # ── Implementation review ─────────────────────────────
 
 [[snippets]]

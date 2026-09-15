@@ -66,17 +66,13 @@ the broad analysis gate and converges on remaining valid findings.
 
 ## Midpoint checkpoints
 
-Use the midpoint family for a large implementation whose remaining slices would
-compound a structural mistake.
-
-```text
-midpoint-status  → completed / remaining / deviations / surprises
-review-midpoint  → judge completed work + guide unreached work
-respond-midpoint → fix now / fold into remaining slice / disagree
-```
-
-Unreached slices are intentionally absent, not defects. Weight foundational
-problems highest because every remaining slice inherits them.
+A large implementation paused at a committed milestone is reviewed through
+`/review` in full mode, whose brief carries a rest-of-the-build switch:
+unreached phases are intentionally absent, a structural problem the remaining
+phases would inherit outranks a local defect, and the reviewer returns the
+tenets the rest holds to (`~/.config/lessons/collaboration/tenets.md`), which
+the host writes into the spec. `midpoint-status` remains the status snapshot
+for a reviewer picking the work up cold.
 
 ## Context resets
 

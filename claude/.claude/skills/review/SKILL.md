@@ -6,6 +6,7 @@ requires:
   - lessons:codebase-design/deep-modules.md
   - lessons:codebase-design/deepening.md
   - lessons:codebase-design/composition.md
+  - lessons:collaboration/tenets.md
 ---
 
 # Review — independent review of committed work
@@ -47,6 +48,7 @@ A fresh session ("the reviewer") reviews commits the host or the user wrote. The
 
    - **full** → keep **Structural quality** whenever the range decides structure: new modules, reshaped interfaces, any real refactor. Trim it when the work is structurally inert — a version bump, a mechanical syntax migration — however large the diff. **Composition** survives that trim on a **small contained fix**: a patch bolted onto an existing call path is exactly the shape it exists to catch, and exactly the range a reviewer waves through. Drop it only where the range adds no hop and rewires nothing.
    - **goal** → the structural block follows the same rule; the concept-count question its brief always carries is the altitude composition reaches without it.
+   - **full on a milestone** — "phase 1 is done", "the rest continues here", a spec whose phases are partly unbuilt → keep **The rest of the build**: it stops the reviewer flagging the unbuilt phases, and it returns the tenets those phases hold to, in the form `~/.config/lessons/collaboration/tenets.md` defines — the few load-bearing decisions with their reasons, not rules about files. Delete it when the range is the whole change.
 
    Done when a cold reader could deliver the review without this conversation.
 
@@ -98,6 +100,8 @@ A fresh session ("the reviewer") reviews commits the host or the user wrote. The
 
    Whatever the verification instrument, you wrote this code, so the bias cuts both ways — adopting findings to be agreeable and rebutting them to defend your own work are equal failures. Meet a structural reframing on its merits; a narrower local patch is not a rebuttal. A finding that asks for a new test earns the same scrutiny as one that asks for a code change — locate the bug it would catch, and the absence of a test already catching it; "more coverage" is not a defect, and a test the reviewer wants deleted is verified the same way.
 
+   A milestone round's **tenets** are judged by the bar in `~/.config/lessons/collaboration/tenets.md`, not as findings: a line that is load-bearing for the remaining phases, takes a stand, carries its reason, and names no file survives; a line that fails the bar is a tip, and joins the findings at whatever severity its content earns.
+
    Done when every finding carries a verdict: confirmed, rebutted with a first-principles reason, or foundational — those the user decides — and every critical or moderate behavioral verdict names the test that decided it, or why none could.
 
 6. **Fix, and account for the tests.** Apply the confirmed criticals and moderates yourself — in this skill the host is the implementer; minors go by user preference. A `goal` round has no severity ladder: its output is a verdict plus decisions, so it reports first (step 8), builds what the user authorizes, and reports again; applying a design objection unasked is the failure mode there. Unpinned-behaviour findings are fixed by writing the test, which lands in this step like any other.
@@ -106,8 +110,10 @@ A fresh session ("the reviewer") reviews commits the host or the user wrote. The
    - **Write the fix for the next reader**, who will never see this review: comments and test titles carry the behavior and its reason in the present tense. The round's coordinates (`(review r2)`, the finding id, the reviewer) and the changelog voice (`previously`, `no longer`) go in the commit message, where a later `goal` round compiles its **already judged** from them.
    - **Every confirmed bug indicts the suite** — it was green over the bug. Decide whether the step-5 test filled a coverage gap or must replace a weak test (wrong altitude, over-mocked, asserting internals), and add, strengthen, or delete accordingly. A test whose subject the fix removed is a **tombstone**: deleted rather than inverted, since the subject earns the keep, not the polarity.
 
+   - **Tenets go into the spec.** On a milestone round, the surviving tenets are written into the spec as `## Tenets`, beside its phases — the first milestone creates the section, a later one revises it, with each struck tenet and its reason kept — and they land in the fix commit, or in their own when there is nothing to fix. The build rereads the spec after every compaction; a tenet left in this conversation is dropped at the next one.
+
    Done when the project's checks are green over the fixes, the step-5 tests among them.
 
 7. **Round 2, when the fixes were substantive** — a `full` instrument. `goal` defaults to no second round: its findings are either decisions for the user or a reason to run `full`, neither of which a follow-up to the same voice settles. Run one anyway only when the user asks. For `full`: send a per-finding summary of what changed — rebuttals included — into the same session, one voice or a whole fan-out alike, with the `resume:` command collection printed — a fresh name (`review-r2`) and the follow-up as its prompt file. The question is narrow: was each point actually integrated or hand-waved, and did the fixes regress anything? Converging, not relitigating. For light fixes, the tests that pinned them are the cheap substitute.
 
-8. **Report** to the user, who did not watch the round and decides from this message alone. Lead with what needs them: each foundational objection or design decision as its own standalone question — why it matters now, what it means in plain product terms, the options with what each implies for the person using the product, and your recommendation — with none of the vocabulary the round built. Then the question this round bought and the mode that bought it, the verdict finding by finding (fixed / rebutted with the reason / escalated as foundational), what the fixes changed, the check results, and the job name, so the session stays continuable. Where nothing needs the user, say so in the first line and let the verdicts be the report.
+8. **Report** to the user, who did not watch the round and decides from this message alone. Lead with what needs them: each foundational objection or design decision as its own standalone question — why it matters now, what it means in plain product terms, the options with what each implies for the person using the product, and your recommendation — with none of the vocabulary the round built. Then the question this round bought and the mode that bought it, the verdict finding by finding (fixed / rebutted with the reason / escalated as foundational), what the fixes changed, the check results, on a milestone round the tenets as written into the spec and what was struck, and the job name, so the session stays continuable. Where nothing needs the user, say so in the first line and let the verdicts be the report.

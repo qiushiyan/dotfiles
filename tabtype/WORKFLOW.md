@@ -55,11 +55,9 @@ implement-spec   → build from a settled spec
 implement-direct → build a bounded change without a separate spec
 ```
 
-For a large build, pause at a committed boundary:
-
-```text
-midpoint-status → review-midpoint → respond-midpoint → user go-ahead → continue
-```
+For a large build, pause at a committed milestone and run `/review` in full
+mode with the rest-of-the-build switch kept; `midpoint-status` supplies the
+snapshot when a reviewer outside the skill needs one.
 
 ## 5. Review and converge
 
