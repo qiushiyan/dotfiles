@@ -69,18 +69,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git",
       "skillPath": "skills/apple-design/SKILL.md",
-      "skillFolderHash": "e9f5b472dfb28d8cf29f64001b6c01ef94b8168b",
+      "skillFolderHash": "cd509ae729c86487d352e17a26651217a4c25711",
       "installedAt": "2026-07-17T04:47:46.747Z",
-      "updatedAt": "2026-07-17T04:47:46.747Z"
+      "updatedAt": "2026-09-15T19:39:50.068Z"
     },
     "find-animation-opportunities": {
       "source": "emilkowalski/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/emilkowalski/skills.git",
       "skillPath": "skills/find-animation-opportunities/SKILL.md",
-      "skillFolderHash": "502f891c05c9cade7e7bd815e3f228fdd20b61b6",
+      "skillFolderHash": "e6443880f38e33cf78e5d678471eed35e8566763",
       "installedAt": "2026-07-17T04:47:46.749Z",
-      "updatedAt": "2026-09-09T08:52:51.669Z"
+      "updatedAt": "2026-09-15T19:39:51.636Z"
     },
     "writing-for-agents": {
       "source": "mattpocock/skills",
@@ -114,9 +114,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/tt-a1i/archify.git",
       "skillPath": "archify/SKILL.md",
-      "skillFolderHash": "8aa4cadc3cde102db4009f23f951cb4cf1e28d61",
+      "skillFolderHash": "4013c90c02fd8b9c9ab2032e6a95df5d2b92ce97",
       "installedAt": "2026-09-04T13:51:01.199Z",
-      "updatedAt": "2026-09-09T08:52:54.646Z"
+      "updatedAt": "2026-09-15T19:39:54.878Z"
     },
     "find-docs": {
       "source": "upstash/context7",
