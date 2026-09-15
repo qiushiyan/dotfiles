@@ -1,25 +1,26 @@
-# tmux 3.7b plus a backported fix for popups being overwritten by background
+# tmux 3.7c with jemalloc plus a fix for popups overwritten by background
 # pane updates when status-position is top (overlay checks used window
 # coordinates while drawing used tty coordinates, so the popup's protected
 # region landed `status lines` rows too low). Fixes screen_redraw_draw_pane,
 # screen_redraw_draw_pane_status, screen_redraw_draw_borders_cell and the
 # scrollbar drawer. Drop this formula and return to stock `tmux` once an
 # upstream release includes the fix (check the tmux CHANGES for popup overlay
-# fixes after 3.7b).
+# fixes after 3.7c).
 #
 # Managed from the dotfiles repo: see docs/tmux-popup-patch.md there.
 class TmuxPopupfix < Formula
-  desc "Terminal multiplexer (3.7b + popup overlay fix for status-position top)"
+  desc "Terminal multiplexer (3.7c + popup overlay fix for status-position top)"
   homepage "https://tmux.github.io/"
-  url "https://github.com/tmux/tmux/releases/download/3.7b/tmux-3.7b.tar.gz"
-  sha256 "87f2e99e3b685973f2ca002ffd6ed7e51a5744f7009daae5a15670b6d532db96"
+  url "https://github.com/tmux/tmux/releases/download/3.7c/tmux-3.7c.tar.gz"
+  sha256 "7c60cae9a0e25288e2e24750aafc9e8800fc7fd4555e447e1b29ee4201cfb3bf"
   license "ISC"
-  version "3.7b"
+  version "3.7c"
 
   depends_on "pkgconf" => :build
   depends_on "libevent"
   depends_on "ncurses"
   depends_on "utf8proc"
+  depends_on "jemalloc"
 
   conflicts_with "tmux", because: "both install a tmux binary"
 
@@ -28,6 +29,7 @@ class TmuxPopupfix < Formula
   def install
     args = %W[
       --enable-utf8proc
+      --enable-jemalloc
       --sysconfdir=#{etc}
     ]
     system "./configure", *std_configure_args, *args
