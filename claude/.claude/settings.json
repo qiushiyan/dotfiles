@@ -56,7 +56,7 @@
     "memory-types": "off",
     "plan-artifact": "off",
     "pr": "off",
-    "prototype": "off",
+    "prototype": "user-invocable-only",
     "run": "off",
     "run-skill-generator": "off",
     "schedule": "off",
