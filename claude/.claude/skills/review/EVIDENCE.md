@@ -153,8 +153,12 @@ rest-of-the-build bullet under Evaluate and its output item, both a switch.
 `review/SKILL.md`: the switch in step 3's scoping list; step 6 writes
 surviving tenets into the spec beside its phases. `tabtype`: `review-midpoint`
 and `respond-midpoint` deleted; `DESIGN.md` and `WORKFLOW.md` route the
-milestone round to `/review`. Not changed: `consult/APPROACH-BRIEF.md`, the
-user's open decision; `midpoint-status`, left with no skill consumer.
+milestone round to `/review`. In a second commit at the user's request:
+`consult/APPROACH-BRIEF.md` (the tenets output item, a switch),
+`consult/SKILL.md` (the route in step 2, the bar and the spec home in step
+5, the synthesis line in step 7), `write-spec/SPEC-BAR.md` (the `## Tenets`
+section in the spec's shape). Not changed: `midpoint-status`, left with no
+skill consumer.
 
 **Next comparison.** The first full round on a milestone with the switch
 kept, starting with `feat/pipe-panel-source-and-spawn-sink` milestone 1.
@@ -177,5 +181,14 @@ written is the first, and step 6 names the `## Tenets` heading and the
 no-fix commit case); the step-8 report contract omitted the tenets; the
 switch was stated in three places (the template comment cut). Also
 generalised the lesson's avoid example away from the module under review.
-No round has run on the revised brief; the outcome measures above are
-pending.
+A second cold reader on the consult route (approach mode, "settle the
+approaches and the tenets for phases 2 and 3") picked the mode, kept the
+item, wrote tenets to the spec, and found the two skills judging tenets
+identically. Fixed from its report: the tenets item had no skip (fewer is
+the norm); consult's spec write did not say create-or-revise with struck
+tenets kept; the spec bar implied a list position instead of "next to the
+phases". Left as is: envoy's refusal of a reused round name when a project
+already consumed `consult-r1` is a pre-existing gap in step 3, out of this
+pass's scope; `write-spec/SKILL.md` names no tenets, since the spec bar it
+reads before writing does. No round has run on the revised briefs; the
+outcome measures above are pending.

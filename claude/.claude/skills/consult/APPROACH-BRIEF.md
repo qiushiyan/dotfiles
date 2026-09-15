@@ -115,7 +115,14 @@ the voice name what is wrong in it.»
    (file/section/function), why it's a problem (concrete failure or
    contradiction), and the smallest fix consistent with the constraints above.
    "None" is a real answer.
-4. **Foundational objections** — a separate section, "none" said explicitly
+4. **Tenets for the build** «keep only when the round decides how a build
+   proceeds — a milestone, a phase plan, an ask for guidelines; otherwise
+   delete this item» — read `~/.config/lessons/collaboration/tenets.md`
+   first. The few load-bearing decisions the build holds to, from your
+   sketch and ours: each a stand with its reason, no file names, seven at
+   most and fewer the norm — a decision the later phases could survive
+   without is left out.
+5. **Foundational objections** — a separate section, "none" said explicitly
    when it is empty.
 
 Be specific and terse; no praise padding.

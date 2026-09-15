@@ -84,6 +84,12 @@ the format (tree, prose, diagram) to what fits. Small is enough:
   feature, not a module rewrite — and name what you're deliberately leaving
   alone.
 - *The target shape* — the envisioned end-state; the next section says how.
+- *Tenets* — when a consult or milestone review produced them: the few
+  load-bearing decisions the build holds to, in the form
+  `~/.config/lessons/collaboration/tenets.md` defines, as its own
+  `## Tenets` section next to the phases wherever they sit. The build
+  rereads the spec after every compaction, which is why they live here and
+  not in the conversation.
 - *Test standards* — the behaviors that must be tested, and for each the
   strategy: through which interface, what gets faked at which boundary, plus
   the gotchas worth flagging. What to test and how to think about testing it —
