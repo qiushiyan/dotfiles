@@ -178,3 +178,27 @@ and the usage-analysis addendum concern schema, budgets, query behavior,
 source scope, permissions, or evidence selection; none is changed by this
 nonce-only delta. References are byte-identical to the previous pin. No CLI
 upgrade or live schema remeasurement was needed or performed.
+
+## 2026-09-15 — correlation guidance (pin 2869861 → b164d90)
+
+Upstream changes two behaviors: scope topic correlations to the same sessions,
+and document OMP as a source with inactive branches. Adopted the correlation
+rule; OMP stays in the pristine references, outside the Claude-focused body.
+The installed 0.2.5 provider registry contains Claude, Codex, Kimi, and Pi only.
+Replaced the body's old corpus-count claim with this runtime boundary.
+
+An in-memory SQLite fixture used the installed schema and unchanged
+`createQueryApi`: X selected one session; searching Y with `{ sessionId }`
+returned its visible message and excluded an unrelated session, meta input,
+and an inactive branch. A separate probe confirmed that `search` ignores
+`{ sessions: [...] }` in 0.2.5, so the body prescribes one bounded search per
+candidate in a single script and stops on an empty candidate set. All six
+hot-schema column sets matched `pragma_table_info` on the installed schema.
+This verifies query semantics, not live indexing or transcript timing.
+
+Every prior lesson was reviewed. #3–5's budgets, batching, and inline examples
+remain; #7's persistence workflow is unchanged; #9's host scope stays narrow.
+#10–12's self-exclusion and per-session literal nonce remain, and core.js still
+passes only invocationNonce to identity resolution. #1–2, #8, #13–14, the
+withdrawn permission premise, and the usage-analysis addendum are unaffected
+by this delta. No CLI upgrade or live schema/usage remeasurement was performed.

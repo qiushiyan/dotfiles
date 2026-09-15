@@ -1,20 +1,19 @@
 Before upgrading, read docs/skill-customizations.md in the dotfiles repo
 (the obelisk entry). It owns the customization intent and preservation constraints.
 
-Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 28698613aafbd279957e3231318838cbdbc1653f
-(2026-08-29), published from tommy0103/obelisk @ 55896aa.
-Verified byte-identical on 2026-09-09, excluding this PINNED.txt;
-../references/ is a verbatim copy of references/ here.
-Installed CLI verified from package metadata and source: @obelisk-apps/cli 0.2.5.
+Pinned from tommy0103/obelisk-skill skills/obelisk/ @ b164d907a305d20f5d57394fd726f7999a6d0980
+(2026-09-14). Reviewed and verified byte-identical on 2026-09-15,
+excluding this PINNED.txt; ../references/ is a verbatim copy of references/ here.
+Installed CLI remains @obelisk-apps/cli 0.2.5; no runtime upgrade performed.
 
-The delta from 109b8b1 only changes invocation identity guidance in SKILL.md:
-literal search nonces and script-content fallback for hidden query paths.
-The literal-nonce guidance is adopted. Script-content fallback is ahead of the
-installed 0.2.5 runtime: executeQuery passes only invocationNonce to resolution.
-Keep the personalized per-session path, explicit session-id filtering, and
-bounded Claude-oriented query examples. LESSONS.md records the source check
-and isolated resolver probes. References and schema documentation are unchanged;
-no CLI upgrade or live schema remeasurement was performed in this docs-only pass.
+The delta from 2869861 adds session-scoped topic correlation and OMP source /
+inactive-branch documentation. Adopted correlation with the verified
+search(Y, { sessionId }) form; search ignores a sessions array in 0.2.5.
+OMP remains reference-only: the installed provider registry has no OMP provider.
+The prior script-content identity fallback remains deferred. All six hot-schema
+column sets matched the installed schema through isolated pragma_table_info;
+no live index or transcript-timing remeasurement was performed. LESSONS.md
+records the per-delta decisions and isolated query probe.
 
 Installed via pnpm global only (/Users/qiushi/Library/pnpm/bin), deliberately:
 pnpm's bin directory survives node upgrades where an nvm-scoped npm global does

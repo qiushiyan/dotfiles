@@ -5,6 +5,15 @@ rulebook; counts are written so the next pass can re-run them. Passes run
 under `improve-tool`; queries are obelisk scripts over `tool_calls` reads of
 the file and user turns naming it.
 
+## 2026-09-15 — upstream sync: empty delta
+
+`writing-for-agents` remains at folder hash
+`ad2925850efb8973a72d2e666f7a975f9a2d4a9b`, the fold baseline. The global
+Skills CLI update and an independent GitHub tree check agree; installed
+files match the upstream blobs. Nothing to graduate or reclassify.
+The tracked pointer check found only skill-mechanics routes, ownership
+guidance, and historical evidence; the rulebook body is unchanged.
+
 ## 2026-09-04 — first pass: the rulebook itself is a prompt
 
 Corpus: all time, self excluded. Signatures: reads = `tool_calls.name='Read'

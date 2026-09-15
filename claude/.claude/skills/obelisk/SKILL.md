@@ -107,7 +107,8 @@ for paths hidden behind variables, but 0.2.5 does not implement it.
 
 ## Hot schema
 
-Re-verified against CLI 0.2.5 via `pragma_table_info` on 2026-08-24. Guessed
+Verified against CLI 0.2.5's installed schema in an isolated database via
+`pragma_table_info` on 2026-09-15. Guessed
 column names are the top historical failure class — trust this list over
 instinct:
 
@@ -137,6 +138,11 @@ start time. `sql()` is the escalation for exact joins and aggregations.
 
 ## Query rules
 
+- For "while working on X, did we discuss Y?", find X's session ids first,
+  then search Y within each using `search(Y, { sessionId, limit: 10 })` in
+  one budgeted script. In CLI 0.2.5, `search` ignores `sessions: [...]`.
+  An empty candidate set ends the search. Ground the conclusion in visible
+  user/assistant text; independent global hits do not establish a connection.
 - The read-only guard keyword-scans the SQL: a SELECT containing `replace(...)`
   is rejected because it matches `REPLACE INTO`. Trim and clean strings with
   `substr()`, or in JS after fetching.
@@ -232,9 +238,9 @@ return remember({
 
 ## Escalation references
 
-Upstream docs, still valid. Their Kimi, DeepSeek and visibility material does
-not apply here (no Kimi or DeepSeek rows — the installed 0.2.5 CLI does not
-even index DeepSeek; every row visible), and Pi is 3 sessions out of 1273.
+Upstream references can describe features ahead of the installed CLI 0.2.5,
+which indexes Claude, Codex, Kimi, and Pi, but not DeepSeek or OMP. Use their
+provider and visibility guidance only when the runtime and corpus support it.
 
 | Read | when |
 |---|---|

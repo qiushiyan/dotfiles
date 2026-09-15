@@ -8,7 +8,7 @@ Repository: tailwindcss/insiders (purchased, private access required)
 Path: rules/tailwind.md
 Commit: 176752669945da4b631df8625165df272cb2cb57
 Git blob SHA: 2bd9a5e6ad08b5a369b26bfd8c216fb51d999d24
-Checked: 2026-09-09
+Checked: 2026-09-15 (unchanged blob SHA)
 
 The source file's history contains one commit, dated 2025-07-03. The local
 SKILL.md is an intentional workflow adaptation, not a verbatim copy. This
