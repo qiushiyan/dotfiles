@@ -48,7 +48,7 @@ A fresh session ("the reviewer") reviews commits the host or the user wrote. The
 
    - **full** → keep **Structural quality** whenever the range decides structure: new modules, reshaped interfaces, any real refactor. Trim it when the work is structurally inert — a version bump, a mechanical syntax migration — however large the diff. **Composition** survives that trim on a **small contained fix**: a patch bolted onto an existing call path is exactly the shape it exists to catch, and exactly the range a reviewer waves through. Drop it only where the range adds no hop and rewires nothing.
    - **goal** → the structural block follows the same rule; the concept-count question its brief always carries is the altitude composition reaches without it.
-   - **full on a milestone** — "phase 1 is done", "the rest continues here", a spec whose phases are partly unbuilt → keep **The rest of the build**: it stops the reviewer flagging the unbuilt phases, and it returns the tenets those phases hold to, in the form `~/.config/lessons/collaboration/tenets.md` defines — the few load-bearing decisions with their reasons, not rules about files. Delete it when the range is the whole change.
+   - **full on a milestone** — "phase 1 is done", "the rest continues here", a spec whose phases are partly unbuilt → keep **The rest of the build**: it stops the reviewer flagging the unbuilt phases, and it returns the tenets those phases hold to, in the form `~/.config/lessons/collaboration/tenets.md` defines. Delete it when the range is the whole change.
 
    Done when a cold reader could deliver the review without this conversation.
 
@@ -100,7 +100,7 @@ A fresh session ("the reviewer") reviews commits the host or the user wrote. The
 
    Whatever the verification instrument, you wrote this code, so the bias cuts both ways — adopting findings to be agreeable and rebutting them to defend your own work are equal failures. Meet a structural reframing on its merits; a narrower local patch is not a rebuttal. A finding that asks for a new test earns the same scrutiny as one that asks for a code change — locate the bug it would catch, and the absence of a test already catching it; "more coverage" is not a defect, and a test the reviewer wants deleted is verified the same way.
 
-   A milestone round's **tenets** are judged by the bar in `~/.config/lessons/collaboration/tenets.md`, not as findings: a line that is load-bearing for the remaining phases, takes a stand, carries its reason, and names no file survives; a line that fails the bar is a tip, and joins the findings at whatever severity its content earns.
+   A milestone round's **tenets** are judged by the bar in `~/.config/lessons/collaboration/tenets.md`, not as findings: a line that fails it is a tip, and joins the findings at whatever severity its content earns.
 
    Done when every finding carries a verdict: confirmed, rebutted with a first-principles reason, or foundational — those the user decides — and every critical or moderate behavioral verdict names the test that decided it, or why none could.
 

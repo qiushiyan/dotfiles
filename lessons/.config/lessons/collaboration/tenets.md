@@ -55,9 +55,7 @@ to grow without being told about that arm.
 Rules cannot cover the situations a build meets after the plan runs out,
 which is most of them; a principle with its reason can be applied there,
 and a principle without one is obeyed by the letter and defeated by the
-next case. The stand-taking form is what keeps a set honest: a tenet that
-is always true costs nothing to hold and guides nothing. The cap is what
-keeps it read: seven decisions survive a compaction summary and a cold
+next case. The cap is what keeps it read: seven decisions survive a compaction summary and a cold
 read; twenty file-level rules become the material the summary drops first.
 
 ---

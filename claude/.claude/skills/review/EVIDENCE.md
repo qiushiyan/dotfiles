@@ -190,5 +190,9 @@ tenets kept; the spec bar implied a list position instead of "next to the
 phases". Left as is: envoy's refusal of a reused round name when a project
 already consumed `consult-r1` is a pre-existing gap in step 3, out of this
 pass's scope; `write-spec/SKILL.md` names no tenets, since the spec bar it
-reads before writing does. No round has run on the revised briefs; the
+reads before writing does. A prompt-engineering revision pass over the six model-facing surfaces
+then cut the tenet definition from four echoes back to the lesson and the
+two brief items, removed a negation-carried clause and an unearned
+"committed" claim in consult step 5, and gave the review bullet the same
+fewer-is-the-norm skip. No round has run on the revised briefs; the
 outcome measures above are pending.
