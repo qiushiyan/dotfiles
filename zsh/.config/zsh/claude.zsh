@@ -50,10 +50,10 @@
 #                         last drove it. This wrapper only cds afterwards,
 #                         from the advisory --cd-file (bare `x`'s target is
 #                         untouched)
-#   x-accounts / x-acc    account board (headroom accounts): live usage for
-#                         every account, refreshing while it is open; enter
-#                         repins bare `x` and exits — no session starts
-#                         until `x` is typed
+#   x-accounts / x-acc    account board (headroom accounts --compact): one
+#                         row per account, refreshing while it is open;
+#                         enter repins bare `x` and exits — no session
+#                         starts until `x` is typed
 #   x-check               ≡ headroom check — verifies the reverse-engineered
 #                         machinery after a Claude Code update
 #   x-account             ≡ claude-account <name|email> [args...] — prompted
@@ -145,9 +145,12 @@ x-check()       { headroom check "$@" }
 # itself while it is open. Enter repins bare `x` and exits — deliberately no
 # launch chained on: "change the default account" and "start a session" are
 # separate decisions, and when a session is wanted it is one keystroke (`x`)
-# away. Bare `headroom` is the same board, so this is the only wrapper it
-# needs.
-x-accounts()    { headroom accounts "$@" }
+# away. The wrapper asks for the compact layout — one row per account,
+# percent and time-to-reset per window, every warning at the row's end — a
+# presentation flag and nothing more: same refresh, same enter, same data.
+# The presentation choice lives here, in the shell layer, by design; bare
+# `headroom` / `headroom accounts` keeps the block layout with bars.
+x-accounts()    { headroom accounts --compact "$@" }
 x-acc()         { x-accounts "$@" }
 # Session picker (headroom sessions): every session on the machine, entered
 # in its own project dir and continued — by exec, inside headroom — on the

@@ -9,7 +9,7 @@ lives.
 ```text
 x                 → launch on the board's default account
 x-<name>          → one launch on a named account; default unchanged
-x-accounts / x-acc → choose the default account; no launch
+x-accounts / x-acc → choose the default account (compact board); no launch
 x-select          → resume in the session's project and owning account
 x-check           → verify routing after a Claude Code update
 ```
@@ -25,7 +25,7 @@ Account lifecycle commands and failure recovery live under **Use patterns**.
 This is where the underlying engine lives: **`~/dev/headroom`** — a
 standalone Go CLI installed to `~/.local/bin/headroom` via its
 `make install`. The account board (`headroom` / `headroom accounts`, with
-`--json`), the session picker (`headroom sessions`, with a `--json`
+`--compact` for one row per account and `--json`), the session picker (`headroom sessions`, with a `--json`
 listing; it enters the project dir and execs claude itself), launch routing
 (`headroom launch` validates the account, verifies the shared-sessions
 topology, and builds the child environment from that decision alone), and
