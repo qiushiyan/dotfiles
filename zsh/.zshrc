@@ -174,6 +174,10 @@ eval "$(zoxide init zsh)"
 # oh-my-posh (must be last — other tools can override shell integration)
 eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
 
+# Register after the prompt hooks: Oh My Posh consumes the command's exit status
+# first and emits the output marker before cout publishes command metadata.
+_cout_setup
+
 # --------------------------------------------------------------------
 # 5. ALIASES
 # Aliases live in ~/.config/zsh/aliases.zsh (auto-sourced by .zshenv).

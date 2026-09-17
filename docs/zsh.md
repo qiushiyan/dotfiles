@@ -58,6 +58,7 @@ zsh/.config/zsh/
   claude-sessions.zsh  # shared session store: migration + drift check (tests/ has its harness)
   xcode.zsh
   tmux-utils.zsh
+  cout.zsh        # cout + per-pane command metadata for tmux prefix o
   proxy.zsh
   gws.zsh
 ```
@@ -71,6 +72,26 @@ zsh/.config/zsh/
 - **Package manager** — pnpm preferred over npm.
 - **Editing** — `set -o vi`; vim keybindings everywhere.
 - **Secrets** — `~/.secrets`, untracked, mode `600`, sourced by `.zshrc`.
+
+## Copying a command and its output
+
+`cout` and tmux `prefix o` copy the last completed command and displayed output
+to the macOS clipboard. The workflow and limits are in
+[tmux's copy guide](../tmux/.config/tmux/workflow.md#reading-back--copying-output-copy-mode).
+
+`cout.zsh` defines the wrapper in every shell, but `.zshrc` registers its hooks
+only for interactive tmux shells, after Oh My Posh. `preexec` publishes the
+exact command into pane-local tmux options; `precmd` marks it ready and counts
+subsequent empty/cancelled prompts and standalone `cout` calls. Shared Zsh
+history is never consulted. No output is logged or captured on each command:
+the helper reads scrollback only when invoked, uses the prompt/output markers
+to isolate the result, and joins soft-wrapped lines.
+
+Oh My Posh's `shell_integration` supplies OSC 133 markers. Its transient prompt
+template explicitly retains A/B markers because the transient redraw otherwise
+erases the old prompt boundary. Keep those invisible escapes when changing the
+template. Existing shells need `zshreload` and a newly run command; a running
+command or an uninitialized shell has no result available for copying.
 
 ## Lessons learned
 

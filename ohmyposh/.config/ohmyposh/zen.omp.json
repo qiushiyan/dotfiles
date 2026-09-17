@@ -201,8 +201,9 @@
     "foreground_templates": [
       "{{ if gt .Code 0 }}p:red{{ end }}"
     ],
-    "template": "❯ "
+    "template": "\u001b]133;A\u0007❯ \u001b]133;B\u0007"
   },
+  "shell_integration": true,
   "final_space": true,
   "version": 4
 }

@@ -8,6 +8,7 @@ bash tmux/.config/tmux/scripts/tests/test-pane-control.sh        [T5 T14 …]
 bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
 bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W2 W10 …]
 python3 tmux/.config/tmux/scripts/tests/test-popup-overlay.py --stock <known-broken-binary> --candidate <candidate-binary>
+python3 tmux/.config/tmux/scripts/tests/test-cout.py            # requires tmux, zsh, oh-my-posh
 zsh  zsh/.config/zsh/tests/claude-sessions.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/theme-sync.test.zsh                   # runs whole
@@ -25,6 +26,7 @@ Each suite owns one boundary:
 | context chip | publication, shedding, cleanup, and quota refresh without the live cache |
 | worktree core | tmux-free base, slot, merge, snapshot, and reap rules |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
+| cout | exact commands and displayed output with the real transient prompt on a private tmux socket; a temporary home and fake clipboard isolate all state |
 | Claude sessions | shared-store topology and repair against a throwaway `$HOME` |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
 | theme sync | startup + precmd switching against a throwaway `$HOME` |

@@ -130,6 +130,19 @@ mark-and-move: `scripts/pane-mode.md`.
 
 ## Reading back & copying output (copy mode)
 
+- **`prefix o`** copies the last completed shell command **and its output** to
+  the macOS clipboard. **`cout`** does the same from a shell prompt; run it as a
+  standalone command. Repeating either keeps copying the original result.
+  Paste straight into a coding agent: the text starts with `$ <command>`,
+  followed by the displayed output, with colors removed and wrapped lines
+  joined. After installing this feature, run **`zshreload`** once in existing
+  shells, then run the command you want to capture.
+  This needs the command's boundaries to remain in tmux scrollback; clearing
+  history or screen-rewriting/full-screen programs can prevent capture. It
+  captures terminal text (including Zsh's `%` marker for a missing final
+  newline), not a raw stdout/stderr log. Missing boundaries leave the clipboard
+  unchanged. Shell/prompt integration lives in `zsh/.config/zsh/cout.zsh` and
+  `ohmyposh/.config/ohmyposh/zen.omp.json`; capture lives in `scripts/tmux-cout.py`.
 - Enter with **`prefix [`**; leave with `q` or a quick **double-`Esc`** (a single `Esc` won't exit — see below).
 - Scroll: `C-u`/`C-d` (10 lines), `j`/`k` (one line), `gg`/`G` (top/bottom), `/` to search forward.
 - Select + copy: `v` start selection, `C-v` rectangle, `H`/`L` to line start/end, `y` to copy and exit.
@@ -203,6 +216,8 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 **Reorder** — windows `Shift-Left`/`Shift-Right` · panes: float `prefix z` · scratch shell `prefix Z` (stock zoom `prefix C-z`), everything else in **`prefix p`** pane mode (table above)
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom · `Esc` clear selection (stays in copy mode) · `q` or double-`Esc` exit
+
+**Copy last command + output** — `prefix o` or standalone `cout` → macOS clipboard
 
 **Paste buffers** — browse `prefix =` · `Enter` paste · `/` search name/content · `d` delete · `e` edit · `v` preview · `q` exit · newest only `prefix ]`
 
