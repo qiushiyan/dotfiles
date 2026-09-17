@@ -187,7 +187,7 @@ def record(store):
 def render(raw, metadata):
     """Replay bytes into an isolated terminal emulator, never into the live pane."""
     data = raw.read_bytes()
-    if re.search(rb"\x1b\[\?(?:47|1047|1049)h", data):
+    if re.search(rb"\x1b\[\?(?:[0-9]*;)*0*(?:47|1047|1049)(?:;[0-9]*)*h", data):
         raise ValueError("full-screen applications do not have a plain command transcript.")
     with tempfile.TemporaryDirectory(prefix="cout-render-") as directory:
         tmp = Path(directory)

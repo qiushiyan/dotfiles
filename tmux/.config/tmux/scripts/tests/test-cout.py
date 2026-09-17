@@ -231,10 +231,11 @@ class CoutTest(unittest.TestCase):
 
     def test_full_screen_output_does_not_change_clipboard(self):
         (self.home / "clipboard").write_text("untouched")
-        self.execute("printf '\\033[?1049hhidden\\033[?1049l'")
-        self.execute("cout")
-        self.assertEqual((self.home / "clipboard").read_text(), "untouched")
-        self.assertIn("full-screen", self.capture(success=False))
+        for mode in ("1049", "25;1049", "1049;25"):
+            self.execute(f"printf '\\033[?{mode}hhidden\\033[?1049l'")
+            self.execute("cout")
+            self.assertEqual((self.home / "clipboard").read_text(), "untouched")
+            self.assertIn("full-screen", self.capture(success=False))
 
     def test_old_shell_metadata_requests_reload_without_copying(self):
         self.execute("print retained")
