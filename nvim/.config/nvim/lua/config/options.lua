@@ -12,6 +12,19 @@ vim.opt.swapfile = false
 -- always show markdown symbols (backticks, stars, etc)
 vim.opt.conceallevel = 0
 
+-- LazyVim temporarily clears 'clipboard' until VeryLazy. Restore the chosen
+-- value before queued startup keys: an immediate p in Claude's Ctrl+G editor
+-- must not paste a stale Vim register. Capture the default to preserve SSH's
+-- empty clipboard setting as well as local unnamedplus.
+local clipboard = vim.opt.clipboard:get()
+vim.api.nvim_create_autocmd("VimEnter", {
+  group = vim.api.nvim_create_augroup("ClipboardBeforeInput", { clear = true }),
+  once = true,
+  callback = function()
+    vim.opt.clipboard = clipboard
+  end,
+})
+
 -- TypeScript LSP: tsgo (typescript-go native port; global install via pnpm,
 -- @typescript/native-preview). LazyVim's typescript extra wires it up and
 -- disables vtsls/tsserver.
