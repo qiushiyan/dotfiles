@@ -152,6 +152,10 @@ class Recorder:
         prefix = b"\x1b]777;cout;" + self.store.name.encode() + b";"
         pending = b""
         while data := os.read(0, 65536):
+            # Cache removal invalidates this recorder. Release the pipe so a
+            # shell reload can attach a replacement without stealing a logger.
+            if not self.store.is_dir():
+                return
             pending += data
             while pending:
                 start = pending.find(prefix)
@@ -181,7 +185,8 @@ def record(store):
     finally:
         for entry in recorder.active.values():
             entry["file"].close()
-        shutil.rmtree(store, ignore_errors=True)
+    # Preserve records after a fault; setup reaps the abandoned directory.
+    shutil.rmtree(store, ignore_errors=True)
 
 
 def render(raw, metadata):
@@ -244,7 +249,8 @@ def completed(pane, index):
     store = Path(store_name)
     deadline = time.monotonic() + 3
     while True:
-        if not (store / "recorder.json").exists():
+        manifest = store / "recorder.json"
+        if not manifest.is_file() or not alive(json.loads(manifest.read_text())["pid"]):
             raise ValueError("the command recorder stopped; run zshreload.")
         ids = json.loads((store / "index.json").read_text()).get(session, []) if (store / "index.json").exists() else []
         if ids and ids[0] == latest:
@@ -255,13 +261,14 @@ def completed(pane, index):
     if index > len(ids):
         raise ValueError(f"index {index} is unavailable; {len(ids)} command(s) retained in this shell.")
     identity = ids[index - 1]
-    metadata = json.loads((store / f"{identity}.json").read_text())
-    if metadata.get("error"):
-        raise ValueError(metadata["error"])
-    command = (store / f"{identity}.command").read_text()
-    output = render(store / f"{identity}.raw", metadata)
-    if option(pane, "@cout-state") != state or option(pane, "@cout-ready") != "1":
-        raise ValueError("the active command changed while copying; try again.")
+    try:
+        metadata = json.loads((store / f"{identity}.json").read_text())
+        if metadata.get("error"):
+            raise ValueError(metadata["error"])
+        command = (store / f"{identity}.command").read_text()
+        output = render(store / f"{identity}.raw", metadata)
+    except FileNotFoundError:
+        raise ValueError("this recording is no longer retained; copy a more recent command.") from None
     return command, "$ " + command + "\n" + output
 
 

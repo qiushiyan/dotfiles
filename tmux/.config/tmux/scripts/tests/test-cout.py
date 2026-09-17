@@ -2,6 +2,8 @@
 """Exercise cout with real Zsh/Oh My Posh on a private tmux socket."""
 
 import os
+import json
+import signal
 from pathlib import Path
 import shutil
 import shlex
@@ -52,12 +54,13 @@ class CoutTest(unittest.TestCase):
         time.sleep(.1)
 
     def tearDown(self):
-        store = Path(self.option("@cout-store"))
+        store_name = self.option("@cout-store")
+        store = Path(store_name) if store_name else None
         self.tmux("kill-server")
         deadline = time.monotonic() + 5
-        while store.exists() and time.monotonic() < deadline:
+        while store and store.exists() and time.monotonic() < deadline:
             time.sleep(.03)
-        self.assertFalse(store.exists(), "pane recorder must clean up after server exit")
+        self.assertFalse(store and store.exists(), "pane recorder must clean up after server exit")
         self.temp.cleanup()
 
     def tmux(self, *args):
@@ -162,6 +165,9 @@ class CoutTest(unittest.TestCase):
         self.execute("print child")
         self.assertEqual(self.capture(), "$ print child\nchild\n")
         self.execute("exit")
+        store = Path(self.option("@cout-store"))
+        exited = next(p for p in store.glob("*.command") if p.read_text() == "exit")
+        self.wait(lambda: exited.with_suffix(".json").exists())
         self.assertEqual(self.capture(index=2), "$ print parent_b\nparent_b\n")
         self.assertEqual(self.capture(index=3), "$ print parent_a\nparent_a\n")
         self.assertTrue(self.capture().startswith("$ zsh\n"))
@@ -185,12 +191,21 @@ class CoutTest(unittest.TestCase):
     def test_exec_reload_and_foreign_pipe_are_isolated(self):
         self.execute("print old")
         old_store = self.option("@cout-store")
+        before = set(Path(old_store).glob("*.command"))
         self.execute("exec zsh")
         self.assertEqual(self.option("@cout-store"), old_store)
         self.assertIn("no completed command", self.capture(success=False))
         self.execute("print new")
         self.assertEqual(self.capture(), "$ print new\nnew\n")
+        replaced = next(p for p in set(Path(old_store).glob("*.command")) - before
+                        if p.read_text() == "exec zsh")
+        metadata = json.loads(replaced.with_suffix(".json").read_text())
+        self.assertIn("replaced", metadata["error"])
+        size = replaced.with_suffix(".raw").stat().st_size
+
         self.assertIn("unavailable", self.capture(success=False, index=2))
+        self.execute("print more output")
+        self.assertEqual(replaced.with_suffix(".raw").stat().st_size, size)
         # Another logger takes over the pipe; setup must leave it running.
         self.tmux("pipe-pane", "-O", "-t", self.pane, "cat > " + shlex.quote(str(self.home / "foreign")))
         self.wait(lambda: not Path(old_store).exists())
@@ -201,7 +216,72 @@ class CoutTest(unittest.TestCase):
         self.tmux("send-keys", "-t", self.pane, "-l", "logger still alive")
         self.wait(lambda: "logger still alive" in (self.home / "foreign").read_text())
 
+    def test_removed_cache_reports_once_and_reload_recovers(self):
+        self.execute("print retained")
+        store = Path(self.option("@cout-store"))
+        shutil.rmtree(store)
+        self.execute("print one")
+        self.execute("print two")
+        screen = self.tmux("capture-pane", "-p", "-J", "-S", "-", "-t", self.pane)
+        self.assertNotIn("_cout_preexec:", screen)
+        self.assertEqual(screen.count("cout: recording stopped; run zshreload to restart it."), 1)
+        self.execute("exec zsh")
+        self.execute("print recovered")
+        self.assertEqual(self.capture(), "$ print recovered\nrecovered\n")
+
+    def test_killed_recorder_reports_promptly_and_reload_reaps_cache(self):
+        self.execute("print retained")
+        store = Path(self.option("@cout-store"))
+        pid = json.loads((store / "recorder.json").read_text())["pid"]
+        os.kill(pid, signal.SIGKILL)
+        self.execute("print one")
+        self.wait(lambda: self.tmux("display-message", "-p", "-t", self.pane, "#{pane_pipe}").strip() == "0")
+        started = time.monotonic()
+        self.assertIn("recorder stopped; run zshreload", self.capture(success=False))
+        self.assertLess(time.monotonic() - started, 2, "dead recorder must not wait for completion timeout")
+        self.execute("print two")
+        self.assertNotIn("_cout_preexec:", self.tmux("capture-pane", "-p", "-J", "-t", self.pane))
+        self.execute("exec zsh")
+        self.execute("print recovered")
+        self.assertEqual(self.capture(), "$ print recovered\nrecovered\n")
+        self.assertFalse(store.exists())
+
+    def test_recorder_fault_keeps_completed_records_until_recovery(self):
+        self.execute("print retained")
+        store = Path(self.option("@cout-store"))
+        identity = self.option("@cout-state").split()[1]
+        saved = (store / f"{identity}.raw").read_bytes()
+        self.execute("_cout_mark invalid")
+        self.wait(lambda: self.tmux("display-message", "-p", "-t", self.pane, "#{pane_pipe}").strip() == "0")
+        self.assertEqual((store / f"{identity}.raw").read_bytes(), saved)
+        self.assertIn("recorder stopped; run zshreload", self.capture(success=False))
+        self.execute("exec zsh")
+        self.execute("print recovered")
+        self.assertEqual(self.capture(), "$ print recovered\nrecovered\n")
+        self.assertFalse(store.exists())
+
+    def test_selected_copy_survives_starting_another_command(self):
+        self.execute("print selected")
+        helper = self.home / ".config/tmux/scripts/tmux-cout.py"
+        helper.write_text(helper.read_text().replace('    data = raw.read_bytes()',
+            '    (Path.home() / "render-started").touch()\n'
+            '    while not (Path.home() / "render-release").exists():\n'
+            '        time.sleep(.01)\n'
+            '    data = raw.read_bytes()'))
+        process = subprocess.Popen(["python3", str(helper), "--pane", self.pane],
+                                   env=self.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            self.wait(lambda: (self.home / "render-started").exists())
+            self.execute("print next")
+        finally:
+            (self.home / "render-release").touch()
+            stdout, stderr = process.communicate(timeout=10)
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertEqual((self.home / "clipboard").read_text(), "$ print selected\nselected\n")
+        self.assertIn('Copied "print selected"', stdout)
+
     def test_recording_limits_prune_and_refuse_truncated_output(self):
+        self.execute("true")
         helper = self.home / ".config/tmux/scripts/tmux-cout.py"
         helper.write_text(helper.read_text().replace("MAX_RECORD = 16 * 1024 * 1024", "MAX_RECORD = 1024")
                           .replace("MAX_CACHE = 64 * 1024 * 1024", "MAX_CACHE = 2048")
@@ -301,7 +381,7 @@ class CoutTest(unittest.TestCase):
         result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
                                 env=self.env, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("No such file", result.stderr)
+        self.assertIn("recording is no longer retained", result.stderr)
         self.assertEqual(sentinel.read_text(), "keep me")
 
 

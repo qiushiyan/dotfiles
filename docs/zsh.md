@@ -82,8 +82,9 @@ Both report a 40-character command preview after a successful copy. The workflow
 
 `cout.zsh` defines the wrapper in every shell, but `.zshrc` registers its hooks
 only for interactive tmux shells, after Oh My Posh has consumed the command's
-exit status. Each shell gets its own session ID. `preexec` saves exact command
-text and emits a private start marker; `precmd`/`zshexit` emit its end marker.
+exit status. Recorder setup is lazy: the first real command initializes it,
+keeping Python startup off the shell-startup path. Each shell gets its own
+session ID. `preexec` saves exact command text and emits a private start marker; `precmd`/`zshexit` emit its end marker.
 Standalone `cout` calls and empty/cancelled prompts create no record. Shared
 Zsh history and prompt themes are not involved.
 
@@ -93,8 +94,8 @@ session and expected completion ID. A reader waits for that exact completion
 before selecting an index, so recorder lag cannot silently select an older
 command. Each active execution receives output: a parent `zsh` command includes
 the nested interaction, while child commands have their own records. Returning
-from the child restores the parent's index. `exec zsh` starts a new index and
-marks any interrupted execution as incomplete. Remote prompt markers do not
+from the child restores the parent's index. `exec zsh` starts a new index; its
+first command finalizes the replaced shell's interrupted execution as incomplete. Remote prompt markers do not
 change local command boundaries; an `ssh` command records the entire connection.
 
 The helper renders a selected recording in a temporary, isolated tmux server,
@@ -108,8 +109,10 @@ Recordings live under `${XDG_CACHE_HOME:-~/.cache}/cout`, with private directori
 and files (700/600). Each active command has a 16 MiB output limit; completed
 records share a 64 MiB output budget and 1,000-record limit per pane. Oldest
 completed records are pruned first, across all shell sessions. Oversized output
-is flagged rather than silently truncated. The recorder removes its cache when
-the pane pipe closes; the next setup reaps caches abandoned by dead recorders.
+is flagged rather than silently truncated. The recorder removes its cache on
+clean pipe closure. A recorder fault preserves completed files; the next setup reaps
+caches abandoned by dead recorders. Removing an active cache stops its recorder;
+the shell reports one reload instruction without repeating internal errors.
 An existing non-cout output pipe is left alone and setup reports the conflict.
 
 Existing shells need `zshreload` and a newly run command. Copying while a command
