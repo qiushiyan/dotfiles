@@ -231,6 +231,11 @@ terminal_title = [
   "model-with-reasoning",
 ]
 
+[tui.keymap.chat]
+# Option+Up opens questions or edits queued messages; Option+Down returns.
+edit_queued_message = "alt-up"
+prompt_stack_back = "alt-down"
+
 [tui.model_availability_nux]
 "gpt-5.5" = 4
 "gpt-5.6-sol" = 4
