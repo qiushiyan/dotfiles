@@ -17,7 +17,7 @@ import time
 
 MAX_RECORD = 16 * 1024 * 1024
 MAX_CACHE = 64 * 1024 * 1024
-MAX_RECORDS = 1000
+MAX_RECORDS = 50
 RECORD_ID = re.compile(r"[0-9a-f]{32}-[1-9][0-9]*\Z")
 
 

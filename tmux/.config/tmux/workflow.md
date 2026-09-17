@@ -148,7 +148,7 @@ mark-and-move: `scripts/pane-mode.md`.
   index; exiting restores the parent's history. The parent's `zsh` or `ssh`
   record contains the whole nested interaction. `exec zsh`/`zshreload` starts
   a new index. Completed results survive pane resizing and cleared scrollback.
-  Recordings use a private cache, retaining at most 1,000 completed commands
+  Recordings use a private cache, retaining at most 50 completed commands
   and 64 MiB of output per pane, with a 16 MiB limit per active command.
   Old records expire first; closing the pane removes its recordings.
   This copies terminal text (including Zsh's `%` marker for a missing final
@@ -158,6 +158,8 @@ mark-and-move: `scripts/pane-mode.md`.
   Shell hooks live in `zsh/.config/zsh/cout.zsh`; recording and copying live in
   `scripts/tmux-cout.py`. See [the recording design](../../../docs/zsh.md#copying-a-command-and-its-output)
   for lifecycle and rendering limits.
+- Pane scrollback retains up to **10,000 lines**. New panes pick up limit changes;
+  existing panes and running `cout` recorders keep their current limits until closed.
 - Enter with **`prefix [`**; leave with `q` or a quick **double-`Esc`** (a single `Esc` won't exit — see below).
 - Scroll: `C-u`/`C-d` (10 lines), `j`/`k` (one line), `gg`/`G` (top/bottom), `/` to search forward.
 - Select + copy: `v` start selection, `C-v` rectangle, `H`/`L` to line start/end, `y` to copy and exit.

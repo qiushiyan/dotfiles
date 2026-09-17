@@ -107,7 +107,7 @@ are refused. Rendering uses the pane dimensions at command start; resizing
 
 Recordings live under `${XDG_CACHE_HOME:-~/.cache}/cout`, with private directories
 and files (700/600). Each active command has a 16 MiB output limit; completed
-records share a 64 MiB output budget and 1,000-record limit per pane. Oldest
+records share a 64 MiB output budget and 50-record limit per pane. Oldest
 completed records are pruned first, across all shell sessions. Oversized output
 is flagged rather than silently truncated. The recorder removes its cache on
 clean pipe closure. A recorder fault preserves completed files; the next setup reaps

@@ -285,7 +285,7 @@ class CoutTest(unittest.TestCase):
         helper = self.home / ".config/tmux/scripts/tmux-cout.py"
         helper.write_text(helper.read_text().replace("MAX_RECORD = 16 * 1024 * 1024", "MAX_RECORD = 1024")
                           .replace("MAX_CACHE = 64 * 1024 * 1024", "MAX_CACHE = 2048")
-                          .replace("MAX_RECORDS = 1000", "MAX_RECORDS = 3"))
+                          .replace("MAX_RECORDS = 50", "MAX_RECORDS = 3"))
         store = Path(self.option("@cout-store"))
         self.tmux("pipe-pane", "-t", self.pane)
         self.wait(lambda: not store.exists())
