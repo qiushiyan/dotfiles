@@ -20,66 +20,6 @@ NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ec
 [projects."/Users/qiushi"]
 trust_level = "trusted"
 
-[projects."/Users/qiushi/workspace/marswave/music-mvp-frontend-new"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/content-engine"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/aloe/itell"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/slides"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/vercel-ai"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/multimodal-engine"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/preprocessing-engine"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/next-music"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/canva-clone"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/remotion-examples/remotion-hello"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/listenhub-fe"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/learn-swift/Swift101.playground"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/aloe/itell-rs"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/cc-prep"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/TabType"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/workshops/aihero-personal-assistant/project"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/pi-research/pi-mono"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/marswave/cola"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/aloe/itell/apps/platform"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/workspace/260408-qiushi-yan"]
-trust_level = "trusted"
-
 [projects."/Users/qiushi/.agents"]
 trust_level = "trusted"
 
@@ -111,12 +51,6 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/qiushi/dev/tabtype"]
-trust_level = "trusted"
-
-[projects."/Users/qiushi/dev/duet"]
-trust_level = "trusted"
-
-[projects."/private/var/folders/kl/7wvm1wp50ng3z83rfdwxks480000gn/T/tmp.s8FqJxuLYy"]
 trust_level = "trusted"
 
 [projects."/Users/qiushi/dev/itell"]
