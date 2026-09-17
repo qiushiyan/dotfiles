@@ -58,7 +58,7 @@ zsh/.config/zsh/
   claude-sessions.zsh  # shared session store: migration + drift check (tests/ has its harness)
   xcode.zsh
   tmux-utils.zsh
-  cout.zsh        # cout + per-pane command metadata for tmux prefix o
+  cout.zsh        # cout + execution boundaries for the pane recorder
   proxy.zsh
   gws.zsh
 ```
@@ -81,25 +81,40 @@ Both report a 40-character command preview after a successful copy. The workflow
 [tmux's copy guide](../tmux/.config/tmux/workflow.md#reading-back--copying-output-copy-mode).
 
 `cout.zsh` defines the wrapper in every shell, but `.zshrc` registers its hooks
-only for interactive tmux shells, after Oh My Posh. `preexec` remembers the
-exact command; `precmd` publishes it with its ending prompt ordinal into a
-1,000-entry ring of pane-local tmux options. Every prompt advances the ordinal,
-including empty/cancelled prompts and standalone `cout` calls; only actual
-commands advance the command index. This keeps copied notifications and
-invalid `cout` calls out of later captures. A new shell resets the index.
-Shared Zsh history is never consulted. No output is logged or captured on each command:
-the helper reads scrollback only when invoked, uses the prompt/output markers
-to isolate the result, and joins soft-wrapped lines.
+only for interactive tmux shells, after Oh My Posh has consumed the command's
+exit status. Each shell gets its own session ID. `preexec` saves exact command
+text and emits a private start marker; `precmd`/`zshexit` emit its end marker.
+Standalone `cout` calls and empty/cancelled prompts create no record. Shared
+Zsh history and prompt themes are not involved.
 
-The shell writer publishes a newest-first list of retained entry slots; only
-the writer knows ring capacity and reuse order. Each entry preserves multiline
-command text. Shells with an older metadata format receive a `zshreload` message.
+One `tmux pipe-pane` recorder per pane observes output and these ordered markers.
+It owns completed records, indexes, and retention; the shell publishes only its
+session and expected completion ID. A reader waits for that exact completion
+before selecting an index, so recorder lag cannot silently select an older
+command. Each active execution receives output: a parent `zsh` command includes
+the nested interaction, while child commands have their own records. Returning
+from the child restores the parent's index. `exec zsh` starts a new index and
+marks any interrupted execution as incomplete. Remote prompt markers do not
+change local command boundaries; an `ssh` command records the entire connection.
 
-Oh My Posh's `shell_integration` supplies OSC 133 markers. Its transient prompt
-template explicitly retains A/B markers because the transient redraw otherwise
-erases the old prompt boundary. Keep those invisible escapes when changing the
-template. Existing shells need `zshreload` and a newly run command; a running
-command or an uninitialized shell has no result available for copying.
+The helper renders a selected recording in a temporary, isolated tmux server,
+joins wrapped lines, and copies terminal text without rerunning the command.
+Completed recordings survive changes to the live pane's size or scrollback.
+Full-screen output and recordings whose beginning was erased during rendering
+are refused. Rendering uses the pane dimensions at command start; resizing
+*during* a running interactive program may affect its layout.
+
+Recordings live under `${XDG_CACHE_HOME:-~/.cache}/cout`, with private directories
+and files (700/600). Each active command has a 16 MiB output limit; completed
+records share a 64 MiB output budget and 1,000-record limit per pane. Oldest
+completed records are pruned first, across all shell sessions. Oversized output
+is flagged rather than silently truncated. The recorder removes its cache when
+the pane pipe closes; the next setup reaps caches abandoned by dead recorders.
+An existing non-cout output pipe is left alone and setup reports the conflict.
+
+Existing shells need `zshreload` and a newly run command. Copying while a command
+is running, from an old shell protocol, or after recorder failure leaves the
+clipboard unchanged and reports the problem.
 
 ## Lessons learned
 

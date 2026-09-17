@@ -175,7 +175,7 @@ eval "$(zoxide init zsh)"
 eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/zen.omp.json)"
 
 # Register after the prompt hooks: Oh My Posh consumes the command's exit status
-# first and emits the output marker before cout publishes command metadata.
+# before cout finalizes the execution record.
 _cout_setup
 
 # --------------------------------------------------------------------

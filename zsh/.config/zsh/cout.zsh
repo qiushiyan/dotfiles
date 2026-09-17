@@ -1,8 +1,6 @@
-# Exact command text comes from this shell, never shared shell history.
-# Output stays in tmux scrollback; capturing/copying only happens on request.
+# Command records belong to a shell session; the pane recorder owns output.
 cout() {
   emulate -L zsh
-  local index=${1-1}
   if (( $# > 1 )); then
     print -u2 'Usage: cout [positive index] (default: 1, the last command)'
     return 2
@@ -11,14 +9,17 @@ cout() {
     print -u2 'cout: run this inside tmux.'
     return 1
   fi
-  command python3 "$HOME/.config/tmux/scripts/tmux-cout.py" --pane "$TMUX_PANE" --index "$index"
+  command python3 "$HOME/.config/tmux/scripts/tmux-cout.py" --pane "$TMUX_PANE" --index "${1-1}"
+}
+
+_cout_mark() {
+  # Private OSC frames travel in the same ordered byte stream as program output.
+  # Ordinary OSC 133 prompts from nested/remote shells are just recorded text.
+  print -rn -- $'\e]777;cout;'"${_cout_store:t};$1"$'\a'
 }
 
 _cout_preexec() {
   emulate -L zsh
-  # Ignore standalone cout calls, including invalid arguments. Compound
-  # commands such as `cout 2; print done` count as real commands: their cout
-  # call is refused while the compound command is running.
   local -a words=("${(@z)1}")
   local word copying=0
   if [[ $words[1] == cout ]]; then
@@ -29,48 +30,49 @@ _cout_preexec() {
       esac
     done
   fi
+  # cout is standalone; inside a compound command the readiness gate refuses it.
   (( copying )) && return 0
-  _cout_pending=1
-  _cout_command=$1
   command tmux set-option -p -t "$TMUX_PANE" @cout-ready 0 2>/dev/null
+  (( ++_cout_sequence ))
+  _cout_last="$_cout_session-$_cout_sequence"
+  if ! (umask 077; print -rn -- "$1" > "$_cout_store/$_cout_last.command"); then
+    _cout_pending=0
+    _cout_broken=1
+    return 0
+  fi
+  _cout_pending=1
+  _cout_mark "B;$_cout_last;${COLUMNS:-80};${LINES:-24}"
   return 0
+}
+
+_cout_finish() {
+  if (( _cout_pending )); then
+    _cout_mark "E;$_cout_last"
+    _cout_pending=0
+  fi
 }
 
 _cout_precmd() {
   emulate -L zsh
-  (( ++_cout_prompt ))
-  local -a update
-  if (( _cout_pending )); then
-    _cout_pending=0
-    _cout_ready=1
-    # Bounded per-pane metadata, not output logs. Each entry contains the
-    # ending prompt ordinal and exact command, separated by the first newline.
-    # Only this writer knows capacity and reuse order; the reader gets an
-    # explicit newest-first slot list and never reconstructs ring arithmetic.
-    local capacity=1000 slot
-    slot=$(( _cout_slot % capacity + 1 ))
-    _cout_slot=$slot
-    _cout_history=("$slot" "${(@)_cout_history[1,capacity-1]}")
-    update=(set-option -p -t "$TMUX_PANE" "@cout-entry-$slot"
-      "$_cout_prompt"$'\n'"$_cout_command" ';')
-  fi
-  # Empty/cancelled prompts and cout notifications advance the prompt ordinal
-  # without adding a command entry, so index 2 always means the prior command.
-  command tmux "${update[@]}" \
-    set-option -p -t "$TMUX_PANE" @cout-history "${(j: :)_cout_history}" \; \
-    set-option -p -t "$TMUX_PANE" @cout-prompt "$_cout_prompt" \; \
-    set-option -p -t "$TMUX_PANE" @cout-ready "$_cout_ready" 2>/dev/null
+  (( _cout_broken )) && return 0
+  _cout_finish
+  # Publish the expected completion ID. Readers wait for that exact record;
+  # recorder lag must never make cout silently select the previous command.
+  command tmux set-option -p -t "$TMUX_PANE" @cout-state "$_cout_session $_cout_last" \; \
+    set-option -p -t "$TMUX_PANE" @cout-ready 1 2>/dev/null
   return 0
 }
 
 _cout_setup() {
   emulate -L zsh
   [[ -o interactive && -n ${TMUX:-} && -n ${TMUX_PANE:-} ]] || return 0
-  typeset -g _cout_pending=0 _cout_ready=0 _cout_slot=0 _cout_prompt=0 _cout_command=''
-  typeset -ga _cout_history=()
-  command tmux set-option -p -t "$TMUX_PANE" @cout-ready 0 \; \
-    set-option -p -t "$TMUX_PANE" @cout-history '' 2>/dev/null
+  local -a setup=("${(@f)$(command python3 "$HOME/.config/tmux/scripts/tmux-cout.py" setup --pane "$TMUX_PANE")}")
+  (( ${#setup} == 2 )) || return 0
+  typeset -g _cout_store=$setup[1] _cout_session=$setup[2]
+  typeset -g _cout_pending=0 _cout_sequence=0 _cout_last=- _cout_broken=0
+  _cout_mark "S;$_cout_session;$$"
   autoload -Uz add-zsh-hook
   add-zsh-hook preexec _cout_preexec
   add-zsh-hook precmd _cout_precmd
+  add-zsh-hook zshexit _cout_finish
 }

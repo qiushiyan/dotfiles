@@ -144,13 +144,20 @@ mark-and-move: `scripts/pane-mode.md`.
   followed by the displayed output, with colors removed and wrapped lines
   joined. After installing this feature, run **`zshreload`** once in existing
   shells, then run the command you want to capture.
-  Up to 1,000 commands are indexed per shell, starting after `zshreload` or a
-  new shell. This needs the command's boundaries to remain in tmux scrollback; clearing
-  history or screen-rewriting/full-screen programs can prevent capture. It
-  captures terminal text (including Zsh's `%` marker for a missing final
-  newline), not a raw stdout/stderr log. Missing boundaries leave the clipboard
-  unchanged. Shell/prompt integration lives in `zsh/.config/zsh/cout.zsh` and
-  `ohmyposh/.config/ohmyposh/zen.omp.json`; capture lives in `scripts/tmux-cout.py`.
+  Indexes belong to the current shell. Entering a nested Zsh gives it a new
+  index; exiting restores the parent's history. The parent's `zsh` or `ssh`
+  record contains the whole nested interaction. `exec zsh`/`zshreload` starts
+  a new index. Completed results survive pane resizing and cleared scrollback.
+  Recordings use a private cache, retaining at most 1,000 completed commands
+  and 64 MiB of output per pane, with a 16 MiB limit per active command.
+  Old records expire first; closing the pane removes its recordings.
+  This copies terminal text (including Zsh's `%` marker for a missing final
+  newline), not a raw stdout/stderr log. Full-screen applications, erased
+  output, and oversized or incomplete recordings leave the clipboard unchanged.
+  A pane already using another output logger cannot also start this recorder.
+  Shell hooks live in `zsh/.config/zsh/cout.zsh`; recording and copying live in
+  `scripts/tmux-cout.py`. See [the recording design](../../../docs/zsh.md#copying-a-command-and-its-output)
+  for lifecycle and rendering limits.
 - Enter with **`prefix [`**; leave with `q` or a quick **double-`Esc`** (a single `Esc` won't exit — see below).
 - Scroll: `C-u`/`C-d` (10 lines), `j`/`k` (one line), `gg`/`G` (top/bottom), `/` to search forward.
 - Select + copy: `v` start selection, `C-v` rectangle, `H`/`L` to line start/end, `y` to copy and exit.

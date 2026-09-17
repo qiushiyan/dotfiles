@@ -26,7 +26,7 @@ Each suite owns one boundary:
 | context chip | publication, shedding, cleanup, and quota refresh without the live cache |
 | worktree core | tmux-free base, slot, merge, snapshot, and reap rules |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
-| cout | indexed commands, displayed output, and copy notifications with the real transient prompt on a private tmux socket; a temporary home and fake clipboard isolate all state |
+| cout | command/output pairing across nested shells, indexed copies, recorder retention/cleanup, and terminal rendering with the real transient prompt; private tmux sockets, a temporary home, and a fake clipboard isolate state |
 | Claude sessions | shared-store topology and repair against a throwaway `$HOME` |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
 | theme sync | startup + precmd switching against a throwaway `$HOME` |

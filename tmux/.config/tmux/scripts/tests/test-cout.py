@@ -40,8 +40,8 @@ class CoutTest(unittest.TestCase):
             f'source "{MODULE}"\n'
             f'eval "$(oh-my-posh init zsh --config {PROMPT})"\n'
             '_cout_setup\n'
-            '_test_tick() { (( ++_test_generation )); '
-            'tmux set-option -p -t "$TMUX_PANE" @test-generation "$_test_generation"; }\n'
+            '_test_tick() { local n=$(tmux show-options -pqv -t "$TMUX_PANE" @test-generation); '
+            'tmux set-option -p -t "$TMUX_PANE" @test-generation "$(( ${n:-0} + 1 ))"; }\n'
             'add-zsh-hook precmd _test_tick\n'
         )
         self.tmux("-f", "/dev/null", "new-session", "-d", "-x", "60", "-y", "16",
@@ -52,7 +52,12 @@ class CoutTest(unittest.TestCase):
         time.sleep(.1)
 
     def tearDown(self):
+        store = Path(self.option("@cout-store"))
         self.tmux("kill-server")
+        deadline = time.monotonic() + 5
+        while store.exists() and time.monotonic() < deadline:
+            time.sleep(.03)
+        self.assertFalse(store.exists(), "pane recorder must clean up after server exit")
         self.temp.cleanup()
 
     def tmux(self, *args):
@@ -150,12 +155,92 @@ class CoutTest(unittest.TestCase):
         self.execute(cmd)
         self.assertEqual(self.capture(), "$ " + cmd + "\n" + "long 界 " * 30 + "\n")
 
+    def test_nested_shell_preserves_parent_and_child_records(self):
+        self.execute("print parent_a")
+        self.execute("print parent_b")
+        self.execute("zsh")
+        self.execute("print child")
+        self.assertEqual(self.capture(), "$ print child\nchild\n")
+        self.execute("exit")
+        self.assertEqual(self.capture(index=2), "$ print parent_b\nparent_b\n")
+        self.assertEqual(self.capture(index=3), "$ print parent_a\nparent_a\n")
+        self.assertTrue(self.capture().startswith("$ zsh\n"))
+        self.assertIn("child", self.capture())
+
+    def test_completed_record_survives_resize_and_clear_history(self):
+        command = "printf '%s\\n' '" + "wide 界 " * 40 + "'"
+        self.execute(command)
+        expected = "$ " + command + "\n" + "wide 界 " * 40 + "\n"
+        self.tmux("resize-window", "-t", self.pane, "-x", "30", "-y", "16")
+        self.tmux("clear-history", "-t", self.pane)
+        self.assertEqual(self.capture(), expected)
+
+    def test_foreign_prompt_markers_progress_and_blank_lines(self):
+        command = "printf '\\033]133;A\\aREMOTE> \\033]133;B\\a\\r\\033[2Kprogress 1\\rprogress 2\\n\\n   \\n'"
+        self.execute(command)
+        self.assertEqual(self.capture(), "$ " + command + "\nprogress 2\n\n   \n")
+        self.execute("print next")
+        self.assertEqual(self.capture(index=2), "$ " + command + "\nprogress 2\n\n   \n")
+
+    def test_exec_reload_and_foreign_pipe_are_isolated(self):
+        self.execute("print old")
+        old_store = self.option("@cout-store")
+        self.execute("exec zsh")
+        self.assertEqual(self.option("@cout-store"), old_store)
+        self.assertIn("no completed command", self.capture(success=False))
+        self.execute("print new")
+        self.assertEqual(self.capture(), "$ print new\nnew\n")
+        self.assertIn("unavailable", self.capture(success=False, index=2))
+        # Another logger takes over the pipe; setup must leave it running.
+        self.tmux("pipe-pane", "-O", "-t", self.pane, "cat > " + shlex.quote(str(self.home / "foreign")))
+        self.wait(lambda: not Path(old_store).exists())
+        result = subprocess.run(["python3", str(HELPER), "setup", "--pane", self.pane],
+                                env=self.env, text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("already has an output pipe", result.stderr)
+        self.tmux("send-keys", "-t", self.pane, "-l", "logger still alive")
+        self.wait(lambda: "logger still alive" in (self.home / "foreign").read_text())
+
+    def test_recording_limits_prune_and_refuse_truncated_output(self):
+        helper = self.home / ".config/tmux/scripts/tmux-cout.py"
+        helper.write_text(helper.read_text().replace("MAX_RECORD = 16 * 1024 * 1024", "MAX_RECORD = 1024")
+                          .replace("MAX_CACHE = 64 * 1024 * 1024", "MAX_CACHE = 2048")
+                          .replace("MAX_RECORDS = 1000", "MAX_RECORDS = 3"))
+        store = Path(self.option("@cout-store"))
+        self.tmux("pipe-pane", "-t", self.pane)
+        self.wait(lambda: not store.exists())
+        self.execute("exec zsh")
+        for letter in "abc":
+            self.execute("print '" + letter * 900 + "'")
+        self.assertIn("b" * 900, self.capture(index=2))
+        self.assertIn("unavailable", self.capture(success=False, index=3))
+        for number in range(4):
+            self.execute(f"print short-{number}")
+        self.assertIn("short-1", self.capture(index=3))
+        self.assertIn("unavailable", self.capture(success=False, index=4))
+        store = Path(self.option("@cout-store"))
+        self.assertEqual(len(list(store.glob("*.command"))), 3)
+        self.assertLessEqual(sum(p.stat().st_size for p in store.glob("*.raw")), 2048)
+        self.assertEqual(store.stat().st_mode & 0o777, 0o700)
+        self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in store.iterdir()))
+        (self.home / "clipboard").write_text("untouched")
+        self.execute("print '" + "x" * 1500 + "'")
+        self.execute("cout")
+        self.assertIn("per-command recording limit", self.capture(success=False))
+        self.assertEqual((self.home / "clipboard").read_text(), "untouched")
+
+    def test_full_screen_output_does_not_change_clipboard(self):
+        (self.home / "clipboard").write_text("untouched")
+        self.execute("printf '\\033[?1049hhidden\\033[?1049l'")
+        self.execute("cout")
+        self.assertEqual((self.home / "clipboard").read_text(), "untouched")
+        self.assertIn("full-screen", self.capture(success=False))
+
     def test_old_shell_metadata_requests_reload_without_copying(self):
         self.execute("print retained")
         (self.home / "clipboard").write_text("untouched")
         # An already-running shell can still be publishing the previous format.
-        self.tmux("set-option", "-p", "-t", self.pane, "@cout-count", "1")
-        self.tmux("set-option", "-pu", "-t", self.pane, "@cout-history")
+        self.tmux("set-option", "-pu", "-t", self.pane, "@cout-state")
         result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
                                 env=self.env, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
@@ -197,7 +282,7 @@ class CoutTest(unittest.TestCase):
         self.tmux("split-window", "-h", "-t", self.pane, "/bin/sleep 30")
         self.assertEqual(self.capture(), expected)
 
-    def test_missing_boundaries_and_running_command_leave_clipboard_alone(self):
+    def test_missing_record_and_running_command_leave_clipboard_alone(self):
         sentinel = self.home / "clipboard"
         sentinel.write_text("keep me")
         self.assertIn("no completed command", self.capture(success=False))
@@ -209,11 +294,13 @@ class CoutTest(unittest.TestCase):
         self.tmux("send-keys", "-t", self.pane, "C-c")
         self.wait(lambda: self.option("@cout-ready") == "1")
         self.execute("for i in {1..80}; do print row-$i; done")
-        self.tmux("clear-history", "-t", self.pane)
+        store = Path(self.option("@cout-store"))
+        identity = self.option("@cout-state").split()[1]
+        (store / f"{identity}.raw").unlink()
         result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
                                 env=self.env, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("boundaries", result.stderr)
+        self.assertIn("No such file", result.stderr)
         self.assertEqual(sentinel.read_text(), "keep me")
 
 
