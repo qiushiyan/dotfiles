@@ -13,8 +13,10 @@ claude/.agents/.skill-lock.json # CLI's global lock, stowed to ~/.agents/.skill-
 .claude/skills/                 # repo-local skills, shared via .agents/skills → ../.claude/skills
 ```
 
-`~/.claude`, `~/.codex`, and `~/.agents` remain real directories. Only the
-skills and lockfile are linked into the repo; runtime files stay outside it.
+`~/.claude`, `~/.codex`, and `~/.agents` remain real directories. The personal
+skill tree and lockfile are linked into the repo. Claude cloud downloads land
+under the linked tree's ignored `synced/` directory; other runtime state stays
+outside it. Codex exclusions leave those downloads on disk.
 `make install` / `make restow` enforce that boundary; see [Stow layout](stow-layout.md).
 
 [Codex discovers `~/.agents/skills` and follows symlinked skill folders](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills).
@@ -194,17 +196,18 @@ sources through `.claude/skills/`. Their `.agents/skills` aliases expose the
 same files to Codex. An external folder symlink points to its owning project's
 source; review and commit changes there.
 
-After any skill edit, installation, update, or removal:
+After changing skills, global invocation overrides, or the Codex policy—and
+after cloud imports or runtime updates—reconcile the derived files:
 
 ```bash
 skill-sync
 skill-sync --check
 ```
 
-The command is stowed from `scripts/.local/bin/skill-sync`; before restowing,
-run it by that repository-relative path. It uses `uv` with a pinned YAML
-dependency and scans both Claude skill trees in this repository. For another
-project's skills, pass `--skills-dir /path/to/project/.claude/skills`.
+`scripts/.local/bin/skill-sync` uses `uv` with a pinned YAML dependency. Its
+default run scans this repository's personal and repo-local Claude skill trees
+and applies the policy and document manifests. For another project's headers,
+pass `--skills-dir /path/to/project/.claude/skills`.
 
 `scripts/.local/share/dotfiles/skill-policy.yaml` owns Codex-only policy and
 selects the global Claude settings to read. The effective manual-only policy
@@ -227,9 +230,11 @@ The manifest's `disabled` paths and every `SKILL.md` under `exclude_roots`
 become exact-path entries in the marked final block of
 `codex/.codex/config.toml`. Each run refreshes the inventory, including new
 Claude account caches, and removes stale generated rules. Exact paths preserve
-same-named personal and plugin skills. Keep hand-edited settings outside that
-block; update policy in the manifest. Claude's settings, skill bodies, lockfile,
-and directory links remain untouched. Cloud downloads stay untracked.
+same-named personal and plugin skills. Put hand-edited settings before the
+generated block, which must remain last; update policy in the manifest.
+Generated paths reflect this machine's cache, so rerun sync after restoring
+dotfiles on another machine. Claude settings, skill bodies, the lockfile, and
+directory links remain untouched.
 
 [Codex's per-skill policy](https://learn.chatgpt.com/docs/build-skills#optional-metadata)
 keeps manual invocation available while excluding manual-only skills from the
@@ -243,7 +248,9 @@ that carry a verbatim copy. Absent checkouts are skipped with a notice. With
 no scope flags, all jobs run. `--skills-dir` alone translates frontmatter only;
 `--documents` alone copies documents only; `--policy` applies the named policy
 to the default skill roots, or to roots supplied with `--skills-dir`. Scoped
-runs never implicitly load the other manifests.
+runs never implicitly load the other manifests. Using only `--skills-dir` on
+the shared tree can restore an automatic default despite a global manual-only
+override; use the default run for personal-skill maintenance.
 
 Repeated runs leave synchronized files untouched; `--check` reports drift
 without writing and exits nonzero. All jobs validate before writes, including

@@ -40,8 +40,11 @@ committable by accident.
 
 The Claude package also stows `~/.agents/skills` as a link to the shared
 personal skills and `~/.agents/.skill-lock.json` as the tracked upstream lock.
-Other `.agents` state stays in the real home directory; [agent skills](agent-skills.md)
-owns installation and update behavior.
+Other `.agents` state stays in the real home directory. Claude cloud downloads
+are an exception within the linked skill tree: they land in
+`claude/.claude/skills/synced/`, which Git ignores. Ignoring that cache does not
+hide its skills from Codex; `skill-sync` generates the separate visibility
+rules. [Agent skills](agent-skills.md) owns installation and synchronization.
 
 ## `<pkg>/CLAUDE.md` stows to `~/CLAUDE.md`
 

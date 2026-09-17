@@ -57,11 +57,12 @@ References: [skill overrides](https://code.claude.com/docs/en/skills#override-sk
 
 ## Codex controls
 
-Codex distinguishes its runtime-owned `~/.codex/skills/.system/`, plugin
-skills, and the shared personal tree. Claude-imported copies under
-`claude/.claude/skills/synced/` belong to that personal tree: the Codex
-bundled switch does not cover them. Preserve the shared directory;
-Codex-only visibility choices belong in `codex/.codex/config.toml`.
+Codex discovers runtime-owned `~/.codex/skills/.system/`, plugin skills,
+and shared personal skills. Claude cloud downloads under the shared tree's
+`synced/` directory are a separate owner but visible through the same path.
+The Codex bundled switch covers only `.system`. The tracked policy supplies
+the desired selection; `codex/.codex/config.toml` and per-skill metadata are
+the derived controls.
 
 Claude's sync cache uses organization/account subdirectories. Codex discovers
 each cached copy through the shared tree without applying Claude's active-account
@@ -106,14 +107,18 @@ Workspace-managed enablement can override local plugin choices.
 
 ## Verifying Codex visibility
 
-`codex debug prompt-input` renders the model-visible initial messages
-without a model request. Compare fresh invocations before and after an
-override; preserve the live configuration by testing overrides in a
-temporary `CODEX_HOME` or with process-local `-c` flags. Manual-only skills
-should disappear from the catalog while remaining explicitly invocable;
-disabled skills should disappear from both discovery and invocation.
-Recheck the actual desktop session after changing its configuration:
-the CLI probe establishes CLI behavior, not every desktop-managed surface.
+Verification has separate boundaries:
+
+- `skill-sync --check` checks generated files against policy, without writing.
+- `codex debug prompt-input` renders that CLI's default catalog without a
+  model request. Manual-only and disabled skills should be absent.
+- App-server `skills/list` reports availability: manual-only skills remain
+  enabled; excluded copies can still appear here with `enabled: false`.
+- A fresh desktop process must supply a catalog with the same exclusions;
+  manual invocation needs its own check. A CLI probe does not establish either.
+
+Use a temporary `CODEX_HOME` or process-local `-c` flags for experimental
+overrides. Keep verification tied to the executable and configuration used.
 
 The context saving is the skill's name, description, and path. Full bodies
 already load only when selected. Existing conversation context remains;
@@ -148,9 +153,13 @@ baseline already excluded morning and import-memory. The policy pass measured:
 | Entire skills block, o200k estimate | 6,357 | 2,996 |
 
 The catalog reduction is approximately 3,361 tokens (54.8%); this is a share
-of skill context, not of the whole model window. App-server `skills/list`
-confirms manual-only skills remain enabled and excluded copies are disabled.
+of skill context, not of the whole model window. The standalone app-server
+reports manual-only skills enabled and excluded copies disabled; no model
+request exercised manual invocation.
 The desktop-bundled CLI 0.153.4 cannot render this configuration because it
 rejects the existing `tui.keymap.chat.prompt_stack_back` field. These numbers
 therefore measure the standalone CLI, not a desktop session or a billed API
-request.
+request. Desktop exclusion verification remains open: the running session's
+refreshed catalog still contains the excluded system and cloud skills while
+omitting the manual-only entries. A fresh desktop process has not been checked,
+and the cause of that discrepancy is not established.
