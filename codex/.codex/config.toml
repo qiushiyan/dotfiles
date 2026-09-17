@@ -205,6 +205,16 @@ collaboration_modes = true
 goals = true
 js_repl = false
 
+# Claude cloud sync exposes copies through the shared personal skill tree.
+# Match names so every synced copy stays out of Codex's skill catalog.
+[[skills.config]]
+name = "morning"
+enabled = false
+
+[[skills.config]]
+name = "import-memory"
+enabled = false
+
 [notice]
 hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true

@@ -63,6 +63,12 @@ skills, and the shared personal tree. Claude-imported copies under
 bundled switch does not cover them. Preserve the shared directory;
 Codex-only visibility choices belong in `codex/.codex/config.toml`.
 
+Claude's sync cache uses organization/account subdirectories. Codex discovers
+each cached copy through the shared tree without applying Claude's active-account
+selection. The sync manifests identify `morning` and `import-memory` as
+`anthropic-example`; these are Anthropic-provided cloud skills. See
+[claude.ai skill syncing](https://code.claude.com/docs/en/skills#where-synced-skills-load).
+
 The [local-skill configuration](https://learn.chatgpt.com/docs/build-skills#enable-or-disable-local-codex-skills)
 can hide a skill without deleting its files. Codex CLI 0.154.0 also supports
 an exact name selector, which covers every same-named copy:
@@ -77,8 +83,8 @@ name = "import-memory"
 enabled = false
 ```
 
-These are optional examples, not the current selection. Name rules also
-match personal skills with the same name. To distinguish a bundled or
+The global config disables these names across all synced copies. Name rules
+also match personal skills with the same name. To distinguish a bundled or
 imported copy from a retained personal skill, use `path` instead of `name`,
 pointing to its exact `SKILL.md`. CLI 0.154.0 expands `~` and resolves
 symlinks; folder, subtree, and glob exclusions are unsupported. The config
