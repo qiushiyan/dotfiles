@@ -49,6 +49,19 @@ wt_slot_free() {
   [ -z "$entries" ]
 }
 
+# After moving a worktree away, remove only its empty branch-name parents.
+# Paths come from Git's absolute worktree list. Never scan sibling checkouts:
+# even an empty-directory find walks all their dependency trees.
+wt_remove_empty_parents() {
+  local root="$1" parent="${2%/*}"
+  while true; do
+    case "$parent" in "$root"/*) ;; *) break ;; esac
+    rmdir "$parent" 2>/dev/null || break
+    parent="${parent%/*}"
+  done
+  return 0
+}
+
 # The main (first) worktree — canonical home for gitignored files we seed from.
 wt_main_worktree() {
   git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}'

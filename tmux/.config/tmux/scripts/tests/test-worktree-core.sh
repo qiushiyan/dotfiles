@@ -242,6 +242,38 @@ CASE=W34; want "$@" && ok W34 no  "$(Cq "$REPO" wt_slot_free "$SLOT/link")"
 CASE=W35; want "$@" && ok W35 no  "$(Cq "$REPO" wt_slot_free "$SLOT/dark")"
 chmod 755 "$SLOT/dark"
 
+# --- removal parent cleanup ---------------------------------------------------
+
+# The old recursive find walked dependencies in every sibling worktree and
+# deleted their empty directories. Exercise real rmdir against sandbox paths.
+PARENTS="$SANDBOX/parent cleanup"
+mkdir -p "$PARENTS/feat/nested" "$PARENTS/keep/node_modules/empty"
+CASE=W36; if want "$@"; then
+  C "$REPO" wt_remove_empty_parents "$PARENTS" "$PARENTS/feat/nested/removed"
+  ok W36-ancestors-gone no "$([ -d "$PARENTS/feat" ] && echo yes || echo no)"
+  ok W36-sibling-preserved yes "$([ -d "$PARENTS/keep/node_modules/empty" ] && echo yes || echo no)"
+fi
+
+CASE=W37; if want "$@"; then
+  mkdir -p "$PARENTS/shared/remaining" "$PARENTS/shared/nested"
+  C "$REPO" wt_remove_empty_parents "$PARENTS" "$PARENTS/shared/nested/removed"
+  ok W37-empty-parent-gone no "$([ -d "$PARENTS/shared/nested" ] && echo yes || echo no)"
+  ok W37-stop-at-sibling yes "$([ -d "$PARENTS/shared/remaining" ] && echo yes || echo no)"
+fi
+
+CASE=W38; if want "$@"; then
+  mkdir -p "$SANDBOX/empty-root/nested"
+  C "$REPO" wt_remove_empty_parents "$SANDBOX/empty-root" "$SANDBOX/empty-root/nested/removed"
+  C "$REPO" wt_remove_empty_parents "$SANDBOX/empty-root" "$SANDBOX/empty-root/top-level-removed"
+  ok W38-root-preserved yes "$([ -d "$SANDBOX/empty-root" ] && echo yes || echo no)"
+fi
+
+CASE=W39; if want "$@"; then
+  mkdir -p "$PARENTS-other/nested"
+  C "$REPO" wt_remove_empty_parents "$PARENTS" "$PARENTS-other/nested/removed"
+  ok W39-outside-preserved yes "$([ -d "$PARENTS-other/nested" ] && echo yes || echo no)"
+fi
+
 # --- sandbox guard ------------------------------------------------------------
 
 # W12  Every case above ran with HOME redirected. Without that, wt_worktree_root

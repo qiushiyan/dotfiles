@@ -73,6 +73,11 @@ trees. Sweep only that batch in a background tmux job. Startup may reap abandone
 trash older than the age gate; it never removes the whole root, which could race
 another live popup.
 
+After each successful move, remove only that worktree's empty parent directories,
+stopping at the repository's worktree root or the first non-empty parent. Never
+scan the root recursively: that visits every surviving checkout's dependencies
+and can turn a single removal into a minute-long pause.
+
 ## Verification
 
 `tests/test-worktree-core.sh` owns merge styles, stale/truncated fetch state,

@@ -383,6 +383,7 @@ batch_remove() {
     # under it reports the NEW path, so afterwards nothing matches any more.
     wins="$(windows_for_path "$path" -a)"
     if mv "$path" "$trash/$i" 2>/dev/null; then
+      wt_remove_empty_parents "$wt_root" "$path"
       removed=$((removed+1))
       gone="$gone$branch"$'\n'
       # every session, not just this one — a window left pointing at a deleted
@@ -462,10 +463,8 @@ batch_remove() {
     esac
   fi
 
-  # sweep this batch's trash server-side (survives the popup closing) and drop
-  # the empty parents slashed branches leave behind (feat/x → feat/).
+  # Sweep this batch's trash server-side (survives the popup closing).
   tmux run-shell -b "rm -rf '$trash'" 2>/dev/null || true
-  find "$wt_root" -mindepth 1 -type d -empty -delete 2>/dev/null || true
   sleep 0.8
 }
 
