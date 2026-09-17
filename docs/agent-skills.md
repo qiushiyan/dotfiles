@@ -206,36 +206,55 @@ run it by that repository-relative path. It uses `uv` with a pinned YAML
 dependency and scans both Claude skill trees in this repository. For another
 project's skills, pass `--skills-dir /path/to/project/.claude/skills`.
 
-The Claude header is authoritative for `policy.allow_implicit_invocation` in
-each skill's `agents/openai.yaml`: `disable-model-invocation: true` produces
-`false`; an absent or false header restores `true`. Skills already using the
-automatic default need no metadata file. Other metadata and comments are
-preserved. Repeated runs leave synchronized files untouched; `--check` reports
-drift without writing and exits nonzero. Invalid YAML, non-boolean flags, broken
-links, or conflicting shared metadata targets abort validation before writes.
+`scripts/.local/share/dotfiles/skill-policy.yaml` owns Codex-only policy and
+selects the global Claude settings to read. The effective manual-only policy
+is the union of `disable-model-invocation: true`, Claude's global
+`user-invocable-only` override, and the manifest's `manual` paths. An `on`
+override does not bypass a manual-only header. A global `off` override produces
+an exact-path Codex exclusion for matching shared skills. Project-local
+settings stay local: translating them into shared metadata would change other
+projects. `name-only` has no Codex equivalent and leaves the header's policy.
+
+The command derives `policy.allow_implicit_invocation` in each skill's
+`agents/openai.yaml`. Skills using the automatic default need no metadata
+file. Other fields and comments are preserved. Shared skills return to their
+header's default when an override is removed. Runtime skills outside the
+shared roots are touched only when explicitly listed; removing one from
+`manual` stops managing it, so restore or remove its generated policy field
+when retiring that override.
+
+The manifest's `disabled` paths and every `SKILL.md` under `exclude_roots`
+become exact-path entries in the marked final block of
+`codex/.codex/config.toml`. Each run refreshes the inventory, including new
+Claude account caches, and removes stale generated rules. Exact paths preserve
+same-named personal and plugin skills. Keep hand-edited settings outside that
+block; update policy in the manifest. Claude's settings, skill bodies, lockfile,
+and directory links remain untouched. Cloud downloads stay untracked.
 
 [Codex's per-skill policy](https://learn.chatgpt.com/docs/build-skills#optional-metadata)
 keeps manual invocation available while excluding manual-only skills from the
 default skill declarations. Existing conversation context is not erased; use a
-fresh session to verify prompt savings. This sync translates frontmatter only;
-Claude's `skillOverrides` and plugin settings keep their separate scope.
+fresh session to verify prompt savings. `docs/bundled-skills.md` owns the
+visibility checks and measurement method.
 
 The same command broadcasts shared documents. `scripts/.local/share/dotfiles/documents.yaml`
 lists each source (today `docs/documentation-standards.md`) and the checkouts
-that carry a verbatim copy; the copies are refreshed on every run, `--check`
-reports a copy that drifted, and a checkout absent from this machine is
-skipped with a notice. `--skills-dir` and `--documents <manifest>` each scope
-the run to that one job, which is how the test suite keeps its temporary
-trees away from the live manifest. A copy is a tracked file in its project,
-so the run prints it as external: commit it there, on a branch, with the
-project's review.
+that carry a verbatim copy. Absent checkouts are skipped with a notice. With
+no scope flags, all jobs run. `--skills-dir` alone translates frontmatter only;
+`--documents` alone copies documents only; `--policy` applies the named policy
+to the default skill roots, or to roots supplied with `--skills-dir`. Scoped
+runs never implicitly load the other manifests.
 
-Commit generated metadata with the skill changes. For managed upstream skills,
-the derived policy field is the sole local exception to keeping their files
-upstream: installation or updates can overwrite it, and the sync reapplies it.
-External destinations are printed explicitly so their changes are committed in
-the owning repositories. The command does not modify skill bodies, settings,
-the lockfile, or symlinks.
+Repeated runs leave synchronized files untouched; `--check` reports drift
+without writing and exits nonzero. All jobs validate before writes, including
+YAML/JSON/TOML, boolean policies, links, and conflicting outputs. Tests run a
+copied command with temporary manifests and a temporary home.
+
+Commit shared metadata, generated config, and policy changes together.
+Upstream skill updates and Codex runtime updates can overwrite metadata; run
+`skill-sync` and `skill-sync --check` afterwards to restore the tracked policy.
+Runtime metadata is labeled separately and stays outside Git. Other external
+destinations are reported for review and commit in their owning repositories.
 
 ## Ownership tiers — who may edit a skill, and where a lesson goes
 

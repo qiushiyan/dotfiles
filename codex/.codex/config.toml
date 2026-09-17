@@ -205,16 +205,6 @@ collaboration_modes = true
 goals = true
 js_repl = false
 
-# Claude cloud sync exposes copies through the shared personal skill tree.
-# Match names so every synced copy stays out of Codex's skill catalog.
-[[skills.config]]
-name = "morning"
-enabled = false
-
-[[skills.config]]
-name = "import-memory"
-enabled = false
-
 [notice]
 hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
@@ -314,3 +304,163 @@ dock-icon-preference = "codex-system"
 
 [hooks.state."/Users/qiushi/dev/itell/apps/platform/.codex/hooks.json:pre_tool_use:0:0"]
 trusted_hash = "sha256:f99372b57f6cd8bdffcc5caca6992786c7d0003f6802815cdd73d2df43217e0f"
+
+# BEGIN skill-sync generated exclusions
+# Generated from skill-policy.yaml; run skill-sync after imports or updates.
+[[skills.config]]
+path = "~/.codex/skills/.system/plugin-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/.codex/skills/.system/skill-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/.codex/skills/.system/skill-installer/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/docs/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/docx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/import-memory/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/morning/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/pdf/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/pptx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/skill-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/xlsx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/built-in-browser/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/chrome-browser/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/computer-use/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/deep-research/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/docs/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/docx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/import-memory/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/morning/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/pdf/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/pptx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/skill-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/xlsx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/7bbf9307-7e61-4fe9-84b4-9d7e7eb55765_e05a1788-2c30-439a-8452-373fcc22f1b4/docs/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/7bbf9307-7e61-4fe9-84b4-9d7e7eb55765_e05a1788-2c30-439a-8452-373fcc22f1b4/docx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/7bbf9307-7e61-4fe9-84b4-9d7e7eb55765_e05a1788-2c30-439a-8452-373fcc22f1b4/import-memory/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/7bbf9307-7e61-4fe9-84b4-9d7e7eb55765_e05a1788-2c30-439a-8452-373fcc22f1b4/morning/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/7bbf9307-7e61-4fe9-84b4-9d7e7eb55765_e05a1788-2c30-439a-8452-373fcc22f1b4/pdf/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/7bbf9307-7e61-4fe9-84b4-9d7e7eb55765_e05a1788-2c30-439a-8452-373fcc22f1b4/pptx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/7bbf9307-7e61-4fe9-84b4-9d7e7eb55765_e05a1788-2c30-439a-8452-373fcc22f1b4/skill-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/7bbf9307-7e61-4fe9-84b4-9d7e7eb55765_e05a1788-2c30-439a-8452-373fcc22f1b4/xlsx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/docs/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/docx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/import-memory/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/morning/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/pdf/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/pptx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/skill-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/xlsx/SKILL.md"
+enabled = false
+
+# END skill-sync generated exclusions

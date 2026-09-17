@@ -20,6 +20,8 @@ claude/.claude/*
 !claude/.claude/skills/
 # ...but never the packaged skill exports (zip artifacts).
 claude/.claude/skills/**/*.skill
+# Account-scoped cloud downloads are runtime cache, not personal skill sources.
+claude/.claude/skills/synced/
 # Purchased upstream material stays local; only its pin/procedure is public.
 claude/.claude/skills/tailwind-best-practices/.upstream/*
 !claude/.claude/skills/tailwind-best-practices/.upstream/PINNED.txt

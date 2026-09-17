@@ -3,18 +3,20 @@
 # requires-python = ">=3.11"
 # dependencies = ["ruamel.yaml==0.18.16"]
 # ///
-"""Mirror Claude skill frontmatter into Codex's per-skill invocation policy,
+"""Synchronize Codex skill visibility and invocation policies,
 and copy broadcast documents from this repository into other checkouts."""
 
 import argparse
 from copy import deepcopy
 from dataclasses import dataclass
 from io import StringIO
+import json
 import os
 from pathlib import Path
 import stat
 import sys
 import tempfile
+import tomllib
 
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
@@ -23,6 +25,9 @@ from ruamel.yaml.error import YAMLError
 
 FIELD = "allow_implicit_invocation"
 MANIFEST = "scripts/.local/share/dotfiles/documents.yaml"
+SKILL_POLICY = "scripts/.local/share/dotfiles/skill-policy.yaml"
+BLOCK_START = "# BEGIN skill-sync generated exclusions"
+BLOCK_END = "# END skill-sync generated exclusions"
 
 
 @dataclass
@@ -45,7 +50,7 @@ def mapping(text, source):
     return value
 
 
-def allows_implicit(skill):
+def skill_header(skill):
     lines = skill.read_text().splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
         raise ValueError(f"{skill}: missing YAML frontmatter")
@@ -56,7 +61,7 @@ def allows_implicit(skill):
     disabled = data.get("disable-model-invocation", False)
     if type(disabled) is not bool:
         raise ValueError(f"{skill}: disable-model-invocation must be a YAML boolean")
-    return not disabled
+    return data
 
 
 def render_metadata(before, desired, path):
@@ -74,54 +79,143 @@ def render_metadata(before, desired, path):
     data["policy"] = policy
     policy[FIELD] = desired
     if FIELD not in policy.ca.items:
-        policy.yaml_add_eol_comment("Derived from SKILL.md by skill-sync", FIELD)
+        policy.yaml_add_eol_comment("Managed by skill-sync", FIELD)
     output = StringIO()
     yaml_parser().dump(data, output)
     return output.getvalue()
 
 
-def plan_skills(roots, repo):
+def plan_skills(roots, repo, overrides=None, manual=()):
     changes = {}
     seen = set()
     destinations = {}
+    disabled = set()
+    overrides = overrides or {}
+    manual = {path.resolve(strict=True) for path in manual}
+    entries = []
     for root in roots:
         root = root.expanduser().resolve(strict=True)
         if not root.is_dir():
             raise ValueError(f"{root}: expected a skill directory")
-        for entry in sorted(root.iterdir()):
-            if entry.name.startswith("."):
-                continue
-            if entry.is_symlink() and not entry.exists():
-                raise ValueError(f"{entry}: broken symlink")
-            skill = entry / "SKILL.md"
-            if not skill.exists():
-                if skill.is_symlink():
-                    raise ValueError(f"{skill}: broken symlink")
-                continue
-            source = skill.resolve(strict=True)
-            # Keep the folder's identity: a linked SKILL.md need not share metadata.
-            folder = entry.resolve(strict=True)
-            if folder in seen:
-                continue
-            seen.add(folder)
-            desired = allows_implicit(source)
-            agents = folder / "agents"
-            if agents.is_symlink() and not agents.exists():
-                raise ValueError(f"{agents}: broken symlink")
-            candidate = folder / "agents" / "openai.yaml"
-            if candidate.is_symlink() and not candidate.exists():
-                raise ValueError(f"{candidate}: broken symlink")
-            path = candidate.resolve()
-            if path in destinations and destinations[path] != desired:
-                raise ValueError(f"{path}: linked skills request conflicting invocation policies")
-            destinations[path] = desired
-            before = path.read_bytes() if path.exists() else None
-            after = render_metadata(before.decode() if before is not None else "", desired, path)
-            if after.encode() != (before or b""):
-                changes[path] = Change(before, after.encode(), not path.is_relative_to(repo))
+        entries.extend(sorted(root.iterdir()))
+    entries.extend(path.parent for path in sorted(manual))
+    for entry in entries:
+        if entry.name.startswith("."):
+            continue
+        if entry.is_symlink() and not entry.exists():
+            raise ValueError(f"{entry}: broken symlink")
+        skill = entry / "SKILL.md"
+        if not skill.exists():
+            if skill.is_symlink():
+                raise ValueError(f"{skill}: broken symlink")
+            continue
+        source = skill.resolve(strict=True)
+        # Keep the folder's identity: a linked SKILL.md need not share metadata.
+        folder = entry.resolve(strict=True)
+        if folder in seen:
+            continue
+        seen.add(folder)
+        header = skill_header(source)
+        override = overrides.get(header.get("name", entry.name))
+        if override == "off":
+            disabled.add(source)
+        desired = not (header.get("disable-model-invocation", False)
+                       or override == "user-invocable-only" or source in manual)
+        agents = folder / "agents"
+        if agents.is_symlink() and not agents.exists():
+            raise ValueError(f"{agents}: broken symlink")
+        candidate = folder / "agents" / "openai.yaml"
+        if candidate.is_symlink() and not candidate.exists():
+            raise ValueError(f"{candidate}: broken symlink")
+        path = candidate.resolve()
+        if path in destinations and destinations[path] != desired:
+            raise ValueError(f"{path}: linked skills request conflicting invocation policies")
+        destinations[path] = desired
+        before = path.read_bytes() if path.exists() else None
+        after = render_metadata(before.decode() if before is not None else "", desired, path)
+        if after.encode() != (before or b""):
+            changes[path] = Change(before, after.encode(), not path.is_relative_to(repo))
     if not seen:
         raise ValueError("no SKILL.md files found in the selected roots")
-    return changes, len(seen), set(destinations)
+    return changes, len(seen), set(destinations), disabled
+
+
+def policy_path(value, repo, source):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{source}: paths must be non-empty strings")
+    path = Path(value).expanduser()
+    return (path if path.is_absolute() else repo / path).resolve()
+
+
+def load_policy(manifest, repo):
+    data = mapping(manifest.read_text(), manifest)
+    fields = {"claude_settings", "codex_config", "exclude_roots", "disabled", "manual"}
+    if set(data) != fields:
+        raise ValueError(f"{manifest}: expected exactly {', '.join(sorted(fields))}")
+    settings = policy_path(data["claude_settings"], repo, manifest)
+    config = policy_path(data["codex_config"], repo, manifest)
+    settings_data = json.loads(settings.read_text())
+    if not isinstance(settings_data, dict):
+        raise ValueError(f"{settings}: expected a JSON object")
+    overrides = settings_data.get("skillOverrides", {})
+    if not isinstance(overrides, dict) or any(
+        value not in ("on", "off", "name-only", "user-invocable-only")
+        for value in overrides.values()
+    ):
+        raise ValueError(f"{settings}: invalid skillOverrides")
+    paths = {}
+    for field in ("exclude_roots", "disabled", "manual"):
+        if not isinstance(data[field], CommentedSeq):
+            raise ValueError(f"{manifest}: {field} must be a list")
+        paths[field] = {policy_path(value, repo, manifest) for value in data[field]}
+    disabled = paths["disabled"]
+    for root in sorted(paths["exclude_roots"]):
+        if not root.exists():
+            print(f"skipped {root}: exclusion root absent")
+            continue
+        if not root.is_dir():
+            raise ValueError(f"{root}: expected an exclusion directory")
+        disabled.update(path.resolve(strict=True) for path in root.rglob("SKILL.md"))
+    manual = set()
+    for path in sorted(paths["manual"]):
+        if not path.exists():
+            print(f"skipped {path}: manual-only skill absent")
+            continue
+        manual.add(path)
+    for path in disabled | manual:
+        if path.name != "SKILL.md" or (path.exists() and not path.is_file()):
+            raise ValueError(f"{path}: expected a SKILL.md file")
+    if disabled & manual:
+        raise ValueError("a skill cannot be both disabled and manual-only")
+    return config, overrides, manual, disabled
+
+
+def plan_exclusions(config, disabled, repo):
+    before = config.read_bytes()
+    text = before.decode()
+    tomllib.loads(text)
+    if BLOCK_START in text or BLOCK_END in text:
+        if text.count(BLOCK_START) != 1 or text.count(BLOCK_END) != 1:
+            raise ValueError(f"{config}: malformed skill-sync exclusion block")
+        start = text.index(BLOCK_START)
+        end = text.index(BLOCK_END)
+        if end < start or text[end + len(BLOCK_END):].strip():
+            raise ValueError(f"{config}: generated exclusions must be the final block")
+        text = text[:start]
+    lines = [BLOCK_START, "# Generated from skill-policy.yaml; run skill-sync after imports or updates."]
+    home = str(Path.home()) + "/"
+    for path in sorted(disabled):
+        selector = str(path)
+        if selector.startswith(home):
+            selector = "~/" + selector[len(home):]
+        lines.extend(["[[skills.config]]", f"path = {json.dumps(selector)}", "enabled = false", ""])
+    lines.append(BLOCK_END)
+    after = (text.rstrip() + "\n\n" + "\n".join(lines) + "\n").encode()
+    tomllib.loads(after.decode())
+    changes = {} if before == after else {
+        config: Change(before, after, not config.is_relative_to(repo))
+    }
+    return changes
 
 
 def relative_inside(value, field, manifest):
@@ -226,7 +320,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         "Requires uv (dependencies are cached). Exit: 0 synchronized, "
         "1 drift with --check, 2 invalid input or write failure. With no scope "
-        "flag both jobs run on this repository's skill trees and document manifest; "
+        "flag all jobs run on this repository's skill trees and manifests; "
         "a scope flag runs only the jobs it names. Destinations outside this "
         "repository are reported for review and commit there."
     ))
@@ -239,20 +333,39 @@ def main():
         "copy the documents this manifest lists into their checkouts. "
         f"Defaults to {MANIFEST} in dotfiles."
     ))
+    parser.add_argument("--policy", type=Path, metavar="MANIFEST", help=(
+        "apply Claude global overrides and Codex exclusions/manual policies; "
+        f"defaults to {SKILL_POLICY} on an unscoped run."
+    ))
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[3]
-    scoped = args.skills_dir is not None or args.documents is not None
-    roots = args.skills_dir or ([] if scoped else [repo / "claude/.claude/skills", repo / ".claude/skills"])
+    scoped = args.skills_dir is not None or args.documents is not None or args.policy is not None
+    roots = args.skills_dir or ([] if scoped and args.policy is None else
+                               [repo / "claude/.claude/skills", repo / ".claude/skills"])
     manifest = args.documents or (None if scoped else repo / MANIFEST)
+    policy = args.policy or (None if scoped else repo / SKILL_POLICY)
+    if policy is not None and args.policy is None and not policy.exists():
+        policy = None
     try:
-        # Validate every job before writing anything from either.
+        # Validate every job before writing anything.
         changes = {}
         summaries = []
         outputs = set()
-        if roots:
-            skill_changes, count, outputs = plan_skills(roots, repo)
+        overrides, manual, disabled = {}, set(), set()
+        if policy is not None:
+            config, overrides, manual, disabled = load_policy(policy, repo)
+        if roots or manual:
+            skill_changes, count, outputs, off = plan_skills(roots, repo, overrides, manual)
+            disabled.update(off)
             changes.update(skill_changes)
             summaries.append((count, "skills checked", len(skill_changes), "metadata files"))
+        if policy is not None:
+            if config in outputs:
+                raise ValueError(f"{config}: config may not overwrite skill metadata")
+            outputs.add(config)
+            config_changes = plan_exclusions(config, disabled, repo)
+            changes.update(config_changes)
+            summaries.append((len(disabled), "exclusions checked", len(config_changes), "config files"))
         if manifest is not None:
             doc_changes, count, skipped = plan_documents(manifest.expanduser().resolve(strict=True), repo, outputs)
             changes.update(doc_changes)
@@ -266,7 +379,12 @@ def main():
                     raise ValueError(f"{path}: changed during scan; rerun skill-sync")
                 write_atomic(path, change.after)
             verb = "would update" if args.check else "updated"
-            print(f"{verb} {path}" + (" [external: review/commit in owning repository]" if change.external else ""))
+            note = ""
+            if change.external:
+                runtime = Path.home() / ".codex/skills/.system"
+                note = (" [runtime metadata: policy tracked in dotfiles]" if path.is_relative_to(runtime)
+                        else " [external: review/commit in owning repository]")
+            print(f"{verb} {path}" + note)
         status = "need synchronization" if args.check else "updated"
         for count, checked, changed, noun in summaries:
             print(f"{count} {checked}; {changed} {noun} {status}.")

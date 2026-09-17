@@ -31,7 +31,7 @@ Each suite owns one boundary:
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree |
 | bypass guard | dormant hook logic through synthetic PreToolUse payloads |
-| skill sync | invocation parity, metadata preservation, byte-exact document copies, validation before writes, and symlink destinations in temporary trees; every case runs a copied script from a temporary layout with a sentinel checkout, so a scope regression lands in the sandbox, never in a live project |
+| skill sync | invocation overrides, refreshed cloud exclusions, runtime metadata recovery, metadata preservation, byte-exact document copies, validation before writes, and symlink destinations; every case runs a copied script with a temporary home, manifests, and sentinel checkout, so scope regressions stay in the sandbox |
 
 The table is a routing map. Case ids and complete behavior inventories stay in
 the suites.

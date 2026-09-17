@@ -8,8 +8,11 @@ regressed; the skills-only cases assert it stays empty.
 """
 
 from pathlib import Path
+import json
+import os
 import subprocess
 import tempfile
+import tomllib
 import unittest
 
 
@@ -20,7 +23,9 @@ class SkillSyncTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.base = Path(self.temp.name)
+        self.base = Path(self.temp.name).resolve()
+        self.home = self.base / "home"
+        self.home.mkdir()
         self.root = self.base / "skills"
         self.root.mkdir()
         self.repo, self.script = self.install()
@@ -71,9 +76,138 @@ class SkillSyncTest(unittest.TestCase):
         return result
 
     def run_script(self, script, *args, expected=0):
-        result = subprocess.run([str(script), *args], text=True, capture_output=True, timeout=30)
+        result = subprocess.run([str(script), *args], text=True, capture_output=True, timeout=30,
+                                env={**os.environ, "HOME": str(self.home)})
         self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
         return result
+
+    def policy(self, overrides=None, manual=(), disabled=(), exclude_roots=()):
+        settings = self.repo / "claude-settings.json"
+        settings.write_text(json.dumps({"skillOverrides": overrides or {}}))
+        config = self.repo / "codex-config.toml"
+        if not config.exists():
+            config.write_text('# Preserve configuration\nmodel = "fixture"\n')
+        manifest = self.repo / "policy.yaml"
+        # JSON is valid YAML; absolute fixture paths keep production state unreachable.
+        manifest.write_text(json.dumps({
+            "claude_settings": str(settings), "codex_config": str(config),
+            "manual": [str(p) for p in manual],
+            "disabled": [str(p) for p in disabled],
+            "exclude_roots": [str(p) for p in exclude_roots],
+        }))
+        return manifest, config
+
+    def test_global_overrides_and_codex_manual_policy(self):
+        manual = self.skill("manual", "")
+        by_header = self.skill("header", "disable-model-invocation: true")
+        codex_only = self.skill("codex-only", "")
+        automatic = self.skill("automatic", "")
+        manifest, config = self.policy(
+            {"manual": "user-invocable-only", "header": "on", "automatic": "name-only"},
+            manual=[codex_only.parent.parent / "SKILL.md"],
+        )
+        before = config.read_bytes()
+        self.run_sync("--policy", str(manifest), "--check", expected=1)
+        self.assertEqual(config.read_bytes(), before)
+        self.assertFalse(manual.exists())
+        self.run_sync("--policy", str(manifest))
+        for path in (manual, by_header, codex_only):
+            self.assertIn("allow_implicit_invocation: false", path.read_text())
+        self.assertFalse(automatic.exists())
+        self.run_sync("--policy", str(manifest), "--check")
+        # Removing a shared-skill override returns to its header's automatic default.
+        self.policy()
+        self.run_sync("--policy", str(manifest))
+        for path in (manual, codex_only):
+            self.assertIn("allow_implicit_invocation: true", path.read_text())
+        self.assertIn("allow_implicit_invocation: false", by_header.read_text())
+
+    def test_cloud_exclusions_preserve_namesakes_and_refresh_inventory(self):
+        personal = self.skill("creator", "")
+        cache = self.base / "synced"
+        cloud = cache / "account-a" / "creator" / "SKILL.md"
+        cloud.parent.mkdir(parents=True)
+        cloud.write_text("---\nname: creator\n---\nCloud body\n")
+        manifest, config = self.policy(exclude_roots=[cache])
+        self.run_sync("--policy", str(manifest))
+        entries = tomllib.loads(config.read_text())["skills"]["config"]
+        self.assertEqual(entries, [{"path": str(cloud), "enabled": False}])
+        self.assertFalse(personal.exists())
+        self.assertIn('# Preserve configuration\nmodel = "fixture"', config.read_text())
+        stamp = config.stat().st_mtime_ns
+        self.run_sync("--policy", str(manifest))
+        self.assertEqual(stamp, config.stat().st_mtime_ns)
+        cloud.unlink()
+        new = cache / "account-b" / "new" / "SKILL.md"
+        new.parent.mkdir(parents=True)
+        new.write_text("---\nname: new\n---\n")
+        self.run_sync("--policy", str(manifest), "--check", expected=1)
+        self.run_sync("--policy", str(manifest))
+        entries = tomllib.loads(config.read_text())["skills"]["config"]
+        self.assertEqual(entries, [{"path": str(new), "enabled": False}])
+
+    def test_runtime_metadata_reapplied_without_changing_vendor_body(self):
+        self.skill("personal", "")
+        runtime = self.home / ".codex/skills/.system/imagegen"
+        runtime.mkdir(parents=True)
+        source = runtime / "SKILL.md"
+        source.write_text("---\nname: imagegen\n---\nVendor body\n")
+        metadata = runtime / "agents/openai.yaml"
+        metadata.parent.mkdir()
+        vendor = 'interface: {display_name: "Image generation"}\n'
+        metadata.write_text(vendor)
+        manifest, _ = self.policy(manual=["~/.codex/skills/.system/imagegen/SKILL.md"])
+        self.run_sync("--policy", str(manifest))
+        self.assertIn("allow_implicit_invocation: false", metadata.read_text())
+        metadata.write_text(vendor)  # Simulate a runtime reinstall.
+        self.run_sync("--policy", str(manifest), "--check", expected=1)
+        self.run_sync("--policy", str(manifest))
+        self.assertIn('display_name: "Image generation"', metadata.read_text())
+        self.assertIn("allow_implicit_invocation: false", metadata.read_text())
+        self.assertEqual(source.read_text(), "---\nname: imagegen\n---\nVendor body\n")
+
+    def test_policy_validation_precedes_all_writes(self):
+        pending = self.skill("pending")
+        source = pending.parent.parent / "SKILL.md"
+        manifest, config = self.policy(manual=[source], disabled=[source])
+        before = config.read_bytes()
+        self.run_sync("--policy", str(manifest), expected=2)
+        self.assertFalse(pending.exists())
+        self.assertEqual(config.read_bytes(), before)
+        self.policy({"pending": "invalid"})
+        self.run_sync("--policy", str(manifest), expected=2)
+        self.assertFalse(pending.exists())
+        self.policy()
+        config.write_text(before.decode() + "# BEGIN skill-sync generated exclusions\n")
+        self.run_sync("--policy", str(manifest), expected=2)
+        self.assertFalse(pending.exists())
+
+    def test_claude_off_disables_only_matching_shared_path(self):
+        metadata = self.skill("hidden", "")
+        manifest, config = self.policy({"hidden": "off"})
+        self.run_sync("--policy", str(manifest))
+        self.assertEqual(tomllib.loads(config.read_text())["skills"]["config"], [
+            {"path": str(metadata.parent.parent / "SKILL.md"), "enabled": False}
+        ])
+        self.assertFalse(metadata.exists())
+
+    def test_default_policy_is_loaded_but_explicit_scopes_are_isolated(self):
+        metadata = self.skill("manual", "")
+        manifest, config = self.policy({"manual": "user-invocable-only"})
+        default = self.repo / "scripts/.local/share/dotfiles/skill-policy.yaml"
+        default.write_bytes(manifest.read_bytes())
+        root = self.repo / "claude/.claude/skills"
+        root.parent.mkdir(parents=True)
+        root.symlink_to(self.root, target_is_directory=True)
+        (self.repo / ".claude/skills").mkdir(parents=True)
+        original = config.read_bytes()
+        self.run_sync()
+        self.assertFalse(metadata.exists())
+        self.assertEqual(config.read_bytes(), original)
+        self.run_script(self.script)
+        self.assertIn("allow_implicit_invocation: false", metadata.read_text())
+        self.assertTrue((self.sentinel / "docs/standard.md").exists())
+        self.run_script(self.script, "--check")
 
     def test_check_apply_reenable_and_idempotency(self):
         manual = self.skill("manual")

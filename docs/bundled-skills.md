@@ -69,28 +69,19 @@ selection. The sync manifests identify `morning` and `import-memory` as
 `anthropic-example`; these are Anthropic-provided cloud skills. See
 [claude.ai skill syncing](https://code.claude.com/docs/en/skills#where-synced-skills-load).
 
-The [local-skill configuration](https://learn.chatgpt.com/docs/build-skills#enable-or-disable-local-codex-skills)
-can hide a skill without deleting its files. Codex CLI 0.154.0 also supports
-an exact name selector, which covers every same-named copy:
+The policy in `scripts/.local/share/dotfiles/skill-policy.yaml` excludes the
+Claude cloud cache and selected Codex system skills. `skill-sync` generates
+[local-skill configuration](https://learn.chatgpt.com/docs/build-skills#enable-or-disable-local-codex-skills)
+using exact `SKILL.md` paths, preserving same-named personal and plugin skills.
+Run it after cloud imports and skill/runtime updates. The generated selection
+belongs to the marked block in `codex/.codex/config.toml`; the synchronization
+contract lives in `docs/agent-skills.md` § Synchronizing Codex invocation.
 
-```toml
-[[skills.config]]
-name = "morning"
-enabled = false
-
-[[skills.config]]
-name = "import-memory"
-enabled = false
-```
-
-The global config disables these names across all synced copies. Name rules
-also match personal skills with the same name. To distinguish a bundled or
-imported copy from a retained personal skill, use `path` instead of `name`,
-pointing to its exact `SKILL.md`. CLI 0.154.0 expands `~` and resolves
-symlinks; folder, subtree, and glob exclusions are unsupported. The config
-reference's folder wording is misleading: a folder override leaves the
-skill visible. A synced-tree exclusion therefore needs one file rule per
-copy and a fresh inventory after imports.
+Codex CLI 0.154.0 expands `~` and resolves symlinks in path selectors. Folder,
+subtree, and glob exclusions are unsupported: a folder override leaves the
+skill visible. Its name selector matches every same-named copy, so use that
+only when all copies should be disabled. The manifest's exclusion-root rule
+is implemented by enumerating files, not by passing a directory to Codex.
 
 `[skills.bundled]` with `enabled = false` removes the `.system` skills while
 preserving the shared tree. It has no per-skill exemption: an `enabled = true`
@@ -104,8 +95,8 @@ For manual invocation with no default catalog entry, use
 `docs/agent-skills.md` owns the shared-skill synchronization procedure.
 CLI 0.154.0 has no equivalent per-skill policy in `config.toml`; strict
 configuration validation rejects it. Editing runtime-owned or imported
-metadata is vulnerable to its owner's refresh, so use external disable
-rules when preserving manual invocation is unnecessary.
+metadata is vulnerable to its owner's refresh. The tracked policy lets
+`skill-sync` restore manual-only metadata without forking skill bodies.
 
 [Plugin enablement](https://learn.chatgpt.com/docs/config-file/config-reference)
 uses `[plugins."plugin-name@marketplace-name"]` with `enabled = false`, or
@@ -128,3 +119,38 @@ The context saving is the skill's name, description, and path. Full bodies
 already load only when selected. Existing conversation context remains;
 start a fresh session to measure the reduction. See
 [progressive disclosure and invocation](https://learn.chatgpt.com/docs/build-skills).
+
+### Catalog measurement
+
+Capture the same prompt, model, working directory, and CLI version before and
+after changing policy:
+
+```bash
+codex debug prompt-input 'Skill catalog measurement' > /tmp/skill-prompt.json
+```
+
+Count the `### Available skills` portion of the `<skills_instructions>` text,
+ending before `</skills_instructions>`. This includes every emitted name,
+description, and path; the larger block also includes the root aliases and
+instructions. Count text rather than JSON escaping. `tiktoken` with
+`o200k_base` gives a reproducible estimate, not the serving model's exact token
+usage. Catalog budgeting can change description lengths, so compare emitted
+text rather than subtracting file sizes.
+
+The 2026-09-17 CLI 0.154.0 measurement in dotfiles used `gpt-6-astra`. The
+baseline already excluded morning and import-memory. The policy pass measured:
+
+| Measure | Before | After |
+|---|---:|---:|
+| Default catalog entries | 70 | 31 |
+| Catalog characters | 21,416 | 12,045 |
+| Catalog tokens, o200k estimate | 6,128 | 2,767 |
+| Entire skills block, o200k estimate | 6,357 | 2,996 |
+
+The catalog reduction is approximately 3,361 tokens (54.8%); this is a share
+of skill context, not of the whole model window. App-server `skills/list`
+confirms manual-only skills remain enabled and excluded copies are disabled.
+The desktop-bundled CLI 0.153.4 cannot render this configuration because it
+rejects the existing `tui.keymap.chat.prompt_stack_back` field. These numbers
+therefore measure the standalone CLI, not a desktop session or a billed API
+request.

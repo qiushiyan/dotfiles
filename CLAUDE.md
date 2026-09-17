@@ -79,11 +79,12 @@ The existing folder links handle these installs; no `--copy`, per-skill
 symlinks, or restow is needed.
 
 After any skill edit, install, update, or removal, and after editing
-`docs/documentation-standards.md`, run `skill-sync`, then `skill-sync --check`. Claude's `disable-model-invocation` header owns the
-invocation policy; the command derives the per-skill Codex setting in
-`agents/openai.yaml`. Other metadata remains hand-editable. Review and commit
-skill, generated metadata, and lockfile changes together; commit external
-changes in the owning repositories reported by the command.
+`docs/documentation-standards.md`, run `skill-sync`, then `skill-sync --check`.
+The command derives Codex metadata and exclusions from Claude headers, global
+invocation overrides, and the tracked skill-policy manifest. Other metadata
+remains hand-editable. Review and commit skills, generated metadata/config,
+policy, and lockfile changes together. External source changes belong in their
+owning repositories; runtime metadata stays outside Git.
 
 Installation caveats and synchronization behavior live in `docs/agent-skills.md`.
 

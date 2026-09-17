@@ -1,0 +1,15 @@
+# Paths are relative to this repository; ~ resolves on the machine running sync.
+# Claude's global user-invocable-only overrides also become Codex manual policies.
+claude_settings: claude/.claude/settings.json
+codex_config: codex/.codex/config.toml
+exclude_roots:
+  - claude/.claude/skills/synced
+disabled:
+  - ~/.codex/skills/.system/plugin-creator/SKILL.md
+  - ~/.codex/skills/.system/skill-installer/SKILL.md
+  - ~/.codex/skills/.system/skill-creator/SKILL.md
+manual:
+  - ~/.codex/skills/.system/imagegen/SKILL.md
+  - claude/.claude/skills/apple-design/SKILL.md
+  - claude/.claude/skills/archify/SKILL.md
+  - claude/.claude/skills/grilling/SKILL.md
