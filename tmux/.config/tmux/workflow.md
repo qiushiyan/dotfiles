@@ -137,6 +137,8 @@ mark-and-move: `scripts/pane-mode.md`.
   Copies, empty prompts, and cancelled input do not count toward the index.
   After copying, `cout` prints **`Copied "<command preview>"`**, truncated to
   40 characters; the shortcut shows the same notice in the status line.
+  `prefix o` replaces tmux's stock next-pane shortcut; use `prefix h/j/k/l`
+  for pane navigation.
   Repeating either keeps copying the original result.
   Paste straight into a coding agent: the text starts with `$ <command>`,
   followed by the displayed output, with colors removed and wrapped lines

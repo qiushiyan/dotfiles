@@ -39,6 +39,9 @@ table.
 Per-tool palettes preserve hand-tuned contrast; a shared colour generator would
 remove that control. Theme additions follow `/add-theme`.
 
+The Oh My Posh transient prompt also carries invisible markers used by `cout`.
+When editing that template, preserve the [shell capture integration](zsh.md#copying-a-command-and-its-output).
+
 ## Model 2 — the control plane
 
 **`theme-set`** (`scripts/.local/bin/theme-set`, on `PATH`) is the one writer.

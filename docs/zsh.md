@@ -91,6 +91,10 @@ Shared Zsh history is never consulted. No output is logged or captured on each c
 the helper reads scrollback only when invoked, uses the prompt/output markers
 to isolate the result, and joins soft-wrapped lines.
 
+The shell writer publishes a newest-first list of retained entry slots; only
+the writer knows ring capacity and reuse order. Each entry preserves multiline
+command text. Shells with an older metadata format receive a `zshreload` message.
+
 Oh My Posh's `shell_integration` supplies OSC 133 markers. Its transient prompt
 template explicitly retains A/B markers because the transient redraw otherwise
 erases the old prompt boundary. Keep those invisible escapes when changing the

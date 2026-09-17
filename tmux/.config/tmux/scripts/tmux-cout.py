@@ -34,17 +34,12 @@ def selected_command(pane, index):
     def option(name):
         return tmux("show-options", "-pqv", "-t", pane, name).removesuffix("\n")
 
-    count = option("@cout-count")
-    if not count:
-        # Keep index 1 working in shells started before indexed capture landed.
-        if index != 1:
-            raise ValueError("run zshreload to enable indexed command history.")
-        return option("@cout-command"), int(option("@cout-skip"))
-    count = int(count)
-    available = min(count, 1000)
-    if index > available:
-        raise ValueError(f"index {index} is unavailable; {available} command(s) recorded in this shell.")
-    slot = (count - index) % 1000 + 1
+    slots = option("@cout-history").split()
+    if not slots:
+        raise ValueError("run zshreload to enable indexed command history.")
+    if index > len(slots):
+        raise ValueError(f"index {index} is unavailable; {len(slots)} command(s) recorded in this shell.")
+    slot = slots[index - 1]
     end, separator, command = option(f"@cout-entry-{slot}").partition("\n")
     if not separator:
         raise ValueError("command metadata is missing; run zshreload and a new command.")
@@ -88,7 +83,7 @@ def main():
         if isinstance(error, subprocess.CalledProcessError) and error.stderr:
             message = f"cout: {error.stderr.strip()}"
         if args.notify:
-            tmux("display-message", "-t", args.pane, message)
+            tmux("display-message", "-l", "-t", args.pane, message)
         else:
             print(message, file=sys.stderr)
         return 1

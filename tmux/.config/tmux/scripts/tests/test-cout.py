@@ -127,10 +127,11 @@ class CoutTest(unittest.TestCase):
         self.execute("print original")
         expected = self.capture()
         self.execute("cout")
+        (self.home / "clipboard").write_text("untouched")
         for invocation in ["cout 0", "cout -1", "cout abc", "cout 1.5", "cout 1 2",
                            "cout ''", "cout 2", "cout 9999999999999999999999999"]:
             self.execute(invocation)
-            self.assertEqual((self.home / "clipboard").read_text(), expected)
+            self.assertEqual((self.home / "clipboard").read_text(), "untouched", invocation)
             self.assertEqual(self.capture(), expected)
         self.assertIn("unavailable", self.capture(success=False, index=2))
         clipboard = self.home / "bin/pbcopy"
@@ -148,6 +149,18 @@ class CoutTest(unittest.TestCase):
         cmd = "printf '%s\\n' \\\n  '" + "long 界 " * 30 + "'"
         self.execute(cmd)
         self.assertEqual(self.capture(), "$ " + cmd + "\n" + "long 界 " * 30 + "\n")
+
+    def test_old_shell_metadata_requests_reload_without_copying(self):
+        self.execute("print retained")
+        (self.home / "clipboard").write_text("untouched")
+        # An already-running shell can still be publishing the previous format.
+        self.tmux("set-option", "-p", "-t", self.pane, "@cout-count", "1")
+        self.tmux("set-option", "-pu", "-t", self.pane, "@cout-history")
+        result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
+                                env=self.env, text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("zshreload", result.stderr)
+        self.assertEqual((self.home / "clipboard").read_text(), "untouched")
 
     def test_shortcut_cancelled_prompt_and_no_final_newline(self):
         self.execute("printf no-newline")
