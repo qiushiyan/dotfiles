@@ -30,18 +30,49 @@ def transcript(command, skipped, capture):
     return "$ " + command + "\n" + "".join(chunks)
 
 
+def selected_command(pane, index):
+    def option(name):
+        return tmux("show-options", "-pqv", "-t", pane, name).removesuffix("\n")
+
+    count = option("@cout-count")
+    if not count:
+        # Keep index 1 working in shells started before indexed capture landed.
+        if index != 1:
+            raise ValueError("run zshreload to enable indexed command history.")
+        return option("@cout-command"), int(option("@cout-skip"))
+    count = int(count)
+    available = min(count, 1000)
+    if index > available:
+        raise ValueError(f"index {index} is unavailable; {available} command(s) recorded in this shell.")
+    slot = (count - index) % 1000 + 1
+    end, separator, command = option(f"@cout-entry-{slot}").partition("\n")
+    if not separator:
+        raise ValueError("command metadata is missing; run zshreload and a new command.")
+    return command, int(option("@cout-prompt")) - int(end)
+
+
+def copied_message(command):
+    # Single-line preview; never let command text emit terminal control codes.
+    preview = " ".join("".join(c if c.isprintable() else " " for c in command).split())
+    if len(preview) > 40:
+        preview = preview[:40] + "…"
+    return f'Copied "{preview}"'
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pane", required=True)
+    parser.add_argument("--index", type=int, default=1, help="1-based command index, newest first")
     parser.add_argument("--print", action="store_true", help="print without changing the clipboard")
     parser.add_argument("--notify", action="store_true", help="report through the tmux status line")
     args = parser.parse_args()
     try:
+        if args.index < 1:
+            raise ValueError("index must be a positive integer.")
         ready = tmux("show-options", "-pqv", "-t", args.pane, "@cout-ready").strip()
         if ready != "1":
             raise ValueError("no completed command is ready; open a new shell and run a command first.")
-        command = tmux("show-options", "-pqv", "-t", args.pane, "@cout-command").removesuffix("\n")
-        skipped = int(tmux("show-options", "-pqv", "-t", args.pane, "@cout-skip").strip())
+        command, skipped = selected_command(args.pane, args.index)
         capture = tmux("capture-pane", "-p", "-F", "-T", "-N", "-S", "-", "-t", args.pane)
         text = transcript(command, skipped, capture)
         if args.print:
@@ -49,7 +80,9 @@ def main():
         else:
             subprocess.run(["pbcopy"], input=text, text=True, check=True)
             if args.notify:
-                tmux("display-message", "-t", args.pane, "Copied command and output")
+                tmux("display-message", "-l", "-t", args.pane, copied_message(command))
+            else:
+                print(copied_message(command))
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         message = f"cout: {error}"
         if isinstance(error, subprocess.CalledProcessError) and error.stderr:

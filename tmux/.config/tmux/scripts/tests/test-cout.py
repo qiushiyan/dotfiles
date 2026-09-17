@@ -79,8 +79,9 @@ class CoutTest(unittest.TestCase):
         # precmd finishes immediately before Zsh actually paints PS1.
         time.sleep(.1)
 
-    def capture(self, success=True):
-        result = subprocess.run(["python3", str(HELPER), "--pane", self.pane, "--print"],
+    def capture(self, success=True, index=1):
+        result = subprocess.run(["python3", str(HELPER), "--pane", self.pane,
+                                 "--index", str(index), "--print"],
                                 env=self.env, text=True, capture_output=True)
         self.assertEqual(result.returncode == 0, success, result.stderr + result.stdout)
         return result.stdout if success else result.stderr
@@ -95,6 +96,50 @@ class CoutTest(unittest.TestCase):
             self.assertEqual((self.home / "clipboard").read_text(), expected)
             self.assertEqual(self.capture(), expected)
         self.execute("")
+        self.assertEqual(self.capture(), expected)
+
+    def test_indexed_history_skips_copies_and_empty_prompts(self):
+        first = "printf '%s\\n' \\\n  'first command with a long enough title to truncate the notification'"
+        self.execute(first)
+        first_text = self.capture()
+        self.execute("cout 1")
+        self.assertEqual((self.home / "clipboard").read_text(), first_text)
+        self.execute("")
+        self.execute("true")
+        self.execute("cout 2")
+        self.assertEqual((self.home / "clipboard").read_text(), first_text)
+        self.assertEqual(self.capture(index=2), first_text)
+        self.assertEqual(self.capture(), "$ true\n")
+        self.execute("print third")
+        third_text = "$ print third\nthird\n"
+        for invocation, expected in [("cout 3", first_text), ("cout 2", "$ true\n"),
+                                     ("cout", third_text), ("cout 1", third_text)]:
+            self.execute(invocation)
+            self.assertEqual((self.home / "clipboard").read_text(), expected)
+        screen = self.tmux("capture-pane", "-p", "-J", "-S", "-", "-t", self.pane)
+        self.assertIn('Copied "print third"', screen)
+        self.assertIn('Copied "true"', screen)
+        preview = " ".join(first.split())[:40] + "…"
+        self.assertIn(f'Copied "{preview}"', screen)
+        self.assertNotIn("Copied", self.capture(index=3))
+
+    def test_invalid_indices_and_clipboard_failure_preserve_history(self):
+        self.execute("print original")
+        expected = self.capture()
+        self.execute("cout")
+        for invocation in ["cout 0", "cout -1", "cout abc", "cout 1.5", "cout 1 2",
+                           "cout ''", "cout 2", "cout 9999999999999999999999999"]:
+            self.execute(invocation)
+            self.assertEqual((self.home / "clipboard").read_text(), expected)
+            self.assertEqual(self.capture(), expected)
+        self.assertIn("unavailable", self.capture(success=False, index=2))
+        clipboard = self.home / "bin/pbcopy"
+        clipboard.write_text("#!/bin/sh\nexit 1\n")
+        before = self.tmux("capture-pane", "-p", "-S", "-", "-t", self.pane).count('Copied "print original"')
+        self.assertEqual(before, 1)
+        self.execute("cout")
+        after = self.tmux("capture-pane", "-p", "-S", "-", "-t", self.pane).count('Copied "print original"')
+        self.assertEqual(before, after)
         self.assertEqual(self.capture(), expected)
 
     def test_silent_and_multiline_wrapped_output(self):

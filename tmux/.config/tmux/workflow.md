@@ -132,12 +132,18 @@ mark-and-move: `scripts/pane-mode.md`.
 
 - **`prefix o`** copies the last completed shell command **and its output** to
   the macOS clipboard. **`cout`** does the same from a shell prompt; run it as a
-  standalone command. Repeating either keeps copying the original result.
+  standalone command. **`cout N`** selects the Nth most recent command:
+  `cout` = `cout 1`, `cout 2` copies the command before that, and so on.
+  Copies, empty prompts, and cancelled input do not count toward the index.
+  After copying, `cout` prints **`Copied "<command preview>"`**, truncated to
+  40 characters; the shortcut shows the same notice in the status line.
+  Repeating either keeps copying the original result.
   Paste straight into a coding agent: the text starts with `$ <command>`,
   followed by the displayed output, with colors removed and wrapped lines
   joined. After installing this feature, run **`zshreload`** once in existing
   shells, then run the command you want to capture.
-  This needs the command's boundaries to remain in tmux scrollback; clearing
+  Up to 1,000 commands are indexed per shell, starting after `zshreload` or a
+  new shell. This needs the command's boundaries to remain in tmux scrollback; clearing
   history or screen-rewriting/full-screen programs can prevent capture. It
   captures terminal text (including Zsh's `%` marker for a missing final
   newline), not a raw stdout/stderr log. Missing boundaries leave the clipboard
@@ -217,7 +223,7 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom · `Esc` clear selection (stays in copy mode) · `q` or double-`Esc` exit
 
-**Copy last command + output** — `prefix o` or standalone `cout` → macOS clipboard
+**Copy command + output** — `prefix o` or `cout` for latest · `cout N` for Nth most recent → macOS clipboard
 
 **Paste buffers** — browse `prefix =` · `Enter` paste · `/` search name/content · `d` delete · `e` edit · `v` preview · `q` exit · newest only `prefix ]`
 

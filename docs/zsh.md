@@ -75,15 +75,19 @@ zsh/.config/zsh/
 
 ## Copying a command and its output
 
-`cout` and tmux `prefix o` copy the last completed command and displayed output
-to the macOS clipboard. The workflow and limits are in
+`cout [N]` copies the Nth most recent completed command and displayed output
+to the macOS clipboard (default 1). tmux `prefix o` copies the latest command.
+Both report a 40-character command preview after a successful copy. The workflow and limits are in
 [tmux's copy guide](../tmux/.config/tmux/workflow.md#reading-back--copying-output-copy-mode).
 
 `cout.zsh` defines the wrapper in every shell, but `.zshrc` registers its hooks
-only for interactive tmux shells, after Oh My Posh. `preexec` publishes the
-exact command into pane-local tmux options; `precmd` marks it ready and counts
-subsequent empty/cancelled prompts and standalone `cout` calls. Shared Zsh
-history is never consulted. No output is logged or captured on each command:
+only for interactive tmux shells, after Oh My Posh. `preexec` remembers the
+exact command; `precmd` publishes it with its ending prompt ordinal into a
+1,000-entry ring of pane-local tmux options. Every prompt advances the ordinal,
+including empty/cancelled prompts and standalone `cout` calls; only actual
+commands advance the command index. This keeps copied notifications and
+invalid `cout` calls out of later captures. A new shell resets the index.
+Shared Zsh history is never consulted. No output is logged or captured on each command:
 the helper reads scrollback only when invoked, uses the prompt/output markers
 to isolate the result, and joins soft-wrapped lines.
 
