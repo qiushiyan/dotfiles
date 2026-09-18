@@ -369,3 +369,54 @@ route's new failure states against § Goals) and a term collision with
 the whole-spec check on this sample. Supports the hypothesis that the
 loopy-os siblings were the prose attractor: this tree's siblings are mixed
 and the block appeared without the later step-2 line.
+
+## 2026-09-18 — the three builds (spec → implementation, same sessions)
+
+Three Opus analysts, one per branch, read the build phase of each session
+(after the compaction that followed the spec) with the brief in this
+session's scratchpad (`build/*.brief.md`; reports `build/*-report.md`).
+
+| | OPC (`cc8ba647`) | gauge (`51310e66`) | PDF (`f078881d`) |
+|---|---|---|---|
+| build wall time | 1 h 43 | 4 h 34 (incl. 4 review rounds, docs, CI) | 1 h 56 |
+| commits | 6 | 18 | 11 |
+| user corrections of a spec misreading | 0 | 0 | 0 |
+| spec reads during the build | 6, in 3 bursts at phase boundaries, none after the auto-compaction | 1 | 1 |
+| measurements re-run | none | none | only the two the spec marked unreachable |
+| departures | 8, none in the user report, 4 + 9 in the review brief | 8, all in § As built | 8, all in § As built |
+| spec statements wrong against code or itself | 1 (§ Phases vs § Target shape on named sets) | 2 (`close()` on the cleanup list; "registry untouched") | 2 ("unchanged in behaviour" gate; "list is complete") |
+| review findings the spec could have prevented | no result landed | ~5 (timer leak, projection, matcher map, partition rule, two closed states) | 3 of 7 (two tenets written after review, pass-through rule) |
+
+What held (all three): unattended builds with zero corrections; premises
+and measurements consumed as given, D1/P7/P1 never relitigated; an
+assumed premise with a fallback (OPC P9, 64 KiB) implemented and verified
+without a detour; § Phases held against a user push to collapse PR 2
+(PDF, answered with no tool call); test standards used as a checklist.
+
+What failed, recurrent: (1) facts about existing code stated outside
+§ Premises carried no verification and shipped defects — gauge ×2, PDF ×1,
+OPC's self-contradiction is the same class; (2) the Structure sketch was
+followed literally — PDF's `callback_credentials.ts` produced the review's
+only critical finding, gauge's file list omitted the projection; the
+"sketches" hedge did not bite; (3) invariants held implicitly and written
+only after review — PDF two tenets, gauge "one matcher map per kind";
+(4) rules far from the code they bind or restated with drift — gauge's
+partition rule in § Delivery, OPC's named-set rule in two sections, the
+close-reason precedence never ordered; OPC's 10k words cost a `grep -n
+"^#"` index at every phase boundary. Singletons to watch: non-goals that
+close a state with one sentence became the gauge's two largest departures;
+the org's alarm policy was absent and overturned a specified alarm; the
+PDF spec drafted model-facing sentences that failed a prompt pass; the OPC
+eval rung vanished with no report, and its departures reached the reviewer
+but not the user (the user had deferred docs; the report is the build
+skill's).
+
+Proposed bar changes, not yet applied: A. a claim about existing code
+outside § Premises carries sha and line or says unverified; B. Structure
+names responsibilities and the invariant each protects, file names
+optional, rejected shapes rejected by property; C. each phase in
+§ Delivery names the sections that bind it, and the verification list is
+answered item by item in the build report (the report half belongs to the
+build/handoff skill); D. the first cold read also looks for a rule stated
+in two sections with different answers. Keep unchanged: § Premises, the
+summary block, the situations.
