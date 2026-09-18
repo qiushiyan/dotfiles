@@ -127,6 +127,16 @@ over that history; the passes themselves are the provenance below.
   reports, never after the packet. A behaviour wanted all session needs a
   home the whole session reads, not the first turn's contract.
 
+- **Measure the artifact at the version its reader saw.** A document
+  that accretes after it ships (a spec gains an as-built banner, a review
+  record, an owed list) inflates any size or section count taken from the
+  merged file. The write-spec pass reported a 5.3k-word median that fell to
+  3.9k at the true first commit, and a 13% "journey" share that was 5%;
+  a consult voice caught it by reading the original commits. Recover the
+  version the reader read (`git log --all`, first blob without the later
+  marks), and keep three versions for a before/after: first commit, the one
+  the build read, the final.
+
 ## Goals over procedure
 
 The user's direction is to describe goals, conventions, and constraints while

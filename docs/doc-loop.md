@@ -14,7 +14,7 @@ All checkpoints are user-triggered by design — the skills never fire themselve
 /onboarding <project input>  ← project-specific context and first-turn contract
     /consult                 ← position taken, then fresh voices judge it → the settled direction
     /spike                   ← optional: throwaway code settles what the direction rests on
-    /write-spec              ← the direction becomes a committed spec + validation consult
+    /write-spec              ← unknowns settled by running them; the direction becomes a committed spec, read cold, then validated
     …implement…              ← the host builds from the spec
     /review                  ← a cold session judges the committed range → the PR
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)
@@ -37,7 +37,7 @@ independent judgment inside one. An artifact's author is never its only judge.
 |---|---|
 | `/consult` | host position → independent designs → settled direction + continuable job |
 | `/spike` | one technical uncertainty → executable evidence → verdict that amends the direction |
-| `/write-spec` | settled direction → committed design → validation consult |
+| `/write-spec` | settled direction → unknowns run down → committed design → cold read + validation consult |
 | `/review` | committed range + design anchor → verified findings → merge verdict |
 
 The host verifies outside findings against source; a peer is evidence, not

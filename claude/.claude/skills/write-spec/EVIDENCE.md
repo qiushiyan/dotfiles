@@ -133,3 +133,131 @@ warm-vs-fresh consult branch taken correctly; do split proposals persist in
 consult rounds (if so, escalate the lesson pointer into /consult's brief
 guidance); snippet-vs-skill door counts; sessions-per-PR against the ≤2
 default.
+
+## 2026-09-18 — second pass (improve-tool; spec quality and the writing bar)
+
+Corpus: obelisk index through 2026-09-17. Invocation predicate: a user
+message carrying `<command-name>/write-spec</command-name>`, or the two
+by-path forms, from 2026-08-31; sidechains and the session itself excluded.
+Population 44 sessions; 6 steward-eval worktrees set aside; 38 human runs.
+Spec sample: 48 unique specs across develop and the worktrees; 36 recoverable
+at their first commit before any as-built edit (`git log --all`, first
+version without an as-built mark). Query and results: the session
+scratchpad (`75e316e5…`), ledger `write-spec-frictions.md`.
+
+What held from the founding pass: commit + validation consult ran unprompted
+in 36/38; the warm consult branch was taken whenever a prior consult existed
+(34/38); a lesson was read in 35/38 runs, mostly head-of-file or the bar
+sections (the 09-01 reword landed); the interview fired once, correctly;
+the snippet door had 0 uses. The post-report ritual (`/compact`, then
+"reread the settled spec … implement end to end") appeared in ~25/38 and
+stays the user's.
+
+Frictions and verdicts:
+
+- **Open decisions not decidable from the report** — 4 sessions
+  (81ba94fc 09-02, 4b65a508 09-14, 75b26ed1 09-16, daac7f82 09-17): "can
+  you elaborate the trade-off in plain terms? what bet is it relying on?".
+  Verdict: SKILL step 5 now carries the decision form (experience per
+  option, the bet, the cost if wrong, recommendation, what waits) with a
+  worked example lifted from the 09-17 run.
+- **Report scheduled the build into another session** — 3 sessions
+  (5cd2512a, ff69f762, 37865012). User verdict: not the skill's; those
+  sessions began from a spec-focused brief on a `spec/` branch. Dropped.
+- **Branch already carrying a spec** — 4 branches, three handlings. User
+  verdict: rare; named by hand. Dropped.
+- **The specs themselves** (user's priority). First-commit medians: 3,885
+  words (p75 4.8k, max 10.4k); summary 418 words; 27 words per sentence,
+  18% of sentences over 40 words; journey sections (consult settled, the
+  cut, owner decisions, review record) in 31 of 36 at ~5% each. Read
+  closely: corpus-reuse (3.6k), authored-artifact-integrity (5.4k), card-ux
+  (5.0k), runaway-output (5.5k). Defects verified by reading, not counting:
+  a rule stated three ways that drifted (card focus, lines 194/430/556 of
+  its first commit); a target shape that could not represent two legal
+  states the build had to add; a summary promising a bound the spec's own
+  Phase 0 still had to measure; fixtures prescribed from a database the
+  build could not reach; an owner assigned a check whose dependency it
+  could not import. Build departures (89db4c19, 0b095280, ca31201d,
+  952764c4) split into changed realizations and unbuilt commitments listed
+  together. No build in the corpus stalled on a spec gap; user turns during
+  builds were next-stage commands.
+- **Documentation-standards read** — 33/38 runs read the 2,170-word
+  project file because step 2 asked. None of its spec-relevant rules were
+  in SPEC-BAR. Verdict: six rules absorbed at their homes; step 2 reads the
+  specs README and the project bindings only.
+
+Consults (codex, warm chain `dotfiles-4f711dad/consult-r1b` → `consult-r2`
+→ `consult-r3`; sketches not blind, the position was in each brief).
+Adopted: keep the anatomy; readiness over artifact (design-changing
+unknowns settled inside the run, 30 min per question, `/spike` where
+reading cannot settle it); decision status split from basis and outstanding
+verification, with a local evidence block beside each consequential
+premise; one home per rule with derived views allowed; situations including
+"if it recurs"; owners must reach their dependencies; behaviours bind,
+names are sketches, realizations reported apart from unbuilt commitments;
+open questions only for unresolved choices with owner and build dependency;
+the cold comprehension check as a resolution task with inspectable output.
+Corrected by the voice: the first length baseline was inflated by as-built
+edits (5.3k → 3.9k median); shortening demoted from headline to one repair.
+Rejected: cutting the Tenets section (`/consult` step 5 writes there).
+
+User decisions: cold read by an Opus subagent (cheaper than the Fable
+primary), hard-coded; summary as complete short sentences one per line, not
+fragments (the Fable prompting guide's brevity and re-grounding text, over
+the "sacrifice grammar" line); Tenets kept for cross-cutting invariants;
+full set of forms with positive examples and one avoid case.
+
+Web research (scratchpad `research-notes.md`): first-party guidance on
+specs (self-contained, files and interfaces named, out of scope stated,
+end-to-end verification) and on brevity by selection not fragments;
+spec-kit's clarify (question + why it matters + recommended option) and
+analyze (terminology drift and duplication as a severity table) shaped the
+open-question, report and cold-read forms; MADR's Confirmation slot became
+"outstanding verification"; the ubiquitous-language pattern and a measured
+telegraphic-compression result informed the shorthand mechanism and the
+summary's sentence form.
+
+Changes: SKILL.md rewritten (procedure settles unknowns; step 2 reads
+project bindings; step 4 cold read then validation; step 5 decision form;
+Emphasis compressed); SPEC-BAR.md rewritten around the reader contract,
+five authorities, the forms with examples, writing rules, readiness;
+COLD-READ.md added (the subagent prompt). Example numbers verified against
+the source spec's § Evidence; a reproduction path invented in the first
+draft was replaced by an honest "not retained" line.
+
+Validation: a warm review (structure, semantics) and a cold codex review
+(prompt quality against the rulebook), jobs `dotfiles-4f711dad/spec-skill-review-r1`
+and `-r2`. Round 1: both "ship after fixes". Fixed on their findings: the
+premise examples taught closure without evidence (date, revision and a
+design-preserving fallback added; the "outstanding then settled" line and
+the failed-spike duplicate cut); the Design example spliced two domains
+and dropped the selection payload (now one domain, payload restored);
+the summary collapsed worker death into run death and named a risk without
+its guard; step 4's re-entry after validation and the final-revision cold
+read were missing; "two cold readers" overstated a resumed consult; Tenets
+placement conflicted with `/consult` step 5 (both now say one section where
+the spec bar places it, struck-tenet reasons in the synthesis); the report
+example never introduced its terms; COLD-READ's example sat outside the
+dispatched block; the finding form forced invented alternatives. Round 2:
+remaining items were scoped claims in examples (a fallback with no basis,
+"nothing can fail a send", "in the kernel", reachability as an import) and
+the journey-exclusion sentence the first cut had removed; all applied.
+Deliberate keeps: the reproduction line that says the command was not
+retained (the form must show how missing provenance is marked); the
+Structure writing rule the cold reviewer called doctrine (one of the six
+rules the user asked to absorb); SPEC-BAR at ~2.5k words rather than the
+reviewer's 20% cut, by the user's choice of the full example set. Not
+tested: a live run of the rewritten skill; the cold-read subagent on a real
+spec.
+
+Re-measure next pass, over runs after this change ships, against the
+baselines above: missing states or behaviours discovered during build or
+review; commitments unmet at the first build report; departures split by
+kind; unresolved terms returned by the cold read and how many survived to
+the build; clarification turns per open decision presented; spec length
+and summary length at first commit; whether design-changing checks ran
+inside the run (tests, production reads, spikes in the window) instead of
+landing as a Phase 0; documentation-standards reads (expect ~0).
+Revision or reversal if: runs stall inside the 30-minute boxes without a
+decision; the cold read returns mostly false ambiguity; or specs grow past
+the current medians with no fall in build-side discoveries.
