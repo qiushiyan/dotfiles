@@ -75,49 +75,47 @@ zsh/.config/zsh/
 
 ## Copying a command and its output
 
-`cout [N]` copies the Nth most recent completed command and displayed output
-to the macOS clipboard (default 1). tmux `prefix o` copies the latest command.
-Both report a 40-character command preview after a successful copy. The workflow and limits are in
-[tmux's copy guide](../tmux/.config/tmux/workflow.md#reading-back--copying-output-copy-mode).
+`cout [N]` and tmux `prefix o` copy a completed command and its terminal output
+to the macOS clipboard. Usage belongs to `tmux/.config/tmux/workflow.md`
+§ Reading back & copying output (copy mode).
 
-`cout.zsh` defines the wrapper in every shell, but `.zshrc` registers its hooks
-only for interactive tmux shells, after Oh My Posh has consumed the command's
-exit status. Recorder setup is lazy: the first real command initializes it,
-keeping Python startup off the shell-startup path. Each shell gets its own
-session ID. `preexec` saves exact command text and emits a private start marker; `precmd`/`zshexit` emit its end marker.
-Standalone `cout` calls and empty/cancelled prompts create no record. Shared
-Zsh history and prompt themes are not involved.
+`zsh/.config/zsh/cout.zsh` owns execution boundaries and shell identity.
+`zsh/.zshrc` registers its hooks after Oh My Posh consumes the command's exit
+status. The first real command initializes recording synchronously, keeping
+Python setup off shell startup. `preexec` saves exact command text and emits a
+private start marker; `precmd`/`zshexit` emit its end marker. Standalone copies
+and empty/cancelled prompts create no record.
 
-One `tmux pipe-pane` recorder per pane observes output and these ordered markers.
-It owns completed records, indexes, and retention; the shell publishes only its
-session and expected completion ID. A reader waits for that exact completion
-before selecting an index, so recorder lag cannot silently select an older
-command. Each active execution receives output: a parent `zsh` command includes
-the nested interaction, while child commands have their own records. Returning
-from the child restores the parent's index. `exec zsh` starts a new index; its
-first command finalizes the replaced shell's interrupted execution as incomplete. Remote prompt markers do not
-change local command boundaries; an `ssh` command records the entire connection.
+`tmux/.config/tmux/scripts/tmux-cout.py` owns the pane's `pipe-pane` recorder,
+completed records, indexes, and retention. Markers and output share an ordered
+stream; the reader waits for the shell's exact completion ID before selecting a
+record. Every active execution receives output, so a parent `zsh` or `ssh`
+record contains the nested interaction. Local child shells have separate indexes;
+returning restores the parent's index. `exec zsh` starts a new index, and its
+first command finalizes the replaced shell's execution as incomplete. Shared
+shell history and local or remote prompt themes do not determine boundaries.
 
-The helper renders a selected recording in a temporary, isolated tmux server,
-joins wrapped lines, and copies terminal text without rerunning the command.
-Completed recordings survive changes to the live pane's size or scrollback.
-Full-screen output and recordings whose beginning was erased during rendering
-are refused. Rendering uses the pane dimensions at command start; resizing
-*during* a running interactive program may affect its layout.
+Copying renders an immutable record in a temporary, isolated tmux server without
+rerunning the command. Its history limit is independent of live pane scrollback;
+clearing or resizing the live pane leaves completed records intact. Replay uses
+the dimensions at command start, so resizing during execution may affect layout.
+Full-screen output, a lost replay boundary, and oversized or incomplete records
+are refused with the clipboard unchanged.
 
-Recordings live under `${XDG_CACHE_HOME:-~/.cache}/cout`, with private directories
-and files (700/600). Each active command has a 16 MiB output limit; completed
-records share a 64 MiB output budget and 50-record limit per pane. Oldest
-completed records are pruned first, across all shell sessions. Oversized output
-is flagged rather than silently truncated. The recorder removes its cache on
-clean pipe closure. A recorder fault preserves completed files; the next setup reaps
-caches abandoned by dead recorders. Removing an active cache stops its recorder;
-the shell reports one reload instruction without repeating internal errors.
-An existing non-cout output pipe is left alone and setup reports the conflict.
+Recordings live under `${XDG_CACHE_HOME:-~/.cache}/cout`, with directory/file
+permissions 700/600. Each active command has a 16 MiB output limit. Completed
+records share a 64 MiB output budget and 50-record limit per pane, across shell
+sessions; oldest records expire first. Clean pipe closure removes the cache.
+Faults preserve completed files until a new recorder setup reaps the abandoned
+cache. Deleting an active cache interrupts recording and prompts for a reload;
+leave normal cleanup to the recorder. Setup refuses to replace another logger.
 
-Existing shells need `zshreload` and a newly run command. Copying while a command
-is running, from an old shell protocol, or after recorder failure leaves the
-clipboard unchanged and reports the problem.
+`zshreload` loads changed shell hooks and starts a new index. It reuses a live
+pane recorder, so changes to recording code or retention limits require a new
+recorder; opening a new pane picks up both shell and recorder changes. After a
+recorder failure, reload the shell and run a new command to resume capture.
+Prior output is unavailable to a newly initialized recorder. The isolated
+integration suite and its invocation are documented in `docs/testing.md`.
 
 ## Lessons learned
 

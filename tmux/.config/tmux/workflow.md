@@ -130,36 +130,43 @@ mark-and-move: `scripts/pane-mode.md`.
 
 ## Reading back & copying output (copy mode)
 
-- **`prefix o`** copies the last completed shell command **and its output** to
-  the macOS clipboard. **`cout`** does the same from a shell prompt; run it as a
-  standalone command. **`cout N`** selects the Nth most recent command:
-  `cout` = `cout 1`, `cout 2` copies the command before that, and so on.
-  Copies, empty prompts, and cancelled input do not count toward the index.
-  After copying, `cout` prints **`Copied "<command preview>"`**, truncated to
-  40 characters; the shortcut shows the same notice in the status line.
-  `prefix o` replaces tmux's stock next-pane shortcut; use `prefix h/j/k/l`
-  for pane navigation.
-  Repeating either keeps copying the original result.
-  Paste straight into a coding agent: the text starts with `$ <command>`,
-  followed by the displayed output, with colors removed and wrapped lines
-  joined. After installing this feature, run **`zshreload`** once in existing
-  shells, then run the command you want to capture.
-  Indexes belong to the current shell. Entering a nested Zsh gives it a new
-  index; exiting restores the parent's history. The parent's `zsh` or `ssh`
-  record contains the whole nested interaction. `exec zsh`/`zshreload` starts
-  a new index. Completed results survive pane resizing and cleared scrollback.
-  Recordings use a private cache, retaining at most 50 completed commands
-  and 64 MiB of output per pane, with a 16 MiB limit per active command.
-  Old records expire first; closing the pane removes its recordings.
-  This copies terminal text (including Zsh's `%` marker for a missing final
-  newline), not a raw stdout/stderr log. Full-screen applications, erased
-  output, and oversized or incomplete recordings leave the clipboard unchanged.
-  A pane already using another output logger cannot also start this recorder.
-  Shell hooks live in `zsh/.config/zsh/cout.zsh`; recording and copying live in
-  `scripts/tmux-cout.py`. See [the recording design](../../../docs/zsh.md#copying-a-command-and-its-output)
-  for lifecycle and rendering limits.
-- Pane scrollback retains up to **10,000 lines**. New panes pick up limit changes;
-  existing panes and running `cout` recorders keep their current limits until closed.
+### Copy a command and its output
+
+- **`cout`** or **`cout 1`**: copy the latest completed command and its output.
+- **`cout N`**: copy the Nth most recent command; `cout 2` selects the previous one.
+- **`prefix o`**: copy the latest command from the selected pane. This overrides
+  tmux's stock next-pane shortcut; use `prefix h/j/k/l` for pane navigation.
+
+Run `cout` as a standalone command. Copies, empty prompts, and cancelled input
+do not count toward the index, so repeated copies return the same result. A
+successful copy prints **`Copied "<command preview>"`**, truncated to 40 characters;
+the shortcut shows that notice in the status line. Pasted text starts with
+`$ <command>`, followed by terminal output with colors removed and wraps joined.
+Zsh's visible `%` marker is retained when output lacks a final newline.
+
+Indexes belong to the current shell. A nested Zsh gets a separate index;
+exiting restores the parent's. The parent's `zsh` or `ssh` entry contains the
+whole interaction. `zshreload` starts a fresh index. Full-screen applications,
+oversized output, and missing or incomplete recordings leave the clipboard
+unchanged. A pane using another output logger cannot start a `cout` recorder.
+Design, byte limits, and recovery: `docs/zsh.md` § Copying a command and its output.
+
+### Retention and cleanup
+
+Scrollback retains **10,000 lines per pane**. `cout` independently retains up to
+**50 completed commands per pane**, shared across its shell sessions. Clearing
+scrollback with **`prefix C-k`** leaves those recordings available; clean pane
+closure removes them. Let these limits expire old output and close finished
+panes or sessions as work ends; routine full-server resets are unnecessary.
+
+For a changed scrollback limit, reload the tmux config with **`prefix r`**, then
+open new panes. New panes also pick up changed recording limits. `zshreload`
+refreshes shell hooks but reuses the running recorder, so it does not apply
+recorder-limit changes. After opening a new pane or enabling the hooks, run the
+command you want to capture; earlier output cannot be recovered by `cout`.
+
+### Browse and select scrollback
+
 - Enter with **`prefix [`**; leave with `q` or a quick **double-`Esc`** (a single `Esc` won't exit — see below).
 - Scroll: `C-u`/`C-d` (10 lines), `j`/`k` (one line), `gg`/`G` (top/bottom), `/` to search forward.
 - Select + copy: `v` start selection, `C-v` rectangle, `H`/`L` to line start/end, `y` to copy and exit.
@@ -202,6 +209,9 @@ A vendored, flash.nvim-style tool in `scripts/easyjump/` (see its `DESIGN.md`) �
 ## Surviving reboots (resurrect + continuum)
 
 Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore when the tmux server starts — so a reboot doesn't lose your workspace. Manual control: **`prefix C-s`** to save now, **`prefix C-r`** to restore.
+
+Workspace save/restore is independent of scrollback and `cout` recordings.
+Clearing pane output leaves saved workspace layouts intact.
 
 Saves go through a small wrapper that first puts any floated pane (`prefix z`) back in its window — a snapshot taken mid-float couldn't be reconnected on restore, since the pane and the window it belongs to would be saved as unrelated things.
 
