@@ -342,3 +342,30 @@ re-reads still find cross-section contradictions after the delta scope
 (reversal condition: a build-side discovery the narrowed re-read would
 have caught); build-side departures and missing states on these two
 branches once built.
+
+### Third run, same day — the PDF callback spec (`f078881d`)
+
+Loaded the intermediate text (both checks at once, re-read inputs, the
+paragraph rule and the journey echo; not yet the "existing specs are not a
+convention" line). Tree: `docs/loopy/specs/`, not loopy-os. Spec
+`2026-09-18-pdf-callback-uploads-outside-the-proxy.md`, three commits,
+3,844 → 5,741 words; the growth is design the validation forced (finite
+ceilings, header authentication, the wire change split into a second PR),
+not journey: zero mentions of consult, round or cold read in the spec.
+Labelled block under `## Summary`, 17 lines; mean 23.9 words per sentence,
+10.9% over 40, the best profile in the corpus. Situations, premises with
+basis and "does not establish", rejected shapes with their constraint, a
+complete failure-class table, obligations with real/substitute/limit, one
+open question in the form, three observations parked. Report in the
+step-5 form with the one decision carrying bet, cost and what waits.
+
+Timing: spec phase 24 min. First cold read and the fresh consult
+dispatched 40 s apart; the consult returned in 3 min. Re-read with the
+inherited term list and the changed sections: 16 turns, 8 tool calls,
+8.4k output tokens, 3.4 min, against the first read's 65 turns, 37 calls,
+29k tokens, 7 min — and it still found a cross-section gap (the text
+route's new failure states against § Goals) and a term collision with
+`deploy-coupling.md`'s "contract migration". The delta scope did not lose
+the whole-spec check on this sample. Supports the hypothesis that the
+loopy-os siblings were the prose attractor: this tree's siblings are mixed
+and the block appeared without the later step-2 line.
