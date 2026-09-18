@@ -56,21 +56,27 @@ contradiction.
 ### The summary, first
 
 Open with a labelled block that re-grounds a model reading cold: one
-complete short sentence per line, selective about what it keeps. Keep any exception that changes the
-build and any dependency still outstanding. Point at the sections that own
-the detail. A prose summary of the same content runs to twice the length
-and hides the exceptions inside its sentences.
+complete short sentence per line, selective about what it keeps, with a
+blank line between the groups so the eye finds the state, the change, the
+edges and the pointers without reading every line. Keep any exception that
+changes the build and any dependency still outstanding. Point at the
+sections that own the detail. A prose summary of the same content runs to
+twice the length and hides the exceptions inside its sentences.
 
 <example>
 Current: Loopy runs model-written shell scripts inside pool workers.
-Failure: oversized piped output exhausts a worker's heap; the resumed turn can repeat the command and lose the next worker too.
+Failure: oversized piped output exhausts a worker's heap, and the resumed turn can repeat the command and lose the next worker too.
 Failure: truncated output can reach the model with exit code 0 and look complete.
+
 Goal: a command that overruns fails honestly, and the worker and the conversation survive.
-Change: the text-to-bytes conversion is repaired, the output bound is lowered, and the truncation notice travels outside the streams.
+Change: the text-to-bytes conversion is repaired.
+Change: the output bound is lowered, and the truncation notice travels outside the streams.
 Recovery: the resumed model is told what failed, and an identical command is refused once.
+
 Boundary: synchronous printing can still stall a worker, and the heap ceiling is unchanged.
 Risk: a lower bound may reject legitimate file writes; which constructs the bound charges is measured before the bound is chosen.
 Open: which repeated worker losses end the run early is the owner's call.
+
 Where: § Behaviour describes the six situations; § Design carries the mechanism and its evidence; § Delivery holds the open call.
 </example>
 
