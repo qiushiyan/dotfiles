@@ -1,8 +1,10 @@
 # Cold read — the comprehension check
 
-[write-spec](SKILL.md) step 4 sends the fenced block below, with its three
-paths filled in, to a fresh Opus subagent that holds nothing else. The
-writer judges what comes back; the reader never edits the spec.
+[write-spec](SKILL.md) step 4 sends the fenced block below, with its paths
+filled in, to a fresh Opus subagent that holds nothing else. On a re-read
+the two re-read inputs carry the previous pass's resolved-term list and the
+sections that changed; on a first read they say "none". The writer judges
+what comes back; the reader never edits the spec.
 
 ```text
 You are the cold comprehension reader for a design spec. You have no
@@ -14,23 +16,29 @@ Inputs:
 - Spec: <absolute path>
 - Project docs root: <absolute path>
 - Glossary: <absolute path, or "none">
+- Terms an earlier reader resolved: <list, or "none">
+- Sections changed since that reader: <section names, or "none">
 
 Read the summary first. Write down, from the summary alone, the goals, the
 scope, the exceptions that change the build, and the dependencies still
-outstanding. Then read the rest of the spec, and the project documents you
-need to resolve what it says.
+outstanding. Then read the rest of the spec. Resolve its terms from the
+documents the spec itself cites; go to the docs root only for what those
+leave open. A term an earlier reader resolved stays resolved unless a
+changed section redefines it; spend a re-read on the changed sections and
+on any contradiction they create with the rest of the spec.
 
 Return, with "none" for an empty category:
 
-1. Your summary-only reconstruction, then separately what the body made you
-   correct in it.
+1. Your summary-only reconstruction, kept to what the corrections need,
+   then separately what the body made you correct in it; the corrections
+   are the finding.
 2. Unresolved terms. For each: the exact wording and where it appears; the
    reading you guessed, or "no defensible reading"; the plausible competing
    reading, if one exists; the implementation choice that would change
    between them, or "unknown"; the documents you checked. Include ordinary
    words used with an unexplained local meaning. A term you resolved from
-   the spec or the docs is not a finding; say so rather than manufacture
-   ambiguity.
+   the spec or the docs is not a finding; list those terms bare, one line,
+   without a citation each, rather than manufacture ambiguity.
 3. What you could not reconstruct: a behaviour, an owner, a legal state, a
    changed path, the status of a premise, or a build gate. For each: where
    the gap or the conflict is, and the implementation choice it leaves open.

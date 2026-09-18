@@ -36,11 +36,13 @@ most of them; trim only for a genuinely contained change.
 
 ## The document's shape
 
-Use the project's headings where it has them. Otherwise the spec has five
-sections, each the authority for one kind of statement:
+The spec has five sections, each the authority for one kind of statement.
+A section a written project rule requires (a status header, an As built
+record) is added at the kind it belongs to; nothing else about the shape
+comes from the project.
 
-- **Intent** — goals, non-goals, and the cross-cutting constraints the
-  build holds to (the Tenets).
+- **Intent** — goals and non-goals, followed by the Tenets as their own
+  section: the cross-cutting constraints the build holds to.
 - **Behaviour** — what a person observes, situation by situation.
 - **Design** — ownership, interfaces, wiring, and the premises they rest on.
 - **Verification** — how each obligation will be observed.
@@ -53,10 +55,11 @@ contradiction.
 
 ### The summary, first
 
-Open with a labelled block that re-grounds a model reading cold: one complete
-short sentence per line, selective about what it keeps. Keep any exception
-that changes the build and any dependency still outstanding. Point at the
-sections that own the detail.
+Open with a labelled block that re-grounds a model reading cold: one
+complete short sentence per line, selective about what it keeps. Keep any exception that changes the
+build and any dependency still outstanding. Point at the sections that own
+the detail. A prose summary of the same content runs to twice the length
+and hides the exceptions inside its sentences.
 
 <example>
 Current: Loopy runs model-written shell scripts inside pool workers.
@@ -82,12 +85,10 @@ whether it extends that concept or stands apart from it, and why.
 
 **Tenets** are the few cross-cutting invariants the build holds to when the
 sections run out of instructions, in the form the tenets lesson defines.
-They have one `## Tenets` section, a sibling placed right after Intent
-unless the project's convention places it elsewhere; a validation round
-revises it in place, and the reason a tenet was struck lives in that
-round's synthesis, not here. A
-rule that binds one behaviour or one seam is not a tenet; it lives beside
-that behaviour or seam.
+They have one `## Tenets` section, placed right after Intent; a validation
+round revises it in place, and the reason a tenet was struck lives in that
+round's synthesis, not here. A rule that binds one behaviour or one seam is
+not a tenet; it lives beside that behaviour or seam.
 
 ### Behaviour
 
@@ -224,8 +225,9 @@ with the observation that decided it.
 For each obligation: the behaviour it verifies, the observation boundary,
 what must stay real, and what may be substituted with the claim the
 substitute can and cannot prove. Verify that the fixtures and runners you
-prescribe are reachable from a build session. A regression a validation
-round asked for is an obligation here; the build enumerates the cases.
+prescribe are reachable from a build session. A regression the validation
+asked for is an obligation here, stated without the round that asked; the
+build enumerates the cases.
 
 <example>
 Obligation: the section read model implements § Behaviour — Focus.
@@ -269,9 +271,13 @@ notice proceed independently.
 
 ## Writing rules
 
-- **One claim per sentence.** Name the component, the state or the
-  operation instead of the shorthand the session coined; a term stays when
-  it gives the reader a resolvable name the project already uses.
+- **One claim per sentence, one topic per paragraph.** A reader hunting a
+  rule's home finds it by the sentence that states it; a sentence carrying
+  three rules in nested clauses hides two of them, and a paragraph that
+  runs past a screen is a list or a section in disguise. Name the
+  component, the state or the operation instead of the shorthand the
+  session coined; a term stays when it gives the reader a resolvable name
+  the project already uses.
 
   <example type="avoid">
   Ask the artifact leg first, fall to the cache path on any uncertain answer.
@@ -313,5 +319,8 @@ notice proceed independently.
   enumeration, line-level edit plans, call-site rename inventories, doc
   update plans, commit order, and time estimates belong to the build. Domain
   and interface vocabulary is the spec's to fix.
+- **Strip the journey**, as the opening says: consult job names, rounds,
+  finding counts and dispositions leave the spec; each decision keeps its
+  reason and its evidence. The job names belong in the report.
 - **Run the project's own checks** from its documentation bindings, then
   reread the spec once as one whole.

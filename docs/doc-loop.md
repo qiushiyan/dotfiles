@@ -14,7 +14,7 @@ All checkpoints are user-triggered by design — the skills never fire themselve
 /onboarding <project input>  ← project-specific context and first-turn contract
     /consult                 ← position taken, then fresh voices judge it → the settled direction
     /spike                   ← optional: throwaway code settles what the direction rests on
-    /write-spec              ← unknowns settled by running them; the direction becomes a committed spec, read cold, then validated
+    /write-spec              ← unknowns settled by running them; the direction becomes a committed spec, read cold and validated
     …implement…              ← the host builds from the spec
     /review                  ← a cold session judges the committed range → the PR
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)

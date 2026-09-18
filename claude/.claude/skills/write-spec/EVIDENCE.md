@@ -261,3 +261,84 @@ landing as a Phase 0; documentation-standards reads (expect ~0).
 Revision or reversal if: runs stall inside the 30-minute boxes without a
 decision; the cold read returns mostly false ambiguity; or specs grow past
 the current medians with no fall in build-side discoveries.
+
+## 2026-09-18 — first two runs of the rewritten skill
+
+Corpus: the two `/write-spec` runs after commit `8131715` shipped, both on
+2026-09-18, both Fable sessions with Opus cold readers: `cc8ba647` (loopy-os
+M4 OPC slice, `docs/loopy/specs/loopy-os/23-…`, five commits) and `51310e66`
+(coordinator loop gauge, `docs/loopy/infra/specs/2026-09-18-…`, three
+commits). Neither has been built yet; this pass measures the spec and the
+procedure only. Predicates: the session jsonl (skill text markers, Agent
+dispatches with `model`, envoy runs, commits) and the subagent transcripts
+under each session's directory (turns, tool calls, usage).
+
+What held: both sessions read SPEC-BAR and COLD-READ at step 2, dispatched
+the cold-read block verbatim to Opus, ran the first cold read in parallel
+with the warm validation consult, and reported in the step-5 form (the OPC
+report carried three decisions with bet, cost and what waits; the gauge
+report said nothing was open). The gauge run settled premises in-run with
+three scratchpad scripts, a production CloudWatch read, the package test
+suite and `tofu validate`, and moved one assumed premise to measured when
+the validator asked. The cold reads returned real gaps (two deadline
+definitions, a double start at a hand-off, switch-gated hygiene stranding
+rows, a ceiling documented as 24 against a release of 64, an existing host
+sampler the spec had not mentioned) and listed the coined loopy-os
+vocabulary as resolved from the tree docs, so the shorthand check works.
+`/spike` was not invoked; the scripts were written directly, same outcome.
+
+What did not hold: prose form. Gauge 5,758 words, mean 33.5 words per
+sentence, 26% over 40; OPC 9,621 words, mean 47.1, 40% over 40, longest
+paragraph 655 words — the worst profile in the corpus, against a v0 median
+of 3,885 words. The OPC spec has no labelled summary block and its status
+paragraph names consult rounds and finding counts; the gauge spec ends on a
+Consult dispositions section. Cause, from the OPC transcript: SKILL step 2
+let project convention govern "format", and the loopy-os siblings (written
+under the old bar) supplied a prose summary and a journey paragraph the
+model copied. The writing rules lost to the sibling attractor.
+
+Cost: each cold read was 51–79 Opus turns, 30–45 shell calls walking the
+docs tree, 26–40k output tokens, 6–9.5 minutes. The first pass overlapped
+the consult; the serial re-reads cost 15 min (OPC, two re-reads) and 10 min
+(gauge, one). Re-reads re-resolved the same terms from zero. The write-spec
+phase was 38 and 28 minutes of sessions lasting 3h17 and 1h45.
+
+Changes: SKILL step 2 — the spec is written to SPEC-BAR; the project
+decides placement, front matter or status header, index row, and sections
+a written project rule requires; headings, order and prose are the bar's;
+existing specs are not a convention (user's call: the loopy-os siblings are
+the old skill's output, not a standard). SPEC-BAR's shape says the same. SKILL step 4 — both checks
+dispatched at once, one revision; a re-read carries the previous reader's
+resolved-term list and the changed sections, reconstruction blind; the
+arrow chains and the bold emphasis removed. COLD-READ — two re-read inputs;
+resolve from the spec's cited documents first, docs root only for what
+they leave open; resolved terms as a bare list; the reconstruction kept to
+what the corrections need. SPEC-BAR — the block sits under the project's
+summary heading; one topic per paragraph with its reason; "strip the
+journey" echoed in Before you finish, naming the opening as its home.
+Description names the cold read. doc-loop.md's line updated.
+
+Validation: one Opus cold reader with five route scenarios (both checks
+dispatched together; re-read inputs and what stays blind; the sibling-prose
+directory; "skip the checks"; an unmeasurable gate premise) resolved each
+as intended and flagged four wording defects: Tenets described both inside
+Intent and as a sibling section (fixed: a sibling, the project clause
+dropped); "the committed spec" against the "don't commit" override (fixed:
+"the spec as it stands"); a validation "round" named as a regression's
+provenance against the journey rule (fixed); the thirty-minute box not
+observable by the agent (kept: the user's chosen bound, a heuristic).
+
+Deliberate keeps: the "adapt and simplify" licence (F1 of the first pass);
+the thirty-minute box as a heuristic rather than a measured clock;
+the `never`-free boundary at the end of the cold-read block (a reader would
+otherwise read code); the five-input block for first reads, where the two
+re-read lines carry "none".
+
+Re-measure next pass: sentence and paragraph profile of the next specs in
+the loopy-os tree specifically (the sibling attractor is strongest there);
+presence of the block under the tree's `## Summary`; journey text in status
+paragraphs; re-read duration and shell-call count against 30–45; whether
+re-reads still find cross-section contradictions after the delta scope
+(reversal condition: a build-side discovery the narrowed re-read would
+have caught); build-side departures and missing states on these two
+branches once built.

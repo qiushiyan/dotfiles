@@ -1,6 +1,6 @@
 ---
 name: write-spec
-description: Promote the settled direction into a committed spec and run a validation consult. Defaults — commit + validation consult; override by argument ("don't commit", "skip validation").
+description: Promote the settled direction into a committed spec — unknowns run down, the spec committed, read cold by a fresh model, validated by consult. Defaults — commit + cold read + validation consult; override by argument ("don't commit", "skip validation", "skip the checks").
 disable-model-invocation: true
 requires:
   - user:consult
@@ -55,43 +55,47 @@ keeps the cold read; "skip the checks" skips both and ends at the report.
    carrying why it matters, the options with what each means for the real
    user, and your recommendation.
 
-2. **Write the spec** where the project keeps specs, following its
-   convention. Read the specs directory's README and the project's
-   documentation bindings; they govern names, order, format and local
-   checks. Where no convention exists, follow the existing specs, and ask
-   only if placement stays ambiguous. Read [SPEC-BAR.md](SPEC-BAR.md)
-   before writing: it carries the shared spec-writing rules, decides what
-   the spec must settle, and says when it is done. Where the two meet, the
-   project's convention governs names, order and format; SPEC-BAR's shape is
-   the fallback.
+2. **Write the spec** to [SPEC-BAR.md](SPEC-BAR.md): read it before
+   writing; it carries the shape, the spec-writing rules, what the spec
+   must settle, and when it is done. The project decides where the file
+   goes, its front matter or status header, its index row, and any section
+   a written project rule requires; read the specs directory's README and
+   the project's documentation bindings for those and for the local checks.
+   Everything else, the headings, their order and the prose, is
+   SPEC-BAR's. Existing specs in the directory are not a convention: they
+   show placement, and where they differ from the bar the bar wins. Ask
+   only if placement stays ambiguous.
 
 3. **Commit the spec** on the current branch: the spec file alone, its own
    commit, nothing else staged.
 
-4. **Check it cold, then validate it.** A fresh comprehension reader, then
-   the independent validation route, in this order:
+4. **Check it cold and validate it.** Two independent readers judge the
+   spec as it stands. Dispatch both at once, since each takes minutes and
+   neither needs the other's result, and fold what they return into one
+   revision.
 
-   - **Cold read.** Dispatch a fresh subagent on the `opus` model with the
-     prompt in [COLD-READ.md](COLD-READ.md) and only the spec path, the
-     project docs root, and the glossary path. Judge its reconstruction
-     against the design you meant. Resolve each material ambiguity at the
-     rule's home; keep a term only when its meaning is recoverable from the
-     spec or the project docs. When a correction changes what a cold reader
-     would reconstruct, send the corrected spec to a fresh reader.
-   - **Validation consult.** A prior consult's latest job name in reach (this
-     session's synthesis, or the handoff) → continue **that** job with the
-     spec as the updated proposal under critique; the voices keep their
-     context and judge follow-through. Mechanics live in `/consult` step 6;
-     if the job cannot continue, fall through. Otherwise → invoke `/consult`
-     in approach mode, fresh, with the spec as the artifact under review.
-     Judge the findings by `/consult`'s own process; the revisions keep
-     SPEC-BAR's section ownership. A finding that opens a new technical
-     unknown goes back to step 1. A major disagreement that needs the user's
-     call → flag it and stop.
+   - **Cold read.** A fresh subagent on the `opus` model, given the block in
+     [COLD-READ.md](COLD-READ.md) filled in and nothing else, reports what a
+     model with no conversation could not reconstruct. Judge its
+     reconstruction against the design you meant. Resolve each material
+     ambiguity at the rule's home; keep a term only when its meaning is
+     recoverable from the spec or the project docs.
+   - **Validation consult.** When a prior consult's latest job name is in
+     reach (this session's synthesis, or the handoff), continue that job
+     with the spec as the updated proposal under critique, by `/consult`
+     step 6: the voices keep their context and judge follow-through. When
+     no job can continue, open a fresh `/consult` in approach mode with the
+     spec as the artifact under review. Judge the findings by `/consult`'s
+     own process; the revisions keep SPEC-BAR's section ownership. A finding
+     that opens a new technical unknown goes back to step 1. A disagreement
+     that needs the user's call is flagged in the report, and the run stops
+     there.
 
-   Before reporting, hold the final revision to SPEC-BAR's readiness, and
-   send it to a fresh cold reader when validation changed what a cold reader
-   would reconstruct. Commit a revision only when the spec actually changed.
+   When a revision changes what a cold reader would reconstruct, send the
+   revised spec to a fresh reader with the previous reader's resolved-term
+   list and the changed sections as the block's re-read inputs; the summary
+   reconstruction stays blind. Hold the final revision to SPEC-BAR's done
+   condition. Commit a revision only when the spec changed.
 
 5. **Report and stop.** The user did not watch the run; this message is
    their first look at it. Lead with the outcome and whether the spec is
@@ -143,9 +147,9 @@ section is a conscious call, not drift.
 
 ## Scope — one PR, one session, unless forced apart
 
-Default the spec to **one PR built in this one session, however ambitious**.
+Default the spec to one PR built in this one session, however ambitious.
 Work genuinely too large for that, or carrying operational risk, runs as
-phases **on the same branch**: still one PR, a handoff carrying the baton,
+phases on the same branch: still one PR, a handoff carrying the baton,
 two sessions at most without a really strong reason. Multiple PRs only when
 every intermediate PR is independently correct as a merge state *and* a
 concrete constraint (a repository or ownership boundary, release or rollback
