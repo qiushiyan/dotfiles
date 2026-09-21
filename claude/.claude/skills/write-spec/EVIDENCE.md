@@ -707,3 +707,110 @@ skipped, with the reason, since the spec is the one surface the build
 reads. The Design and Verification examples show both. Measure next: the
 share of Protects lines with a held-by, and whether the next build report
 answers by number and marks nominal tests as nominal.
+
+## 2026-09-21 — two runs on the text with held-by lines and the build line
+
+Both sessions ran on `claude-fable-5-1` and loaded the skill at `cf402d1`
+(the bar text with "as a tenet's held-by line does" is in both
+transcripts). Sessions: `6814be22` (planlab, `feat/eval-matrix-runner-and-judge-comparison`)
+and `5b4757dc` (planlab, `perf/large-schedule-script-cost`).
+
+### The eval matrix spec (`555a015ba1` → `f6e29b78c5`)
+
+Design consult first (`consult-r1/codex`, 5 min), three user decisions,
+then `/write-spec` at 12:27Z. Step 1: 13 grounding reads in 8 min, no
+spikes, since every premise is a code-shape claim. Written at 12:35Z at
+8,142 words. Checks in parallel: cold read (Opus, 35 calls, 5.9 min) and
+the warm validation round (`consult-r2/codex`, resumed by job path,
+7 min). The first read returned 7 terms and 15 gaps, one load-bearing
+(whether the deployed endpoint refuses a record in the new observed
+state); the writer read the endpoint and settled it: opaque on submit,
+decoded on read, no nightly hold. The consult returned 12 findings, 11
+adopted. The revision was a whole-file `Write`: 10,639 words (+31%). The
+re-read was told "rewritten whole", so its scope was the whole document:
+23 calls, 6.0 min; it found two state conflicts (a deadline attempt's
+phases against the state table; the retry-budget arithmetic) and three
+unnamed things. 14 edits, +4%. A third read on the changed sections:
+27 calls, 6.3 min; one genuine contradiction introduced by revision 1
+(moving the screen's long cases into the nightly's directory against the
+spec's own "nightly unchanged" goal) and eight clarifications. 11 edits,
++2%. Report at 13:05Z: 38 min in the skill, 18 of them cold reads.
+
+Final: 11,305 words, the largest of the eight specs so far; 19-line
+summary in four groups; 6 tenets and 13 Protects lines, every one with a
+held-by; an 11-row attempt state table; 19 `Today:` lines (three
+hand-checked at the spec commit, all true); 15 premises, 12 with an
+Establishes line, 1 with Does not establish, 2 with fallbacks; 15
+obligations under the build line, which the writer rewrote with the
+definitions inline after the first read. Prose sentences 25.3 words
+mean, 74 of 422 over forty (17%), concentrated in Verification Observe
+lines (12), Behaviour After lines (11), Premises (11), API (10) and
+Wiring (8).
+
+What the writer ignored, four times: `check-refs.sh` printed "11
+unresolved" on every run, and `spec-stats.py` printed 12% → 17% → 18% →
+18% over forty with a 283-word "longest sentence". Neither reached the
+report. The eleven are all sketches (`matrix/plan.ts` after "sketched
+as", which the bar itself says is not a citation) plus the model slug
+`x-ai/grok-4.6`; the 283-word sentence is a table row. Both tools cried
+wolf, and the honest numbers (0 misses, 17% long) were buried under the
+false ones. Engine defects, both.
+
+### The select vocabulary spec (`0fa6c8914f`)
+
+No design consult; a user discussion, then `/write-spec` at 12:26Z. Step
+1: 29 calls in 8 min, four of them spikes (classifying 144 production
+refusals under the proposed rule; comparing a staged file's keys against
+the schema per entity; the literal-select share; distance-2 suggestions),
+plus a frozen install, a fixture conversion and a bundle build. Written
+at 12:34Z, measured, two sentences fixed, committed. Cold read (Opus, 39
+calls, 5.6 min) and a fresh approach consult (`consult-r1/codex`, 5 min)
+in parallel. At 12:37Z, before either returned, the user said "implement
+end to end … defer doc updates", so the spec was never revised: the
+findings went into the build and six spec-text ambiguities are listed as
+owed in the session's `deferred-doc-pass.md`.
+
+Final: 3,867 words, 15.9 words mean, 4 of 223 sentences over forty (1%);
+16-line summary in four groups; 5 tenets and 4 Protects lines, all with
+a held-by; two verdict tables; 8 `Today:` lines (three hand-checked,
+including "two entries" in the alias table, all true); 6 premises; 10
+obligations; every reference resolves.
+
+The cold read on this small spec was the richest yet: the verdict table
+let the reader name a legal state the table lacks (`{project: '*'}`
+alone); it found the fallback premise contradicting obligations 2 and 3,
+the same finding the consult reached independently; the derivation of
+keys for record and union entities; four alias hard cases; the reversal
+of a recorded seam decision with no review; the pass line of obligation
+9; and "pinned, nominal or skipped" as terms nowhere defined. That last
+one is the bar's defect: the rule text defines the three words and the
+example line does not, and both writers copied the example. The eval
+writer added the definitions after its read; the select writer never
+got the chance.
+
+One premise broke in the build: "the schema import adds nothing material
+to the sandbox bundle. Settled." Its basis was real (one schema already
+in the bundle) and did not establish the claim (the table schema drags
+the XER parser stack; the vocabulary ships as generated data). It was the
+one premise of the three settled ones without a Does not establish line;
+the two that carried one held. One observation, noted for the count.
+
+The build: library commit 15 min after the spec (1,688 lines), the
+model-facing commit 8 min later, a paired eval of five trials per arm
+(0 of 5 → 5 of 5), a corpus read by nine subagents, then `/review`. The
+build report was organised by commit and did not answer the ten
+obligations by number, the second build in a row; here the user's
+"commit at milestones" shaped the report. Same session, no compaction,
+so this was not a cold-artifact test of the spec.
+
+### Disposition
+
+Held constant: the block, the held-by lines, the state tables, the
+Today lines, the build line, parallel checks, the warm resume. Engine
+defects to fix: the checker treats a sketch as a citation and a version
+slug as a path; the stats count table rows as sentences. Bar defect to
+fix: the Verification example line without its definitions. Proposed as
+a cue only: a stats line counting settled premises with no Does not
+establish line. Measure next: whether a clean checker and an honest
+sentence count get acted on or reported; whether a build report answers
+by number (0 of 2 so far).
