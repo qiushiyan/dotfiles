@@ -100,6 +100,8 @@ render:    tmux/.config/tmux/tmux.conf, "pane borders"
 tests:     tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh
 ```
 
-Exercise a full-width pane, half split, quarter split, urgent quota, hard kill,
-same-pane resume, and pane relocation. The suite must substitute the quota
-refresher so it never touches the live accounts cache.
+Exercise full-width and split panes across accounts, including low weekly
+usage beside urgent 5-hour usage. Cover abandoned-lock recovery, hard kill,
+same-pane resume, and pane relocation. Stub the refresher for trigger checks;
+stub `headroom` and use a temporary home when exercising the real refresher,
+so tests never touch the live accounts cache.

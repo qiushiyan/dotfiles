@@ -92,13 +92,12 @@ Everything derives from that tree:
 
 - **Daily**: `x`. Nothing else.
 - **Which lane is a running session on, and how much is left in it?** Its
-  tmux pane border says so — the context chip
-  (`yan 5h:23 Fable:15 opus-5[1m] ✳ 37%`) leads with the account's email local
-  part, or the full email when two lanes share one, and follows it with that
-  lane's 5-hour and model-scoped weekly limits. `x-acc` remains the complete
-  board; the chip answers only for the pane in front of you. Rendering, quota
-  sources, identity fallbacks, freshness, and shedding live in
-  `tmux/.config/tmux/scripts/context-chip.md`.
+  tmux context chip shows the account's email local part, or the full email
+  when lanes share one, beside its model-scoped weekly usage
+  (`yan Fable:15 opus-5[1m] ✳ 37%`). Wider panes also show 5-hour usage;
+  narrowing prioritizes the weekly on every account. `x-acc` is the complete
+  board. Rendering, quota sources, identity fallbacks, freshness, and shedding
+  live in `tmux/.config/tmux/scripts/context-chip.md`.
 - **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
   headroom off the live board, then type `x`; bare `x` targets it from then
   on. For a one-off session on another account without moving `x`, that
