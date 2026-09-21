@@ -291,17 +291,17 @@ observation boundary, what must stay real, and what may be substituted with
 the claim the substitute can and cannot prove. The numbers are what a
 held-by line and the build's report point at. Open the section with one
 line addressed to the build, since the spec is the one document the build
-reads: answer each obligation by number in the build report, as pinned (a
-test that goes red when the behaviour is removed), nominal (a test that
-exists but would stay green), or skipped, with the reason. An obligation
+reads, asking for each obligation answered by number with its definitions
+in the line, as the example opens. An obligation
 that vanishes without an answer is the failure the numbering exists to
 make visible. Verify that the fixtures and runners you prescribe are
 reachable from a build session. A regression the validation asked for is an obligation here,
 stated without the round that asked; the build enumerates the cases.
 
 <example>
-The build reports each obligation below by number: pinned, nominal or
-skipped, with the reason.
+The build reports each obligation below by number: pinned, a test that
+goes red when the behaviour is removed; nominal, a test that exists but
+would stay green; or skipped, with the reason.
 
 3. Obligation: the section read model implements § Behaviour — Focus.
 Observe: the public section view computed from a card's recorded turns and

@@ -806,11 +806,13 @@ so this was not a cold-artifact test of the spec.
 ### Disposition
 
 Held constant: the block, the held-by lines, the state tables, the
-Today lines, the build line, parallel checks, the warm resume. Engine
-defects to fix: the checker treats a sketch as a citation and a version
-slug as a path; the stats count table rows as sentences. Bar defect to
-fix: the Verification example line without its definitions. Proposed as
-a cue only: a stats line counting settled premises with no Does not
-establish line. Measure next: whether a clean checker and an honest
+Today lines, the build line, parallel checks, the warm resume. Applied:
+the checker skips a path on a line that calls it a sketch and a token
+whose extension is digits; the stats leave table rows out and count the
+tables; the Verification example line carries the three definitions and
+the rule points at it. Rerun on the three latest specs: every reference
+resolves, and the eval spec's honest count is 75 of 412 over forty. A
+premise cue (settled premises with no Does not establish line) was
+proposed on one observation and dropped as overfitting. Measure next: whether a clean checker and an honest
 sentence count get acted on or reported; whether a build report answers
 by number (0 of 2 so far).

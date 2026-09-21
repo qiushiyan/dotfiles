@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""spec-stats.py <spec.md> — approximate prose statistics for a spec, with code
-and indented blocks excluded: words per section, sentence and paragraph
+"""spec-stats.py <spec.md> — approximate prose statistics for a spec, with code,
+indented blocks and table rows excluded: words per section, sentence and paragraph
 lengths, and the summary block's labelled lines and groups. Run before the
 final reread."""
 import re, sys
@@ -10,6 +10,8 @@ def main(path):
     text = re.sub(r"^---\n.*?\n---\n", "", text, count=1, flags=re.S)   # front matter
     body = re.sub(r"```.*?```", "", text, flags=re.S)                    # code blocks
     body = re.sub(r"^(?: {4,}|\t).*$", "", body, flags=re.M)             # indented blocks
+    tables = len(re.findall(r"^\s*\|\s*-{3,}", body, flags=re.M))         # header separators
+    body = re.sub(r"^\s*\|.*$", "", body, flags=re.M)                     # table rows
 
     # words per section
     print("words per section")
@@ -34,6 +36,7 @@ def main(path):
     longest = max(sents, key=lambda x: x[0]) if sents else (0, "")
     print(f"\nwords {words}   sentences {ns}   mean {words/ns if ns else 0:.1f} words/sentence   over 40 words {over40} ({100*over40/ns if ns else 0:.0f}%)")
     print(f"longest sentence, {longest[0]} words: {longest[1][:160]}…")
+    print(f"tables {tables} (their rows are left out of the counts above)")
 
     # longest paragraph (a bullet counts as its own paragraph)
     paras = [re.sub(r"\s+", " ", b).strip() for p in re.split(r"\n\s*\n", body)

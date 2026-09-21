@@ -4,8 +4,8 @@
 # paths with a slash and an extension (resolved at the repo root, relative to
 # the spec for ../ links, or under a directory another cited path established)
 # and `§ Heading` references to this spec's own headings, by leading words.
-# Skipped: paths without an extension, symbols, URLs, route paths, and another
-# document's headings. Prints each detected miss with its line; exits 1 on
+# Skipped: paths without an extension, symbols, URLs, route paths, a path on a
+# sentence that calls it a sketch, and another document's headings. Prints each detected miss with its line; exits 1 on
 # any. A clean run means no detected misses, not that every reference holds.
 set -euo pipefail
 spec=${1:?usage: check-refs.sh <spec.md> [repo-root]}
@@ -18,6 +18,9 @@ bases=()
 while IFS=: read -r line ref; do
   [ -z "$ref" ] && continue
   case "$ref" in *'*'*|*'<'*|*'{'*|http*|*'|'*|/*) continue;; esac   # globs, placeholders, URLs, route paths
+  case "${ref##*.}" in *[!0-9]*) ;; *) continue;; esac                  # a version, not an extension: grok-4.6
+  text=$(sed -n "${line}p" "$spec"); before=${text%%\`$ref\`*}      # the sentence the path sits in
+  case "$(sed -E 's/.*[.;:] //' <<< "$before")" in *[Ss]ketch*) continue;; esac   # a proposed placement, not a citation
   p=${ref%%:*}; p=${p%%#*}          # drop :line and #anchor suffixes
   if [[ $p == ../* || $p == ./* ]]; then target="$spec_dir/$p"; else target="$root/$p"; fi
   if [ -e "$target" ]; then bases+=("$(dirname "$target")"); continue; fi
