@@ -614,3 +614,49 @@ user's framing); the design-it-twice paragraph (the pointer plus what the
 document carries); "Leave out what isn't yours to pin" stays in the
 closing rules rather than beside Design, since it covers tests, docs and
 estimates too.
+
+## 2026-09-21 — first run on the layered text (headroom, `3fa78b3c`)
+
+A separate Go project (`~/dev/headroom`), spec `docs/specs/codex-support.md`,
+three commits 9d361c8 → 691ec5c, unbuilt. The session loaded the current
+text (scripts, Today lines, held-by, the re-read inputs all present).
+
+Procedure: spikes ran before the consult (CODEX_HOME isolation, `login
+status` latency, the usage endpoint, session sharing across homes, an
+unstarted window measured twice); the consult round then the spec. In the
+spec step: SPEC-BAR read, the six lessons read, then five minutes reading
+the exact files the Wiring section describes (`app.go`, `accounts.go`,
+`refresh.go`, `http.go`, `prepare.go`, `launch.go`, `usage.go`, `state.go`)
+plus the vendor's source tree, `make check` and `make test-pty` run green,
+the spec written at 09:34, `spec-stats.py` run before the commit, both
+checks dispatched together at 09:35, re-read with inherited terms at
+09:42, report at 09:47. Spec phase 21 minutes; zero user turns inside it.
+Cold reads: 22 and 19 tool calls, 5 and 4 minutes.
+
+The spec: 7,147 words (5,307 at first commit, +35%), mean 16.5 words per
+sentence and 3% over 40 at both commits, so the revisions did not degrade
+the prose; a 19-line grouped summary block; zero journey text; every cited
+path and heading resolves. Structure entries carry Owner / Protects /
+Today / After; Wiring has five Today and five After bullets, each Today
+naming its file and symbols; six tenets each close with a held-by line
+naming a mechanism or an obligation number; four tables (row identity,
+reset states, allowance order, health and eligibility order, all with
+entered-when columns); seventeen numbered obligations mapped onto four
+phases; seven premises with measured or from-source bases, two assumed
+with fallbacks that move a number. Eight Today claims checked against the
+source by this pass (prepare/prepareWith and the parallel health query,
+Assemble's newest-observation choice, Start/fetch/interpret, the picker's
+fields, Prepare's order and ExecPath's argv, CooldownMax and spacing(),
+FreshWindow, the three ParseLimits call sites): all eight hold.
+
+The re-read still found a cross-section contradiction (the parse
+dispatch could not feed the identity check as written), an obligation
+numbered out of order, two terms and six gaps; the last revision closed
+them and was not re-read, which the report says. Growth through the
+checks stayed above the quarter target, on design content (the allowance
+state, the spacing floor, bootstrapping).
+
+No change made from this run. Next evidence: the build on
+`codex-support` — whether the pickup gate re-reads the Today lines,
+whether obligations 1–17 are answered by number, and which departures
+appear against the four tables.
