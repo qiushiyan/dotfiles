@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # check-refs.sh <spec.md> [repo-root]
-# Every backticked repository path and every `§ Heading` reference in the spec
-# must resolve: paths at the repo root (or relative to the spec for ../ links),
-# headings inside the spec. Prints each miss with its line; exits 1 on any miss.
+# A heuristic check of the references it recognises: backticked repository
+# paths with a slash and an extension (resolved at the repo root, relative to
+# the spec for ../ links, or under a directory another cited path established)
+# and `§ Heading` references to this spec's own headings, by leading words.
+# Skipped: paths without an extension, symbols, URLs, route paths, and another
+# document's headings. Prints each detected miss with its line; exits 1 on
+# any. A clean run means no detected misses, not that every reference holds.
 set -euo pipefail
 spec=${1:?usage: check-refs.sh <spec.md> [repo-root]}
 root=${2:-$(git -C "$(dirname "$spec")" rev-parse --show-toplevel 2>/dev/null || pwd)}

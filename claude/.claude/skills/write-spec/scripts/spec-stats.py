@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""spec-stats.py <spec.md> — the shape of a spec as a model reads it: words per
-section, sentence length, the longest paragraph, and whether the summary is a
-labelled block. Run before the final reread."""
+"""spec-stats.py <spec.md> — approximate prose statistics for a spec, with code
+and indented blocks excluded: words per section, sentence and paragraph
+lengths, and the summary block's labelled lines and groups. Run before the
+final reread."""
 import re, sys
 
 def main(path):

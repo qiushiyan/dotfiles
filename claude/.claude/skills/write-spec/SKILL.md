@@ -66,8 +66,9 @@ keeps the cold read; "skip the checks" skips both and ends at the report.
    show placement, and where they differ from the bar the bar wins. Ask
    only if placement stays ambiguous.
 
-3. **Commit the spec** on the current branch: the spec file alone, its own
-   commit, nothing else staged.
+3. **Commit the spec** on the current branch: the spec file and the index
+   row that registers it where the project keeps one, in its own commit,
+   nothing else staged.
 
 4. **Check it cold and validate it.** Two independent readers judge the
    spec as it stands. Dispatch both at once, since each takes minutes and
@@ -91,8 +92,9 @@ keeps the cold read; "skip the checks" skips both and ends at the report.
      that needs the user's call is flagged in the report, and the run stops
      there.
 
-   Each finding is fixed by rewriting the sentence at the rule's home, as
-   SPEC-BAR's closing rules say. When a revision changes what a cold reader
+   A correction rewrites the sentence at the rule's home and missing content
+   is added at the section that owns it, as SPEC-BAR's closing rules say.
+   When a revision changes what a cold reader
    would reconstruct, send the revised spec to a fresh reader with the
    previous reader's resolved-term list and the changed sections as the
    block's re-read inputs; the summary reconstruction stays blind. Hold the
@@ -109,7 +111,8 @@ keeps the cold read; "skip the checks" skips both and ends at the report.
    the bet each relies on, the cost if it is wrong, your recommendation, and
    which build work waits on the answer. When a retry is one of the options,
    say what happens after the retry. Report unresolved checks separately. If
-   nothing is open, say so. The user decides what happens next.
+   nothing is open, say so. The user decides what happens next. The
+   opening and the decision of such a report, before its identifiers:
 
    <example>
    The spec for the worker deaths on oversized script output is written,

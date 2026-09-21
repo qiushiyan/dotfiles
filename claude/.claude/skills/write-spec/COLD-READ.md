@@ -29,9 +29,9 @@ on any contradiction they create with the rest of the spec.
 
 Return, with "none" for an empty category:
 
-1. Your summary-only reconstruction, kept to what the corrections need,
-   then separately what the body made you correct in it; the corrections
-   are the finding.
+1. Your summary-only reconstruction, compact: the goals, the scope, the
+   exceptions and the dependencies as you read them. Then, separately,
+   what the body made you correct in it, or "none".
 2. Unresolved terms. For each: the exact wording and where it appears; the
    reading you guessed, or "no defensible reading"; the plausible competing
    reading, if one exists; the implementation choice that would change
@@ -45,15 +45,18 @@ Return, with "none" for an empty category:
 
 A term finding reads like this:
 
+<example>
 Term: "both legs", § Design — API.
 Guessed: the eager staging planner and the lazy resolver.
 Alternative: artifact selection and the cache fallback.
 Choice that changes: which callers must share the selection rule, and which
 may make a retention request.
 Checked: the spec, docs/loopy/infra/client-data-corpus.md.
+</example>
 
-Give conclusions with their evidence, not a reasoning transcript. Use only
-the spec and the project docs. Do not read implementation code, run
-anything, edit anything, or fill a gap by inventing a design; the task is
-comprehension, not a second design review.
+Give conclusions with their evidence, not a reasoning transcript. Read the
+spec and the project documents with whatever tools read files; leave
+implementation code, tests and commands unrun and every file unedited, and
+fill no gap by inventing a design; the task is comprehension, not a second
+design review.
 ```

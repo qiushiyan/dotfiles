@@ -37,13 +37,16 @@ most of them; trim only for a genuinely contained change.
 
 ## The document's shape
 
-The spec has five sections, each the authority for one kind of statement.
-A section a written project rule requires (a status header, an As built
-record) is added at the kind it belongs to; nothing else about the shape
-comes from the project.
+The headings, in order: Summary, Intent, Tenets, Behaviour, Design,
+Verification, Delivery. Five of them are authorities, each for one kind
+of statement; the Summary re-grounds, and the Tenets carry Intent's
+cross-cutting constraints as their own section. A section a written
+project rule requires (a status header, an As built record) is added at
+the kind it belongs to; nothing else about the shape comes from the
+project.
 
-- **Intent** — goals and non-goals, followed by the Tenets as their own
-  section: the cross-cutting constraints the build holds to.
+- **Intent** — goals and non-goals, with the Tenets right after them: the
+  cross-cutting constraints the build holds to.
 - **Behaviour** — what a person observes, situation by situation.
 - **Design** — ownership, interfaces, wiring, and the premises they rest on.
 - **Verification** — how each obligation will be observed.
@@ -62,8 +65,8 @@ per line, selective about what it keeps, with a
 blank line between the groups so the eye finds the state, the change, the
 edges and the pointers without reading every line. Keep any exception that
 changes the build and any dependency still outstanding. Point at the
-sections that own the detail. A prose summary of the same content runs to
-twice the length and hides the exceptions inside its sentences.
+sections that own the detail. A prose summary of the same content hides the exceptions and the
+dependencies inside its sentences.
 
 <example>
 Current: Loopy runs model-written shell scripts inside pool workers.
@@ -97,8 +100,7 @@ each closing with what holds it: the mechanism in § Design that makes it
 hard to break, or the numbered obligation in § Verification that would
 catch the break. An invariant with neither is a wish: the writer strikes
 it, or moves it beside the seam it describes with the observation that
-would show it broken. Writing the line is how the writer finds that out
-before a reviewer does. They have one
+would show it broken. They have one
 `## Tenets` section, placed right after Intent; a validation round revises
 it in place, and the reason a tenet was struck lives in that round's
 synthesis, not here. A rule that binds one behaviour or one seam is not a
@@ -114,8 +116,8 @@ resolved (§ Design — Wiring) and obligation 2.
 ### Behaviour
 
 Describe the situations that change a person's experience. For each: what
-they see today, what they see after, the mechanism that produces it, and
-what happens if the failure recurs. Name what the person sees separately
+they see today, what they see after, the mechanism in one line pointing at
+the Design view that owns it, and what happens if the failure recurs. Name what the person sees separately
 from what the model or the system receives. A before/after flow earns its
 place only where a route changes; a sequence only where order changes the
 outcome.
@@ -131,10 +133,10 @@ the bound and how much was retained, and tells the model to say so or to
 narrow the command. The planner then sees a qualified answer or a retry,
 not a confident answer from a partial read.
 
-Mechanism: the limit event travels through the shell's diagnostics channel
-into the tool result, outside stdout and stderr, so the failing command
-cannot delete it. What the planner sees depends on the model following the
-notice; § Verification holds the eval that checks it does.
+Mechanism: the limit event reaches the tool result outside stdout and
+stderr, so the failing command cannot delete it (§ Design — Wiring). What
+the planner sees depends on the model following the notice; § Verification
+holds the eval that checks it does.
 
 If it recurs: every affected result carries the notice. The model can print
 less, or write to a file and read a slice. A second truncated result does
@@ -207,11 +209,13 @@ Binding distinctions:
 
 Legal states of a publication row:
 
-  | state     | entered when                                   | left when                                  | written by      |
-  | --------- | ---------------------------------------------- | ------------------------------------------ | --------------- |
-  | pending   | the planner records the plan hash              | the build finishes or fails                | the planner     |
-  | published | the artifact's bytes are retained in the store | retention drops the bytes, or a new plan   | the publisher   |
-  | stale     | the store fingerprint no longer matches        | never; a new plan writes a new row         | the lazy reader |
+  | state     | entered when                                    | left when                                                  | written by      |
+  | --------- | ----------------------------------------------- | ---------------------------------------------------------- | --------------- |
+  | pending   | the planner records the plan hash               | the build finishes (published) or fails (failed)           | the planner     |
+  | published | the artifact's bytes are retained in the store  | the fingerprint changes (stale) or retention drops (absent) | the publisher   |
+  | stale     | the store fingerprint no longer matches         | never; a new plan writes a new row                         | the lazy reader |
+  | failed    | the build fails                                 | never; the next send writes a new row                      | the planner     |
+  | absent    | retention drops the bytes                       | never; the row is deleted with the artifact                | retention       |
 
 Wiring — the changed path:
   Today: the eager planner builds the corpus on every send and never asks
@@ -265,7 +269,8 @@ Basis — assumed: no legitimate script in the 30-day fleet read piped more than
 Outstanding verification: the p99 of piped output over that window, from the tool-call rollup.
 Fallback: raise the bound to the measured p99 plus margin, capped at the 256 MiB
 the shell already allows. The notice, the refusal and the recovery path are the
-same at any bound; only the number moves.
+same at any bound; only the number moves. A p99 above the cap means the bound
+cannot hold the fleet, and the premise becomes blocking.
 </example>
 
 A premise with no fallback that preserves the design is a gate, not an
@@ -356,8 +361,9 @@ notice proceed independently.
   system as it is; label proposed behaviour as unbuilt.
 - **Measurements keep their scope.** A number carries its date, window,
   population and limits, in the premise it supports.
-- **References resolve.** Every cited path and `§ Heading` exists at the
-  revision the spec names.
+- **References resolve.** Every cited path to existing source and every
+  `§ Heading` exists at the revision the spec names; a proposed placement
+  is labelled as a sketch and is not a citation.
 
 ## Before you finish
 
@@ -382,16 +388,17 @@ notice proceed independently.
 - **Strip the journey**, as the opening says: consult job names, rounds,
   finding counts and dispositions leave the spec; each decision keeps its
   reason and its evidence. The job names belong in the report.
-- **Revise by replacement.** A finding from a check is fixed by rewriting
-  the sentence at the rule's home, and the old sentence goes; a clause
-  appended beside it is how a spec grows by half through its checks and
-  ends up saying one thing twice.
+- **Revise by replacement.** A correction rewrites the sentence at the
+  rule's home and the old sentence goes; a clause appended beside it is
+  how a spec ends up saying one thing twice. Missing content, a state, an
+  owner or an obligation, is added at the section that owns it.
 - **Measure the document**, then reread it once as one whole:
   `scripts/spec-stats.py <spec>` prints words per section, sentence length
   and whether the summary is a labelled block; `scripts/check-refs.sh
-  <spec>` lists every cited repository path and `§ Heading` that does not
-  resolve in the working tree, and a path outside the repository is checked
-  by hand. The numbers to act on: a sentence past forty words carries two
-  claims, and a section that grew by half through the checks says something
-  twice.
+  <spec>` lists the cited repository paths and `§ Heading` references it
+  recognises that do not resolve in the working tree; a clean run means no
+  detected misses, and a path outside the repository or in an unusual form
+  is checked by hand. Read a sentence past forty words for a second claim,
+  and a section that grew by half through the checks for a rule stated
+  twice; the number is the cue, the reading is the judgment.
 - **Run the project's own checks** from its documentation bindings.

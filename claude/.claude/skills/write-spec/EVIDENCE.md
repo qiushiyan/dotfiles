@@ -590,3 +590,27 @@ commit against 27.7/19% (trial) and 21.9/7% (PDF). Reverse the Today
 convention if the gate's re-reads cost more than the review rounds they
 replace, or if writers fill Today lines from memory anyway (wrong Today
 lines at the same rate as before).
+
+Cold Codex review (`dotfiles-4f711dad/spec-skill-review-r3`, 2 min,
+rulebook first, surfaces second, this log last): verdict ship after
+fixes. Applied: the state-table example made coherent (failure and
+absence rows, every exit named); the fallback example names the edge
+where the premise becomes blocking; the cold reader always returns a
+compact reconstruction, then corrections or "none"; the commit boundary
+includes the project's index row; corrections replace and missing content
+is added at its owning section; Behaviour's mechanism is one line
+pointing at Design, the example trimmed to match; proposed placements are
+sketches, not citations; thresholds are cues for a reading, not
+diagnoses; the checker's header and the bar describe it as heuristic
+with its exclusions, a clean run meaning no detected misses; the
+statistics docstring says approximate; the headings named in order
+instead of "five sections" plus two; the cold-read example tagged; the
+report example labelled as the opening and decision portion; the
+reader's boundary permits file-reading tools. Cut: the "twice the length"
+multiplier and the "writing the line is how the writer finds out"
+sentence. Kept against the review: "Writing a spec is a procedure, not
+only a document" (it is the anchor for step 1's settle-by-running, the
+user's framing); the design-it-twice paragraph (the pointer plus what the
+document carries); "Leave out what isn't yours to pin" stays in the
+closing rules rather than beside Design, since it covers tests, docs and
+estimates too.
