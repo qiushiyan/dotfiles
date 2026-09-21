@@ -17,102 +17,93 @@ requires:
 
 # Write a spec
 
-Turn the direction this session has settled into a spec: the design document
-the user approves and this session, after compaction, implements. Writing a
-spec is a procedure, not only a document. It settles the unknowns the design
-turns on by running them, so the build starts from measured ground, and it
-produces a document a model can rebuild its whole mental model from.
+Turn the direction this session has settled into the document the user
+approves and this session, after compaction, builds from. A spec is a
+procedure as much as a document: it settles the unknowns the design turns
+on by running them, so the build starts from measured ground, and it gives
+a model with no conversation everything it needs to rebuild the whole
+mental model.
 
-Everything below is a bar, not a form: **adapt and simplify to the change at
-hand**. Arguments to this skill override any default below, and an override
-carries through the later steps it touches: "don't commit" leaves the spec
-and its revisions as uncommitted files the checks still read; a user who
-wants to read the spec first gets the report after step 2, the checks
-waiting on their word; "skip validation" skips the validation consult and
-keeps the cold read; "skip the checks" skips both and ends at the report.
+Everything below is a bar, not a form; adapt it to the change at hand.
+Arguments override the defaults and carry through the steps they touch:
+
+- "don't commit": the spec, its index row and its revisions stay
+  uncommitted files, and step 4 still reads them.
+- "let me read it first": the report comes after step 2, and step 4 waits
+  on the user's word.
+- "skip validation": step 4 keeps the cold read and drops the consult.
+- "skip the checks": step 4 is skipped and the run ends at the report.
 
 ## Process
 
 1. **Ground, then settle what the design turns on.** Reread the modules the
-   change touches, so the problem and the approach are grounded in code, not
-   memory. Reuse evidence this session already gathered when its revision,
-   inputs and scope still support the decision; fill the material gaps
-   rather than repeat a sound measurement.
-
-   Then settle every unknown whose answer could change the scope, the
-   ownership, the feasibility, or the promised experience, before the design
-   is written as ready. Use whatever the question needs: a source read, an
-   existing test, a production read, or a thin `/spike`. Give each question
-   at most thirty minutes. Record what ran, what it established, and what
-   stays unknown; an access failure or an expired time box leaves the claim
-   unresolved, never quietly deferred to the build. Continue with an
-   evidenced fallback or an explicit scope cut when either preserves the
+   change touches, so the problem and the approach rest on code rather
+   than memory; reuse evidence this session already gathered where its
+   revision and scope still support the decision. Then settle every
+   unknown whose answer could change the scope, the ownership, the
+   feasibility or the promised experience: a source read, an existing
+   test, a production read, or a thin `/spike`, thirty minutes each at
+   most so one question cannot eat the run. Record what ran, what it
+   established, and what stays unknown. A failed access or an expired time
+   box leaves the claim unresolved, never quietly deferred to the build;
+   continue with an evidenced fallback or a scope cut when either keeps the
    agreed goal.
 
-   Ask the user only for a product choice, or for a blocker you cannot settle
-   within those bounds. Ask the independent questions in one batch, a
-   question whose answer decides whether another applies first, each
-   carrying why it matters, the options with what each means for the real
-   user, and your recommendation.
+   Ask the user only for a product choice or a blocker you cannot settle
+   within those bounds: the independent questions in one batch, each with
+   why it matters, what each option means for the real user, and your
+   recommendation.
 
-2. **Write the spec** to [SPEC-BAR.md](SPEC-BAR.md): read it before
-   writing; it carries the shape, the spec-writing rules, what the spec
-   must settle, and when it is done. The project decides where the file
-   goes, its front matter or status header, its index row, and any section
-   a written project rule requires; read the specs directory's README and
-   the project's documentation bindings for those and for the local checks.
-   Everything else, the headings, their order and the prose, is
-   SPEC-BAR's. Existing specs in the directory are not a convention: they
-   show placement, and where they differ from the bar the bar wins. Ask
-   only if placement stays ambiguous.
+2. **Write the spec** to [SPEC-BAR.md](SPEC-BAR.md), read before writing.
+   The project decides placement: where the file goes, its status header,
+   its index row, any section a written project rule requires; read the
+   specs directory's README and the project's documentation entry point
+   for those and for the project's own checks. The headings, their order
+   and the prose are the bar's. Sibling specs show placement, not a
+   convention; where they differ from the bar, the bar wins.
 
-3. **Commit the spec** on the current branch: the spec file and the index
-   row that registers it where the project keeps one, in its own commit,
-   nothing else staged.
+3. **Commit the spec** on the current branch with the index row that
+   registers it, in its own commit with nothing else staged, so the build's
+   departures diff against it.
 
-4. **Check it cold and validate it.** Two independent readers judge the
-   spec as it stands. Dispatch both at once, since each takes minutes and
-   neither needs the other's result, and fold what they return into one
+4. **Check it cold and validate it.** Two readers judge the spec as it
+   stands; dispatch both at once and fold what they return into one
    revision.
 
-   - **Cold read.** A fresh subagent on the `opus` model, given the block in
-     [COLD-READ.md](COLD-READ.md) filled in and nothing else, reports what a
-     model with no conversation could not reconstruct. Judge its
-     reconstruction against the design you meant. Resolve each material
-     ambiguity at the rule's home; keep a term only when its meaning is
-     recoverable from the spec or the project docs.
-   - **Validation consult.** When a prior consult's latest job name is in
-     reach (this session's synthesis, or the handoff), continue that job
-     with the spec as the updated proposal under critique, by `/consult`
-     step 6: the voices keep their context and judge follow-through. When
-     no job can continue, open a fresh `/consult` in approach mode with the
-     spec as the artifact under review. Judge the findings by `/consult`'s
-     own process; the revisions keep SPEC-BAR's section ownership. A finding
-     that opens a new technical unknown goes back to step 1. A disagreement
-     that needs the user's call is flagged in the report, and the run stops
-     there.
+   - **Cold read.** A fresh subagent on the `opus` model, a different
+     model from the writer's, given the block in [COLD-READ.md](COLD-READ.md)
+     filled in and nothing else, reports what a model with no conversation
+     could not reconstruct. Judge its reconstruction against the design
+     you meant; resolve each material ambiguity at the rule's home, and
+     keep a term only when its meaning is recoverable from the spec or the
+     project docs.
+   - **Validation consult.** When a prior consult's latest job is in reach
+     (this session's synthesis, or the handoff), continue it with the spec
+     as the updated proposal under critique, by `/consult` step 6: the
+     voices keep their context and judge follow-through. Otherwise open a
+     fresh `/consult` in approach mode with the spec as the artifact under
+     review. Judge the findings by `/consult`'s own process. A finding that
+     opens a technical unknown returns to step 1; a disagreement that needs
+     the user's call is flagged in the report, and the run stops there.
 
-   A correction rewrites the sentence at the rule's home and missing content
-   is added at the section that owns it, as SPEC-BAR's closing rules say.
-   When a revision changes what a cold reader
-   would reconstruct, send the revised spec to a fresh reader with the
-   previous reader's resolved-term list and the changed sections as the
-   block's re-read inputs; the summary reconstruction stays blind. Hold the
-   final revision to SPEC-BAR's done condition, its measurements included.
-   Commit a revision only when the spec changed.
+   Corrections follow the bar's closing rules: rewrite at the rule's home,
+   add at the section that owns it. When the revision changes what a cold
+   reader would reconstruct, send it to a fresh reader with the previous
+   reader's resolved-term list and the changed sections as the block's
+   re-read inputs; the summary reconstruction stays blind. Hold the final
+   revision to the bar's done condition, measurements included, and commit
+   a revision only when the spec changed.
 
-5. **Report and stop.** The user did not watch the run; this message is
-   their first look at it. Lead with the outcome and whether the spec is
-   ready, then each open decision, then the identifiers: the spec path, the
-   commit SHAs, the latest consult job name, what settled, and what the cold
-   read and the validation changed. Every status claim traces to a tool
-   result from this session. Write each open decision so the user can decide
-   from this message alone: what the person experiences under each option,
-   the bet each relies on, the cost if it is wrong, your recommendation, and
-   which build work waits on the answer. When a retry is one of the options,
-   say what happens after the retry. Report unresolved checks separately. If
-   nothing is open, say so. The user decides what happens next. The
-   opening and the decision of such a report, before its identifiers:
+5. **Report and stop.** This message is the user's first look at the run.
+   Lead with the outcome and whether the spec is ready. Then each open
+   decision, written so the user can decide from this message alone: what
+   the person experiences under each option, the bet each relies on, the
+   cost if it is wrong, your recommendation, and which build work waits on
+   the answer. Then the identifiers: the spec path, the commit SHAs, the
+   latest consult job, what settled, and what the cold read and the
+   validation changed. Every status claim traces to a tool result from this
+   session; unresolved checks are reported apart; if nothing is open, say
+   so. The opening and one decision of such a report:
 
    <example>
    The spec for the worker deaths on oversized script output is written,
@@ -144,22 +135,21 @@ keeps the cold read; "skip the checks" skips both and ends at the report.
 
 ## Emphasis
 
-Give depth to the decisions this change turns on, and omit the views that
+Give depth to the decisions the change turns on and omit the views that
 settle nothing. A refactor usually turns on the target shape and the
-vocabulary later sessions inherit; a feature usually turns on what the
-person experiences. These are inspirations, not a taxonomy: skipping a
-section is a conscious call, not drift.
+vocabulary later sessions inherit; a feature on what the person
+experiences. Skipping a section is a conscious call, not drift; the
+heading is left out.
 
-## Scope — one PR, one session, unless forced apart
+## Scope
 
-Default the spec to one PR built in this one session, however ambitious.
-Work genuinely too large for that, or carrying operational risk, runs as
-phases on the same branch: still one PR, a handoff carrying the baton,
-two sessions at most without a really strong reason. Multiple PRs only when
-every intermediate PR is independently correct as a merge state *and* a
-concrete constraint (a repository or ownership boundary, release or rollback
-mechanics, an operational step mid-way, evidence only a merged PR can
-produce) benefits from the seam. State the PR boundary and the phases
-explicitly in the spec, so a consult voice or an implementing session does
-not quietly re-split it. The reasoning behind the default:
+One PR built in this one session, however ambitious. Work too large for
+that, or carrying operational risk, runs as phases on the same branch:
+still one PR, a handoff between the sessions, two sessions at most without
+a strong reason. Multiple PRs need two things: every intermediate PR is
+independently correct as a merge state, and a concrete constraint benefits
+from the seam, such as a repository or ownership boundary, release or
+rollback mechanics, an operational step mid-way, or evidence only a merged
+PR can produce. State the boundary and the phases in § Delivery, so a voice
+or a build session does not quietly re-split them; the reasoning is
 `~/.config/lessons/collaboration/pr-boundaries.md`.

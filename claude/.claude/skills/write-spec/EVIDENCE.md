@@ -816,3 +816,27 @@ premise cue (settled premises with no Does not establish line) was
 proposed on one observation and dropped as overfitting. Measure next: whether a clean checker and an honest
 sentence count get acted on or reported; whether a build report answers
 by number (0 of 2 so far).
+
+## 2026-09-21 — the prompt-engineering pass over all three surfaces
+
+Requested as one revision toward short, clear instructions with examples
+over prose, and no overfitting to single runs. Rewritten whole: SPEC-BAR
+3,684 → 3,111 words, SKILL 1,416 → 1,229, COLD-READ 490 → 427, with all
+ten examples kept and the Design example cut by one entry. Cut: incident
+narration, mechanism narration, procedure the model derives, the Readiness
+bullet (its content lives in the done condition and the gate sentence),
+the "Current, searchable names" rule (folded into References resolve).
+Merged: Intent and Tenets under one heading; Emphasis and Scope kept as
+two short sections since SPEC-BAR cites § Scope.
+
+Cold read (Opus, eight scenarios, 2.3 min): every scenario answered from
+the files; one contradiction found and fixed (the failed-invariant rule
+had different outcomes in Tenets and Structure; Structure now defers to
+the tenet rule); the obligation vocabulary was defined only in an example
+the file calls "a form", so Verification now opens with the example's
+first line as written; the override sentence became a four-item list with
+"the checks" scoped to step 4; "documentation bindings" and "the baton"
+replaced with plain words; reasons added for the time box, the own
+commit and the reader's model. Left as is: the consult is not re-run
+after a revision (the cold read is), and the forty-word cue keeps its
+number.
