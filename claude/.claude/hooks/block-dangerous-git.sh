@@ -50,15 +50,30 @@ PUSH_RE='(^|[^a-zA-Z0-9_])git([[:space:]]+(-C|--work-tree|--git-dir|-c)([[:space
 # last `cd <path>` and any `git -C <path>`; fall back to the hook's cwd.
 # Accident prevention, not a sandbox: an unresolvable path just falls back.
 # ─────────────────────────────────────────────────────────────────────────────
+# A path lifted out of the command text is never shell-expanded, so a leading
+# `~` reaches the -d test literally, fails it, and the caller silently falls
+# back to the hook's own cwd — judging `cd ~/dev/other && git push` against
+# whatever repo the session root happens to be. Only the two forms a shell
+# would expand for the current user are expanded; `~other` keeps the fallback.
+expand_tilde() {
+  case "$1" in
+    "~")   printf '%s' "$HOME" ;;
+    "~/"*) printf '%s/%s' "$HOME" "${1#\~/}" ;;
+    *)     printf '%s' "$1" ;;
+  esac
+}
+
 effective_git_dir() {
   local dir="$PWD" arg
   arg=$(printf '%s\n' "$COMMAND" \
     | grep -oE "(^|[;&|][[:space:]]*)cd[[:space:]]+(\"[^\"]+\"|'[^']+'|[^;&|[:space:]]+)" \
     | tail -1 | sed -E "s/^.*cd[[:space:]]+//; s/^[\"']//; s/[\"']\$//")
+  arg=$(expand_tilde "$arg")
   [ -n "$arg" ] && [ -d "$arg" ] && dir="$arg"
   arg=$(printf '%s\n' "$COMMAND" \
     | grep -oE "git[[:space:]]+-C[[:space:]]+(\"[^\"]+\"|'[^']+'|[^[:space:]]+)" \
     | tail -1 | sed -E "s/^git[[:space:]]+-C[[:space:]]+//; s/^[\"']//; s/[\"']\$//")
+  arg=$(expand_tilde "$arg")
   [ -n "$arg" ] && [ -d "$arg" ] && dir="$arg"
   printf '%s' "$dir"
 }
@@ -160,7 +175,6 @@ DANGEROUS_PATTERNS=(
   "git reset --hard"
   "git clean -fd"
   "git clean -f"
-  "git branch -D"
   "git checkout \."
   "git restore \."
   "reset --hard"
@@ -172,5 +186,46 @@ for pattern in "${DANGEROUS_PATTERNS[@]}"; do
     exit 2
   fi
 done
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tier 5: Force branch deletion — gated, with a per-command bypass.
+#
+# `git branch -D` is how worktree cleanup ends, and it is the only ending that
+# works: a squash-merged branch never shares commits with the trunk, so `-d`
+# refuses it as unmerged however thoroughly the work shipped. Blocking it
+# outright dead-ends every cleanup, so this tier gates rather than forbids —
+# the same shape as Tier 3, and deliberately narrower than the patterns above,
+# which destroy uncommitted work and stay unbypassable.
+# ─────────────────────────────────────────────────────────────────────────────
+if echo "$SCAN" | grep -qE "git branch -D"; then
+  if echo "$SCAN" | grep -qE "(^|[[:space:]])CLAUDE_ALLOW_BRANCH_DELETE=1[[:space:]]"; then
+    exit 0  # user-authorized branch deletion
+  fi
+  cat >&2 <<'EOF'
+BLOCKED: git branch -D force-deletes a branch, which is gated.
+
+Deleting a branch git still considers unmerged can drop commits that exist
+nowhere else. This is the expected state — not an error to work around.
+
+How to bypass when authorized:
+
+  CLAUDE_ALLOW_BRANCH_DELETE=1 git branch -D <branch>
+
+When to use the bypass:
+- ONLY when the user has authorized this cleanup — "clean up the worktrees",
+  "delete that branch", or a cleanup task they asked for.
+- Prefer `git branch -d` first. It succeeds whenever git can see the work is
+  merged, and its refusal is the signal that this gate exists for.
+
+When NOT to use the bypass:
+- On your own initiative after deciding a branch looks finished.
+- To clear an error from `git branch -d` you have not explained. Confirm the
+  work reached the trunk first: for a squash merge, that the merged PR's head
+  equals or contains this branch's HEAD.
+
+If unsure: report the branch and why `-d` refused, then let the user decide.
+EOF
+  exit 2
+fi
 
 exit 0

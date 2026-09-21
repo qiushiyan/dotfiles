@@ -330,8 +330,7 @@ $0'''
 [[snippets]]
 key = "implement-spec"
 expand = '''
-Reread the settled spec and the critical files this change touches to rebuild your mental model from
-the actual code, then implement end to end, commit at major milestones along the way. Defer doc updates — I'll say when.'''
+Reread the settled spec to rebuild your mental model on the goals and implementation tenets, then implement end to end, commit at major milestones along the way. Defer doc updates — I'll say when.'''
 
 # ── Direct build (skip spec/plan) ─────────────────────
 
@@ -545,6 +544,12 @@ Branch-specific focus:
 $0'''
 
 # ── Standalone helpers ────────────────────────────────
+[[snippets]]
+key = "consult-codex"
+expand = '''
+Agreeing with the general direction here. Now, let's run a consult round with Codex to settle down the high-level design and implementation tenets.
+'''
+
 
 [[snippets]]
 key = "consult-verify"

@@ -6,7 +6,7 @@ model_reasoning_summary = "concise"
 model_verbosity = "low"
 sandbox_mode = "danger-full-access"
 approval_policy = "never"
-service_tier = "priority"
+service_tier = "default"
 
 notify = ["/Users/qiushi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 
@@ -98,6 +98,9 @@ trust_level = "trusted"
 [projects."/Users/qiushi/dev/.handoffs/planlab-main/spec/staging-large-schedule-capacity.evidence/research-2026-09-10/consult-verify"]
 trust_level = "trusted"
 
+[projects."/private/tmp/envoy-launcher-check.VtIYYg/work"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
@@ -120,8 +123,8 @@ NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = ""
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = ""
 NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = ""
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.901.41600"
-NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/qiushi/.codex/plugins/cache/openai-bundled/browser/26.901.41600/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
+BROWSER_USE_CODEX_APP_VERSION = "26.908.70816"
+NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/qiushi/.codex/plugins/cache/openai-bundled/browser/26.908.70816/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
 SKY_CUA_SERVICE_PATH = "/Users/qiushi/.codex/computer-use/Codex Computer Use.app"
 CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
 
@@ -142,6 +145,7 @@ js_repl = false
 [notice]
 hide_gpt5_1_migration_prompt = true
 suppress_unstable_features_warning = true
+hide_rate_limit_model_nudge = true
 
 [tui]
 # Tokyo Night Moon syntax palette, matching the terminal theme.
@@ -164,6 +168,7 @@ terminal_title = [
   "weekly-limit",
   "model-with-reasoning",
 ]
+pet = "disabled"
 
 [tui.keymap.chat]
 # Option+Up opens questions or edits queued messages; Option+Down returns.
@@ -443,6 +448,42 @@ enabled = false
 
 [[skills.config]]
 path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771c724_11a64f37-35c0-453a-8fc9-5c81cbe46b00/xlsx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/docs/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/docx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/import-memory/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/morning/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/pdf/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/pptx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/skill-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/theme-factory/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/xlsx/SKILL.md"
 enabled = false
 
 # END skill-sync generated exclusions

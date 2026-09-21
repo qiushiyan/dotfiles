@@ -41,3 +41,12 @@ fi
 # silently never runs and only the trailing error says so. Here rather than
 # in .zshrc because the shells that hit it are non-interactive.
 unsetopt EQUALS
+
+# ── Portless: .localhost only ─────────────────────────────
+# Portless runs ONE proxy per machine with one global TLD list, registers
+# every project's route on every TLD, and refuses a project that asks for a
+# different list. planlab's dev launcher expects `.localhost`; an itell
+# project once started the proxy with `local.itell.ai` first and planlab
+# came up under an itell domain. Whichever project starts the proxy now
+# starts it plain; itell reaches its app at platform.localhost.
+export PORTLESS_TLD=localhost

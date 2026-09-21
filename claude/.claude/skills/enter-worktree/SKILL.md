@@ -1,5 +1,5 @@
 ---
-name: suggest-worktree
+name: enter-worktree
 description: Name the branch for work that is ready to leave the primary branch, hand back the gwt command that creates it, and move the session there once it exists.
 argument-hint: "[scope hint]"
 disable-model-invocation: true

@@ -15,7 +15,7 @@ All checkpoints are user-triggered by design — the skills never fire themselve
     /consult                 ← position taken, then fresh voices judge it → the settled direction
     /spike                   ← optional: throwaway code settles what the direction rests on
     /write-spec              ← unknowns settled by running them; the direction becomes a committed spec, read cold and validated
-    /suggest-worktree        ← names the branch; gwt places it, this session moves in and keeps its context
+    /enter-worktree          ← names the branch; gwt places it, this session moves in and keeps its context
     …implement…              ← the host builds from the spec
     /review                  ← a cold session judges the committed range → the PR
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)
@@ -78,7 +78,7 @@ pickup gate last. It lands at
 carrying state, lessons and dead-ends with their _why_, and first moves.
 
 A brief is earned by the gap it crosses. Work that continues in the session that
-investigated it crosses none: `/suggest-worktree` names the branch, `gwt` places
+investigated it crosses none: `/enter-worktree` names the branch, `gwt` places
 it, and the session follows it in still holding what a brief would have had to
 reconstruct.
 

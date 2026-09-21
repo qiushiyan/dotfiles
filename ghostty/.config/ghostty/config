@@ -8,7 +8,7 @@
 # Primary font. Repeated font-family lines APPEND ordered fallbacks; they do
 # not replace the first family. Verify resolution with ghostty +show-face.
 # Font selection lives here; theme-set manages colours only. See docs/ghostty-fonts.md.
-font-family = Berkeley Mono
+# font-family = Berkeley Mono
 # Nerd Font symbols fall back to JetBrains; ordinary text uses Berkeley.
 font-family = JetBrainsMono Nerd Font Mono
 font-size = 21
