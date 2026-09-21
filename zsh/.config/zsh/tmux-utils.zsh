@@ -48,10 +48,20 @@ _codex_display_path() {
   print -r -- "$_codex_display"
 }
 
-codex() {
+# _codex_in_pane <n> <launcher word 1..n> [codex args...]
+# Run a Codex launcher with the pane decoration around it. The launcher is
+# whatever starts the session — `command codex` for the plain spelling,
+# `headroom launch --vendor codex [--account <name>] --` for the managed one
+# (codex.zsh) — and the first <n> words are it; the rest are Codex's own
+# arguments, which is where -C/--cd is looked for. One implementation, so a
+# managed session and a plain one look the same on the border.
+_codex_in_pane() {
   emulate -L zsh
+  local -i _codex_n=$1; shift
+  local -a _codex_launcher=("${(@)argv[1,_codex_n]}")
+  shift $_codex_n
   if [[ ! -o interactive || -z ${TMUX_PANE:-} ]]; then
-    command codex "$@"
+    "${_codex_launcher[@]}" "$@"
     return $?
   fi
 
@@ -72,7 +82,7 @@ codex() {
   command tmux set-option -p -t "$_codex_pane" @codex_active 1 2>/dev/null
   command tmux set-option -w -t "$_codex_pane" pane-border-status top 2>/dev/null
 
-  command codex "$@" || _codex_rc=$?
+  "${_codex_launcher[@]}" "$@" || _codex_rc=$?
 
   command tmux set-option -p -u -t "$_codex_pane" @codex_active 2>/dev/null
   command tmux set-option -p -u -t "$_codex_pane" @codex_path 2>/dev/null
@@ -80,6 +90,13 @@ codex() {
     "bash '$HOME/.config/tmux/scripts/tmux-claude-ctx.sh' reconcile '$_codex_pane'" \
     2>/dev/null
   return $_codex_rc
+}
+
+# Plain `codex`: the vendor's own default account (~/.codex), decorated. The
+# headroom-aware spelling is `cx` (codex.zsh).
+codex() {
+  emulate -L zsh
+  _codex_in_pane 2 command codex "$@"
 }
 
 # --------------------------------------------------------------------

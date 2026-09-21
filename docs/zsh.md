@@ -56,6 +56,7 @@ zsh/.config/zsh/
   cwd-guard.zsh    # deleted-cwd defenses: _cwd_guard at startup, zshreload (tests/ has its harness)
   claude.zsh       # multi-account launchers (x, x-<name>) — see claude-accounts.md
   claude-sessions.zsh  # shared session store: migration + drift check (tests/ has its harness)
+  codex.zsh        # Codex accounts through headroom (cx, cx-<name>); plain `codex` stays the vendor default
   xcode.zsh
   tmux-utils.zsh
   cout.zsh        # cout + execution boundaries for the pane recorder

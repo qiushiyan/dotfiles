@@ -96,6 +96,18 @@ export HEADROOM_PRIMARY_NAME="$CLAUDE_PRIMARY_NAME"
 # The board advertises `headroom launch --account <name>` by default; this
 # shell has x-<name> for every account, so let it promise that spelling.
 export HEADROOM_LAUNCHER_FORMAT="x-%s"
+# envoy (~/dev/envoy — what /consult and /review dispatch through) spawns the
+# bare provider binary with its caller's environment unless told otherwise:
+# a Claude voice then lands on whatever account the dispatching session is on.
+# Route it through headroom instead, so every turn — fresh, resumed or a
+# fan-out member — runs on the board's current account, decided at dispatch.
+# envoy splits this on whitespace and runs no shell. Exported only when
+# headroom exists: envoy never falls back from a configured launcher, so on a
+# machine without headroom the variable must stay unset for envoy to work.
+# (The Codex twin lives in codex.zsh.)
+if (( $+commands[headroom] )); then
+  export ENVOY_CLAUDE_CMD="headroom launch --"
+fi
 # Local parts that never get a short launcher alias: x-<these> are utilities.
 # Purely this file's concern — headroom advertises only the guaranteed
 # x-<email> identities, so there is no naming policy to keep in sync anymore.
