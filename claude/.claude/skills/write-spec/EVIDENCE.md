@@ -420,3 +420,73 @@ answered item by item in the build report (the report half belongs to the
 build/handoff skill); D. the first cold read also looks for a rule stated
 in two sections with different answers. Keep unchanged: § Premises, the
 summary block, the situations.
+
+## 2026-09-21 — two more runs on the final text, and five builds in total
+
+Runs `ae6b98fe` (spec/eval-configuration-matrix → built in `d732b40f`, a
+separate session, PR #7358) and `81e8cdd7` (feat/eval-trial-record-and-facts,
+built in-session). Both loaded the final step-2 text. Both in
+`docs/loopy/specs/`. Reports in `build/cfg-report.md`, `build/trial-report.md`.
+
+Spec phase: configuration 29 min (docs tree first), trial 30 min; both
+dispatched the cold read beside the warm validation round (Codex and a
+Fable voice); re-reads 20 and 22 tool calls, 5 and 7 min, against 30 and
+27 on the first read. Labelled block present in both, grouped (15 and 20
+lines, 4 gaps); journey words 0. Words: configuration 4,105 → 6,404 at
+last spec commit (mean 32.7 w/s, 25% over 40); trial 7,296 → 10,270
+(26.9/17% → 32.2/25%); the Design section grew 3,727 → 5,540. The checks
+add prose and never remove it, and the sentence profile degrades through
+revision. Every spec on the new bar (5.7k–10.3k) is longer than the old
+corpus median of 3.9k.
+
+Builds: configuration 9 h 19 wall (4 h 24 of by-hand screen runs), 13
+commits, 2 review rounds, zero corrections of a spec misreading; trial 1 h
+33, 6 commits one per § Delivery step, zero corrections, no review round,
+nine new modules citing the spec's sections in their headers. Premises
+reused in both; the configuration's onboarding gate re-verified eight
+premises at source and all held.
+
+Recurrent across the five builds (OPC, gauge, PDF, configuration, trial):
+- statements about existing code outside § Premises found wrong: 4/5
+  (gauge `close()` and registry; PDF "unchanged" gate and "complete" list;
+  configuration `step_timeout_ms` "carried by the adapter"; OPC's
+  self-contradiction) plus an unbound noun ("the catalog's level map",
+  four greps);
+- invariants asserted without a mechanism or written only after review:
+  3/5 (PDF two tenets; gauge matcher map; configuration r1-critical "so
+  the two cannot disagree", and recorded-vs-enforced manifest sources);
+- state vocabularies without entry/exit rules or an unordered precedence:
+  4/5 (configuration unmeasured/pending, r1 F5; OPC close reasons; gauge
+  claimed-not-admitted, partial materialization; PDF over-delivered body);
+- Structure sketch followed literally with harm: 2/5 (PDF credentials
+  helper, gauge file list);
+- verbatim model- or judge-facing text authored by the spec failing in
+  reality: 2/5 (PDF failure lines; trial rubric sentence flaky on Bedrock,
+  and a determinism escape clause that would have excused it);
+- verification obligations dropped without a report: 3/5 (OPC eval rung;
+  trial three; configuration said so for two);
+- departures reaching the reviewer or a commit but not § As built / the
+  user report: OPC, configuration (two), trial (docs deferred).
+Singletons: a four-hour wall estimate that ran 1 h 18 (the bar already
+excludes estimates); the gauge's org alarm policy; "except where the
+judge answered differently" as a tolerance.
+
+Held in all five: unattended builds; premises consumed, no measurement
+re-run; ordered § Delivery executed as commits; the summary block and
+situations; the phases holding against a user push (PDF).
+
+Proposed bar changes, evidence now at 3–5 of 5: A. a claim about existing
+code carries its path, and where a sha matters the sha, or says
+unverified; a noun naming a code artefact carries its path; B. an
+invariant names its mechanism or becomes a § Verification obligation, and
+a recorded fact says whether anything checks it; C. a state list carries
+each state's entry and exit rule, and an ordered evaluation is written as
+an order; D. Structure names responsibilities and the invariant each
+protects, file names optional, rejected shapes by property; E. text the
+build will hand to a model or a judge is bound by what it must say, and
+if written verbatim it is a premise that ran; F. § Verification
+obligations are numbered so the build answers each, and each phase names
+the sections that bind it; G. a revision replaces the sentence it corrects
+rather than appending a clause, and the final reread cuts what the
+revisions duplicated; H. the first cold read hunts a rule stated in two
+sections with different answers.
