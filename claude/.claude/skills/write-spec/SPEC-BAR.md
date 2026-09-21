@@ -155,10 +155,12 @@ opening reshape when it blocks.
 Give the views that settle the design, and only those:
 
 - **Structure** — each changed responsibility, its owner, and the
-  invariant that owner protects; the file it lives in today where one
-  exists, and a proposed placement last, as a sketch. A file list with no
-  responsibilities beside it is what the build copies when it copies the
-  wrong thing.
+  invariant that owner protects, closing with what holds that invariant:
+  the mechanism, or the obligation by number, as a tenet's held-by line
+  does. An invariant with neither is struck or demoted to a sentence about
+  today. Then the file it lives in today where one exists, and a proposed
+  placement last, as a sketch. A file list with no responsibilities beside
+  it is what the build copies when it copies the wrong thing.
 - **API** — what a caller writes, the distinctions callers rely on, and the
   legal states the surface must express. Walk the real inputs through the
   proposed representation and through the state table; a state the sketch
@@ -188,14 +190,18 @@ read point.
 Structure — responsibilities:
   The corpus's durable identity, now including the tree layout. Owner: the
     corpus module. Protects: two sends with the same plan and store resolve
-    the same artifact. Today in `packages/loopy-master-host/src/workspace_corpus.ts`.
+    the same artifact. Held by: the identity is derived, never stored
+    (obligation 1). Today in `packages/loopy-master-host/src/workspace_corpus.ts`.
   One artifact-selection rule, shared by both callers. Owner: a publication
     module both callers import. Protects: the eager planner and the lazy
-    resolver never disagree about which artifact is current. New; sketched
-    as `client_data_publication.ts` beside the corpus.
+    resolver never disagree about which artifact is current. Held by: both
+    import the one function and no other selector exists (obligation 2).
+    New; sketched as `client_data_publication.ts` beside the corpus.
   Retention check, then the fallback to a full build. Owner: the eager
     planner. Protects: a reused send never references bytes the store has
-    dropped. Today in `packages/loopy-master-host/src/loopy_stage_pool_client_data.ts`.
+    dropped. Held by: selection returns the artifact and the planner proves
+    retention before planning (obligation 4). Today in
+    `packages/loopy-master-host/src/loopy_stage_pool_client_data.ts`.
 
 API — what a caller writes:
   selectActiveClientDataArtifact({ workspaceId, planHash, storeFingerprint })
@@ -283,14 +289,20 @@ with the observation that decided it.
 Number the obligations. For each: the behaviour it verifies, the
 observation boundary, what must stay real, and what may be substituted with
 the claim the substitute can and cannot prove. The numbers are what a
-tenet's held-by line and the build's report point at; the build answers
-each number as met, weakened or skipped, and an obligation that vanishes
-without an answer is the failure the numbering exists to make visible.
-Verify that the fixtures and runners you prescribe are reachable from a
-build session. A regression the validation asked for is an obligation here,
+held-by line and the build's report point at. Open the section with one
+line addressed to the build, since the spec is the one document the build
+reads: answer each obligation by number in the build report, as pinned (a
+test that goes red when the behaviour is removed), nominal (a test that
+exists but would stay green), or skipped, with the reason. An obligation
+that vanishes without an answer is the failure the numbering exists to
+make visible. Verify that the fixtures and runners you prescribe are
+reachable from a build session. A regression the validation asked for is an obligation here,
 stated without the round that asked; the build enumerates the cases.
 
 <example>
+The build reports each obligation below by number: pinned, nominal or
+skipped, with the reason.
+
 3. Obligation: the section read model implements § Behaviour — Focus.
 Observe: the public section view computed from a card's recorded turns and
 state transitions.

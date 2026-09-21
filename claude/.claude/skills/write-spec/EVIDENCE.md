@@ -699,7 +699,11 @@ versus empty reason term, the offline plan with no owner); the rest were
 ordinary (the 401 wrapper, the rounded percent, the pty harness leaking a
 real root).
 
-Candidate changes, from this build: a Protects line closes with what
-holds it, as a tenet does; the spec's Verification opens with one line
-addressed to the build, asking for each obligation answered by number as
-pinned, nominal or skipped, since that is the one surface the build reads.
+Applied from this build: a Protects line closes with what holds it, the
+mechanism or the obligation number, as a tenet does, or is struck or
+demoted; the Verification section opens with one line addressed to the
+build asking for each obligation answered by number as pinned, nominal or
+skipped, with the reason, since the spec is the one surface the build
+reads. The Design and Verification examples show both. Measure next: the
+share of Protects lines with a held-by, and whether the next build report
+answers by number and marks nominal tests as nominal.
