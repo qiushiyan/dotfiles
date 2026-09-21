@@ -1,5 +1,52 @@
 # write-spec — evidence log
 
+The dated entries below are the passes in order: what was mined, what was
+found, what changed and how it was checked. This changelog is the short
+form, one line per change with the principle behind it, for a reader who
+wants the shape of the skill's history before the receipts.
+
+## Changelog
+
+- **2026-08-31 — founded from the snippet family.** The hand-typed
+  preamble and the post-spec choreography (commit, validation consult,
+  compact) became the skill; the "adapt and simplify" licence stayed in
+  the body. Principle: a workflow the user retypes every time is a skill
+  waiting to be written.
+- **2026-09-18 — the spec as a measured procedure.** Step 1 settles the
+  unknowns the design turns on by running them (source read, existing
+  test, production read, thin spike, thirty minutes each) instead of
+  deferring them to a build phase; the bar took five authorities (Intent,
+  Behaviour, Design, Verification, Delivery), a labelled summary block for
+  re-grounding after compaction, premises that separate a decision from
+  its basis, situations with today/after/mechanism/recurrence, and an
+  Opus cold reader that reports what a model with no conversation cannot
+  reconstruct. Reports present open decisions as bets with costs.
+  Principle: the spec is read by two models that hold none of the
+  conversation, so it must carry its evidence and its vocabulary, and the
+  journey stays out.
+- **2026-09-18, later — the bar owns the shape.** Project convention
+  decides placement, front matter and index rows; headings, order and
+  prose are the bar's, and sibling specs are not a convention. Both checks
+  run at once; a re-read inherits the resolved-term list and the changed
+  sections. Principle: a rule loses to an example the model has been
+  reading all morning, so the example set must be the bar's own.
+- **2026-09-21 — formats that make the gap visible.** From five builds:
+  `Today:`/`After:` lines in Wiring, a state table with entry and exit
+  rules, a held-by line on every tenet, responsibility-first Structure,
+  numbered obligations, requirements rather than verbatim text for
+  anything a model or judge reads, revision by replacement; two scripts
+  for references and statistics; the pickup gate re-reads `Today:` lines;
+  As built assembled from commits. Principle: wrong claims about existing
+  code are inevitable, so the format types each sentence as observation,
+  design or assumption and the build re-checks the observations cheaply;
+  a missing state or an unheld invariant is made visible by an empty cell
+  or an empty line rather than forbidden by a rule.
+
+Held constant through every pass: the premises section, the summary
+block, the situations and the ordered delivery, which carried every
+unattended build; and the evidence standard, that a change ships with the
+sessions that motivated it and the measures that would reverse it.
+
 ## 2026-08-31 — founding pass (improve-tool over the snippet family)
 
 Corpus: obelisk index through 2026-08-31; signatures = each snippet's
