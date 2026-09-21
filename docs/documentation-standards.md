@@ -42,20 +42,20 @@ Each kind of content has one job, and a doc is one kind:
 - **Design docs** say what is true today — present tense, edited in place. When a proposal ships, its surviving decisions fold in here, so no two docs describe one subsystem. Docs lead, code follows: a doc/code disagreement is a doc bug or a design regression, resolved explicitly, never by silently matching either side.
 - **Runbooks** are ordered actions with a checkable result; exact commands live here, not in a design summary.
 - **Proposals** (specs, plans, roadmaps) are explicitly unbuilt work and open decisions; a live doc cites one as a proposal, and depends on none. Once shipped, its decisions live in the design doc and the proposal is pruned or kept as a dated record as the project's bindings say — either way nothing live routes through it.
-- **Status pages hold only the open ledger** — one per active initiative: the facts that move with a rollout and the dated items whose follow-up read is still owed. An item enters while it carries an owed read and leaves when the read lands; a landed change that owes nothing leaves its trace in the record it shipped with. A page therefore only shrinks between landings; one with a paragraph per event is the smell.
+- **Status pages hold only the open ledger** — one per active initiative: the facts that move with a rollout and the dated items whose follow-up read is still owed. An item enters while it carries an owed read and leaves once the read has landed; a landed change that owes nothing leaves its trace in the record it shipped with. A page therefore only shrinks between landings; one with a paragraph per event is the smell.
 
   ```markdown
-  - **<date> — <what is now true> (#PR, merged <date> as <sha>).** <one sentence>.
+  - **<date> — <what is now true> (#PR).** <one sentence>.
     As-built: <doc § heading>. Records: <issue or spec>. **Closing read owed** —
-    ready when: <observable condition — a serving sha, an elapsed window, the first
+    ready when: <observable condition — #PR serving, an elapsed window, the first
     qualifying event>. Read: <predicate>.
   ```
 
-  The condition lets a later session take the read without the writer's memory; the landed block (predicate · window · result · verdict · follow-on) goes to the record, and the item leaves.
+  The condition lets a later session take the read without the writer's memory. A confirming read posts its outcome (predicate · window · result · verdict) on the PR the item names, and the item leaves with the next change to the page; a read that overturns something is new work with its own change and record.
 - **Evidence tiers** (specs, issues, records, research), where a project keeps them, are reference behind settled decisions: dated filenames (`YYYY-MM-DD-kebab-name.md`), deleted only after distilling, edited after merge only for the marks the project's bindings name. The filename is the index entry, nothing keeps a roster, and an item earns prominence by citation from the live doc where its lesson applies.
 - **An index** is a curated route, and every live doc is reachable from it: an unrouted doc is invisible to readers and to a diff-scoped update, and rots.
 
-**A live initiative** — a tree for a system that is partly built — keeps status, proposal and present apart: the README header carries a standing **What is live** block naming, per module doc, the sections that describe running code; what does not run yet is a slice's spec, folded in at merge. Epistemic state (chosen, disputed, superseded) lives in a decisions ledger, delivery state (unbuilt, serving, verified) in the header. A number or heading is an address once cited: numbering never shifts, and a superseded entry keeps its number with a pointer to its successor.
+**A live initiative** — a tree for a system that is partly built — keeps status, proposal and present apart: the README header carries a standing **What is live** block naming, per module doc, the sections that describe running code; what does not run yet is a slice's spec, folded in at merge. Epistemic state (chosen, disputed, superseded) lives in a decisions ledger, delivery state (unbuilt, building, merged as #PR) in the header; whether it serves is asked of the running system. A number or heading is an address once cited: numbering never shifts, and a superseded entry keeps its number with a pointer to its successor.
 
 ## The hot path
 
@@ -82,6 +82,7 @@ What does not earn it:
 ## Writing standards
 
 - **Present state.** Git holds the journey; a live doc has no "added X", "as of Y". The diff leaks in with a present-tense disguise — "B, not A", "replaces A", "no longer" — every word true, the sentence shaped like the change. The **future-need test** for any trace of the before-state: will a reader who never saw A need it? Usually not; A earns a mention only while it still bites today, stated as a present hazard, or while a transition is mid-flight. When a change closes a gap, sweep the tree for the sentence that described the gap.
+- **What this change can know.** A doc merges with the change that writes it: it states what that change makes true and cites the PR by number. A merge sha, a serving time or a read's result becomes true later and is read from the running system or the PR's thread; a placeholder for one is a second PR waiting to be written.
 - **Current names.** Real searchable nouns; point at source with a line-sized description and leave signatures and option lists in source. Cite a repository file as a bare backticked path from the base the bindings name — an agent opens the path with its read tool, and link syntax adds nothing it can use. Planned or unproven behaviour is marked (a status line, a spec, an open question), never stated as fact.
 - Every edit re-reads the whole doc, merges overlap instead of adding a second description, folds new information into the section it belongs in, and cuts what drifted into implementation detail — a doc that gains ten lines should usually shed five.
 
@@ -115,8 +116,11 @@ git diff --cached -U0 -- '*.md' | grep -nE '^\+\s*\|?\s*:?-+:?\s*(\|\s*:?-*:?\s*
 # every live-doc reference into a proposal or evidence directory is a candidate: what role does the target play?
 git grep -nE '(specs|plans|proposals|issues|records|research|adr)/[^ )]*\.md' -- '<live docs>'
 
-# a status page holds only open items: every dated item carries an owed read (skip where the tree has none)
-for p in <status pages>; do echo "$p items=$(grep -cE '^(> )?- \*\*20' $p) owed=$(grep -c 'Closing read owed' $p)"; done
+# no fact from after the merge, and no placeholder for one, entered a doc
+git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' | grep -niE 'merged [^.]{0,24} as `?[0-9a-f]{7,}|serving (on|from|since) |to be filled|at (the )?(merge|closeout)'
+
+# a status page holds only open items, each a few lines: every dated item carries an owed read (skip where the tree has none)
+for p in <status pages>; do echo "$p items=$(grep -cE '^(> )?- \*\*20' $p) owed=$(grep -c 'Closing read owed' $p) bytes=$(wc -c < $p)"; done
 ```
 
 What a hit means:
@@ -124,10 +128,11 @@ What a hit means:
 - **A narrative grep** (cardinal, changelog, PR or date): fine on a status page or in an evidence tier; in a design doc, a sentence to rewrite in the present tense with the evidence cited by record.
 - **A table:** stays when the reader compares cells across rows; becomes a sectioned list when its rows are independent lookups; exempt inside a quoted avoid-example.
 - **A reference into a proposal or evidence directory:** fine when the target is cited in its role — a proposal as unbuilt, a retained record or decision as evidence, an authoring guide as a guide; a defect when a live doc leans on unbuilt work.
-- **`items` and `owed` differ:** above, an item that landed and did not leave; below, an owed line with no dated item.
+- **A post-merge fact:** cite the PR by number; the running system answers the rest.
+- **`items` and `owed` differ:** above, an item that landed and did not leave; below, an owed line with no dated item. **`bytes` far above ~600 an item:** items retell their as-built.
 
 Then run the project's own checks from its bindings, re-read each modified doc as one narrative, and grep live docs for each moved path and superseded term.
 
 ## The standards file itself
 
-Rules accrete one incident at a time. A new rule enters as a line in the check block or a worked example first, and as prose only when neither can carry it; a rule that exists and was still broken gets a check, not a second statement. The file stays under ~13 KB; growth past that means a project binding leaked in or a rule is stated twice. Review it and the doc skills after a major model release: guardrails written for an older model become friction for a newer one, and removing stale guidance weighs the same as adding new.
+Rules accrete one incident at a time. A new rule enters as a line in the check block or a worked example first, and as prose only when neither can carry it; a rule that exists and was still broken gets a check, not a second statement. The file stays under ~14 KB; growth past that means a project binding leaked in or a rule is stated twice. Review it and the doc skills after a major model release: guardrails written for an older model become friction for a newer one, and removing stale guidance weighs the same as adding new.

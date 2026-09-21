@@ -257,6 +257,24 @@ invariant each holds, never assigned whole to the nearer one. Pipeline pass
 2026-09-04, `abd24d95`; the counts with their predicates:
 `~/dev/brief/EVIDENCE.md`, the 2026-09-04 entry.
 
+## A recurring chore is often a fact written in the wrong place
+
+A workflow that needs the same small follow-up every time is usually
+recording a fact where it cannot yet be known. Planlab's docs sync wrote
+status items shaped `(#PR, merged <date> as <sha>)` and headers saying
+"serving"; the feature PR could know neither, so it wrote placeholders, and
+a second, hand-invoked docs PR replaced them — 39 of 58 closeout PRs in three
+weeks, 19 of them nothing else. No instruction to "remember the closeout"
+touches that; the fix is the invariant one layer down — a doc states what the
+change that writes it can know, and what becomes true later is asked of the
+system that knows it. Before automating or batching a chore, ask which
+artifact created the need for it. The same pass measured a second shape of
+the mistake: the step everyone suspected of costing tokens (a drift check,
+0.2 % of the first turn) was cheap and nearly inert, and the real cost was
+the hand work its vague output sent agents to do. Measure the suspect before
+redesigning it (improve-tool pass 2026-09-21, two-voice consult; receipts in
+planlab's `.agents/skills/pl-loopy-handoff/EVIDENCE.md`).
+
 ## Feedback compounds only if it is captured and re-read
 
 Feedback to an agent normally dies with the session. Here it does not — the

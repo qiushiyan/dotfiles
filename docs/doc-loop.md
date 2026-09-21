@@ -55,8 +55,7 @@ state, the exploration that produced it is disposable.
 |---|---|---|
 | duet | `/onboarding [harness \| providers \| prompts \| surface \| design]` | project `/update-docs`, global `/handoff` |
 | itell (`apps/platform`) | `/onboarding <problem or issue>` → analysis / proposal | project `/update-docs`, global `/handoff` |
-| planlab — Loopy agent/triage | `/pl-loopy-onboarding [agent \| triage]` | `/pl-loopy-update-docs` |
-| planlab — infra migration | `/pl-loopy-infra-onboarding [topic]` | `/pl-loopy-infra-handoff` (global `/handoff` defers to it) |
+| planlab — Loopy | `/pl-loopy-onboarding <goal>` (a route name is a hint; an incident id goes to `/pl-loopy-debug` first) | `/pl-loopy-handoff` — sync, what remains, the next milestone; `/pl-loopy-handoff-distill` after merge and deploy (global `/handoff` and `/distill-handoffs` defer to them) |
 | anywhere else | read the docs tree by hand | global `/update-docs`, global `/handoff` |
 
 Global skills live in `claude/.claude/skills/{update-docs,handoff}/` (this repo);
@@ -136,6 +135,12 @@ mostly as a **closeout** — from the branch that just merged, deleting the
 brief that spawned it and settling only the briefs that named it — and, from
 the default branch, as the whole-folder reconcile; `docs/handoff.md` places
 its machinery.
+
+A doc merges with the change that writes it, so the per-change pass states
+what that change can know and cites its PR by number; what becomes true
+afterwards — it serves, a production read confirmed — stays with the running
+system and the PR's thread, and a closeout opens a docs PR only when a read
+overturned something.
 
 Update-docs is diff-scoped; distill-docs catches tree-wide duplication, stale
 proposals, and misplaced mechanism. Run it when the hot-path budget flags an

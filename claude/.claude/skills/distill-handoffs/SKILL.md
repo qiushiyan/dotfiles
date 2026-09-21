@@ -60,7 +60,12 @@ A branch landed and its session is closing: its brief is spent, and the briefs t
 5. **Write** per § Verdicts, references before files, holding back only what § What waits names. Re-anchor every brief you edited and `brief check <slug>` each; a bare `brief check` warning on a brief you did not touch goes in the report.
    Done when `brief check <slug>` is clean on every brief you touched.
 
-6. **Report.** Short prose: what landed, in a line; the anchor's verdict and what was written for it; per admitted brief, what moved and the edit made; the `_clusters.md` change; the count of briefs out of scope and unread; then, under their own heading, the items that wait, each with the one word that releases it. A pass with nothing waiting says so.
+6. **Report.** Short prose: what landed, in a line; the anchor's verdict and what was written for it; per admitted brief, what moved and the edit made; the `_clusters.md` change; the count of briefs out of scope and unread; then, under their own heading, the items that wait, each with the one word that releases it. A pass with nothing waiting says so. End on what the user would otherwise come back to ask — the same file holds both:
+
+   ```bash
+   jq -r '.cleanup[]? | .command // ("hold: " + .hold)' "$S/closeout.json"          # what the landed branch leaves behind; brief runs none of it
+   jq -r '.next[] | .command + (if .gated then "  (gated)" else "" end)' "$S/closeout.json"   # the folder's order, next first
+   ```
 
 ## Reconcile
 
@@ -128,7 +133,7 @@ A brief is a view onto durable artifacts — the PR, the docs the sync pass upda
 
 - It names live briefs only — a retirement removes the slug in the same write, and `brief check` flags a retired or unknown name and an empty cluster.
 - A live brief `brief check` reports unplaced — in the domain or not — is slotted from its listing row where the order's stated properties put it, in the same pass, and the report says where and why; a rank the human wants elsewhere is one word back, where a deferred slot is the same warning re-read on every pass.
-- Its "In flight" line is one live slug or "nothing". What a landed branch settled, when it deployed, what it measured — the docs and PRs are that archive.
+- Which briefs are in flight and which landed is the listing's to show, from branches and PRs; the note carries no such line, and one found there is deleted at the next amend. What a landed branch settled, when it deployed, what it measured — the docs and PRs are that archive.
 - A date or identifier appears only as an unresolved constraint on a live brief ("run `<slug>` before the vendor cutoff on 2026-09-01"). A watch that requires action gets a brief; one that requires none lives in its issue or runbook.
 
 Amend it when a cluster's meaning shifts, a name is coined or retired, or an ordering property proves wrong. A folder that has grown clusters worth naming earns a note; a wave list with dates is the listing, and goes stale in days.
