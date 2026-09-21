@@ -41,7 +41,9 @@ render path   → shell-builtin cache read; never waits for headroom
 
 Claude's payload exposes an all-models weekly number, not the model-scoped limit
 that normally stops work. A detached refresher updates the scoped cache after
-five minutes when no sibling pane owns the lock.
+five minutes when no sibling pane owns a fresh lock. Locks older than two
+minutes allow a refresher through so its stale-lock sweep can recover from an
+interrupted run.
 
 An aged value is safe while its usage window is live because usage only rises.
 After the window rolls over, stale low usage would promise headroom that may not
@@ -62,15 +64,15 @@ account  5h  model-weekly  model  context
 lane facts ←──────────────→ session facts
 ```
 
-Responsive shedding preserves the signal that matters:
+The model-scoped weekly has priority over the 5-hour figure on every account,
+even at low usage. Responsive shedding follows pane width:
 
 ```text
-<75 columns → calm quota pair drops
-<55         → account drops
-<40         → model drops
-always      → context remains
-quota ≥50   → survives to 40
-quota ≥85   → survives at any width
+<140 columns → 5-hour drops
+<55          → account drops
+<40          → model drops; weekly drops below 85%
+always       → context remains
+weekly ≥85   → survives at any width
 ```
 
 Each quota value earns its own colour: muted below 50, yellow from 50, red from

@@ -356,8 +356,11 @@ fi
 # out. The lock test is what keeps a busy window cheap: six panes rendering
 # three times a second all see the same stale stamp for the ~400ms a refresh
 # takes, and without it every one of those renders would spawn a process that
-# does nothing but discover the lock and exit. Detached in a subshell so the
-# render never waits on it.
+# does nothing but discover the lock and exit. An abandoned lock must let the
+# refresher run so its stale-lock sweep can recover; otherwise this gate keeps
+# that sweep unreachable forever. Match the refresher's two-minute cutoff.
+# The mtime lookup runs only for an overdue cache with a lock. The refresher
+# stays detached so rendering never waits for headroom.
 # CLAUDE_CTX_REFRESH_CMD is a test lever, not a setting. UNSET (production)
 # means the refresher beside this script; set-but-EMPTY turns refreshing off;
 # set to a path substitutes that. The chip suite needs all three: it drives
@@ -367,8 +370,9 @@ fi
 # below permanently untested, which is how they would rot.
 QUOTA_REFRESH="${CLAUDE_CTX_REFRESH_CMD-${BASH_SOURCE[0]%/*}/claude-quota-refresh.sh}"
 if [ -n "$LANE_EMAIL" ] && [ -n "$QUOTA_REFRESH" ] &&
-   [ "$((NOW - QUOTA_AT))" -gt 300 ] && [ ! -d "${QUOTA_FILE%.quota}.lock" ] &&
-   [ -r "$QUOTA_REFRESH" ]; then
+   [ "$((NOW - QUOTA_AT))" -gt 300 ] && [ -r "$QUOTA_REFRESH" ] &&
+   { [ ! -d "${QUOTA_FILE%.quota}.lock" ] ||
+     [ -n "$(find "${QUOTA_FILE%.quota}.lock" -maxdepth 0 -mmin +2 -print 2>/dev/null)" ]; }; then
     ( bash "$QUOTA_REFRESH" "$LANE_EMAIL" >/dev/null 2>&1 & ) 2>/dev/null
 fi
 

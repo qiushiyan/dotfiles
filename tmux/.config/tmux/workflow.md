@@ -44,8 +44,9 @@ The worktree popup names windows after their branch automatically; rename ad-hoc
 
 A Claude pane shows **account · 5-hour · model-weekly · model · context** on
 the top-right border (`yan 5h:23 Fable:15 opus-5[1m] ✳ 37%`). Each percentage
-draws muted → yellow → red as it becomes urgent. Narrow panes shed calm shared
-quota first and context last; an urgent quota survives the shed.
+draws muted → yellow → red as it becomes urgent. Half-width panes keep the
+model-weekly quota and hide the 5-hour figure. Context remains at every width;
+an urgent weekly quota does too.
 
 The account is the quota lane, not a generic process label. The weekly number
 comes from headroom because Claude's payload lacks the model-scoped limit.

@@ -758,7 +758,13 @@ c22() {
     check "C22 the lock suppresses a duplicate refresher" "$(spawns "$marker")" "0"
     check "C22 and the stale line is still drawn meanwhile" "$(opt @claude_ctx_wk)" "51"
 
+    # An abandoned lock must not prevent the refresher's own sweep running.
+    touch -t 202001010000 "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
+    pub sid-C 'claude-opus-5[1m]' 390000 "$lane" 5
+    check "C22 an abandoned lock lets recovery run" "$(spawns "$marker")" "1"
+
     # Lock gone, still stale: the trigger fires again.
+    rm -f "$marker"
     rmdir "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
     pub sid-D 'claude-opus-5[1m]' 400000 "$lane" 5
     check "C22 a stale line with no lock re-arms it" \
@@ -837,9 +843,72 @@ c24() {
     check "C24 wrapper reconciles the border on exit" "$(effective_status)" "off"
 }
 
+# Weekly priority is independent of account identity and usage severity.
+c25() {
+    fresh || return
+    local lane width
+    for lane in work@example.test personal@example.test; do
+        quota "$lane" 10 15 Fable 10 3600
+        pub sid-A claude-fable-5-1 220000 "$lane" 98
+        T resize-window -t t -x 200
+        check "C25 wide $lane shows both limits" "$(border)" \
+            " ${lane%%@*} 5h:98 Fable:15 fable-5-1 ✳ 22% "
+        for width in 139 102 75 55; do
+            T resize-window -t t -x "$width"
+            check "C25 $lane at $width prioritizes calm weekly over hot 5h" "$(border)" \
+                " ${lane%%@*} Fable:15 fable-5-1 ✳ 22% "
+        done
+        T resize-window -t t -x 40
+        check "C25 weekly survives without the account" "$(border)" \
+            " Fable:15 fable-5-1 ✳ 22% "
+        T resize-window -t t -x 39
+        check "C25 a sliver keeps context" "$(border)" " ✳ 22% "
+        quota "$lane" 10 98 Fable 10 3600
+        pub sid-A claude-fable-5-1 220000 "$lane" 98
+        check "C25 urgent weekly survives a sliver" "$(border)" " Fable:98 ✳ 22% "
+        T resize-window -t t -x 140
+        check "C25 widening restores both without republishing" "$(border)" \
+            " ${lane%%@*} 5h:98 Fable:98 fable-5-1 ✳ 22% "
+    done
+    rm -rf "$SANDBOX_HOME/.cache"
+}
+
+# Exercise stale-lock recovery through the real refresher with fake headroom.
+c26() {
+    fresh || return
+    local lane=recovery@example.test
+    local cache="$SANDBOX_HOME/.cache/claude-ctx"
+    local fakebin="$SANDBOX/fake-headroom"
+    mkdir -p "$fakebin" "$cache/$lane.lock"
+    quota "$lane" 86400 67 Fable 86400 -60
+    touch -t 202001010000 "$cache/$lane.lock"
+    cat > "$fakebin/headroom" <<'STUB'
+#!/bin/bash
+if [ "${1:-}" = limits ]; then
+    printf '%s\n' '{"accounts":[{"email":"recovery@example.test","usage":{"observed_at":"2026-01-01T00:00:00Z","limits":[{"kind":"weekly_scoped","percent_state":"ok","identity_state":"ok","percent":79,"model":"Fable","resets_at":"2099-01-01T00:00:00Z"}]}}]}'
+fi
+STUB
+    chmod +x "$fakebin/headroom"
+    local PATH="$fakebin:$PATH"
+    export PATH
+    REFRESH_CMD="$REPO/claude/.claude/commands/claude-quota-refresh.sh"
+    pub sid-A claude-fable-5-1 220000 "$lane" 15
+    for _ in $(seq 1 30); do
+        [ ! -d "$cache/$lane.lock" ] && break
+        sleep 0.1
+    done
+    check "C26 the real refresher retires the abandoned lock" \
+        "$([ -d "$cache/$lane.lock" ] && echo locked || echo clear)" "clear"
+    pub sid-A claude-fable-5-1 220000 "$lane" 15
+    check "C26 recovered weekly reaches the pane" "$(opt @claude_ctx_wk)" "79"
+    check "C26 recovered weekly keeps its label" "$(opt @claude_ctx_wk_model)" "Fable"
+    unset REFRESH_CMD
+    rm -rf "$SANDBOX_HOME/.cache" "$fakebin"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done
