@@ -490,3 +490,56 @@ the sections that bind it; G. a revision replaces the sentence it corrects
 rather than appending a clause, and the final reread cuts what the
 revisions duplicated; H. the first cold read hunts a rule stated in two
 sections with different answers.
+
+## 2026-09-21 — the layered pass: format, tools, and the build gate
+
+The user reframed the eight proposed rules as patches on one layer and
+asked for root causes, formats that make the mistake visible, and
+mechanisms over instructions, accepting that wrong claims about existing
+code will keep happening and must be cheap to catch. Applied:
+
+- Format (SPEC-BAR): Structure entries carry responsibility, owner, the
+  invariant protected, today's file, and a placement sketch last; legal
+  states go in a table (entered when, left when, written by); Wiring
+  describes today in `Today:` lines read from the file while writing and
+  the proposal in `After:` lines; a tenet closes with what holds it, a
+  mechanism or a numbered obligation, and one with neither is struck or
+  moved to its seam; obligations are numbered and answered by the build;
+  text a model or a judge will read is bound by requirements, and written
+  verbatim it is a premise that ran; revision by replacement; the Design
+  example rewritten to show all of it. Summary sits under `## Summary`.
+- Tools (`scripts/`): `check-refs.sh` resolves every cited repository
+  path and `§ Heading` (package-relative paths resolve under a directory
+  another citation established; other documents' headings are skipped);
+  `spec-stats.py` prints words per section, sentence length, the longest
+  paragraph and the summary block's shape. Tried on the five specs: the
+  post-build trial tree reports only the files the build deleted; the
+  configuration spec 2 misses, the PDF spec 3, all references to other
+  documents or vendor paths.
+- Build gate (handoff/pickup build.md and design.md): a spec's `Today:`
+  lines are premises for the source check.
+- Handoff (planlab `pl-loopy-handoff`, branch
+  `docs/handoff-as-built-from-commits`, commit 0a3037deda, not pushed):
+  § As built is assembled from the branch's commits, not from memory.
+
+Validation: an Opus cold reader with seven scenarios resolved the gate
+moving case (Today lines, re-read by the build), the state table, the
+unheld invariant, the refusal message, the revision procedure and the
+Structure order as intended, and flagged nine wording defects; seven
+fixed (the disposition of an unheld invariant; the walk linked to the
+table; the summary heading named; "the cut" disambiguated; the
+reproduction line no longer contradicts "Settled"; the PR boundary
+stated always; thresholds for the numbers; the example labels the owner;
+the docstring's ordering). Two are pointers to files outside the read
+set and stand.
+
+Measure next: `Today:` lines present in Wiring and whether the pickup
+gate re-reads them (transcript: reads of the cited paths in the first ten
+minutes of a build); state tables present where a spec has states;
+held-by lines on tenets and how many are struck at writing time;
+obligations answered by number in build reports; spec growth through
+checks (target: under a quarter); words per sentence at the last spec
+commit against 27.7/19% (trial) and 21.9/7% (PDF). Reverse the Today
+convention if the gate's re-reads cost more than the review rounds they
+replace, or if writers fill Today lines from memory anyway (wrong Today
+lines at the same rate as before).

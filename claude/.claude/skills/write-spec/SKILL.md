@@ -91,11 +91,13 @@ keeps the cold read; "skip the checks" skips both and ends at the report.
      that needs the user's call is flagged in the report, and the run stops
      there.
 
-   When a revision changes what a cold reader would reconstruct, send the
-   revised spec to a fresh reader with the previous reader's resolved-term
-   list and the changed sections as the block's re-read inputs; the summary
-   reconstruction stays blind. Hold the final revision to SPEC-BAR's done
-   condition. Commit a revision only when the spec changed.
+   Each finding is fixed by rewriting the sentence at the rule's home, as
+   SPEC-BAR's closing rules say. When a revision changes what a cold reader
+   would reconstruct, send the revised spec to a fresh reader with the
+   previous reader's resolved-term list and the changed sections as the
+   block's re-read inputs; the summary reconstruction stays blind. Hold the
+   final revision to SPEC-BAR's done condition, its measurements included.
+   Commit a revision only when the spec changed.
 
 5. **Report and stop.** The user did not watch the run; this message is
    their first look at it. Lead with the outcome and whether the spec is

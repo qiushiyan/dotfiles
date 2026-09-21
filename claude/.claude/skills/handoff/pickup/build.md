@@ -84,7 +84,9 @@ command or query · read the symbol · read the record · the brief's word.
 `Unverified` is a finding, not a failure: it names the missing evidence and
 stays unverified until that evidence exists. Production claims take
 production evidence; when getting it would be its own investigation, say
-so rather than infer it.
+so rather than infer it. A spec's `Today:` lines, the sentences in its
+Structure and Wiring that describe the code as it is, are premises for
+this check: read each at the path it names before building on it.
 
 **The scope test is where a build session's judgement lives.** A shared
 seam, a contract to de-risk before its consumers land, or a correctness

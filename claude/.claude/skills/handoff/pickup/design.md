@@ -81,7 +81,9 @@ command or query · read the symbol · read the record · the brief's word.
 `Unverified` is a finding, not a failure: it names the missing evidence and
 stays unverified until that evidence exists. Production claims take
 production evidence; when getting it would be its own investigation, say
-so rather than infer it.
+so rather than infer it. A spec's `Today:` lines, the sentences in its
+Structure and Wiring that describe the code as it is, are premises for
+this check: read each at the path it names before building on it.
 
 **A cause still believed goes on trial; a cause read from the code is a
 premise like any other.** When the brief's fix rests on a cause nobody has

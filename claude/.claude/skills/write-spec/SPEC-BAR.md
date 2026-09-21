@@ -7,7 +7,8 @@ compaction. They need to reconstruct the problem, the intended outcome, the
 binding decisions with their reasons, the evidence those decisions rest on,
 and the shape to build. A section earns its place by changing an
 implementation choice or by making one judgeable. The session's journey
-(consult rounds, the cut, decision logs, review records) stays out; each
+(consult rounds, the scope cut's history, decision logs, review records)
+stays out; each
 decision's reason and the evidence behind it stay in.
 
 Done when the summary alone re-grounds a cold reader, every design-changing
@@ -55,8 +56,9 @@ contradiction.
 
 ### The summary, first
 
-Open with a labelled block that re-grounds a model reading cold: one
-complete short sentence per line, selective about what it keeps, with a
+Open with a labelled block under a `## Summary` heading, ahead of the five
+sections, that re-grounds a model reading cold: one complete short sentence
+per line, selective about what it keeps, with a
 blank line between the groups so the eye finds the state, the change, the
 edges and the pointers without reading every line. Keep any exception that
 changes the build and any dependency still outstanding. Point at the
@@ -90,11 +92,24 @@ introduces something a person could mistake for an existing concept, say
 whether it extends that concept or stands apart from it, and why.
 
 **Tenets** are the few cross-cutting invariants the build holds to when the
-sections run out of instructions, in the form the tenets lesson defines.
-They have one `## Tenets` section, placed right after Intent; a validation
-round revises it in place, and the reason a tenet was struck lives in that
-round's synthesis, not here. A rule that binds one behaviour or one seam is
-not a tenet; it lives beside that behaviour or seam.
+sections run out of instructions, in the form the tenets lesson defines,
+each closing with what holds it: the mechanism in § Design that makes it
+hard to break, or the numbered obligation in § Verification that would
+catch the break. An invariant with neither is a wish: the writer strikes
+it, or moves it beside the seam it describes with the observation that
+would show it broken. Writing the line is how the writer finds that out
+before a reviewer does. They have one
+`## Tenets` section, placed right after Intent; a validation round revises
+it in place, and the reason a tenet was struck lives in that round's
+synthesis, not here. A rule that binds one behaviour or one seam is not a
+tenet; it lives beside that behaviour or seam.
+
+<example>
+One resolution of the configuration serves every reader, over each reader
+resolving from the same inputs: two resolvers agree until the day one of
+them gains an input. Held by: the factory closes over the value the CLI
+resolved (§ Design — Wiring) and obligation 2.
+</example>
 
 ### Behaviour
 
@@ -137,18 +152,30 @@ opening reshape when it blocks.
 
 Give the views that settle the design, and only those:
 
-- **Structure** — the changed modules and the responsibility each owns.
+- **Structure** — each changed responsibility, its owner, and the
+  invariant that owner protects; the file it lives in today where one
+  exists, and a proposed placement last, as a sketch. A file list with no
+  responsibilities beside it is what the build copies when it copies the
+  wrong thing.
 - **API** — what a caller writes, the distinctions callers rely on, and the
   legal states the surface must express. Walk the real inputs through the
-  proposed representation; a state the sketch cannot represent is a design
-  gap, not a build detail.
+  proposed representation and through the state table; a state the sketch
+  cannot represent is a design gap, not a build detail. States go in a
+  table, one row per state with when it is entered, when it is left, and
+  who writes it: an empty cell is visible, a state missing from a comma
+  list is not, and an input that lands in no row is the state you missed.
 - **Wiring** — the changed paths: what each boundary knows, what survives a
-  retry, and where failure goes.
+  retry, and where failure goes. Describe today's path in `Today:` lines,
+  each read from the file it names while writing, and the proposed path in
+  `After:` lines; the build re-reads every `Today:` line at its path before
+  building on it, so a wrong one costs minutes rather than a review round.
 
-Behaviours, ownership, and the distinctions callers rely on bind. Proposed
-symbol names and file placement are sketches the build may change for a
-stated reason; the build reports a changed realization apart from a
-behaviour it did not build.
+Behaviours, ownership, invariants, and the distinctions callers rely on
+bind. Proposed symbol names and file placement are sketches the build may
+change for a stated reason; the build reports a changed realization apart
+from a behaviour it did not build. A sentence that describes what the code
+does now is an observation and carries the path it was read at; a sentence
+about what it will do is a design.
 
 <example>
 The change: a workspace's published document corpus is reused on the first
@@ -156,10 +183,17 @@ send instead of after a later send re-verifies it. Two callers read the
 artifact: the eager planner at dispatch time and the lazy resolver at the
 read point.
 
-Structure — proposed placement:
-  workspace_corpus.ts               the corpus's durable identity, now including the tree layout
-  client_data_publication.ts        one artifact-selection rule, shared by both callers
-  loopy_stage_pool_client_data.ts   the eager planner: retention check, then the fallback to a full build
+Structure — responsibilities:
+  The corpus's durable identity, now including the tree layout. Owner: the
+    corpus module. Protects: two sends with the same plan and store resolve
+    the same artifact. Today in `packages/loopy-master-host/src/workspace_corpus.ts`.
+  One artifact-selection rule, shared by both callers. Owner: a publication
+    module both callers import. Protects: the eager planner and the lazy
+    resolver never disagree about which artifact is current. New; sketched
+    as `client_data_publication.ts` beside the corpus.
+  Retention check, then the fallback to a full build. Owner: the eager
+    planner. Protects: a reused send never references bytes the store has
+    dropped. Today in `packages/loopy-master-host/src/loopy_stage_pool_client_data.ts`.
 
 API — what a caller writes:
   selectActiveClientDataArtifact({ workspaceId, planHash, storeFingerprint })
@@ -171,14 +205,27 @@ Binding distinctions:
   must not look like a missing artifact.
   Selection makes no retention request; the lazy read path stays free of network calls.
 
+Legal states of a publication row:
+
+  | state     | entered when                                   | left when                                  | written by      |
+  | --------- | ---------------------------------------------- | ------------------------------------------ | --------------- |
+  | pending   | the planner records the plan hash              | the build finishes or fails                | the planner     |
+  | published | the artifact's bytes are retained in the store | retention drops the bytes, or a new plan   | the publisher   |
+  | stale     | the store fingerprint no longer matches        | never; a new plan writes a new row         | the lazy reader |
+
 Wiring — the changed path:
-  The eager planner enumerates the corpus once, derives both identities, asks
-  selection, proves retention on the returned artifact, and only then plans a
-  reused send. Any uncertain answer (no row, retention unknown, a throw) takes
-  the full build, so the worst case is today's send. A retry re-enters at
-  selection with nothing carried over. A failure in the reuse probe falls
-  back to the full build; the full build keeps its ordinary failure
-  semantics. Reuse is advisory.
+  Today: the eager planner builds the corpus on every send and never asks
+    whether one is already published (`loopy_stage_pool_client_data.ts`,
+    `planClientDataStaging`).
+  Today: the lazy resolver reads the newest published row and trusts it
+    (`client_data_resolver.ts`, `resolveClientData`).
+  After: the eager planner enumerates the corpus once, derives both
+    identities, asks selection, proves retention on the returned artifact,
+    and only then plans a reused send. Any uncertain answer (no row,
+    retention unknown, a throw) takes the full build, so the worst case is
+    today's send. A retry re-enters at selection with nothing carried over.
+  After: a failure in the reuse probe falls back to the full build; the full
+    build keeps its ordinary failure semantics. Reuse is advisory.
 </example>
 
 **Design it twice** before you commit a shape, as the lesson teaches: two or
@@ -206,7 +253,7 @@ Result: heap growth of +3,263 MB for text and −1 MB for the file path; the
 isolated converter measured 33 heap bytes per input byte.
 Establishes: amplification on the text conversion path.
 Does not establish: a safe 32 MiB bound, coverage of the capture path, or the latency after the fix.
-Reproduction: the harness command was not retained; rerun before treating this as current proof.
+Reproduction: the harness command was not retained; the numbers stand as observed and cannot be rerun as written.
 </example>
 
 An assumed premise names a fallback that keeps the design standing, so a
@@ -228,15 +275,18 @@ with the observation that decided it.
 
 ### Verification
 
-For each obligation: the behaviour it verifies, the observation boundary,
-what must stay real, and what may be substituted with the claim the
-substitute can and cannot prove. Verify that the fixtures and runners you
-prescribe are reachable from a build session. A regression the validation
-asked for is an obligation here, stated without the round that asked; the
-build enumerates the cases.
+Number the obligations. For each: the behaviour it verifies, the
+observation boundary, what must stay real, and what may be substituted with
+the claim the substitute can and cannot prove. The numbers are what a
+tenet's held-by line and the build's report point at; the build answers
+each number as met, weakened or skipped, and an obligation that vanishes
+without an answer is the failure the numbering exists to make visible.
+Verify that the fixtures and runners you prescribe are reachable from a
+build session. A regression the validation asked for is an obligation here,
+stated without the round that asked; the build enumerates the cases.
 
 <example>
-Obligation: the section read model implements § Behaviour — Focus.
+3. Obligation: the section read model implements § Behaviour — Focus.
 Observe: the public section view computed from a card's recorded turns and
 state transitions.
 Real: the production read-model function and the domain types.
@@ -251,7 +301,7 @@ Limit: synthetic records do not establish the shape of historical production dat
 
 ### Delivery
 
-State the PR boundary and the phases only where order matters; the reasoning
+State the PR boundary always, and the phases only where order matters; the reasoning
 behind one PR in one session is in [SKILL.md](SKILL.md) § Scope. A check
 whose failure would change the design belongs before the spec is ready, not
 in a first phase of the build.
@@ -324,9 +374,24 @@ notice proceed independently.
 - **Leave out what isn't yours to pin.** Full code bodies, per-case test
   enumeration, line-level edit plans, call-site rename inventories, doc
   update plans, commit order, and time estimates belong to the build. Domain
-  and interface vocabulary is the spec's to fix.
+  and interface vocabulary is the spec's to fix. A sentence a model or a
+  judge will read is bound by what it must state and what it must not name;
+  the build writes it under the prompt-engineering rulebook. A sentence
+  written out verbatim here is a premise, run against a real record before
+  the spec is called settled, because a copied sentence ships as written.
 - **Strip the journey**, as the opening says: consult job names, rounds,
   finding counts and dispositions leave the spec; each decision keeps its
   reason and its evidence. The job names belong in the report.
-- **Run the project's own checks** from its documentation bindings, then
-  reread the spec once as one whole.
+- **Revise by replacement.** A finding from a check is fixed by rewriting
+  the sentence at the rule's home, and the old sentence goes; a clause
+  appended beside it is how a spec grows by half through its checks and
+  ends up saying one thing twice.
+- **Measure the document**, then reread it once as one whole:
+  `scripts/spec-stats.py <spec>` prints words per section, sentence length
+  and whether the summary is a labelled block; `scripts/check-refs.sh
+  <spec>` lists every cited repository path and `§ Heading` that does not
+  resolve in the working tree, and a path outside the repository is checked
+  by hand. The numbers to act on: a sentence past forty words carries two
+  claims, and a section that grew by half through the checks says something
+  twice.
+- **Run the project's own checks** from its documentation bindings.
