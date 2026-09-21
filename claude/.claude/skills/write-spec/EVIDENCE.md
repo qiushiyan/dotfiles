@@ -660,3 +660,46 @@ No change made from this run. Next evidence: the build on
 `codex-support` — whether the pickup gate re-reads the Today lines,
 whether obligations 1–17 are answered by number, and which departures
 appear against the four tables.
+
+### The headroom build (same session, after `/compact` at 09:52Z)
+
+Report in `build/headroom-report.md`. Four phases in 35 minutes (09:52 →
+10:27Z), 74 files, +7,356/−970; docs, two review rounds (a warm Codex
+voice continuing the validation session beside a cold one) and their fixes
+by 12:11Z. Zero corrections of a spec misreading across ten user turns;
+both review voices returned no foundational objection.
+
+Today lines: the build read the spec once, then every file the `Today:`
+lines name within 35 seconds, all before the first edit, and no Today
+line was wrong. This happened from the user's kickoff prompt, not from
+the pickup gate (no brief was picked up). Premises were reused; the one
+re-derivation was a 25-second grep of the installed binary for the seams
+the source-tree premises named.
+
+What the spec did not hold: (1) a Structure entry's Protects line, "no
+operation accepts a scope beside an account or an account list", had no
+obligation behind it and was violated within the hour (`setOf(scope,
+list)`), the cold voice's critical finding; tenets carry a held-by line,
+Protects lines do not. (2) P3 was measured over a body whose
+`rate_limit_reached_type` was null, so the allowance rule bound a field
+the measurement never exercised; the source reading took it for a string,
+it is an object on the wire, and round 2 found it. (3) The build's report
+was organised by commit and answered none of the seventeen obligations by
+number; 12, 14, 15 and 16 were satisfied nominally (a hand-routed page
+test, instant stubs, a fixture name both vendors share, equal percentages
+in a column test) and one promised test had been truncated away by a
+later edit. The spec bar's "the build answers each number" lives in
+SPEC-BAR, which the build never reads. (4) An unresolved term, whether
+`auth_mode: null` is present or absent, cost a review exchange; the
+build's reading stood.
+
+Reviews: roughly half of round 1's findings trace to the spec (the
+aliasing instances under obligation 2, the Protects invariant, the null
+versus empty reason term, the offline plan with no owner); the rest were
+ordinary (the 401 wrapper, the rounded percent, the pty harness leaking a
+real root).
+
+Candidate changes, from this build: a Protects line closes with what
+holds it, as a tenet does; the spec's Verification opens with one line
+addressed to the build, asking for each obligation answered by number as
+pinned, nominal or skipped, since that is the one surface the build reads.
