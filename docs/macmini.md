@@ -1,5 +1,8 @@
 # Mac mini (`ssh macmini`)
 
+> The steward host that ran here moved to `qiushi-mini` on 2026-09-22
+> (`docs/qiushi-mini.md` § Steward host); its files on this box were removed.
+
 A colleague's Mac mini on the company tailnet that I have a user account on,
 for development over SSH. It is a **shared, production-ish box**: the owner's
 account serves `autoandy` from it, so the rule is *don't use up the cores or
