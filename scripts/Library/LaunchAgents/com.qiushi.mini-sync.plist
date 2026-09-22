@@ -5,7 +5,7 @@
   <key>Label</key>
   <string>com.qiushi.mini-sync</string>
 
-  <!-- Mirror dotfiles + personal CLIs to the office mini every 15 minutes.
+  <!-- Mirror dotfiles + personal CLIs to the office mini every hour.
        - -quiet exits 0 without output when the mini is unreachable (offline,
        laptop asleep, off the tailnet), so only real failures reach the log.
        Manual `mini-sync` is the same code path. docs/qiushi-mini.md § Sync. -->
@@ -24,7 +24,7 @@
   </dict>
 
   <key>StartInterval</key>
-  <integer>900</integer>
+  <integer>3600</integer>
 
   <key>RunAtLoad</key>
   <true/>

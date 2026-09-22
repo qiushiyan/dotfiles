@@ -71,8 +71,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 
 Personal CLIs (headroom, envoy, brief, gwt) come from the laptop through
 `mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
-Not installed: go, rust, Docker, databases, other GUI apps, oh-my-zsh,
-oh-my-posh.
+Not installed: go, rust, Docker, databases, other GUI apps.
 
 ## Shell
 
@@ -84,17 +83,31 @@ and they pull the shared parts from the mirror.
   shellenv, `~/.local/bin`, the newest nvm Node `bin`, `$PNPM_HOME/bin`, and
   the SSH-only terminal variables (§ Terminal over SSH). It then sources a
   curated list of modules straight from `~/dotfiles/zsh/.config/zsh/`:
-  `aliases nav utils git claude claude-sessions codex tmux-utils cwd-guard`.
+  `aliases nav utils git claude claude-sessions codex tmux-utils cwd-guard
+  theme`.
   That gives the laptop's muscle memory (`n`, `g`, `lg`, `l`, `t`, `b`,
   `take`, `p`, …) and routes `x`/`cx` through headroom. Laptop-only modules
-  stay out: `toolchain` (the PATH lines replace it), `xcode`, `theme`,
-  `cout`, `proxy`. It turns off `EQUALS`, as the laptop does.
+  stay out: `toolchain` (the PATH lines replace it), `xcode`, `cout`,
+  `proxy`. It turns off `EQUALS`, as the laptop does, and exports
+  `PROMPT_MACHINE=mini` (below).
 - **`~/.zprofile`** repeats brew shellenv, because `/etc/zprofile`'s
   `path_helper` reorders PATH for login shells after `.zshenv`.
-- **`~/.zshrc`** holds the nvm and pnpm installer blocks, `compinit` plus
-  `_git_zsh_register_completions`, zoxide, fzf, `alias v=nvim`, and `EDITOR`.
+- **`~/.zshrc`** follows the laptop's order without sourcing it (that file
+  names laptop-only paths): vi mode and history settings, oh-my-zsh
+  (`history`, `zsh-autosuggestions`; it runs `compinit`),
+  zsh-syntax-highlighting, `_git_zsh_register_completions`, the nvm/pnpm
+  installer blocks, zoxide, fzf, and oh-my-posh last. oh-my-zsh and the two
+  plugins are shallow clones at the laptop's paths; oh-my-posh is from the
+  `jandedobbeleer/oh-my-posh` tap.
 - **`~/.tmux.conf`** is eight lines (mouse, history, `tmux-256color`,
   `set-clipboard on`), on plain Homebrew tmux rather than `tmux-popupfix`.
+
+**Prompt:** the `ohmyposh` package is stowed, so the mini renders the
+laptop's `zen.omp.json` in the synced theme's palette. That config's first
+segment is a machine badge, shown only when `PROMPT_MACHINE` is set; the
+mini's `.zshenv` sets it to `mini`, so its prompt opens with a peach
+` mini` and a laptop prompt stays unmarked. A new machine opts in the same
+way, with no second theme to keep in step.
 
 **Git:** the global identity is the personal Gmail. GitHub auth goes through
 `gh auth setup-git` (HTTPS), so no private SSH key lives on the mini.
@@ -228,7 +241,39 @@ laptop.
   refresh tokens, so two machines sharing one log each other out. A file
   deleted on the laptop stays on the mini.
 - **Schedule**: `com.qiushi.mini-sync` (a LaunchAgent stowed from
-  `scripts/Library/`) runs `mini-sync --quiet` at load and every 15 minutes.
+  `scripts/Library/`) runs `mini-sync --quiet` at load and every hour.
   An unreachable mini is a silent no-op, and real failures go to
   `~/Library/Logs/mini-sync.log`. Run `mini-sync` by hand for a change you
   want there now; `-n` previews it.
+
+## Steward host
+
+Since 2026-09-22 this mini runs the steward's production host, moved from the
+shared `macmini` (planlab `docs/steward/architecture.md` § Wiring is the
+design; `/pl-deploy-steward` redeploys it). It runs in this same account, so
+it keeps its own **session home** apart from mine:
+
+| path | whose | what |
+|---|---|---|
+| `~/.config/steward/` | steward | config, token file (`env`, 600), prelude and wrapper; `paused` is the operator's pause |
+| `~/.local/state/steward/` | steward | the store, journal, evidence, launchd logs, deploy records |
+| `~/planlab` | steward | its checkout (not `~/dev/planlab/main`, which is mine) |
+| `~/steward-worktrees/` | steward | one worktree per task |
+| `~/.steward-home/` | steward | the `HOME` every steward process runs under: its own `.claude` (settings, skills link, login), `.codex` (config, login), pinned `dotfiles` clone, `.gitconfig`, `Library/pnpm` (obelisk), `.local/bin/{claude,envoy,steward,planlab}` |
+| `/Library/LaunchDaemons/ai.planlab.steward.{tick,digest,sweep}.plist` | root | the three daemons, `UserName` qiushiyan |
+
+- **mini-sync doesn't touch any of it.** Its targets (`~/dotfiles`,
+  `~/.codex/config.toml`, the four CLIs in `~/.local/bin`, the token files,
+  theme) are mine. The steward's dotfiles are a real clone at the pin in
+  `services/steward/host/versions.json`, never this mirror. A skill edit
+  reaches the steward only by a pin bump and a deploy.
+- **Its logins live in files** in the session home, because the Keychain is
+  locked outside the GUI. To log in again:
+  `ssh -t qiushi-mini 'HOME=~/.steward-home ~/.steward-home/.local/bin/claude /login'`
+  (the same with `codex login`).
+- **Not a trust boundary.** Driven sessions run with permissions bypassed as
+  my UID; the session home keeps configuration apart, nothing more.
+- **Status:** `ssh qiushi-mini '~/.steward-home/.local/bin/steward status'`;
+  pause with `steward pause`, resume with `steward unpause`.
+- **FileVault:** after an unplanned restart the daemons wait, like
+  Tailscale, until someone unlocks the mini.

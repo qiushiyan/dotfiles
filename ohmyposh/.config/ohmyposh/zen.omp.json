@@ -150,6 +150,12 @@
       "alignment": "left",
       "segments": [
         {
+          "foreground": "p:peach",
+          "style": "plain",
+          "template": "{{ if .Env.PROMPT_MACHINE }}<b> {{ .Env.PROMPT_MACHINE }}</b> {{ end }}",
+          "type": "text"
+        },
+        {
           "foreground": "p:blue",
           "options": {
             "home_icon": "~",
