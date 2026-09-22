@@ -8,7 +8,7 @@
 #   enter        switch to the highlighted worktree's window; if the typed name
 #                matches no worktree, place that branch in one and open its window
 #   ctrl-n       place the TYPED name in a worktree even when the query still
-#                fuzzy-matches an existing worktree. wt_add resolves the name
+#                fuzzy-matches an existing worktree. gwt resolves the name
 #                first, so an existing local or remote branch is checked out
 #                rather than created; only a name that exists nowhere is new.
 #   tab/ctrl-a   mark one / toggle all entries (shift-tab unmarks)
@@ -72,10 +72,8 @@
 
 set -u
 
-# Pure git-worktree logic (path convention, base resolution, the worktree-add
-# dance, gitignored-file seeding, pkg-manager detection, reap candidacy) lives
-# in the tmux-free worktree-core.sh, shared with the gwt shell function. We add
-# only tmux glue.
+# gwt owns creation and seeding. The shell support file owns listing,
+# merge checks, snapshots, and removal; this script owns the tmux/fzf UI.
 source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
 
 session="$(tmux display-message -p '#{session_name}' 2>/dev/null)"
@@ -231,18 +229,6 @@ maybe_post_create() {
   tmux send-keys -t "$target" "$cmd" Enter
 }
 
-# Seed the new worktree with gitignored files/dirs from the main worktree. The
-# copy itself is wt_copy_ignored in worktree-core.sh (where the @worktree_copy_globs
-# patterns, the --directory mechanics, and the "keep patterns specific" warning are
-# documented). Here we only pass the tmux-configured globs in and surface the
-# core's summary via display-message.
-maybe_copy_files() {
-  local globs msg
-  globs="$(tmux show-option -gqv @worktree_copy_globs 2>/dev/null)"
-  msg="$(wt_copy_ignored "$1" "$globs")"
-  [ -n "$msg" ] && tmux display-message "$msg" || true
-}
-
 # Window ids (one per line) whose PANES live in <path>, across every session.
 # Identity by path, not by name: the window name is the branch with "/"→"-",
 # which is not injective (feat/x and feat-x produce the same name, so switching
@@ -277,23 +263,21 @@ switch_worktree() {
 # returns 0 on success (worktree created, window opened → caller exits popup);
 # returns 1 on any failure (caller loops back to the list so you can retry).
 create_worktree() {
-  local name path win base winid
+  local name path win base winid globs
   name="$(printf '%s' "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   if [ -z "$name" ]; then
     echo "type a name first"; sleep 1.5; return 1
   fi
-  path="$wt_root/$name"
   win="$(win_name "$name")"
-  if ! wt_slot_free "$path"; then echo "path already exists: $path"; sleep 1.5; return 1; fi
   base="$(wt_default_base)"
-  mkdir -p "$(dirname "$path")"
-  # wt_add resolves the name and picks the verb itself: existing local branch →
-  # checkout, remote-only branch → tracking checkout, otherwise a new branch off
-  # $base (so $base is a suggestion, not a decision). On failure it prints git's
-  # error to stderr — pause so it's readable before the loop refreshes.
-  if ! wt_add "$name" "$base" "$path"; then sleep 2.5; return 1; fi
+  globs="$(tmux show-option -gqv @worktree_copy_globs 2>/dev/null)"
+  # The binary prints only the path and finishes ignored-file seeding before
+  # a destination window can start its install/post-create command.
+  if ! path="$(WORKTREE_COPY_GLOBS="${globs:-${WORKTREE_COPY_GLOBS:-}}" \
+      "$HOME/.local/bin/gwt" create --non-interactive "$name" "$base")"; then
+    sleep 2.5; return 1
+  fi
   winid="$(tmux new-window -t "$session" -n "$win" -c "$path" -P -F '#{window_id}')"
-  maybe_copy_files "$path"               # seed .env* etc. BEFORE install may need them
   maybe_post_create "$path" "$winid"
   return 0
 }
@@ -493,7 +477,7 @@ reap_merged() {
 
 # ctrl-p: open GitHub PRs via gh; enter fetches the PR head into a local branch
 # (refs/pull/<n>/head exists for fork PRs too) and reuses the normal create
-# path — wt_add resolves the now-local branch and checks it out, then window, file
+# path — gwt resolves the now-local branch and checks it out, then window, file
 # seed, install + agent as usual. ctrl-o opens the PR in the browser instead;
 # esc returns to the worktree list.
 # Output contract HERE is two lines (--expect without --print-query): line 1 =

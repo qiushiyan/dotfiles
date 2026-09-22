@@ -81,6 +81,7 @@ and can turn a single removal into a minute-long pause.
 ## Verification
 
 `tests/test-worktree-core.sh` owns merge styles, stale/truncated fetch state,
-cache-key poisoning, slot refusal, snapshots, and reap candidates. Popup tests
+cache-key poisoning, snapshots, and reap candidates. Creation and slot refusal
+are tested in `~/dev/gwt`. Popup tests
 must also prove dirty-decline behavior, collect-before-move window cleanup, and
 that failed snapshots preserve the worktree.

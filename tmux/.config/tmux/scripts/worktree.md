@@ -10,26 +10,28 @@ merged verdict, removal, recovery      → worktree-removal.md
 
 The scripts own syntax. These docs own the constraints behind it.
 
-## Three front-ends, one core
+## Shared placement, separate interfaces
 
-`scripts/worktree-core.sh` is tmux-free git logic shared by:
-
-- `tmux-worktree.sh` — fzf UI; opens each worktree in its own tmux window and
-  delivers post-create work there;
-- `gwt` in `zsh/.config/zsh/git.zsh` — creates, seeds ignored files, then changes
-  the current shell's directory; it does not install dependencies;
-- `brief start` in `~/dev/brief` — resolves the branch first, then creates only
-  when resolution proves the name absent.
+`gwt` in `~/dev/gwt`, installed at `~/.local/bin/gwt`, owns branch resolution,
+worktree creation, and ignored-file seeding. Its callers are the tmux popup,
+`brief start`, the `enter-worktree` skill, and the optional `gwtcd` shell helper.
 
 ```text
-git/path/base/slot/seed/merge verdict → worktree-core.sh
-tmux window, popup, send-keys          → tmux-worktree.sh
-parent-shell cd                        → gwt wrapper
-brief lifecycle diagnosis             → brief CLI
+branch resolution, creation, seeding → gwt binary
+listing, merge verdict, recovery     → worktree-core.sh
+tmux window, popup, send-keys        → tmux-worktree.sh
+parent-shell cd                      → gwtcd helper
+brief lifecycle diagnosis/resume     → brief CLI
 ```
 
-The core CLI prints only the new path on stdout. Git progress goes elsewhere so
-`gwt` can consume the result without parsing prose.
+The binary prints only the new path on stdout; diagnostics use stderr. It never
+changes the caller's directory. `gwt create --non-interactive` accepts the
+current HEAD as the default base without prompting. `--json` returns the path
+and placement result as an object. The binary's `--help` owns its full contract;
+`~/dev/gwt/README.md` owns installation and placement design.
+
+The shell core retains a forwarding CLI for already-running shells that still
+hold the old function. Run `zshreload` to pick up the binary and `gwtcd` helper.
 
 ## Mental model
 
@@ -69,14 +71,14 @@ window name.
 ## Ignored-file seeding
 
 A worktree checkout omits local prerequisites such as `.env*`, token-bearing
-`.npmrc`, and `scripts.local/`. The core copies only ignored matches from the
+`.npmrc`, and `scripts.local/`. The binary copies only ignored matches from the
 main worktree, preserving relative path and permissions.
 
 ```text
 source   → main worktree
 universe → git ls-files -oi --exclude-standard --directory
 gate     → basename matches @worktree_copy_globs
-copy     → cp -pR to the same relative path
+copy     → cp -pPR to the same relative path, preserving existing targets
 ```
 
 `--directory` prevents descent into wholly ignored trees such as
@@ -86,8 +88,9 @@ through checkout, and unignored WIP is deliberately excluded.
 
 ## Slot safety
 
-`wt_slot_free` accepts an absent path or an empty real directory. It refuses a
-file, symlink, unreadable directory, or non-empty directory and deletes nothing.
+`gwt` accepts an absent path or an empty real directory. It refuses a file,
+symlink, unreadable or non-empty directory, and symlink parents within the
+repository worktree root. It deletes nothing.
 A stale registration may leave the only copy of work in that slot; every
 creator passes through the same guard.
 
@@ -111,10 +114,11 @@ The scripts remain bash-3.2-safe; under `set -u`, empty arrays are unsafe, so
 batch data uses TSV lines.
 
 ```text
-core tests:  tmux/.config/tmux/scripts/tests/test-worktree-core.sh
+placement:   make -C ~/dev/gwt check
+removal:     tmux/.config/tmux/scripts/tests/test-worktree-core.sh
 popup path:  detached scratch tmux pane + send-keys + capture-pane
 safe test:   set @worktree_post_create_cmd to harmless echo
 ```
 
-Script edits are live through Stow. A binding change in `tmux.conf` needs
-`prefix r`.
+Rebuild the binary with `make -C ~/dev/gwt install`. Script edits are live
+through Stow. A binding change in `tmux.conf` needs `prefix r`.

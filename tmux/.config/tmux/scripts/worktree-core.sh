@@ -1,28 +1,7 @@
 #!/usr/bin/env bash
-# worktree-core.sh — the tmux-free heart of the git-worktree machinery.
-#
-# This file holds the pure logic (no tmux calls, no window/pane awareness) shared
-# by two front-ends:
-#   - tmux-worktree.sh  — the `prefix W` fzf popup; SOURCES this file and wraps the
-#                         functions below with tmux glue (new-window, send-keys,
-#                         display-message).
-#   - gwtn (git.zsh)    — a lightweight shell function that creates a worktree +
-#                         branch and `cd`s into it in the CURRENT pane (no new
-#                         window); INVOKES this file as a CLI: `worktree-core.sh
-#                         create <branch> <base>` and reads the printed path.
-#
-# Dual nature: when SOURCED it only defines wt_* functions (the executable guard at
-# the bottom is false). When EXECUTED directly it dispatches a subcommand.
-#
-# CLI stdout contract (load-bearing — gwtn captures it):
-#   `create` prints ONLY the final worktree path to stdout. Every human-facing
-#   message (the verb it chose, the copy summary, errors) goes to STDERR, so the
-#   caller can do `path="$(worktree-core.sh create ...)"` and get a clean path
-#   while the messages still stream to the terminal.
-#   `resolve` prints ONLY the verdict line (see wt_resolve_branch) to stdout.
-#
-# New worktrees land at  ~/dev/.worktrees/<repo>/<branch>  for every project
-# (repo = the toplevel's basename; no per-repo special-casing).
+# tmux worktree support: merge verdicts, listing, snapshots, and removal.
+# Creation and branch resolution live in ~/dev/gwt, installed as ~/.local/bin/gwt.
+# The CLI shim at the bottom keeps already-running shells usable after migration.
 
 # --- repo identity & worktree root -------------------------------------------
 
@@ -33,20 +12,6 @@
 # `brief`'s folder scheme resolves the project through --git-common-dir.
 wt_worktree_root() {
   printf '%s\n' "$HOME/dev/.worktrees/$(basename "$(wt_main_worktree 2>/dev/null)")"
-}
-
-# A slot is free when nothing is there, or an empty real directory is — git
-# worktree add accepts an empty directory. Anything else (files, a symlink, a
-# non-empty directory git no longer registers) is refused: it may be the only
-# copy of a session's work, and no caller here deletes on the user's behalf.
-wt_slot_free() {
-  local path="$1" entries
-  [ -e "$path" ] || [ -L "$path" ] || return 0
-  [ -d "$path" ] && [ ! -L "$path" ] || return 1
-  # ls failing (unreadable) must not read as empty — that is the one answer
-  # that would let git worktree add try to write into it.
-  entries="$(ls -A "$path" 2>/dev/null)" || return 1
-  [ -z "$entries" ]
 }
 
 # After moving a worktree away, remove only its empty branch-name parents.
@@ -69,8 +34,8 @@ wt_main_worktree() {
 
 # Default base ref for a brand-new branch: the first of these that resolves. A
 # fresh clone without origin/HEAD set falls through the chain (fix with
-# `git remote set-head origin -a`). NB: the gwtn shell function deliberately does
-# NOT use this — it defaults to the *current* branch — but the popup does.
+# `git remote set-head origin -a`). The gwt binary defaults to the current
+# branch; the popup passes this base explicitly.
 wt_default_base() {
   local b
   for b in origin/HEAD origin/main origin/master main master; do
@@ -243,194 +208,11 @@ _wt_merged_compute() {
   return 0
 }
 
-# --- branch resolution --------------------------------------------------------
-
-# What does <branch> ALREADY refer to? This is the decision that picks wt_add's
-# verb, and it exists because the obvious ordering is wrong. `worktree add -b` is
-# a CREATION, and a creation succeeds whenever no LOCAL branch exists — so trying
-# it first let "create" win every tie, including the tie against a branch that
-# exists only on a remote. That produced a brand-new empty branch quietly
-# shadowing the remote one, which is the worst available outcome: same name, none
-# of the commits, no error. Resolve the name FIRST, then choose the verb.
-#
-# Prints exactly one line:
-#   local                a local branch of that name exists
-#   remote <ref>         no local branch; exactly one refs/remotes/*/<branch>
-#   ambiguous <ref>…     no local branch; several remotes carry the name
-#   absent               nothing, anywhere
-#
-# In a for-each-ref pattern `*` fills the remote-name slot only — it does not
-# cross `/`, so a slashed branch (skill/foo/bar) resolves correctly. But the
-# pattern DOES match a longer ref at a component boundary: `…/*/feat/x` also
-# matches `…/origin/feat/x/y`. The exact-suffix filter drops those, so a `remote`
-# verdict always names a ref that really is <branch>.
-wt_resolve_branch() {
-  local branch="$1" ref n=0 all=""
-  git show-ref --verify --quiet "refs/heads/$branch" && { printf 'local\n'; return 0; }
-  while IFS= read -r ref; do
-    [ -n "$ref" ] || continue
-    case "$ref" in
-      */"$branch") n=$((n + 1)); all="${all:+$all }$ref" ;;
-    esac
-  done <<EOF
-$(git for-each-ref --format='%(refname)' "refs/remotes/*/$branch" 2>/dev/null)
-EOF
-  case "$n" in
-    0) printf 'absent\n' ;;
-    1) printf 'remote %s\n' "$all" ;;
-    *) printf 'ambiguous %s\n' "$all" ;;
-  esac
-}
-
-# The same verdict, but with ONE bounded network probe when the answer would be
-# "absent" — the only verdict that is dangerous to get wrong from a stale cache.
-# Remote-tracking refs are a local cache: a branch pushed since your last fetch
-# reads as absent, and absent means "create a new branch off the base" — the same
-# silent-shadow bug, just rarer. The probe costs nothing on a hit, and a miss is
-# precisely the moment you were about to create a branch and wanted fresh refs
-# anyway (gwt otherwise never fetches, so this is also its only guard against
-# forking off a stale base). Staleness gate and timeout are the ones from the
-# base-freshness section above.
-wt_resolve_branch_fresh() {
-  local branch="$1" verdict
-  verdict="$(wt_resolve_branch "$branch")"
-  [ "$verdict" = absent ] || { printf '%s\n' "$verdict"; return 0; }
-  wt_base_is_stale || { printf 'absent\n'; return 0; }
-  printf 'wt: no branch "%s" here or on a remote — refreshing remote refs…\n' "$branch" >&2
-  wt_fetch_base || printf 'wt: fetch failed or timed out — resolving against the last-fetched state\n' >&2
-  wt_resolve_branch "$branch"
-}
-
-# --- create ------------------------------------------------------------------
-
-# Put <branch> in a worktree at <path>, forking from <base> ONLY if the branch
-# does not already exist somewhere. The verb comes from the resolution above:
-#
-#   local      → check the existing branch out. <base> unused.
-#   remote     → `git worktree add <path> <branch>`, whose DWIM creates the local
-#                branch at <remote>/<branch> AND sets it as upstream ("branch 'x'
-#                set up to track 'origin/x'"). <base> unused.
-#   absent     → `--no-track -b` off <base>: a genuinely new branch.
-#   ambiguous  → refuse, naming the candidates. git's own error here is a bare
-#                "fatal: invalid reference: <branch>", which tells you nothing.
-#
-# <force_new> (4th arg, default 0) forces the `absent` verb — the escape hatch for
-# "I want a new branch that happens to share a name with a remote one". It is the
-# inverse of the flag you might expect: the dangerous case is the one where you
-# DON'T know the name is taken, so the safe reading has to be the default.
-#
-# The chosen verb is always announced on stderr. The bug this replaced was bad
-# specifically because it was silent, so the fix must not be.
-#
-# Returns 0/1; on failure prints git's own error (under a header) to stderr so
-# either front-end can surface it.
-wt_add() {
-  local branch="$1" base="$2" path="$3" force_new="${4:-0}"
-  local verdict kind tmp rc ref short
-
-  if [ "$force_new" = 1 ]; then verdict="absent"; else verdict="$(wt_resolve_branch_fresh "$branch")"; fi
-  kind="${verdict%% *}"
-
-  if [ "$kind" = ambiguous ]; then
-    printf 'wt: "%s" exists on more than one remote:\n' "$branch" >&2
-    # Unquoted on purpose: one line per ref. Refnames cannot contain whitespace
-    # or glob characters, so word-splitting is exactly the right tool here.
-    # shellcheck disable=SC2086
-    set -- ${verdict#ambiguous }
-    for ref in "$@"; do printf '      %s\n' "${ref#refs/remotes/}" >&2; done
-    printf '    disambiguate by creating the local branch yourself first, e.g.\n' >&2
-    printf '      git branch --track %s <remote>/%s\n' "$branch" "$branch" >&2
-    return 1
-  fi
-
-  tmp="$(mktemp)"
-  # Capture BOTH git streams to $tmp: git prints "Preparing worktree…" (stderr) and
-  # "HEAD is now at…" (stdout), and we must not let either leak to OUR stdout — the
-  # CLI's stdout is the worktree path alone. Silent on success; on failure the
-  # captured output is replayed to stderr.
-  case "$kind" in
-    local)
-      printf 'wt: "%s" already exists locally — checking it out (base not used)\n' "$branch" >&2
-      git worktree add "$path" "$branch" >"$tmp" 2>&1
-      ;;
-    remote)
-      # "refs/remotes/origin/feat/x" → short "origin/feat/x", remote "origin".
-      short="${verdict#remote refs/remotes/}"
-      printf 'wt: "%s" exists only on %s — checking out %s as a tracking branch (base not used)\n' \
-        "$branch" "${short%/$branch}" "$short" >&2
-      git worktree add "$path" "$branch" >"$tmp" 2>&1
-      ;;
-    *)
-      printf 'wt: creating new branch "%s" off "%s"\n' "$branch" "$(wt_base_display "$base")" >&2
-      git worktree add --no-track -b "$branch" "$path" "$base" >"$tmp" 2>&1
-      ;;
-  esac
-  rc=$?
-
-  [ "$rc" -eq 0 ] && { rm -f "$tmp"; return 0; }
-  printf 'git worktree add failed:\n' >&2; cat "$tmp" >&2; rm -f "$tmp"
-  return 1
-}
-
-# Seed the new worktree with the gitignored files/dirs a fresh checkout leaves
-# behind (`.env*`, `.npmrc`, `scripts.local/` …), copied from the MAIN worktree.
-#
-# Patterns: arg $2 if given, else $WORKTREE_COPY_GLOBS, else the default below
-# (space/newline-separated; "off"/"none"/… disables). Each pattern matches an
-# entry's BASENAME, so ".env*" catches env files at *any depth*
-# (application/.env.development.local) and "scripts.local" matches that ignored
-# directory; every match is recreated at the same relative path, directories
-# copied whole (cp -pR; perms preserved — env files are often 600, scripts +x).
-#
-# Why `git ls-files -oi --exclude-standard --directory`:
-#   -oi --exclude-standard  → only paths git IGNORES — exactly "what `worktree add`
-#                             didn't bring over"; never tracked paths (already
-#                             checked out) nor untracked-but-unignored WIP.
-#   --directory             → collapses a wholly-ignored dir to ONE "dir/" entry
-#                             instead of every file under it (e.g. the hundreds of
-#                             .env files dependencies ship inside node_modules/).
-#                             We strip the slash, match the basename, and cp -pR it
-#                             ONLY if it matches — so the PATTERN is the only gate:
-#                             node_modules/ & dist/ are excluded purely by not
-#                             matching. KEEP DEFAULT PATTERNS SPECIFIC; a broad glob
-#                             like "*" would now drag in whole ignored dirs.
-#
-# Emits "worktree: copied N item(s) from main" to STDOUT (the popup captures it for
-# display-message; the CLI re-routes it to stderr). Source is always the main
-# worktree, regardless of which worktree the caller launched from.
-wt_copy_ignored() {
-  local newdir="$1" globs="${2:-}"
-  local main rel relstripped src dst base pat copied=0
-  main="$(wt_main_worktree)"
-  [ -n "$main" ] && [ "$main" != "$newdir" ] || return 0
-  [ -z "$globs" ] && globs="${WORKTREE_COPY_GLOBS:-}"
-  case "$globs" in off|none|no|0|false|disabled) return 0 ;; esac
-  [ -z "$globs" ] && globs=".env* .npmrc scripts.local .duet docs.local"
-  set -f; set -- $globs; set +f          # split patterns; never pathname-expand them
-  while IFS= read -r -d '' rel; do
-    relstripped="${rel%/}"               # --directory yields ignored dirs as "dir/"
-    src="$main/$relstripped"
-    [ -e "$src" ] || continue
-    base="${relstripped##*/}"
-    for pat in "$@"; do
-      case "$base" in
-        $pat)
-          dst="$newdir/$relstripped"
-          mkdir -p "$(dirname "$dst")"
-          cp -pR "$src" "$dst" 2>/dev/null && copied=$((copied + 1))
-          break ;;
-      esac
-    done
-  done < <(git -C "$main" ls-files -oi --exclude-standard --directory -z)
-  [ "$copied" -gt 0 ] && printf 'worktree: copied %d item(s) from main\n' "$copied"
-  return 0
-}
-
 # Pick the dependency-install command for a Node project from its committed
 # lockfile (so we never clobber an npm repo with a pnpm lockfile), defaulting to
 # pnpm (repo convention). Prints the command; prints nothing if not a Node project.
 # Pure selection only — DELIVERY (popup: send-keys into the new window) is the
-# front-end's job. (gwtn does not install at all.)
+# front-end's job. (gwt does not install at all.)
 wt_install_cmd() {
   local path="$1"
   [ -f "$path/package.json" ] || return 0
@@ -582,71 +364,20 @@ _wt_reap_one() {
 
 # --- CLI (only when EXECUTED directly, not when sourced) ----------------------
 
-# create <branch> [base] [--no-copy] [--new]
-#   base defaults to wt_default_base (origin/HEAD chain) when omitted, and is used
-#   ONLY when the branch is being created — an existing local or remote branch is
-#   checked out and the base is irrelevant (wt_add says which happened). --new
-#   forces creation even when a remote branch of that name exists.
-#   Prints ONLY the worktree path to stdout.
 _wt_core_create() {
-  local branch="" base="" copy=1 force_new=0
-  while [ $# -gt 0 ]; do
-    case "$1" in
-      --no-copy) copy=0 ;;
-      --new) force_new=1 ;;
-      --) shift; break ;;
-      -*) printf 'create: unknown flag: %s\n' "$1" >&2; return 2 ;;
-      *)  if   [ -z "$branch" ]; then branch="$1"
-          elif [ -z "$base" ];   then base="$1"
-          fi ;;
-    esac
-    shift
-  done
-  [ -n "$branch" ] || { printf 'create: branch name required\n' >&2; return 2; }
-  git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
-    || { printf 'create: not inside a git repository: %s\n' "$PWD" >&2; return 1; }
-  [ -n "$base" ] || base="$(wt_default_base)"
-
-  local path; path="$(wt_worktree_root)/$branch"
-  wt_slot_free "$path" || { printf 'create: path already exists: %s\n' "$path" >&2; return 1; }
-  mkdir -p "$(dirname "$path")"
-  wt_add "$branch" "$base" "$path" "$force_new" || return 1
-  if [ "$copy" -eq 1 ]; then
-    local msg; msg="$(wt_copy_ignored "$path")"
-    [ -n "$msg" ] && printf '%s\n' "$msg" >&2
-  fi
-  printf '%s\n' "$path"
+  "$HOME/.local/bin/gwt" create --non-interactive "$@"
 }
 
-# resolve <branch>
-#   Print what <branch> already refers to (the wt_resolve_branch verdict line),
-#   refreshing remote refs once if the answer would be "absent". Exists so a
-#   front-end can find out whether a base is even a question BEFORE prompting for
-#   one: gwt used to ask "fork from <current branch>?" and then discard the answer
-#   whenever the branch already existed. Doing the probe here also means the one
-#   bounded fetch happens before the prompt, not after it.
 _wt_core_resolve() {
-  local branch="${1:-}"
-  [ -n "$branch" ] || { printf 'resolve: branch name required\n' >&2; return 2; }
-  git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
-    || { printf 'resolve: not inside a git repository: %s\n' "$PWD" >&2; return 1; }
-  wt_resolve_branch_fresh "$branch"
+  "$HOME/.local/bin/gwt" resolve "$@"
 }
 
-_wt_core_main() {
-  set -u
-  local sub="${1:-}"; [ $# -gt 0 ] && shift
-  case "$sub" in
-    create)  _wt_core_create "$@" ;;
-    resolve) _wt_core_resolve "$@" ;;
-    "")      printf 'worktree-core.sh: missing subcommand (try: create, resolve)\n' >&2; return 2 ;;
-    *)       printf 'worktree-core.sh: unknown subcommand: %s\n' "$sub" >&2; return 2 ;;
-  esac
-}
-
-# Run the CLI only when executed directly; a `source` leaves BASH_SOURCE[0] != $0.
-# A clean `if` (not `[ … ] &&`) so sourcing returns 0 — a trailing false && would
-# make `source worktree-core.sh` itself "fail" (same lesson as .zshenv's exit 0).
+# Compatibility for shells and brief binaries loaded before the migration.
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-  _wt_core_main "$@"
+  sub="${1:-}"; [ $# -gt 0 ] && shift
+  case "$sub" in
+    create) _wt_core_create "$@" ;;
+    resolve) _wt_core_resolve "$@" ;;
+    *) printf 'worktree-core.sh: use gwt create or gwt resolve\n' >&2; exit 2 ;;
+  esac
 fi

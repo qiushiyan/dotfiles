@@ -24,7 +24,7 @@ Each suite owns one boundary:
 |---|---|
 | pane control | float, restore, and pane-mode transactions on an isolated tmux socket |
 | context chip | publication, shedding, cleanup, and quota refresh without the live cache |
-| worktree core | tmux-free base, slot, merge, snapshot, and reap rules |
+| worktree core | tmux-free base, merge, snapshot, and reap rules |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | command/output pairing across nested shells, indexed copies, recorder retention/cleanup, and terminal rendering with the real transient prompt; private tmux sockets, a temporary home, and a fake clipboard isolate state |
 | Claude sessions | shared-store topology and repair against a throwaway `$HOME` |

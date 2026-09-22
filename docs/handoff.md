@@ -28,8 +28,9 @@ The loop is split so that staleness cannot misroute a session:
   prints a quoted `cd` command. Everything else is a straight exec of
   `~/.local/bin/brief`.
 
-The shared worktree boundary is `tmux/.config/tmux/scripts/worktree-core.sh`.
-It owns worktree creation for `gwt`, the tmux popup, and `brief start`.
+The shared worktree boundary is `~/.local/bin/gwt` (source: `~/dev/gwt`).
+It owns branch resolution and worktree creation for the tmux popup,
+`brief start`, and the `enter-worktree` skill. Install with `make -C ~/dev/gwt install`.
 
 ## The next session's first prompt
 

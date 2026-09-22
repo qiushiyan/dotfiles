@@ -808,129 +808,36 @@ _gitswitch() {
   _arguments '1:profile:(personal marswave cola)'
 }
 
-# gwt — lightweight "git worktree": put a branch in a worktree, seed the main
-# worktree's gitignored files into it, and cd there IN THE CURRENT PANE. The
-# no-new-window, no-install counterpart to the `prefix W` popup; both share
-# tmux/.config/tmux/scripts/worktree-core.sh (the actual git work). The cd must
-# happen in this shell, which is the whole reason this is a function and not a
-# call to the core's CLI directly.
-#
-# The branch need NOT be new. The core resolves the name before picking a verb: an
-# existing local branch is checked out, a branch that exists only on a remote is
-# checked out as a tracking branch (upstream set), and only a name that exists
-# nowhere creates anything. It says on stderr which one it did. --new forces
-# creation — the inverse of the flag you might expect, because the case that needs
-# protecting is the one where you don't know the name is already taken.
-#
-# Base resolution diverges from the popup ON PURPOSE: omit it and gwt defaults to
-# the CURRENT branch (you usually want to fork from where you stand) behind a [y/N]
-# confirm; the popup instead forks from the origin/HEAD→main→master chain. The
-# confirm only appears when a branch is actually being CREATED — for a branch that
-# already exists there is no base to choose.
-gwt() {
+# gwt is the compiled CLI in ~/.local/bin. Keep directory changes explicit:
+# gwtcd adds only the parent-shell cd that a binary cannot perform.
+gwtcd() {
   emulate -L zsh
-  local core="$HOME/.config/tmux/scripts/worktree-core.sh"
-  local branch="" base="" force_new=0 arg
-
+  local arg dest
   for arg in "$@"; do
     case "$arg" in
-      -h|--help) _gwt_help; return 0 ;;
-      --new)     force_new=1 ;;
-      -*)        print -u2 "gwt: unknown flag: $arg"; _gwt_help; return 1 ;;
-      *) if   [[ -z "$branch" ]]; then branch="$arg"
-         elif [[ -z "$base" ]];   then base="$arg"
-         else print -u2 "gwt: too many arguments: $arg"; return 1
-         fi ;;
+      -h|--help) command gwt --help; return ;;
+      --json) print -u2 "gwtcd: --json is for gwt; gwtcd needs its path output"; return 2 ;;
     esac
   done
-
-  if [[ -z "$branch" ]]; then
-    print -u2 "gwt: branch name required"; _gwt_help; return 1
-  fi
-  if ! git rev-parse --is-inside-work-tree &>/dev/null; then
-    print -u2 "gwt: not inside a git repository"; return 1
-  fi
-
-  # Ask the core what the name already refers to BEFORE deciding whether a base is
-  # even a question — prompting for a fork point and then discarding it (which is
-  # what happens for an already-existing branch) is theatre. This probe is also
-  # where the single bounded fetch happens, so the prompt below is based on a
-  # freshly-resolved answer rather than a stale remote-tracking cache.
-  local verdict=absent
-  if (( ! force_new )); then
-    verdict="$(bash "$core" resolve "$branch")" || return 1
-  fi
-
-  # Creating, and no base given → default to the current branch, but confirm (the
-  # worktree+branch are cheap to make but annoying to undo, and the base is easy
-  # to get wrong).
-  if [[ "$verdict" == absent && -z "$base" ]]; then
-    base="$(git rev-parse --abbrev-ref HEAD)"
-    printf 'gwt: no base given — fork "%s" from current branch "%s"? [y/N] ' "$branch" "$base"
-    local ans; read -r ans
-    [[ "$ans" == [yY]* ]] || { print "aborted"; return 1; }
-  fi
-
-  # The core does the git work and prints ONLY the new worktree's path to stdout
-  # (the verb it chose, the copy summary and errors go to stderr, visible). cd into
-  # it on success.
-  # NB: do NOT name this `path` — that's a zsh special var tied to $PATH, and a
-  # `local path` would blank PATH for the rest of this function (bash can't be found).
-  local -a coreargs=(create)
-  (( force_new )) && coreargs+=(--new)
-  coreargs+=("$branch")
-  [[ -n "$base" ]] && coreargs+=("$base")
-
-  local dest
-  dest="$(bash "$core" "${coreargs[@]}")" || return 1
-  [[ -n "$dest" ]] && cd "$dest"
-}
-
-_gwt_help() {
-  cat <<'EOF'
-Usage: gwt <branch> [base] [--new]
-
-Put <branch> in a git worktree, copy the main worktree's gitignored files
-(.env*, .npmrc, scripts.local, …) into it, and cd there — in the current pane
-(no new tmux window, no dependency install).
-
-The branch does not have to be new. gwt resolves the name first and reports on
-stderr which of these it did:
-
-  exists locally            checks that branch out into the worktree
-  exists only on a remote   checks out a tracking branch (upstream set)
-  exists nowhere            creates it off <base>
-
-Worktrees land at  ~/dev/.worktrees/<repo>/<branch>.
-
-Arguments:
-  branch   (required)  branch to place in a worktree
-  base     (optional)  fork point, used ONLY when the branch is being created; if
-                       omitted, defaults to the CURRENT branch and asks for [y/N]
-                       confirmation
-
-Options:
-  --new       create a new branch off <base> even if a remote branch of that
-              name exists
-  -h, --help  Show this help message
-
-Examples:
-  gwt fix/login              fork fix/login from the current branch (after y/N)
-  gwt fix/login main         fork fix/login from main, no prompt
-  gwt skill/cust-foo         check out existing origin/skill/cust-foo, tracking
-  gwt fix/login --new        new branch, ignoring any origin/fix/login
-
-Related:
-  prefix W   tmux popup to switch / create / remove worktrees (opens a new window)
-EOF
+  dest="$(command gwt create "$@")" || return $?
+  [[ -n "$dest" ]] && cd -- "$dest"
 }
 
 # Completes local branches AND remote-only branch names (lstrip=3 drops
 # refs/remotes/<remote>/, which is the form you actually type — gwt resolves the
 # remote itself).
 _gwt() {
+  # Explicit subcommands and the branch-first form share completion.
+  if [[ "$words[2]" == create || "$words[2]" == resolve ]]; then
+    words=("$words[1]" "${words[@]:2}")
+    (( CURRENT-- ))
+  fi
   _arguments \
     '--new[create a new branch even if a remote branch of that name exists]' \
+    '--non-interactive[use current HEAD without confirmation]' \
+    '--no-copy[skip ignored prerequisites]' \
+    '--no-fetch[use cached remote refs]' \
+    '--json[print structured output]' \
     '1:branch (existing local, existing remote, or new):($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))' \
     '2:base branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
 }
@@ -1154,7 +1061,7 @@ _git_zsh_register_completions() {
   compdef _stage     stage
   compdef _gitswitch gitswitch
   compdef _gopen     gopen
-  compdef _gwt      gwt
+  compdef _gwt      gwt gwtcd
   compdef _brief     brief b   # b is the alias (aliases.zsh); register both
   compdef _gitguard  gitguard
 }

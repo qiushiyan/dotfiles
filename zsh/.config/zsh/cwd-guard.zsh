@@ -1,7 +1,7 @@
 # ~/.config/zsh/cwd-guard.zsh — shells whose working directory was deleted.
 # Auto-sourced by .zshenv via ~/.config/zsh/*.zsh glob.
 #
-# Delete the directory a shell sits in — `git worktree remove`, `gwt` cleanup,
+# Delete the directory a shell sits in — `git worktree remove`, tmux worktree cleanup,
 # an rm -rf from another pane — and that shell keeps running fine on an
 # unlinked inode. The trouble starts when a NEW zsh is started there, which is
 # exactly what `exec zsh -l` (zshreload) does, in place. getcwd(3) fails, zsh
