@@ -166,7 +166,7 @@ laptop. `pnpm install` was run at the root and in `bench/`. The `planlab` and
 `bench` launchers were generated with each package's own install
 (`pnpm planlab:install`, `cd bench && pnpm cli:install`), which bakes this
 checkout's absolute paths in. Re-run them if the checkout moves. Their tokens
-live in `~/.planlab/.env` and `~/.bench/.env`.
+(`~/.planlab/.env`, `~/.bench/.env`) arrive through `mini-sync` (§ Sync).
 
 Not installed: go, rust, Docker, databases, fonts, GUI apps, oh-my-zsh.
 
@@ -186,6 +186,11 @@ and the laptop is the source of truth.
   source clones on the mini. `planlab` and `bench` are deliberately absent:
   they are two-line shims that `exec` tsx inside a checkout, and the mini
   generates its own (§ Toolchain, planlab checkout).
+- **Token files**: `SECRETS` in the script, currently `~/.planlab/.env` and
+  `~/.bench/.env`, are sent with mode 600 inside 700 dirs. Only plain CLI API
+  tokens belong on that list. OAuth logins (Claude Code, Codex, gh) must not
+  be copied: their refresh tokens rotate, so two machines sharing one log
+  each other out. The mini logs in to those on its own.
 - **Schedule**: `com.qiushi.mini-sync` (LaunchAgent, stowed from
   `scripts/Library/`) runs `mini-sync --quiet` at load and every 15 minutes.
   An unreachable mini is a silent no-op. Real failures go to

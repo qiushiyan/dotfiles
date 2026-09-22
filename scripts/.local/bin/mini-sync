@@ -5,6 +5,8 @@
 # Why a mirror and not `git pull`: skills and tools iterate uncommitted, and
 # the mirror carries the working tree as-is. See docs/qiushi-mini.md § Sync.
 #
+# Also: CLI token files (SECRETS below).
+#
 # Usage: mini-sync [-n|--dry-run] [-q|--quiet]
 #   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
 set -euo pipefail
@@ -15,6 +17,11 @@ REPO="$HOME/dotfiles"
 # into a local checkout (planlab, bench) do not belong here: they point at
 # laptop paths.
 BINS=(headroom envoy brief gwt)
+# Token files (paths relative to $HOME), sent 600 in 700 dirs. Only CLI API
+# tokens belong here. OAuth logins (Claude Code, Codex, gh) rotate their
+# refresh tokens, so two machines sharing one log each other out; the mini
+# logs in on its own.
+SECRETS=(.planlab/.env .bench/.env)
 
 dry=() quiet=0
 for arg in "$@"; do
@@ -73,5 +80,13 @@ for b in "${BINS[@]}"; do
   fi
 done
 rsync -a ${dry[@]+"${dry[@]}"} "${bins[@]}" "$HOST:.local/bin/"
+
+say "==> ${SECRETS[*]} → $HOST:~"
+secrets=()
+for s in "${SECRETS[@]}"; do
+  [[ -f $HOME/$s ]] && secrets+=("$HOME/./$s")
+done
+# -R keeps the path after /./; --chmod applies to the dirs it creates too.
+(( ${#secrets[@]} )) && rsync -aR --chmod=D700,F600 ${dry[@]+"${dry[@]}"} "${secrets[@]}" "$HOST:"
 
 say "==> done"
