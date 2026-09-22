@@ -79,8 +79,16 @@ Installed 2026-09-22. A deliberately small subset of the laptop: no
   `TERM_PROGRAM`, so without it Claude Code prints URLs as plain text. Open
   links with **Cmd+Shift+click**: Ghostty opens OSC 8 links on Cmd-click, and
   Shift bypasses tmux's mouse capture. Plain Ctrl-click is Claude Code's own
-  click handler running `open` on the host, so on the mini it opens the mini's
-  Safari. The same Cmd+Shift+click works in local tmux panes.
+  click handler, which runs `$BROWSER` (else `open`) on the host. For SSH
+  sessions, `.zshenv` sets `BROWSER=~/.local/bin/browser-clip`, a ten-line
+  shim that sends the URL to the laptop clipboard over OSC 52 instead of
+  opening the mini's Safari. It writes to the parent's tty when it was
+  spawned detached. So on the mini, Ctrl-click copies the link and
+  Cmd+Shift+click opens it.
+- **OSC 52 requires the laptop tmux at `set-clipboard on`.** The default
+  `external` drops OSC 52 from panes, and tmux forwards it only to a client
+  that is showing the pane. Both the nvim `"+y` path and `browser-clip`
+  depend on this.
 - `~/.zprofile`: brew shellenv again, because `/etc/zprofile`'s `path_helper`
   reorders PATH for login shells after `.zshenv`.
 - `~/.zshrc`: the nvm and pnpm installer blocks, `compinit`, zoxide, fzf,
