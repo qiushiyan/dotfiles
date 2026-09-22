@@ -175,7 +175,7 @@ command you want to capture; earlier output cannot be recovered by `cout`.
 
 ## Browsing past copies (`prefix =`)
 
-Copy-mode `y` puts text in a **tmux paste buffer**, not the macOS clipboard (`set-clipboard` is `external`, so tmux never emits its own OSC 52 — that's why `prefix y` shells out to `pbcopy`). Those buffers stack up to 50 deep, so the last 50 things you copied are all still there — `prefix ]` only ever gives back the newest one.
+Copy-mode `y` puts text in the macOS clipboard (tmux forwards it to Ghostty as OSC 52) **and** in a **tmux paste buffer**. The buffers stack up to 50 deep, so the last 50 things you copied are all still there — `prefix ]` only ever gives back the newest one.
 
 **`prefix =`** opens the full stack as a zoomed, searchable list:
 

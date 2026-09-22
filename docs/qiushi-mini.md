@@ -56,14 +56,12 @@ into it, because accepting a share needs the admin console.
 
 ## Toolchain
 
-Installed 2026-09-22. A deliberately small subset of the laptop: no
-`bootstrap.sh`, no Brewfile. Two packages are stowed from the mirror: `nvim`
-and `claude`. Everything else from this repo arrives through the mirror
-(§ Sync).
+A deliberately small subset of the laptop: no `bootstrap.sh`, no Brewfile.
+Add a tool when a task on the mini needs it, not to match the laptop.
 
 | tool | version | how | update |
 |---|---|---|---|
-| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync coreutils bat difftastic` (the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
+| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync git-lfs coreutils bat difftastic` (the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
 | node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'` |
 | pnpm | 11.27.1 | `get.pnpm.io/install.sh` with `PNPM_VERSION=11.27.1` → `~/Library/pnpm`; pinned to 11 to match the laptop, not the Rust-port 12 | `pnpm self-update` |
@@ -71,138 +69,146 @@ and `claude`. Everything else from this repo arrives through the mirror
 | Codex CLI | 0.155.1 | `chatgpt.com/codex/install.sh` → `~/.local/bin/codex` | `codex update` |
 | Python | 3.14.7 | `uv python install 3.14` (versioned `python3.14` only) | `uv python upgrade` |
 
-**Shell files, all hand-written (the `zsh` package is not stowed):**
+Personal CLIs (headroom, envoy, brief, gwt) come from the laptop through
+`mini-sync` (§ Sync). Not installed: go, rust, Docker, databases, fonts, GUI
+apps, oh-my-zsh.
 
-- `~/.zshenv`: brew shellenv, `~/.local/bin`, the newest nvm Node `bin`, and
-  `$PNPM_HOME/bin`. This file exists because `ssh qiushi-mini '<cmd>'` runs a
-  non-login, non-interactive zsh that reads nothing else. With only
-  `.zprofile`, `nvim`, brew `jq` and the rest were missing from PATH.
-  It also sets `FORCE_HYPERLINK=1` for SSH sessions. sshd doesn't forward
-  `TERM_PROGRAM`, so without it Claude Code prints URLs as plain text. Open
-  links with **Cmd+Shift+click**: Ghostty opens OSC 8 links on Cmd-click, and
-  Shift bypasses tmux's mouse capture. Plain Ctrl-click is Claude Code's own
-  click handler, which runs `$BROWSER` (else `open`) on the host. For SSH
-  sessions, `.zshenv` sets `BROWSER=~/.local/bin/browser-clip`, a ten-line
-  shim that sends the URL to the laptop clipboard over OSC 52 instead of
-  opening the mini's Safari. It writes to the parent's tty when it was
-  spawned detached. So on the mini, Ctrl-click copies the link and
-  Cmd+Shift+click opens it.
-- **OSC 52 requires the laptop tmux at `set-clipboard on`.** The default
-  `external` drops OSC 52 from panes, and tmux forwards it only to a client
-  that is showing the pane. Both the nvim `"+y` path and `browser-clip`
-  depend on this.
-- `~/.zprofile`: brew shellenv again, because `/etc/zprofile`'s `path_helper`
-  reorders PATH for login shells after `.zshenv`.
-- `~/.zshenv` (end): sources a curated list of modules straight from the
-  mirrored `~/dotfiles/zsh/.config/zsh/`: `aliases nav utils git claude
-  claude-sessions codex tmux-utils cwd-guard`. This gives the same muscle
-  memory as the laptop (`n`, `g`, `lg`, `l`, `t`, `b`, `take`, `p`, …), and
-  `x`/`cx` route through headroom. Laptop-only modules stay out:
-  `toolchain` (the PATH lines above replace it), `xcode`, `theme`, `cout`,
-  `proxy`. It also turns off `EQUALS`, as the laptop does.
-- `~/.zshrc`: the nvm and pnpm installer blocks, `compinit` plus
+## Shell
+
+The `zsh` package is not stowed. The mini's startup files are hand-written,
+and they pull the shared parts from the mirror.
+
+- **`~/.zshenv`** carries everything, because `ssh qiushi-mini '<cmd>'` runs
+  a non-login, non-interactive zsh that reads no other file. It sets brew
+  shellenv, `~/.local/bin`, the newest nvm Node `bin`, `$PNPM_HOME/bin`, and
+  the SSH-only terminal variables (§ Terminal over SSH). It then sources a
+  curated list of modules straight from `~/dotfiles/zsh/.config/zsh/`:
+  `aliases nav utils git claude claude-sessions codex tmux-utils cwd-guard`.
+  That gives the laptop's muscle memory (`n`, `g`, `lg`, `l`, `t`, `b`,
+  `take`, `p`, …) and routes `x`/`cx` through headroom. Laptop-only modules
+  stay out: `toolchain` (the PATH lines replace it), `xcode`, `theme`,
+  `cout`, `proxy`. It turns off `EQUALS`, as the laptop does.
+- **`~/.zprofile`** repeats brew shellenv, because `/etc/zprofile`'s
+  `path_helper` reorders PATH for login shells after `.zshenv`.
+- **`~/.zshrc`** holds the nvm and pnpm installer blocks, `compinit` plus
   `_git_zsh_register_completions`, zoxide, fzf, `alias v=nvim`, and `EDITOR`.
-- `~/.tmux.conf`: eight lines (mouse, history, `tmux-256color`,
-  `set-clipboard on`). Plain Homebrew tmux, not `tmux-popupfix`.
+- **`~/.tmux.conf`** is eight lines (mouse, history, `tmux-256color`,
+  `set-clipboard on`), on plain Homebrew tmux rather than `tmux-popupfix`.
 
-**Git:** global identity is the personal Gmail. `~/dotfiles` is cloned over
-HTTPS, and GitHub auth goes through `gh auth setup-git`, so no private SSH key
-lives on the mini.
+**Git:** the global identity is the personal Gmail. GitHub auth goes through
+`gh auth setup-git` (HTTPS), so no private SSH key lives on the mini.
 
-**Neovim:** only `nvim` is stowed from `~/dotfiles`. Plugins were restored
-from `lazy-lock.json`, and Mason installs LSPs on first open. Over SSH,
-LazyVim leaves `clipboard` empty and `options.lua` sets
-`vim.g.clipboard = "osc52"`, so `"+y` lands in the laptop's clipboard
-(Ghostty allows OSC 52 writes by default). Without that, Neovim prefers the
-mini's own pbcopy.
+**Neovim:** the `nvim` package is stowed from the mirror. Plugins install
+from `lazy-lock.json`, and Mason installs LSPs on first open.
 
-**Ghostty terminfo:** `xterm-ghostty` was pushed with
-`infocmp -x xterm-ghostty | ssh qiushi-mini -- tic -x -` (into `~/.terminfo`).
-Without it, tmux and nvim reject the TERM that Ghostty sends.
+## Terminal over SSH
 
-**Auth over SSH:** the login Keychain is locked in SSH sessions. Claude Code
-falls back to `~/.claude/.credentials.json`. Codex is told to use a file
-(`cli_auth_credentials_store = "file"` in `~/.codex/config.toml`, which is not
-stowed). gh falls back to plaintext storage.
+The laptop's Ghostty → laptop tmux → ssh chain needs these on top of a
+default mini:
 
-**Claude Code config:** the `claude` package is stowed. `~/.claude` and
-`~/.agents` are real dirs, and `settings.json`, `CLAUDE.md`, hooks, rules,
-commands, agents and skills link into the mirror. Codex reads the same
-skills through `~/.agents/skills`. The hooks and the statusline call
-`~/.config/tmux/scripts/*`, so that one dir is linked to the mirror's
-`tmux/.config/tmux/scripts`. The laptop's `tmux.conf` is not linked, and
-`~/.tmux.conf` stays the mini's own. Those scripts no-op outside tmux.
-`settings.json` is a link into the mirror, so a setting changed on the mini
-(`/config`, `/model` default) is lost at the next sync. Change it on the
-laptop.
+- **terminfo**: `xterm-ghostty` was pushed with
+  `infocmp -x xterm-ghostty | ssh qiushi-mini -- tic -x -` (into
+  `~/.terminfo`). Without it, tmux and nvim reject the TERM Ghostty sends.
+- **Clipboard (OSC 52)**: the laptop tmux must run `set-clipboard on`,
+  because `external` drops OSC 52 sent from panes. tmux forwards it only to a
+  client that is showing the pane. nvim's `"+y` depends on this:
+  `options.lua` sets `vim.g.clipboard = "osc52"` for `SSH_TTY` sessions,
+  because Neovim otherwise prefers the mini's own pbcopy. LazyVim leaves
+  `clipboard` empty over SSH, so plain `y` stays in Vim registers.
+- **Links**: open them with **Cmd+Shift+click**. Ghostty opens OSC 8 links
+  on Cmd-click, and Shift bypasses tmux's mouse capture. sshd doesn't forward
+  `TERM_PROGRAM`, so `.zshenv` sets `FORCE_HYPERLINK=1` for SSH sessions;
+  without it Claude Code prints plain-text URLs.
+- **Ctrl-click in Claude Code** is its own click handler, which runs
+  `$BROWSER` (else `open`) on the host, the mini. `.zshenv` sets
+  `BROWSER=~/.local/bin/browser-clip` for SSH sessions. That shim sends the
+  URL to the laptop clipboard over OSC 52 instead of opening the mini's
+  Safari, and writes to the parent's tty when it was spawned detached.
 
-**Codex config:** `~/.codex/config.toml` is **generated**, not linked,
-because Codex writes its project and hook trust into it at runtime.
-`mini-sync` passes the laptop's file through
-`scripts/.local/share/dotfiles/mini-codex-config.py`, which:
+## Agent config
+
+**Auth:** the login Keychain is locked in SSH sessions, so every login lives
+in a file:
+- Claude Code falls back to `~/.claude/.credentials.json`.
+- Codex is pinned to `cli_auth_credentials_store = "file"`.
+- gh falls back to plaintext `hosts.yml`.
+
+Each is logged in on the mini itself, never copied from the laptop (§ Sync,
+token files).
+
+**Claude Code:** the `claude` package is stowed from the mirror. `~/.claude`
+and `~/.agents` are real dirs, and `settings.json`, `CLAUDE.md`, hooks,
+rules, commands, agents and skills link into the mirror. Codex reads the same
+skills through `~/.agents/skills`.
+- The hooks and the statusline call `~/.config/tmux/scripts/*`, so that one
+  dir links to the mirror's `tmux/.config/tmux/scripts`. The laptop's
+  `tmux.conf` is not linked. Those scripts no-op outside tmux.
+- A setting changed on the mini (`/config`, the `/model` default) writes
+  through the link into the mirror and is lost at the next sync.
+
+**Codex:** `~/.codex/config.toml` is **generated**, not linked, because Codex
+writes project and hook trust into it at runtime. `mini-sync` runs the
+laptop's file through `scripts/.local/share/dotfiles/mini-codex-config.py`,
+which:
 - keeps every shared setting: model, reasoning, TUI, features, context7,
   and skill-sync's exclusions;
 - drops the ChatGPT desktop integrations (computer-use, node_repl, plugins,
   marketplaces, `desktop`, `notify`);
 - keeps the mini's own `projects.*`, `hooks.state*` and
   `tui.model_availability_nux` tables;
-- pins `cli_auth_credentials_store = "file"`.
+- pins the file credential store.
 
 The output is idempotent, and the file is rewritten only when the laptop's
-config changed. `AGENTS.md` and `themes/` are plain links into the mirror.
-A `/model` choice made on the mini is replaced by the laptop's at the next
-sync.
+config changed, so a `/model` choice made on the mini lasts until then.
+`AGENTS.md` and `themes/` are plain links into the mirror.
 
-**Extra Codex accounts:** don't use `cx-account-add` here. It shares the
-laptop's raw `codex/.codex/config.toml`, which has no file credential store.
-Run `headroom accounts add --vendor codex --share-config <email>` instead:
-bare `--share-config` links the mini primary's generated config.
+**Accounts:**
+- Add Claude accounts with `x-account-add <email>` as on the laptop, then
+  `/login` on the first `x-<name>`.
+- For Codex, don't use `cx-account-add`: it shares the laptop's raw config,
+  which lacks the file credential store. Run
+  `headroom accounts add --vendor codex --share-config <email>`. A bare
+  `--share-config` links the mini primary's generated config.
+- headroom 81c3045 reads `.credentials.json` only for non-primary accounts.
+  So the Claude primary's board row says "credential unreadable", and
+  `headroom check` FAILs `keychain[primary]`/`blob[primary]`. Launch routing
+  and the Codex page are unaffected.
 
-**planlab checkout:** `~/dev/planlab/main` is a real clone (`gh repo clone
-planlab-ai/main`, git-lfs installed), not part of the mirror. It is worked in
-and pulled here like any repo, and `p`/`pp` from `nav.zsh` reach it. Commits
-use a repo-local identity (`qiushi@planlab.ai` / `qiushiyan`), as on the
-laptop. `pnpm install` was run at the root and in `bench/`. The `planlab` and
-`bench` launchers were generated with each package's own install
-(`pnpm planlab:install`, `cd bench && pnpm cli:install`), which bakes this
-checkout's absolute paths in. Re-run them if the checkout moves. Their tokens
-(`~/.planlab/.env`, `~/.bench/.env`) arrive through `mini-sync` (§ Sync).
+## planlab checkout
 
-Not installed: go, rust, Docker, databases, fonts, GUI apps, oh-my-zsh.
+`~/dev/planlab/main` is a real clone (`gh repo clone planlab-ai/main`), not
+part of the mirror. You work in it and pull it like any repo, and `p`/`pp`
+reach it. Commits use a repo-local identity (`qiushi@planlab.ai` /
+`qiushiyan`), as on the laptop. The `planlab` and `bench` launchers come
+from each package's own install (`pnpm planlab:install`,
+`cd bench && pnpm cli:install`), which bakes this checkout's absolute paths
+in. Re-run the installs after moving the checkout.
 
 ## Sync
 
-`mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way
-and the laptop is the source of truth.
+`mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way,
+and the laptop is the source of truth. **Never edit `~/dotfiles` on the
+mini.** The next sync overwrites it, so a fix found there is made on the
+laptop.
 
-- **dotfiles**: `rsync --delete` of this repo to `~/dotfiles` on the mini.
-  It sends everything git can see (tracked files plus untracked files that
-  are not ignored) and `.git` itself, so the mini's `git status` matches the
+- **dotfiles**: `rsync --delete` of this repo to `~/dotfiles`. It sends
+  everything git can see (tracked files plus untracked files that are not
+  ignored) and `.git` itself, so the mini's `git status` matches the
   laptop's, uncommitted edits included. Ignored paths never leave the laptop:
   `ssh/`, `vpn-private/`, purchased upstream material, app runtime state,
   `node_modules`.
 - **CLIs**: the compiled binaries `headroom envoy brief gwt` are copied from
-  `~/.local/bin` (same arch and OS family). There is no Go and there are no
-  source clones on the mini. `planlab` and `bench` are deliberately absent:
-  they are two-line shims that `exec` tsx inside a checkout, and the mini
-  generates its own (§ Toolchain, planlab checkout).
-- **Token files**: `SECRETS` in the script, currently `~/.planlab/.env` and
-  `~/.bench/.env`, are sent with mode 600 inside 700 dirs. Only plain CLI API
-  tokens belong on that list. OAuth logins (Claude Code, Codex, gh) must not
-  be copied: their refresh tokens rotate, so two machines sharing one log
-  each other out. The mini logs in to those on its own.
-- **Schedule**: `com.qiushi.mini-sync` (LaunchAgent, stowed from
+  `~/.local/bin` (same arch and OS family), so the mini needs no Go and no
+  source clones. `planlab` and `bench` are not copied: they are shims into a
+  checkout, and the mini generates its own (§ planlab checkout).
+- **Codex config**: regenerated as described in § Agent config.
+- **Token files**: `SECRETS` in the script (`~/.planlab/.env`,
+  `~/.bench/.env`) are sent 600 inside 700 dirs. Only plain CLI API tokens
+  belong on that list. OAuth logins (Claude Code, Codex, gh) rotate their
+  refresh tokens, so two machines sharing one log each other out. A file
+  deleted on the laptop stays on the mini.
+- **Schedule**: `com.qiushi.mini-sync` (a LaunchAgent stowed from
   `scripts/Library/`) runs `mini-sync --quiet` at load and every 15 minutes.
-  An unreachable mini is a silent no-op. Real failures go to
-  `~/Library/Logs/mini-sync.log`. Run `mini-sync` by hand after a change you
+  An unreachable mini is a silent no-op, and real failures go to
+  `~/Library/Logs/mini-sync.log`. Run `mini-sync` by hand for a change you
   want there now; `-n` previews it.
-
-**Never edit `~/dotfiles` on the mini.** The next sync overwrites it. A fix
-found there gets made on the laptop.
-
-**headroom on the mini:** Claude Code credentials live in
-`.credentials.json`, not the Keychain, because the Keychain is locked over
-SSH. headroom 81c3045 reads that file only for non-primary accounts, so the
-primary's board row says "credential unreadable" and `headroom check` FAILs
-`keychain[primary]`/`blob[primary]`. Routing (`x`, `x-<name>`) and the Codex
-page are unaffected.
