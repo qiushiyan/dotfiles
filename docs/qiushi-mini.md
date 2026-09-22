@@ -158,6 +158,16 @@ laptop's raw `codex/.codex/config.toml`, which has no file credential store.
 Run `headroom accounts add --vendor codex --share-config <email>` instead:
 bare `--share-config` links the mini primary's generated config.
 
+**planlab checkout:** `~/dev/planlab/main` is a real clone (`gh repo clone
+planlab-ai/main`, git-lfs installed), not part of the mirror. It is worked in
+and pulled here like any repo, and `p`/`pp` from `nav.zsh` reach it. Commits
+use a repo-local identity (`qiushi@planlab.ai` / `qiushiyan`), as on the
+laptop. `pnpm install` was run at the root and in `bench/`. The `planlab` and
+`bench` launchers were generated with each package's own install
+(`pnpm planlab:install`, `cd bench && pnpm cli:install`), which bakes this
+checkout's absolute paths in. Re-run them if the checkout moves. Their tokens
+live in `~/.planlab/.env` and `~/.bench/.env`.
+
 Not installed: go, rust, Docker, databases, fonts, GUI apps, oh-my-zsh.
 
 ## Sync
@@ -174,8 +184,8 @@ and the laptop is the source of truth.
 - **CLIs**: the compiled binaries `headroom envoy brief gwt` are copied from
   `~/.local/bin` (same arch and OS family). There is no Go and there are no
   source clones on the mini. `planlab` and `bench` are deliberately absent:
-  they are two-line shims that `exec` tsx inside the laptop's
-  `~/dev/planlab/main` checkout.
+  they are two-line shims that `exec` tsx inside a checkout, and the mini
+  generates its own (§ Toolchain, planlab checkout).
 - **Schedule**: `com.qiushi.mini-sync` (LaunchAgent, stowed from
   `scripts/Library/`) runs `mini-sync --quiet` at load and every 15 minutes.
   An unreachable mini is a silent no-op. Real failures go to
