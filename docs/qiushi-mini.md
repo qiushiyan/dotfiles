@@ -70,8 +70,9 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | Python | 3.14.7 | `uv python install 3.14` (versioned `python3.14` only) | `uv python upgrade` |
 
 Personal CLIs (headroom, envoy, brief, gwt) come from the laptop through
-`mini-sync` (§ Sync). Not installed: go, rust, Docker, databases, fonts, GUI
-apps, oh-my-zsh.
+`mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
+Not installed: go, rust, Docker, databases, other GUI apps, oh-my-zsh,
+oh-my-posh.
 
 ## Shell
 
@@ -220,7 +221,7 @@ laptop.
 - **Codex config**: regenerated as described in § Agent config.
 - **Theme**: `THEME` in the script sends theme-set's two outputs
   (`~/.config/terminal-theme`, the gitignored Ghostty include), so the mini's
-  Ghostty, nvim, statusline and prompt follow the laptop's theme.
+  Ghostty, nvim and Claude statusline follow the laptop's theme.
 - **Token files**: `SECRETS` in the script (`~/.planlab/.env`,
   `~/.bench/.env`) are sent 600 inside 700 dirs. Only plain CLI API tokens
   belong on that list. OAuth logins (Claude Code, Codex, gh) rotate their
