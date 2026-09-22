@@ -75,6 +75,9 @@ Installed 2026-09-22. A deliberately small subset of the laptop: no
   `$PNPM_HOME/bin`. This file exists because `ssh qiushi-mini '<cmd>'` runs a
   non-login, non-interactive zsh that reads nothing else. With only
   `.zprofile`, `nvim`, brew `jq` and the rest were missing from PATH.
+  It also sets `FORCE_HYPERLINK=1` for SSH sessions. sshd doesn't forward
+  `TERM_PROGRAM`, so without it Claude Code prints URLs as plain text and
+  Ctrl-click does nothing.
 - `~/.zprofile`: brew shellenv again, because `/etc/zprofile`'s `path_helper`
   reorders PATH for login shells after `.zshenv`.
 - `~/.zshrc`: the nvm and pnpm installer blocks, `compinit`, zoxide, fzf,
