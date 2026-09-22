@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # tmux worktree support: merge verdicts, listing, snapshots, and removal.
-# Creation and branch resolution live in ~/dev/gwt, installed as ~/.local/bin/gwt.
+# Creation and branch resolution live in ~/dev/gwt, installed by make install into ~/.local/bin; resolved through PATH.
 # The CLI shim at the bottom keeps already-running shells usable after migration.
 
 # --- repo identity & worktree root -------------------------------------------
 
 # Read placement from gwt so changing worktree_root also changes cleanup's bounds.
 wt_worktree_root() {
-  "$HOME/.local/bin/gwt" path
+  gwt path
 }
 
 # Configuration is read once per popup; helper-only callers load it on demand.
 WT_CONFIG_LOADED=0
 wt_load_config() {
   local cfg
-  cfg="$("$HOME/.local/bin/gwt" config show --json)" || return 1
+  cfg="$(gwt config show --json)" || return 1
   WT_BASE_MAX_AGE_SECONDS="$(printf '%s' "$cfg" | jq -er '.fetch.max_age')" || return 1
   WT_FETCH_TIMEOUT="$(printf '%s' "$cfg" | jq -er '.fetch.timeout')" || return 1
   WT_CONFIG_LOADED=1
@@ -372,11 +372,11 @@ _wt_reap_one() {
 # --- CLI (only when EXECUTED directly, not when sourced) ----------------------
 
 _wt_core_create() {
-  "$HOME/.local/bin/gwt" create --non-interactive "$@"
+  gwt create --non-interactive "$@"
 }
 
 _wt_core_resolve() {
-  "$HOME/.local/bin/gwt" resolve "$@"
+  gwt resolve "$@"
 }
 
 # Compatibility for shells and brief binaries loaded before the migration.

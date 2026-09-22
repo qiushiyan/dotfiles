@@ -19,7 +19,7 @@ CORE="$(cd "$(dirname "$0")/.." && pwd)/worktree-core.sh"
 PASS=0; FAIL=0; FAILED=""
 
 SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/wt-core-test.XXXXXX")
-GWT_BIN="$HOME/.local/bin/gwt"
+GWT_BIN="$(command -v gwt)" || exit 1
 REAL_WT="$HOME/dev/.worktrees"
 REAL_BEFORE=$(ls -A "$REAL_WT" 2>/dev/null | sort)
 
@@ -37,8 +37,9 @@ export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER
 export HOME="$SANDBOX"
 export XDG_CONFIG_HOME="$SANDBOX/.config"
 unset GWT_CONFIG
-mkdir -p "$SANDBOX/.local/bin"
-cp "$GWT_BIN" "$SANDBOX/.local/bin/gwt"
+mkdir -p "$SANDBOX/bin"
+cp "$GWT_BIN" "$SANDBOX/bin/gwt" || exit 1
+export PATH="$SANDBOX/bin:$PATH"
 export GIT_CONFIG_GLOBAL="$SANDBOX/gitconfig"; : > "$GIT_CONFIG_GLOBAL"
 
 # Run a core function inside a repo: C <repo> <fn> [args...]

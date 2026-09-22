@@ -12,7 +12,7 @@ The scripts own syntax. These docs own the constraints behind it.
 
 ## Shared placement, separate interfaces
 
-`gwt` in `~/dev/gwt`, installed at `~/.local/bin/gwt`, owns branch resolution,
+`gwt` on PATH (source: `~/dev/gwt`) owns branch resolution,
 worktree creation, and ignored-file seeding. Its callers are the tmux popup,
 `brief start`, the `enter-worktree` skill, and the optional `gwtcd` shell helper.
 

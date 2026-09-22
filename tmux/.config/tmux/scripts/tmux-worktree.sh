@@ -277,7 +277,7 @@ create_worktree() {
   win="$(win_name "$name")"
   # The binary prints only the path and finishes ignored-file seeding before
   # a destination window can start its install/post-create command.
-  if ! path="$("$HOME/.local/bin/gwt" create --non-interactive "$name")"; then
+  if ! path="$(gwt create --non-interactive "$name")"; then
     sleep 2.5; return 1
   fi
   winid="$(tmux new-window -t "$session" -n "$win" -c "$path" -P -F '#{window_id}')"
