@@ -38,10 +38,16 @@ duet instead. Don't grow the engine.
 - **Human at every boundary.** Dispatch, collection, round 2, verdicts — a
   person (or the host acting in front of one) sits between every stage.
   That is what lets the engine stay judgment-free.
-- **No model substitution, ever.** No `--model`/`--effort` → the provider's
-  own config governs. The host never picks a model the user didn't name.
-  The current Codex recommendation lives in `envoy -h` and the user's Codex
-  config; the engine carries no model default of its own.
+- **The skills resolve the model; the engine never does.** Each dispatching
+  skill carries the same **Resolving the voice** table — user words to exact
+  model IDs, with a per-provider default (`codex:gpt-6-sol`,
+  `claude:claude-opus-5-5`) — so every voice is dispatched with the model
+  written out, and a job's record never depends on whatever the provider's
+  config held that day. Effort is the exception: passed only when the user
+  asks, otherwise the provider's configured level governs. The engine stays
+  default-free: a bare provider still means the provider's config, and
+  envoy never substitutes a model. A model roll is one edit per skill table
+  (consult, review, delegate), made together.
 - **Independence picks the default provider.** The host is usually Claude
   Code, so a codex sidekick buys cross-family review for free; both bill a
   flat subscription, so cost isn't the tiebreaker. Default codex; claude is

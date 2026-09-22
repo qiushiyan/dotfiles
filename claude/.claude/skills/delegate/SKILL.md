@@ -10,6 +10,19 @@ requires:
 
 The economics: your judgment at the ends — the spec before, the review after — and a background session does the labor in the middle. A written spec (or design doc) is the entry ticket: with none, stop and write one first.
 
+## Resolving the voice
+
+Every `--with` names an exact model, resolved from what the user said. A voice they left unspecified takes its provider's default, and a provider they left unnamed is codex.
+
+| The user says | Voice |
+|---|---|
+| nothing, "codex", "sol" | `codex:gpt-6-sol` |
+| "astra" | `codex:gpt-6-astra` |
+| "claude", "opus" | `claude:claude-opus-5-5` |
+| "fable" | `claude:claude-fable-5-1` |
+
+A model ID the user spells out goes through as written. Effort goes on only when the user asks for one — "sol on high" is `codex:gpt-6-sol:high`, "astra on high" is `codex:gpt-6-astra:high`; unasked, it stays off and the provider's configured level (high) applies.
+
 ## Process
 
 1. **Preflight.** Check `git status`: the delegate commits its own work, so a clean baseline is what makes the review diff exact and the work revertible. Dirty tree → ask the user to commit or stash (or to explicitly accept a same-tree dispatch anyway); an invocation that already authorizes it ("commit them") is the answer — commit, then record the baseline with `git rev-parse HEAD`.
@@ -23,10 +36,10 @@ The economics: your judgment at the ends — the spec before, the review after �
 3. **Dispatch** with write intent, anchored to the baseline, 180-minute cap, as one background Bash task, the job named for the round (`delegate-r1`), and return once it is running — the task completing is the signal, and nothing the dispatch prints needs relaying:
 
    ```sh
-   envoy run delegate-r1 --with codex --allow-write --baseline <sha> --prompt-file <prompt> --timeout-min 180
+   envoy run delegate-r1 --with codex:gpt-6-sol --allow-write --baseline <sha> --prompt-file <prompt> --timeout-min 180
    ```
 
-   `codex` alone inherits the model in the user's Codex config; a Claude voice runs only on a model the user names (`--with claude:<model>`). A worktree dispatch adds `--cwd <path>`. While it runs, keep discussing anything, but leave the delegate's tree alone — an edit there races it. If the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
+   The voice is resolved per **Resolving the voice**. A worktree dispatch adds `--cwd <path>`. While it runs, keep discussing anything, but leave the delegate's tree alone — an edit there races it. If the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
 
 4. **Collect and verify** on the task-completion notification — `envoy collect delegate-r1` prints the handoff report plus the commits and diffstat since the baseline in one block; any other status prints a `next:` line; follow it. Where the report claims tests pass, re-run the project's checks yourself. Done when the report is read, every commit is enumerated, and the checks have been re-run.
 
