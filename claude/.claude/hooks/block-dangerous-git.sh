@@ -3,9 +3,9 @@
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command')
 
-# Branches Claude may NEVER push (no bypass) — your trunk(s). Edit this list to
-# protect more, e.g. "main master develop release".
-PROTECTED_BRANCHES="main master"
+# Branches Claude may NEVER push (no bypass). Empty: Claude may push any
+# branch, trunk included. List branches to protect again, e.g. "main master".
+PROTECTED_BRANCHES=""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Match against the command's *executable* parts, not inert text.
@@ -127,8 +127,8 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier 3: Plain git push from a NON-protected branch.
 #
-# Default: ALLOWED. Claude may push feature branches freely — the trunk is
-# already covered by Tier 2 and force/delete by Tier 1.
+# Default: ALLOWED. Claude may push freely — protected branches, if any, are
+# covered by Tier 2 and force/delete by Tier 1.
 #
 # Opt-in gate: set CLAUDE_GATE_PUSH=1 in the hook's environment (e.g. add it to
 # the "env" block in ~/.claude/settings.json) to restore the old default-block
