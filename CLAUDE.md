@@ -28,6 +28,10 @@ reads them from the environment.
 
 ## Working here
 
+- **On the office mini (`$USER` is `qiushiyan`), this checkout is a
+  read-only mirror.** The laptop's `mini-sync` overwrites it every 15
+  minutes, so an edit here is lost. Make the change on the laptop, or report
+  it for the user to make. `docs/qiushi-mini.md` § Sync.
 - Edits are live; no build. Use `make restow` after file additions or removals
   that require new links. `dotadd <path>` brings an unmanaged file under Stow.
 - Commit directly on `main`; leave pushes to the user.
@@ -121,6 +125,6 @@ Additional routes beyond the feature docs above:
 - The colleague's Mac mini (`ssh macmini`), including access etiquette:
   `docs/macmini.md`.
 - My own office Mac mini (`ssh qiushi-mini`), reached over the company
-  tailnet: `docs/qiushi-mini.md`.
+  tailnet and kept in sync by `mini-sync`: `docs/qiushi-mini.md`.
 - tmux design-doc index: `tmux/.config/tmux/roadmap.md`.
 - TabType prompt snippets: `tabtype/CLAUDE.md`.
