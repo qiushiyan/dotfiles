@@ -28,11 +28,12 @@ before anyone logs in. There is no Tailscale.app. The CLI is
 **Node key expiry is on.** I am a member, not an admin, of the company
 tailnet, so only an admin can disable expiry in the admin console. The key
 expires **2027-03-21**. Once the key expires, the node drops off the tailnet
-and can only be re-authorised from the office LAN. Renew it over SSH before
-that date:
+and can only be re-authorised from the office LAN. Renew it before that date
+from the office, over the LAN, because re-authenticating can drop a session
+that runs over Tailscale itself:
 
 ```bash
-ssh -t qiushi-mini 'sudo /opt/homebrew/bin/tailscale up --force-reauth'
+ssh -t qiushiyan@qiushi-mini.local 'sudo /opt/homebrew/bin/tailscale up --force-reauth'
 ```
 
 Check the current expiry on the mini with
