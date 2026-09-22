@@ -12,16 +12,18 @@ The economics: your judgment at the ends — the spec before, the review after �
 
 ## Resolving the voice
 
-Every `--with` names an exact model, resolved from what the user said. A voice they left unspecified takes its provider's default, and a provider they left unnamed is codex.
+Name the model on every cold voice, so the job records what ran whatever the provider's config holds that day. Resolve it from the user's words:
 
-| The user says | Voice |
-|---|---|
-| nothing, "codex", "sol" | `codex:gpt-6-sol` |
-| "astra" | `codex:gpt-6-astra` |
-| "claude", "opus" | `claude:claude-opus-5-5` |
-| "fable" | `claude:claude-fable-5-1` |
+```sh
+--with codex:gpt-6-sol           # the default: no voice named, or "codex"
+--with codex:gpt-6-astra         # "astra"
+--with claude:claude-opus-5-5    # "claude", "opus"
+--with claude:claude-fable-5-1   # "fable"
+--with codex:gpt-6-sol:high      # effort only when the user asks: "sol on high"
+--with codex:gpt-6-astra:high    # "astra on high"
+```
 
-A model ID the user spells out goes through as written. Effort goes on only when the user asks for one — "sol on high" is `codex:gpt-6-sol:high`, "astra on high" is `codex:gpt-6-astra:high`; unasked, it stays off and the provider's configured level (high) applies.
+A model ID the user spells out goes through as written.
 
 ## Process
 

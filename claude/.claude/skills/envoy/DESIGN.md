@@ -39,14 +39,14 @@ duet instead. Don't grow the engine.
   person (or the host acting in front of one) sits between every stage.
   That is what lets the engine stay judgment-free.
 - **The skills resolve the model; the engine never does.** Each dispatching
-  skill carries the same **Resolving the voice** table — user words to exact
+  skill carries the same **Resolving the voice** block — user words to exact
   model IDs, with a per-provider default (`codex:gpt-6-sol`,
   `claude:claude-opus-5-5`) — so every voice is dispatched with the model
   written out, and a job's record never depends on whatever the provider's
   config held that day. Effort is the exception: passed only when the user
   asks, otherwise the provider's configured level governs. The engine stays
   default-free: a bare provider still means the provider's config, and
-  envoy never substitutes a model. A model roll is one edit per skill table
+  envoy never substitutes a model. A model roll is one edit per skill block
   (consult, review, delegate), made together.
 - **Independence picks the default provider.** The host is usually Claude
   Code, so a codex sidekick buys cross-family review for free; both bill a
