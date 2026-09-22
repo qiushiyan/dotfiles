@@ -44,12 +44,12 @@
 # every session — a window pointing at a deleted directory is broken wherever
 # it lives.
 #
-# New worktrees go under  ~/dev/.worktrees/<repo>/<branch>  for every project
-# (no per-repo special-casing). Create makes the worktree, opens its window, then:
+# gwt config chooses base, root, and seeding. The default placement is
+# ~/dev/.worktrees/<repo>/<branch>. Create seeds the worktree, then opens its window:
 #   - copies the gitignored files/dirs a checkout leaves behind (`.env* .npmrc
 #     scripts.local .duet docs.local` by default, from the MAIN worktree, at any
 #     depth; matched directories are copied whole) into the new tree — configurable
-#     via @worktree_copy_globs ("off" to disable);
+#     via copy_globs in gwt config ([] to disable);
 #   - sends ONE visible, cancellable command line into the new window: the
 #     dependency install for a Node project (pnpm/npm/yarn/bun, from the
 #     lockfile; @worktree_auto_install off to disable) chained with the
@@ -88,7 +88,8 @@ fi
 
 # Path convention, main_worktree, and default_base come from worktree-core.sh
 # (wt_worktree_root / wt_main_worktree / wt_default_base).
-wt_root="$(wt_worktree_root)"
+wt_load_config || { echo "could not load gwt configuration"; sleep 2; exit 1; }
+wt_root="$(wt_worktree_root)" || exit 1
 cur_top="$(git rev-parse --show-toplevel 2>/dev/null)"   # the worktree we're IN
 main_top="$(wt_main_worktree)"                           # never removable either
 
@@ -98,8 +99,13 @@ main_top="$(wt_main_worktree)"                           # never removable eithe
 # rename) and sweeps in the background. Self-heal on startup: sweep whatever a
 # crashed/killed popup left behind — but only entries older than 2 minutes, so
 # this can never race the sweep another live popup just scheduled.
-WT_TRASH="$HOME/dev/.worktrees/.trash"
-tmux run-shell -b "find '$WT_TRASH' -mindepth 1 -maxdepth 1 -mmin +2 -exec rm -rf {} + 2>/dev/null; true" 2>/dev/null || true
+wt_shell_quote() {
+  local value="$1"
+  value=${value//\'/\'\\\'\'}
+  printf "'%s'" "$value"
+}
+WT_TRASH="${wt_root%/*}/.trash"
+tmux run-shell -b "find $(wt_shell_quote "$WT_TRASH") -mindepth 1 -maxdepth 1 -mmin +2 -exec rm -rf {} + 2>/dev/null; true" 2>/dev/null || true
 
 # The other thing removal leaves behind: the refs/wt-trash snapshots taken before
 # discarding uncommitted work or force-deleting a branch. They pin objects, so
@@ -263,18 +269,15 @@ switch_worktree() {
 # returns 0 on success (worktree created, window opened → caller exits popup);
 # returns 1 on any failure (caller loops back to the list so you can retry).
 create_worktree() {
-  local name path win base winid globs
+  local name path win winid
   name="$(printf '%s' "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   if [ -z "$name" ]; then
     echo "type a name first"; sleep 1.5; return 1
   fi
   win="$(win_name "$name")"
-  base="$(wt_default_base)"
-  globs="$(tmux show-option -gqv @worktree_copy_globs 2>/dev/null)"
   # The binary prints only the path and finishes ignored-file seeding before
   # a destination window can start its install/post-create command.
-  if ! path="$(WORKTREE_COPY_GLOBS="${globs:-${WORKTREE_COPY_GLOBS:-}}" \
-      "$HOME/.local/bin/gwt" create --non-interactive "$name" "$base")"; then
+  if ! path="$("$HOME/.local/bin/gwt" create --non-interactive "$name")"; then
     sleep 2.5; return 1
   fi
   winid="$(tmux new-window -t "$session" -n "$win" -c "$path" -P -F '#{window_id}')"
@@ -448,7 +451,7 @@ batch_remove() {
   fi
 
   # Sweep this batch's trash server-side (survives the popup closing).
-  tmux run-shell -b "rm -rf '$trash'" 2>/dev/null || true
+  tmux run-shell -b "rm -rf $(wt_shell_quote "$trash")" 2>/dev/null || true
   sleep 0.8
 }
 

@@ -29,7 +29,7 @@ The loop is split so that staleness cannot misroute a session:
   `~/.local/bin/brief`.
 
 The shared worktree boundary is `~/.local/bin/gwt` (source: `~/dev/gwt`).
-It owns branch resolution and worktree creation for the tmux popup,
+It owns configured paths, branch resolution, and worktree creation for the tmux popup,
 `brief start`, and the `enter-worktree` skill. Install with `make -C ~/dev/gwt install`.
 
 ## The next session's first prompt

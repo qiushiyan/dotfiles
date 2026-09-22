@@ -19,6 +19,7 @@ CORE="$(cd "$(dirname "$0")/.." && pwd)/worktree-core.sh"
 PASS=0; FAIL=0; FAILED=""
 
 SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/wt-core-test.XXXXXX")
+GWT_BIN="$HOME/.local/bin/gwt"
 REAL_WT="$HOME/dev/.worktrees"
 REAL_BEFORE=$(ls -A "$REAL_WT" 2>/dev/null | sort)
 
@@ -34,6 +35,10 @@ want() { [ $# -eq 0 ] && return 0; case " $* " in *" $CASE "*) return 0;; esac; 
 
 export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
 export HOME="$SANDBOX"
+export XDG_CONFIG_HOME="$SANDBOX/.config"
+unset GWT_CONFIG
+mkdir -p "$SANDBOX/.local/bin"
+cp "$GWT_BIN" "$SANDBOX/.local/bin/gwt"
 export GIT_CONFIG_GLOBAL="$SANDBOX/gitconfig"; : > "$GIT_CONFIG_GLOBAL"
 
 # Run a core function inside a repo: C <repo> <fn> [args...]
@@ -257,6 +262,16 @@ CASE=W39; if want "$@"; then
   mkdir -p "$PARENTS-other/nested"
   C "$REPO" wt_remove_empty_parents "$PARENTS" "$PARENTS-other/nested/removed"
   ok W39-outside-preserved yes "$([ -d "$PARENTS-other/nested" ] && echo yes || echo no)"
+fi
+
+# Configuration durations need not be whole minutes (BSD find -mmin refuses them).
+CASE=W40; if want "$@"; then
+  mkdir -p "$XDG_CONFIG_HOME/gwt"
+  printf 'fetch.max_age = "90s"\n' > "$XDG_CONFIG_HOME/gwt/config.toml"
+  printf 'fresh\n' > "$REPO/.git/FETCH_HEAD"
+  ok W40-fresh no "$(Cq "$REPO" wt_base_is_stale)"
+  touch -t 200001010000 "$REPO/.git/FETCH_HEAD"
+  ok W40-stale yes "$(Cq "$REPO" wt_base_is_stale)"
 fi
 
 # --- sandbox guard ------------------------------------------------------------

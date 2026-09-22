@@ -5,13 +5,19 @@
 
 # --- repo identity & worktree root -------------------------------------------
 
-# Every project's worktrees live under one root, grouped by repo dir name.
-# Root the group on the MAIN checkout, never on `pwd`: run from a linked
-# worktree, --show-toplevel is the branch directory, which would nest the next
-# worktree under a sibling branch's name instead of the project's. Same reason
-# `brief`'s folder scheme resolves the project through --git-common-dir.
+# Read placement from gwt so changing worktree_root also changes cleanup's bounds.
 wt_worktree_root() {
-  printf '%s\n' "$HOME/dev/.worktrees/$(basename "$(wt_main_worktree 2>/dev/null)")"
+  "$HOME/.local/bin/gwt" path
+}
+
+# Configuration is read once per popup; helper-only callers load it on demand.
+WT_CONFIG_LOADED=0
+wt_load_config() {
+  local cfg
+  cfg="$("$HOME/.local/bin/gwt" config show --json)" || return 1
+  WT_BASE_MAX_AGE_SECONDS="$(printf '%s' "$cfg" | jq -er '.fetch.max_age')" || return 1
+  WT_FETCH_TIMEOUT="$(printf '%s' "$cfg" | jq -er '.fetch.timeout')" || return 1
+  WT_CONFIG_LOADED=1
 }
 
 # After moving a worktree away, remove only its empty branch-name parents.
@@ -32,10 +38,8 @@ wt_main_worktree() {
   git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}'
 }
 
-# Default base ref for a brand-new branch: the first of these that resolves. A
-# fresh clone without origin/HEAD set falls through the chain (fix with
-# `git remote set-head origin -a`). The gwt binary defaults to the current
-# branch; the popup passes this base explicitly.
+# Merge/reap base: the first of these refs that resolves. Creation uses gwt
+# config independently. A clone without origin/HEAD falls through the chain.
 wt_default_base() {
   local b
   for b in origin/HEAD origin/main origin/master main master; do
@@ -61,8 +65,6 @@ wt_base_display() {
 # Same shape of guard as the branch-creation wrapper in git.zsh: skip the network
 # when a fetch happened recently, and bound the probe with `timeout` so a dead
 # network can't hang a caller.
-: "${WT_BASE_MAX_AGE_MIN:=5}"   # minutes a previous fetch counts as fresh
-: "${WT_FETCH_TIMEOUT:=8}"      # seconds to wait for the network probe
 
 # The remote whose refs the base lives on ("origin"), or nothing when the base is
 # a local branch (the main/master tail of wt_default_base's chain) — there's
@@ -76,16 +78,20 @@ wt_base_remote() {
   esac
 }
 
-# True when no fetch has happened in the last WT_BASE_MAX_AGE_MIN minutes.
-# `-size +0c` is load-bearing: a fetch killed mid-flight truncates FETCH_HEAD to
+# True when no fetch has happened within the configured freshness window.
+# The nonempty-file check is load-bearing: a fetch killed mid-flight truncates FETCH_HEAD to
 # empty with a FRESH mtime, and that has to read as stale (same lesson as the
 # `-s` test in git.zsh). --git-common-dir, not --git-dir: FETCH_HEAD lives in the
 # main checkout's .git even when we're called from a linked worktree.
 wt_base_is_stale() {
-  local common
+  [ "$WT_CONFIG_LOADED" = 1 ] || wt_load_config || return 1
+  local common modified
   common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
-  [ -n "$common" ] || return 0
-  [ -n "$(find "$common/FETCH_HEAD" -size +0c -mmin "-$WT_BASE_MAX_AGE_MIN" 2>/dev/null)" ] && return 1
+  [ -n "$common" ] && [ -s "$common/FETCH_HEAD" ] || return 0
+  modified="$(stat -f %m "$common/FETCH_HEAD" 2>/dev/null)" ||
+    modified="$(stat -c %Y "$common/FETCH_HEAD" 2>/dev/null)" || return 0
+  awk -v now="$(date +%s)" -v modified="$modified" -v age="$WT_BASE_MAX_AGE_SECONDS" \
+    'BEGIN { exit !(now - modified < age) }' && return 1
   return 0
 }
 
@@ -93,6 +99,7 @@ wt_base_is_stale() {
 # the probe failed or timed out — callers must SAY so rather than quietly
 # grading against last week's base.
 wt_fetch_base() {
+  [ "$WT_CONFIG_LOADED" = 1 ] || wt_load_config || return 1
   local remote
   remote="$(wt_base_remote)"
   [ -n "$remote" ] || return 0

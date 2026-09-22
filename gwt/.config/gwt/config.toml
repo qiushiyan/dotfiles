@@ -1,0 +1,8 @@
+# Shared by gwt, tmux creation, brief, and agents.
+base = "HEAD"
+worktree_root = "~/dev/.worktrees"
+copy_globs = [".env*", ".npmrc", "scripts.local", ".duet", "docs.local"]
+
+[fetch]
+max_age = "5m"
+timeout = "8s"

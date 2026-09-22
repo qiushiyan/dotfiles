@@ -26,9 +26,11 @@ brief lifecycle diagnosis/resume     → brief CLI
 
 The binary prints only the new path on stdout; diagnostics use stderr. It never
 changes the caller's directory. `gwt create --non-interactive` accepts the
-current HEAD as the default base without prompting. `--json` returns the path
+configured base (HEAD by default) without prompting. `--json` returns the path
 and placement result as an object. The binary's `--help` owns its full contract;
-`~/dev/gwt/README.md` owns installation and placement design.
+`~/dev/gwt/README.md` owns installation and placement design. Its non-interactive
+`remove` command deletes a clean checkout and branch with explicit success/failure
+output; tmux cleanup retains its own merge checks, snapshots, and window handling.
 
 The shell core retains a forwarding CLI for already-running shells that still
 hold the old function. Run `zshreload` to pick up the binary and `gwtcd` helper.
@@ -45,9 +47,11 @@ Invoke the popup from a repo pane. Worktrees land at
 `~/dev/.worktrees/<repo>/<branch>`; `<repo>` is the main checkout's basename.
 The popup opens windows in the session that invoked it.
 
-The popup forks from the default-base chain. `gwt` defaults to the current
-branch behind confirmation because its purpose is to continue from where the
-shell stands. An explicit base overrides either.
+Creation uses the shared `gwt` config: global `~/.config/gwt/config.toml`, then
+`gwt.toml` in the shared Git directory. `gwt config show` explains the effective
+values. The popup obtains its root with `gwt path`; the path above is the default.
+The default-base chain remains the tmux merge/reap target; it does not choose
+the creation base. Fetch freshness and deadlines also come from `gwt` config.
 
 ## Creation pipeline
 
@@ -77,7 +81,7 @@ main worktree, preserving relative path and permissions.
 ```text
 source   → main worktree
 universe → git ls-files -oi --exclude-standard --directory
-gate     → basename matches @worktree_copy_globs
+gate     → basename matches configured copy_globs
 copy     → cp -pPR to the same relative path, preserving existing targets
 ```
 
@@ -90,7 +94,7 @@ through checkout, and unignored WIP is deliberately excluded.
 
 `gwt` accepts an absent path or an empty real directory. It refuses a file,
 symlink, unreadable or non-empty directory, and symlink parents within the
-repository worktree root. It deletes nothing.
+repository worktree root. Creation deletes nothing.
 A stale registration may leave the only copy of work in that slot; every
 creator passes through the same guard.
 

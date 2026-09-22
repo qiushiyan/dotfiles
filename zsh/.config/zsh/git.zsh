@@ -827,19 +827,39 @@ gwtcd() {
 # refs/remotes/<remote>/, which is the form you actually type — gwt resolves the
 # remote itself).
 _gwt() {
-  # Explicit subcommands and the branch-first form share completion.
-  if [[ "$words[2]" == create || "$words[2]" == resolve ]]; then
+  local subcommand="$words[2]"
+  if [[ "$subcommand" == config ]]; then
+    _arguments '2:action:(show)' '--json[print effective values and sources as JSON]'
+    return
+  fi
+  if [[ "$subcommand" == (create|resolve|path|remove) ]]; then
     words=("$words[1]" "${words[@]:2}")
     (( CURRENT-- ))
   fi
-  _arguments \
-    '--new[create a new branch even if a remote branch of that name exists]' \
-    '--non-interactive[use current HEAD without confirmation]' \
-    '--no-copy[skip ignored prerequisites]' \
-    '--no-fetch[use cached remote refs]' \
-    '--json[print structured output]' \
-    '1:branch (existing local, existing remote, or new):($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))' \
-    '2:base branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
+  case "$subcommand" in
+    remove)
+      _arguments '--force[allow deleting unmerged commits; protects dirty worktrees]' \
+        '--json[report each removal step as JSON]' \
+        '1:local branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
+      ;;
+    path|resolve)
+      local -a flags
+      flags=('--json[print structured output]')
+      [[ "$subcommand" == resolve ]] && flags+=('--no-fetch[use cached remote refs]')
+      _arguments "${flags[@]}" \
+        '1:branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))'
+      ;;
+    *)
+      _arguments \
+        '--new[create a new branch even if a remote branch of that name exists]' \
+        '--non-interactive[use the configured base without confirmation]' \
+        '--no-copy[skip ignored prerequisites]' \
+        '--no-fetch[use cached remote refs]' \
+        '--json[print structured output]' \
+        '1:branch or command:(create resolve path remove config $(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))' \
+        '2:base branch:($(git for-each-ref --format="%(refname:short)" refs/heads refs/remotes 2>/dev/null))'
+      ;;
+  esac
 }
 
 # --------------------------------------------------------------------

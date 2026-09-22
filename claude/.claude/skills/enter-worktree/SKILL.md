@@ -9,13 +9,14 @@ then move the session into it. Choose a branch name that describes the goal and
 scope, using the repository's naming conventions.
 
 Use the installed binary in non-interactive mode. An omitted base forks from
-the current HEAD; pass a base explicitly when the discussion calls for one.
+the configured base (current HEAD by default); pass a base explicitly when
+the discussion calls for one.
 
 ```bash
-~/.local/bin/gwt create --non-interactive feat/answer-attachments
-# stdout: /Users/qiushi/dev/.worktrees/<repo>/feat/answer-attachments
+gwt create --non-interactive feat/answer-attachments
+# stdout: absolute path under the configured worktree root
 
-~/.local/bin/gwt create --non-interactive fix/ask-dock-long-body develop
+gwt create --non-interactive fix/ask-dock-long-body develop
 ```
 
 On success, stdout is the absolute worktree path; diagnostics go to stderr.
