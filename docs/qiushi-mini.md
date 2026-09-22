@@ -125,6 +125,22 @@ default mini:
   URL to the laptop clipboard over OSC 52 instead of opening the mini's
   Safari, and writes to the parent's tty when it was spawned detached.
 
+## Ghostty on the mini
+
+The app is installed by hand. The `ghostty` package is stowed from the
+mirror, so `~/.config/ghostty` is a folder link into it, as on the laptop.
+The theme include (`auto/theme.ghostty`) and `~/.config/terminal-theme`
+arrive through `mini-sync` (§ Sync). Ghostty reloads config only with
+⌘⇧, or a restart.
+
+**Fonts** are the laptop's casks, `font-jetbrains-mono-nerd-font` and
+`font-sarasa-gothic`, installed into `~/Library/Fonts`. The files landed but
+were not registered: CoreText listed neither family, and Ghostty fell back to
+PingFang SC for CJK, until the files were registered once with
+`CTFontManagerRegisterFontURLs(…, .user, …)` (what Font Book's Install does).
+After a font cask, verify with `ghostty +show-face --cp=0x4E2D`; it must name
+`Sarasa Term SC`.
+
 ## Agent config
 
 **Auth:** the login Keychain is locked in SSH sessions, so every login lives
@@ -202,6 +218,9 @@ laptop.
   source clones. `planlab` and `bench` are not copied: they are shims into a
   checkout, and the mini generates its own (§ planlab checkout).
 - **Codex config**: regenerated as described in § Agent config.
+- **Theme**: `THEME` in the script sends theme-set's two outputs
+  (`~/.config/terminal-theme`, the gitignored Ghostty include), so the mini's
+  Ghostty, nvim, statusline and prompt follow the laptop's theme.
 - **Token files**: `SECRETS` in the script (`~/.planlab/.env`,
   `~/.bench/.env`) are sent 600 inside 700 dirs. Only plain CLI API tokens
   belong on that list. OAuth logins (Claude Code, Codex, gh) rotate their

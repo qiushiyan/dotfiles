@@ -5,7 +5,7 @@
 # Why a mirror and not `git pull`: skills and tools iterate uncommitted, and
 # the mirror carries the working tree as-is. See docs/qiushi-mini.md § Sync.
 #
-# Also: CLI token files (SECRETS below).
+# Also: CLI token files (SECRETS) and theme-set state (THEME), below.
 #
 # Usage: mini-sync [-n|--dry-run] [-q|--quiet]
 #   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
@@ -22,6 +22,11 @@ BINS=(headroom envoy brief gwt)
 # refresh tokens, so two machines sharing one log each other out; the mini
 # logs in on its own.
 SECRETS=(.planlab/.env .bench/.env)
+# theme-set's two outputs, so the mini's terminal apps follow the laptop's
+# theme. The Ghostty include is gitignored, so the dotfiles mirror skips it.
+# It goes by its real path: ~/.config/ghostty is a stowed folder link on the
+# mini, and rsync -R would replace a link on the way with a directory.
+THEME=(.config/terminal-theme dotfiles/ghostty/.config/ghostty/auto/theme.ghostty)
 
 dry=() quiet=0
 for arg in "$@"; do
@@ -88,5 +93,12 @@ for s in "${SECRETS[@]}"; do
 done
 # -R keeps the path after /./; --chmod applies to the dirs it creates too.
 (( ${#secrets[@]} )) && rsync -aR --chmod=D700,F600 ${dry[@]+"${dry[@]}"} "${secrets[@]}" "$HOST:"
+
+say "==> theme → $HOST"
+theme=()
+for t in "${THEME[@]}"; do
+  [[ -f $HOME/$t ]] && theme+=("$HOME/./$t")
+done
+(( ${#theme[@]} )) && rsync -aR ${dry[@]+"${dry[@]}"} "${theme[@]}" "$HOST:"
 
 say "==> done"
