@@ -7,11 +7,13 @@ optional list of case ids to narrow the run:
 bash tmux/.config/tmux/scripts/tests/test-pane-control.sh        [T5 T14 …]
 bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
 bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W2 W10 …]
+python3 tmux/.config/tmux/scripts/tests/test-gwt-popup.py        # requires gwt, tmux, fzf
 python3 tmux/.config/tmux/scripts/tests/test-popup-overlay.py --stock <known-broken-binary> --candidate <candidate-binary>
 python3 tmux/.config/tmux/scripts/tests/test-cout.py            # requires tmux, zsh, oh-my-posh
 zsh  zsh/.config/zsh/tests/claude-sessions.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/theme-sync.test.zsh                   # runs whole
+zsh  zsh/.config/zsh/tests/gwt.test.zsh                         # requires gwt on PATH
 zsh  zsh/.config/zsh/tests/cwd-guard.test.zsh                    # runs whole
 zsh  zsh/.config/zsh/tests/stow-reach.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/bypass-cd-read-guard.test.zsh         # runs whole
@@ -25,11 +27,13 @@ Each suite owns one boundary:
 | pane control | float, restore, and pane-mode transactions on an isolated tmux socket |
 | context chip | publication, shedding, cleanup, and quota refresh without the live cache |
 | worktree core | tmux-free base, merge, snapshot, and reap rules; requires installed gwt, copied into the temporary home |
+| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery on a private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | command/output pairing across nested shells, indexed copies, recorder retention/cleanup, and terminal rendering with the real transient prompt; private tmux sockets, a temporary home, and a fake clipboard isolate state |
 | Claude sessions | shared-store topology and repair against a throwaway `$HOME` |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
 | theme sync | startup + precmd switching against a throwaway `$HOME` |
+| gwt shell | completion, parent-shell entry, configured placement, caller HEAD, seeding, and compatibility shim in a temporary home |
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree |
 | bypass guard | dormant hook logic through synthetic PreToolUse payloads |

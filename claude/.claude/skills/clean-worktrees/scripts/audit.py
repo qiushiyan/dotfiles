@@ -177,7 +177,8 @@ def main():
         "Candidates use Git ancestry or inactive remote-backed tips; squash/rebase PR "
         "proof remains for agent review. Activity includes commit/reflog, .git marker, "
         "tracked/nonignored files and ignored files outside the remover's cache exclusions."))
-    parser.add_argument("root", nargs="?", type=Path, default=Path.home() / "dev/.worktrees")
+    parser.add_argument("root", nargs="?", type=Path,
+                        help="root to audit; default: worktree_root from gwt config show")
     parser.add_argument("--output", type=Path, required=True, help="JSON evidence and draft plan, outside cleanup root")
     parser.add_argument("--repo", type=Path, action="append", default=[],
                         help="also read this registry; repeat for repos with no surviving checkouts under root")
@@ -188,6 +189,14 @@ def main():
     args = parser.parse_args()
     if args.days <= 0:
         parser.error("--days must be positive")
+    if args.root is None:
+        try:
+            config = subprocess.run(["gwt", "config", "show", "--json"], capture_output=True,
+                                    text=True, check=True, timeout=10)
+            args.root = Path(json.loads(config.stdout)["worktree_root"])
+        except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+            parser.error("cannot read gwt worktree root: " + problem(error) +
+                         "; fix gwt config or supply an explicit root")
     root = args.root.expanduser().resolve(strict=True)
     output = args.output.expanduser().resolve()
     if within(output, root):

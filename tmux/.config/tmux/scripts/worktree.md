@@ -29,8 +29,9 @@ changes the caller's directory. `gwt create --non-interactive` accepts the
 configured base (HEAD by default) without prompting. `--json` returns the path
 and placement result as an object. The binary's `--help` owns its full contract;
 `~/dev/gwt/README.md` owns installation and placement design. Its non-interactive
-`remove` command deletes a clean checkout and branch with explicit success/failure
-output; tmux cleanup retains its own merge checks, snapshots, and window handling.
+`remove` command checks ancestry and squash/rebase patch equivalence against
+the configured base in the main checkout, then deletes a clean checkout and branch
+with explicit success/failure output; tmux cleanup retains its own merge checks, snapshots, and window handling.
 
 The shell core retains a forwarding CLI for already-running shells that still
 hold the old function. Run `zshreload` to pick up the binary and `gwtcd` helper.

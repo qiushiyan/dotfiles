@@ -114,6 +114,16 @@ class AuditTests(unittest.TestCase):
     def row(self, report, path):
         return next(row for row in report["worktrees"] if row["path"] == str(path))
 
+    def test_default_root_comes_from_gwt_on_path(self):
+        path = self.checkout("configured")
+        self.stub("gwt", "#!/bin/sh\n[ \"$*\" = 'config show --json' ] || exit 9\n"
+                  + "printf '%s\\n' '" + json.dumps({"worktree_root": str(self.root)}) + "'\n")
+        output = self.sandbox / "configured-audit.json"
+        self.command(sys.executable, str(HELPER), "--output", str(output), "--no-fetch")
+        report = json.loads(output.read_text())
+        self.assertEqual(report["root"], str(self.root))
+        self.assertEqual([row["path"] for row in report["worktrees"]], [str(path)])
+
     def test_fetch_proves_graph_merge_and_audit_preserves_checkout(self):
         self.assertEqual(self.git("config", "--global", "--list"), "")
         self.assertEqual(self.git("config", "core.hooksPath").strip(), str(self.hooks))

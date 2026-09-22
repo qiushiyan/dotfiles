@@ -8,7 +8,7 @@ disable-model-invocation: true
 # Clean worktrees
 
 Remove merged or inactive linked checkouts while preserving unfinished work.
-Default to `~/dev/.worktrees` and a 14-day inactivity window. The audit script
+Use gwt's configured worktree root and a 14-day inactivity window. The audit script
 collects evidence and proposes candidates; you settle uncertainty and select
 the authorized scope. The removal runner checks execution safety, not merge
 or inactivity eligibility. An audit-only request stops at the selection.

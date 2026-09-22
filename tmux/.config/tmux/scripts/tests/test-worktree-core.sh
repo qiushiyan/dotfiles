@@ -19,7 +19,7 @@ CORE="$(cd "$(dirname "$0")/.." && pwd)/worktree-core.sh"
 PASS=0; FAIL=0; FAILED=""
 
 SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/wt-core-test.XXXXXX")
-GWT_BIN="$(command -v gwt)" || exit 1
+GWT_BIN="$(command -v gwt)" || { echo "test-worktree-core: install gwt on PATH first" >&2; exit 1; }
 REAL_WT="$HOME/dev/.worktrees"
 REAL_BEFORE=$(ls -A "$REAL_WT" 2>/dev/null | sort)
 
@@ -116,7 +116,7 @@ CASE=W5; want "$@" && ok W5 no "$(Cq "$REPO" wt_merged_into noop origin/main)"
 # way to prove the memo is really being read rather than silently recomputed —
 # and, in W23, that a moved base doesn't reuse it.
 
-CACHE="$REPO/.git/wt-merged-cache"
+CACHE="$(C "$REPO" wt_merged_cache_file)"
 poison() { printf '%s %s %s\n' "$(git -C "$REPO" rev-parse "$1^{commit}")" \
                                "$(git -C "$REPO" rev-parse origin/main^{commit})" "$2" > "$CACHE"; }
 
@@ -273,6 +273,32 @@ CASE=W40; if want "$@"; then
   ok W40-fresh no "$(Cq "$REPO" wt_base_is_stale)"
   touch -t 200001010000 "$REPO/.git/FETCH_HEAD"
   ok W40-stale yes "$(Cq "$REPO" wt_base_is_stale)"
+fi
+
+# Matching non-merge patches cannot account for edits made in a merge commit.
+CASE=W41; if want "$@"; then
+  MERGE_REPO="$SANDBOX/merge-edits"
+  git init -q -b main "$MERGE_REPO"
+  git -C "$MERGE_REPO" commit -qm initial --allow-empty
+  git -C "$MERGE_REPO" checkout -qb feature
+  echo feature > "$MERGE_REPO/feature"
+  git -C "$MERGE_REPO" add feature
+  git -C "$MERGE_REPO" commit -qm feature
+  FEATURE_SHA=$(git -C "$MERGE_REPO" rev-parse HEAD)
+  git -C "$MERGE_REPO" checkout -qb side main
+  echo side > "$MERGE_REPO/side"
+  git -C "$MERGE_REPO" add side
+  git -C "$MERGE_REPO" commit -qm side
+  SIDE_SHA=$(git -C "$MERGE_REPO" rev-parse HEAD)
+  git -C "$MERGE_REPO" checkout -q feature
+  git -C "$MERGE_REPO" merge --no-ff --no-commit side >/dev/null 2>&1
+  echo keep > "$MERGE_REPO/merge-only"
+  git -C "$MERGE_REPO" add merge-only
+  git -C "$MERGE_REPO" commit -qm 'merge edits'
+  git -C "$MERGE_REPO" checkout -q main
+  git -C "$MERGE_REPO" cherry-pick "$FEATURE_SHA" "$SIDE_SHA" >/dev/null
+  printf '%s %s 1\n' "$(git -C "$MERGE_REPO" rev-parse feature)" "$(git -C "$MERGE_REPO" rev-parse main)" > "$MERGE_REPO/.git/wt-merged-cache"
+  ok W41-merge-edits-preserved no "$(Cq "$MERGE_REPO" wt_merged_into feature main)"
 fi
 
 # --- sandbox guard ------------------------------------------------------------

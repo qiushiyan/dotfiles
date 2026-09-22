@@ -84,7 +84,7 @@ wt_base_remote() {
 # `-s` test in git.zsh). --git-common-dir, not --git-dir: FETCH_HEAD lives in the
 # main checkout's .git even when we're called from a linked worktree.
 wt_base_is_stale() {
-  [ "$WT_CONFIG_LOADED" = 1 ] || wt_load_config || return 1
+  [ "$WT_CONFIG_LOADED" = 1 ] || wt_load_config || return 0
   local common modified
   common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
   [ -n "$common" ] && [ -s "$common/FETCH_HEAD" ] || return 0
@@ -142,14 +142,14 @@ wt_fetch_base() {
 # 7-worktree repo) to recompute an answer that only changes when a branch or the
 # base actually moves; with it, the first open after a fetch pays and the rest
 # are free. Lines are "<branch-sha> <base-sha> <0|1>". Nothing needs
-# invalidating — a moved ref is simply a different key — and the appends are
+# invalidating for ref movement; the filename versions the verdict policy. Appends are
 # short enough to be O_APPEND-atomic, which is what makes it safe under the
 # fan-out's concurrent writers.
 wt_merged_cache_file() {
   local common
   common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
   [ -n "$common" ] || return 1
-  printf '%s/wt-merged-cache\n' "$common"
+  printf '%s/wt-merged-cache-v2\n' "$common"
 }
 
 # Keep the memo from growing without bound; called at front-end startup, not per
@@ -189,7 +189,7 @@ wt_merged_into() {
 
 # The uncached verdict — the three checks described above, in cost order.
 _wt_merged_compute() {
-  local branch="$1" base="$2" mb tree out
+  local branch="$1" base="$2" mb tree out merges
   git merge-base --is-ancestor "$branch" "$base" 2>/dev/null && return 0
 
   mb="$(git merge-base "$base" "$branch" 2>/dev/null)" || return 1
@@ -202,6 +202,10 @@ _wt_merged_compute() {
   case "$(git cherry "$base" "$(git commit-tree "$tree" -p "$mb" -m _ 2>/dev/null)" 2>/dev/null)" in
     -*) return 0 ;;
   esac
+
+  # git cherry omits merge commits, including edits made during the merge.
+  merges="$(git rev-list --merges "$base..$branch" 2>/dev/null)" || return 1
+  [ -z "$merges" ] || return 1
 
   out="$(git cherry "$base" "$branch" 2>/dev/null)"
   [ -n "$out" ] || return 1

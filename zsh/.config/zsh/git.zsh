@@ -815,24 +815,31 @@ gwtcd() {
   local arg dest
   for arg in "$@"; do
     case "$arg" in
-      -h|--help) command gwt --help; return ;;
+      -h|--help) print -r -- "Usage: gwtcd <branch> [base] [create-options]"
+        print -r -- "Create a worktree and enter it. See gwt --help for creation options."; return ;;
       --json) print -u2 "gwtcd: --json is for gwt; gwtcd needs its path output"; return 2 ;;
     esac
   done
   dest="$(command gwt create "$@")" || return $?
-  [[ -n "$dest" ]] && cd -- "$dest"
+  [[ -n "$dest" ]] || { print -u2 "gwtcd: gwt returned no worktree path; inspect git worktree list"; return 1; }
+  cd -- "$dest"
 }
 
 # Completes local branches AND remote-only branch names (lstrip=3 drops
 # refs/remotes/<remote>/, which is the form you actually type — gwt resolves the
 # remote itself).
 _gwt() {
-  local subcommand="$words[2]"
+  local subcommand="$words[2]" commands="create resolve path remove config"
+  if [[ "$words[1]" == gwtcd ]]; then
+    subcommand=""
+    commands=""
+  fi
   if [[ "$subcommand" == config ]]; then
     _arguments '2:action:(show)' '--json[print effective values and sources as JSON]'
     return
   fi
   if [[ "$subcommand" == (create|resolve|path|remove) ]]; then
+    commands=""
     words=("$words[1]" "${words[@]:2}")
     (( CURRENT-- ))
   fi
@@ -856,7 +863,7 @@ _gwt() {
         '--no-copy[skip ignored prerequisites]' \
         '--no-fetch[use cached remote refs]' \
         '--json[print structured output]' \
-        '1:branch or command:(create resolve path remove config $(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))' \
+        '1:branch or command:('"$commands"' $(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))' \
         '2:base branch:($(git for-each-ref --format="%(refname:short)" refs/heads refs/remotes 2>/dev/null))'
       ;;
   esac
