@@ -301,6 +301,25 @@ CASE=W41; if want "$@"; then
   ok W41-merge-edits-preserved no "$(Cq "$MERGE_REPO" wt_merged_into feature main)"
 fi
 
+# Whitespace can carry code semantics even though git cherry ignores it.
+CASE=W42; if want "$@"; then
+  WS_REPO="$SANDBOX/whitespace-edits"
+  git init -q -b main "$WS_REPO"
+  git -C "$WS_REPO" commit -qm initial --allow-empty
+  git -C "$WS_REPO" checkout -qb feature
+  printf "if True:\n    print('one')\n    print('two')\n" > "$WS_REPO/script.py"
+  git -C "$WS_REPO" add script.py
+  git -C "$WS_REPO" commit -qm feature
+  git -C "$WS_REPO" checkout -q main
+  git -C "$WS_REPO" merge --squash feature >/dev/null
+  git -C "$WS_REPO" commit -qm squash
+  git -C "$WS_REPO" checkout -q feature
+  printf "if True:\n    print('one')\nprint('two')\n" > "$WS_REPO/script.py"
+  git -C "$WS_REPO" commit -qam reindent
+  printf '%s %s 1\n' "$(git -C "$WS_REPO" rev-parse feature)" "$(git -C "$WS_REPO" rev-parse main)" > "$WS_REPO/.git/wt-merged-cache-v2"
+  ok W42-whitespace-preserved no "$(Cq "$WS_REPO" wt_merged_into feature main)"
+fi
+
 # --- sandbox guard ------------------------------------------------------------
 
 # W12  Every case above ran with HOME redirected. Without that, wt_worktree_root

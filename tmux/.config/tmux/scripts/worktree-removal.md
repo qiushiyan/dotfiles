@@ -39,7 +39,10 @@ Run the graph check first, then patch checks. `git branch -d` sees only graph
 ancestry, so a branch proven squash-merged may require `-D`; this is safe only
 after the independent patch verdict. Per-commit patch matches omit merge commits,
 so unintegrated merge commits stay protected unless their combined branch patch
-is proven squash-merged.
+is proven squash-merged. Patch matches also require a clean merge that leaves
+the base tree unchanged (Git 2.38+), preserving whitespace-only changes that
+patch IDs ignore. Later edits to the same lines on base can leave integration
+unconfirmed.
 
 Manual application with edits and merges into a non-default base remain
 unproven and require the force path.
@@ -52,7 +55,7 @@ verdict is requested. A truncated `FETCH_HEAD` is stale even with a fresh
 mtime. Fetch failure is reported instead of silently grading against old state.
 
 Merged verdicts cache on `(branch sha, base sha)` in
-`<git-common-dir>/wt-merged-cache-v2`. Ref movement creates a new key; the
+`<git-common-dir>/wt-merged-cache-v3`. Ref movement creates a new key; the
 filename versions the verdict policy so older verdicts cannot bypass new guards. A branch-only key could preserve a dangerous
 stale `merged` answer.
 

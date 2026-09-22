@@ -128,6 +128,8 @@ wt_fetch_base() {
 #      `git cherry` whether the base already carries that patch ("-" = applied).
 #   3. GitHub "Rebase and merge"   → base gets the commits re-authored, new SHAs,
 #      same patches. Per-commit `git cherry`: merged iff EVERY commit reads "-".
+# Both patch paths also require a clean merge leaving the base tree unchanged,
+# because patch IDs ignore whitespace that can change code semantics.
 #
 # Cost order is deliberate — (1) is a graph query, (2) and (3) each scan the
 # patch-ids of merge-base..base (~0.1–0.4s here), so only a branch that is
@@ -149,7 +151,7 @@ wt_merged_cache_file() {
   local common
   common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
   [ -n "$common" ] || return 1
-  printf '%s/wt-merged-cache-v2\n' "$common"
+  printf '%s/wt-merged-cache-v3\n' "$common"
 }
 
 # Keep the memo from growing without bound; called at front-end startup, not per
@@ -200,7 +202,7 @@ _wt_merged_compute() {
   [ "$(git rev-parse -q --verify "$mb^{tree}" 2>/dev/null)" = "$tree" ] && return 1
 
   case "$(git cherry "$base" "$(git commit-tree "$tree" -p "$mb" -m _ 2>/dev/null)" 2>/dev/null)" in
-    -*) return 0 ;;
+    -*) _wt_merge_leaves_base_unchanged "$branch" "$base"; return $? ;;
   esac
 
   # git cherry omits merge commits, including edits made during the merge.
@@ -216,7 +218,16 @@ _wt_merged_compute() {
   case $'\n'"$out" in
     *$'\n'+*) return 1 ;;
   esac
-  return 0
+  _wt_merge_leaves_base_unchanged "$branch" "$base"
+}
+
+# Patch IDs ignore whitespace, including significant Python/YAML indentation.
+# Accept a patch match only when merging leaves the base's exact contents intact.
+_wt_merge_leaves_base_unchanged() {
+  local tree base_tree
+  tree="$(git merge-tree --write-tree "$2" "$1" 2>/dev/null)" || return 1
+  base_tree="$(git rev-parse --verify "$2^{tree}" 2>/dev/null)" || return 1
+  [ "$tree" = "$base_tree" ]
 }
 
 # Pick the dependency-install command for a Node project from its committed
