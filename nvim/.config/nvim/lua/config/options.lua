@@ -25,14 +25,22 @@ vim.api.nvim_create_autocmd("VimEnter", {
   end,
 })
 
+-- Over SSH, "+y must reach the local terminal's clipboard. Neovim ranks pbcopy
+-- above OSC 52, so on a macOS remote it would copy into the remote Mac's own
+-- clipboard. 'clipboard' stays empty here (above), so only explicit "+ uses it
+-- and p never triggers an OSC 52 read prompt.
+if vim.env.SSH_TTY then
+  vim.g.clipboard = "osc52"
+end
+
 -- TypeScript LSP: tsgo (typescript-go native port; global install via pnpm,
 -- @typescript/native-preview). LazyVim's typescript extra wires it up and
 -- disables vtsls/tsserver.
 vim.g.lazyvim_ts_lsp = "tsgo"
 
-local paths = require("config.paths")
-vim.g.python3_host_prog = paths.python
-vim.g.python_host_prog = paths.python
+-- No plugin needs the Python provider and no machine has pynvim; disabling it
+-- skips the startup probe and the checkhealth warning.
+vim.g.loaded_python3_provider = 0
 
 -- handle github pattern when opening links
 local open = vim.ui.open
