@@ -100,6 +100,17 @@ A typical task window: agent on one side, dev server on the other, a scratch she
 - **Quick shell:** **`prefix Z`** pops up a **throwaway shell at the current pane's directory** — check `git status` or an `ls` next to a running agent without splitting a pane off. `C-d` closes and disposes of it; it's smaller than the float and rounded-bordered so the two never look alike (in a float, `C-d` would kill your real process).
 - **Rearrange:** **`prefix p`** — see below. **Close:** just exit its shell (`C-d`); `prefix X` force-kills a stuck pane.
 
+**Clicks stop working** — tab clicks and pane clicks do nothing, except now and
+then when the mouse had not moved before the click. Ghostty believes the right
+button is still held after a lost release. It reports every motion as a
+right-button drag (SGR `34` instead of `35`), so tmux reads the next left
+press as `MouseDragEnd1`, finds no binding, and hands it to the pane.
+**Fix: right-click once in any pane** (Esc any menu that opens); ⌘Q Ghostty if
+that fails. To confirm next time: `kill -USR2 <tmux pid>` toggles
+`~/tmux-server-<pid>.log`, which logs `mouse input (SGR)` and `mouse key is …`.
+The log grows by hundreds of MB a minute with Claude panes open, so toggle it
+off within seconds.
+
 ### Rearranging panes (`prefix p`)
 
 One key instead of five you can't remember. `prefix p` enters a **sticky** mode
