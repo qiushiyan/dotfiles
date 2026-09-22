@@ -709,6 +709,10 @@ ignore_patterns = ["node_modules", ".git", "dist", "build"]
 
 # misc helpers
 [[snippets]]
+key = "clusters"
+expand = "~/dev/.handoffs/planlab-main/_clusters.md"
+
+[[snippets]]
 key = "postal"
 expand = "HA9 0JF"
 
