@@ -91,8 +91,9 @@ The pointer's last line names the **pickup gate** — `build` or `design`,
 first turn: no edits; a re-grounding written for the user, who picks a brief
 up days after writing it; the brief's premises checked against the code;
 and the next move named, usually `/consult`. `design` puts the problem and
-the approach on trial (a fix brief's claimed cause included); `build` takes
-the direction as settled and tries the premises and the scope.
+the approach on trial (a fix brief's claimed cause included) and names the
+end state the recommended step faces; `build` takes the direction as
+settled and tries the premises and the scope.
 
 Where the machinery lives and which repo owns which half: `docs/handoff.md`.
 

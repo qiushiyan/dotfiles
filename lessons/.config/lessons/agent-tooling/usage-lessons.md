@@ -121,6 +121,20 @@ over that history; the passes themselves are the provenance below.
   above it carried falsified entries in 6 of them; the user never read the
   line. Lead with the outcome only when it changes something (a reframe
   opens the packet); otherwise let the evidence table be the verdict.
+- **The alternative you ask for is the alternative you get.** A design
+  gate that asked for one countershape, "a contained change against a
+  structural one, a different seam", got a smaller slice or a PR split in
+  about a quarter of 42 packets, and the owner sent five of nine such
+  splits back for a combined PR; the alternatives that changed a
+  recommendation were shape changes at a different seam. Name the kind of
+  alternative wanted and keep sequencing out of it. The same pass then
+  over-read its own data: a "what-if" slot was justified on eight
+  step-back turns that a two-voice consult showed were two inside packet
+  windows, the rest adjacent sessions, and on a flagship example that
+  attributed one host's CPU cost to another. Count inside the window the
+  instruction governs, and verify an example at its source before it
+  teaches (pickup-gate pass, 2026-09-22; receipts in planlab's
+  `.agents/skills/pl-loopy-handoff/EVIDENCE.md`).
 - **A mindset scoped to one turn does not carry.** The CEO-briefing format
   for questions lived in the pickup gate; the user's snippet asking for it
   fired later in the same sessions, after review and implementation
