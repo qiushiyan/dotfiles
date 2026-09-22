@@ -136,10 +136,29 @@ skills through `~/.agents/skills`. The hooks and the statusline call
 (`/config`, `/model` default) is lost at the next sync. Change it on the
 laptop.
 
-Not installed: go, rust, Docker, databases, fonts, GUI apps, oh-my-zsh, and
-the `codex` stow package. Its `config.toml` holds laptop project-trust paths,
-and Codex writes to it at runtime. Without it, the skill-sync implicit-
-invocation exclusions don't apply on the mini.
+**Codex config:** `~/.codex/config.toml` is **generated**, not linked,
+because Codex writes its project and hook trust into it at runtime.
+`mini-sync` passes the laptop's file through
+`scripts/.local/share/dotfiles/mini-codex-config.py`, which:
+- keeps every shared setting: model, reasoning, TUI, features, context7,
+  and skill-sync's exclusions;
+- drops the ChatGPT desktop integrations (computer-use, node_repl, plugins,
+  marketplaces, `desktop`, `notify`);
+- keeps the mini's own `projects.*`, `hooks.state*` and
+  `tui.model_availability_nux` tables;
+- pins `cli_auth_credentials_store = "file"`.
+
+The output is idempotent, and the file is rewritten only when the laptop's
+config changed. `AGENTS.md` and `themes/` are plain links into the mirror.
+A `/model` choice made on the mini is replaced by the laptop's at the next
+sync.
+
+**Extra Codex accounts:** don't use `cx-account-add` here. It shares the
+laptop's raw `codex/.codex/config.toml`, which has no file credential store.
+Run `headroom accounts add --vendor codex --share-config <email>` instead:
+bare `--share-config` links the mini primary's generated config.
+
+Not installed: go, rust, Docker, databases, fonts, GUI apps, oh-my-zsh.
 
 ## Sync
 

@@ -38,14 +38,30 @@ fi
 # Ignored paths stay behind: ssh config, vpn-private/, purchased upstream
 # material, app runtime state, node_modules. Anchored so a name excludes
 # only that path.
-excludes=$(mktemp "${TMPDIR:-/tmp}/mini-sync.XXXXXX")
-trap 'rm -f "$excludes"' EXIT
+work=$(mktemp -d "${TMPDIR:-/tmp}/mini-sync.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+excludes="$work/excludes"
 git -C "$REPO" ls-files -o -i --exclude-standard --directory | sed 's|^|/|' > "$excludes"
 echo '.DS_Store' >> "$excludes"
 
 say "==> dotfiles → $HOST:~/dotfiles"
 rsync -a --delete ${dry[@]+"${dry[@]}"} --exclude-from="$excludes" \
   "$REPO/" "$HOST:dotfiles/"
+
+# Codex's config.toml can't be a link like the claude package: Codex writes
+# its trust decisions into it. Derive the mini's copy from the laptop's
+# instead, keeping the tables Codex owns there (mini-codex-config.py).
+say "==> codex config → $HOST:~/.codex/config.toml"
+ssh "$HOST" 'cat ~/.codex/config.toml 2>/dev/null' > "$work/mini.toml" || true
+python3 "$REPO/scripts/.local/share/dotfiles/mini-codex-config.py" \
+  "$REPO/codex/.codex/config.toml" "$work/mini.toml" > "$work/new.toml"
+if cmp -s "$work/mini.toml" "$work/new.toml"; then
+  say "    unchanged"
+elif (( ${#dry[@]} )); then
+  diff -u "$work/mini.toml" "$work/new.toml" || true
+else
+  ssh "$HOST" 'mkdir -p ~/.codex && umask 077 && cat > ~/.codex/config.toml.mini-sync && mv ~/.codex/config.toml.mini-sync ~/.codex/config.toml' < "$work/new.toml"
+fi
 
 say "==> ${BINS[*]} → $HOST:~/.local/bin"
 bins=()
