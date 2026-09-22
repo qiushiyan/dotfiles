@@ -76,8 +76,11 @@ Installed 2026-09-22. A deliberately small subset of the laptop: no
   non-login, non-interactive zsh that reads nothing else. With only
   `.zprofile`, `nvim`, brew `jq` and the rest were missing from PATH.
   It also sets `FORCE_HYPERLINK=1` for SSH sessions. sshd doesn't forward
-  `TERM_PROGRAM`, so without it Claude Code prints URLs as plain text and
-  Ctrl-click does nothing.
+  `TERM_PROGRAM`, so without it Claude Code prints URLs as plain text. Open
+  links with **Cmd+Shift+click**: Ghostty opens OSC 8 links on Cmd-click, and
+  Shift bypasses tmux's mouse capture. Plain Ctrl-click is Claude Code's own
+  click handler running `open` on the host, so on the mini it opens the mini's
+  Safari. The same Cmd+Shift+click works in local tmux panes.
 - `~/.zprofile`: brew shellenv again, because `/etc/zprofile`'s `path_helper`
   reorders PATH for login shells after `.zshenv`.
 - `~/.zshrc`: the nvm and pnpm installer blocks, `compinit`, zoxide, fzf,
