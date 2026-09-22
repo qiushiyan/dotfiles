@@ -28,7 +28,7 @@ You are the lead. Fresh sessions ("voices") give independent takes on a problem 
    | a cause believed rather than proven — a hypothesis, a suspicion, "I think it's X because Y", a symptom nobody has traced yet | a causal claim | **diagnosis** |
    | a shape to commit to — "settle the final approach", which interface, a spec or design doc, a scope call, or a bug whose cause is already read out of the code | a design choice | **approach** |
 
-   A bug in the picture is not the signal; an **unsettled cause** is. A session that has traced the mechanism and can point at the lines has no causal claim left on trial, however loud the incident was — there the fix is the whole question and `approach` is the instrument.
+   The user's words pick the mode; where the position's causal link is inferred from a correlation rather than read from the code, diagnosis wins, and the pick-back line says so. A bug in the picture is not the signal; an **unsettled cause** is. A session that has traced the mechanism and can point at the lines has no causal claim left on trial, however loud the incident was — there the fix is the whole question and `approach` is the instrument.
 
    **diagnosis** ([DIAGNOSIS-BRIEF.md](DIAGNOSIS-BRIEF.md)) — the cause goes on trial before the fix, and the brief's **order is the instrument**: what was observed, then the voice's **blind read** of it, then what this session concluded. Filling that first section costs the most care — every line is something someone saw, and one inference among them spends what the round was bought for. Where a wrong diagnosis would cost a whole implementation cycle, step 6 splits the blind read across two turns instead.
 
@@ -38,18 +38,22 @@ You are the lead. Fresh sessions ("voices") give independent takes on a problem 
 
    **Tenets.** When the turn asks how the build should proceed — "guidelines", "principles", "guardrails", a milestone or a phase plan — keep the approach brief's tenets item; delete it otherwise. Its form is `~/.config/lessons/collaboration/tenets.md`, which the item sends the voice to before it writes.
 
-   The template's design-bar section goes out as written — its lesson pointers are for the voice — whenever module shape or an interface is at stake; trim it only when the question genuinely isn't about code structure. Any rulebook this session is working under goes out beside them by path — the voice works to the same bar the work will be held to. Done when a cold reader could act on the brief without this conversation, and when nothing above the diagnosis brief's blind read states a conclusion.
+   The template's design-bar section goes out as written — its lesson pointers are for the voice — whenever module shape or an interface is at stake; trim it only when the question genuinely isn't about code structure. Any rulebook this session is working under goes out beside them by path — the voice works to the same bar the work will be held to.
 
-3. **Dispatch** as one fan-out, 30-minute cap — each voice on its brief, one background Bash task, the job named for the round (`consult-r1`, then `consult-r2`), that finishes once; return as soon as it is running, since the task completing is the signal and nothing the dispatch prints needs relaying:
+   **When the position rests on data this session produced** — a production query, a log run, a session-history query, an eval result, a hand classification — the brief keeps its `## The data behind this position` section and the output's method item; [DATA-BLOCK.md](DATA-BLOCK.md) says what the section carries and why the voice judges the method before the conclusion. The query files and their raw outputs are saved in the scratchpad and cited by path, since a voice cannot judge a predicate it cannot read. A position with no such number deletes the section and the item.
 
-   ```sh
-   envoy run consult-r1 --with codex --with claude:opus --prompt-file <brief> --timeout-min 30
-   ```
+   Done when a cold reader could act on the brief without this conversation, when nothing above the diagnosis brief's blind read states a conclusion, and when every count the position leans on has its query on disk.
 
-   Two voices buy what one cannot — independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names, however they name them. `codex` alone inherits the model in the user's Codex config; a Claude voice is spelled `claude:<model>` — "opus" is `claude:opus`, "fable" is `claude:claude-fable-5-1` — and runs only on a model the user named, so where they name no voice the round is one codex turn, never a Claude model of your choosing. The single turn also fits a question narrow enough that a second read buys nothing:
+3. **Dispatch** as one job, 30-minute cap — each voice on its brief, one background Bash task, the job named for the round (`consult-r1`, then `consult-r2`), that finishes once; return as soon as it is running, since the task completing is the signal and nothing the dispatch prints needs relaying. Where the user names no voice the round is one codex turn:
 
    ```sh
    envoy run consult-r1 --with codex --prompt-file <brief> --timeout-min 30
+   ```
+
+   Two voices buy what one cannot — independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names, however they name them. `codex` alone inherits the model in the user's Codex config; a Claude voice is spelled `claude:<model>` — "opus" is `claude:opus`, "fable" is `claude:claude-fable-5-1` — and runs only on a model the user named, never a Claude model of your choosing. When both are named:
+
+   ```sh
+   envoy run consult-r1 --with codex --with claude:opus --prompt-file <brief> --timeout-min 30
    ```
 
    When the user gives the voices different jobs — one to judge the design, one to survey what exists — each voice takes its own brief, attached as `<voice>=<brief>`, and it is still one job with one collect:

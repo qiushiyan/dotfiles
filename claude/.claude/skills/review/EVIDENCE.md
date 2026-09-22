@@ -196,3 +196,10 @@ two brief items, removed a negation-carried clause and an unearned
 "committed" claim in consult step 5, and gave the review bullet the same
 fewer-is-the-norm skip. No round has run on the revised briefs; the
 outcome measures above are pending.
+
+## 2026-09-22 — the data behind a change
+
+Recorded in `../consult/EVIDENCE.md`, the 2026-09-22 entry: both brief
+templates gain a `## The data behind this change` section and a method item
+first in the output when the range rests on a measurement this session
+produced; step 2 carries the trigger; `consult/DATA-BLOCK.md` is the one home.

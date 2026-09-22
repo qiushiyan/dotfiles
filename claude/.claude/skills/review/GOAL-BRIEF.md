@@ -90,6 +90,18 @@ and you should say so.
 deliberately deferred, external constraints. Never rationale for a choice
 inside the diff. Nothing to say? Delete the section.»
 
+## The data behind this change
+
+«Keep this section only when the range rests on a measurement this session
+produced — a report, a spec or a threshold in the diff built from production
+queries, log runs, session-history queries, an eval or benchmark, a hand
+classification; otherwise delete it and the output's method item. Its shape
+and register are in `~/.claude/skills/consult/DATA-BLOCK.md`: observed only —
+source and window, population and denominator, the queries and raw outputs by
+absolute path, how rows were classified and by whom, coverage gaps, what was
+not measured, the receipts. Nothing here says what the change concluded; that
+is in the range, where you judge it.»
+
 ## The standards this work was built to
 
 «The rulebooks the implementer worked under, by absolute path — the guidance
@@ -150,20 +162,27 @@ Nothing to name? Delete the section.»
 ## Output
 
 1. **What I expected** — the sentences you wrote before reading, verbatim.
-2. **Did it land** — achieved / partly / not, against the goal, with what a
+2. **The method** «only when the data section is kept» — before the verdict:
+   is the right data pulled for the question, is data missing that would
+   change the answer, is the analysis approach sound, and which of the
+   range's measured claims the method cannot support as stated. Where you doubt a
+   count, re-run or vary the predicate if the brief says you can, and
+   otherwise say what you would run and what would change if it came back
+   different. "Sound, with these limits" is a real answer.
+3. **Did it land** — achieved / partly / not, against the goal, with what a
    user can and can't do as the evidence. This is the verdict the round exists
    for; say it plainly before anything else.
-3. **Obvious mistakes** — what, where, and why a reasonable person would expect
+4. **Obvious mistakes** — what, where, and why a reasonable person would expect
    otherwise. Unranked. "None" is a real answer.
-4. **Unpinned behaviour** — each behaviour the revert test found no test for,
+5. **Unpinned behaviour** — each behaviour the revert test found no test for,
    or "none".
-5. **Weight it doesn't need** — the concepts that could be deleted without
+6. **Weight it doesn't need** — the concepts that could be deleted without
    costing the goal anything, or "none".
-6. **Structural findings** «only when the structural block was kept» — open
+7. **Structural findings** «only when the structural block was kept» — open
    with the trace, one line per hop for what it adds and "adds nothing" where
    that is the answer; then each finding with the code that proves it and the
    reshape it names.
-7. **Design objections** — where you would have built this differently and what
+8. **Design objections** — where you would have built this differently and what
    keeping it costs, or "none".
 
 Be specific and terse; no praise padding, and no severity ladder — this round's

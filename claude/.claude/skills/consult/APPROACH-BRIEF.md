@@ -73,6 +73,17 @@ restate their content here. An artifact that *is* the proposal — a spec, a
 design doc — is not listed here: it is named under "What we propose", after
 the sketch, so the voice commits before it opens it.»
 
+## The data behind this position
+
+«Keep this section only when the position rests on a count, a rate or a
+measurement this session produced; otherwise delete it and the output's
+method item. Its shape and register are in DATA-BLOCK.md beside this
+template: observed only — source and window, population and denominator,
+the queries and raw outputs by absolute path, how rows were classified and by
+whom, coverage gaps, what was not measured, and the two or three receipts the
+position leans on. Every conclusion drawn from the data stays under "What we
+propose", where the voice is meant to attack it.»
+
 ## Your sketch, before reading on
 
 Write this down now, before reading past this heading: from the goal, the
@@ -106,6 +117,13 @@ the voice name what is wrong in it.»
 
 ## Output
 
+0. **The method** «only when the data section is kept» — before any
+   conclusion: is the right data pulled for the question, is data missing
+   that would change the answer, is the analysis approach sound, and which
+   of the position's counts or claims the method cannot support as stated.
+   Where you doubt a count, re-run or vary the predicate if the brief says
+   you can, and otherwise say what you would run and what would change if
+   it came back different. "Sound, with these limits" is a real answer.
 1. **Your sketch** — verbatim, as written before you read our position.
 2. **Where you differ from us, and why** — from the goal restated in your own
    words if it differs, through the shape. Where the sketches agree, one line;
