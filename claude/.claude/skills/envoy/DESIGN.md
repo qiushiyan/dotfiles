@@ -47,7 +47,7 @@ duet instead. Don't grow the engine.
   flat subscription, so cost isn't the tiebreaker. Default codex; claude is
   opt-in by name.
 - **One job, however many voices.** Several takes — on one brief, or each
-  voice on its own (`--with codex=survey.md --with claude:opus=critique.md`)
+  voice on its own (`--with codex=survey.md --with claude:claude-opus-5-5=critique.md`)
   — are a single job with several `--with` voices: one completion, so "one
   voice is back: wait or synthesize?" never becomes a question the host
   holds. The fan-out absorbs the ledger, not the prompt; a voice given a
