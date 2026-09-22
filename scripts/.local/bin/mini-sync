@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# mini-sync — mirror this laptop's dotfiles tree and personal CLIs to the
+# office Mac mini. One-way: the laptop is the source of truth and the mini's
+# copy is overwritten, so never edit ~/dotfiles on the mini.
+# Why a mirror and not `git pull`: skills and tools iterate uncommitted, and
+# the mirror carries the working tree as-is. See docs/qiushi-mini.md § Sync.
+#
+# Usage: mini-sync [-n|--dry-run] [-q|--quiet]
+#   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
+set -euo pipefail
+
+HOST=${MINI_SYNC_HOST:-qiushi-mini}
+REPO="$HOME/dotfiles"
+# Compiled, self-contained CLIs from ~/.local/bin. Launcher shims that exec
+# into a local checkout (planlab, bench) do not belong here: they point at
+# laptop paths.
+BINS=(headroom envoy brief gwt)
+
+dry=() quiet=0
+for arg in "$@"; do
+  case $arg in
+    -n|--dry-run) dry=(--dry-run --itemize-changes) ;;
+    -q|--quiet) quiet=1 ;;
+    -h|--help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "mini-sync: unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
+
+say() { (( quiet )) || printf '%s\n' "$*"; }
+
+if ! ssh -o BatchMode=yes -o ConnectTimeout=5 "$HOST" true 2>/dev/null; then
+  (( quiet )) && exit 0
+  echo "mini-sync: $HOST unreachable" >&2
+  exit 1
+fi
+
+# Everything git can see (tracked + untracked-not-ignored) plus .git itself.
+# Ignored paths stay behind: ssh config, vpn-private/, purchased upstream
+# material, app runtime state, node_modules. Anchored so a name excludes
+# only that path.
+excludes=$(mktemp "${TMPDIR:-/tmp}/mini-sync.XXXXXX")
+trap 'rm -f "$excludes"' EXIT
+git -C "$REPO" ls-files -o -i --exclude-standard --directory | sed 's|^|/|' > "$excludes"
+echo '.DS_Store' >> "$excludes"
+
+say "==> dotfiles → $HOST:~/dotfiles"
+rsync -a --delete ${dry[@]+"${dry[@]}"} --exclude-from="$excludes" \
+  "$REPO/" "$HOST:dotfiles/"
+
+say "==> ${BINS[*]} → $HOST:~/.local/bin"
+bins=()
+for b in "${BINS[@]}"; do
+  if [[ -x $HOME/.local/bin/$b ]]; then
+    bins+=("$HOME/.local/bin/$b")
+  else
+    echo "mini-sync: skipping $b (not installed here)" >&2
+  fi
+done
+rsync -a ${dry[@]+"${dry[@]}"} "${bins[@]}" "$HOST:.local/bin/"
+
+say "==> done"

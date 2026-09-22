@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.mini-sync</string>
+
+  <!-- Mirror dotfiles + personal CLIs to the office mini every 15 minutes.
+       - -quiet exits 0 without output when the mini is unreachable (offline,
+       laptop asleep, off the tailnet), so only real failures reach the log.
+       Manual `mini-sync` is the same code path. docs/qiushi-mini.md § Sync. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushi/.local/bin/mini-sync</string>
+    <string>--quiet</string>
+  </array>
+
+  <!-- launchd's default PATH lacks Homebrew: rsync must be Homebrew's 3.x,
+       not macOS's openrsync. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushi/Library/Logs/mini-sync.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushi/Library/Logs/mini-sync.log</string>
+</dict>
+</plist>

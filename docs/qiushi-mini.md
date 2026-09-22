@@ -57,11 +57,12 @@ into it, because accepting a share needs the admin console.
 ## Toolchain
 
 Installed 2026-09-22. A deliberately small subset of the laptop: no
-`bootstrap.sh`, no Brewfile, and only the `nvim` package stowed.
+`bootstrap.sh`, no Brewfile, and only the `nvim` package stowed. Everything
+else from this repo arrives through the mirror (§ Sync).
 
 | tool | version | how | update |
 |---|---|---|---|
-| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow` | `brew upgrade` |
+| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync coreutils bat difftastic` (the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
 | node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'` |
 | pnpm | 11.27.1 | `get.pnpm.io/install.sh` with `PNPM_VERSION=11.27.1` → `~/Library/pnpm`; pinned to 11 to match the laptop, not the Rust-port 12 | `pnpm self-update` |
@@ -91,8 +92,15 @@ Installed 2026-09-22. A deliberately small subset of the laptop: no
   depend on this.
 - `~/.zprofile`: brew shellenv again, because `/etc/zprofile`'s `path_helper`
   reorders PATH for login shells after `.zshenv`.
-- `~/.zshrc`: the nvm and pnpm installer blocks, `compinit`, zoxide, fzf,
-  `alias x="claude --dangerously-skip-permissions"`, `alias v=nvim`, and `EDITOR`.
+- `~/.zshenv` (end): sources a curated list of modules straight from the
+  mirrored `~/dotfiles/zsh/.config/zsh/`: `aliases nav utils git claude
+  claude-sessions codex tmux-utils cwd-guard`. This gives the same muscle
+  memory as the laptop (`n`, `g`, `lg`, `l`, `t`, `b`, `take`, `p`, …), and
+  `x`/`cx` route through headroom. Laptop-only modules stay out:
+  `toolchain` (the PATH lines above replace it), `xcode`, `theme`, `cout`,
+  `proxy`. It also turns off `EQUALS`, as the laptop does.
+- `~/.zshrc`: the nvm and pnpm installer blocks, `compinit` plus
+  `_git_zsh_register_completions`, zoxide, fzf, `alias v=nvim`, and `EDITOR`.
 - `~/.tmux.conf`: eight lines (mouse, history, `tmux-256color`,
   `set-clipboard on`). Plain Homebrew tmux, not `tmux-popupfix`.
 
@@ -117,5 +125,36 @@ falls back to `~/.claude/.credentials.json`. Codex is told to use a file
 stowed). gh falls back to plaintext storage.
 
 Not installed: go, rust, Docker, databases, fonts, GUI apps, oh-my-zsh, and
-the `claude`/`codex` stow packages. The skills and hooks depend on
-headroom/envoy/brief, which don't exist here.
+the `claude`/`codex` stow packages.
+
+## Sync
+
+`mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way
+and the laptop is the source of truth.
+
+- **dotfiles**: `rsync --delete` of this repo to `~/dotfiles` on the mini.
+  It sends everything git can see (tracked files plus untracked files that
+  are not ignored) and `.git` itself, so the mini's `git status` matches the
+  laptop's, uncommitted edits included. Ignored paths never leave the laptop:
+  `ssh/`, `vpn-private/`, purchased upstream material, app runtime state,
+  `node_modules`.
+- **CLIs**: the compiled binaries `headroom envoy brief gwt` are copied from
+  `~/.local/bin` (same arch and OS family). There is no Go and there are no
+  source clones on the mini. `planlab` and `bench` are deliberately absent:
+  they are two-line shims that `exec` tsx inside the laptop's
+  `~/dev/planlab/main` checkout.
+- **Schedule**: `com.qiushi.mini-sync` (LaunchAgent, stowed from
+  `scripts/Library/`) runs `mini-sync --quiet` at load and every 15 minutes.
+  An unreachable mini is a silent no-op. Real failures go to
+  `~/Library/Logs/mini-sync.log`. Run `mini-sync` by hand after a change you
+  want there now; `-n` previews it.
+
+**Never edit `~/dotfiles` on the mini.** The next sync overwrites it. A fix
+found there gets made on the laptop.
+
+**headroom on the mini:** Claude Code credentials live in
+`.credentials.json`, not the Keychain, because the Keychain is locked over
+SSH. headroom 81c3045 reads that file only for non-primary accounts, so the
+primary's board row says "credential unreadable" and `headroom check` FAILs
+`keychain[primary]`/`blob[primary]`. Routing (`x`, `x-<name>`) and the Codex
+page are unaffected.
