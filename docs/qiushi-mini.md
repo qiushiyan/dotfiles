@@ -57,8 +57,9 @@ into it, because accepting a share needs the admin console.
 ## Toolchain
 
 Installed 2026-09-22. A deliberately small subset of the laptop: no
-`bootstrap.sh`, no Brewfile, and only the `nvim` package stowed. Everything
-else from this repo arrives through the mirror (§ Sync).
+`bootstrap.sh`, no Brewfile. Two packages are stowed from the mirror: `nvim`
+and `claude`. Everything else from this repo arrives through the mirror
+(§ Sync).
 
 | tool | version | how | update |
 |---|---|---|---|
@@ -124,8 +125,21 @@ falls back to `~/.claude/.credentials.json`. Codex is told to use a file
 (`cli_auth_credentials_store = "file"` in `~/.codex/config.toml`, which is not
 stowed). gh falls back to plaintext storage.
 
+**Claude Code config:** the `claude` package is stowed. `~/.claude` and
+`~/.agents` are real dirs, and `settings.json`, `CLAUDE.md`, hooks, rules,
+commands, agents and skills link into the mirror. Codex reads the same
+skills through `~/.agents/skills`. The hooks and the statusline call
+`~/.config/tmux/scripts/*`, so that one dir is linked to the mirror's
+`tmux/.config/tmux/scripts`. The laptop's `tmux.conf` is not linked, and
+`~/.tmux.conf` stays the mini's own. Those scripts no-op outside tmux.
+`settings.json` is a link into the mirror, so a setting changed on the mini
+(`/config`, `/model` default) is lost at the next sync. Change it on the
+laptop.
+
 Not installed: go, rust, Docker, databases, fonts, GUI apps, oh-my-zsh, and
-the `claude`/`codex` stow packages.
+the `codex` stow package. Its `config.toml` holds laptop project-trust paths,
+and Codex writes to it at runtime. Without it, the skill-sync implicit-
+invocation exclusions don't apply on the mini.
 
 ## Sync
 
