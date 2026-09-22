@@ -68,7 +68,10 @@ template heading stated correctly in the block; step 3's slot list in the
 review skill named the data and standards sections; two pre-existing consult
 defects the scenario tripped — words-versus-substance mode precedence and the
 first dispatch recipe showing an unnamed second voice. Read-only simulations;
-no round has yet run on a brief that carries the block.
+no round has yet run on a brief that carries the block. A same-day reread
+against the rulebook replaced the block's explanatory prose with a filled
+section and a filled method verdict from this pass, and cut the four
+templates' author-facing slot to three lines each.
 
 **Next pass measures.** Rounds after data work whose brief carries the
 section (baseline 0 / 43 by the word, 6 / 43 by a predicate named); method

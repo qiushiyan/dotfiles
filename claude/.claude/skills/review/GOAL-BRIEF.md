@@ -92,15 +92,11 @@ inside the diff. Nothing to say? Delete the section.»
 
 ## The data behind this change
 
-«Keep this section only when the range rests on a measurement this session
-produced — a report, a spec or a threshold in the diff built from production
-queries, log runs, session-history queries, an eval or benchmark, a hand
-classification; otherwise delete it and the output's method item. Its shape
-and register are in `~/.claude/skills/consult/DATA-BLOCK.md`: observed only —
-source and window, population and denominator, the queries and raw outputs by
-absolute path, how rows were classified and by whom, coverage gaps, what was
-not measured, the receipts. Nothing here says what the change concluded; that
-is in the range, where you judge it.»
+«Only when the range rests on a measurement this session produced — a
+report, a spec or a threshold in the diff built from its own queries, logs,
+eval or classification; else delete this section and the output's method
+item. Fill it to `~/.claude/skills/consult/DATA-BLOCK.md`: observed only,
+the queries and raw outputs by absolute path, what the reviewer can run.»
 
 ## The standards this work was built to
 
@@ -164,11 +160,10 @@ Nothing to name? Delete the section.»
 1. **What I expected** — the sentences you wrote before reading, verbatim.
 2. **The method** «only when the data section is kept» — before the verdict:
    is the right data pulled for the question, is data missing that would
-   change the answer, is the analysis approach sound, and which of the
-   range's measured claims the method cannot support as stated. Where you doubt a
-   count, re-run or vary the predicate if the brief says you can, and
-   otherwise say what you would run and what would change if it came back
-   different. "Sound, with these limits" is a real answer.
+   change the answer, is the approach sound, and which measured claims it
+   cannot support as stated. Doubt a count: re-run or vary it if the brief
+   says you can, else say what you would run and what a different result
+   would change. "Sound, with these limits" is a real answer.
 3. **Did it land** — achieved / partly / not, against the goal, with what a
    user can and can't do as the evidence. This is the verdict the round exists
    for; say it plainly before anything else.

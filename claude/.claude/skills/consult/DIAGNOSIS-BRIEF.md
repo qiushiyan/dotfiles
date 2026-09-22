@@ -46,14 +46,9 @@ Every line here is something someone saw. Inferences, causes, and suspicions
 belong below the blind read — a conclusion smuggled in here defeats the whole
 brief.
 
-Where the evidence is a count, a rate or a timing this session produced —
-a production query, a log run, a session-history query — add the data
-block from DATA-BLOCK.md beside this template, in the same observed
-register: source and window, population and denominator, the queries and
-raw outputs by absolute path, how rows were classified and by whom,
-coverage gaps, what was not measured, the receipts. It belongs here, above
-the blind read, because it is what was seen and how; the voice judges the
-method before it judges the cause.»
+Where a count, a rate or a timing here is this session's own measurement,
+add DATA-BLOCK.md's bullets in this section, without a heading: the
+queries and raw outputs by absolute path, and what the voice can run.»
 
 ## The blind read
 
@@ -112,13 +107,12 @@ them itself — never restate their content here.»
 
 ## Output
 
-0. **The method** «only when the observations carry the data block» —
-   before any conclusion: is the right data pulled for the question, is
-   data missing that would change the answer, is the analysis approach
-   sound, and which observed counts the method cannot support as stated.
-   Where you doubt a count, re-run or vary the predicate if the brief says
-   you can, and otherwise say what you would run and what would change if
-   it came back different. "Sound, with these limits" is a real answer.
+0. **The method** «only when the observations carry the data block» — before any
+   conclusion: is the right data pulled for the question, is data missing
+   that would change the answer, is the approach sound, and which counts or
+   claims it cannot support as stated. Doubt a count: re-run or vary it if
+   the brief says you can, else say what you would run and what a different
+   result would change. "Sound, with these limits" is a real answer.
 1. **The blind read** — items 1–3, verbatim.
 2. **The cause** — confirmed / not carried by the evidence / a different cause
    you would back, with the evidence for your verdict. State this before

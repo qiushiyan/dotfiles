@@ -47,15 +47,11 @@ decisions fenced below.
 
 ## The data behind this change
 
-«Keep this section only when the range rests on a measurement this session
-produced — a report, a spec or a threshold in the diff built from production
-queries, log runs, session-history queries, an eval or benchmark, a hand
-classification; otherwise delete it and the output's method item. Its shape
-and register are in `~/.claude/skills/consult/DATA-BLOCK.md`: observed only —
-source and window, population and denominator, the queries and raw outputs by
-absolute path, how rows were classified and by whom, coverage gaps, what was
-not measured, the receipts the change leans on. What the range concluded from
-the data is in the range, where you judge it.»
+«Only when the range rests on a measurement this session produced — a
+report, a spec or a threshold in the diff built from its own queries, logs,
+eval or classification; else delete this section and the output's method
+item. Fill it to `~/.claude/skills/consult/DATA-BLOCK.md`: observed only,
+the queries and raw outputs by absolute path, what the reviewer can run.»
 
 ## The foundation — decided, not up for relitigation
 
@@ -98,11 +94,10 @@ their content.»
 
 «When the data section is kept:» open with **the method** — before any
 finding: is the right data pulled for the question, is data missing that
-would change the answer, is the analysis approach sound, and which of the
-range's measured claims the method cannot support as stated; where you doubt a count,
-re-run or vary the predicate if the brief says you can, and otherwise say what
-you would run and what would change if it came back different; "sound, with
-these limits" is a real answer. Then **the trace**: the hops of the one path you followed, one line each
+would change the answer, is the approach sound, and which measured claims
+it cannot support as stated; doubt a count: re-run or vary it if the brief
+says you can, else say what you would run; "sound, with these limits" is a
+real answer. Then **the trace**: the hops of the one path you followed, one line each
 for what that hop adds, and "adds nothing" where that is the answer. Then
 findings ordered by severity — **critical** (blocks merge) / **moderate**
 (fix before merge) / **minor** (nice-to-have) — and don't pass the review

@@ -45,12 +45,12 @@ Framing: holds | redefined — <what the code and evidence say the problem is, a
 <for each of hot path · user-driven surface · core execution logic the change touches: what runs differently, what holds the risk down, why it is worth it — or one line saying it touches none>
 
 ## 5. End state
-<the shape this part of the system is headed for — the initiative's sequence doc where it records one, else what section 2's facts imply — in a sentence or two> · <one reshape away | a different system> · <what the recommendation does toward it> | the current structure is that shape | not established — <what the checks left unverified>
+<where this part of the system is headed — quoted from the initiative's sequence doc, else implied by section 2's facts — in a sentence or two> · <one reshape away | a different system> · <what the recommendation does toward it> | the current structure is that shape | not established — <what is unverified>
 
 ## 6. Countershape, trade-off, recommendation
-<one genuinely different shape that answers the strongest objection — or "the proposal survived: <why the objections leave it standing>" | "the proposal is moot — <the premise that fell>" | "no countershape — section 2 fixed the shape at <seam>; what is open is <scope or sequence>"; the moot and no-countershape verdicts drop the comparison line>
-<proposal vs countershape on the root problem and on user / structure / risk cost; a hybrid only where a changed shape removes the strongest objection — removing it by deferring a part is sequence, for the line below>
-Recommendation: <the shape> — accepts <the trade-off> · <"a judgment call" where it genuinely is one> · <one PR, or the sequence, under the project's milestone rule where one exists> | none — the brief closes: <what answered it, and where the record goes>
+<one genuinely different shape that answers the strongest objection> | the proposal survived — <why> | the proposal is moot — <the premise that fell> | no countershape — section 2 fixed the shape at <seam>
+<proposal vs countershape on the root problem and on user / structure / risk cost; a hybrid only where a changed shape removes the strongest objection>
+Recommendation: <the shape> — accepts <the trade-off> · <"a judgment call" where it is one> · <one PR, or the sequence, under the project's milestone rule where one exists> | none — the brief closes: <what answered it, where the record goes>
 
 ## 7. Decisions and parked unknowns
 Decision needed: <a product fork, in the form below> | none
@@ -116,22 +116,15 @@ fallback, or a signal that would catch a regression. "Adds a branch that
 only runs in the error path" is an answer; "overhead is minimal" is not.
 This is an accounting, not a veto.
 
-**Section 5 is the end state; section 6 holds one countershape; the
-design space belongs to the consult.** The end state is where this part
-of the system is headed, and it is usually already written: a live
-initiative records it in its sequence doc, which the onboarding read
-reaches through the brief's `paths:`. Quote it from there. Where nothing
-is recorded, section 2's facts may imply one — a measurement, a falsified
-premise, a mechanism read from the code — and where they do not, the slot
-says so; an end state invented to fill the slot is worse than none. A
-sentence or two, not a design: it orients the recommendation, so a local
-fix is chosen knowing what it defers rather than because the brief's frame
-stopped at the local fix. Precedence with section 1: a fact that changes
-what the brief's problem *is* redefines the framing there; a fact that
-leaves the brief's problem standing and shows a larger one beside it is
-named here, the recommendation stays on the brief's question, and whether
-this session turns to the larger problem is a scope fork for section 7 —
-the user's to decide.
+**The end state is usually already written.** A live initiative records
+where it is headed in its sequence doc, reached through the brief's
+`paths:`; quote it. Without one, section 2's facts may imply it; without
+that, say "not established" — an end state invented to fill the slot is
+worse than none. It orients the recommendation so a local fix is chosen
+knowing what it defers. A fact that changes what the brief's problem *is*
+redefines the framing in section 1; a fact that leaves the problem standing
+and shows a larger one beside it goes here, and whether this session turns
+to it is a section 7 fork.
 
 <example>
 ## 5. End state
@@ -143,23 +136,29 @@ The capacity initiative's next milestone records it: the process that coordinate
 The current structure is that shape: one serializer behind one versioned header, every writer inside it. The change flips a default inside that structure.
 </example>
 
-The proposal is the brief's `## At pickup` approach block. Sketch one
-approach that makes a genuinely different bet from it — a contained change
-against a structural one, the shape that makes the problem's class
-disappear rather than this instance, a different seam, a different owner
-of the state — so the two stress-test each other. A smaller slice, a split
-into more PRs or a reordering is a sequencing question, not a countershape:
-it settles nothing about the shape, and it goes on the recommendation line
-under the project's milestone rule where one exists — an initiative's
-sequence doc, or the project handoff skill's next-milestone review. Weigh
-proposal and countershape by how fully each solves the root problem;
-combine them where a hybrid removes the strongest objection. When the
-proposal wins, one clause says why the cheaper shape does not — that
-clause is what shows a structural change earns its cost at the current
-scale. The recommendation is the step the
-evidence in hand supports, said with the end state it faces; the consult
-is dispatched from it, and where the choice is genuinely a judgment call,
-say so.
+**One countershape; the design space belongs to the consult.** The
+proposal is the brief's `## At pickup` approach block. The countershape
+makes a different bet on the *shape* — contained against structural, the
+class against the instance, another seam, another owner of the state. A
+smaller slice, a split or a reorder is sequencing: it goes on the
+recommendation line under the project's milestone rule. When the proposal
+wins, one clause says why the cheaper shape does not; that clause is what
+shows a structural change earns its cost at the current scale. The
+recommendation is the step the evidence supports, facing the end state,
+and the consult is dispatched from it.
+
+<example>
+## 6. Countershape, trade-off, recommendation
+Exclude the three server-to-server callback routes from the proxy matcher, as the event route already is, so no body cap and no clone applies to them. The proposal raises the cap for one route; the countershape closes the class in one matcher line and a raw-bytes rewrite would still pass through the clone. Hybrid: exclusion for all three, raw bytes only for the route that parses megabytes before it checks its secret.
+Recommendation: the hybrid — accepts leaving two routes on base64 JSON · not a judgment call · one PR.
+</example>
+
+<example type="avoid">
+Countershape: ship reconciliation first as its own thin PR, then the read in a second.
+</example>
+
+The avoid case is a sequence, not a shape; it belongs on the recommendation
+line.
 
 **Route every question you are tempted to ask into one of three lanes:**
 

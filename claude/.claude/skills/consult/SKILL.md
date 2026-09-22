@@ -40,7 +40,7 @@ You are the lead. Fresh sessions ("voices") give independent takes on a problem 
 
    The template's design-bar section goes out as written — its lesson pointers are for the voice — whenever module shape or an interface is at stake; trim it only when the question genuinely isn't about code structure. Any rulebook this session is working under goes out beside them by path — the voice works to the same bar the work will be held to.
 
-   **When the position rests on data this session produced** — a production query, a log run, a session-history query, an eval result, a hand classification — the brief keeps its `## The data behind this position` section and the output's method item; [DATA-BLOCK.md](DATA-BLOCK.md) says what the section carries and why the voice judges the method before the conclusion. The query files and their raw outputs are saved in the scratchpad and cited by path, since a voice cannot judge a predicate it cannot read. A position with no such number deletes the section and the item.
+   **A position that rests on a number this session measured** keeps the template's data section and the method item, filled to [DATA-BLOCK.md](DATA-BLOCK.md) with the queries and raw outputs saved beside the brief; the voice judges the method before the conclusion. No such number: delete both.
 
    Done when a cold reader could act on the brief without this conversation, when nothing above the diagnosis brief's blind read states a conclusion, and when every count the position leans on has its query on disk.
 
