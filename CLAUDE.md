@@ -122,7 +122,7 @@ Additional routes beyond the feature docs above:
 
 - Auto-compaction settings: `docs/claude-autocompact.md`.
 - Dormant Claude `cd` read guard: `docs/bypass-cd-read-guard.md`.
-- The colleague's Mac mini (`ssh macmini`), including access etiquette:
+- The colleague's Mac mini (`ssh macmini2`), including access etiquette:
   `docs/macmini.md`.
 - My own office Mac mini (`ssh qiushi-mini`), reached over the company
   tailnet and kept in sync by `mini-sync`: `docs/qiushi-mini.md`.

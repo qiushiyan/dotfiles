@@ -95,6 +95,7 @@ alias devmanager="~/.config/scripts/dev-marswave-manager.sh"
 alias devengine="~/.config/scripts/dev-marswave-engine.sh"
 alias sshstaging="ssh marswave.staging"
 alias sshprod="ssh marswave.production"
+alias sshmini="ssh mini"
 
 # --------------------------------------------------------------------
 # Misc Tools

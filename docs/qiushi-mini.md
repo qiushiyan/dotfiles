@@ -9,7 +9,7 @@ collected 2026-09-22.
 
 | | |
 |---|---|
-| alias | `ssh qiushi-mini` — `Host qiushi-mini` in `~/.ssh/config` (gitignored; the address lives only there) |
+| alias | `ssh qiushi-mini` or `ssh mini` (`sshmini`) — `Host qiushi-mini mini` in `~/.ssh/config` (gitignored; the address lives only there) |
 | network | Tailscale, tailnet `planlab-ai.org.github`, node `qiushi-mini` (MagicDNS `qiushi-mini.tailf7adf1.ts.net`) |
 | LAN | `qiushi-mini.local` also works on the office Wi-Fi |
 | user | `qiushiyan` (uid 502, `admin` group, sudo **with password**) |

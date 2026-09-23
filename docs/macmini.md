@@ -1,4 +1,4 @@
-# Mac mini (`ssh macmini`)
+# Mac mini (`ssh macmini2`)
 
 > The steward host that ran here moved to `qiushi-mini` on 2026-09-22
 > (`docs/qiushi-mini.md` § Steward host); its files on this box were removed.
@@ -13,7 +13,7 @@ load-related before relying on it.
 
 | | |
 |---|---|
-| alias | `ssh macmini` — `Host macmini` in `~/.ssh/config` (gitignored; the address lives only there) |
+| alias | none — `ssh macmini2` (its tailnet name) or its address, via `Host macmini2 <address>` in `~/.ssh/config` (gitignored) |
 | network | Tailscale, node `macmini2`; direct peer connection, ~7 ms RTT from the laptop |
 | user | `qiushiyan` (uid 504, `admin` group, sudo **with password**) |
 | key | `~/.ssh/id_ed25519_macmini` (dedicated, no passphrase); installed in the mini's `authorized_keys` |
@@ -102,7 +102,7 @@ Not installed: uv, go, rust, tmux, nvim. Add here when they land.
 
 ## Next steps
 
-`claude` is installed but not logged in — first `ssh macmini` then `claude`
+`claude` is installed but not logged in — first `ssh macmini2` then `claude`
 to authenticate in the browser flow. Repos go in `/Volumes/T7/qiushiyan`.
 Consider stowing a zsh/tmux subset of these dotfiles once the minimal
 `.zshrc` starts to feel thin.
