@@ -15,12 +15,12 @@ The economics: your judgment at the ends — the spec before, the review after �
 Name the model on every cold voice, so the job records what ran whatever the provider's config holds that day. Resolve it from the user's words:
 
 ```sh
---with codex:gpt-6-sol           # the default: no voice named, or "codex"
---with codex:gpt-6-astra         # "astra"
+--with codex:gpt-6-astra         # the default: no voice named, or "codex"
+--with codex:gpt-6-sol           # "sol"
 --with claude:claude-opus-5-5    # "claude", "opus"
 --with claude:claude-fable-5-1   # "fable"
---with codex:gpt-6-sol:high      # effort only when the user asks: "sol on high"
---with codex:gpt-6-astra:high    # "astra on high"
+--with codex:gpt-6-astra:high    # effort only when the user asks: "astra on high"
+--with codex:gpt-6-sol:high      # "sol on high"
 ```
 
 A model ID the user spells out goes through as written.
@@ -38,7 +38,7 @@ A model ID the user spells out goes through as written.
 3. **Dispatch** with write intent, anchored to the baseline, 180-minute cap, as one background Bash task, the job named for the round (`delegate-r1`), and return once it is running — the task completing is the signal, and nothing the dispatch prints needs relaying:
 
    ```sh
-   envoy run delegate-r1 --with codex:gpt-6-sol --allow-write --baseline <sha> --prompt-file <prompt> --timeout-min 180
+   envoy run delegate-r1 --with codex:gpt-6-astra --allow-write --baseline <sha> --prompt-file <prompt> --timeout-min 180
    ```
 
    The voice is resolved per **Resolving the voice**. A worktree dispatch adds `--cwd <path>`. While it runs, keep discussing anything, but leave the delegate's tree alone — an edit there races it. If the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.

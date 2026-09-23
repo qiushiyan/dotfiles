@@ -15,12 +15,12 @@ You are the lead. Fresh sessions ("voices") give independent takes on a problem 
 Name the model on every cold voice, so the job records what ran whatever the provider's config holds that day. Resolve it from the user's words:
 
 ```sh
---with codex:gpt-6-sol           # the default: no voice named, or "codex"
---with codex:gpt-6-astra         # "astra"
+--with codex:gpt-6-astra         # the default: no voice named, or "codex"
+--with codex:gpt-6-sol           # "sol"
 --with claude:claude-opus-5-5    # "claude", "opus"
 --with claude:claude-fable-5-1   # "fable"
---with codex:gpt-6-sol:high      # effort only when the user asks: "sol on high"
---with codex:gpt-6-astra:high    # "astra on high"
+--with codex:gpt-6-astra:high    # effort only when the user asks: "astra on high"
+--with codex:gpt-6-sol:high      # "sol on high"
 ```
 
 A model ID the user spells out goes through as written. A warm voice (`@<job>/<member>`) keeps the model it started on.
@@ -62,19 +62,19 @@ A model ID the user spells out goes through as written. A warm voice (`@<job>/<m
 3. **Dispatch** as one job, 30-minute cap — each voice on its brief, one background Bash task, the job named for the round (`consult-r1`, then `consult-r2`), that finishes once; return as soon as it is running, since the task completing is the signal and nothing the dispatch prints needs relaying. Where the user names no voice the round is one turn on the default:
 
    ```sh
-   envoy run consult-r1 --with codex:gpt-6-sol --prompt-file <brief> --timeout-min 30
+   envoy run consult-r1 --with codex:gpt-6-astra --prompt-file <brief> --timeout-min 30
    ```
 
    Two voices buy what one cannot — independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names, resolved per **Resolving the voice**. When a codex and a Claude voice are both named:
 
    ```sh
-   envoy run consult-r1 --with codex:gpt-6-sol --with claude:claude-opus-5-5 --prompt-file <brief> --timeout-min 30
+   envoy run consult-r1 --with codex:gpt-6-astra --with claude:claude-opus-5-5 --prompt-file <brief> --timeout-min 30
    ```
 
    When the user gives the voices different jobs — one to judge the design, one to survey what exists — each voice takes its own brief, attached as `<voice>=<brief>`, and it is still one job with one collect:
 
    ```sh
-   envoy run consult-r1 --with claude:claude-fable-5-1=<critique-brief> --with codex:gpt-6-sol=<survey-brief> --timeout-min 30
+   envoy run consult-r1 --with claude:claude-fable-5-1=<critique-brief> --with codex:gpt-6-astra=<survey-brief> --timeout-min 30
    ```
 
    A voice with its own job gets its own file: an assignment paragraph inside a shared brief is read past, and the voice does the other's work. `--prompt-file` stays the default for any voice without a file of its own.
@@ -97,4 +97,4 @@ A model ID the user spells out goes through as written. A warm voice (`@<job>/<m
 
 6. **Round 2** has real triggers, beyond "depth warrants it". In `diagnosis`: **the falsifying observation coming back** — run the cheapest one the voice named, then send what you saw; that is the round where a hypothesis dies or survives, and it is worthless before the observation exists. In either mode, where a wrong answer would cost a whole implementation cycle, **withhold across two turns** — this is the one home of that trigger. In `diagnosis` round 1 carries the evidence with our hypothesis withheld entirely and round 2 sends it in; in `approach` round 1 carries the goal, the constraints and the reading list and returns the voice's own sketch, and round 2 sends our position in. Either way the voice judges what arrives against a reading it has already committed and cannot now un-see. In `approach`: a split fan-out, where the voices genuinely conflicted — send both positions back and ask each to argue against the other's. Another trigger arrives from outside: `/write-spec` continues a finished round with its spec as the updated proposal under critique — a legitimate round 2, same resume mechanics. Either way the payload is the host position or updated proposal, sent into the same session(s) for critique-and-confirm — the voices keep their round-1 context, where a fresh session would restart from zero. Done when the trigger that opened the round is answered: the observation reported, the withheld hypothesis judged, or the conflict resolved to one position or an explicit fork. One voice or a whole fan-out continues the same way — still one task, one collect — with the `resume:` command collection printed: a fresh name (`consult-r2`) and the payload as its prompt file.
 
-7. **Synthesize** for the user, who did not watch the round and decides from this message alone. Lead with what needs them: each unresolved judgment call as its own standalone question — why it matters now, what it means in plain product terms, the options with what each implies for the person using the product, and your recommendation — with none of the vocabulary the round built; a synthesis that ends on "your earlier questions stand as before" sends the user back to reconstruct them. Then where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and — when the round carried the tenets item — the tenets adopted and where they were written. A `diagnosis` round leads with the cause — confirmed, refuted, or replaced, what settled it, and the blind read's delta, including when it converged — before anything about the fix. Name the job in the synthesis — the latest round, and for a fan-out its members (`consult-r1/codex-gpt-6-sol`, `consult-r1/claude-claude-opus-5-5`; after a round 2, `consult-r2/codex-gpt-6-sol`): the sessions stay continuable, and when /review later covers the implementation of this design, its default seats one of those voices warm (`--with @consult-r2/codex-gpt-6-sol`) beside a cold one, so the synthesis also says which voice's position the design followed.
+7. **Synthesize** for the user, who did not watch the round and decides from this message alone. Lead with what needs them: each unresolved judgment call as its own standalone question — why it matters now, what it means in plain product terms, the options with what each implies for the person using the product, and your recommendation — with none of the vocabulary the round built; a synthesis that ends on "your earlier questions stand as before" sends the user back to reconstruct them. Then where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and — when the round carried the tenets item — the tenets adopted and where they were written. A `diagnosis` round leads with the cause — confirmed, refuted, or replaced, what settled it, and the blind read's delta, including when it converged — before anything about the fix. Name the job in the synthesis — the latest round, and for a fan-out its members (`consult-r1/codex-gpt-6-astra`, `consult-r1/claude-claude-opus-5-5`; after a round 2, `consult-r2/codex-gpt-6-astra`): the sessions stay continuable, and when /review later covers the implementation of this design, its default seats one of those voices warm (`--with @consult-r2/codex-gpt-6-astra`) beside a cold one, so the synthesis also says which voice's position the design followed.
