@@ -51,10 +51,10 @@ Done when every kept lesson carries why you believe it and how sure you are, and
 ## 4 — Write the brief
 
 ```sh
-brief new <slug> --pickup build|design [--domain <folder> | --cluster <workstream>]
+brief new <slug> --pickup build|design [--domain <folder>]
 ```
 
-prints the file it scaffolded, folder created, with `anchored:` and `base:` already stamped from the repo — leave those two alone and fill the rest. `--domain` is for a handoff folder kept in domain folders (it has a root `README.md`; the project's own handoff skill says which folder, and `brief new` lists them when it is missing); a flat folder takes `--cluster`.
+prints the file it scaffolded, folder created, with `anchored:` and `base:` already stamped from the repo — leave those two alone and fill the rest. `--domain` names the folder when the handoff folder keeps domain folders (it has a root `README.md`; the project's own handoff skill says which, and `brief new` lists them when it is missing).
 
 **`--pickup` names how the next session's first turn runs**, and `brief start` refuses to launch a brief without it. `build` only when the approach is already reviewed — a spec the user approved, a consult record, a PR to continue; otherwise `design`. The gate each value fires is [`pickup/build.md`](pickup/build.md) / [`pickup/design.md`](pickup/design.md): the receiving session ends its first turn on that gate's contract — a re-grounding written for the user who has lost the thread, the premises checked, the next move named (usually a consult) — before any edit. Neither gate skips the consult — a brief whose question the checks have already answered closes instead — and `build` only narrows what it asks. Read the gate you chose before writing `## At pickup`, since that section is its input.
 
@@ -72,7 +72,6 @@ goal: <the next session's goal in a phrase, with its 2–3 strands. One
 run: /<onboarding-skill> <route>
 anchored: <stamped — leave>
 base: <stamped — leave>
-cluster: <workstream>
 pickup: build | design
 paths:
   - <repo-relative path>
@@ -96,7 +95,6 @@ Head rules — each is the residue of a real failure:
 - `collides-with:` names **sibling briefs**, `<slug> · <why>`; a collision with no slug (a path predicate, a person's strand) is written as prose. `none` costs nothing and says you looked.
 - `paths:` lists the repo-relative paths this brief's claims live in, as narrow as the work: `brief drift` lists every PR that landed under them since the anchor and `brief related` reads them back before it, so a whole app directory returns every PR the repository merged. In `## At pickup`, cite each claim's files by repo path, or its symbols, so drift can attribute a PR to that claim.
 - `run:` is the invocation the pickup fires: the project's onboarding skill plus its short route. Omit the field where the project has none — the goal then stands as the opening directive itself.
-- `cluster:` joins a flat folder's workstreams; with no siblings it is load for nothing. A brief in a domain folder carries no `cluster:` — the folder it sits in is its domain.
 - `pickup:` is `build` or `design` — the test is above; the sweep may flip it when a design brief's approach settles.
 
 Body rules:
@@ -188,6 +186,6 @@ the review. What stays: the harvest (step 3) and the body's four sections,
 the point-rather-than-pre-chew rule, repo-relative paths, the ~150-line
 ceiling, and the head's fields kept to what a continuation can fill
 (`goal`, `paths`, `rests-on`, `blocked-by`, `collides-with`; no `run`,
-`anchored`, `base`, `cluster` or `pickup`). Done when the file at the
+`anchored`, `base` or `pickup`). Done when the file at the
 destination reads cold as the first thing a session with none of this
 context opens.

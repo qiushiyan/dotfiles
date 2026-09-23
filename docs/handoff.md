@@ -71,9 +71,9 @@ sibling of `~/dev/.worktrees`. Living outside the project's own checkouts keeps
 one brief visible from every worktree, whatever branch it is on.
 
 A project folder takes one of two shapes, and the folder itself says which.
-Flat: `<slug>.md` files and one `_clusters.md` note. With a root `README.md`:
-briefs in domain folders, `<domain>/<slug>.md`, the root README holding the
-order and each domain's README what its briefs are about — Planlab's domains
+Flat: `<slug>.md` files and no notes, small enough to read whole. With a root
+`README.md`: briefs in domain folders, `<domain>/<slug>.md`, the root README
+holding the order and each domain's README what its briefs are about — Planlab's domains
 are its onboarding routes. A folder that is a git clone is shared across
 machines and teammates (Planlab's is `planlab-ai/handoffs`, cloned at the same
 path on the Mac mini): `brief start` pulls it first, and the handoff and sweep
@@ -86,8 +86,8 @@ live successor needs a unique passage          → brief retire <slug> --reason 
 premise died but useful work remains            → rewrite forward, then delete the old brief
 ```
 
-The kept `.md.done` form is the exception, not the archive. The notes
-(`_clusters.md`, or the READMEs) name live briefs and their order; retirement
+The kept `.md.done` form is the exception, not the archive. The READMEs name
+live briefs and their order; retirement
 removes the slug from them in the same change.
 
 **Honesty floor:** a session that taught nothing transferable hands off state
