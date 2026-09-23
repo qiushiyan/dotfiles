@@ -9,7 +9,7 @@ argument-hint: [nothing on a feature branch → close out this branch; `folder` 
 
 **Defer to the project first.** If the repo ships its own sweep skill (check `.claude/skills/` for one that names this skill), run that: it carries what this skill cannot know — where the project keeps status, how it reads production, what a merged PR owes besides its brief — and points back here for the passes, verdicts and retirement below. Its additions run after step 1 of whichever pass fires, and its report section follows this skill's report.
 
-Handoff briefs live under `~/dev/.handoffs/<project>/`, one per next session, each written by a session that saw only its own PR. What a brief *asks for* usually survives; what it *says about the world* drifts. The sweep owns the cross-brief view — a premise that shipped, a gate that discharged, two briefs on one seam — and keeps the folder a **task board**: its notes (§ The folder note) plus the listing say what to do next, and finished work is gone. A folder that is a git clone is shared with other machines and teammates, so a pass that wrote ends on `brief sync`.
+Handoff briefs live under `~/dev/.handoffs/<project>/`, one per next session, each written by a session that saw only its own PR. What a brief *asks for* usually survives; what it *says about the world* drifts. The sweep owns the cross-brief view — a premise that shipped, a gate that discharged, two briefs on one seam — and keeps the folder a **task board**: its notes (§ The folder note) plus the listing say what to do next, and finished work is gone.
 
 ## Pick the pass
 
@@ -19,11 +19,12 @@ Handoff briefs live under `~/dev/.handoffs/<project>/`, one per next session, ea
 | `folder`, or nothing while on the default branch and no branch named | **reconcile** — the whole folder against the repo |
 | a branch/slug, or nothing while on a feature branch | **closeout** — that branch's briefs alone |
 
-Closeout takes the branch that landed: the argument, else the one the user's words name, else `git branch --show-current`. Name the pass before anything else. Four rules hold across all of them:
+Closeout takes the branch that landed: the argument, else the one the user's words name, else `git branch --show-current`. Name the pass before anything else. Five rules hold across all of them:
 
 - **Scope is the set of briefs the pass names, plus every brief whose listing row reads `#N merged`.** Finished work is finished wherever it sits, so a merged row is a second anchor, carried through the same steps. Any other brief *file* outside the scope is left unread and unedited whatever drift the listing shows; the notes are the pass's own, whatever the scope.
 - **State comes from the repo.** The listing's join resolves PRs and branches through the slug and knows nothing of file sets or production, and every miss reads finished work as nothing — so `git worktree list`, `gh pr list --state open`, and `git diff --stat <default>...<branch>` are read, not inferred.
 - **Write in the same turn; the human's turn is for the significant verdicts only** (§ What waits). A verdict the repo already backs — a merged branch deletes, a discharged gate is noted, a retired name leaves the note — is applied as soon as it is reached, and the report is the record of what was written.
+- **Work on a current copy, and publish what you wrote.** A handoff folder that is a git clone is written from other machines and by teammates. Pull it before the first read — `git -C <folder> pull --ff-only`, the command `brief`'s header prints — and when the pull refuses, go on and say in the report that the copy may be behind. A pass that wrote ends on `brief sync`; a folder kept on this machine answers that there is nothing to publish.
 - **Brief prose follows the handoff skill** — `~/.claude/skills/handoff/SKILL.md` § 4, or the repo's own handoff skill where it ships one. Read it when a verdict writes brief text.
 
 ## Closeout
@@ -57,7 +58,7 @@ A branch landed and its session is closing: its brief is spent, and the briefs t
 
 4. **Verdicts** (§ Verdicts): the anchor deletes when its work landed and rewrites when its premise died; each admitted brief gets a field to correct, a note, or leave.
 
-5. **Write** per § Verdicts, references before files, holding back only what § What waits names. Re-anchor every brief you edited and `brief check <slug>` each; a bare `brief check` warning on a brief you did not touch goes in the report. Then `brief sync`, which publishes a shared folder and says so for one kept on this machine.
+5. **Write** per § Verdicts, references before files, holding back only what § What waits names. Re-anchor every brief you edited and `brief check <slug>` each; a bare `brief check` warning on a brief you did not touch goes in the report. Then `brief sync`.
    Done when `brief check <slug>` is clean on every brief you touched and `brief sync` has printed its outcome.
 
 6. **Remove the checkout.** Read the cleanup and the folder's order from the file first:

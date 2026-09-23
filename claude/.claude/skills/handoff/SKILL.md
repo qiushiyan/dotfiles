@@ -54,7 +54,7 @@ Done when every kept lesson carries why you believe it and how sure you are, and
 brief new <slug> --pickup build|design [--domain <folder> | --cluster <workstream>]
 ```
 
-prints the file it scaffolded, folder created, with `anchored:` and `base:` already stamped from the repo — leave those two alone and fill the rest. A project whose handoff folder has a root `README.md` keeps its briefs in domain folders: `--domain` names the folder, the project's own handoff skill says which one, and `brief new` lists the folders when it is left out. A flat folder takes `--cluster` instead.
+prints the file it scaffolded, folder created, with `anchored:` and `base:` already stamped from the repo — leave those two alone and fill the rest. `--domain` is for a handoff folder kept in domain folders (it has a root `README.md`; the project's own handoff skill says which folder, and `brief new` lists them when it is missing); a flat folder takes `--cluster`.
 
 **`--pickup` names how the next session's first turn runs**, and `brief start` refuses to launch a brief without it. `build` only when the approach is already reviewed — a spec the user approved, a consult record, a PR to continue; otherwise `design`. The gate each value fires is [`pickup/build.md`](pickup/build.md) / [`pickup/design.md`](pickup/design.md): the receiving session ends its first turn on that gate's contract — a re-grounding written for the user who has lost the thread, the premises checked, the next move named (usually a consult) — before any edit. Neither gate skips the consult — a brief whose question the checks have already answered closes instead — and `build` only narrows what it asks. Read the gate you chose before writing `## At pickup`, since that section is its input.
 
@@ -154,7 +154,7 @@ brief                 # your row beside its siblings
 brief sync            # publish, when the folder is shared
 ```
 
-The listing is the half you cannot get by re-reading your own file: it renders what the file only claims — the goal as a cold reader meets it, the gates, the collisions — and the row either reads cold or it doesn't. A handoff folder that is a git clone is read by other machines and teammates, and they see the brief only once `brief sync` prints `published`; a folder kept on this machine answers that there is nothing to publish. `conflicted` names the file another machine changed — merge it as the line says, then sync again.
+The listing is the half you cannot get by re-reading your own file: it renders what the file only claims — the goal as a cold reader meets it, the gates, the collisions — and the row either reads cold or it doesn't. A handoff folder that is a git clone is read by other machines and teammates, who see the brief only once `brief sync` prints `published`.
 
 ## 5 — Close
 
