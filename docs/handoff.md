@@ -77,8 +77,8 @@ order and each domain's README what its briefs are about — Planlab's domains
 are its onboarding routes. A folder that is a git clone is shared across
 machines and teammates (Planlab's is `planlab-ai/handoffs`, cloned at the same
 path on the Mac mini): `brief start` pulls it first, and the handoff and sweep
-skills end on `brief sync`. Evidence over 1 MB and nested repositories stay on
-the machine that made them.
+skills end on `brief sync`. Evidence over 256 KB, nested repositories and
+briefs `brief check` refuses stay on the machine that made them.
 
 ```text
 work landed + durable knowledge has an owner → brief delete <slug>

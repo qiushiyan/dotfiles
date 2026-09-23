@@ -218,6 +218,10 @@ Planlab's handoff briefs are their own clone, at the path `brief` derives from
 this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
 `brief start` pulls it before a pickup; `git -C ~/dev/.handoffs/planlab-main
 pull --ff-only` refreshes it for a session that reads the files directly.
+Where a brief lands and what `brief sync` publishes are the binary's rules,
+so after a `brief` change on the laptop run `mini-sync` before the mini
+writes to the clone rather than waiting for the timer: an older binary files
+a brief where the new one reads another slug.
 
 ## Sync
 

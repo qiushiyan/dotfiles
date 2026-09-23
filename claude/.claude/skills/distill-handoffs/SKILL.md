@@ -61,9 +61,10 @@ A branch landed and its session is closing: its brief is spent, and the briefs t
 5. **Write** per § Verdicts, references before files, holding back only what § What waits names. Re-anchor every brief you edited and `brief check <slug>` each; a bare `brief check` warning on a brief you did not touch goes in the report. Then `brief sync`.
    Done when `brief check <slug>` is clean on every brief you touched and `brief sync` has printed its outcome.
 
-6. **Remove the checkout.** Read the cleanup and the folder's order from the file first:
+6. **Remove the checkout.** Step 5 moved the order the file recorded, so write it again, then read the cleanup and the order from it:
 
    ```bash
+   brief closeout <branch> --json > "$S/closeout.json"
    jq -r '.cleanup[]? | (.command // ("hold: " + .hold)) + (if .note then "   # " + .note else "" end)' "$S/closeout.json"
    jq -r '.next[] | .command + (if .gated then "  (gated)" else "" end)' "$S/closeout.json"   # next first
    ```
@@ -112,7 +113,7 @@ Four verdicts spend a judgment the repo cannot back, and those alone wait for th
 
 - **rewrite** — a successor brief is a new goal, and a goal is a design;
 - **keep** over delete — a `kept:` retirement;
-- **delete** of a brief whose branch does not read merged;
+- **delete** of a brief whose branch does not read merged — its release also deletes the branch on origin when `brief start` published one (`git push origin --delete <slug>`), since a branch there reads `started` on every machine;
 - a change to the **order** beyond slotting an unplaced brief or dropping a retired name, and a cluster or domain coined or removed.
 
 ## Verdicts
