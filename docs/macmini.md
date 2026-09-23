@@ -13,8 +13,8 @@ load-related before relying on it.
 
 | | |
 |---|---|
-| alias | `ssh macmini-shared` — `Host macmini-shared` in `~/.ssh/config` (gitignored; the address lives only there) |
-| network | Tailscale, node `macmini2`; direct peer connection, ~7 ms RTT from the laptop |
+| alias | `ssh macmini-shared` — my own ssh name for this box, a `Host macmini-shared` entry in `~/.ssh/config` (gitignored; the address lives only there) |
+| network | Tailscale node `macmini2`: the owner's name for the machine on the company tailnet, which only they or a tailnet admin can change. It resolves to the same address the ssh entry names, so `macmini-shared` and `macmini2` are one machine. Direct peer connection, ~7 ms RTT from the laptop |
 | user | `qiushiyan` (uid 504, `admin` group, sudo **with password**) |
 | key | `~/.ssh/id_ed25519_macmini` (dedicated, no passphrase); installed in the mini's `authorized_keys` |
 | host key | ECDSA `SHA256:bRe2KmbVDU5TGBIGu6WI+IimLZp96P2mS1DUVaphU9g` |
@@ -58,8 +58,8 @@ Neighbours on T7: `autoandy/`, `planlab-build/`, `andy/`, `max/` — leave alone
 - Two VMs are bridged on `bridge100` (192.168.64.0/24) — Docker's or the
   `container` CLI's.
 - Also present: a Homebrew `tailscaled` LaunchDaemon *and* Tailscale.app (two
-  `utun`s with two 100.x addresses; `macmini2` / the one in `~/.ssh/config` is
-  the app's), Qualys cloud agent, a `pfctl` daemon of the owner's.
+  `utun`s with two 100.x addresses; the app's is node `macmini2`, the one
+  `macmini-shared` connects to), Qualys cloud agent, a `pfctl` daemon of the owner's.
 - Other human accounts: `andy`, `max`. SMB Public folders are shared with
   guest access — don't put anything private in `~/Public`.
 
