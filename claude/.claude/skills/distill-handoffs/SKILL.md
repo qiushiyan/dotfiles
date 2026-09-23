@@ -9,7 +9,7 @@ argument-hint: [nothing on a feature branch → close out this branch; `folder` 
 
 **Defer to the project first.** If the repo ships its own sweep skill (check `.claude/skills/` for one that names this skill), run that: it carries what this skill cannot know — where the project keeps status, how it reads production, what a merged PR owes besides its brief — and points back here for the passes, verdicts and retirement below. Its additions run after step 1 of whichever pass fires, and its report section follows this skill's report.
 
-Handoff briefs live under `~/dev/.handoffs/<project>/`, one per next session, each written by a session that saw only its own PR. What a brief *asks for* usually survives; what it *says about the world* drifts. The sweep owns the cross-brief view — a premise that shipped, a gate that discharged, two briefs on one seam — and keeps the folder a **task board**: `_clusters.md` plus the listing say what to do next, and finished work is gone.
+Handoff briefs live under `~/dev/.handoffs/<project>/`, one per next session, each written by a session that saw only its own PR. What a brief *asks for* usually survives; what it *says about the world* drifts. The sweep owns the cross-brief view — a premise that shipped, a gate that discharged, two briefs on one seam — and keeps the folder a **task board**: its notes (§ The folder note) plus the listing say what to do next, and finished work is gone. A folder that is a git clone is shared with other machines and teammates, so a pass that wrote ends on `brief sync`.
 
 ## Pick the pass
 
@@ -21,7 +21,7 @@ Handoff briefs live under `~/dev/.handoffs/<project>/`, one per next session, ea
 
 Closeout takes the branch that landed: the argument, else the one the user's words name, else `git branch --show-current`. Name the pass before anything else. Four rules hold across all of them:
 
-- **Scope is the domain the pass names, plus every brief whose listing row reads `#N merged`.** Finished work is finished wherever it sits, so a merged row is a second anchor, carried through the same steps. Any other brief *file* outside the domain is left unread and unedited whatever drift the listing shows; the folder note is the pass's own, whatever the domain.
+- **Scope is the set of briefs the pass names, plus every brief whose listing row reads `#N merged`.** Finished work is finished wherever it sits, so a merged row is a second anchor, carried through the same steps. Any other brief *file* outside the scope is left unread and unedited whatever drift the listing shows; the notes are the pass's own, whatever the scope.
 - **State comes from the repo.** The listing's join resolves PRs and branches through the slug and knows nothing of file sets or production, and every miss reads finished work as nothing — so `git worktree list`, `gh pr list --state open`, and `git diff --stat <default>...<branch>` are read, not inferred.
 - **Write in the same turn; the human's turn is for the significant verdicts only** (§ What waits). A verdict the repo already backs — a merged branch deletes, a discharged gate is noted, a retired name leaves the note — is applied as soon as it is reached, and the report is the record of what was written.
 - **Brief prose follows the handoff skill** — `~/.claude/skills/handoff/SKILL.md` § 4, or the repo's own handoff skill where it ships one. Read it when a verdict writes brief text.
@@ -30,7 +30,7 @@ Closeout takes the branch that landed: the argument, else the one the user's wor
 
 A branch landed and its session is closing: its brief is spent, and the briefs that named it may have moved.
 
-1. **Establish the branch and prove it landed.** `brief` (the listing) first: every row reading `#N merged` is a second anchor for this pass. Then `brief closeout <branch> --json` returns the anchor (the brief named `<branch>` or `review-<branch>`, live or retired, or `null` when none was written), the landed state from gh, the changed files, and every live brief that might belong, each with its reasons: `relation` (a lineage field on either side names the other), `path` (its `paths:` overlap the changed files), `cluster`, `run`. On a busy folder the JSON runs past the 10 k the harness shows you, so read it from a file:
+1. **Establish the branch and prove it landed.** `brief` (the listing) first: every row reading `#N merged` is a second anchor for this pass. Then `brief closeout <branch> --json` returns the anchor (the brief named `<branch>` or `review-<branch>`, live or retired, or `null` when none was written), the landed state from gh, the changed files, and every live brief that might belong, each with its reasons: `relation` (a lineage field on either side names the other), `path` (its `paths:` overlap the changed files), `cluster`, and — only beside one of those — `domain` (the same domain folder) and `run`. On a busy folder the JSON runs past the 10 k the harness shows you, so read it from a file:
 
    ```bash
    S=<your scratchpad directory>
@@ -42,36 +42,41 @@ A branch landed and its session is closing: its brief is spent, and the briefs t
    ```
    # the shape — not today's folder
    {"anchor":"feat/client-data-corpus-by-default","merged":true,"pr":5941,"files":26}
-   feat/client-data-corpus-reuse-on-publish   cluster+path+prose+relation+run   its rests-on: names the anchor (line 21)
-   infra/loopy-master-disk-throughput         cluster+path+relation             anchor's collides-with names it; its rests-on: names the anchor (line 27)
+   feat/client-data-corpus-reuse-on-publish   domain+path+prose+relation+run   its rests-on: names the anchor (line 21)
+   infra/loopy-master-disk-throughput         domain+path+relation             anchor's collides-with names it; its rests-on: names the anchor (line 27)
    fix/ux-cut-turn-honesty                    path
    ```
 
    The path lists behind a `path` reason are in the file when step 2 needs them. When gh reads the branch unmerged but the invocation says it landed, run the command once more — a merge clicked seconds earlier reads open — then do steps 2–4 on what it shows and hold only the writes; the report ends with `/distill-handoffs <branch>` to run once the PR reads merged.
    Done when the landed state is read and the anchor is resolved or its absence explained.
 
-2. **Judge the domain from the reasons, before opening any body.** `relation` admits. `path` admits when the overlap is the anchor's subject rather than plumbing both touch — read the overlapping files, not their count. `cluster` or `run` alone excludes: a cluster is a workstream, and on a busy folder it names half the briefs. Write the domain as a list, one reason per line; everything else is out of scope from here.
+2. **Judge the scope from the reasons, before opening any body.** `relation` admits. `path` admits when the overlap is the anchor's subject rather than plumbing both touch — read the overlapping files, not their count. `cluster` alone excludes: a cluster is a workstream, and on a busy folder it names half the briefs; `domain` and `run` only ever ride beside another reason. Write the scope as a list, one reason per line; everything else is out of scope from here.
    Done when every candidate carries admit or exclude with its reason.
 
 3. **Read the anchor and each admitted brief whole; `brief drift` the admitted ones.** The payload is what this branch made *moot* — a premise it shipped, a gate it discharged, a collision it settled — as much as what it falsified.
 
 4. **Verdicts** (§ Verdicts): the anchor deletes when its work landed and rewrites when its premise died; each admitted brief gets a field to correct, a note, or leave.
 
-5. **Write** per § Verdicts, references before files, holding back only what § What waits names. Re-anchor every brief you edited and `brief check <slug>` each; a bare `brief check` warning on a brief you did not touch goes in the report.
-   Done when `brief check <slug>` is clean on every brief you touched.
+5. **Write** per § Verdicts, references before files, holding back only what § What waits names. Re-anchor every brief you edited and `brief check <slug>` each; a bare `brief check` warning on a brief you did not touch goes in the report. Then `brief sync`, which publishes a shared folder and says so for one kept on this machine.
+   Done when `brief check <slug>` is clean on every brief you touched and `brief sync` has printed its outcome.
 
-6. **Report.** Short prose: what landed, in a line; the anchor's verdict and what was written for it; per admitted brief, what moved and the edit made; the `_clusters.md` change; the count of briefs out of scope and unread; then, under their own heading, the items that wait, each with the one word that releases it. A pass with nothing waiting says so. End on what the user would otherwise come back to ask — the same file holds both:
+6. **Remove the checkout.** Read the cleanup and the folder's order from the file first:
 
    ```bash
-   jq -r '.cleanup[]? | .command // ("hold: " + .hold)' "$S/closeout.json"          # what the landed branch leaves behind; brief runs none of it
-   jq -r '.next[] | .command + (if .gated then "  (gated)" else "" end)' "$S/closeout.json"   # the folder's order, next first
+   jq -r '.cleanup[]? | (.command // ("hold: " + .hold)) + (if .note then "   # " + .note else "" end)' "$S/closeout.json"
+   jq -r '.next[] | .command + (if .gated then "  (gated)" else "" end)' "$S/closeout.json"   # next first
    ```
+
+   A `gwt remove` line is a verdict the repo backs, so run it without asking: as the pass's last tool call, because it can delete the session's working directory, and from the checkout its note names when it names one (`cd <path> && gwt remove …`). gwt itself refuses a dirty, untracked or locked checkout. Whatever it refuses, any `hold`, and any line step 5 did not apply stay for the user.
+   Done when the `gwt remove` JSON is read, or the cleanup has no such line.
+
+7. **Report.** Short prose: what landed, in a line; the anchor's verdict and what was written for it; per admitted brief, what moved and the edit made; the note changes and the `brief sync` outcome; the count of briefs out of scope and unread; then, under their own heading, the items that wait, each with the one word that releases it. A pass with nothing waiting says so. End on what the user would otherwise come back to ask: what gwt removed or why it refused, the cleanup left to them, then the `next` commands.
 
 ## Reconcile
 
 The periodic pass over everything, every few days or after a busy week. Most briefs come out untouched. A folder of one or two briefs has no cross-brief view to derive — steps 1 and 3 still run, and the report is the verdicts alone.
 
-1. **State.** `brief` and `brief --json` join every brief against the repo and decorate each gate with its PR's state; then the reads the join is too shallow for (the rule above). The listing closes on what the folder owes — an undefined cluster, a retired or unknown slug named in the note, a cluster with no live brief, a live brief nobody placed in the order. Those are derived, so they are the worklist.
+1. **State.** `brief` and `brief --json` join every brief against the repo and decorate each gate with its PR's state; then the reads the join is too shallow for (the rule above). The listing closes on what the folder owes — a retired or unknown slug a note names, a live brief nobody placed in the order, an undefined or empty cluster, a domain folder with no README. Those are derived, so they are the worklist.
    Done when every branch or PR the folder implies has a state you read.
 
 2. **Read**, yourself — a delegated summary drops the file and path sets collisions are found by. Every brief's head; whole, every brief whose state moved (merged, PR opened, gate discharged, non-zero drift).
@@ -80,14 +85,14 @@ The periodic pass over everything, every few days or after a busy week. Most bri
    - a merged branch is finished work → delete (§ Retirement);
    - a legacy `.md.done` without a `kept:` stamp → judge it once under § Retirement, delete or stamp;
    - each `blocked-by` is a claim about the world on the day it was written, and the world discharges gates quietly — verify each against the repo;
-   - a brief with no cluster needs one; a cluster whose last brief left leaves the note with its paragraph;
+   - in a flat folder, a brief with no cluster needs one; a cluster or domain whose last brief left loses its paragraph, and an emptied domain folder its README;
    - `brief drift <slug>` on every non-zero drift, read for the instructions it makes moot as much as the claims it falsifies;
    - step 1's `--stat` file sets against the paths each brief names — a branch grows into a collision with no brief changing.
    Done when every brief carries a verdict.
 
-4. **Write** per § Verdicts, holding back only what § What waits names. Done when every touched brief carries a fresh anchor and `brief check` is clean.
+4. **Write** per § Verdicts, holding back only what § What waits names, then `brief sync`. Done when every touched brief carries a fresh anchor, `brief check` is clean and `brief sync` has printed its outcome.
 
-5. **Report.** The refresher is the deliverable, written for someone who wrote these documents and no longer remembers them: what each cluster is about; per brief, its goal in a sentence and its state; the collisions and the order they imply; per brief, **rewrote**, **noted**, **deleted**, or **left** — and, under their own heading, the verdicts that wait for the human with the one word that releases each.
+5. **Report.** The refresher is the deliverable, written for someone who wrote these documents and no longer remembers them: what each cluster or domain is about; per brief, its goal in a sentence and its state; the collisions and the order they imply; per brief, **rewrote**, **noted**, **deleted**, or **left** — and, under their own heading, the verdicts that wait for the human with the one word that releases each.
 
 ## Question-led
 
@@ -95,7 +100,7 @@ The periodic pass over everything, every few days or after a busy week. Most bri
 
 - Read every brief whole; a partial read yields a confident map of the wrong shape, and the map is what the question asks.
 - Verify what the answer turns on — a gate said to be discharged, a status paragraph, a quoted number — against the repo, and for running behaviour against production. The briefs are the documents the human is asking you to doubt.
-- Derive only the cross-brief view the question needs: clusters, collisions from the diffs rather than the declared fields, the gates, the order those imply. Weigh the note's ordering properties rather than re-ranking from scratch, and treat any state it asserts as a claim the reconcile pass measures.
+- Derive only the cross-brief view the question needs: clusters or domains, collisions from the diffs rather than the declared fields, the gates, the order those imply. Weigh the note's ordering properties rather than re-ranking from scratch, and treat any state it asserts as a claim the reconcile pass measures.
 - Answer plainly, "no" included, naming what would change the answer and what you could not verify.
 
 Then run Reconcile steps 3–5, which the answer usually moves; the report leads with the answer and carries the verdicts under it.
@@ -107,7 +112,7 @@ Four verdicts spend a judgment the repo cannot back, and those alone wait for th
 - **rewrite** — a successor brief is a new goal, and a goal is a design;
 - **keep** over delete — a `kept:` retirement;
 - **delete** of a brief whose branch does not read merged;
-- a change to the note's **order** beyond slotting an unplaced brief or dropping a retired name, and a cluster coined or removed.
+- a change to the **order** beyond slotting an unplaced brief or dropping a retired name, and a cluster or domain coined or removed.
 
 ## Verdicts
 
@@ -118,25 +123,25 @@ Four, and each is a fact the sweep found, not a design it chose — the receivin
 - **Note** — the edges drifted: a discharged gate, a collision that appeared, a measurement already paid for, folded into the section it bears on as the case rather than the verdict. A gate on a production read is discharged only by a read you ran with the project's own production-reading skills; otherwise note the merge and leave the gate — "deployed" in the invocation is the release, not the read. A boundary move is written into both briefs, so neither session learns of it from the other's absence.
 - **Leave** — nothing moved.
 
-Writing order: references first (`_clusters.md`, the sibling head fields the CLI lists), then the file, then `brief anchor <slug> --by sweep` on every brief edited — an edited brief on its old anchor sends the next session to re-run drift you already resolved. `brief set <slug> <key> <value>` rewrites `pickup`, `cluster` or `run`; a lineage list (`rests-on`, `blocked-by`, `collides-with`) is edited in the file, one `  - ` item at a time, and `brief check <slug>` proves the head still parses before anything else is touched.
+Writing order: references first (the notes, the sibling head fields the CLI lists), then the file, then `brief anchor <slug> --by sweep` on every brief edited — an edited brief on its old anchor sends the next session to re-run drift you already resolved. `brief set <slug> <key> <value>` rewrites `pickup`, `cluster` or `run`, and `brief mv <slug> --domain <folder>` moves a brief to another domain folder; a lineage list (`rests-on`, `blocked-by`, `collides-with`) is edited in the file, one `  - ` item at a time, and `brief check <slug>` proves the head still parses before anything else is touched.
 
 ## Retirement
 
 A brief is a view onto durable artifacts — the PR, the docs the sync pass updated, the issue or spec record. Once the work lands the view has nothing left to show, so:
 
-- **Delete** — `brief delete <slug>`, exact slug, live or retired — once you can name the durable home the report will cite. It refuses while a head field or `_clusters.md` still names the slug: amend the note, drop the sibling items (a `supersedes:` entry naming a deleted brief points at nothing), fold any lesson a successor still needs into the successor's body, then delete. Read a live successor's lineage before deleting what it names — once a referrer is gone the reference report is silent about it. An `.evidence/` dir stays behind on purpose: the repo's docs cite these by path, so grep `docs/` for `.evidence` before removing one by hand.
+- **Delete** — `brief delete <slug>`, exact slug, live or retired — once you can name the durable home the report will cite. It refuses while a head field or a note still names the slug: amend the note, drop the sibling items (a `supersedes:` entry naming a deleted brief points at nothing), fold any lesson a successor still needs into the successor's body, then delete. Read a live successor's lineage before deleting what it names — once a referrer is gone the reference report is silent about it. An `.evidence/` dir stays behind on purpose: the repo's docs cite these by path, so grep `docs/` for `.evidence` before removing one by hand.
 - **Keep** — the one exception: a named live successor depends on a specific passage unique to this brief, and no durable owner can take that passage without loss. Folding is still preferred; keeping is for when folding would lose it. `brief retire <slug> --reason "kept: <successor-slug> needs § <section>"` — the `kept:` prefix is what the next reconcile reads to know the judgement was made, and the file is re-judged when the successor lands.
 
 ## The folder note
 
-`_clusters.md` holds what the listing cannot derive: what each cluster *means*, and the order to work the live briefs in with the properties that order rests on. Membership, goals and state live in the listing; a copy in the note is stale by the next merge.
+The notes hold what the listing cannot derive: what each group of briefs *means*, and the order to work the live briefs in with the properties that order rests on. A flat folder has one note, `_clusters.md`, and groups its briefs by their `cluster:` field. A folder with a root `README.md` keeps its briefs in domain folders: the root README carries the order and what crosses domains, and each domain folder's `README.md` says what its briefs are about and why each sits where it does. Membership, goals and state live in the listing; a copy in a note is stale by the next merge.
 
-- It names live briefs only — a retirement removes the slug in the same write, and `brief check` flags a retired or unknown name and an empty cluster.
-- A live brief `brief check` reports unplaced — in the domain or not — is slotted from its listing row where the order's stated properties put it, in the same pass, and the report says where and why; a rank the human wants elsewhere is one word back, where a deferred slot is the same warning re-read on every pass.
-- Which briefs are in flight and which landed is the listing's to show, from branches and PRs; the note carries no such line, and one found there is deleted at the next amend. What a landed branch settled, when it deployed, what it measured — the docs and PRs are that archive.
+- The notes name live briefs only — a retirement removes the slug in the same write, and `brief check` flags a retired or unknown name, an empty cluster, and a domain folder with no README.
+- A live brief `brief check` reports unplaced — in the scope or not — is slotted from its listing row where the order's stated properties put it, in the same pass, and the report says where and why; a rank the human wants elsewhere is one word back, where a deferred slot is the same warning re-read on every pass.
+- Which briefs are in flight and which landed is the listing's to show, from branches and PRs; a note carries no such line, and one found there is deleted at the next amend. What a landed branch settled, when it deployed, what it measured — the docs and PRs are that archive.
 - A date or identifier appears only as an unresolved constraint on a live brief ("run `<slug>` before the vendor cutoff on 2026-09-01"). A watch that requires action gets a brief; one that requires none lives in its issue or runbook.
 
-Amend it when a cluster's meaning shifts, a name is coined or retired, or an ordering property proves wrong. A folder that has grown clusters worth naming earns a note; a wave list with dates is the listing, and goes stale in days.
+Amend a note when a group's meaning shifts, a name is coined or retired, or an ordering property proves wrong. A flat folder that has grown clusters worth naming earns a note; a wave list with dates is the listing, and goes stale in days.
 
 ## Escalation — session history
 

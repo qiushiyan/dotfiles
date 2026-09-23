@@ -51,10 +51,10 @@ Done when every kept lesson carries why you believe it and how sure you are, and
 ## 4 — Write the brief
 
 ```sh
-brief new <slug> --pickup build|design [--cluster <workstream>]
+brief new <slug> --pickup build|design [--domain <folder> | --cluster <workstream>]
 ```
 
-prints the file it scaffolded, folder created, with `anchored:` and `base:` already stamped from the repo — leave those two alone and fill the rest.
+prints the file it scaffolded, folder created, with `anchored:` and `base:` already stamped from the repo — leave those two alone and fill the rest. A project whose handoff folder has a root `README.md` keeps its briefs in domain folders: `--domain` names the folder, the project's own handoff skill says which one, and `brief new` lists the folders when it is left out. A flat folder takes `--cluster` instead.
 
 **`--pickup` names how the next session's first turn runs**, and `brief start` refuses to launch a brief without it. `build` only when the approach is already reviewed — a spec the user approved, a consult record, a PR to continue; otherwise `design`. The gate each value fires is [`pickup/build.md`](pickup/build.md) / [`pickup/design.md`](pickup/design.md): the receiving session ends its first turn on that gate's contract — a re-grounding written for the user who has lost the thread, the premises checked, the next move named (usually a consult) — before any edit. Neither gate skips the consult — a brief whose question the checks have already answered closes instead — and `build` only narrows what it asks. Read the gate you chose before writing `## At pickup`, since that section is its input.
 
@@ -96,7 +96,7 @@ Head rules — each is the residue of a real failure:
 - `collides-with:` names **sibling briefs**, `<slug> · <why>`; a collision with no slug (a path predicate, a person's strand) is written as prose. `none` costs nothing and says you looked.
 - `paths:` lists the repo-relative paths this brief's claims live in, as narrow as the work: `brief drift` lists every PR that landed under them since the anchor and `brief related` reads them back before it, so a whole app directory returns every PR the repository merged. In `## At pickup`, cite each claim's files by repo path, or its symbols, so drift can attribute a PR to that claim.
 - `run:` is the invocation the pickup fires: the project's onboarding skill plus its short route. Omit the field where the project has none — the goal then stands as the opening directive itself.
-- `cluster:` joins the folder's workstreams; with no siblings it is load for nothing.
+- `cluster:` joins a flat folder's workstreams; with no siblings it is load for nothing. A brief in a domain folder carries no `cluster:` — the folder it sits in is its domain.
 - `pickup:` is `build` or `design` — the test is above; the sweep may flip it when a design brief's approach settles.
 
 Body rules:
@@ -151,9 +151,10 @@ Done when the brief passes the cold-pickup test — every pointer resolves from 
 ```sh
 brief check <slug>    # fix what it flags; clean is the bar
 brief                 # your row beside its siblings
+brief sync            # publish, when the folder is shared
 ```
 
-That second command is the half you cannot get by re-reading your own file: the listing renders what the file only claims — the goal as a cold reader meets it, the gates, the collisions — and the row either reads cold or it doesn't.
+The listing is the half you cannot get by re-reading your own file: it renders what the file only claims — the goal as a cold reader meets it, the gates, the collisions — and the row either reads cold or it doesn't. A handoff folder that is a git clone is read by other machines and teammates, and they see the brief only once `brief sync` prints `published`; a folder kept on this machine answers that there is nothing to publish. `conflicted` names the file another machine changed — merge it as the line says, then sync again.
 
 ## 5 — Close
 

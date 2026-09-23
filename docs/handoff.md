@@ -67,8 +67,18 @@ cleanup checks both names. The cold-read test a slug has to pass lives in
 ## Where briefs live
 
 `~/dev/.handoffs/<project>/<slug>.md` — central, outside every worktree, a
-sibling of `~/dev/.worktrees`. Living outside git keeps one brief visible from
-every worktree.
+sibling of `~/dev/.worktrees`. Living outside the project's own checkouts keeps
+one brief visible from every worktree, whatever branch it is on.
+
+A project folder takes one of two shapes, and the folder itself says which.
+Flat: `<slug>.md` files and one `_clusters.md` note. With a root `README.md`:
+briefs in domain folders, `<domain>/<slug>.md`, the root README holding the
+order and each domain's README what its briefs are about — Planlab's domains
+are its onboarding routes. A folder that is a git clone is shared across
+machines and teammates (Planlab's is `planlab-ai/handoffs`, cloned at the same
+path on the Mac mini): `brief start` pulls it first, and the handoff and sweep
+skills end on `brief sync`. Evidence over 1 MB and nested repositories stay on
+the machine that made them.
 
 ```text
 work landed + durable knowledge has an owner → brief delete <slug>
@@ -76,9 +86,9 @@ live successor needs a unique passage          → brief retire <slug> --reason 
 premise died but useful work remains            → rewrite forward, then delete the old brief
 ```
 
-The kept `.md.done` form is the exception, not the archive. `_clusters.md`
-names live clusters and their order; retirement removes the slug from it in the
-same change.
+The kept `.md.done` form is the exception, not the archive. The notes
+(`_clusters.md`, or the READMEs) name live briefs and their order; retirement
+removes the slug from them in the same change.
 
 **Honesty floor:** a session that taught nothing transferable hands off state
 and next move, and nothing else.

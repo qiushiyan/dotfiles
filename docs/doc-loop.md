@@ -73,8 +73,10 @@ The brief **is** the next session's first prompt, not a document about the work:
 `brief start <slug>` places the worktree and hands the session its pointer —
 the invocation and goal, the file's path, a literal drift command, and the
 pickup gate last. It lands at
-`~/dev/.handoffs/<project>/<slug>.md`, outside every worktree and outside git,
-carrying state, lessons and dead-ends with their _why_, and first moves.
+`~/dev/.handoffs/<project>/<slug>.md` (Planlab: `<route>/<slug>.md`), outside
+every worktree, carrying state, lessons and dead-ends with their _why_, and
+first moves. Planlab's folder is a clone of `planlab-ai/handoffs`, shared
+across machines and teammates.
 
 A brief is earned by the gap it crosses. Work that continues in the session that
 investigated it crosses none: `/enter-worktree` names the branch, `gwt` places

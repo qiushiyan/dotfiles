@@ -57,9 +57,12 @@ Once a worktree exists, the rename costs a branch and a worktree too.
 
 `brief mv <old> <new>` does the mechanical half: it moves the file, rewrites
 sibling references in typed fields, and prints every remaining mention —
-prose in sibling briefs, `_clusters.md`, the brief's own body — for you to
-edit with judgement. Close with `brief check`: it resolves every sibling
-reference, so a dangling slug fails loudly instead of surviving in prose.
+prose in sibling briefs, the folder's notes (`_clusters.md`, or the
+`README.md` files of a folder kept in domain folders), the brief's own body —
+for you to edit with judgement. Close with `brief check`: it resolves every
+sibling reference, so a dangling slug fails loudly instead of surviving in
+prose. Moving a brief to another domain folder is not a rename — the slug and
+the branch stay — and is `brief mv <slug> --domain <folder>`.
 
 The sweep stops at the handoff folder. A repo's own dated records — specs,
 issue records, execution records — name what the brief was called at the time,
