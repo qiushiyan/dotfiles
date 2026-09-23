@@ -21,7 +21,7 @@ A manufactured handoff sends the next session down a road nobody planned. the in
 - **Thread continues** — work unfinished, or a known next milestone → full handoff: steps 2–5.
 - **Stopped mid-task** — context or time ran out before the work landed → the brief is the most valuable thing you can leave. Run steps 3–5 now and fold the doc pass into the brief's first moves.
 - **Done but not trusted** — the work is "complete" but the user's verdict is that it doesn't merge yet — edge cases kept surfacing after earlier "done" claims — and the next session re-reviews this branch's work before any merge → full handoff: steps 2–5 in **review posture** (step 4 defines it).
-- **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 alone and close by printing `/distill-handoffs` for the user: its closeout pass deletes the brief that spawned this branch (`<branch>` or `review-<branch>`) once the work has a durable home and settles the briefs that named it, within this branch's domain only. Only the user can invoke it, and this skill writes one brief without seeing the folder around it.
+- **Work landed, nothing queued** — an isolated fix or feature, done and verified → ask the user one question: *anything queued for the next session, or doc pass only?* If nothing's queued, run step 2 and step 3's **Neighbours**, and close by printing `/distill-handoffs` for the user: its closeout pass deletes the brief that spawned this branch (`<branch>` or `review-<branch>`) once the work has a durable home and settles the briefs that named it, within this branch's domain only. Only the user can invoke it, and this skill writes one brief without seeing the folder around it.
 
 Review posture is entered on the user's verdict — the invocation's arguments or the session saying the branch isn't ready — never on your own read of the work. A clean ending with a natural next goal is a forward handoff: write it, no question. When the ending shows the *done but not trusted* signature but the verdict was never spoken — a large or bumpy branch, bugs found after green claims, no merge decision stated — settle the gate with one question: *merging this and moving on, or holding it for a review session?*
 
@@ -35,7 +35,7 @@ Done when docs are updated, or the skip is named ("deferred to next session" / "
 
 ## 3 — Harvest what only this session knows
 
-The diff shows what changed. The harvest collects what it can't show, in two halves — what the session learned, and what it fought.
+The diff shows what changed. The harvest collects what it can't show, in three parts — what the session learned, what it fought, and which other live briefs it moved.
 
 **Lessons** — conclusions the next session should inherit:
 
@@ -46,7 +46,9 @@ The diff shows what changed. The harvest collects what it can't show, in two hal
 
 **Friction** — where the work actually hurt, mined now because the wrap-up is what glosses it: fixes that took several attempts, code re-read repeatedly before it could be trusted, wrong turns, assumptions that broke, places too many cases had to be held in mind at once. Make one call per point: **essential** — the problem is genuinely that hard — or **accidental** — the current design manufactured the struggle. Essential friction joins the lessons ("harder than it looks, and why"). Accidental friction is a design signal: name the concrete struggle and the reshape that would have dissolved it. You built what you're now judging, so hand the next session the case, not the verdict.
 
-Done when every kept lesson carries why you believe it and how sure you are, and every friction point carries its essential-or-accidental call — a session that taught nothing and fought nothing gets a brief of state + next move and nothing else; the honesty floor cuts both ways.
+**Neighbours** — the live briefs this session moved without writing them. A lesson, a measurement or a change can falsify a premise a sibling rests on, discharge its gate, or open a collision on a path it plans to touch, and the session that knows it is this one. Find them where they sit — the brief's domain folder `README.md` when the folder keeps domain folders, and the live briefs `brief related --paths <the paths this branch changed>` lists — and write the case into each moved brief now, as the sweep's **Note** verdict would (`~/.claude/skills/distill-handoffs/SKILL.md` § Verdicts): the fact and its evidence, with what has landed kept apart from what is still on this branch. Then `brief anchor <slug> --by sweep` and `brief check <slug>` on each. Deleting, rewriting or re-ordering a sibling stays the sweep's, after the merge. This part runs whether or not this session writes a brief of its own.
+
+Done when every kept lesson carries why you believe it and how sure you are, every friction point carries its essential-or-accidental call, and every neighbour this session moved carries the case — a session that taught nothing and fought nothing gets a brief of state + next move and nothing else; the honesty floor cuts both ways.
 
 ## 4 — Write the brief
 
