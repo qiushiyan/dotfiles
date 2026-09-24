@@ -114,9 +114,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/tt-a1i/archify.git",
       "skillPath": "archify/SKILL.md",
-      "skillFolderHash": "4013c90c02fd8b9c9ab2032e6a95df5d2b92ce97",
+      "skillFolderHash": "68f9fae4d0b4a17c5cd8cba9682e7306f879d4bb",
       "installedAt": "2026-09-04T13:51:01.199Z",
-      "updatedAt": "2026-09-15T19:39:54.878Z"
+      "updatedAt": "2026-09-24T22:20:47.587Z"
     },
     "find-docs": {
       "source": "upstash/context7",
