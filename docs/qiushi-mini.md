@@ -128,8 +128,8 @@ in step:
   laptop's `zen.omp.json` in the synced theme's palette. Its first segment is
   a peach ` mini`.
 - **tmux status bar:** the shared `tmux.conf` copies the variable into
-  `@machine` whenever it is sourced, and draws the same badge at the left of
-  the top bar. It stays visible while an agent holds the pane, which the
+  `@machine` whenever it is sourced, and draws the same badge at the right
+  of the top bar, beside the session badge. It stays visible while an agent holds the pane, which the
   prompt does not.
 - **Window title:** tmux titles the Ghostty window `mini · <session>:…`,
   which shows in the Window menu and Mission Control even with the titlebar
