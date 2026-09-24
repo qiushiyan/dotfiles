@@ -10,7 +10,7 @@ $HOME/bin:\
 $HOME/bin/elixir-ls:\
 $HOME/.local/bin:\
 $HOME/.mix/escripts:\
-/opt/homebrew/opt/postgresql@16/bin:\
+/opt/homebrew/opt/postgresql@18/bin:\
 /opt/homebrew/opt/openjdk@11/bin:\
 /usr/local/bin:\
 $HOME/Library/Android/sdk/platform-tools:\

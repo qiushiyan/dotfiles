@@ -116,7 +116,7 @@ brew "k9s"
 brew "kustomize"
 brew "rclone"
 brew "redis"
-brew "postgresql@16", restart_service: :changed
+brew "postgresql@18", restart_service: :changed
 brew "mongosh"
 brew "protoc-gen-go"
 brew "protoc-gen-go-grpc"

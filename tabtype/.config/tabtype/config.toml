@@ -564,7 +564,9 @@ expand = '''
 [[snippets]]
 key = "prompt-check"
 expand = '''
-Review and revise the model-facing surfaces this session touched — prompts, skill bodies, CLAUDE.md, snippets, tool descriptions, results and errors — against /Users/qiushi/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md, running its revision pass. Report each finding as a named defect with its fix, and each deliberate keep with its reason; say plainly if nothing needs changing.'''
+Review and revise the model-facing surfaces this session touched — prompts, skill bodies, CLAUDE.md, snippets, tool descriptions, results and errors — against /Users/qiushi/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md, running its revision pass.
+
+Prefer short and clear instructions that inspires reasoning with informative code example as patterns, over long prose repeating what the code already tells. Structural rewrite is sometimes more effective than patching. Report each finding as a named defect with its fix, and each deliberate keep with its reason; say plainly if nothing needs changing.'''
 
 [[snippets]]
 key = "compact-inflight"
