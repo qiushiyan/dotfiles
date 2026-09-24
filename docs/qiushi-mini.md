@@ -227,15 +227,19 @@ session. It is the same script, which picks the host by the name it runs as.
 Copies go over the same alias: `scp mac:~/path .`, `rsync -a mac:~/dir/ dir/`.
 
 **The key is the mini's own, and the laptop fences it.** The key is
-`~/.ssh/id_ed25519_mac`, with a passphrase. Its line in the laptop's
-`~/.ssh/authorized_keys` carries `from="100.68.130.84"`, the mini's tailnet
-address, so the key is useless anywhere else. The passphrase matters because
-the mini is not a trust boundary (§ Steward host). Without it, every agent
-session on the mini, the steward's included, could log into the laptop
-unattended. Setup, run once by hand:
+`~/.ssh/id_ed25519_mac`. Its line in the laptop's `~/.ssh/authorized_keys`
+carries `from="100.68.130.84"`, the mini's tailnet address, so the key is
+useless anywhere else.
+
+⚠️ **The key has no passphrase, by choice, for convenience.** The mini is
+not a trust boundary (§ Steward host), so every process running as this
+user there can log into the laptop unattended. That includes agent sessions
+with permissions bypassed and the steward's driven sessions. To close that,
+add a passphrase with `ssh-keygen -p -f ~/.ssh/id_ed25519_mac`; the laptop
+side is unchanged. To revoke the key, delete its line from the laptop's
+`authorized_keys`. Setup, run once by hand:
 
 1. On the mini: `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_mac -C qiushi-mini-to-mac`
-   (set a passphrase).
 2. On the laptop:
    `ssh mini 'cat ~/.ssh/id_ed25519_mac.pub' | sed 's/^/from="100.68.130.84" /' >> ~/.ssh/authorized_keys`
 
