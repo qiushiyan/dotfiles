@@ -83,11 +83,8 @@ and they pull the shared parts from the mirror.
   a non-login, non-interactive zsh that reads no other file. It sets brew
   shellenv, `~/.local/bin`, `LANG=en_US.UTF-8`, the newest nvm Node `bin`,
   `$PNPM_HOME/bin`, and the SSH-only terminal variables (§ Terminal over
-  SSH). The laptop's ssh sends no locale, and without one tmux marks the
-  client non-UTF-8 and draws every non-ASCII glyph as `_`. tmux fixes that
-  per client at attach time, so a client attached without it has to detach
-  and attach again. It then sources a
-  curated list of modules straight from `~/dotfiles/zsh/.config/zsh/`:
+  SSH). It then sources a curated list of modules straight from
+  `~/dotfiles/zsh/.config/zsh/`:
   `aliases nav utils git claude claude-sessions codex tmux-utils cwd-guard
   theme`.
   That gives the laptop's muscle memory (`n`, `g`, `lg`, `l`, `t`, `b`,
@@ -95,6 +92,11 @@ and they pull the shared parts from the mirror.
   stay out: `toolchain` (the PATH lines replace it), `xcode`, `cout`,
   `proxy`. It turns off `EQUALS`, as the laptop does, and exports
   `PROMPT_MACHINE=mini` (below).
+- **Locale:** the laptop's ssh sends no `LANG`, so `.zshenv` sets one.
+  Without a UTF-8 locale, tmux marks the client non-UTF-8 and draws every
+  non-ASCII glyph (status-bar separators, icons) as `_`. tmux fixes that per
+  client when it attaches, so a client attached without it must detach and
+  attach again.
 - **`~/.zprofile`** repeats brew shellenv, because `/etc/zprofile`'s
   `path_helper` reorders PATH for login shells after `.zshenv`.
 - **`~/.zshrc`** follows the laptop's order without sourcing it (that file
