@@ -7,7 +7,7 @@
 #   frommini -g    the mini's GUI pasteboard, text or image: copies made over
 #                  Screen Sharing, pbcopy, tmux prefix y/Y on the mini
 #
-# See docs/qiushi-mini.md § Clipboard.
+# See docs/qiushi-mini.md § Clipboard and attach.
 set -euo pipefail
 
 HOST=${MINI_HOST:-mini}

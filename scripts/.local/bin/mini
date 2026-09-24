@@ -7,7 +7,7 @@
 #   mini <name>    session <name>, created when missing
 #
 # Refuses inside the laptop's tmux: both use the same prefixes, so the laptop
-# tmux would take every prefix key. See docs/qiushi-mini.md § Clipboard.
+# tmux would take every prefix key. See docs/qiushi-mini.md § Clipboard and attach.
 set -euo pipefail
 
 HOST=${MINI_HOST:-mini}

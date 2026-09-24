@@ -46,6 +46,11 @@ It validates the name, writes `~/.config/terminal-theme`, regenerates the
 Ghostty include, and re-sources tmux. It is UI-agnostic on purpose: the tmux
 `prefix t` menu, the CLI, and anything added later all call the same script.
 
+The office mini runs its own copy of `theme-set` from the mirrored repo, so
+`prefix t` there switches the mini alone. `mini-sync` applies the laptop's
+theme on the mini only when the laptop's theme changes, so a pick made on the
+mini lasts until then (`docs/qiushi-mini.md` § Sync).
+
 The picker is a native tmux `display-menu` bound to `prefix t` (overrides
 clock-mode) — defined in `tmux.conf`. It opens with the current theme selected;
 the palette loader maps the canonical theme name to `display-menu -C`'s row.

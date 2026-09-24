@@ -2,7 +2,7 @@
 # tomini — send the laptop clipboard, text or image, to the office mini's
 # pasteboard. Claude Code on the mini then pastes it with Ctrl+V. An image
 # also stays on the mini as a file (path printed; kept 7 days) for tools that
-# take a path. See docs/qiushi-mini.md § Clipboard.
+# take a path. See docs/qiushi-mini.md § Clipboard and attach.
 set -euo pipefail
 
 HOST=${MINI_HOST:-mini}

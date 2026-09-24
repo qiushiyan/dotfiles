@@ -106,8 +106,8 @@ and they pull the shared parts from the mirror.
   The plugins are gitignored, so they were cloned on the mini at
   the laptop's commits into the mirror's `tmux/.config/tmux/plugins/`;
   `mini-sync` leaves ignored paths alone. After a plugin update on the laptop,
-  run `prefix I`/`prefix U` on the mini too. The old eight-line
-  `~/.tmux.conf` is kept as `~/.tmux.conf.pre-stow`. Bindings that call
+  run `prefix I`/`prefix U` on the mini too. `~/.tmux.conf.pre-stow` is an
+  inert hand-written config tmux never reads. Bindings that call
   laptop-only tools fail on the mini: `prefix T` (sesh) and `prefix b`
   (terminal-browser). `prefix y`/`Y` copy with the mini's `pbcopy`, so over
   SSH the path lands on the mini's clipboard; `frommini -g` fetches it
@@ -128,15 +128,16 @@ from `lazy-lock.json`, and Mason installs LSPs on first open.
 
 ## Terminal over SSH
 
-The laptop's Ghostty → laptop tmux → ssh chain needs these on top of a
-default mini:
+The laptop's Ghostty → ssh → mini tmux chain (§ Clipboard and attach says
+why the laptop tmux stays out of it) needs these on top of a default mini:
 
 - **terminfo**: `xterm-ghostty` was pushed with
   `infocmp -x xterm-ghostty | ssh qiushi-mini -- tic -x -` (into
   `~/.terminfo`). Without it, tmux and nvim reject the TERM Ghostty sends.
-- **Clipboard (OSC 52)**: the laptop tmux must run `set-clipboard on`,
-  because `external` drops OSC 52 sent from panes. tmux forwards it only to a
-  client that is showing the pane. nvim's `"+y` depends on this:
+- **Clipboard (OSC 52)**: every tmux between a pane and Ghostty must run
+  `set-clipboard on`, because `external` drops OSC 52 sent from panes; the
+  shared `tmux.conf` sets it. tmux forwards it only to a client that is
+  showing the pane. nvim's `"+y` depends on this:
   `options.lua` sets `vim.g.clipboard = "osc52"` for `SSH_TTY` sessions,
   because Neovim otherwise prefers the mini's own pbcopy. LazyVim leaves
   `clipboard` empty over SSH, so plain `y` stays in Vim registers.
@@ -158,6 +159,18 @@ would lose every prefix key to the laptop. In that window, **`mini`** attaches
 the most recently active session, including one the Screen Sharing Ghostty
 is also showing; `mini <name>` attaches or creates `<name>`. Bare
 `tmux attach` is not the same: it prefers an unattached session.
+
+When the mini's tmux server dies, continuum's last snapshot (saved every 15
+minutes) brings the sessions back:
+
+1. `tmux new-session -d -s tmp` starts a server; continuum restores the
+   snapshot about a second later.
+2. Wait until `tmux ls` lists the restored sessions, then
+   `tmux kill-session -t tmp`. Killed sooner, `tmp` is the last session and
+   the server exits before the restore runs.
+3. Panes return as shells in their folders; agents do not restart. Run
+   `claude --continue` (with your usual flags) in each pane to reopen that
+   folder's latest conversation, or `--resume` to pick one.
 
 Nothing is forwarded automatically. Copies travel only when you copy on
 purpose:

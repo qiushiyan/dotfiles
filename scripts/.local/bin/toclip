@@ -9,7 +9,7 @@
 # session's ssh client, outside tmux straight at the session's tty. The request
 # is fire-and-forget — a terminal that ignores OSC 52 (Terminal.app) drops it —
 # so inside tmux the text also stays as the newest tmux buffer, which
-# `frommini` on the laptop fetches. See docs/qiushi-mini.md § Clipboard.
+# `frommini` on the laptop fetches. See docs/qiushi-mini.md § Clipboard and attach.
 set -euo pipefail
 
 # Larger payloads stay in the tmux buffer only: tmux's input-buffer-size is

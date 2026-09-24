@@ -115,6 +115,9 @@ intact, dividers present below it.
 
 ## Retiring the patch
 
+The office mini carries the same tap and build (`docs/qiushi-mini.md`
+§ Toolchain); retire it there in the same pass.
+
 When a tmux release after 3.7c lands (check its CHANGES for a popup/overlay
 coordinate fix; if unclear, install and rerun the harness above):
 
