@@ -233,3 +233,18 @@ persistence, path, self-exclusion, query, and fresh-index purposes; #6 remains
 withdrawn. #9's narrow host scope stays deliberate. Runtime probes establish
 mechanics, not new usage measurements or live transcript timing; the per-session
 path and explicit self-exclusion remain. No live index rebuild was performed.
+
+## 2026-09-24 — skill delta b164d90 → 3e045af (deferred)
+
+Upstream added ZCode and GitHub Copilot to the provider list and `source`
+values, and documented a `RangeError` for negative helper limits. The
+engine is unchanged: npm's latest and rc tags remain 0.2.6-rc.0. Its
+`dist/core/src/providers/` registers claude, codex, deepseek, kimi, and pi;
+nothing in the package mentions zcode or copilot, and `query.js` has no
+negative-limit check. The delta therefore describes an unreleased runtime.
+
+Deferred every hunk. Host coverage stays Claude-focused (#9), and the escalation
+section's "features ahead of the installed CLI" boundary already covers the
+refreshed references. Refreshed `.upstream/` and `references/` to the new
+pristine copy and advanced the pin. No engine change, so the 2026-09-15 schema
+and helper probes still stand; none were rerun.

@@ -1,24 +1,19 @@
 Before upgrading, read docs/skill-customizations.md in the dotfiles repo
 (the obelisk entry). It owns the customization intent and preservation constraints.
 
-Pinned from tommy0103/obelisk-skill skills/obelisk/ @ b164d907a305d20f5d57394fd726f7999a6d0980
-(2026-09-14). Reviewed and verified byte-identical on 2026-09-15,
+Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 3e045afda883d40f46a8d9e3cb8ae265dd722706
+(2026-09-23). Reviewed and verified byte-identical on 2026-09-24,
 excluding this PINNED.txt; ../references/ is a verbatim copy of references/ here.
-Installed CLI: @obelisk-apps/cli 0.2.6-rc.0, the npm latest release candidate
-verified on 2026-09-15. The skill pin and engine version are independent.
+Installed CLI: @obelisk-apps/cli 0.2.6-rc.0, still npm's latest and rc tag
+on 2026-09-24. The skill pin and engine version are independent.
 
-The skill delta from 2869861 adds session-scoped topic correlation and OMP
-source / inactive-branch documentation. Adopted correlation with the verified
-search(Y, { sessionId }) form; search ignores a sessions array. OMP remains
-reference-only: the installed provider registry has no OMP provider. DeepSeek
-is supported. The script-content identity fallback remains deferred.
-
-The engine fixes SQL keyword false positives: scalar replace() and quoted
-keywords work; one-statement and read-only boundaries remain enforced. The
-corresponding body workarounds are retired. All six hot-schema column sets
-matched the installed schema through isolated pragma_table_info. A CLI query
-also initialized and read a temporary index. No live index or transcript-timing
-remeasurement was performed. LESSONS.md records the probes and decisions.
+The skill delta from b164d90 documents ZCode and GitHub Copilot providers and
+a RangeError for negative helper limits. The installed provider registry has
+claude, codex, deepseek, kimi, and pi only, and its query layer has no limit
+validation, so the whole delta runs ahead of the runtime. Deferred: adopt when
+an installed engine ships those providers and a workflow needs them. The
+body's escalation boundary already covers ahead-of-runtime references, so
+../SKILL.md is unchanged. LESSONS.md records the review.
 
 Installed via pnpm global only (/Users/qiushi/Library/pnpm/bin), deliberately:
 pnpm's bin directory survives node upgrades where an nvm-scoped npm global does
@@ -31,7 +26,7 @@ Pin the exact version when upgrading: pnpm's packument cache serves a stale
 `latest` for a day or so after a release, and `pnpm add -g
 @obelisk-apps/cli@latest` installed 0.2.4 while printing "0.2.5 is available".
 
-History: previous pins 109b8b1 (2026-08-26), 3226391 (2026-08-24). Before that the skill lived in
+History: previous pins b164d90 (2026-09-14), 109b8b1 (2026-08-26), 3226391 (2026-08-24). Before that the skill lived in
 tommy0103/obelisk skill-doc/ (pin 7c1b478, 2026-08-04). It now ships from its own docs-only repo.
 
 Upgrade the engine during every skill-upgrade pass, even if the skill hash is
