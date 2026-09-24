@@ -31,8 +31,8 @@ mouse-hide-while-typing = true
 mouse-scroll-multiplier = 2
 macos-titlebar-style = hidden
 
-window-width = 130
-window-height = 27
+window-width = 104
+window-height = 32
 window-padding-balance = true
 window-padding-x = 4
 window-padding-y = 4
@@ -49,7 +49,7 @@ keybind = performable:ctrl+c=copy_to_clipboard
 # sesh session picker (sends prefix T to tmux)
 keybind = ctrl+shift+p=text:\x01T
 # Karabiner passes ctrl+` through here and also runs scripts/second-window.applescript,
-# which opens a second window when only one tab exists (see karabiner.json).
+# which opens a second window, centered, when only one tab exists (see karabiner.json).
 keybind = ctrl+`=goto_window:next
 
 
