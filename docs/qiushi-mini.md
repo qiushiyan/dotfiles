@@ -119,12 +119,25 @@ and they pull the shared parts from the mirror.
   SSH the path lands on the mini's clipboard; `frommini -g` fetches it
   (§ Clipboard and attach).
 
-**Prompt:** the `ohmyposh` package is stowed, so the mini renders the
-laptop's `zen.omp.json` in the synced theme's palette. That config's first
-segment is a machine badge, shown only when `PROMPT_MACHINE` is set; the
-mini's `.zshenv` sets it to `mini`, so its prompt opens with a peach
-` mini` and a laptop prompt stays unmarked. A new machine opts in the same
-way, with no second theme to keep in step.
+**Machine badge:** `PROMPT_MACHINE=mini`, set in the mini's `.zshenv`,
+marks everything that runs on the mini; the laptop leaves it unset and stays
+unmarked. A new machine opts in the same way, with no second config to keep
+in step:
+
+- **Prompt:** the `ohmyposh` package is stowed, so the mini renders the
+  laptop's `zen.omp.json` in the synced theme's palette. Its first segment is
+  a peach ` mini`.
+- **tmux status bar:** the shared `tmux.conf` copies the variable into
+  `@machine` whenever it is sourced, and draws the same badge at the left of
+  the top bar. It stays visible while an agent holds the pane, which the
+  prompt does not.
+- **Window title:** tmux titles the Ghostty window `mini · <session>:…`,
+  which shows in the Window menu and Mission Control even with the titlebar
+  hidden.
+
+The tmux server reads the variable from its own environment, which it takes
+from the shell that started it. A server started any other way has no badge
+until the variable is set in it.
 
 **Git:** the global identity is the personal Gmail. GitHub auth goes through
 `gh auth setup-git` (HTTPS), so no private SSH key lives on the mini.
