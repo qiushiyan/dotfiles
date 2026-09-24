@@ -81,8 +81,12 @@ and they pull the shared parts from the mirror.
 
 - **`~/.zshenv`** carries everything, because `ssh qiushi-mini '<cmd>'` runs
   a non-login, non-interactive zsh that reads no other file. It sets brew
-  shellenv, `~/.local/bin`, the newest nvm Node `bin`, `$PNPM_HOME/bin`, and
-  the SSH-only terminal variables (§ Terminal over SSH). It then sources a
+  shellenv, `~/.local/bin`, `LANG=en_US.UTF-8`, the newest nvm Node `bin`,
+  `$PNPM_HOME/bin`, and the SSH-only terminal variables (§ Terminal over
+  SSH). The laptop's ssh sends no locale, and without one tmux marks the
+  client non-UTF-8 and draws every non-ASCII glyph as `_`. tmux fixes that
+  per client at attach time, so a client attached without it has to detach
+  and attach again. It then sources a
   curated list of modules straight from `~/dotfiles/zsh/.config/zsh/`:
   `aliases nav utils git claude claude-sessions codex tmux-utils cwd-guard
   theme`.
@@ -204,9 +208,9 @@ purpose:
   (`get`/`put`) is the single place that reads and writes a Mac's pasteboard as
   a typed file. `tomini` and `frommini` run it on both ends, the mini's copy
   from the mirror. Each command lands the whole payload before writing the
-  destination, so a failed read never clears a clipboard. It sets `LANG`,
-  because an ssh session on the mini has no locale and `pbcopy` would
-  otherwise garble non-ASCII text.
+  destination, so a failed read never clears a clipboard. It sets `LANG`
+  itself, because `pbcopy` garbles non-ASCII text under a caller with no
+  locale.
 - **Screen Sharing shares its own clipboard** with the laptop while its
   window is open (Edit → Use Shared Clipboard). That is separate from all of
   the above.
