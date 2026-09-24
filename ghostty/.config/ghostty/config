@@ -31,8 +31,8 @@ mouse-hide-while-typing = true
 mouse-scroll-multiplier = 2
 macos-titlebar-style = hidden
 
-window-width = 104
-window-height = 32
+window-width = 114
+window-height = 35
 window-padding-balance = true
 window-padding-x = 4
 window-padding-y = 4
