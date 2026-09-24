@@ -30,6 +30,12 @@ checkbox. Just be aware of the categories:
   Logitech G Hub, Raycast, Rectangle. First launch pops a system dialog
   that links straight to the right pane in System Settings → Privacy &
   Security. Approve, then quit & relaunch the app.
+- **Karabiner's AppleScript rule**: Ghostty's ctrl+` rule runs
+  `ghostty/.config/ghostty/scripts/second-window.applescript`, which needs
+  `karabiner_console_user_server` allowed under Automation (Ghostty,
+  System Events) and Accessibility. A missing grant fails silently: no
+  second window, or one left uncentered, so grant these by hand if the
+  first ctrl+` in a lone Ghostty window shows no prompt.
 - **Apps that just need a sign-in** (iCloud Keychain pre-fills most):
   Slack, Linear, Discord, Postman, MongoDB Compass, Codex, Raycast,
   Zed (for Zed AI). Walk the Dock/Launchpad and log in.
