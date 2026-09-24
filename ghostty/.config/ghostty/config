@@ -48,6 +48,8 @@ keybind = shift+ctrl+r=reload_config
 keybind = performable:ctrl+c=copy_to_clipboard
 # sesh session picker (sends prefix T to tmux)
 keybind = ctrl+shift+p=text:\x01T
+# Karabiner passes ctrl+` through here and also runs scripts/second-window.applescript,
+# which opens a second window when only one tab exists (see karabiner.json).
 keybind = ctrl+`=goto_window:next
 
 

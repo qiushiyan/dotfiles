@@ -28,6 +28,41 @@
                                 "type": "basic"
                             }
                         ]
+                    },
+                    {
+                        "description": "Ghostty: ctrl+` toggles windows, opening a second one if needed",
+                        "manipulators": [
+                            {
+                                "type": "basic",
+                                "from": {
+                                    "key_code": "grave_accent_and_tilde",
+                                    "modifiers": {
+                                        "mandatory": [
+                                            "control"
+                                        ]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "grave_accent_and_tilde",
+                                        "modifiers": [
+                                            "left_control"
+                                        ]
+                                    },
+                                    {
+                                        "shell_command": "/usr/bin/osascript ~/.config/ghostty/scripts/second-window.applescript"
+                                    }
+                                ],
+                                "conditions": [
+                                    {
+                                        "type": "frontmost_application_if",
+                                        "bundle_identifiers": [
+                                            "^com\\.mitchellh\\.ghostty$"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 ]
             },
