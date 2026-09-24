@@ -217,6 +217,28 @@ purpose:
   window is open (Edit → Use Shared Clipboard). That is separate from all of
   the above.
 
+## Reaching the laptop
+
+From the mini, the laptop is `ssh qiushi-mac` (or `ssh mac`): tailnet node
+`qiushis-macbook-pro`, user `qiushi`, with Remote Login on. The alias lives in
+the mini's own `~/.ssh/config`, which is not part of the mirror. `mac` is the
+mirror image of `mini`: it attaches the laptop's most recently active tmux
+session. It is the same script, which picks the host by the name it runs as.
+Copies go over the same alias: `scp mac:~/path .`, `rsync -a mac:~/dir/ dir/`.
+
+**The key is the mini's own, and the laptop fences it.** The key is
+`~/.ssh/id_ed25519_mac`, with a passphrase. Its line in the laptop's
+`~/.ssh/authorized_keys` carries `from="100.68.130.84"`, the mini's tailnet
+address, so the key is useless anywhere else. The passphrase matters because
+the mini is not a trust boundary (§ Steward host). Without it, every agent
+session on the mini, the steward's included, could log into the laptop
+unattended. Setup, run once by hand:
+
+1. On the mini: `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_mac -C qiushi-mini-to-mac`
+   (set a passphrase).
+2. On the laptop:
+   `ssh mini 'cat ~/.ssh/id_ed25519_mac.pub' | sed 's/^/from="100.68.130.84" /' >> ~/.ssh/authorized_keys`
+
 ## Ghostty on the mini
 
 The app is installed by hand. The `ghostty` package is stowed from the
@@ -318,8 +340,8 @@ laptop.
   source clones. `planlab` and `bench` are not copied: they are shims into a
   checkout, and the mini generates its own (§ planlab checkout).
 - **Codex config**: regenerated as described in § Agent config.
-- **Links**: `LINKS` in the script (`theme-set`, `toclip`, `browser-clip`)
-  are made links in the mini's `~/.local/bin`, pointing into the mirror. The
+- **Links**: `LINKS` in the script (`theme-set`, `toclip`, `browser-clip`,
+  `mac`) are made links in the mini's `~/.local/bin`, pointing into the mirror. The
   `scripts` package is not stowed on the mini because it carries this
   laptop's `mini-sync` LaunchAgent.
 - **Theme**: the laptop's theme name is applied by running the mini's own

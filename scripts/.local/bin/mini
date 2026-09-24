@@ -1,25 +1,30 @@
 #!/usr/bin/env bash
-# mini — attach the office mini's tmux, from a laptop Ghostty window.
+# mini / mac — attach the other machine's tmux from a Ghostty window.
 #
-#   mini           the most recently active session, attached elsewhere or not
-#                  (the Screen Sharing window stays attached too); a new
-#                  session when none exist
-#   mini <name>    session <name>, created when missing
+#   mini [name]    on the laptop: the office mini's tmux
+#   mac [name]     on the mini: the laptop's tmux (ssh host qiushi-mac)
 #
-# Refuses inside the laptop's tmux: both use the same prefixes, so the laptop
-# tmux would take every prefix key. See docs/qiushi-mini.md § Clipboard and attach.
+# No name: the most recently active session, attached elsewhere or not; a new
+# session when none exist. A name: that session, created when missing.
+#
+# Refuses inside tmux: both machines' tmux use the same prefixes, so the
+# outer tmux would take every prefix key. See docs/qiushi-mini.md § Clipboard and attach.
 set -euo pipefail
 
-HOST=${MINI_HOST:-mini}
+case $(basename "$0") in
+  mac) HOST=${REMOTE_HOST:-qiushi-mac} ;;
+  *)   HOST=${REMOTE_HOST:-${MINI_HOST:-mini}} ;;
+esac
+me=$(basename "$0")
 
-case ${1:-} in -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+case ${1:-} in -h|--help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
 if [[ -n ${TMUX:-} ]]; then
-  echo "mini: run this from a Ghostty window outside tmux (the laptop tmux would take the prefix keys)" >&2
+  echo "$me: run this from a Ghostty window outside tmux (the local tmux would take the prefix keys)" >&2
   exit 1
 fi
 
 if [[ -n ${1:-} ]]; then
-  [[ $1 =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "mini: session names are letters, digits, . _ -" >&2; exit 2; }
+  [[ $1 =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "$me: session names are letters, digits, . _ -" >&2; exit 2; }
   exec ssh -t "$HOST" "tmux new-session -A -s '$1'"
 fi
 # `tmux attach` alone prefers an unattached session, which is rarely the one

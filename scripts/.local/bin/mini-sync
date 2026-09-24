@@ -25,7 +25,7 @@ SECRETS=(.planlab/.env .bench/.env)
 # Mirror scripts the mini runs by name. The scripts package is not stowed
 # there (it carries this laptop's mini-sync LaunchAgent), so each gets a
 # link in the mini's ~/.local/bin, pointing into the mirror.
-LINKS=(theme-set toclip browser-clip)
+LINKS=(theme-set toclip browser-clip mac)
 # The mini records the last theme this script applied there, so a theme
 # picked on the mini (prefix t) lasts until the laptop switches.
 THEME_STATE=.local/state/mini-sync/theme
