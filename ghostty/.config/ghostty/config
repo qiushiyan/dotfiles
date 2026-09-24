@@ -48,7 +48,7 @@ keybind = shift+ctrl+r=reload_config
 keybind = performable:ctrl+c=copy_to_clipboard
 # sesh session picker (sends prefix T to tmux)
 keybind = ctrl+shift+p=text:\x01T
-keybind = ctrl+`=toggle_quick_terminal
+keybind = ctrl+`=goto_window:next
 
 
 # initial-command = "~/.config/dev-itell.sh"
