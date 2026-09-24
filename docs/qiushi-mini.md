@@ -102,16 +102,16 @@ and they pull the shared parts from the mirror.
   `jandedobbeleer/oh-my-posh` tap.
 - **tmux** is the laptop's: the `tmux` package is stowed, so
   `~/.config/tmux` is a folder link into the mirror, and `prefix t` switches
-  themes through `~/.local/bin/theme-set`, a link to the mirror's script (the
-  `scripts` package is not stowed: it carries the laptop's `mini-sync`
-  LaunchAgent). The plugins are gitignored, so they were cloned on the mini at
+  themes through `~/.local/bin/theme-set`, a link `mini-sync` keeps (§ Sync).
+  The plugins are gitignored, so they were cloned on the mini at
   the laptop's commits into the mirror's `tmux/.config/tmux/plugins/`;
   `mini-sync` leaves ignored paths alone. After a plugin update on the laptop,
   run `prefix I`/`prefix U` on the mini too. The old eight-line
   `~/.tmux.conf` is kept as `~/.tmux.conf.pre-stow`. Bindings that call
   laptop-only tools fail on the mini: `prefix T` (sesh) and `prefix b`
   (terminal-browser). `prefix y`/`Y` copy with the mini's `pbcopy`, so over
-  SSH the path lands on the mini's clipboard, not the laptop's.
+  SSH the path lands on the mini's clipboard; `frommini -g` fetches it
+  (§ Clipboard and attach).
 
 **Prompt:** the `ohmyposh` package is stowed, so the mini renders the
 laptop's `zen.omp.json` in the synced theme's palette. That config's first
@@ -146,9 +146,57 @@ default mini:
   without it Claude Code prints plain-text URLs.
 - **Ctrl-click in Claude Code** is its own click handler, which runs
   `$BROWSER` (else `open`) on the host, the mini. `.zshenv` sets
-  `BROWSER=~/.local/bin/browser-clip` for SSH sessions. That shim sends the
-  URL to the laptop clipboard over OSC 52 instead of opening the mini's
-  Safari, and writes to the parent's tty when it was spawned detached.
+  `BROWSER=~/.local/bin/browser-clip` for SSH sessions. That shim hands the
+  URL to `toclip`, which sends it to the laptop clipboard instead of opening
+  the mini's Safari (§ Clipboard and attach).
+
+## Clipboard and attach
+
+The laptop reaches the mini from its own Ghostty window, never from inside
+the laptop tmux: both tmux configs use the same prefixes, so a nested mini
+would lose every prefix key to the laptop. In that window, **`mini`** attaches
+the most recently active session, including one the Screen Sharing Ghostty
+is also showing; `mini <name>` attaches or creates `<name>`. Bare
+`tmux attach` is not the same: it prefers an unattached session.
+
+Nothing is forwarded automatically. Copies travel only when you copy on
+purpose:
+
+| command | runs on | moves |
+|---|---|---|
+| terminal copy (Claude's `c`, nvim `"+y`, tmux copy mode) | mini | to the laptop clipboard over OSC 52, and into the mini tmux's buffers |
+| `<cmd> \| toclip`, `toclip <text>` | either | to the clipboard of the machine you are sitting at |
+| `frommini` | laptop | the mini tmux's newest buffer → laptop clipboard |
+| `frommini -g` | laptop | the mini's GUI pasteboard, text or image → laptop clipboard |
+| `tomini` | laptop | the laptop clipboard, text or image → the mini's pasteboard |
+
+- **OSC 52 is fire-and-forget.** A terminal that ignores it, such as macOS
+  Terminal.app, drops the copy without an error. The text still sits in the
+  mini tmux's newest buffer, so `frommini` recovers it.
+- **`toclip` aims at the ssh client.** With both the laptop's ssh and the
+  Screen Sharing Ghostty on one session, an untargeted `load-buffer -w`
+  writes to whichever client tmux picks by activity, which can be the mini's
+  own screen. `toclip` targets the session's most recent client that has
+  `sshd` among its ancestors, and falls back to `pbcopy` when there is none.
+  Outside tmux it writes OSC 52 to the session's tty, or its caller's tty when
+  it was spawned detached. Payloads over 512 KiB are not sent through the
+  terminal; inside tmux they stay in the buffer for `frommini`.
+  `scripts/.local/share/dotfiles/tests/test-toclip.sh` pins the routing.
+- **Images:** a screenshot sent with `tomini` becomes the mini's pasteboard
+  image, which Claude Code there pastes with Ctrl+V. It also stays as a file
+  in `~/.cache/clip/` for 7 days, and `tomini` prints its path. When the
+  pasteboard holds both text and an image, text wins: a file copied in Finder
+  carries its name as text and its icon as an image.
+- **One helper for both pasteboards:** `scripts/.local/share/dotfiles/pasteboard`
+  (`get`/`put`) is the single place that reads and writes a Mac's pasteboard as
+  a typed file. `tomini` and `frommini` run it on both ends, the mini's copy
+  from the mirror. Each command lands the whole payload before writing the
+  destination, so a failed read never clears a clipboard. It sets `LANG`,
+  because an ssh session on the mini has no locale and `pbcopy` would
+  otherwise garble non-ASCII text.
+- **Screen Sharing shares its own clipboard** with the laptop while its
+  window is open (Edit → Use Shared Clipboard). That is separate from all of
+  the above.
 
 ## Ghostty on the mini
 
@@ -251,6 +299,10 @@ laptop.
   source clones. `planlab` and `bench` are not copied: they are shims into a
   checkout, and the mini generates its own (§ planlab checkout).
 - **Codex config**: regenerated as described in § Agent config.
+- **Links**: `LINKS` in the script (`theme-set`, `toclip`, `browser-clip`)
+  are made links in the mini's `~/.local/bin`, pointing into the mirror. The
+  `scripts` package is not stowed on the mini because it carries this
+  laptop's `mini-sync` LaunchAgent.
 - **Theme**: the laptop's theme name is applied by running the mini's own
   `theme-set`, which writes `~/.config/terminal-theme` and the gitignored
   Ghostty include there and reloads the mini's tmux. It runs only when the

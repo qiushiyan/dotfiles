@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# frommini — copy something from the office mini to the laptop clipboard.
+#
+#   frommini       the newest buffer of the mini's tmux: where terminal copies
+#                  land (Claude's copy key, tmux copy mode, toclip) even when
+#                  they never reached the laptop
+#   frommini -g    the mini's GUI pasteboard, text or image: copies made over
+#                  Screen Sharing, pbcopy, tmux prefix y/Y on the mini
+#
+# See docs/qiushi-mini.md § Clipboard.
+set -euo pipefail
+
+HOST=${MINI_HOST:-mini}
+PB="$HOME/dotfiles/scripts/.local/share/dotfiles/pasteboard"
+PB_MINI='~/dotfiles/scripts/.local/share/dotfiles/pasteboard'
+
+die() { printf 'frommini: %s\n' "$*" >&2; exit 1; }
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/frommini.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+
+# Each branch lands the complete payload in $work before the laptop's
+# clipboard is touched, so a failed fetch never clears it.
+case ${1:-} in
+  '')
+    ssh "$HOST" 'tmux save-buffer -' > "$work/clip.txt" \
+      || die "the mini's tmux has no buffer (or no server)"
+    [[ -s $work/clip.txt ]] || die "the mini's newest tmux buffer is empty"
+    f=$work/clip.txt what="the mini's newest tmux buffer" ;;
+  -g)
+    # One round trip: the remote prints the payload's extension on the first
+    # line, then the payload itself.
+    ssh "$HOST" "d=\$(mktemp -d) && f=\$($PB_MINI get \$d) && printf '%s\n' \"\${f##*.}\" && cat \"\$f\"; s=\$?; rm -rf \$d; exit \$s" \
+      > "$work/raw" || die "could not read the mini's pasteboard"
+    ext=$(head -n 1 "$work/raw")
+    [[ $ext == txt || $ext == png ]] || die "unexpected payload from the mini"
+    tail -c +$(( ${#ext} + 2 )) "$work/raw" > "$work/clip.$ext"
+    f=$work/clip.$ext what="the mini's pasteboard" ;;
+  -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  *) die "unknown argument: $1 (try -h)" ;;
+esac
+
+"$PB" put "$f"
+kind=text; [[ $f == *.png ]] && kind=image
+printf 'frommini: %s (%s bytes) from %s → laptop clipboard\n' "$kind" "$(wc -c < "$f" | tr -d ' ')" "$what"

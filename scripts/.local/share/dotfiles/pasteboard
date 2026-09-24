@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# pasteboard — read or write this Mac's pasteboard as one typed file. tomini
+# and frommini run it on both ends (the mini runs it from its mirror over ssh),
+# so text/image detection and conversion live in one place.
+#
+#   pasteboard get <dir>    write the pasteboard to <dir>/clip.txt or
+#                           <dir>/clip.png and print that path
+#   pasteboard put <file>   set the pasteboard from <file>: *.png as an image,
+#                           anything else as UTF-8 text
+#
+# Text wins when the pasteboard holds both: a file copied in Finder carries its
+# name as text and its icon as an image, and the name is what was meant. A
+# screenshot copied to the clipboard carries only the image.
+set -euo pipefail
+
+# pbcopy/pbpaste decode by locale, and an ssh session on the mini has none:
+# without this, non-ASCII text arrives as mojibake.
+export LANG=en_US.UTF-8
+
+die() { printf 'pasteboard: %s\n' "$*" >&2; exit 1; }
+
+is_png() { [[ $(head -c 8 "$1" | od -An -tx1 | tr -d ' \n') == 89504e470d0a1a0a ]]; }
+
+get() {
+  local dir=${1:?usage: pasteboard get <dir>} info
+  [[ -d $dir ]] || die "no such directory: $dir"
+  info=$(osascript -e 'clipboard info' 2>/dev/null) || die "cannot read the pasteboard"
+  if [[ $info == *'class utf8'* || $info == *'Unicode text'* ]]; then
+    pbpaste > "$dir/clip.txt"
+    [[ -s $dir/clip.txt ]] || die "the pasteboard text is empty"
+    printf '%s\n' "$dir/clip.txt"
+  elif [[ $info == *'class PNGf'* || $info == *'TIFF'* || $info == *'JPEG'* ]]; then
+    # PNG when the pasteboard offers it; otherwise its TIFF, converted.
+    if ! osascript - "$dir/clip.png" 'PNGf' >/dev/null 2>&1 <<<"$WRITE_IMAGE"; then
+      osascript - "$dir/clip.tiff" 'TIFF' >/dev/null 2>&1 <<<"$WRITE_IMAGE" \
+        || die "cannot read the pasteboard image"
+      sips -s format png "$dir/clip.tiff" --out "$dir/clip.png" >/dev/null 2>&1 \
+        || die "cannot convert the pasteboard image to PNG"
+      rm -f "$dir/clip.tiff"
+    fi
+    is_png "$dir/clip.png" || die "the pasteboard image did not convert to PNG"
+    printf '%s\n' "$dir/clip.png"
+  else
+    die "the pasteboard holds no text or image"
+  fi
+}
+
+put() {
+  local f=${1:?usage: pasteboard put <file>}
+  [[ -s $f ]] || die "nothing to put: $f is missing or empty"
+  case $f in
+    *.png)
+      is_png "$f" || die "not a PNG: $f"
+      osascript -e 'on run argv' \
+        -e 'set the clipboard to (read (POSIX file (item 1 of argv)) as «class PNGf»)' \
+        -e 'end run' "$f" >/dev/null ;;
+    *) pbcopy < "$f" ;;
+  esac
+}
+
+# Writes the pasteboard's image, as the class named by argv 2, to argv 1.
+WRITE_IMAGE='on run argv
+  set out to POSIX file (item 1 of argv)
+  if item 2 of argv is "PNGf" then
+    set img to the clipboard as «class PNGf»
+  else
+    set img to the clipboard as «class TIFF»
+  end if
+  set f to open for access out with write permission
+  try
+    set eof f to 0
+    write img to f
+  end try
+  close access f
+end run'
+
+case ${1:-} in
+  get) get "${2:-}" ;;
+  put) put "${2:-}" ;;
+  *) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac

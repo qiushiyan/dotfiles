@@ -18,6 +18,7 @@ zsh  zsh/.config/zsh/tests/cwd-guard.test.zsh                    # runs whole
 zsh  zsh/.config/zsh/tests/stow-reach.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/bypass-cd-read-guard.test.zsh         # runs whole
 python3 scripts/.local/share/dotfiles/tests/test_skill_sync.py # requires uv
+bash scripts/.local/share/dotfiles/tests/test-toclip.sh         [K1 K5 …]
 ```
 
 Each suite owns one boundary:
@@ -38,6 +39,7 @@ Each suite owns one boundary:
 | Stow reach | root-memory and package-ignore invariants from the working tree |
 | bypass guard | dormant hook logic through synthetic PreToolUse payloads |
 | skill sync | invocation overrides, refreshed cloud exclusions, runtime metadata recovery, metadata preservation, byte-exact document copies, validation before writes, and symlink destinations; every case runs a copied script with a temporary home, manifests, and sentinel checkout, so scope regressions stay in the sandbox |
+| toclip | which clipboard a copy reaches: pbcopy at the screen, the ssh client (not tmux's activity pick) inside tmux, the buffer kept for oversize payloads; private tmux socket, real clients on ptys, a stub pbcopy, and K8 asserts the real clipboard is untouched |
 
 The table is a routing map. Case ids and complete behavior inventories stay in
 the suites.

@@ -1,0 +1,6 @@
+#!/bin/sh
+# BROWSER for ssh sessions on the office mini (its .zshenv sets it): a URL
+# "opened" there — Claude Code Ctrl-click, gh --web — goes to the laptop's
+# clipboard through toclip instead of opening the mini's Safari.
+[ -n "$1" ] || exit 1
+exec "$(dirname "$0")/toclip" -q "$1"

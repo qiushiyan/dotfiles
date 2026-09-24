@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# tomini — send the laptop clipboard, text or image, to the office mini's
+# pasteboard. Claude Code on the mini then pastes it with Ctrl+V. An image
+# also stays on the mini as a file (path printed; kept 7 days) for tools that
+# take a path. See docs/qiushi-mini.md § Clipboard.
+set -euo pipefail
+
+HOST=${MINI_HOST:-mini}
+PB="$HOME/dotfiles/scripts/.local/share/dotfiles/pasteboard"
+PB_MINI='~/dotfiles/scripts/.local/share/dotfiles/pasteboard'
+
+case ${1:-} in -h|--help) sed -n '2,5p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/tomini.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+# The whole payload is read before the mini's pasteboard is touched, so a
+# failed read never clears what is there.
+f=$("$PB" get "$work")
+size=$(wc -c < "$f" | tr -d ' ')
+
+case $f in
+  *.png)
+    name=clip-$(date +%Y%m%d-%H%M%S).png
+    path=$(ssh "$HOST" "mkdir -p ~/.cache/clip && find ~/.cache/clip -name 'clip-*.png' -mtime +7 -delete
+      f=~/.cache/clip/$name && cat > \$f.part && mv \$f.part \$f && $PB_MINI put \$f && echo \$f" < "$f")
+    printf 'tomini: image (%s bytes) → mini pasteboard; file: %s\n' "$size" "$path" ;;
+  *)
+    ssh "$HOST" "t=\$(mktemp) && cat > \$t && $PB_MINI put \$t; s=\$?; rm -f \$t; exit \$s" < "$f"
+    printf 'tomini: text (%s bytes) → mini pasteboard\n' "$size" ;;
+esac

@@ -22,6 +22,10 @@ BINS=(headroom envoy brief gwt)
 # refresh tokens, so two machines sharing one log each other out; the mini
 # logs in on its own.
 SECRETS=(.planlab/.env .bench/.env)
+# Mirror scripts the mini runs by name. The scripts package is not stowed
+# there (it carries this laptop's mini-sync LaunchAgent), so each gets a
+# link in the mini's ~/.local/bin, pointing into the mirror.
+LINKS=(theme-set toclip browser-clip)
 # The mini records the last theme this script applied there, so a theme
 # picked on the mini (prefix t) lasts until the laptop switches.
 THEME_STATE=.local/state/mini-sync/theme
@@ -91,6 +95,13 @@ for s in "${SECRETS[@]}"; do
 done
 # -R keeps the path after /./; --chmod applies to the dirs it creates too.
 (( ${#secrets[@]} )) && rsync -aR --chmod=D700,F600 ${dry[@]+"${dry[@]}"} "${secrets[@]}" "$HOST:"
+
+say "==> ${LINKS[*]} → $HOST:~/.local/bin (links into the mirror)"
+if (( ${#dry[@]} )); then
+  say "    would ensure the links"
+else
+  ssh "$HOST" "mkdir -p ~/.local/bin && for n in ${LINKS[*]}; do ln -sfn ../../dotfiles/scripts/.local/bin/\$n ~/.local/bin/\$n; done"
+fi
 
 # The laptop's theme goes through the mini's own theme-set, which writes the
 # name and the Ghostty include there and reloads the mini's tmux. It runs only

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# mini — attach the office mini's tmux, from a laptop Ghostty window.
+#
+#   mini           the most recently active session, attached elsewhere or not
+#                  (the Screen Sharing window stays attached too); a new
+#                  session when none exist
+#   mini <name>    session <name>, created when missing
+#
+# Refuses inside the laptop's tmux: both use the same prefixes, so the laptop
+# tmux would take every prefix key. See docs/qiushi-mini.md § Clipboard.
+set -euo pipefail
+
+HOST=${MINI_HOST:-mini}
+
+case ${1:-} in -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+if [[ -n ${TMUX:-} ]]; then
+  echo "mini: run this from a Ghostty window outside tmux (the laptop tmux would take the prefix keys)" >&2
+  exit 1
+fi
+
+if [[ -n ${1:-} ]]; then
+  [[ $1 =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "mini: session names are letters, digits, . _ -" >&2; exit 2; }
+  exec ssh -t "$HOST" "tmux new-session -A -s '$1'"
+fi
+# `tmux attach` alone prefers an unattached session, which is rarely the one
+# being worked in. `=` makes the target an exact name.
+exec ssh -t "$HOST" 's=$(tmux list-sessions -F "#{session_activity} #{session_name}" 2>/dev/null | sort -rn | head -n 1 | cut -d " " -f 2-)
+  if [ -n "$s" ]; then exec tmux attach-session -t "=$s"; else exec tmux new-session; fi'

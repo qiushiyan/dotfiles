@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# toclip — put text on the clipboard of the machine you are sitting at.
+#
+#   <cmd> | toclip       toclip <text>...       (-q: no report on stderr)
+#
+# At a machine's own screen (the laptop, or the mini over Screen Sharing) it
+# is pbcopy. In an ssh session to the mini it asks the laptop's terminal to
+# copy, over OSC 52: inside tmux through `load-buffer -w` aimed at this
+# session's ssh client, outside tmux straight at the session's tty. The request
+# is fire-and-forget — a terminal that ignores OSC 52 (Terminal.app) drops it —
+# so inside tmux the text also stays as the newest tmux buffer, which
+# `frommini` on the laptop fetches. See docs/qiushi-mini.md § Clipboard.
+set -euo pipefail
+
+# Larger payloads stay in the tmux buffer only: tmux's input-buffer-size is
+# 1 MiB of encoded sequence, and the terminal side's ceiling is untested.
+OSC52_MAX=${TOCLIP_OSC52_MAX:-524288}
+
+quiet=0
+[[ ${1:-} == -q ]] && { quiet=1; shift; }
+case ${1:-} in -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+
+say() { (( quiet )) || printf 'toclip: %s\n' "$*" >&2; }
+die() { printf 'toclip: %s\n' "$*" >&2; exit 1; }
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/toclip.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+payload=$work/payload
+if (( $# )); then printf '%s' "$*" > "$payload"; else cat > "$payload"; fi
+[[ -s $payload ]] || die "nothing to copy"
+size=$(wc -c < "$payload" | tr -d ' ')
+
+local_copy() { LANG=en_US.UTF-8 pbcopy < "$payload"; }
+
+# A client is remote when an sshd sits among its process's ancestors: the
+# laptop's `ssh mini` attaches through sshd, the Screen Sharing Ghostty does
+# not. TOCLIP_REMOTE_PIDS (space-separated) replaces the walk in tests.
+is_remote() {
+  local pid=$1 comm i
+  if [[ -n ${TOCLIP_REMOTE_PIDS+set} ]]; then
+    [[ " $TOCLIP_REMOTE_PIDS " == *" $pid "* ]]; return
+  fi
+  for i in 1 2 3 4 5 6 7 8; do
+    comm=$(ps -o comm= -p "$pid" 2>/dev/null) || return 1
+    [[ $comm == *sshd* ]] && return 0
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+    [[ -z $pid || $pid -le 1 ]] && return 1
+  done
+  return 1
+}
+
+# The tty of the nearest ancestor that has one. A detached caller (Claude
+# Code's link handler) has no /dev/tty of its own.
+caller_tty() {
+  if { : > /dev/tty; } 2>/dev/null; then printf '/dev/tty'; return; fi
+  local pid=$$ t i
+  for i in 1 2 3 4 5 6; do
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+    [[ -z $pid || $pid -le 1 ]] && return 1
+    t=$(ps -o tty= -p "$pid" 2>/dev/null | tr -d ' ')
+    case $t in ''|'??') ;; *) printf '/dev/%s' "$t"; return ;; esac
+  done
+  return 1
+}
+
+if [[ -n ${TMUX:-} ]]; then
+  session=$(tmux display-message -p -t "${TMUX_PANE:-}" '#{session_id}')
+  target=
+  while read -r _ pid name; do
+    if is_remote "$pid"; then target=$name; break; fi
+  done < <(tmux list-clients -t "$session" -F '#{client_activity} #{client_pid} #{client_name}' | sort -rn)
+  if [[ -z $target ]]; then
+    tmux load-buffer - < "$payload"
+    local_copy
+    say "copied $size bytes here (no ssh client on this session)"
+  elif (( size > OSC52_MAX )); then
+    tmux load-buffer - < "$payload"
+    say "$size bytes is too large to send through the terminal; kept as the newest tmux buffer — run frommini on the laptop"
+    exit 1
+  else
+    tmux load-buffer -w -t "$target" - < "$payload"
+    say "sent $size bytes to the laptop terminal ($target); also kept as the newest tmux buffer"
+  fi
+elif [[ -n ${SSH_CONNECTION:-} ]]; then
+  (( size <= OSC52_MAX )) || die "$size bytes is too large to send through the terminal"
+  tty=$(caller_tty) || die "no terminal to send to"
+  printf '\033]52;c;%s\a' "$(base64 < "$payload" | tr -d '\n')" > "$tty"
+  say "sent $size bytes to the laptop terminal"
+else
+  local_copy
+  say "copied $size bytes"
+fi
