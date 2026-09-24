@@ -5,7 +5,7 @@
 # Why a mirror and not `git pull`: skills and tools iterate uncommitted, and
 # the mirror carries the working tree as-is. See docs/qiushi-mini.md § Sync.
 #
-# Also: CLI token files (SECRETS) and theme-set state (THEME), below.
+# Also: CLI token files (SECRETS) and the laptop's theme, below.
 #
 # Usage: mini-sync [-n|--dry-run] [-q|--quiet]
 #   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
@@ -22,11 +22,9 @@ BINS=(headroom envoy brief gwt)
 # refresh tokens, so two machines sharing one log each other out; the mini
 # logs in on its own.
 SECRETS=(.planlab/.env .bench/.env)
-# theme-set's two outputs, so the mini's terminal apps follow the laptop's
-# theme. The Ghostty include is gitignored, so the dotfiles mirror skips it.
-# It goes by its real path: ~/.config/ghostty is a stowed folder link on the
-# mini, and rsync -R would replace a link on the way with a directory.
-THEME=(.config/terminal-theme dotfiles/ghostty/.config/ghostty/auto/theme.ghostty)
+# The mini records the last theme this script applied there, so a theme
+# picked on the mini (prefix t) lasts until the laptop switches.
+THEME_STATE=.local/state/mini-sync/theme
 
 dry=() quiet=0
 for arg in "$@"; do
@@ -94,11 +92,24 @@ done
 # -R keeps the path after /./; --chmod applies to the dirs it creates too.
 (( ${#secrets[@]} )) && rsync -aR --chmod=D700,F600 ${dry[@]+"${dry[@]}"} "${secrets[@]}" "$HOST:"
 
+# The laptop's theme goes through the mini's own theme-set, which writes the
+# name and the Ghostty include there and reloads the mini's tmux. It runs only
+# when the laptop's theme differs from the last one applied, as with the Codex
+# config above.
 say "==> theme → $HOST"
-theme=()
-for t in "${THEME[@]}"; do
-  [[ -f $HOME/$t ]] && theme+=("$HOME/./$t")
-done
-(( ${#theme[@]} )) && rsync -aR ${dry[@]+"${dry[@]}"} "${theme[@]}" "$HOST:"
+theme=$(tr -d '[:space:]' < "$HOME/.config/terminal-theme" 2>/dev/null || true)
+if [[ ! $theme =~ ^[a-z0-9_]+$ ]]; then
+  say "    no laptop theme"
+else
+  applied=$(ssh "$HOST" "cat ~/$THEME_STATE 2>/dev/null" || true)
+  if [[ $applied == "$theme" ]]; then
+    say "    unchanged"
+  elif (( ${#dry[@]} )); then
+    say "    would apply $theme (last applied: ${applied:-none})"
+  else
+    ssh "$HOST" "~/.local/bin/theme-set $theme >/dev/null && mkdir -p ~/${THEME_STATE%/*} && echo $theme > ~/$THEME_STATE"
+    say "    applied $theme"
+  fi
+fi
 
 say "==> done"

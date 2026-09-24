@@ -62,6 +62,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | tool | version | how | update |
 |---|---|---|---|
 | CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync git-lfs coreutils bat difftastic` (the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
+| tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
 | node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'` |
 | pnpm | 11.27.1 | `get.pnpm.io/install.sh` with `PNPM_VERSION=11.27.1` → `~/Library/pnpm`; pinned to 11 to match the laptop, not the Rust-port 12 | `pnpm self-update` |
@@ -99,8 +100,18 @@ and they pull the shared parts from the mirror.
   installer blocks, zoxide, fzf, and oh-my-posh last. oh-my-zsh and the two
   plugins are shallow clones at the laptop's paths; oh-my-posh is from the
   `jandedobbeleer/oh-my-posh` tap.
-- **`~/.tmux.conf`** is eight lines (mouse, history, `tmux-256color`,
-  `set-clipboard on`), on plain Homebrew tmux rather than `tmux-popupfix`.
+- **tmux** is the laptop's: the `tmux` package is stowed, so
+  `~/.config/tmux` is a folder link into the mirror, and `prefix t` switches
+  themes through `~/.local/bin/theme-set`, a link to the mirror's script (the
+  `scripts` package is not stowed: it carries the laptop's `mini-sync`
+  LaunchAgent). The plugins are gitignored, so they were cloned on the mini at
+  the laptop's commits into the mirror's `tmux/.config/tmux/plugins/`;
+  `mini-sync` leaves ignored paths alone. After a plugin update on the laptop,
+  run `prefix I`/`prefix U` on the mini too. The old eight-line
+  `~/.tmux.conf` is kept as `~/.tmux.conf.pre-stow`. Bindings that call
+  laptop-only tools fail on the mini: `prefix T` (sesh) and `prefix b`
+  (terminal-browser). `prefix y`/`Y` copy with the mini's `pbcopy`, so over
+  SSH the path lands on the mini's clipboard, not the laptop's.
 
 **Prompt:** the `ohmyposh` package is stowed, so the mini renders the
 laptop's `zen.omp.json` in the synced theme's palette. That config's first
@@ -143,9 +154,9 @@ default mini:
 
 The app is installed by hand. The `ghostty` package is stowed from the
 mirror, so `~/.config/ghostty` is a folder link into it, as on the laptop.
-The theme include (`auto/theme.ghostty`) and `~/.config/terminal-theme`
-arrive through `mini-sync` (§ Sync). Ghostty reloads config only with
-⌘⇧, or a restart.
+The mini's `theme-set` writes the theme include (`auto/theme.ghostty`) and
+`~/.config/terminal-theme`, run either from `prefix t` or by `mini-sync`
+(§ Sync). Ghostty reloads config only with ⌘⇧, or a restart.
 
 **Fonts** are the laptop's casks, `font-jetbrains-mono-nerd-font` and
 `font-sarasa-gothic`, installed into `~/Library/Fonts`. The files landed but
@@ -170,9 +181,8 @@ token files).
 and `~/.agents` are real dirs, and `settings.json`, `CLAUDE.md`, hooks,
 rules, commands, agents and skills link into the mirror. Codex reads the same
 skills through `~/.agents/skills`.
-- The hooks and the statusline call `~/.config/tmux/scripts/*`, so that one
-  dir links to the mirror's `tmux/.config/tmux/scripts`. The laptop's
-  `tmux.conf` is not linked. Those scripts no-op outside tmux.
+- The hooks and the statusline call `~/.config/tmux/scripts/*`, which the
+  stowed `tmux` package provides (§ Shell). Those scripts no-op outside tmux.
 - A setting changed on the mini (`/config`, the `/model` default) writes
   through the link into the mirror and is lost at the next sync.
 
@@ -241,9 +251,13 @@ laptop.
   source clones. `planlab` and `bench` are not copied: they are shims into a
   checkout, and the mini generates its own (§ planlab checkout).
 - **Codex config**: regenerated as described in § Agent config.
-- **Theme**: `THEME` in the script sends theme-set's two outputs
-  (`~/.config/terminal-theme`, the gitignored Ghostty include), so the mini's
-  Ghostty, nvim and Claude statusline follow the laptop's theme.
+- **Theme**: the laptop's theme name is applied by running the mini's own
+  `theme-set`, which writes `~/.config/terminal-theme` and the gitignored
+  Ghostty include there and reloads the mini's tmux. It runs only when the
+  laptop's theme differs from the last one applied (recorded in
+  `~/.local/state/mini-sync/theme` on the mini). A theme picked on the mini
+  with `prefix t` therefore lasts until the laptop switches, as a `/model`
+  choice does for the Codex config.
 - **Token files**: `SECRETS` in the script (`~/.planlab/.env`,
   `~/.bench/.env`) are sent 600 inside 700 dirs. Only plain CLI API tokens
   belong on that list. OAuth logins (Claude Code, Codex, gh) rotate their
