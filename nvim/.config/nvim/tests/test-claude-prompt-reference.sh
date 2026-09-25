@@ -68,6 +68,16 @@ got=$(ref_text)
 [ "$got" = "**Decision 2:** newest question?" ] && ok R1 || bad R1 "reference shows [$got]"
 [ "$(R 'bufname("%")')" = "$DRAFT" ] && ok R1-focus || bad R1-focus "focus on [$(R 'bufname("%")')]"
 
+# R6: the layout follows the pane: stacked when narrow (headless starts at
+# 80 columns), side by side once it widens, stacked again when it narrows.
+[ "$(R 'winlayout()[0]')" = col ] && ok R6-narrow || bad R6-narrow "layout [$(R 'winlayout()[0]')]"
+keys ':set columns=160<CR>'
+[ "$(R 'winlayout()[0]')" = row ] && [ "$(ref_text)" = "**Decision 2:** newest question?" ] &&
+  ok R6-wide || bad R6-wide "layout [$(R 'winlayout()[0]')], reference [$(ref_text)]"
+keys ':set columns=80<CR>'
+[ "$(R 'winlayout()[0]')" = col ] && [ "$(R 'bufname("%")')" = "$DRAFT" ] &&
+  ok R6-back || bad R6-back "layout [$(R 'winlayout()[0]')], focus [$(R 'bufname("%")')]"
+
 # R2: history from the draft, whole-turn toggle from the reference (tool
 # records and meta don't split the turn); the
 # rewound branch is not a reply.

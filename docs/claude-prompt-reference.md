@@ -17,7 +17,9 @@ nvim/.config/nvim/tests/test-claude-prompt-reference.sh
 ## Using it
 
 The window opens automatically on Ctrl+G, beside the draft when the pane is at
-least 100 columns wide and above it otherwise. It shows the newest reply's
+least 100 columns wide and above it otherwise. The layout follows pane resizes
+(tmux zoom, a new split): crossing 100 columns flips it, keeping the reference's
+scroll position and focus. It shows the newest reply's
 **final message**, the text after its last tool call. The cursor stays in the
 draft.
 

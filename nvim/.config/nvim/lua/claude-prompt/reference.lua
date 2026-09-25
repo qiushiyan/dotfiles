@@ -73,6 +73,19 @@ local function scroll(keys)
   end
 end
 
+-- short, wide agent panes read best side by side; narrow ones stack
+local function side_by_side()
+  return vim.o.columns >= 100
+end
+
+local function size(win)
+  if state.side then
+    vim.api.nvim_win_set_width(win, vim.o.columns - math.max(50, math.floor(vim.o.columns * 0.4)))
+  else
+    vim.api.nvim_win_set_height(win, math.floor(vim.o.lines * 0.55))
+  end
+end
+
 local function close()
   if valid_win(state.win) then
     vim.api.nvim_win_close(state.win, true)
@@ -85,16 +98,10 @@ function open_window()
   vim.bo[buf].swapfile = false
   vim.bo[buf].filetype = "markdown"
 
-  -- short, wide agent panes read best side by side; narrow ones stack
-  local cols = vim.o.columns
-  if cols >= 100 then
-    vim.cmd("topleft vsplit")
-    vim.api.nvim_win_set_width(0, cols - math.max(50, math.floor(cols * 0.4)))
-  else
-    vim.cmd("topleft split")
-    vim.api.nvim_win_set_height(0, math.floor(vim.o.lines * 0.55))
-  end
+  state.side = side_by_side()
+  vim.cmd(state.side and "topleft vsplit" or "topleft split")
   local win = vim.api.nvim_get_current_win()
+  size(win)
   vim.api.nvim_win_set_buf(win, buf)
   for opt, value in pairs(WIN_OPTS) do
     vim.wo[win][opt] = value
@@ -151,6 +158,28 @@ function M.open()
   render()
 end
 
+-- Follow pane resizes (tmux zoom, splits): flip the layout when the width
+-- crosses the threshold, otherwise restore the reference's share. Scheduled
+-- so it runs after LazyVim's VimResized `wincmd =`.
+local function relayout()
+  if not valid_win(state.win) then
+    return
+  end
+  if state.side == side_by_side() then
+    return size(state.win)
+  end
+  local in_ref = vim.api.nvim_get_current_win() == state.win
+  local view = vim.api.nvim_win_call(state.win, vim.fn.winsaveview)
+  close()
+  render()
+  vim.api.nvim_win_call(state.win, function()
+    vim.fn.winrestview(view)
+  end)
+  if in_ref then
+    vim.api.nvim_set_current_win(state.win)
+  end
+end
+
 -- Closing the draft window without quitting (<C-w>c, :close) must not leave
 -- the reference as the editor's only window: Claude would wait behind it.
 -- Put the draft back into that window instead.
@@ -187,6 +216,7 @@ local function attach(buf)
   end
   state.draft_win = vim.api.nvim_get_current_win()
   watch_draft(state.draft_win, buf)
+  vim.api.nvim_create_autocmd("VimResized", { callback = vim.schedule_wrap(relayout) })
 
   local map = function(lhs, fn, desc)
     vim.keymap.set("n", lhs, fn, { buffer = buf, desc = desc })
