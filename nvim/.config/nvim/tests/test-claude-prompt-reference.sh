@@ -59,27 +59,28 @@ start() {
 }
 stop() { kill "$NVIM_PID" 2>/dev/null; wait "$NVIM_PID" 2>/dev/null; }
 
-# R1: a Ctrl+G-shaped file opens the reference on the newest reply's whole
-# turn (tool records and meta don't split it), cursor left in the draft.
+# R1: a Ctrl+G-shaped file opens the reference on the newest reply's final
+# message, cursor left in the draft.
 DRAFT="$T/claude-501/claude-prompt-abc.md"
 : >"$DRAFT"
 start "$DRAFT"
 got=$(ref_text)
-[ "$got" = "Let me look around.||**Decision 2:** newest question?" ] && ok R1 || bad R1 "reference shows [$got]"
+[ "$got" = "**Decision 2:** newest question?" ] && ok R1 || bad R1 "reference shows [$got]"
 [ "$(R 'bufname("%")')" = "$DRAFT" ] && ok R1-focus || bad R1-focus "focus on [$(R 'bufname("%")')]"
 
-# R2: history from the draft, final-message toggle from the reference; the
+# R2: history from the draft, whole-turn toggle from the reference (tool
+# records and meta don't split the turn); the
 # rewound branch is not a reply.
 keys '[r'
 got=$(ref_text)
 [ "$got" = "**Decision 1:** earlier question?" ] && ok R2-prev || bad R2-prev "[$got]"
 keys '[r]r'
-[ "$(ref_text)" = "Let me look around.||**Decision 2:** newest question?" ] && ok R2-bounded || bad R2-bounded "[$(ref_text)]"
+[ "$(ref_text)" = "**Decision 2:** newest question?" ] && ok R2-bounded || bad R2-bounded "[$(ref_text)]"
 keys '[R'
 [ "$(ref_text)" = "**Decision 1:** earlier question?" ] && ok R2-oldest || bad R2-oldest "[$(ref_text)]"
 keys ']R<C-w>tf<C-w>p'
 got=$(ref_text)
-[ "$got" = "**Decision 2:** newest question?" ] && ok R2-final || bad R2-final "[$got]"
+[ "$got" = "Let me look around.||**Decision 2:** newest question?" ] && ok R2-full || bad R2-full "[$got]"
 
 # R3: :wq in the draft ends nvim (Claude is waiting on it) and the file holds
 # exactly what was typed.

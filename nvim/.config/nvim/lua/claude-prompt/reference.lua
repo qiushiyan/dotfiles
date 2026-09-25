@@ -147,7 +147,7 @@ function M.open()
     vim.notify("Claude reply reference: " .. err, vim.log.levels.INFO)
     return
   end
-  state.replies, state.index, state.full = replies, #replies, true
+  state.replies, state.index, state.full = replies, #replies, false
   render()
 end
 
