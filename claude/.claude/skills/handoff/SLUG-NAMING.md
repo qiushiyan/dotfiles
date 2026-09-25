@@ -3,9 +3,8 @@
 The slug is one token doing four jobs: the brief's filename, the git branch,
 the worktree directory, and the key branch and PR state resolve through.
 Named once well, all four read well. Where the corpus keeps domain folders,
-the branch and the worktree carry the folder in front of the slug —
-`ux/cut-turn-honesty.md` is branch `ux/cut-turn-honesty` — so the folder
-supplies the place's broad half wherever the name is read.
+the branch and worktree put the folder in front of the slug:
+`ux/cut-turn-honesty.md` is branch `ux/cut-turn-honesty`.
 
 ## The cold-read test
 
@@ -31,8 +30,8 @@ head.
 `<prefix>/<place>-<outcome>`, lowercase kebab, 2–4 words after the prefix.
 Where the repo uses a `feat/`-style prefix, that prefix names the **kind of
 change**, and it nests the brief exactly as it nests the worktree. In a corpus
-kept in domain folders the domain takes the prefix's place in the branch, so
-the slug is `<place>-<outcome>` alone and does not repeat the folder's name.
+kept in domain folders the folder is the prefix, so the slug is
+`<place>-<outcome>` alone and does not repeat the folder's name.
 
 Take the outcome words from the goal you have already written rather than
 coining a fresh phrase for the filename: you name it at your most context-rich,
@@ -66,9 +65,9 @@ prose in sibling briefs, the folder's notes (the `README.md` files of a
 folder kept in domain folders), the brief's own body —
 for you to edit with judgement. Close with `brief check`: it resolves every
 sibling reference, so a dangling slug fails loudly instead of surviving in
-prose. Moving a brief to another domain folder keeps the slug and renames the
-branch with the folder, so it too is cheap only while unstarted:
-`brief mv <slug> --domain <folder>` says what it costs before it moves.
+prose. Moving a brief to another domain folder is
+`brief mv <slug> --domain <folder>`: the slug stays and the branch takes the
+new folder, so it too is cheap only while unstarted.
 
 The sweep stops at the handoff folder. A repo's own dated records — specs,
 issue records, execution records — name what the brief was called at the time,
