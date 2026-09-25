@@ -119,9 +119,8 @@ it.
   run `prefix I`/`prefix U` on the mini too. `~/.tmux.conf.pre-stow` is an
   inert hand-written config tmux never reads. Bindings that call
   laptop-only tools fail on the mini: `prefix T` (sesh) and `prefix b`
-  (terminal-browser). `prefix y`/`Y` copy with the mini's `pbcopy`, so over
-  SSH the path lands on the mini's clipboard; `frommini -g` fetches it
-  (§ Clipboard and attach).
+  (terminal-browser). `prefix y`/`Y` copy through `toclip`, so over SSH the
+  path reaches the laptop clipboard (§ Clipboard and attach).
 
 **Machine badge:** `PROMPT_MACHINE=mini`, set in `hosts/mini.zsh`,
 marks everything that runs on the mini; the laptop leaves it unset and stays
@@ -205,6 +204,7 @@ purpose:
 | terminal copy (Claude's `c`, nvim `y`, tmux copy mode) | mini | to the laptop clipboard over OSC 52, and into the mini tmux's buffers; nvim also writes the mini's pasteboard |
 | `<cmd> \| toclip`, `toclip <text>` | either | to the clipboard of the machine you are sitting at |
 | `cout`, `prefix o` | either | a command and its output, through `toclip` |
+| `prefix y` / `prefix Y` | either | the pane's path, through `toclip` |
 | `frommini` | laptop | the mini tmux's newest buffer → laptop clipboard |
 | `frommini -g` | laptop | the mini's GUI pasteboard, text or image → laptop clipboard |
 | `tomini` | laptop | the laptop clipboard, text or image → the mini's pasteboard |
