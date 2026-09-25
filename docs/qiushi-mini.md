@@ -245,11 +245,11 @@ claude-tomini -n            # newest session for $PWD; check both ends, change n
 claude-tomini --start <id>  # move it and resume it in mini tmux session <worktree name>
 ```
 
-It moves two things. The **code** is the worktree's branch, pushed straight
-into the mini's clone and checked out at the same `$HOME`-relative path. The
-**transcript** is the `.jsonl` and its sidecar dir, filed under the mini's
-project dir. The mini then resumes with `x --resume <id>`, keeping the same
-session id and the whole history.
+It moves the **code** and the **transcript**. The code is the worktree's
+branch, pushed straight into the mini's clone and checked out at the same
+`$HOME`-relative path. The transcript is the `.jsonl` and its sidecar dir,
+filed under the mini's project dir. The mini then resumes with
+`x --resume <id>`, keeping the same session id and the whole history.
 
 - **Preconditions it enforces:** the session is closed on the laptop (a live
   `sessions/<pid>.json` names it), the worktree is clean, and the session's
@@ -270,6 +270,15 @@ session id and the whole history.
   the `cwd` fields are rewritten, because thinking blocks are signed over
   their exact text. The resume command appends a system-prompt note about
   the move instead.
+- **The mini's first turn rebuilds the prompt cache, and that cost is
+  accepted.** The cache matches on the exact prompt from its start, and the
+  system prompt comes before the history. On the mini it differs in the
+  working directory, the environment block and the move note, and the
+  account may sit in another organization. So that turn writes the whole
+  context to the cache at the cache-write rate. It is a one-time cost per
+  move, like resuming after the cache has expired. No script change avoids
+  it, because the working directory alone breaks the match. That turn's
+  `cache_creation_input_tokens` in the mini's transcript shows the size.
 - **The laptop copy stays.** Resuming it too forks the conversation. To
   come back, copy the mini's newer `.jsonl` over it by hand; there is no
   reverse script yet.
