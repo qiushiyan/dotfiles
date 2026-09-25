@@ -81,7 +81,7 @@ Arguments override the defaults and carry through the steps they touch:
      (this session's synthesis, or the handoff), continue it with the spec
      as the updated proposal under critique, by `/consult` step 6: the
      voices keep their context and judge follow-through. Otherwise open a
-     fresh `/consult` in approach mode with the spec as the artifact under
+     fresh `/consult` with the spec as the proposal under
      review. Judge the findings by `/consult`'s own process. A finding that
      opens a technical unknown returns to step 1; a disagreement that needs
      the user's call is flagged in the report, and the run stops there.

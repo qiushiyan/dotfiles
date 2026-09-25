@@ -56,7 +56,7 @@ First cut: <the smallest change that makes the load-bearing premise observable �
 <a product fork that verification exposed, or a parked fork whose case the drift shows has now landed, in the form below> | none
 
 ## Next move
-<the consult you recommend — approach mode, with the one question about the implementation's shape the round would buy, typically the scope test's boundary, and where a fork is open the option the round should assume — or "go" when the scope test found nothing worth a second opinion>
+<the consult you recommend — with the one question about the implementation's shape the round would buy, typically the scope test's boundary, and where a fork is open the option the round should assume — or "go" when the scope test found nothing worth a second opinion>
 ```
 
 ### How each section earns its place

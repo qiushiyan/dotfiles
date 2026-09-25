@@ -80,13 +80,11 @@ duet instead. Don't grow the engine.
   sharing a blind spot or the brief's framing look exactly like voices
   confirming each other — and voices on different briefs are judged each
   against its own question, their overlapping claims compared on evidence.
-- **The brief's order is the instrument**, in both modes, against one
-  failure model (*the voice anchored on what it should have judged*). In
-  `diagnosis` the voice reads the observations and writes its blind read
-  before it sees the host's hypothesis; in `approach` it reads the goal, the
-  constraints and the code and sketches its own design before it sees the
-  host's position, which arrives as one paragraph to attack rather than a
-  design document. The delta between the voice's reading and the host's is
+- **The brief's order is the instrument**, against one failure model (*the
+  voice anchored on what it should have judged*). The voice reads the goal
+  and what was observed and commits its own reading of the problem and the
+  shape before it reads the code or the host's position, which arrives as
+  one short statement to attack rather than a design document. The delta between the voice's reading and the host's is
   the product; a voice that starts from the host's design critiques inside
   its frame and opens with "matches your framing". Same-file ordering is a
   sequencing nudge, not blinding, so where a wrong answer would cost an

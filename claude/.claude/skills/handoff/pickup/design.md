@@ -57,7 +57,7 @@ Decision needed: <a product fork, in the form below> | none
 Parked: <an unresolved technical fact that does not change the direction, with its working answer> | none
 
 ## Next move
-<the consult you recommend and its mode — approach when the mechanism is traced and the shape is open, diagnosis when the cause is still a belief — with the one question the round would buy and, where a fork is open, the option the round should assume until the user answers it> | none — the brief closes, and the closing record is <where>
+<the consult you recommend — with the one question the round would buy (the cause, when it is still a belief; the shape, when the mechanism is traced) and, where a fork is open, the option the round should assume until the user answers it> | none — the brief closes, and the closing record is <where>
 ```
 
 ### How each section earns its place
@@ -94,10 +94,9 @@ traced to its lines — inferred from an incident, a log, a timeline —
 separate what was observed from what was inferred, test each link of the
 claimed chain at its source, and name the alternative cause the evidence
 has not ruled out; the countershape in section 6 is then the fix at a
-different link, and the consult is diagnosis mode. When the mechanism is
-traced and you can point at it, the cause is checked in the ordinary
-premise line and the consult is approach mode: the shape of the fix is
-what is open.
+different link, and the consult's question is the cause. When the mechanism
+is traced and you can point at it, the cause is checked in the ordinary
+premise line and the consult's question is the shape of the fix.
 
 **Structure: is this a local change the design absorbs, or is the design
 in the way?** When the foundation fights the change, preparatory
