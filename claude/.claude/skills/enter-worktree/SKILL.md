@@ -20,6 +20,5 @@ path=$(gwt create --non-interactive feat/answer-attachments) &&
 ```
 </example>
 
-The move applies when your turn ends, so report the branch and path and end
-the turn. If `session-cd` fails, enter the path with `EnterWorktree`, or work
+The move applies when your turn ends, so report the branch and let the user know it finished. If `session-cd` fails, enter the path with `EnterWorktree`, or work
 from the path when that tool is unavailable.
