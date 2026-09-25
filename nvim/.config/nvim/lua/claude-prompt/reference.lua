@@ -23,7 +23,7 @@ local function render()
   if valid_win(state.win) then
     vim.api.nvim_win_set_cursor(state.win, { 1, 0 })
     vim.wo[state.win].winbar = string.format(
-      " reply %d/%d · %s%%=[r ]r  f %s  q close ",
+      " reply %d/%d · %s%%=[r ]r  ]R newest  f %s  q close ",
       state.index,
       #state.replies,
       state.full and "whole turn" or "final message",
@@ -103,6 +103,12 @@ local function open_window()
   map("]r", function()
     step(1)
   end, "Next Claude reply")
+  map("[R", function()
+    step(-math.huge)
+  end, "Oldest Claude reply")
+  map("]R", function()
+    step(math.huge)
+  end, "Newest Claude reply")
   map("f", toggle_full, "Toggle final message / whole turn")
   map("q", close, "Close reply reference")
 
@@ -149,6 +155,12 @@ local function attach(buf)
   map("]r", function()
     step(1)
   end, "Next Claude reply")
+  map("[R", function()
+    step(-math.huge)
+  end, "Oldest Claude reply")
+  map("]R", function()
+    step(math.huge)
+  end, "Newest Claude reply")
   map("<C-f>", function()
     scroll("<C-d>")
   end, "Scroll Claude reply down")

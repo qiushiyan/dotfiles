@@ -75,7 +75,7 @@ got=$(ref_text)
 [ "$got" = "**Decision 1:** earlier question?" ] && ok R2-prev || bad R2-prev "[$got]"
 keys '[r'
 [ "$(ref_text)" = "**Decision 1:** earlier question?" ] && ok R2-bounded || bad R2-bounded "[$(ref_text)]"
-keys ']r<C-w>tf<C-w>p'
+keys '[R]R<C-w>tf<C-w>p'
 got=$(ref_text)
 [ "$got" = "Let me look around.||**Decision 2:** newest question?" ] && ok R2-full || bad R2-full "[$got]"
 
