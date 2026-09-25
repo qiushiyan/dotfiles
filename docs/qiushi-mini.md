@@ -70,10 +70,14 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | Codex CLI | 0.155.1 | `chatgpt.com/codex/install.sh` → `~/.local/bin/codex` | `codex update` |
 | Python | 3.14.7 | `uv python install 3.14` (versioned `python3.14` only) | `uv python upgrade` |
 | AWS CLI | 2.37.3 | `brew install awscli`; `~/.aws/config` copied from the laptop (SSO profiles only; no `credentials`) | `brew upgrade awscli`; re-copy `config` after a profile change |
+| Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
+| poppler | 26.09.0 | `brew install poppler` (`pdftotext` for planlab `debug:run` document reads) | `brew upgrade` |
+| agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
+| portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; no boot service | follow that pin |
 
 Personal CLIs (headroom, envoy, brief, gwt) come from the laptop through
 `mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
-Not installed: go, rust, Docker, databases, other GUI apps.
+Not installed: rust, Docker, other GUI apps.
 
 ## Shell
 
@@ -345,6 +349,9 @@ token files).
 and `~/.agents` are real dirs, and `settings.json`, `CLAUDE.md`, hooks,
 rules, commands, agents and skills link into the mirror. Codex reads the same
 skills through `~/.agents/skills`.
+- Skills linked from other laptop projects dangle on the mini: `explain-diff`
+  (absolute `/Users/qiushi` path), `greenflag-*` (resolve once `~/dev/greenflag`
+  exists), `read-email`/`write-email` and `terminal-browser` (laptop-only).
 - The hooks and the statusline call `~/.config/tmux/scripts/*`, which the
   stowed `tmux` package provides (§ Shell). Those scripts no-op outside tmux.
 - A setting changed on the mini (`/config`, the `/model` default) writes
@@ -387,6 +394,14 @@ reach it. Commits use a repo-local identity (`qiushi@planlab.ai` /
 from each package's own install (`pnpm planlab:install`,
 `cd bench && pnpm cli:install`), which bakes this checkout's absolute paths
 in. Re-run the installs after moving the checkout.
+
+The tools `pl-loopy-verify` needs are in § Toolchain, and `planlab backstage`
+reads prod. The app-backed rungs (`lane up`, feature smoke, the pool rig)
+also need machine state that is not there yet. Nothing has copied the ignored
+`application/.env.development.local` or `loopy-stress/.env.smoke.local`, so
+`debug:run` and evals have no Bedrock credential either. The `planlab` home
+database is not built (`/pl-setup-app`), and no identity is recorded with
+`lane me`.
 
 Planlab's handoff briefs are their own clone, at the path `brief` derives from
 this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
