@@ -84,12 +84,12 @@ duet instead. Don't grow the engine.
   voice anchored on what it should have judged*). The voice reads the goal
   and what was observed and commits its own reading of the problem and the
   shape before it reads the code or the host's position, which arrives as
-  one short statement to attack rather than a design document. The delta between the voice's reading and the host's is
-  the product; a voice that starts from the host's design critiques inside
-  its frame and opens with "matches your framing". Same-file ordering is a
-  sequencing nudge, not blinding, so where a wrong answer would cost an
-  implementation cycle the position is withheld until round 2 in the same
-  session.
+  a short statement to attack rather than a design document. The delta
+  between the voice's reading and the host's is the product; a voice that
+  starts from the host's design critiques inside its frame and opens with
+  "matches your framing". Same-file ordering is a sequencing nudge, not
+  blinding, so where a wrong answer would cost an implementation cycle the
+  position is withheld until round 2 in the same session.
 - **Probes falsify or they go.** A brief carries the areas the host doubts
   and the few observations that could change the decision — a lost dispatch
   traced at ten minutes, an hour and three hours once overturned a proposed

@@ -99,7 +99,8 @@ believe", after the voice's read.»
 
 ## What we believe
 
-«The position this session would defend, in two parts.
+«The position this session would defend, in two parts — a statement to
+attack, not a design document.
 
 **The problem.** What we think is wrong or needed and why, as a chain —
 X, which causes Y, which is why we see Z — with every link marked observed
@@ -113,7 +114,8 @@ cause, at a link in the chain, or at the symptom. When the proposal is a file,
 its absolute path and one line on what it decides; the voice opens it only
 now.
 
-Delete the section when SKILL.md step 6 withholds it for round 2.»
+Delete this section and "Where we doubt it" when SKILL.md step 6 withholds
+our position for round 2.»
 
 ## Where we doubt it
 

@@ -41,8 +41,8 @@ a heading of their own.
 
 ## The output item the voice fills first
 
-Item 0 in a consult and a full review; in a goal review, the item after
-the expectations written blind.
+Item 0 in a consult; the unnumbered opening of a full review's output; in a
+goal review, the item after the expectations written blind.
 
 ```markdown
 0. **The method** — before any conclusion: is the right data pulled for the

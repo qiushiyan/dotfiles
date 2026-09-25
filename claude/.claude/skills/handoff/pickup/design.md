@@ -186,5 +186,5 @@ decision.
 
 Done when section 1 would re-ground the user without the brief in front
 of them, every slot in sections 2–7 carries its verdict or its `none`, and
-the next move names a consult with its mode and question, or the close. Stop after this
+the next move names a consult and its question, or the close. Stop after this
 response — implementation begins once the direction is accepted.
