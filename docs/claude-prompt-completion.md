@@ -25,8 +25,10 @@ the buffer path.
 
 ## Behavior — all deliberate
 
-- Activates only in buffers named `claude-prompt-*`; that prefix is a literal
-  in the Claude binary.
+- Activates only in Ctrl+G prompt buffers, as decided by
+  `claude-prompt.is_prompt_file` (`lua/claude-prompt/init.lua`): the
+  `claude-prompt-` prefix, a literal in the Claude binary, inside a
+  `claude-<uid>/` directory.
 - Completes `/partial` at line start or after whitespace, anywhere in the
   line — but not inside paths like `/usr/bin` (the final slash isn't
   whitespace-preceded). Note only a *leading* slash is parsed as a command by
@@ -48,6 +50,9 @@ the buffer path.
   no reload dance.
 
 Deliberately not covered (yet): `.claude/commands/`, `@`-file completion.
+
+The same buffers also get a read-only window showing the reply being answered:
+`docs/claude-prompt-reference.md`.
 
 ## Rejected alternative: project-local temp dir
 

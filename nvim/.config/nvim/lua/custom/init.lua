@@ -5,3 +5,7 @@ require("custom.floating-todo").setup({
 
 require("custom.fold-markdown-headings").setup()
 require("custom.inline-math").setup()
+
+-- reply reference beside Claude Code's Ctrl+G prompt buffers; registered here,
+-- not in VeryLazy autocmds, so it sees the startup buffer
+require("claude-prompt").setup()

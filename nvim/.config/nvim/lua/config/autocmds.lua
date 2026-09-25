@@ -138,11 +138,9 @@ do
       if name == "" or not vim.uv.fs_stat(name) then
         return nil
       end
-      -- real files whose meaning is transient: git edit files, and Ctrl+G
-      -- prompts at their documented <base>/claude-<uid>/claude-prompt-<id>.md
-      -- shape (docs/claude-prompt-completion.md) — anchored on the parent dir
-      -- so ordinary files named claude-prompt-*.md still publish
-      if name:find("/%.git/") or name:find("/claude%-[^/]+/claude%-prompt%-[^/]*$") then
+      -- real files whose meaning is transient: git edit files, and Claude
+      -- Code's Ctrl+G prompts (lua/claude-prompt/init.lua)
+      if name:find("/%.git/") or require("claude-prompt").is_prompt_file(name) then
         return nil
       end
       return name

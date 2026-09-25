@@ -12,8 +12,7 @@ function source.new()
 end
 
 function source:enabled()
-  local name = vim.api.nvim_buf_get_name(0)
-  return vim.fs.basename(name):match("^claude%-prompt%-") ~= nil
+  return require("claude-prompt").is_prompt_file(vim.api.nvim_buf_get_name(0))
 end
 
 function source:get_trigger_characters()
