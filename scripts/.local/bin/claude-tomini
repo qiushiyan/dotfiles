@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+# claude-tomini — move a Claude Code session from this laptop to the office
+# mini, so the work continues there after the laptop leaves. Claude Code has
+# no native machine-to-machine handoff; this carries the two halves by hand:
+#   code        the worktree's branch, pushed straight to the mini's clone
+#               (no GitHub) and checked out at the same $HOME-relative path;
+#   transcript  the session's .jsonl and its sidecar dir, filed under the
+#               mini's project dir so `claude --resume <id>` finds it there.
+# See docs/qiushi-mini.md § Moving a Claude session.
+#
+# Usage: claude-tomini [-n] [--start] [--force] [--cmd CMD] [SESSION]
+#   SESSION   session id or .jsonl path; default: newest session for $PWD
+#   -n        preview: check both ends, change nothing
+#   --start   resume it in a tmux window on the mini (session: worktree name)
+#   --force   overwrite a transcript the mini already has for this session
+#   --cmd     launcher typed on the mini (default: x, the bypass launcher)
+set -euo pipefail
+
+HOST=${CLAUDE_TOMINI_HOST:-qiushi-mini}
+PROJECTS="$HOME/.claude/projects"
+
+dry=0 start=0 force=0 cmd=x session=
+while (( $# )); do
+  case $1 in
+    -n|--dry-run) dry=1 ;;
+    --start) start=1 ;;
+    --force) force=1 ;;
+    --cmd) cmd=${2:?--cmd needs a value}; shift ;;
+    -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) echo "claude-tomini: unknown option: $1" >&2; exit 2 ;;
+    *) [[ -z $session ]] || { echo "claude-tomini: one session at a time" >&2; exit 2; }
+       session=$1 ;;
+  esac
+  shift
+done
+
+die() { echo "claude-tomini: $*" >&2; exit 1; }
+say() { printf '%s\n' "$*"; }
+# Claude Code's project-dir name: every non-alphanumeric byte becomes '-'.
+encode() { printf '%s' "$1" | sed 's/[^A-Za-z0-9]/-/g'; }
+
+# ---- resolve the transcript ---------------------------------------------
+if [[ -z $session ]]; then
+  dir="$PROJECTS/$(encode "$PWD")"
+  transcript=$(ls -t "$dir"/*.jsonl 2>/dev/null | head -1) \
+    || true
+  [[ -n $transcript ]] || die "no sessions for $PWD (pass an id or path)"
+elif [[ $session == *.jsonl ]]; then
+  transcript=$session
+else
+  transcript=$(ls "$PROJECTS"/*/"$session".jsonl 2>/dev/null | head -1) || true
+  [[ -n $transcript ]] || die "no transcript for session $session under $PROJECTS"
+fi
+[[ -f $transcript ]] || die "not a file: $transcript"
+id=$(basename "$transcript" .jsonl)
+sidecar="${transcript%.jsonl}"   # subagents/, tool-results/
+
+# The session must be closed here: two copies appending to one conversation
+# fork it. Every running claude registers <config>/sessions/<pid>.json.
+for f in "$HOME"/.claude/sessions/*.json "$HOME"/.claude-accounts/*/sessions/*.json; do
+  [[ -f $f ]] && grep -q "\"sessionId\":\"$id\"" "$f" || continue
+  pid=$(basename "$f" .json)
+  kill -0 "$pid" 2>/dev/null && die "session $id is still open here (pid $pid); quit it first"
+done
+
+cwd=$(grep -o '"cwd":"[^"]*"' "$transcript" | tail -1 | sed 's/^"cwd":"//; s/"$//')
+[[ -n $cwd ]] || die "no cwd recorded in $transcript"
+[[ $cwd == "$HOME"/* ]] || die "session cwd $cwd is outside \$HOME; only home-relative paths map"
+[[ -d $cwd ]] || die "session cwd $cwd no longer exists"
+
+# ---- resolve the code ---------------------------------------------------
+top=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || die "$cwd is not in a git repo"
+common=$(git -C "$cwd" rev-parse --path-format=absolute --git-common-dir)
+[[ $common == */.git ]] || die "unsupported repo layout (git dir $common)"
+repo=${common%/.git}
+branch=$(git -C "$top" symbolic-ref --short -q HEAD) || die "$top is on a detached HEAD"
+dirty=$(git -C "$top" status --porcelain)
+[[ -z $dirty ]] || die "$top has uncommitted changes; commit them first:
+$dirty"
+head=$(git -C "$top" rev-parse --short HEAD)
+
+ssh -o BatchMode=yes -o ConnectTimeout=5 "$HOST" true 2>/dev/null || die "$HOST unreachable"
+rhome=$(ssh "$HOST" 'printf %s "$HOME"')
+map() { printf '%s' "$rhome${1#"$HOME"}"; }
+rcwd=$(map "$cwd") rtop=$(map "$top") rrepo=$(map "$repo")
+rproj="$rhome/.claude/projects/$(encode "$rcwd")"
+
+say "session   $id"
+say "code      $branch @ $head"
+say "          $top"
+say "       →  $HOST:$rtop"
+say "transcript → $HOST:$rproj/"
+
+# ---- remote side --------------------------------------------------------
+# check: read-only preflight. apply: move the branch into place from the
+# pushed ref refs/tomini/<branch>. Fast-forward only: the mini's copy of the
+# branch may hold work the laptop lacks, and that is never overwritten.
+remote() {
+  ssh "$HOST" "bash -s -- $(printf '%q ' "$1" "$rrepo" "$rtop" "$branch" "$rproj/$id.jsonl")" <<'EOF'
+set -euo pipefail
+mode=$1 repo=$2 wt=$3 br=$4 tr=$5 ref=refs/tomini/$4
+die() { echo "on the mini: $*" >&2; exit 1; }
+git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || die "no git repo at $repo"
+if [[ -e $wt ]]; then
+  [[ $(git -C "$wt" rev-parse --show-toplevel 2>/dev/null) == "$wt" ]] \
+    || die "$wt exists but is not a worktree root"
+  cur=$(git -C "$wt" symbolic-ref --short -q HEAD || true)
+  [[ $cur == "$br" ]] || die "$wt is on '${cur:-detached}', not $br"
+  [[ -z $(git -C "$wt" status --porcelain) ]] || die "$wt has uncommitted changes"
+  action=fast-forward
+elif git -C "$repo" show-ref --verify -q "refs/heads/$br"; then
+  action=update-and-add
+else
+  action=add
+fi
+if [[ $mode == check ]]; then
+  case $action in
+    fast-forward) echo "worktree  exists on $br; will fast-forward" ;;
+    update-and-add) echo "worktree  will be added; branch $br exists there and will fast-forward" ;;
+    add) echo "worktree  will be added with a new branch $br" ;;
+  esac
+  [[ -e $tr ]] && echo "TRANSCRIPT_EXISTS"
+  exit 0
+fi
+trap 'git -C "$repo" update-ref -d "$ref" 2>/dev/null || true' EXIT
+case $action in
+  fast-forward)
+    git -C "$wt" merge --ff-only -q "$ref" || die "$br on the mini has commits the laptop lacks" ;;
+  update-and-add)
+    git -C "$repo" merge-base --is-ancestor "refs/heads/$br" "$ref" \
+      || die "$br on the mini has commits the laptop lacks"
+    git -C "$repo" branch -f "$br" "$ref"
+    git -C "$repo" worktree add -q "$wt" "$br" ;;
+  add)
+    git -C "$repo" branch -q "$br" "$ref"
+    git -C "$repo" worktree add -q "$wt" "$br" ;;
+esac
+if git -C "$repo" show-ref --verify -q "refs/remotes/origin/$br"; then
+  git -C "$repo" branch -q --set-upstream-to="origin/$br" "$br"
+fi
+echo "worktree  $wt at $(git -C "$wt" rev-parse --short HEAD)"
+EOF
+}
+
+check=$(remote check)
+say "${check//TRANSCRIPT_EXISTS/}" | sed '/^$/d'
+if [[ $check == *TRANSCRIPT_EXISTS* ]] && (( ! force )); then
+  die "the mini already has transcript $id (a previous move?); --force overwrites it"
+fi
+
+# Ignored files never travel: .env, node_modules, build output.
+ignored=$(git -C "$top" ls-files -o -i --exclude-standard --directory | grep -v node_modules/ | head -8 || true)
+[[ -z $ignored ]] || say "not carried (ignored): $(tr '\n' ' ' <<< "$ignored")"
+
+if (( dry )); then
+  say "dry run: nothing changed"
+  exit 0
+fi
+
+# ---- apply --------------------------------------------------------------
+# --no-verify: this is a copy between my own machines, not a publish, so the
+# repo's pre-push checks don't apply.
+work=$(mktemp -d "${TMPDIR:-/tmp}/claude-tomini.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+git -C "$top" push -q --no-verify "$HOST:$rrepo" "+refs/heads/$branch:refs/tomini/$branch"
+
+# The push carries LFS pointers, not content. A file added in an unpushed
+# commit exists only in this laptop's LFS store, so the mini's checkout could
+# not fetch it from GitHub. Send the objects the mini lacks before checkout.
+if git -C "$top" lfs ls-files -l 2>/dev/null | awk '{print $1}' > "$work/oids" && [[ -s $work/oids ]]; then
+  ssh "$HOST" "d=$(printf %q "$rrepo/.git/lfs/objects");"' while read -r o; do
+    p=${o:0:2}/${o:2:2}/$o; [[ -e $d/$p ]] || echo "$p"; done' < "$work/oids" > "$work/missing"
+  while read -r p; do
+    [[ -e $repo/.git/lfs/objects/$p ]] && echo "$p"
+  done < "$work/missing" > "$work/send"
+  if [[ -s $work/send ]]; then
+    rsync -a --files-from="$work/send" "$repo/.git/lfs/objects/" "$HOST:$rrepo/.git/lfs/objects/"
+    say "lfs       $(wc -l < "$work/send" | tr -d ' ') objects sent"
+  fi
+fi
+remote apply
+
+# Stage a copy whose cwd fields name the mini's paths, so the mini's session
+# list shows it under the worktree. Only the "cwd" fields are rewritten:
+# thinking blocks carry signatures over their exact text, so message content
+# stays byte-identical and earlier turns still name laptop paths.
+cp "$transcript" "$work/"
+[[ -d $sidecar ]] && cp -R "$sidecar" "$work/"
+find "$work" -name '*.jsonl' -exec env OLD="$HOME" NEW="$rhome" \
+  perl -pi -e 's/"cwd":"\Q$ENV{OLD}\E(?=[\/"])/"cwd":"$ENV{NEW}/g' {} +
+ssh "$HOST" "mkdir -p $(printf %q "$rproj")"
+rsync -a "$work/" "$HOST:$rproj/"
+say "transcript copied"
+
+# Told once, in the system prompt, rather than as a message in the thread.
+note="This session moved from the laptop to the office mini. Paths under $HOME/ in earlier turns now live under $rhome/; background tasks, monitors and scratch files from before the move did not come along."
+sq() { local q="'\\''"; printf "'%s'" "${1//\'/$q}"; }
+resume="$cmd --resume $id --append-system-prompt $(sq "$note")"
+
+if (( start )); then
+  name=$(basename "$rtop")
+  target=$(ssh "$HOST" "bash -s -- $(printf '%q ' "$name" "$rcwd")" <<'EOF'
+set -euo pipefail
+name=$1 dir=$2
+if tmux has-session -t "=$name" 2>/dev/null; then
+  tmux new-window -P -F '#{pane_id}' -t "=$name:" -c "$dir"
+else
+  tmux new-session -d -P -F '#{pane_id}' -s "$name" -c "$dir"
+fi
+EOF
+  )
+  ssh "$HOST" tmux send-keys -t "$(printf %q "$target")" "$(printf %q "$resume")" Enter
+  say "resumed on $HOST in tmux session '$name' (attach: mini $name)"
+else
+  say "on the mini:"
+  say "  cd $(sq "$rcwd") && $resume"
+fi
+say "the laptop copy stays; resuming it here too forks the conversation"

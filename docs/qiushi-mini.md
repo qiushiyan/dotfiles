@@ -232,6 +232,48 @@ purpose:
   window is open (Edit → Use Shared Clipboard). That is separate from all of
   the above.
 
+## Moving a Claude session
+
+Claude Code has no native handoff between two local machines. Remote Control
+steers a session that keeps running on its own host, and `/teleport` pulls a
+cloud session down to a terminal but can't push a local one onward.
+`claude-tomini` (`scripts/.local/bin/`, laptop only) moves one by hand, so
+work started on the laptop keeps running on the mini after the laptop leaves:
+
+```bash
+claude-tomini -n            # newest session for $PWD; check both ends, change nothing
+claude-tomini --start <id>  # move it and resume it in mini tmux session <worktree name>
+```
+
+It moves two things. The **code** is the worktree's branch, pushed straight
+into the mini's clone and checked out at the same `$HOME`-relative path. The
+**transcript** is the `.jsonl` and its sidecar dir, filed under the mini's
+project dir. The mini then resumes with `x --resume <id>`, keeping the same
+session id and the whole history.
+
+- **Preconditions it enforces:** the session is closed on the laptop (a live
+  `sessions/<pid>.json` names it), the worktree is clean, and the session's
+  cwd is under `$HOME`. The home dirs differ (`/Users/qiushi` vs
+  `/Users/qiushiyan`), so paths map by that prefix.
+- **Never overwrites work on the mini.** An existing worktree or branch there
+  only fast-forwards. The script refuses when the mini already holds this
+  transcript, since that may be a previous move's continuation; `--force`
+  overrides.
+- **The push skips GitHub and the pre-push hook.** It sends the branch to
+  the temporary ref `refs/tomini/<branch>`, which the mini deletes after the
+  checkout. Git LFS content does not ride a push, so the script copies the
+  LFS objects the mini lacks from the laptop's store before the checkout. A
+  file added in an unpushed commit exists nowhere else.
+- **What does not come along:** gitignored files (`.env`, `node_modules`;
+  the script lists them), background tasks and monitors, and the session's
+  `/private/tmp` scratchpad. Earlier turns still name laptop paths. Only
+  the `cwd` fields are rewritten, because thinking blocks are signed over
+  their exact text. The resume command appends a system-prompt note about
+  the move instead.
+- **The laptop copy stays.** Resuming it too forks the conversation. To
+  come back, copy the mini's newer `.jsonl` over it by hand; there is no
+  reverse script yet.
+
 ## Reaching the laptop
 
 From the mini, the laptop is `ssh qiushi-mac` (or `ssh mac`): tailnet node
