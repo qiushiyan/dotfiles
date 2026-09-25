@@ -73,7 +73,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
 | poppler | 26.09.0 | `brew install poppler` (`pdftotext` for planlab `debug:run` document reads) | `brew upgrade` |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
-| portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; no boot service | follow that pin |
+| portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` (§ planlab checkout) | follow that pin |
 
 Personal CLIs (headroom, envoy, brief, gwt) come from the laptop through
 `mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
@@ -395,13 +395,18 @@ from each package's own install (`pnpm planlab:install`,
 `cd bench && pnpm cli:install`), which bakes this checkout's absolute paths
 in. Re-run the installs after moving the checkout.
 
-The tools `pl-loopy-verify` needs are in § Toolchain, and `planlab backstage`
-reads prod. The app-backed rungs (`lane up`, feature smoke, the pool rig)
-also need machine state that is not there yet. Nothing has copied the ignored
-`application/.env.development.local` or `loopy-stress/.env.smoke.local`, so
-`debug:run` and evals have no Bedrock credential either. The `planlab` home
-database is not built (`/pl-setup-app`), and no identity is recorded with
-`lane me`.
+It is set up for `pl-loopy-verify`: the tools are in § Toolchain, and
+`application/setup/bootstrap.sh` built the `planlab` home database. The
+ignored env files (`application/.env.development.local`,
+`loopy-stress/.env.smoke.local`) and the lane identity
+(`~/.config/planlab/dev.json`, `lane me`'s file) are copies of the laptop's,
+all mode 0600. Re-copy them after a credential rotation. Bootstrap's own env
+file is kept as `.env.development.local.bootstrap`.
+
+`lane up` needs the Portless HTTPS proxy on 443. As on the laptop, it runs as
+the boot service `/Library/LaunchDaemons/sh.portless.proxy.plist`, which
+`sudo portless service install` writes with the current nvm node's absolute
+path. A node upgrade therefore needs the install re-run.
 
 Planlab's handoff briefs are their own clone, at the path `brief` derives from
 this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
