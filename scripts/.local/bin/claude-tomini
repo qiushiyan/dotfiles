@@ -149,7 +149,10 @@ if [[ $check == *TRANSCRIPT_EXISTS* ]] && (( ! force )); then
 fi
 
 # Ignored files never travel: .env, node_modules, build output.
-ignored=$(git -C "$top" ls-files -o -i --exclude-standard --directory | grep -v node_modules/ | head -8 || true)
+# A listed dir can be followed by its own files; keep the dir only.
+ignored=$(git -C "$top" ls-files -o -i --exclude-standard --directory \
+  | awk '/node_modules\//{next} {for (d in dirs) if (index($0, d) == 1) next}
+         /\/$/{dirs[$0]} {print}' | head -8 || true)
 [[ -z $ignored ]] || say "not carried (ignored): $(tr '\n' ' ' <<< "$ignored")"
 
 if (( dry )); then
