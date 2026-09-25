@@ -1,7 +1,7 @@
 # The shared session store
 
-Where Claude Code transcripts live, why every account shares one copy, and who
-is allowed to delete them. Satellite of `docs/claude-accounts.md` — read that
+Where Claude Code transcripts live, which directory a session resumes in, why
+every account shares one copy, and who is allowed to delete them. Satellite of `docs/claude-accounts.md` — read that
 first for the account model this rests on.
 
 ## One store, many accounts
@@ -25,6 +25,32 @@ silently, and silently is the whole problem.
 **What stays account-local:** per-session extras (`file-history/`, todos,
 `session-env/`). Resuming under a different account keeps the conversation but
 not its `/rewind` checkpoints.
+
+## Which directory a session resumes in
+
+A transcript lives under one directory's project folder: where the session
+started, or where `/cd` last moved it, e.g.
+`~/.claude/projects/-Users-qiushi-dotfiles/<id>.jsonl`. headroom's
+picker resumes a session in the newest recorded directory that matches that
+folder (`~/dev/headroom/DESIGN.md`, "The cd target is verified"). A plain
+`claude --resume <id>` ignores it and runs wherever it is launched.
+
+Moving a session therefore persists only if the transcript moves too:
+
+- **`/cd <dir>`** moves the file into `<dir>`'s project folder and records
+  the move, so the session resumes in `<dir>`. Claude Code refuses it under
+  `claude -p`, and the model cannot type it.
+- **`EnterWorktree`** switches directory for the live process only. On exit
+  the session moves back to where it was started, and resumes there.
+
+The `enter-worktree` skill uses `/cd` for this reason. Its
+`claude/.claude/skills/enter-worktree/scripts/session-cd` types `/cd <dir>`
+into the session's own tmux pane, and the TUI runs it when the turn ends. The
+script refuses to type when it runs outside Claude Code or tmux, and when the
+pane belongs to another process. It also refuses when the prompt box holds a
+draft, which would otherwise be sent with the command as one message.
+Worktrees of a trusted repo move without a trust prompt; any other directory
+asks the user first.
 
 ## Retention belongs to ccclean
 

@@ -10,15 +10,22 @@ scope, using the repository's naming conventions.
 
 Use `gwt create --non-interactive` with the chosen branch. Supply a base as
 the next argument when the discussion chooses one; otherwise let gwt apply
-its configuration.
+its configuration. On success, stdout is the absolute worktree path;
+diagnostics go to stderr. Pass that path to `session-cd`:
 
 <example>
 ```bash
-gwt create --non-interactive feat/answer-attachments
+path=$(gwt create --non-interactive feat/answer-attachments) &&
+  ~/.agents/skills/enter-worktree/scripts/session-cd "$path"
 ```
 </example>
 
-On success, stdout is the absolute worktree path; diagnostics go to stderr.
-Use that returned path with `EnterWorktree` when available. In an agent without
-that tool, use the path as the working directory for subsequent commands.
-Report the branch and path once the session is working there.
+`session-cd` queues Claude Code's `/cd`, which keeps the session in the
+worktree across quit and resume. The move happens when your turn ends, and
+commands you run before that still use the old directory. So make it the
+turn's last action: report the branch and path, then end the turn. The work
+continues in the worktree on the user's next message.
+
+When `session-cd` exits non-zero, its stderr gives the reason. Enter the path
+with `EnterWorktree` when available; otherwise use it as the working directory
+for subsequent commands.

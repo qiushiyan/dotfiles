@@ -1,0 +1,45 @@
+#!/bin/bash
+# Queue Claude Code's built-in /cd <dir> in the live session that runs this
+# script, by typing it into the session's tmux pane. The TUI holds the command
+# until the current turn ends, then runs it as if the user had typed it; unlike
+# EnterWorktree, /cd moves the transcript, so a resumed session reopens in <dir>.
+# Refuses (exit 1, nothing typed) wherever typing could land in the wrong place.
+set -euo pipefail
+
+die() { echo "session-cd: $*" >&2; exit 1; }
+
+[[ $# -eq 1 && -n $1 ]] || die "usage: session-cd <dir>"
+dest=$(cd "$1" 2>/dev/null && pwd -P) || die "no such directory: $1"
+[[ ${CLAUDECODE:-} == 1 ]] || die "not running inside Claude Code"
+pane=${TMUX_PANE:-}
+[[ -n $pane ]] || die "Claude Code is not running inside tmux"
+
+# The pane must host this Claude process: walk up from our parent to the
+# pane's root process.
+root=$(tmux display-message -p -t "$pane" '#{pane_pid}' 2>/dev/null) || die "tmux pane $pane is gone"
+pid=$PPID
+while [[ $pid -gt 1 && $pid -ne $root ]]; do
+  pid=$(ps -o ppid= -p "$pid" | tr -d ' ')
+done
+[[ $pid -eq $root ]] || die "tmux pane $pane does not host this session"
+
+screen() { tmux capture-pane -p -t "$pane"; }
+
+# Text already in the prompt box would be joined with the command and sent as
+# an ordinary message. The prompt box is the last ❯ line on screen.
+input=$(screen | grep '^❯' | tail -1 | sed 's/^❯//; s/[[:space:]]//g')
+[[ -z $input ]] || die "the user has a draft in the prompt box; typing would corrupt it"
+
+# In vim mode, keys typed in NORMAL mode are editor commands, not text.
+settings=${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json
+if [[ $(jq -r '.editorMode // ""' "$settings" 2>/dev/null) == vim ]]; then
+  if ! screen | grep -q -- '-- INSERT --'; then
+    tmux send-keys -t "$pane" i
+    sleep 0.2
+    screen | grep -q -- '-- INSERT --' || die "could not put the prompt box in vim INSERT mode"
+  fi
+fi
+
+tmux send-keys -t "$pane" -l "/cd $dest"
+tmux send-keys -t "$pane" Enter
+echo "$dest"
