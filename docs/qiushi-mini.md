@@ -69,6 +69,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | Claude Code | 2.1.280 | native `claude.ai/install.sh` → `~/.local/bin/claude` | auto-updates |
 | Codex CLI | 0.155.1 | `chatgpt.com/codex/install.sh` → `~/.local/bin/codex` | `codex update` |
 | Python | 3.14.7 | `uv python install 3.14` (versioned `python3.14` only) | `uv python upgrade` |
+| AWS CLI | 2.37.3 | `brew install awscli`; `~/.aws/config` copied from the laptop (SSO profiles only; no `credentials`) | `brew upgrade awscli`; re-copy `config` after a profile change |
 
 Personal CLIs (headroom, envoy, brief, gwt) come from the laptop through
 `mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
@@ -92,6 +93,11 @@ and they pull the shared parts from the mirror.
   stay out: `toolchain` (the PATH lines replace it), `xcode`, `cout`,
   `proxy`. It turns off `EQUALS`, as the laptop does, and exports
   `PROMPT_MACHINE=mini` (below).
+- **`aws sso login`:** `.zshenv` wraps `aws` to add `--use-device-code`.
+  The default flow redirects the browser to a localhost listener on the
+  mini, which a laptop browser can't reach. With the device-code flow the
+  printed URL carries the code, so it works in any browser; over SSH,
+  `BROWSER` sends it to the laptop clipboard.
 - **Locale:** the laptop's ssh sends no `LANG`, so `.zshenv` sets one.
   Without a UTF-8 locale, tmux marks the client non-UTF-8 and draws every
   non-ASCII glyph (status-bar separators, icons) as `_`. tmux fixes that per
