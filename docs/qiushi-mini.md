@@ -156,10 +156,12 @@ why the laptop tmux stays out of it) needs these on top of a default mini:
 - **Clipboard (OSC 52)**: every tmux between a pane and Ghostty must run
   `set-clipboard on`, because `external` drops OSC 52 sent from panes; the
   shared `tmux.conf` sets it. tmux forwards it only to a client that is
-  showing the pane. nvim's `"+y` depends on this:
-  `options.lua` sets `vim.g.clipboard = "osc52"` for `SSH_TTY` sessions,
-  because Neovim otherwise prefers the mini's own pbcopy. LazyVim leaves
-  `clipboard` empty over SSH, so plain `y` stays in Vim registers.
+  showing the pane. nvim's yank depends on this: for `SSH_TTY` sessions
+  `options.lua` sets `clipboard=unnamedplus` with a provider that copies to
+  both OSC 52 and the mini's pbcopy, and pastes from pbpaste. Plain `y`
+  reaches the laptop, and `p` reads what mini tools copied, such as
+  `brief start`'s pointer, without an OSC 52 read prompt. LazyVim's default,
+  an empty `clipboard` over SSH, made `p` paste a stale register from shada.
 - **Links**: open them with **Cmd+Shift+click**. Ghostty opens OSC 8 links
   on Cmd-click, and Shift bypasses tmux's mouse capture. sshd doesn't forward
   `TERM_PROGRAM`, so `.zshenv` sets `FORCE_HYPERLINK=1` for SSH sessions;
@@ -196,7 +198,7 @@ purpose:
 
 | command | runs on | moves |
 |---|---|---|
-| terminal copy (Claude's `c`, nvim `"+y`, tmux copy mode) | mini | to the laptop clipboard over OSC 52, and into the mini tmux's buffers |
+| terminal copy (Claude's `c`, nvim `y`, tmux copy mode) | mini | to the laptop clipboard over OSC 52, and into the mini tmux's buffers; nvim also writes the mini's pasteboard |
 | `<cmd> \| toclip`, `toclip <text>` | either | to the clipboard of the machine you are sitting at |
 | `frommini` | laptop | the mini tmux's newest buffer → laptop clipboard |
 | `frommini -g` | laptop | the mini's GUI pasteboard, text or image → laptop clipboard |

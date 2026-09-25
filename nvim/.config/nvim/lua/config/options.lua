@@ -12,10 +12,36 @@ vim.opt.swapfile = false
 -- always show markdown symbols (backticks, stars, etc)
 vim.opt.conceallevel = 0
 
+-- Over SSH to a macOS host (the office mini), y must reach the laptop and p
+-- must read what the host's own tools copied, such as `brief start`'s pointer.
+-- Copy therefore writes both OSC 52 (the local terminal's clipboard) and the
+-- host's pbcopy; paste reads pbpaste, so no OSC 52 read prompt and yy/p still
+-- round-trips. LazyVim leaves 'clipboard' empty over SSH, which made p paste
+-- a stale shada register instead; unnamedplus matches the laptop.
+if vim.env.SSH_TTY then
+  if vim.fn.executable("pbcopy") == 1 then
+    local osc52 = require("vim.ui.clipboard.osc52")
+    local function copy(reg)
+      local send = osc52.copy(reg)
+      return function(lines)
+        send(lines)
+        vim.system({ "pbcopy" }, { stdin = table.concat(lines, "\n") }):wait()
+      end
+    end
+    vim.g.clipboard = {
+      name = "osc52+pbcopy",
+      copy = { ["+"] = copy("+"), ["*"] = copy("*") },
+      paste = { ["+"] = { "pbpaste" }, ["*"] = { "pbpaste" } },
+    }
+    vim.opt.clipboard = "unnamedplus"
+  else
+    vim.g.clipboard = "osc52"
+  end
+end
+
 -- LazyVim temporarily clears 'clipboard' until VeryLazy. Restore the chosen
 -- value before queued startup keys: an immediate p in Claude's Ctrl+G editor
--- must not paste a stale Vim register. Capture the default to preserve SSH's
--- empty clipboard setting as well as local unnamedplus.
+-- must not paste a stale Vim register.
 local clipboard = vim.opt.clipboard:get()
 vim.api.nvim_create_autocmd("VimEnter", {
   group = vim.api.nvim_create_augroup("ClipboardBeforeInput", { clear = true }),
@@ -24,14 +50,6 @@ vim.api.nvim_create_autocmd("VimEnter", {
     vim.opt.clipboard = clipboard
   end,
 })
-
--- Over SSH, "+y must reach the local terminal's clipboard. Neovim ranks pbcopy
--- above OSC 52, so on a macOS remote it would copy into the remote Mac's own
--- clipboard. 'clipboard' stays empty here (above), so only explicit "+ uses it
--- and p never triggers an OSC 52 read prompt.
-if vim.env.SSH_TTY then
-  vim.g.clipboard = "osc52"
-end
 
 -- TypeScript LSP: tsgo (typescript-go native port; global install via pnpm,
 -- @typescript/native-preview). LazyVim's typescript extra wires it up and
