@@ -20,12 +20,6 @@ path=$(gwt create --non-interactive feat/answer-attachments) &&
 ```
 </example>
 
-`session-cd` queues Claude Code's `/cd`, which keeps the session in the
-worktree across quit and resume. The move happens when your turn ends, and
-commands you run before that still use the old directory. So make it the
-turn's last action: report the branch and path, then end the turn. The work
-continues in the worktree on the user's next message.
-
-When `session-cd` exits non-zero, its stderr gives the reason. Enter the path
-with `EnterWorktree` when available; otherwise use it as the working directory
-for subsequent commands.
+The move applies when your turn ends, so report the branch and path and end
+the turn. If `session-cd` fails, enter the path with `EnterWorktree`, or work
+from the path when that tool is unavailable.
