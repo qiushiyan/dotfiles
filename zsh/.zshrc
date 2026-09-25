@@ -80,42 +80,27 @@ KEYTIMEOUT=10
 
 # --------------------------------------------------------------------
 # 2. ENVIRONMENT VARIABLES
+# Shared by every machine: set a tool's variables only where the tool is
+# installed, never by machine name (docs/zsh.md § Machines).
 # --------------------------------------------------------------------
 export ZSH="$HOME/.oh-my-zsh"
 export VISUAL="nvim"
 export EDITOR="nvim"
 
-# AWS / GCP
-# export AWS_PROFILE=marswave
-export CLOUDSDK_PYTHON="/opt/homebrew/bin/python3.14"
-export GOOGLE_GENAI_USE_VERTEXAI=true
-export GOOGLE_CLOUD_PROJECT="marswave"
-export GOOGLE_CLOUD_LOCATION="us-west1"
-export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-
-# Java / Android
-export JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.8
-export ANDROID_SDK="$HOME/Library/Android/sdk"
-
-# Python
-export CONDA_AUTO_ACTIVATE_BASE=false
-export PYSPARK_PYTHON="/opt/homebrew/bin/python3.14"
-export PYSPARK_DRIVER_PYTHON="/opt/homebrew/bin/python3.14"
-export PIPX_DEFAULT_PYTHON="python3.14"
-export QUARTO_PYTHON="/opt/homebrew/bin/python3.14"
-
-# Spark
-export SPARK_HOME="$HOME/spark/spark-3.1.2-bin-hadoop3.2"
+# GCP — only where gcloud is installed
+if (( $+commands[gcloud] )); then
+  export CLOUDSDK_PYTHON="/opt/homebrew/bin/python3.14"
+  export GOOGLE_GENAI_USE_VERTEXAI=true
+  export GOOGLE_CLOUD_PROJECT="marswave"
+  export GOOGLE_CLOUD_LOCATION="us-west1"
+  export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+fi
 
 # Bun
 export BUN_INSTALL="$HOME/.bun"
 
-# Wasmtime
-export WASMTIME_HOME="$HOME/.wasmtime"
-
 # Misc
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-export RSTUDIO_PANDOC="/Applications/RStudio.app/Contents/MacOS/quarto/bin/tools"
 export ALLOW_PLAINTEXT_LISTENER=yes
 export K9S_CONFIG_DIR="$HOME/.config/k9s"
 export COREPACK_ENABLE_AUTO_PIN=0
@@ -145,17 +130,24 @@ source "$HOME/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 _git_zsh_register_completions
 
 # tmuxifier
-eval "$(tmuxifier init -)"
+(( $+commands[tmuxifier] )) && eval "$(tmuxifier init -)"
 
 # nvm — lazy-loaded. toolchain.zsh resolved the default Node into $NVM_BIN;
 # re-apply the shared tool paths after login-shell and plugin setup, which
 # can reorder PATH. Only `nvm` itself is deferred (~200ms saved).
 [ -f "$HOME/.config/zsh/toolchain.zsh" ] && source "$HOME/.config/zsh/toolchain.zsh"
+# Homebrew's nvm where it is installed, else nvm's own installer's copy.
 nvm() {
   unfunction nvm
-  . /opt/homebrew/opt/nvm/nvm.sh
-  [ -s /opt/homebrew/opt/nvm/etc/bash_completion.d/nvm ] \
-    && . /opt/homebrew/opt/nvm/etc/bash_completion.d/nvm
+  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+  if [[ -s /opt/homebrew/opt/nvm/nvm.sh ]]; then
+    . /opt/homebrew/opt/nvm/nvm.sh
+    [ -s /opt/homebrew/opt/nvm/etc/bash_completion.d/nvm ] \
+      && . /opt/homebrew/opt/nvm/etc/bash_completion.d/nvm
+  else
+    . "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+  fi
   nvm "$@"
 }
 

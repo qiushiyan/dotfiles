@@ -34,6 +34,11 @@ class CoutTest(unittest.TestCase):
         clipboard = self.home / "bin/pbcopy"
         clipboard.write_text('#!/bin/sh\ncat > "$HOME/clipboard"\n')
         clipboard.chmod(0o700)
+        # The helper copies through toclip when it is on PATH; this stub shadows
+        # the installed one, records the pane it was aimed from, then copies.
+        toclip = self.home / "bin/toclip"
+        toclip.write_text('#!/bin/sh\nprintf %s "$TMUX_PANE" > "$HOME/toclip-pane"\nexec pbcopy\n')
+        toclip.chmod(0o700)
         self.env["PATH"] = str(self.home / "bin") + ":" + self.env["PATH"]
         helper = self.home / ".config/tmux/scripts/tmux-cout.py"
         helper.parent.mkdir(parents=True)
@@ -353,6 +358,17 @@ class CoutTest(unittest.TestCase):
         self.tmux(*action)
         self.wait(lambda: (self.home / "clipboard").exists())
         self.assertEqual((self.home / "clipboard").read_text(), expected)
+        # run-shell has no TMUX_PANE; toclip must still aim from the bound pane.
+        self.assertEqual((self.home / "toclip-pane").read_text(), self.pane)
+
+    def test_toclip_refusal_reaches_the_user(self):
+        self.execute("print hello")
+        (self.home / "bin/toclip").write_text(
+            "#!/bin/sh\necho 'toclip: too large; kept as the newest tmux buffer - run frommini' >&2\nexit 1\n")
+        result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
+                                env=self.env, text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("run frommini", result.stderr)
 
     def test_scrollback_and_pane_target(self):
         cmd = "for i in {1..80}; do print row-$i; done"

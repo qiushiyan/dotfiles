@@ -1,19 +1,15 @@
-# Shared tool paths for every zsh invocation. Add CLI install directories here.
+# Shared tool paths for every zsh invocation, on every machine. Add CLI install
+# directories here; a directory a machine lacks is a harmless PATH miss.
 # .zshrc and .zlogin reapply this after profiles and plugins can reorder PATH.
 
 typeset -U path PATH
 export PATH="\
 $HOME/.config/tmux/plugins/tmuxifier/bin:\
-$HOME/.wasmtime/bin:\
 $HOME/.bun/bin:\
 $HOME/bin:\
-$HOME/bin/elixir-ls:\
 $HOME/.local/bin:\
-$HOME/.mix/escripts:\
 /opt/homebrew/opt/postgresql@18/bin:\
-/opt/homebrew/opt/openjdk@11/bin:\
 /usr/local/bin:\
-$HOME/Library/Android/sdk/platform-tools:\
 $PATH"
 
 _nvm_dir="${NVM_DIR:-$HOME/.nvm}"

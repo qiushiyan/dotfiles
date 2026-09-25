@@ -12,8 +12,9 @@ different kind of shell:
   system `/etc/zprofile` only fires for login shells, so `ssh host cmd` and
   mosh-server would otherwise miss it), forces a UTF-8 locale for the same
   reason, sources `toolchain.zsh`, then sources every other
-  `~/.config/zsh/*.zsh` so functions and aliases exist everywhere, and finally
-  turns `EQUALS` expansion off (below).
+  `~/.config/zsh/*.zsh` so functions and aliases exist everywhere, then this
+  machine's host file (§ Machines), and finally turns `EQUALS` expansion off
+  (below).
 - **`.zprofile`** — login shells only. Homebrew + OrbStack `shellenv`.
 - **`.zshrc`** — interactive shells only. oh-my-zsh, syntax highlighting,
   completions, Oh My Posh prompt, fzf/zoxide, the lazy `nvm` stub.
@@ -61,8 +62,38 @@ zsh/.config/zsh/
   tmux-utils.zsh
   cout.zsh        # cout + execution boundaries for the pane recorder
   proxy.zsh
-  gws.zsh
+  hosts/<machine>.zsh  # one machine's identity (§ Machines); outside the glob
+  tests/           # suites (docs/testing.md); outside the glob
 ```
+
+## Machines
+
+The laptop and the office mini (`docs/qiushi-mini.md`) stow this same
+package, so both run one `.zshenv`, `.zshrc` and `.zlogin` and every module.
+A new module reaches every machine without a list to update. Two rules keep
+that working:
+
+- **Check for the tool, not the machine.** A line that needs something a
+  machine may lack guards on it: `(( $+commands[tmuxifier] ))`,
+  `[[ -r ~/.cargo/env ]]`. The GCP variables are set only where `gcloud` is
+  installed, and the lazy `nvm` stub loads Homebrew's nvm or the installer's
+  copy, whichever exists. A `toolchain.zsh` PATH entry for a directory a
+  machine lacks is a harmless miss. A module that only defines functions
+  (`xcode`, `proxy`) needs no guard: its functions just fail where the tool is
+  absent.
+- **Only identity is per machine.** What is about being a particular
+  machine, such as its prompt badge or its SSH client quirks, goes in
+  `hosts/<name>.zsh`. `.zshenv` sources it last, in every shell, when the
+  untracked one-word `~/.config/machine` names it, so it can override a
+  module. A machine without a marker, currently the laptop, loads no host
+  file. A marker naming a missing file warns in interactive shells only,
+  since stderr in a non-interactive shell lands in tool output.
+  `$HOST` is not the key because the mini reports a DHCP name (`Mac.lan`).
+
+Per-machine state stays out of both: `~/.secrets`, `~/.zprofile`, logins,
+and headroom's generated account launchers. `tests/portability.test.zsh`
+starts the package on a bare `$HOME` and fails on startup noise, a module
+that did not load, or a host file that did not load from its marker.
 
 ## Toolchain conventions
 
@@ -77,7 +108,9 @@ zsh/.config/zsh/
 ## Copying a command and its output
 
 `cout [N]` and tmux `prefix o` copy a completed command and its terminal output
-to the macOS clipboard. Usage belongs to `tmux/.config/tmux/workflow.md`
+to the clipboard of the machine you sit at, through `toclip` when it is
+installed (over SSH to the mini, the laptop's; `docs/qiushi-mini.md`
+§ Clipboard and attach), else `pbcopy`. Usage belongs to `tmux/.config/tmux/workflow.md`
 § Reading back & copying output (copy mode).
 
 `zsh/.config/zsh/cout.zsh` owns execution boundaries and shell identity.

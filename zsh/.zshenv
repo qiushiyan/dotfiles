@@ -2,7 +2,7 @@
 # Keep $PATH free of duplicates regardless of how config is (re)loaded.
 typeset -U path PATH
 
-. "$HOME/.cargo/env"
+[[ -r "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 
 # Homebrew (Apple Silicon) — make /opt/homebrew/bin available to ALL zsh
 # invocations, including non-interactive SSH sessions. /etc/zprofile only
@@ -31,6 +31,21 @@ done
 if (( _compdef_stub )); then
   unfunction compdef
   unset _compdef_stub
+fi
+
+# ── This machine ──────────────────────────────────  docs/zsh.md § Machines
+# Everything above is shared: it checks for the tools it needs rather than for
+# the machine it runs on. Only a machine's identity (its prompt badge, its SSH
+# client quirks) lives in hosts/<name>.zsh, chosen by the untracked one-word
+# ~/.config/machine. hosts/ sits outside the module glob; with no marker (the
+# laptop), no host file loads. Last, so a host file can override a module.
+if [[ -r "$HOME/.config/machine" ]]; then
+  DOTFILES_MACHINE=${"$(<$HOME/.config/machine)"//[[:space:]]/}
+  if [[ -r "$HOME/.config/zsh/hosts/$DOTFILES_MACHINE.zsh" ]]; then
+    source "$HOME/.config/zsh/hosts/$DOTFILES_MACHINE.zsh"
+  elif [[ -o interactive ]]; then
+    print -u2 "zshenv: ~/.config/machine names '$DOTFILES_MACHINE', but ~/.config/zsh/hosts/$DOTFILES_MACHINE.zsh does not exist"
+  fi
 fi
 
 # ── EQUALS off ────────────────────────────────────────────  docs/zsh.md

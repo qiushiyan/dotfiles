@@ -77,41 +77,39 @@ Not installed: go, rust, Docker, databases, other GUI apps.
 
 ## Shell
 
-The `zsh` package is not stowed. The mini's startup files are hand-written,
-and they pull the shared parts from the mirror.
+The `zsh` package is stowed, as on the laptop, so both machines run the same
+`.zshenv`, `.zshrc`, `.zlogin` and every module (`docs/zsh.md` § Machines).
+The shared files check for the tools they need, not for the machine. What is
+about being the mini lives in the tracked `zsh/.config/zsh/hosts/mini.zsh`,
+which `.zshenv` loads in every shell because the untracked `~/.config/machine`
+says `mini`. Edit it on the laptop like any other file; `mini-sync` carries
+it.
 
-- **`~/.zshenv`** carries everything, because `ssh qiushi-mini '<cmd>'` runs
-  a non-login, non-interactive zsh that reads no other file. It sets brew
-  shellenv, `~/.local/bin`, `LANG=en_US.UTF-8`, the newest nvm Node `bin`,
-  `$PNPM_HOME/bin`, and the SSH-only terminal variables (§ Terminal over
-  SSH). It then sources a curated list of modules straight from
-  `~/dotfiles/zsh/.config/zsh/`:
-  `aliases nav utils git claude claude-sessions codex tmux-utils cwd-guard
-  theme`.
-  That gives the laptop's muscle memory (`n`, `g`, `lg`, `l`, `t`, `b`,
-  `take`, `p`, …) and routes `x`/`cx` through headroom. Laptop-only modules
-  stay out: `toolchain` (the PATH lines replace it), `xcode`, `cout`,
-  `proxy`. It turns off `EQUALS`, as the laptop does, and exports
-  `PROMPT_MACHINE=mini` (below).
-- **`aws sso login`:** `.zshenv` wraps `aws` to add `--use-device-code`.
-  The default flow redirects the browser to a localhost listener on the
-  mini, which a laptop browser can't reach. With the device-code flow the
-  printed URL carries the code, so it works in any browser; over SSH,
-  `BROWSER` sends it to the laptop clipboard.
-- **Locale:** the laptop's ssh sends no `LANG`, so `.zshenv` sets one.
-  Without a UTF-8 locale, tmux marks the client non-UTF-8 and draws every
+- **`hosts/mini.zsh`** holds `PROMPT_MACHINE=mini` (below), the SSH-only
+  terminal variables (§ Terminal over SSH), the `aws` wrapper and
+  `alias v=nvim`.
+- **`aws sso login`:** `hosts/mini.zsh` wraps `aws` to add
+  `--use-device-code`. The default flow redirects the browser to a localhost
+  listener on the mini, which a laptop browser can't reach. With the
+  device-code flow the printed URL carries the code, so it works in any
+  browser; over SSH, `BROWSER` sends it to the laptop clipboard.
+- **Locale:** the laptop's ssh sends no `LANG`; the shared `.zshenv` sets
+  one. Without a UTF-8 locale, tmux marks the client non-UTF-8 and draws every
   non-ASCII glyph (status-bar separators, icons) as `_`. tmux fixes that per
   client when it attaches, so a client attached without it must detach and
   attach again.
-- **`~/.zprofile`** repeats brew shellenv, because `/etc/zprofile`'s
-  `path_helper` reorders PATH for login shells after `.zshenv`.
-- **`~/.zshrc`** follows the laptop's order without sourcing it (that file
-  names laptop-only paths): vi mode and history settings, oh-my-zsh
-  (`history`, `zsh-autosuggestions`; it runs `compinit`),
-  zsh-syntax-highlighting, `_git_zsh_register_completions`, the nvm/pnpm
-  installer blocks, zoxide, fzf, and oh-my-posh last. oh-my-zsh and the two
-  plugins are shallow clones at the laptop's paths; oh-my-posh is from the
-  `jandedobbeleer/oh-my-posh` tap.
+- **`~/.zprofile`** is machine-local, as on the laptop, and repeats brew
+  shellenv; `.zlogin` then reapplies `toolchain.zsh`.
+- **nvm** is nvm's own installer's copy in `~/.nvm`, not Homebrew's as on
+  the laptop. `.zshrc`'s lazy `nvm` stub loads whichever is installed.
+- **Plugins:** oh-my-zsh and the two plugins are shallow clones at the
+  laptop's paths; oh-my-posh is from the `jandedobbeleer/oh-my-posh` tap.
+- **`cout`** records here with the system `/usr/bin/python3` (3.9) and copies
+  through `toclip`, so over SSH the copy reaches the laptop clipboard
+  (§ Clipboard and attach).
+- **Before 2026-09-25** the mini had hand-written startup files that
+  sourced a hand-picked list of modules, and every later laptop addition
+  missed the mini. They are kept in `~/.zsh-pre-stow/`.
 - **tmux** is the laptop's: the `tmux` package is stowed, so
   `~/.config/tmux` is a folder link into the mirror, and `prefix t` switches
   themes through `~/.local/bin/theme-set`, a link `mini-sync` keeps (§ Sync).
@@ -125,7 +123,7 @@ and they pull the shared parts from the mirror.
   SSH the path lands on the mini's clipboard; `frommini -g` fetches it
   (§ Clipboard and attach).
 
-**Machine badge:** `PROMPT_MACHINE=mini`, set in the mini's `.zshenv`,
+**Machine badge:** `PROMPT_MACHINE=mini`, set in `hosts/mini.zsh`,
 marks everything that runs on the mini; the laptop leaves it unset and stays
 unmarked. A new machine opts in the same way, with no second config to keep
 in step:
@@ -170,10 +168,10 @@ why the laptop tmux stays out of it) needs these on top of a default mini:
   an empty `clipboard` over SSH, made `p` paste a stale register from shada.
 - **Links**: open them with **Cmd+Shift+click**. Ghostty opens OSC 8 links
   on Cmd-click, and Shift bypasses tmux's mouse capture. sshd doesn't forward
-  `TERM_PROGRAM`, so `.zshenv` sets `FORCE_HYPERLINK=1` for SSH sessions;
+  `TERM_PROGRAM`, so `hosts/mini.zsh` sets `FORCE_HYPERLINK=1` for SSH sessions;
   without it Claude Code prints plain-text URLs.
 - **Ctrl-click in Claude Code** is its own click handler, which runs
-  `$BROWSER` (else `open`) on the host, the mini. `.zshenv` sets
+  `$BROWSER` (else `open`) on the host, the mini. `hosts/mini.zsh` sets
   `BROWSER=~/.local/bin/browser-clip` for SSH sessions. That shim hands the
   URL to `toclip`, which sends it to the laptop clipboard instead of opening
   the mini's Safari (§ Clipboard and attach).
@@ -206,6 +204,7 @@ purpose:
 |---|---|---|
 | terminal copy (Claude's `c`, nvim `y`, tmux copy mode) | mini | to the laptop clipboard over OSC 52, and into the mini tmux's buffers; nvim also writes the mini's pasteboard |
 | `<cmd> \| toclip`, `toclip <text>` | either | to the clipboard of the machine you are sitting at |
+| `cout`, `prefix o` | either | a command and its output, through `toclip` |
 | `frommini` | laptop | the mini tmux's newest buffer → laptop clipboard |
 | `frommini -g` | laptop | the mini's GUI pasteboard, text or image → laptop clipboard |
 | `tomini` | laptop | the laptop clipboard, text or image → the mini's pasteboard |

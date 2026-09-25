@@ -256,7 +256,7 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 
 **Copy mode** — enter `prefix [` · `v` select · `C-v` rectangle · `y` copy · `/` search · `gg`/`G` top/bottom · `Esc` clear selection (stays in copy mode) · `q` or double-`Esc` exit
 
-**Copy command + output** — `prefix o` or `cout` for latest · `cout N` for Nth most recent → macOS clipboard
+**Copy command + output** — `prefix o` or `cout` for latest · `cout N` for Nth most recent → clipboard of the machine you sit at
 
 **Paste buffers** — browse `prefix =` · `Enter` paste · `/` search name/content · `d` delete · `e` edit · `v` preview · `q` exit · newest only `prefix ]`
 

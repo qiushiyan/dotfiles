@@ -46,15 +46,14 @@ eq() {  # eq <expected> <actual> <what>
   return 1
 }
 
-# A throwaway $HOME, because .zshenv reads it: it sources ~/.cargo/env
-# unguarded and globs ~/.config/zsh/*.zsh. Without the override this suite
-# would load the user's live modules — production code with opinions, which
-# is not what it grades.
+# A throwaway $HOME, because .zshenv reads it: it sources ~/.cargo/env,
+# ~/.config/machine's host file and ~/.config/zsh/*.zsh. Without the override
+# this suite would load the user's live modules — production code with
+# opinions, which is not what it grades.
 sandbox() {
   SB=$(mktemp -d "${${TMPDIR:-/tmp}%/}/so-test.XXXXXX")
   H="$SB/home"
-  mkdir -p "$H/.cargo"
-  : >"$H/.cargo/env"
+  mkdir -p "$H"
 }
 
 # One non-interactive, non-login zsh: it reads $ZDOTDIR/.zshenv and nothing

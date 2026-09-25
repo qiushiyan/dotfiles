@@ -279,6 +279,17 @@ def copied_message(command):
     return f'Copied "{preview}"'
 
 
+def copy(pane, text):
+    # toclip reaches the clipboard of the machine you sit at: over ssh to the
+    # mini that is the laptop's (docs/qiushi-mini.md § Clipboard and attach).
+    # prefix o's run-shell has no TMUX_PANE, so name the pane it aims from.
+    # Its stderr is kept for the error: an oversize copy names frommini.
+    toclip = shutil.which("toclip")
+    command = [toclip] if toclip else ["pbcopy"]
+    subprocess.run(command, input=text, text=True, check=True, capture_output=True,
+                   env=dict(os.environ, TMUX_PANE=pane))
+
+
 def main():
     if sys.argv[1:2] == ["record"]:
         record(Path(sys.argv[2]))
@@ -306,7 +317,7 @@ def main():
         if args.print:
             sys.stdout.write(text)
         else:
-            subprocess.run(["pbcopy"], input=text, text=True, check=True)
+            copy(args.pane, text)
             if args.notify:
                 tmux("display-message", "-l", "-t", args.pane, copied_message(command))
             else:
