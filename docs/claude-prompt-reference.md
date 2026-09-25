@@ -43,6 +43,10 @@ typed, and that is all Claude receives.
   reference window first; without it, the reference keeps the editor alive and
   Claude waits forever. `QuitPre` fires after `:wq`'s write, so a failed write
   keeps both windows.
+- **The reference never outlives the draft window.** Closing the draft window
+  without quitting (`<C-w>c`, `:close`) closes the reference too, or, when the
+  reference would be the last window, puts the draft back into it. Reply state
+  outlives the reference window, so the history keys reopen it after `q`.
 - **Setup runs from `lua/custom/init.lua`, not the VeryLazy autocmds file,**
   which would miss the startup buffer.
 - **Prompt-buffer recognition lives only in `claude-prompt.is_prompt_file`.**
@@ -69,7 +73,7 @@ one-line notice and the window stays closed:
    project-directory encoding is reconstructed.
 3. **Replies:** only the last 32 MB is decoded, so transcripts of 80 MB and
    up still open in tens of milliseconds, and history stops where that window
-   starts. The active branch is the `parentUuid` chain of the newest record,
+   starts. A turn cut by the window still shows the part inside it. The active branch is the `parentUuid` chain of the newest record,
    so replies abandoned by `/rewind` drop out. A user record starts a new turn
    unless it is `isMeta` or carries a `tool_result`. A half-written final
    line is skipped.

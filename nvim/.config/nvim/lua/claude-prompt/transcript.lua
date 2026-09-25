@@ -148,10 +148,13 @@ function M.replies(path)
     turn = { texts = {}, last_tool = 0 }
   end
 
+  -- open a turn up front: when the tail window starts mid-turn, the records
+  -- before the next prompt are still the newest reply
+  close()
   for _, r in ipairs(chain) do
     if r.type == "user" and opens_turn(r) then
       close()
-    elseif r.type == "assistant" and turn and r.message and type(r.message.content) == "table" then
+    elseif r.type == "assistant" and r.message and type(r.message.content) == "table" then
       for _, block in ipairs(r.message.content) do
         if block.type == "text" and block.text and block.text:match("%S") then
           turn.texts[#turn.texts + 1] = vim.trim(block.text)

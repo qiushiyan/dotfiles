@@ -7,33 +7,51 @@ local transcript = require("claude-prompt.transcript")
 
 local M = {}
 
--- one reference per editor: Claude spawns a fresh nvim for every Ctrl+G
+-- one reference per editor: Claude spawns a fresh nvim for every Ctrl+G.
+-- win/buf are the reference, present only while its window is open (the
+-- buffer wipes with it); replies/index/full outlive it so keys can reopen it.
 local state = {} -- draft_win, win, buf, replies, index, full
+
+local WIN_OPTS = {
+  wrap = true,
+  linebreak = true,
+  number = false,
+  relativenumber = false,
+  signcolumn = "no",
+  statuscolumn = "",
+  foldcolumn = "0",
+  spell = false,
+  cursorline = false,
+  winfixwidth = true,
+}
 
 local function valid_win(win)
   return win and vim.api.nvim_win_is_valid(win)
 end
 
+local open_window -- forward: render() reopens a closed reference
+
 local function render()
+  if not valid_win(state.win) then
+    open_window()
+  end
   local reply = state.replies[state.index]
   local text = state.full and reply.full or reply.final
   vim.bo[state.buf].modifiable = true
   vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, vim.split(text, "\n", { plain = true }))
   vim.bo[state.buf].modifiable = false
-  if valid_win(state.win) then
-    vim.api.nvim_win_set_cursor(state.win, { 1, 0 })
-    vim.wo[state.win].winbar = string.format(
-      " reply %d/%d · %s%%=[r ]r  ]R newest  f %s  q close ",
-      state.index,
-      #state.replies,
-      state.full and "whole turn" or "final message",
-      state.full and "final" or "whole turn"
-    )
-  end
+  vim.api.nvim_win_set_cursor(state.win, { 1, 0 })
+  vim.wo[state.win].winbar = string.format(
+    " reply %d/%d · %s%%=[r ]r  ]R newest  f %s  q close ",
+    state.index,
+    #state.replies,
+    state.full and "whole turn" or "final message",
+    state.full and "final" or "whole turn"
+  )
 end
 
 local function step(delta)
-  if not state.replies then
+  if not state.replies or not valid_win(state.draft_win) then
     return
   end
   state.index = math.max(1, math.min(#state.replies, state.index + delta))
@@ -41,7 +59,7 @@ local function step(delta)
 end
 
 local function toggle_full()
-  if state.replies then
+  if state.replies and valid_win(state.draft_win) then
     state.full = not state.full
     render()
   end
@@ -59,10 +77,9 @@ local function close()
   if valid_win(state.win) then
     vim.api.nvim_win_close(state.win, true)
   end
-  state.win = nil
 end
 
-local function open_window()
+function open_window()
   local buf = vim.api.nvim_create_buf(false, true) -- unlisted scratch
   vim.bo[buf].bufhidden = "wipe"
   vim.bo[buf].swapfile = false
@@ -79,20 +96,20 @@ local function open_window()
   end
   local win = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(win, buf)
-  for opt, value in pairs({
-    wrap = true,
-    linebreak = true,
-    number = false,
-    relativenumber = false,
-    signcolumn = "no",
-    statuscolumn = "",
-    foldcolumn = "0",
-    spell = false,
-    cursorline = false,
-    winfixwidth = true,
-  }) do
+  for opt, value in pairs(WIN_OPTS) do
     vim.wo[win][opt] = value
   end
+  -- however it closes (q, :q, <C-w>o from the draft), forget it; the id
+  -- check keeps a stale window from clearing a newer reference
+  vim.api.nvim_create_autocmd("WinClosed", {
+    pattern = tostring(win),
+    once = true,
+    callback = function()
+      if state.win == win then
+        state.win, state.buf = nil, nil
+      end
+    end,
+  })
 
   local map = function(lhs, fn, desc)
     vim.keymap.set("n", lhs, fn, { buffer = buf, nowait = true, desc = desc })
@@ -131,10 +148,34 @@ function M.open()
     return
   end
   state.replies, state.index, state.full = replies, #replies, true
-  if not valid_win(state.win) then
-    open_window()
-  end
   render()
+end
+
+-- Closing the draft window without quitting (<C-w>c, :close) must not leave
+-- the reference as the editor's only window: Claude would wait behind it.
+-- Put the draft back into that window instead.
+local function watch_draft(win, buf)
+  vim.api.nvim_create_autocmd("WinClosed", {
+    pattern = tostring(win),
+    once = true,
+    callback = vim.schedule_wrap(function()
+      local ref = state.win
+      if not valid_win(ref) or not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
+      if #vim.api.nvim_tabpage_list_wins(0) > 1 then
+        return close()
+      end
+      state.win, state.buf = nil, nil
+      vim.api.nvim_win_set_buf(ref, buf) -- wipes the reference buffer
+      for opt in pairs(WIN_OPTS) do
+        vim.wo[ref][opt] = vim.go[opt]
+      end
+      vim.wo[ref].winbar = vim.go.winbar
+      state.draft_win = ref
+      watch_draft(ref, buf)
+    end),
+  })
 end
 
 local function attach(buf)
@@ -145,6 +186,7 @@ local function attach(buf)
     return
   end
   state.draft_win = vim.api.nvim_get_current_win()
+  watch_draft(state.draft_win, buf)
 
   local map = function(lhs, fn, desc)
     vim.keymap.set("n", lhs, fn, { buffer = buf, desc = desc })

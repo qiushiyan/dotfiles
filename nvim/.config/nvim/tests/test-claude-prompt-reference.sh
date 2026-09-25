@@ -73,15 +73,18 @@ got=$(ref_text)
 keys '[r'
 got=$(ref_text)
 [ "$got" = "**Decision 1:** earlier question?" ] && ok R2-prev || bad R2-prev "[$got]"
-keys '[r'
-[ "$(ref_text)" = "**Decision 1:** earlier question?" ] && ok R2-bounded || bad R2-bounded "[$(ref_text)]"
-keys '[R]R<C-w>tf<C-w>p'
+keys '[r]r'
+[ "$(ref_text)" = "Let me look around.||**Decision 2:** newest question?" ] && ok R2-bounded || bad R2-bounded "[$(ref_text)]"
+keys '[R'
+[ "$(ref_text)" = "**Decision 1:** earlier question?" ] && ok R2-oldest || bad R2-oldest "[$(ref_text)]"
+keys ']R<C-w>tf<C-w>p'
 got=$(ref_text)
 [ "$got" = "**Decision 2:** newest question?" ] && ok R2-final || bad R2-final "[$got]"
 
 # R3: :wq in the draft ends nvim (Claude is waiting on it) and the file holds
 # exactly what was typed.
 keys 'i1. yes<Esc>'
+printf '1. yes\n' >"$T/expected"
 nvim --server "$SOCK" --remote-send ':wq<CR>' 2>/dev/null
 for _ in $(seq 30); do kill -0 "$NVIM_PID" 2>/dev/null || break; sleep 0.1; done
 if kill -0 "$NVIM_PID" 2>/dev/null; then
@@ -90,7 +93,24 @@ if kill -0 "$NVIM_PID" 2>/dev/null; then
 else
   ok R3-exit
 fi
-[ "$(cat "$DRAFT")" = "1. yes" ] && ok R3-draft || bad R3-draft "draft is [$(cat "$DRAFT")]"
+cmp -s "$DRAFT" "$T/expected" && ok R3-draft || bad R3-draft "draft is [$(cat "$DRAFT")]"
+
+# R5: closing either window never strands the editor. History keys reopen a
+# closed reference; closing the draft window (<C-w>c) leaves the draft on
+# screen, not a lone reference Claude would wait behind.
+DRAFT2="$T/claude-501/claude-prompt-def.md"
+: >"$DRAFT2"
+start "$DRAFT2"
+keys '<C-w>tq'
+keys '[r'
+[ "$(R 'len(nvim_list_wins())')" = 2 ] && [ "$(ref_text)" = "**Decision 1:** earlier question?" ] &&
+  ok R5-reopen || bad R5-reopen "$(R 'len(nvim_list_wins())') windows, reference [$(ref_text)]"
+keys '<C-w>c'
+[ "$(R 'len(nvim_list_wins())')" = 1 ] && [ "$(R 'bufname("%")')" = "$DRAFT2" ] &&
+  ok R5-draft-close || bad R5-draft-close "$(R 'len(nvim_list_wins())') windows showing [$(R 'bufname("%")')]"
+nvim --server "$SOCK" --remote-send ':wq<CR>' 2>/dev/null
+for _ in $(seq 30); do kill -0 "$NVIM_PID" 2>/dev/null || break; sleep 0.1; done
+kill -0 "$NVIM_PID" 2>/dev/null && { bad R5-exit "nvim still running"; stop; } || ok R5-exit
 
 # R4: an ordinary project file that merely shares the name gets no reference.
 start "$T/proj/claude-prompt-notes.md"
