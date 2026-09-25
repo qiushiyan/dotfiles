@@ -326,4 +326,5 @@ usually shorter than before — longer only where a named gap was filled.
   `docs/loopy/prompting-guide.md`), answers that repo's calibrations: which
   terms pass the familiar-term test there, which emphasis is earned, where
   its surfaces live. General lessons graduate up into this file; the house
-  layer keeps the instance and its evidence.
+  layer keeps only what is specific to the project, as a rule with a
+  pointer to the record that earned it.

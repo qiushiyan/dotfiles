@@ -165,3 +165,40 @@ list, remedies only where the bar does not carry them). Departures from
 the vendor pages the reviewer judged earned: no fixed example count;
 explicit formatting guidance; verification scaffolding removed per model
 rather than wholesale.
+
+## 2026-09-25 — the planlab house layer and `loopy-prompt-check`
+
+Corpus: claude user turns naming `docs/loopy/prompting-guide.md` with a
+review verb (`%eview and revise%`, `%self evaluation and improvement%`,
+`%for prompt problems%`, `%review and revise based%`), excluding `#…`
+briefs and dispatched `You are revising…`: 34 invocations / 26 sessions,
+08-20 → 09-23. Guide writers: Edit/Write or Bash patch rows on the file,
+40 sessions (some rows are reads caught by the Bash predicate). Production: 90 days of customer Loopy messages over
+`planlab backstage db` (2,828 hand-typed, 16 workspaces; one customer
+66 %), scratchpad `vocab/FINDINGS.md`. Web: GAO-16-89G, DCMA PAM 200.1,
+AACE 10S-90, SCL protocol, UFGS 01 32 01, P6 help, NEC guidance.
+
+| finding | evidence | verdict |
+|---|---|---|
+| passes apply the house mechanics, not the domain | ~30 reports: truth claims ~25, leaks ~12, cache ~12; planner-vocabulary-in findings 4, none drawn from the guide; domain text ≈1.5 % of 29 KB | instructions — register rebuilt from production + standards |
+| the guide taught blind appends | its preamble and step 5 ("lands here with its evidence") overrode the doc standards' "never an append target"; pass writers 08-13 → 08-19, `pl-loopy-handoff` sync writers 08-26 → 09-24; 15.8 → 29 KB | user confirmed; admission rule in step 5, the sync admits and reports, the snippet reports only; this rulebook's pointer now says "a rule with a pointer to its record" |
+| most of the guide restated this rulebook | calibration binds, the review pass, 8 binding conventions | cut; 29.0 → 17.9 KB with the domain layer added |
+| the listed register was the author's, not the customer's | 4 of 7 listed terms rare; misread "slippage" (customer report), NEC terminal float, coined names; leaks 62 / 1k final replies are script, helper, mount, sandbox, JSON — the listed infra words 0.6 / 1k | new research note `docs/loopy/research/2026-09-25-planner-register-production-read.md` |
+
+Cold readers (three, read-only): the revision pass on a seeded refusal and
+skill paragraph (found every seeded defect; gaps fixed — bridge failures'
+two readers, skill-test pins, regeneration commands, unit helper); the doc
+sync on two reported lessons (rejected the general one, edited the owning
+entry for the domain one; fixed — one admission test, a named admitter,
+new-entry case); a new NEC skill (fixed — baseline vs Accepted Programme,
+NEC terms and float sharing, read-or-ask for context-dependent terms,
+reader-aware glossing, the in-repo NEC reference).
+
+Next pass should measure, after this lands: guide size and the diff shape
+of each later edit (target: edits into owning entries, no case narrative);
+handoff closing reports naming admitted / rejected lessons; register
+findings per `loopy-prompt-check` report (target: rising above 4 / 30);
+Loopy's leak rate per 1,000 final replies (62 / 1k baseline, 30 days to
+09-25) — a runtime outcome this pass did not test. Reversal condition: the
+guide growing past ~20 KB again, or passes citing the register wrongly
+(e.g. glossing NEC terms for a contract reader).
