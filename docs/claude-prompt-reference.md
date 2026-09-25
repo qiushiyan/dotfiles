@@ -2,8 +2,8 @@
 
 When Claude Code's Ctrl+G opens a prompt in Neovim, a read-only window beside
 the draft shows the assistant reply being answered. Agents often end a turn
-with a list of questions taller than the pane, and the Ctrl+G editor used to
-hide them entirely. Sibling of `docs/claude-prompt-completion.md`, which owns
+with a list of questions taller than the pane, and without it the Ctrl+G
+editor hides them entirely. Sibling of `docs/claude-prompt-completion.md`, which owns
 how the prompt buffer is spawned.
 
 ```
@@ -16,12 +16,11 @@ nvim/.config/nvim/tests/test-claude-prompt-reference.sh
 
 ## Using it
 
-The window opens automatically on Ctrl+G, beside the draft when the pane is at
-least 100 columns wide and above it otherwise. The layout follows pane resizes
-(tmux zoom, a new split): crossing 100 columns flips it, keeping the reference's
-scroll position and focus. It shows the newest reply's
-**final message**, the text after its last tool call. The cursor stays in the
-draft.
+The window opens automatically on Ctrl+G on the newest reply's **final
+message**, the text after its last tool call; the cursor stays in the draft.
+It sits beside the draft when the pane is at least 100 columns wide and above
+it otherwise, and follows pane resizes (tmux zoom, a new split): crossing 100
+columns flips the layout, keeping the reference's scroll position and focus.
 
 - **From the draft:** `[r` / `]r` step to the previous or next reply,
   `[R` / `]R` jump to the oldest or newest; `<C-f>` / `<C-b>` scroll the
@@ -67,16 +66,17 @@ one-line notice and the window stays closed:
 1. **Session:** walk up from Neovim's parent process to the nearest pid
    with `$CLAUDE_CONFIG_DIR/sessions/<pid>.json` (default `~/.claude`;
    non-default accounts set the variable, and the editor inherits it). Claude
-   spawns `$EDITOR` as a direct child (verified in a live run in September
-   2026), but the walk tolerates a wrapper shell. The fallback is the pane's
+   spawns `$EDITOR` as a direct child (observed by driving a real Ctrl+G with
+   an ancestry-printing editor), but the walk tolerates a wrapper shell. The fallback is the pane's
    `@claude_ctx_sid` from the context chip. The file's `procStart` isn't
    compared with `ps` because the two disagree by an hour.
 2. **Transcript:** the single match of `projects/*/<sessionId>.jsonl`. No
    project-directory encoding is reconstructed.
 3. **Replies:** only the last 32 MB is decoded, so transcripts of 80 MB and
    up still open in tens of milliseconds, and history stops where that window
-   starts. A turn cut by the window still shows the part inside it. The active branch is the `parentUuid` chain of the newest record,
-   so replies abandoned by `/rewind` drop out. A user record starts a new turn
+   starts; a turn cut by the window still shows the part inside it. The
+   active branch is the `parentUuid` chain of the newest record, so replies
+   abandoned by `/rewind` drop out. A user record starts a new turn
    unless it is `isMeta` or carries a `tool_result`. A half-written final
    line is skipped.
 
