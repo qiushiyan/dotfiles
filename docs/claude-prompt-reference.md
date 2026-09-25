@@ -18,16 +18,17 @@ nvim/.config/nvim/tests/test-claude-prompt-reference.sh
 
 The window opens automatically on Ctrl+G, beside the draft when the pane is at
 least 100 columns wide and above it otherwise. It shows the newest reply's
-**final message**, the text after its last tool call. The cursor stays in the
-draft.
+**whole turn**: all the text Claude wrote since your last message, progress
+notes between tool calls included. The cursor stays in the draft.
 
 - **From the draft:** `[r` / `]r` step to the previous or next reply,
   `[R` / `]R` jump to the oldest or newest; `<C-f>` / `<C-b>` scroll the
   reference half a page.
 - **Between the two windows:** `<C-h>` / `<C-l>` (`<C-k>` / `<C-j>` when
   stacked), LazyVim's window moves; normal mode only.
-- **In the reference:** the reply keys as above, `f` toggles final message /
-  whole turn (progress notes between tool calls included), `q` closes it.
+- **In the reference:** the reply keys as above, `f` toggles whole turn /
+  final message (only the text after the turn's last tool call), `q` closes
+  it.
 - **`:ClaudeReply`** reopens it or reloads it on the newest reply.
 - **Half-height pane:** press tmux `prefix z` (float the pane) before Ctrl+G.
   The tool deliberately doesn't zoom: `resize-pane -Z` toggles, so restoring

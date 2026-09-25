@@ -130,7 +130,7 @@ function M.open()
     vim.notify("Claude reply reference: " .. err, vim.log.levels.INFO)
     return
   end
-  state.replies, state.index, state.full = replies, #replies, false
+  state.replies, state.index, state.full = replies, #replies, true
   if not valid_win(state.win) then
     open_window()
   end
