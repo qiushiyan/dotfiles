@@ -22,7 +22,7 @@ Handoff briefs live under `~/dev/.handoffs/<project>/`, one per next session, ea
 Closeout takes the branch that landed: the argument, else the one the user's words name, else `git branch --show-current`. Name the pass before anything else. Five rules hold across all of them:
 
 - **Scope is the set of briefs the pass names, plus every brief whose listing row reads `#N merged`.** Finished work is finished wherever it sits, so a merged row is a second anchor, carried through the same steps. Any other brief *file* outside the scope is left unread and unedited whatever drift the listing shows; the notes are the pass's own, whatever the scope.
-- **State comes from the repo.** The listing's join resolves PRs and branches through the slug and knows nothing of file sets or production, and every miss reads finished work as nothing — so `git worktree list`, `gh pr list --state open`, and `git diff --stat <default>...<branch>` are read, not inferred.
+- **State comes from the repo.** The listing's join resolves PRs and branches through the brief's branch (the slug, or `<domain>/<slug>` in a corpus kept in domain folders) and knows nothing of file sets or production, and every miss reads finished work as nothing — so `git worktree list`, `gh pr list --state open`, and `git diff --stat <default>...<branch>` are read, not inferred.
 - **Write in the same turn; the human's turn is for the significant verdicts only** (§ What waits). A verdict the repo already backs — a merged branch deletes, a discharged gate is noted, a retired name leaves the note — is applied as soon as it is reached, and the report is the record of what was written.
 - **Work on a current copy, and publish what you wrote.** A handoff folder that is a git clone is written from other machines and by teammates. Pull it before the first read — `git -C <folder> pull --ff-only`, the command `brief`'s header prints — and when the pull refuses, go on and say in the report that the copy may be behind. A pass that wrote ends on `brief sync`; a folder kept on this machine answers that there is nothing to publish.
 - **Brief prose follows the handoff skill** — `~/.claude/skills/handoff/SKILL.md` § 4, or the repo's own handoff skill where it ships one. Read it when a verdict writes brief text.
@@ -113,7 +113,7 @@ Four verdicts spend a judgment the repo cannot back, and those alone wait for th
 
 - **rewrite** — a successor brief is a new goal, and a goal is a design;
 - **keep** over delete — a `kept:` retirement;
-- **delete** of a brief whose branch does not read merged — its release also deletes the branch on origin when `brief start` published one (`git push origin --delete <slug>`), since a branch there reads `started` on every machine;
+- **delete** of a brief whose branch does not read merged — its release also deletes the branch on origin when `brief start` published one (`git push origin --delete <branch>` — the slug, or `<domain>/<slug>` in a corpus kept in domain folders), since a branch there reads `started` on every machine;
 - a change to the **order** beyond slotting an unplaced brief or dropping a retired name, and a domain coined or removed.
 
 ## Verdicts
