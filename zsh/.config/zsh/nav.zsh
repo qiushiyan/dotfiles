@@ -65,12 +65,30 @@ drop() {
 }
 
 # --------------------------------------------------------------------
-# p / pp - Jump to the planlab checkout; pp pulls it from anywhere
+# _pull_both - Run a pull here, then in the other machine's copy
+# --------------------------------------------------------------------
+# The laptop and the mini keep their own clones at the same $HOME-relative
+# paths (docs/qiushi-mini.md § planlab checkout). The mini is the machine
+# where $USER is qiushiyan, and it reaches the laptop as qiushi-mac. A
+# failed local pull stops before the ssh.
+_pull_both() {
+  emulate -L zsh
+  local dir=$1 cmd=$2 rel=${1#$HOME/} here=laptop there=mini
+  local host=${MINI_SYNC_HOST:-qiushi-mini}
+  [[ $USER == qiushiyan ]] && here=mini there=laptop host=qiushi-mac
+  print -P "%F{blue}$here%f"
+  (cd -- "$dir" && eval "$cmd") || return
+  print -P "%F{blue}$there%f"
+  ssh -o ConnectTimeout=5 "$host" "cd ~/$rel && $cmd"
+}
+
+# --------------------------------------------------------------------
+# p / pp - Jump to the planlab checkout; pp pulls it on both machines
 # --------------------------------------------------------------------
 # Functions rather than aliases so the path lives in one place and `p` can
-# take a subpath (`p apps/web`). `pp` pulls via `git -C` so your current
-# directory stays put. `pp` shadows Homebrew nss's certificate printer;
-# `command pp` still reaches it.
+# take a subpath (`p apps/web`). `pp` pulls whatever branch each checkout
+# is on, from anywhere, passing its arguments to `git pull`. `pp` shadows
+# Homebrew nss's certificate printer; `command pp` still reaches it.
 : ${PLANLAB_DIR:=$HOME/dev/planlab/main}
 
 p() {
@@ -80,29 +98,20 @@ p() {
 
 pp() {
   emulate -L zsh
-  git -C "$PLANLAB_DIR" pull "$@"
+  _pull_both "$PLANLAB_DIR" "git pull ${(j: :)${(q)@}}"
 }
 
 # --------------------------------------------------------------------
-# ph - Pull planlab's handoff briefs on the laptop and the mini
+# ph - Pull planlab's handoff briefs on both machines
 # --------------------------------------------------------------------
 # The briefs clone tracks main only, so a checkout on any other branch is
-# an error rather than a pull. Each machine keeps its own clone at the same
-# $HOME-relative path (docs/qiushi-mini.md § planlab checkout); ph pulls the
-# local one, then the other machine's over ssh. The mini is the machine
-# where $USER is qiushiyan, and it reaches the laptop as qiushi-mac.
+# an error rather than a pull.
 : ${PLANLAB_HANDOFFS_DIR:=$HOME/dev/.handoffs/planlab-main}
 
 ph() {
   emulate -L zsh
-  local rel=${PLANLAB_HANDOFFS_DIR#$HOME/} here=laptop there=mini
-  local host=${MINI_SYNC_HOST:-qiushi-mini}
-  [[ $USER == qiushiyan ]] && here=mini there=laptop host=qiushi-mac
-  local pull='test "$(git branch --show-current)" = main || { echo "not on main" >&2; exit 1; }; git pull --ff-only origin main'
-  print -P "%F{blue}$here%f"
-  (cd -- "$PLANLAB_HANDOFFS_DIR" && eval "$pull") || return
-  print -P "%F{blue}$there%f"
-  ssh -o ConnectTimeout=5 "$host" "cd ~/$rel && $pull"
+  _pull_both "$PLANLAB_HANDOFFS_DIR" \
+    'test "$(git branch --show-current)" = main || { echo "not on main" >&2; exit 1; }; git pull --ff-only origin main'
 }
 
 # --------------------------------------------------------------------

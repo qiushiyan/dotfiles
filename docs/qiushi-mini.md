@@ -388,8 +388,9 @@ config changed, so a `/model` choice made on the mini lasts until then.
 ## planlab checkout
 
 `~/dev/planlab/main` is a real clone (`gh repo clone planlab-ai/main`), not
-part of the mirror. You work in it and pull it like any repo, and `p`/`pp`
-reach it. Commits use a repo-local identity (`qiushi@planlab.ai` /
+part of the mirror. You work in it and pull it like any repo; `p` jumps to it,
+and `pp` (`zsh/.config/zsh/nav.zsh`) pulls it here and on the laptop.
+Commits use a repo-local identity (`qiushi@planlab.ai` /
 `qiushiyan`), as on the laptop. The `planlab` and `bench` launchers come
 from each package's own install (`pnpm planlab:install`,
 `cd bench && pnpm cli:install`), which bakes this checkout's absolute paths
@@ -417,8 +418,8 @@ Planlab's handoff briefs are their own clone, at the path `brief` derives from
 this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
 `brief start` pulls it before a pickup; `git -C ~/dev/.handoffs/planlab-main
 pull --ff-only` refreshes it for a session that reads the files directly.
-`ph` (`zsh/.config/zsh/nav.zsh`) pulls main into both clones from either
-machine: the local one first, then the other over SSH.
+`ph` pulls main into both machines' clones, as `pp` does for the checkout:
+from either machine, the local one first, then the other over SSH.
 Where a brief lands and what `brief sync` publishes are the binary's rules,
 so after a `brief` change on the laptop run `mini-sync` before the mini
 writes to the clone rather than waiting for the timer: an older binary files
