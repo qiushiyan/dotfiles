@@ -65,12 +65,12 @@ drop() {
 }
 
 # --------------------------------------------------------------------
-# p / pp - Jump to the planlab checkout; pp also pulls
+# p / pp - Jump to the planlab checkout; pp pulls it from anywhere
 # --------------------------------------------------------------------
-# Functions rather than aliases so the path lives in one place, `p` can
-# take a subpath (`p apps/web`), and `pp` stops at a failed cd instead of
-# pulling whatever repo you were in. `pp` shadows Homebrew nss's
-# certificate printer; `command pp` still reaches it.
+# Functions rather than aliases so the path lives in one place and `p` can
+# take a subpath (`p apps/web`). `pp` pulls via `git -C` so your current
+# directory stays put. `pp` shadows Homebrew nss's certificate printer;
+# `command pp` still reaches it.
 : ${PLANLAB_DIR:=$HOME/dev/planlab/main}
 
 p() {
@@ -80,7 +80,29 @@ p() {
 
 pp() {
   emulate -L zsh
-  p "$@" && git pull
+  git -C "$PLANLAB_DIR" pull "$@"
+}
+
+# --------------------------------------------------------------------
+# ph - Pull planlab's handoff briefs on the laptop and the mini
+# --------------------------------------------------------------------
+# The briefs clone tracks main only, so a checkout on any other branch is
+# an error rather than a pull. Each machine keeps its own clone at the same
+# $HOME-relative path (docs/qiushi-mini.md § planlab checkout); ph pulls the
+# local one, then the other machine's over ssh. The mini is the machine
+# where $USER is qiushiyan, and it reaches the laptop as qiushi-mac.
+: ${PLANLAB_HANDOFFS_DIR:=$HOME/dev/.handoffs/planlab-main}
+
+ph() {
+  emulate -L zsh
+  local rel=${PLANLAB_HANDOFFS_DIR#$HOME/} here=laptop there=mini
+  local host=${MINI_SYNC_HOST:-qiushi-mini}
+  [[ $USER == qiushiyan ]] && here=mini there=laptop host=qiushi-mac
+  local pull='test "$(git branch --show-current)" = main || { echo "not on main" >&2; exit 1; }; git pull --ff-only origin main'
+  print -P "%F{blue}$here%f"
+  (cd -- "$PLANLAB_HANDOFFS_DIR" && eval "$pull") || return
+  print -P "%F{blue}$there%f"
+  ssh -o ConnectTimeout=5 "$host" "cd ~/$rel && $pull"
 }
 
 # --------------------------------------------------------------------
