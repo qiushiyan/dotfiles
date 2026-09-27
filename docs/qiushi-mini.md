@@ -358,6 +358,12 @@ skills through `~/.agents/skills`.
 - A setting changed on the mini (`/config`, the `/model` default) writes
   through the link into the mirror and is lost at the next sync.
 
+**Context7:** `find-docs` runs `npx ctx7@latest` (node is in § Toolchain),
+and Codex's context7 MCP server reads the same key. The mini's `~/.secrets`
+(600, sourced by `.zshrc` as on the laptop) holds only the laptop's
+`CONTEXT7_API_KEY` line, copied by hand on 2026-09-27. mini-sync doesn't
+carry it, so after rotating the key, copy the line again.
+
 **Codex:** `~/.codex/config.toml` is **generated**, not linked, because Codex
 writes project and hook trust into it at runtime. `mini-sync` runs the
 laptop's file through `scripts/.local/share/dotfiles/mini-codex-config.py`,
