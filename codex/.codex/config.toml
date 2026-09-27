@@ -274,6 +274,10 @@ path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f26
 enabled = false
 
 [[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/google-workspace/SKILL.md"
+enabled = false
+
+[[skills.config]]
 path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/import-memory/SKILL.md"
 enabled = false
 
@@ -351,6 +355,10 @@ enabled = false
 
 [[skills.config]]
 path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/docx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/69a3a07b-64fa-4ebb-a92e-1e6e9f6ba920_d1d54b88-90b4-4d05-86da-c9de623a6012/google-workspace/SKILL.md"
 enabled = false
 
 [[skills.config]]
@@ -463,6 +471,10 @@ enabled = false
 
 [[skills.config]]
 path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/docx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/google-workspace/SKILL.md"
 enabled = false
 
 [[skills.config]]
