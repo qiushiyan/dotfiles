@@ -65,21 +65,38 @@ drop() {
 }
 
 # --------------------------------------------------------------------
-# _pull_both - Run a pull here, then in the other machine's copy
+# _pull_both - Run a pull here and in the other machine's copy, at once
 # --------------------------------------------------------------------
 # The laptop and the mini keep their own clones at the same $HOME-relative
 # paths (docs/qiushi-mini.md § planlab checkout). The mini is the machine
-# where $USER is qiushiyan, and it reaches the laptop as qiushi-mac. A
-# failed local pull stops before the ssh.
+# where $USER is qiushiyan, and it reaches the laptop as qiushi-mac. Both
+# pulls run in parallel with output buffered, then print local first; the
+# clones are independent, so one failing doesn't stop the other. Buffered
+# output would hide a prompt, so git may not ask for credentials or a merge
+# message and ssh may not ask for anything.
 _pull_both() {
   emulate -L zsh
+  setopt no_monitor
   local dir=$1 cmd=$2 rel=${1#$HOME/} here=laptop there=mini
   local host=${MINI_SYNC_HOST:-qiushi-mini}
   [[ $USER == qiushiyan ]] && here=mini there=laptop host=qiushi-mac
-  print -P "%F{blue}$here%f"
-  (cd -- "$dir" && eval "$cmd") || return
-  print -P "%F{blue}$there%f"
-  ssh -o ConnectTimeout=5 "$host" "cd ~/$rel && $cmd"
+  local quiet='export GIT_TERMINAL_PROMPT=0 GIT_MERGE_AUTOEDIT=no'
+  local out=$(mktemp -d "${TMPDIR:-/tmp}/pull-both.XXXXXX") pid rc=0
+  {
+    (eval "$quiet"; cd -- "$dir" && eval "$cmd") </dev/null >$out/here 2>&1 &
+    pid=$!
+    ssh -n -o BatchMode=yes -o ConnectTimeout=5 "$host" \
+      "$quiet; cd ~/$rel && $cmd" >$out/there 2>&1 &
+    print -P "%F{blue}$here%f"
+    wait $pid || rc=1
+    command cat $out/here
+    print -P "%F{blue}$there%f"
+    wait $! || rc=1
+    command cat $out/there
+  } always {
+    command rm -rf -- $out
+  }
+  return rc
 }
 
 # --------------------------------------------------------------------

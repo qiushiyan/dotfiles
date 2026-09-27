@@ -95,7 +95,7 @@ rm() {
 # --------------------------------------------------------------------
 # cpwd - Copy current directory path to clipboard
 # --------------------------------------------------------------------
-cpwd() { local p="${PWD/#$HOME/~}"; echo "$p" | pbcopy; echo "$p" }
+cpwd() { local p="${PWD/#$HOME/~}"; print -rn -- "$p" | toclip -q; print -r -- "$p" }
 
 # --------------------------------------------------------------------
 # ccproxy - Toggle AI proxy settings for Claude Code / Codex etc.

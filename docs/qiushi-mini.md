@@ -209,6 +209,7 @@ purpose:
 | `<cmd> \| toclip`, `toclip <text>` | either | to the clipboard of the machine you are sitting at |
 | `cout`, `prefix o` | either | a command and its output, through `toclip` |
 | `prefix y` / `prefix Y` | either | the pane's path, through `toclip` |
+| `cpwd` | either | the shell's working directory, through `toclip` |
 | `frommini` | laptop | the mini tmux's newest buffer → laptop clipboard |
 | `frommini -g` | laptop | the mini's GUI pasteboard, text or image → laptop clipboard |
 | `tomini` | laptop | the laptop clipboard, text or image → the mini's pasteboard |
@@ -419,7 +420,9 @@ this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
 `brief start` pulls it before a pickup; `git -C ~/dev/.handoffs/planlab-main
 pull --ff-only` refreshes it for a session that reads the files directly.
 `ph` pulls main into both machines' clones, as `pp` does for the checkout:
-from either machine, the local one first, then the other over SSH.
+from either machine, both at once, with the local output printed first.
+One machine's failure doesn't stop the other's pull. Git and ssh may not
+prompt while output is buffered, so a pull that needs a password fails.
 Where a brief lands and what `brief sync` publishes are the binary's rules,
 so after a `brief` change on the laptop run `mini-sync` before the mini
 writes to the clone rather than waiting for the timer: an older binary files
