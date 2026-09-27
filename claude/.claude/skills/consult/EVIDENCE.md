@@ -216,3 +216,29 @@ reader fixes, against 4,974 for the old skill and its two templates.
   reach 0.
 - One outcome: whether a problem redefinition changed what was built,
   followed to the user's next decision.
+
+## 2026-09-27 — cited files the voice never opens
+
+**Question**, the user's: do voices fail to read documents outside the
+project, such as the prompt-engineering guide? A tabtype round had every
+such read refused; that was envoy's permission mode, fixed there (envoy
+`EVIDENCE.md`, 2026-09-27). This pass covers review rounds too and records
+itself here only.
+
+**Corpus.** The envoy job store: every claude turn, 2026-09-14 → 09-27,
+matching each brief's cited paths outside the cwd against the voice's
+Read/Bash/Grep/Glob calls. Everywhere but tabtype nothing was refused.
+
+**Finding.** Across 33 fresh, successful rounds whose briefs cited outside
+files, the voice opened 146 and never tried 49 (about 25 %); 4 rounds opened
+none, 18 opened all. The skipped files are the brief's required reading, not
+optional pointers: the codebase-design lessons from "The design bar"
+(`deep-modules.md` 16, `composition.md` 15, `design-it-twice.md` 11,
+`deepening.md` 10), `tenets.md` 10, and the prompt-engineering `SKILL.md` 5
+of its 11 citations. No brief or template change came from this pass.
+
+**Next pass measures:** the share of cited outside files a fresh round never
+opens. Baseline: 49/195. Pull a skipped round's result and check whether its
+critique used the skipped file's vocabulary — a round that skipped
+`deep-modules.md` and still judges depth and seams read it in some other
+form; one that does not is the case for a brief change.
