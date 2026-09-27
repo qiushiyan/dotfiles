@@ -183,7 +183,7 @@ whether the doc owning an edited area was read before the first edit there.
 // pointer hit-rate: edits under a package vs reads of the doc its pointer names
 const P = { 'zsh/': 'docs/zsh.md', 'tmux/': 'tmux/.config/tmux/workflow.md' };
 const ed = sql(`SELECT DISTINCT session_id sid, file_path f FROM tool_calls tc JOIN sessions s ON s.id=tc.session_id
-  WHERE s.project LIKE :p AND tc.name IN ('Edit','Write') AND tc.file_path LIKE :root`, { p: '%dotfiles', root: '/Users/qiushi/dotfiles/%' });
+  WHERE s.project LIKE :p AND tc.name IN ('Edit','Write') AND tc.file_path LIKE :root`, { p: '%dotfiles', root: '%/dotfiles/%' });
 const rd = sql(`SELECT DISTINCT session_id sid, file_path f FROM tool_calls tc JOIN sessions s ON s.id=tc.session_id
   WHERE s.project LIKE :p AND tc.name='Read'`, { p: '%dotfiles' });
 out.pointer_hits = Object.entries(P).map(([pkg, doc]) => {

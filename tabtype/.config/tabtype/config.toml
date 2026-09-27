@@ -554,17 +554,17 @@ Agreeing with the general direction here. Now, let's run a consult round with Co
 [[snippets]]
 key = "consult-verify"
 expand = '''
-/consult run a consultation round with codex to pin the root cause. While you are waiting, reproduce the symptom with a throwaway spike — read /Users/qiushi/dotfiles/claude/.claude/skills/spike/SKILL.md for the discipline (the real thing under test, a thin harness, a verdict carried by the run's output); a reproduction while the fix is still a hypothesis is its instrument run early. Use the run as a chance to challenge your previous diagnosis and verify the real root cause. Reproduce and verify only — no fix yet.'''
+/consult run a consultation round with codex to pin the root cause. While you are waiting, reproduce the symptom with a throwaway spike — read ~/dotfiles/claude/.claude/skills/spike/SKILL.md for the discipline (the real thing under test, a thin harness, a verdict carried by the run's output); a reproduction while the fix is still a hypothesis is its instrument run early. Use the run as a chance to challenge your previous diagnosis and verify the real root cause. Reproduce and verify only — no fix yet.'''
 
 [[snippets]]
 key = "review-verify"
 expand = '''
-/review codex full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read /Users/qiushi/dotfiles/claude/.claude/skills/spike/SKILL.md for the discipline (the real thing under test, a thin harness, a verdict carried by the run's output); this is its around-a-change moment, one spike per claimed behavior. Report expected vs. actual.'''
+/review codex full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read ~/dotfiles/claude/.claude/skills/spike/SKILL.md for the discipline (the real thing under test, a thin harness, a verdict carried by the run's output); this is its around-a-change moment, one spike per claimed behavior. Report expected vs. actual.'''
 
 [[snippets]]
 key = "prompt-check"
 expand = '''
-Review and revise the model-facing surfaces this session touched — prompts, skill bodies, CLAUDE.md, snippets, tool descriptions, results and errors — against /Users/qiushi/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md, running its revision pass.
+Review and revise the model-facing surfaces this session touched — prompts, skill bodies, CLAUDE.md, snippets, tool descriptions, results and errors — against ~/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md, running its revision pass.
 
 Prefer short, clear instructions that invite reasoning, with an informative code example as the pattern, over long prose repeating what the code already says. A structural rewrite is sometimes more effective than patching. Report each finding as a named defect with its fix, and each deliberate keep with its reason; say plainly if nothing needs changing.'''
 
