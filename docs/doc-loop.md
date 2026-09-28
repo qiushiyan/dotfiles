@@ -114,6 +114,11 @@ For this repository the bindings are:
 - **Hot path:** the root `CLAUDE.md` alone. There is no mandatory onboarding
   set, so its cost is reported apart from package-local and landing-page costs,
   under the shared first-read budget.
+- **Small tools document themselves.** A script, config or CLI here owns how
+  it works in its header, comments or `--help`; its doc owns what the user
+  does with it and when, the patterns across tools, and the traps and
+  decisions the code cannot reveal. Mechanism a doc is about to gain goes into
+  the tool's header instead, unless the header already says it.
 - **Proposals and evidence:** a shipped proposal is deleted; Git holds it. The
   tree keeps no evidence tiers and owes no production reads, so the check
   block's `<live docs>` are the git pathspecs `':(glob)docs/*.md' CLAUDE.md`.

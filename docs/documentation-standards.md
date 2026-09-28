@@ -112,7 +112,7 @@ git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' \
   | grep -nE 'no longer|previously|used to|formerly|before this|was replaced|is now'
 
 # no PR number, date-as-narrative or confidence boilerplate entered a design doc
-git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' | grep -nE '#[0-9]{3,}\b|\b(since|as of|on) 20[0-9]{2}-'
+git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' | grep -nE '#[0-9]{3,}\b|\b(since|as of|on) 20[0-9]{2}-|\(20[0-9]{2}-[0-9]{2}-[0-9]{2}\)'
 
 # every new table is a review candidate
 git diff --cached -U0 -- '*.md' | grep -nE '^\+\s*\|?\s*:?-+:?\s*(\|\s*:?-*:?\s*)+\|?\s*$'
@@ -129,7 +129,7 @@ git diff --cached -U0 -- '*.md' | grep -E '^\+[^+]' | grep -i 'read owed' | grep
 
 What a hit means:
 
-- **A narrative grep** (cardinal, changelog, PR or date): fine in a record or an evidence tier; in a design doc, a sentence to rewrite in the present tense with the evidence cited by record.
+- **A narrative grep** (cardinal, changelog, PR or date): fine in a record, an evidence tier or a dated measurement the bindings protect; in a design doc, a sentence to rewrite in the present tense with the evidence cited by record.
 - **A table:** stays when the reader compares cells across rows; becomes a sectioned list when its rows are independent lookups; exempt inside a quoted avoid-example.
 - **A reference into a proposal or evidence directory:** fine when the target is cited in its role — a proposal as unbuilt, a retained record or decision as evidence, an authoring guide as a guide; a defect when a live doc leans on unbuilt work.
 - **A post-merge fact:** cite the PR by number in the change's record; the running system answers the rest.
