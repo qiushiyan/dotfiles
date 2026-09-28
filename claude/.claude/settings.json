@@ -21,7 +21,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
   "disableClaudeAiConnectors": true,
   "skillOverrides": {
     "artifact-capabilities": "off",
@@ -193,7 +192,7 @@
       "effortLevel": "high"
     },
     "claude-opus-5-5": {
-      "effortLevel": "high"
+      "effortLevel": "xhigh"
     }
   },
   "autoCompactWindow": 833000,
