@@ -49,8 +49,7 @@ A correct algorithm against a stale trunk is still wrong. The popup starts
 `gwt trunk --fetch` in the background at launch (a bounded fetch, only when the
 trunk is older than gwt's `fetch.max_age`) and waits for it only when reap or
 branch cleanup needs a verdict. A failed fetch is reported instead of silently
-grading against old state. gwt memoizes verdicts per branch and trunk commit;
-the shell's old `wt-merged-cache*` files are deleted at popup startup.
+grading against old state. gwt memoizes verdicts per branch and trunk commit.
 
 ## Recovery refs
 

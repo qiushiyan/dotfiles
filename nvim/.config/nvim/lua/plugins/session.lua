@@ -5,8 +5,8 @@
 -- Two guards:
 -- 1. Launched only on such files: this nvim never saves a session.
 -- 2. Before any save: wipe buffers outside the cwd, and ephemeral files inside
---    it, so the session holds only the project's own files. 3.x dropped the
---    `pre_save` option this used to be passed as; PersistenceSavePre replaces it.
+--    it, so the session holds only the project's own files (persistence 3.x's
+--    PersistenceSavePre event; the plugin takes no pre-save option).
 
 local tmp_roots = { "/tmp/", "/private/tmp/", "/var/folders/", "/private/var/folders/" }
 if vim.env.TMPDIR and vim.env.TMPDIR ~= "" then
