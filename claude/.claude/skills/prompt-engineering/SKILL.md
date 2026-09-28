@@ -99,18 +99,18 @@ situation, the input, and done, and the two producers become a fact inside it.
   never invents them.
 
   <example type="avoid">
-  Does `reply` say the work cannot continue until the reader decides or provides something?
+  You are the `verify-review` operation in the steward's drain, stage 4 of 7. Your reply is stored as a `turn_reply` row; when your turn ends the drain moves the task to `review.owed` unless a `hold` row exists.
   </example>
 
   <example>
-  An unattended coding session posted `reply` at the end of one step of its work, to the engineer who supervises it. Does `reply` leave its reader something to decide or to provide, whether or not the work waits for it?
+  You are checking a web app build against its acceptance criteria before it goes to code review. The engineer who supervises this task reads your final message. Review starts as soon as your turn ends, unless you run `steward hold --reason "<why>"` to wait for them.
   </example>
 
-  The first carries the pipeline's concern — does the work stop? — into
-  the question, so a reply that handed over an optional decision while the
-  next step ran past it read "no": the case the check existed to catch.
-  The second asks what the text shows, in a scene the model knows, and
-  code adds whether anything waits.
+  The first describes the session from the builder's seat: the
+  operation's name, its place in a state machine, the table its reply
+  lands in. The second gives the same facts as the session meets them —
+  what it is doing, who reads what it writes, and the one lever it holds
+  over what happens next.
 - **Give the reason.** The model performs better when it knows what the
   request is for, and a rule with its why is applied to cases the rule
   never named. For a collaborator on open work, "I'm working on X for Y;
@@ -359,6 +359,10 @@ usually shorter than before — longer only where a named gap was filled.
   long turns, effort, refusal classes, memory, and which instructions a
   prior model needed that this one performs unprompted:
   `~/dotfiles/references/fable-prompting-guide.md`.
+- Writing a question a classifier or judge answers — a yes/no gate, a
+  rubric grader, TypeSafe's Jev: `case-studies/jev-steward-judgments.md`.
+  Case studies hold domain passes most sessions never need, each named
+  here by its trigger.
 - A project's own prompting guide, when its `CLAUDE.md` names one (planlab:
   `docs/loopy/prompting-guide.md`), answers that repo's calibrations: which
   terms pass the familiar-term test there, which emphasis is earned, where

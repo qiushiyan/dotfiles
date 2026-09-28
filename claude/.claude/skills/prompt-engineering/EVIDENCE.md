@@ -238,7 +238,7 @@ paraphrase and are no cut signal.
 | finding | evidence | verdict |
 |---|---|---|
 | the frame is the builder's system, not the reader's situation | PR B's `blocks_next` ("Does `reply` say the work cannot continue until the reader decides or provides something?") passed a review in which two cold voices were told to judge the jev prompts against this rulebook (`ba19dcc8`, review-r1 brief 09-27 09:18 UTC). It read the handovers the badge exists for (an optional decision left open while the next step runs) at 0.05–0.19, "right under its own definition" (`b60cab46` tool result 22:16). The replacement is a situation line plus "leave its reader something to decide or to provide … whether or not the work waits", with code adding the wait fact. On the same stored replies it scores seq 64 at 0.07 → 0.87 and seq 97 at 0.16 → 0.92 (spike, 23:00). Independent support: `b60cab46`/`ba19dcc8`; laptop `2f010ad7` (09-21, "imagine yourself as the model executing the doc loop … based on [the rulebook]"); the 09-25 house pass ("the listed register was the author's, not the customer's") | **instructions**. Layer one names the situation as the reader meets it. New bar rule **The reader's world**: answerable from the input, split the decision so code joins what the input cannot show, a stylised frame allowed when it keeps the right answer, and an acting reader's frame omits but never invents. The badge pair is its example. **Give the reason** now separates the collaborator template from a consequence inside an executor's world. Revision step 1 carries the answerability test; the lens gains *builder's frame* |
-| no guidance for closed-question judges | Astra's ablation over 60 real calls ($0.00445): "the stronger observed mechanism is treating 'no hold' as 'no prerequisite decision'" (`b60cab46` tool result 22:06). The wording had been tuned on one card's 18 replies; the pass built a 123-reply labelled set with a held-out half, and the situation text is part of the question set's version digest (mini branch `8312867659`, `questions.ts`) | **instructions**: a short **Judges** surface section covering input as evidence, self-arguing text, and calibration by labels. `typesafe-ai` stays the vendor home. Single workstream: watch it |
+| no guidance for closed-question judges | Astra's ablation over 60 real calls ($0.00445): "the stronger observed mechanism is treating 'no hold' as 'no prerequisite decision'" (`b60cab46` tool result 22:06). The wording had been tuned on one card's 18 replies; the pass labelled 122 real replies (held locally, since most carry a customer's text) plus 40 edited cases, with no held-out split recorded (corrected 09-28 against the spec `2026-09-28-judgments-with-their-evidence.md`; the first version of this line said 123 with a held-out half, a planned step written up as done), and the situation text is part of the question set's version digest (mini branch `8312867659`, `questions.ts`) | **instructions**: a short **Judges** surface section covering input as evidence, self-arguing text, and calibration by labels. `typesafe-ai` stays the vendor home. Single workstream: watch it |
 | mini sessions invisible to the index | 9 / 32 mini transcripts touch the rulebook | no change here; the next pass reads the mini by hand |
 
 The cause is attributed to the rulebook, not to the authors. The first-layer
@@ -291,6 +291,17 @@ session writes the first case study from its own pass. The removed section
 half stays in the body: the reader's world, answerability, and code joining
 what the input cannot show. The judge-specific sentence in *give the reason*
 went with the section. The main body is now 3592 words.
+
+The first case study landed the same day as
+`case-studies/jev-steward-judgments.md` (1854 words), written by the mini
+session. Checked against branch `37d41c0e38`: its file paths, the bands
+(badge 0.6 / 0.3, residue 0.25 / 0.2), the 32k cap, the `hostWaits` join, and
+the counts (76 asking: 47 / 23 / 6; 46 non-asking, none yes; 34 residue
+files). One heading changed from "What changed, layer by layer" to "What
+changed", so it does not collide with the rulebook's layers. The mini
+session's proofread also moved the body's *reader's world* example from the
+badge pair (now in the case study) to an agent prompt, since most readers of
+the body write for agents, and added the pointer under Pointers.
 
 Next pass should measure, after 2026-09-28, on both machines: whether prompt
 passes over questions for a model (judges, gates, graders) name the
