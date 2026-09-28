@@ -403,7 +403,7 @@ gap was filled.
   rubric grader, TypeSafe's Jev:
   `case-studies/classifier-judge-questions-jev-steward.md`. Case studies
   hold domain passes most sessions never need, each named here by its
-  trigger.
+  trigger; `case-studies/README.md` says when and how to add one.
 - A project's own prompting guide, when its `CLAUDE.md` names one (planlab:
   `docs/loopy/prompting-guide.md`), answers that repo's calibrations: which
   terms pass the familiar-term test there, which emphasis is earned, where

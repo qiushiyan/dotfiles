@@ -410,3 +410,10 @@ The case study was renamed the same day, at the user's request, from
 and its title now leads with "classifier and judge questions". A session
 searching by topic ("classifier", "judge") finds it without knowing Jev or
 the steward.
+
+`case-studies/README.md` was added the same day at the user's request (303
+words). It covers when a pass earns a case study (a domain half the body
+cannot hold, backed by evidence) and naming for the search that should find
+it (topic first, then domain). It also asks for writing that transfers:
+organised around a neighbouring writer's questions, closing with what
+transfers, what does not, and whose it is. The Pointers line names it.
