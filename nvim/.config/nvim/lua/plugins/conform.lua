@@ -11,22 +11,27 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
--- Auto-format when focus is lost or I leave the buffer
+-- Auto-format a buffer with unsaved edits when focus is lost or I leave it.
+-- Unmodified buffers are skipped: formatting a file I only viewed turns the
+-- visit into a diff, and the formatter run (~100ms) would land on every buffer
+-- switch, picker open, and tmux pane switch. Async so leaving never waits on
+-- the formatter; conform drops the result if the buffer changes meanwhile.
 vim.api.nvim_create_autocmd({ "FocusLost", "BufLeave" }, {
   pattern = "*",
   callback = function(args)
     local buf = args.buf or vim.api.nvim_get_current_buf()
-    -- Only format if the current mode is normal mode
-    -- Only format if autoformat is enabled for the current buffer (if
-    -- autoformat disabled globally the buffers inherits it, see :LazyFormatInfo)
-    if LazyVim.format.enabled(buf) and vim.fn.mode() == "n" then
+    -- autoformat can be disabled per buffer or globally (see :LazyFormatInfo)
+    local function wanted()
+      return vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].modified and LazyVim.format.enabled(buf)
+    end
+    if wanted() and vim.fn.mode() == "n" then
       -- Add a small delay to the formatting so it doesn’t interfere with
       -- CopilotChat’s or grug-far buffer initialization, this helps me to not
       -- get errors when using the "BufLeave" event above, if not using
       -- "BufLeave" the delay is not needed
       vim.defer_fn(function()
-        if vim.api.nvim_buf_is_valid(buf) then
-          require("conform").format({ bufnr = buf })
+        if wanted() then
+          require("conform").format({ bufnr = buf, async = true })
         end
       end, 100)
     end

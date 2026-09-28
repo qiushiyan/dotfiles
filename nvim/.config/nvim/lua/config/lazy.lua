@@ -35,10 +35,10 @@ require("lazy").setup({
     -- version = "*", -- try installing the latest stable version for plugins that support semver
   },
   install = { colorscheme = { "tokyonight", "habamax" } },
-  checker = {
-    enabled = true, -- check for plugin updates periodically
-    notify = false, -- notify on update
-  }, -- automatically check for plugin updates
+  -- Off: with notify = false its results were never seen, yet every UI launch
+  -- (including each Ctrl+G prompt and git commit editor) spawned ~50 git
+  -- processes to compute them. `:Lazy check` runs it on demand.
+  checker = { enabled = false },
   performance = {
     rtp = {
       -- disable some rtp plugins
