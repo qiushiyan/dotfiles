@@ -6,17 +6,16 @@ The shell startup model lives in [zsh.md](zsh.md).
 
 ## Recognize the failure
 
-The Obelisk failure exposed two independent sources of drift:
+Either drift source below produces it on its own; a pnpm-installed `obelisk`
+once hit both:
 
-- pnpm installed `obelisk` under `~/Library/pnpm/bin`, but that directory was
-  added only by `.zshrc`. The executing Codex shell was `/bin/zsh` with both
-  interactive and login mode off, so it skipped `.zshrc`.
-- `codex/.codex/config.toml` supplied a static `PATH` through
-  `shell_environment_policy.set`. That copied list omitted pnpm's directory.
+- the tool's directory is added only by `.zshrc`, which Codex's `/bin/zsh`
+  skips because it runs with interactive and login mode off;
+- a static `PATH` in `codex/.codex/config.toml`'s
+  `shell_environment_policy.set` omits the directory.
 
-Calling Obelisk by absolute path succeeded, including a real index query.
-That isolated this failure to command lookup rather than filesystem access
-or Obelisk's database permissions.
+If the CLI works by absolute path, the failure is command lookup, not
+filesystem access or the tool's own permissions.
 
 ## Diagnose a recurrence
 

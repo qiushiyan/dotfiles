@@ -13,8 +13,8 @@ different kind of shell:
   mosh-server would otherwise miss it), forces a UTF-8 locale for the same
   reason, sources `toolchain.zsh`, then sources every other
   `~/.config/zsh/*.zsh` so functions and aliases exist everywhere, then this
-  machine's host file (§ Machines), and finally turns `EQUALS` expansion off
-  (below).
+  machine's host file (§ Machines), then global options such as `EQUALS` off.
+  It must end with status 0 (§ Lessons learned).
 - **`.zprofile`** — login shells only. Homebrew + OrbStack `shellenv`.
 - **`.zshrc`** — interactive shells only. oh-my-zsh, syntax highlighting,
   completions, Oh My Posh prompt, fzf/zoxide, the lazy `nvm` stub.
@@ -24,24 +24,17 @@ different kind of shell:
 They load `.zshenv` → `.zprofile` → `.zshrc` → `.zlogin`, skipping files that
 do not apply to the shell's mode.
 
-**`~/.zprofile` is not in this repo.** Homebrew's and OrbStack's installers wrote
-it and own it, so it is machine-local state that `make install` does not
-recreate — a new machine gets it from running those installers, not from
-stowing. It matters to the load order anyway: its unconditional `brew shellenv`
-runs _after_ `.zshenv` and re-prepends Homebrew's paths. `.zshrc` reapplies
-`toolchain.zsh` after plugin setup; `.zlogin` covers login shells, including
-non-interactive `zsh -lc` calls. `brew shellenv` also exports `FPATH`, which
-`.zshrc` undoes (§ Completion dump).
+**`~/.zprofile` is not in this repo.** Homebrew's and OrbStack's installers
+write and own it, so a new machine gets it from those installers, not from
+`make install`. Its unconditional `brew shellenv` runs _after_ `.zshenv` and
+re-prepends Homebrew's paths, so `.zshrc` reapplies `toolchain.zsh` after
+plugin setup and `.zlogin` does for login shells, including non-interactive
+`zsh -lc`. It also exports `FPATH`, which `.zshrc` undoes (§ Completion dump).
 
 `toolchain.zsh` owns CLI install directories for every shell mode. Add new
-tool paths there. Codex's `shell_environment_policy` inherits its parent
-environment without a static `PATH` override; `.zshenv` supplies the tool
-paths even when the app starts from the macOS GUI. A hard-coded Codex path
-list drifts as tools are installed. Parent inheritance alone cannot import
-exports or virtual environments activated in another terminal after startup.
-
-For diagnosis and recovery, see
-[Codex: CLI works in the terminal but is not found](codex-zsh-path-command-not-found.md).
+tool paths there, not to a static `PATH` in Codex's `shell_environment_policy`:
+Codex inherits its environment and `.zshenv` supplies the paths even when the
+app starts from the GUI (`docs/codex-zsh-path-command-not-found.md`).
 
 ## Modules
 
@@ -51,9 +44,9 @@ Sourced by `.zshenv`; `toolchain.zsh` first, then the rest in glob order.
 zsh/.config/zsh/
   toolchain.zsh    # shared CLI paths, pnpm globals, default Node via nvm
   aliases.zsh
-  git.zsh          # git aliases, worktree helpers, gopen completion (binary: ~/dev/gopen), the one git() (branch guard, push flags from git config's repo.pushArgs), deferred completion registration
-  nav.zsh          # n, take, drop, y, fcd, p/pp (planlab checkout; PLANLAB_DIR), ph (handoff briefs); pp/ph pull on both machines
-  utils.zsh        # gitclean, loc, n, take, dotadd, …
+  git.zsh          # git aliases, worktree helpers, the one git() wrapper
+  nav.zsh          # jumps and pulls: p/pp (planlab checkout), ph (handoff briefs), y, fcd
+  utils.zsh        # loc, dotadd, cpwd, the mobile `agents` session, …
   theme.zsh        # the $TERMINAL_THEME switch
   cwd-guard.zsh    # deleted-cwd defenses: _cwd_guard at startup, zshreload (tests/ has its harness)
   claude.zsh       # multi-account launchers (x, x-<name>) — see claude-accounts.md
@@ -115,13 +108,13 @@ the same fpath before it sources oh-my-zsh: it drops inherited `$ZSH/*`
 entries, deduplicates (`typeset -U`), pins Homebrew's and OrbStack's
 completion directories, and unexports `FPATH`.
 
-The export is the trap. `brew shellenv` runs `export FPATH`, so a child shell
-(nested `zsh`, `zshreload`, a tmux pane whose server captured the variable)
-used to inherit its parent's oh-my-zsh entries and add them again. Each such
-context had a different fpath and rewrote the shared dump. The two pinned
-directories are the ones only login shells add, through `~/.zprofile`; without
-the pin a non-login shell lacked `brew`, `docker` and `orb` completions and
-recorded yet another fpath. A new completion directory belongs in that pin,
+The export is the trap. `brew shellenv` runs `export FPATH`, so without the
+unexport a child shell (nested `zsh`, `zshreload`, a tmux pane whose server
+captured the variable) inherits its parent's oh-my-zsh entries and adds them
+again; each such context has a different fpath and rewrites the shared dump.
+The pinned directories are the ones only login shells add, through
+`~/.zprofile`; without the pin a non-login shell lacks `brew`, `docker` and
+`orb` completions and records yet another fpath. A new completion directory belongs in that pin,
 guarded with `(N/)`, not on an exported `FPATH`. `tests/portability.test.zsh`
 checks that an inherited `FPATH` changes nothing and does not leak.
 
@@ -133,62 +126,48 @@ installed (over SSH to the mini, the laptop's; `docs/qiushi-mini.md`
 § Clipboard and attach), else `pbcopy`. Usage belongs to `tmux/.config/tmux/workflow.md`
 § Reading back & copying output (copy mode).
 
-`zsh/.config/zsh/cout.zsh` owns execution boundaries and shell identity.
-`zsh/.zshrc` registers its hooks after Oh My Posh consumes the command's exit
-status. The first real command initializes recording synchronously, keeping
-Python setup off shell startup. `preexec` saves exact command text and emits a
-private start marker; `precmd`/`zshexit` emit its end marker. Standalone copies
-and empty/cancelled prompts create no record. The `precmd` publication is the
-prompt's only tmux round trip: it also carries the agent-status sweep from
-`tmux-utils.zsh` and unregisters that module's standalone hook
+`zsh/.config/zsh/cout.zsh` owns execution boundaries and shell identity:
+`preexec` saves the exact command text and marks the start, `precmd`/`zshexit`
+mark the end, and `zsh/.zshrc` registers these hooks after Oh My Posh consumes
+the exit status. Standalone copies and empty or cancelled prompts create no
+record. The `precmd` also carries the prompt's tmux round trip
 (`tmux/.config/tmux/scripts/context-chip.md` § Ownership).
 
 `tmux/.config/tmux/scripts/tmux-cout.py` owns the pane's `pipe-pane` recorder,
-completed records, indexes, and retention. Markers and output share an ordered
-stream; the reader waits for the shell's exact completion ID before selecting a
-record. Every active execution receives output, so a parent `zsh` or `ssh`
-record contains the nested interaction. Local child shells have separate indexes;
-returning restores the parent's index. `exec zsh` starts a new index, and its
-first command finalizes the replaced shell's execution as incomplete. Shared
-shell history and local or remote prompt themes do not determine boundaries.
+completed records, indexes, and retention, with its limits at the top of the
+file. Every active execution receives output, so a parent `zsh` or `ssh` record
+contains the nested interaction; a local child shell has its own index, and
+`exec zsh` starts a new one. Shared history and prompt themes do not determine
+boundaries.
 
 Copying renders an immutable record in a temporary, isolated tmux server without
-rerunning the command. Its history limit is independent of live pane scrollback;
-clearing or resizing the live pane leaves completed records intact. Replay uses
-the dimensions at command start, so resizing during execution may affect layout.
-Full-screen output, a lost replay boundary, and oversized or incomplete records
-are refused with the clipboard unchanged.
+rerunning the command, so clearing or resizing the live pane leaves completed
+records intact; replay uses the dimensions at command start. Full-screen output,
+a lost replay boundary, and oversized or incomplete records are refused with the
+clipboard unchanged.
 
-Recordings live under `${XDG_CACHE_HOME:-~/.cache}/cout`, with directory/file
-permissions 700/600. Each active command has a 16 MiB output limit. Completed
-records share a 64 MiB output budget and 50-record limit per pane, across shell
-sessions; oldest records expire first. Clean pipe closure removes the cache.
-Faults preserve completed files until a new recorder setup reaps the abandoned
-cache. Deleting an active cache interrupts recording and prompts for a reload;
-leave normal cleanup to the recorder. Setup refuses to replace another logger.
+Recordings live under `${XDG_CACHE_HOME:-~/.cache}/cout` (700/600); oldest
+records expire first. Leave cleanup to the recorder: deleting an active cache
+interrupts recording and prompts for a reload, and setup refuses to replace
+another logger.
 
-`zshreload` loads changed shell hooks and starts a new index. It reuses a live
-pane recorder, so changes to recording code or retention limits require a new
-recorder; opening a new pane picks up both shell and recorder changes. After a
-recorder failure, reload the shell and run a new command to resume capture.
-Prior output is unavailable to a newly initialized recorder. The isolated
-integration suite and its invocation are documented in `docs/testing.md`.
+`zshreload` picks up changed shell hooks but reuses the pane's live recorder,
+so a change to recording code or retention needs a new pane. After a recorder
+failure, reload the shell and run a new command to resume capture; earlier
+output is gone. The isolated suite is in `docs/testing.md`.
 
 ## Lessons learned
 
-Hard-won during a startup-perf and robustness pass. Read before editing.
+Read before editing.
 
-- **Reload with `exec zsh`, never `source ~/.zshrc`.** Re-sourcing only _adds_
-  state; it cannot drop deleted aliases, functions, or exports, nor fix stale
-  in-memory state. `zshreload` (`cwd-guard.zsh`) is `exec zsh -l` behind a cwd
-  check: a zsh started inside a deleted directory gets `PWD="."`, and
-  zsh-syntax-highlighting then spins forever on `.:h == .` at the first
-  keystroke — the pane looks frozen. The function first moves to the nearest
-  ancestor that still exists; `_cwd_guard` catches every other way of starting
-  a shell there (moves to `~`).
-- **`.zshenv` must exit 0.** A non-zero last statement silently breaks
-  `source ~/.zshenv && …` chains. Keep the final line a clean `if`, not a
-  short-circuiting `&&`.
+- **Reload with `zshreload`, never `source ~/.zshrc`.** Re-sourcing only
+  _adds_ state; it cannot drop deleted aliases, functions, or exports.
+  `zshreload` is `exec zsh -l` behind a cwd check, because a zsh started in a
+  deleted directory freezes the pane at the first keystroke
+  (`cwd-guard.zsh`'s header has the mechanism and both defenses).
+- **`.zshenv` must end with status 0.** A non-zero last statement silently
+  breaks `source ~/.zshenv && …` chains, so whatever comes last is a plain
+  command or a complete `if`, never a short-circuiting `&&`.
 - **nvm is lazy-loaded.** Eagerly sourcing `nvm.sh` costs ~230 ms per shell.
   `toolchain.zsh` already puts the default Node on `PATH` cheaply; an `nvm()`
   stub in `.zshrc` loads the real nvm on first call. Don't reinstate eager
@@ -200,37 +179,27 @@ Hard-won during a startup-perf and robustness pass. Read before editing.
   function for this reason. Start non-trivial functions with `emulate -L zsh`
   so ambient options can't change their behavior.
 - **Completions register late.** `compdef` exists only after oh-my-zsh runs
-  `compinit`. `git.zsh` is sourced once, by `.zshenv`, which stubs `compdef` out
-  to suppress errors; `.zshrc` calls `_git_zsh_register_completions` afterward.
-  Don't re-source whole files just to register completions.
+  `compinit`, so a module sourced by `.zshenv` defers registration to a
+  function `.zshrc` calls afterward (`_git_zsh_register_completions`). Don't
+  re-source whole files just to register completions.
 - **A function in `.zshrc` replaces a module's function of the same name**,
-  because `.zshrc` runs after `.zshenv` sourced the modules. A planlab-only
-  `git()` there once replaced `git.zsh`'s, so `gitguard on` silently did
-  nothing in interactive shells. Extend the module's function instead;
-  `tests/portability.test.zsh` checks that `git()` comes from `git.zsh`.
+  because `.zshrc` runs after `.zshenv` sourced the modules; a second `git()`
+  there silently disables `git.zsh`'s branch guard in interactive shells.
+  Extend the module's function instead; `tests/portability.test.zsh` checks
+  that `git()` comes from `git.zsh`.
 - **Autosuggestions bind their widgets once**, at the first prompt
-  (`ZSH_AUTOSUGGEST_MANUAL_REBIND=1` in `.zshrc`); the default rebinds every
-  widget before every prompt, ~5 ms each time. It is safe because every widget
-  exists by then, and zsh-syntax-highlighting uses `zle-line-pre-redraw` hooks
-  rather than wrapping widgets. A widget created later gets no suggestion
-  handling until `_zsh_autosuggest_bind_widgets` runs.
-- **`EQUALS` expansion is off, machine-wide** (`unsetopt EQUALS`, last line of
-  `.zshenv`). By default zsh expands any word starting with `=` to the path of
-  that command — `=ls` → `/bin/ls`, on assignment right-hand sides and
-  colon-separated components too, so `x==ls` assigns `/bin/ls` and `p=a:=ls:b`
-  becomes `a:/bin/ls:b`. All of that is now literal. It was disabled because AI
-  agents write bash-flavoured one-liners into this shell: `cat a; echo ====;
-  cat b` made zsh look up a command named `===`, and since the tool `eval`s the
-  whole string, the failure **aborted the rest of the line** — `cat b` never
-  ran, and the only clue was one error line under otherwise correct output.
-  947 truncated tool calls across 260 sessions before it was traced. `.zshenv`
-  rather than `.zshrc` because every shell that hits it is non-interactive, and
-  `.zshenv` is also read by sessions already running against a stale Claude
-  shell snapshot. Escape hatches for a script that wants the default back:
-  `emulate zsh`, or `zsh -f` to skip startup files entirely. `=(...)` process
-  substitution is a different feature and is unaffected. Pinned by
+  (`ZSH_AUTOSUGGEST_MANUAL_REBIND=1` in `.zshrc`, which says why it is safe).
+  A widget created later gets no suggestion handling until
+  `_zsh_autosuggest_bind_widgets` runs.
+- **`EQUALS` expansion is off, machine-wide** (`unsetopt EQUALS` in
+  `.zshenv`, whose comment has the mechanism). With it on, an agent's
+  bash-flavoured `cat a; echo ====; cat b` **aborts the rest of the eval'd
+  line** — `cat b` never runs, and the only clue is one error line. It lives in
+  `.zshenv` because the shells that hit it are non-interactive, and `.zshenv`
+  also reaches sessions running against a stale Claude shell snapshot. A
+  script that wants the default back uses `emulate zsh` or `zsh -f`; `=(...)`
+  process substitution is unaffected. Pinned by
   `zsh/.config/zsh/tests/startup-options.test.zsh`.
 - **Measure, don't guess.** Profile with `zmodload zsh/zprof`; verify a perf
   change with an _interleaved_ A/B benchmark (`git stash` the change, time both
-  back-to-back, repeat) — not before/after numbers taken minutes apart. This
-  pass took startup ~530 ms → ~160 ms.
+  back-to-back, repeat) — not before/after numbers taken minutes apart.

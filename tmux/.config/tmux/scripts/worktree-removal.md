@@ -30,12 +30,8 @@ all sessions because a deleted cwd is broken wherever its window lives.
 the popup's `· merged` tag and reap read `gwt list --json`, and branch cleanup
 after a removal reads `gwt merged --json <branches>`. One trunk, the remote
 default branch, serves all of them and `gwt remove`, so they cannot disagree.
-
-| Integration | Detection |
-|---|---|
-| merge commit / fast-forward | branch tip is an ancestor |
-| squash merge | collapsed branch patch already exists on the trunk |
-| rebase merge | every branch commit's patch already exists on the trunk |
+Squash and rebase merges count; that README section owns how each merge style
+is detected.
 
 `git branch -d` sees only graph ancestry, so a branch proven squash-merged may
 require `-D`; this is safe only after gwt's independent patch verdict. A branch

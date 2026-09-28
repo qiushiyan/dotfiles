@@ -79,15 +79,13 @@ skips the override edits the user's real accounts and session state. Global
 patterns like `pkill` need the same care.
 
 Each suite carries a guard case for exactly this reason; when you add state that
-crosses the sandbox boundary, add the guard alongside it. The chip suite's C9 is
-that guard, and it has already earned its keep: the statusline gained a detached
-quota refresher, and the first run afterwards caught it running the real
-`headroom` against the real accounts root and writing the user's live
-`~/.cache`. The lever that closed it, `CLAUDE_CTX_REFRESH_CMD`, is worth copying
-in shape — unset means production, set-but-empty disables the spawn, and set to
-a path substitutes a stub. A lever that could only disable would have bought
-isolation by leaving the trigger, the throttle and the lock test permanently
-unexercised, which is how they would rot; C22 drives all three against the stub.
+crosses the sandbox boundary, add the guard alongside it (the chip suite's C9
+guards its quota refresher). **Give a spawned side effect a three-way lever,
+not an off switch**, in the shape of `CLAUDE_CTX_REFRESH_CMD`: unset means
+production, set-but-empty disables the spawn, and set to a path substitutes a
+stub. A lever that could only disable would buy isolation by leaving the
+trigger, the throttle and the lock permanently unexercised; C22 drives all of
+them against the stub.
 
 **Watch what runs _inside_ the sandbox, too.** A test pane running the user's
 interactive shell loads `~/.zshrc`, and this config's zsh hooks are production
@@ -95,5 +93,5 @@ code with opinions: the `precmd` sweep exists to clear a Claude context chip the
 moment a prompt returns. In a real pane that inference is right; in a test pane
 it makes the shell a **second writer**, racing the case for the same state and
 winning whenever zsh finishes loading last. The chip suite gives its panes a
-non-shell process for that reason, and the timing dependence is invisible while
-it happens to pass — it survived several green runs before it started failing.
+non-shell process for that reason; the timing dependence is invisible while it
+happens to pass.

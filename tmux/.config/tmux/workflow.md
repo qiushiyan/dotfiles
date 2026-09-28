@@ -24,8 +24,7 @@ You open the terminal and want to get into something.
 
 - **`prefix T`** opens the **sesh** picker — fuzzy-find a project, recent dir, or config and jump straight in (creating the session if needed). Inside the picker: `C-a` all · `C-t` tmux sessions · `C-g` configs · `C-x` zoxide dirs · `C-f` find dirs under `~` · `C-d` kill the highlighted session · `Tab`/`S-Tab` move.
 - **`prefix BTab`** flips to the **last session** — the fast toggle between, say, work and a personal project.
-- **`prefix C-f`** jumps to a session by name; **`prefix C-c`** starts a fresh empty one.
-- **`prefix $`** renames the session you're in — do it right after creating an ad-hoc one, so it's findable in `prefix T` later.
+- **`prefix C-f`** jumps to a session by name; **`prefix C-c`** starts a fresh empty one — name it with `prefix $` (below) so `prefix T` finds it later.
 
 At the end of the day, **`prefix d`** detaches — every pane keeps running in the background. Reopen the terminal (or `tmux attach`) and it's exactly as you left it: dev servers still up, agents intact. Done with a project entirely? **`prefix Q`** kills every *other* session, leaving just this one.
 
@@ -34,8 +33,8 @@ At the end of the day, **`prefix d`** detaches — every pane keeps running in t
 The picker and status bar are only as useful as your names.
 
 - **`prefix m`** renames the **current window**.
-- **`prefix M`** renames the **current pane** in a **popup text field** — same rounded frame as the worktree popup, at eye level instead of down in the status line. Type whatever you want; the label is taken verbatim, and the field starts prefilled with your existing label when the pane has one. `Enter` applies, **`Esc` cancels**, and submitting it **empty** (`C-u` wipes the line) resets the pane. Naming a pane shows the label on its **border** and turns the border on for that window; clearing hands the decision to the reconciler, which keeps the row only while some pane in the window still needs it (another label, or a Claude context chip). Naming also **freezes** the title against the program inside the pane — Claude Code otherwise repaints `✳ …` over your label every render — and clearing hands the title back to the app.
-- **`prefix $`** renames the **current session** (tmux's built-in). Do it when a session's default name (`0`, `1`) is meaningless, so `prefix T` reads well — but it's once per session, which is why the custom key went to panes instead.
+- **`prefix M`** renames the **current pane** in a popup text field, prefilled with its existing label; the label is taken verbatim. `Enter` applies, **`Esc` cancels**, and submitting it **empty** (`C-u` wipes the line) clears it. The label shows on the pane's **border**, and the program inside (Claude Code's `✳ …`) can't repaint over it; clearing hands the title back to the app, and the border row stays only while another pane in the window still shows something there.
+- **`prefix $`** renames the **current session** (tmux's built-in). Do it when a session's default name (`0`, `1`) is meaningless, so `prefix T` reads well.
 - For a pane *other* than the current one, use the command prompt: **`prefix :`** then **`rename-pane "label"`** / **`unname-pane`**, which tab-complete like native commands.
 
 The worktree popup names windows after their branch automatically; rename ad-hoc windows (`prefix m`) so browsing with `prefix C-h`/`C-l` makes sense.
@@ -70,7 +69,7 @@ You want to work on a feature without disturbing `main` or another agent — giv
 - Type a branch name and press **`ctrl-n`** → it creates `~/dev/.worktrees/<repo>/<branch>`, opens a window named after the branch, seeds gitignored files (`.env*` …) from the main worktree, and runs the Node install (by lockfile) chained with the post-create command — default `x`, so the agent is already starting when you land. (`@worktree_auto_install off` / `@worktree_post_create_cmd off` to disable.)
 - Press **`enter`** on a listed worktree to jump to its window (created if it doesn't exist yet).
 - Press **`ctrl-y`** to copy the highlighted worktree's path and close — `prefix y` for a worktree you're not in. With rows marked (`tab`, `ctrl-a` for all), it copies every marked path, one per line. The list opens at once; the `*` and `· merged` marks fill in a moment later.
-- Mark several with **`tab`** (or all with **`ctrl-a`**) and press **`ctrl-x`** to remove them as one confirmed batch — deletion is instant (trash-and-sweep: the `rm -rf` happens in the background), dirty ones need an extra explicit discard, and branch deletion is offered in aggregate.
+- Mark several with **`tab`** (or all with **`ctrl-a`**) and press **`ctrl-x`** to remove them as one confirmed batch — deletion is instant, dirty ones need an extra explicit discard, and branch deletion is offered in aggregate.
 - Press **`ctrl-g`** to *reap*: batch-remove every clean worktree whose content has reached the default base, including squash and rebase merges — end-of-week cleanup in three keystrokes.
 - Press **`ctrl-p`** to pick an open GitHub PR and check it out into a fresh worktree (`ctrl-o` opens it in the browser instead).
 
@@ -99,18 +98,17 @@ A typical task window: agent on one side, dev server on the other, a scratch she
 - **Move between panes:** `prefix h/j/k/l`, or **`Ctrl+h/j/k/l` with no prefix** (these also hop in and out of Neovim splits seamlessly).
 - **Focus one:** **`prefix z`** maximizes the pane into a **floating overlay** — the rest of the window stays visible *and live* behind it, so a build or another agent keeps scrolling while you read. `prefix z` again puts it back exactly where it was. (Stock fullscreen zoom moved to `prefix C-z`.)
 - **Quick shell:** **`prefix Z`** pops up a **throwaway shell at the current pane's directory** — check `git status` or an `ls` next to a running agent without splitting a pane off. `C-d` closes and disposes of it; it's smaller than the float and rounded-bordered so the two never look alike (in a float, `C-d` would kill your real process).
-- **Rearrange:** **`prefix p`** — see below. **Close:** just exit its shell (`C-d`); `prefix X` force-kills a stuck pane.
+- **Rearrange:** **`prefix p`** — see below. **Close:** just exit its shell (`C-d`); `prefix X` force-kills a stuck pane. In a window's **only** pane, `C-d` on an empty line is refused so a stray keystroke can't take the whole window with it — type `exit`, or `prefix x` (which confirms). The guard lives in `zsh/.zshrc`.
 
-**Clicks stop working** — tab clicks and pane clicks do nothing, except now and
-then when the mouse had not moved before the click. Ghostty believes the right
-button is still held after a lost release. It reports every motion as a
-right-button drag (SGR `34` instead of `35`), so tmux reads the next left
-press as `MouseDragEnd1`, finds no binding, and hands it to the pane.
+**Clicks stop working** — tab and pane clicks do nothing, except now and then
+when the mouse had not moved. After losing a right-button release, Ghostty
+reports every motion as a right-button drag (SGR `34` instead of `35`), so
+tmux reads the next left press as an unbound `MouseDragEnd1` and hands it to
+the pane.
 **Fix: right-click once in any pane** (Esc any menu that opens); ⌘Q Ghostty if
-that fails. To confirm next time: `kill -USR2 <tmux pid>` toggles
-`~/tmux-server-<pid>.log`, which logs `mouse input (SGR)` and `mouse key is …`.
-The log grows by hundreds of MB a minute with Claude panes open, so toggle it
-off within seconds.
+that fails. To confirm: `kill -USR2 <tmux pid>` toggles
+`~/tmux-server-<pid>.log` (`mouse input (SGR)`, `mouse key is …`); it grows by
+hundreds of MB a minute with Claude panes open, so toggle it off within seconds.
 
 ### Rearranging panes (`prefix p`)
 
@@ -189,7 +187,7 @@ command you want to capture; earlier output cannot be recovered by `cout`.
 - Enter with **`prefix [`**; leave with `q` or a quick **double-`Esc`** (a single `Esc` won't exit — see below).
 - Scroll: `C-u`/`C-d` (10 lines), `j`/`k` (one line), `gg`/`G` (top/bottom), `/` to search forward.
 - Select + copy: `v` start selection, `C-v` rectangle, `H`/`L` to line start/end, `y` to copy and exit.
-- Botched a selection? Tap **`Esc`** once — it clears the selection but *stays* in copy mode at the same scroll spot, so you just re-`v`. A lone `Esc` never tears down copy mode and dumps you at the bottom the way stock tmux does. To actually exit via `Esc`, double-tap it within ~0.4s (tunable: the `sleep 0.4` on the binding in `tmux.conf`), since tmux has no native double-tap — the first press arms a flag a background timer clears.
+- Botched a selection? Tap **`Esc`** once — it clears the selection but *stays* in copy mode at the same scroll spot, so you just re-`v`. A lone `Esc` never tears down copy mode and dumps you at the bottom the way stock tmux does. To actually exit via `Esc`, double-tap it within ~0.4s (tunable: the `sleep 0.4` on the binding in `tmux.conf`).
 
 ## Browsing past copies (`prefix =`)
 
@@ -217,7 +215,7 @@ A vendored, flash.nvim-style tool in `scripts/easyjump/` (see its `DESIGN.md`) �
 
 ## Quick helpers
 
-- **`prefix u`** — fuzzy-pick any URL from the visible scrollback and open it in the browser. (`Shift+Ctrl+click` opens one directly, bypassing tmux's mouse.)
+- **`prefix u`** — fuzzy-pick any URL from the visible scrollback and open it in the browser. (`Cmd+Shift+click` opens one directly — Cmd-click is Ghostty's link click, and Shift bypasses tmux's mouse capture.)
 - **`prefix y`** — copy "this pane's path" to the clipboard: when the pane is running Neovim, the **absolute path of the focused file**; otherwise the pane's **working directory** (read from the foreground process, so it's right even mid-session inside an agent or build — no need to interrupt what's running). **`prefix Y`** is the same but copies the file path **relative to nvim's cwd**. Neovim publishes the paths into pane-scoped `@yank_path`/`@yank_path_rel` options (the `TmuxYankPath` block in nvim's `autocmds.lua`) and withdraws them when the focused buffer isn't a copyable file — dashboards, pickers, terminals, `.git/` edit files, Claude's Ctrl+G prompt files all fall back to the cwd. The path belongs to the machine running tmux; `toclip` sends it to the laptop clipboard when attached over SSH with `mini`, and keeps it in a tmux buffer.
 - **`prefix g`** — open this pane's repo on **GitHub**: the PR thread when the branch has one, otherwise the branch's file tree (a detached HEAD opens its commit). Resolution is the `gopen` CLI's (`~/dev/gopen`; its README owns the rules), read from the same live cwd `prefix y`'s fallback uses — so a pane sitting in a worktree opens *that* worktree's branch, and it works without interrupting whatever is running in the pane. On a branch GitHub has never seen it asks first, then pushes `-u` and opens the PR-create page.
 - **`prefix b`** — **dev-server preview**: prompts for a URL (pre-filled `localhost:3000`; a bare port works) and opens it in a [terminal-browser](https://github.com/zenbu-labs/terminal-browser) pane — real Chromium rendered pixel-accurately in the terminal via the kitty graphics protocol. First press opens a split to the right; pressing again while that browser is open adds the URL as a *tab* in it rather than another split. Close it like any pane, or `terminal-browser shutdown` to kill the shared browser process.
@@ -232,7 +230,7 @@ Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore wh
 Workspace save/restore is independent of scrollback and `cout` recordings.
 Clearing pane output leaves saved workspace layouts intact.
 
-Saves go through a small wrapper that first puts any floated pane (`prefix z`) back in its window — a snapshot taken mid-float couldn't be reconnected on restore, since the pane and the window it belongs to would be saved as unrelated things.
+Each save first puts any floated pane (`prefix z`) back in its window; a save that can't is skipped with a message, keeping the last good snapshot. Why: `scripts/float-pane.md` § Why resurrect saves go through a wrapper.
 
 ---
 
@@ -257,7 +255,7 @@ Saves go through a small wrapper that first puts any floated pane (`prefix z`) b
 
 **Rename** — window `prefix m` · pane `prefix M` popup (`Enter` apply · empty = clear · `Esc` cancel) · session `prefix $`
 
-**Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x`
+**Close / remove** — window `prefix x` (confirms) · pane `prefix X` or `C-d` (refused in a window's only pane: `exit`) · other sessions `prefix Q` · worktree `prefix W` → `ctrl-x`
 
 **Reorder** — windows `Shift-Left`/`Shift-Right` · panes: float `prefix z` · scratch shell `prefix Z` (stock zoom `prefix C-z`), everything else in **`prefix p`** pane mode (table above)
 

@@ -35,7 +35,7 @@ ghostty +validate-config                     # syntax, not font availability
 
 Check representative Latin, icons and CJK in `regular`, `bold`, `italic` and
 `bold_italic`. `+show-face` reports the typographic family, so it distinguishes
-families but cannot prove which weight within Berkeley Mono was selected.
+families but cannot prove which weight within a family was selected.
 Mapped CJK families can work even when absent from the monospace font listing.
 Reload with **⌘⇧,**; codepoint-map changes require a new terminal surface.
 

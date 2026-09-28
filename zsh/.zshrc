@@ -19,19 +19,24 @@ bindkey -M vicmd 'v' edit-command-line
 bindkey -M viins '^L' clear-screen
 bindkey -M vicmd '^L' clear-screen
 
-# ── Ctrl+D guard ──────────────────────────────────────  docs/ctrl-d-guard.md
+# ── Ctrl+D guard ────────────────────────────────────────────────────────────
 # An accidental Ctrl+D must never silently close the last pane of a tmux window
-# (losing e.g. a Claude Code session). Two layers, robust against keymap and
+# (losing e.g. a Claude Code session): prefix-x confirms before killing a
+# window, and a bare Ctrl+D would not. Two layers, robust against keymap and
 # plugin load order:
 #
-#   Floor — `setopt ignore_eof`: keymap-/plugin-independent. An empty-line EOF
-#     can no longer exit zsh on its own, whatever ^D happens to be bound to.
+#   Floor — `setopt ignore_eof`: an option, not a binding, so no keymap switch
+#     or plugin can clobber it. An empty-line EOF cannot exit zsh on its own;
+#     if the widget is bypassed, the worst case is zsh's "use 'exit' to exit".
 #   UX — a widget on ^D that, on an empty line in the SOLE pane of a tmux
-#     window, refuses to exit and shows how to close deliberately; everywhere
-#     else (multi-pane, no tmux) it exits as usual. No in-widget `read` — that
-#     was fragile (message painted late, keypress leaked to the command line).
-#     It is (re)bound from a precmd hook (below) so it runs AFTER oh-my-zsh's
-#     `bindkey -e`, fzf, etc. — and in every keymap.
+#     window, refuses to exit and shows how to close deliberately (`exit` or
+#     prefix-x); everywhere else (multi-pane, no tmux) it exits as usual. No
+#     single keystroke closes the last pane, so a stray or double Ctrl+D can't.
+#     No in-widget y/n `read` either: its prompt paints a keystroke late and the
+#     answer leaks onto the command line.
+#
+# Verify in a fresh shell: `bindkey '^D'` prints `"^D" _guard_ctrl_d`.
+# ~/.config/zsh/tests/portability.test.zsh pins that the option and widget load.
 setopt ignore_eof
 
 _guard_ctrl_d() {
@@ -49,9 +54,14 @@ _guard_ctrl_d() {
 }
 zle -N _guard_ctrl_d
 
-# Bind once, after all plugins have loaded, in every keymap, for both the raw
-# C0 byte and Ghostty's CSI-u form. (oh-my-zsh runs `bindkey -e` at source time
-# — .zshrc:~140 — which is why binding earlier in viins/vicmd did nothing.)
+# Bind once, from a one-shot precmd hook, so the binding lands after every
+# plugin: oh-my-zsh runs `bindkey -e` when sourced (below), making emacs the
+# active keymap despite `set -o vi` above, so a ^D bound at this point in
+# viins/vicmd would sit in an inactive keymap. Bind in every keymap, for both
+# the raw C0 byte (Ghostty's usual Ctrl+D) and the CSI-u form (sent after a
+# TUI exits without popping the Kitty keyboard protocol). The CSI-u
+# Ctrl+C/Ctrl+L binds below share the keymap trap; if they misbehave in emacs
+# mode, bind them here.
 _guard_ctrl_d_bind() {
   local m
   for m in emacs viins vicmd; do

@@ -1,9 +1,10 @@
-# Apple Terminal.app themes
+# Apple Terminal.app profile
 
-Terminal.app profiles are **static snapshots**, not another live consumer of
-`~/.config/terminal-theme`. Create one only when Terminal.app is explicitly in
-scope; `theme-set` still owns the live Ghostty/tmux/Neovim/shell system described
-in `docs/theming.md`.
+Reached from the optional Terminal.app step of `SKILL.md`. Terminal.app
+profiles are **static snapshots**, not another live consumer of
+`~/.config/terminal-theme`: create one only when Terminal.app is explicitly in
+scope. `theme-set` still owns the live Ghostty/tmux/Neovim/shell system
+described in `docs/theming.md`.
 
 ## Create the profile
 
@@ -27,10 +28,10 @@ stow -R terminal
 `--template` is optional and otherwise uses Terminal.app's current default.
 Keep `--bold` aligned with the theme's `bold-color` arm in `theme-set`.
 
-The helper deliberately archives `NSColor(calibratedRed:...)`: this is the
-compact representation Terminal uses. `NSColor(srgbRed:...)` embeds an ICC
-profile in every color and turned the 21-color Tailwind profile from about
-9.5 KB into 106 KB without improving the result.
+The helper deliberately archives `NSColor(calibratedRed:...)`, the compact
+representation Terminal uses. `NSColor(srgbRed:...)` embeds an ICC profile in
+every color and grows the 21-color Tailwind profile from about 9.5 KB to
+106 KB without improving the result.
 
 ## Install and use it
 

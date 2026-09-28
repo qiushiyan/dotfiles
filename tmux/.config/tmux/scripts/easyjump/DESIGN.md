@@ -7,7 +7,9 @@ label to land the copy-mode cursor there (and start a selection for copy).
 This is a **vendored fork** of
 [`roy2220/easyjump.tmux`](https://github.com/roy2220/easyjump.tmux), not the
 upstream plugin. Git preserves the imported source; this file records the delta
-that must survive an upstream refresh.
+that must survive an upstream refresh. `tmux.conf` binds `easyjump.sh` directly
+(`prefix s`, and `C-s` in copy mode); the launcher logs stderr to
+`$TMPDIR/tmux-easyjump.log`.
 
 ## Why a fork (and why it lives here)
 
@@ -23,63 +25,22 @@ We keep upstream's hard-won plumbing and replace only those two layers. It lives
 in `scripts/easyjump/` (tracked + stowed) rather than `~/.config/tmux/plugins/`
 (gitignored, blown away by `prefix U`), so our changes survive and travel.
 
-## Binding
+## Label rules
 
-`tmux.conf` binds it directly (no TPM `@plugin`):
+These carry the flash feel; the comments in `easyjump.py` hold their mechanics.
 
-```tmux
-bind-key s run-shell -b "$HOME/.config/tmux/scripts/easyjump/easyjump.sh"
-bind-key -T copy-mode-vi C-s run-shell -b "$HOME/.config/tmux/scripts/easyjump/easyjump.sh"
-```
+- **A label is never a character that could continue the search**, so every
+  keypress either extends the query or picks a label, never both.
+- **Labels are single characters.** Matches beyond the alphabet go unlabelled
+  and you narrow by typing; this also stops a label overdrawing an adjacent
+  match.
+- **A match keeps its label across keystrokes** while that label is still
+  free, so labels don't reshuffle as you narrow. Nearest matches are labelled
+  first, and every match gets a label — the nearest too, which `Enter` also
+  reaches.
 
-`easyjump.sh` resolves `python3` robustly (tmux's `run-shell` PATH can be thin)
-and logs stderr to `$TMPDIR/tmux-easyjump.log`.
-
-## How it works
-
-- **Capture** (`Screen`): reads pane geometry, cursor, copy-mode/selection state
-  via `display-message`, and the visible text via `capture-pane`. Handles
-  scroll position, the alternate screen, and CJK/wide-char widths.
-- **Overlay** (`Screen.overlay`/`draw`): enters the alternate screen (tmux
-  default) so we can repaint freely and restore cleanly on exit. `draw()`
-  repaints on *every* keystroke — this is the change that makes the search
-  incremental. (In alternate-screen mode `_update` doesn't touch
-  `scroll_position`, so repeated draws are safe.)
-- **Incremental loop** (`interactive`): the flash model. Type characters to
-  narrow; a label key jumps to that match; `Enter` jumps to the nearest
-  (unlabelled) match; `Escape` cancels. With autojump on (`--autojump`, default
-  on), a query that leaves exactly one match jumps immediately — but only on
-  forward typing, so backspacing down to one match still waits. Keys are read as
-  tmux key *names* (`command-prompt -k`) so `Enter`/`Escape`/`BSpace`/`Space`
-  are distinguishable from literal characters.
-- **Label algorithm** (`continuation_chars` + `generate_labels` +
-  `assign_labels`): flash's load-bearing rule — *a label is never a character
-  that could continue the search.* We collect the character after each match and
-  exclude those from the label alphabet, so each keypress is unambiguous (extend
-  the search vs. pick a label). Labels are **single-character only**: matches
-  beyond the alphabet go unlabelled and you narrow by typing (flash's
-  philosophy) — this keeps a keypress unambiguous and stops a label from
-  overdrawing an adjacent match. Two flash refinements: nearest matches get
-  labels first (`rank_positions`), and a match **reuses its previous label**
-  across keystrokes when still available, so labels don't reshuffle as you
-  narrow. **Every** match is labelled, including the nearest (flash's
-  `label.current`): the nearest additionally carries the distinct "current"
-  highlight and `Enter` is a shortcut to it — but it still has its own label, so
-  a match you can see always has a key to jump to it.
-- **Render** (`Screen.render`): a calm grey **backdrop**, the typed substring
-  **highlighted**, the nearest match (the `Enter` target) in a **distinct**
-  colour, and a **label** overlaid on each labelled match.
-- **Jump** (`jump_to_pos`, upstream): after the overlay tears down, drive the
-  copy-mode cursor to the target with `send-keys -X cursor-*`, then
-  `begin-selection`.
-
-## Colours
-
-Four ANSI attribute strings near the top of `easyjump.py` (`LABEL_ATTRS`,
-`TEXT_ATTRS` = backdrop, `MATCH_ATTRS`, `CURRENT_ATTRS`). They use explicit
-fg+bg so they read on both the light and dark terminal themes. Tune there, or
-pass `--label-attrs` / `--text-attrs` / `--match-attrs` / `--current-attrs` from
-the launcher.
+Colours are explicit fg+bg attribute strings at the top of `easyjump.py`,
+readable on light and dark themes.
 
 ## Known limitations (v1)
 
@@ -92,7 +53,7 @@ the launcher.
   misbehaves.
 - **Far matches go unlabelled.** With more matches than label characters
   (~36 minus continuations), only the nearest ones get labels; reach the rest by
-  typing more of the search. (No multi-char labels by design — see above.)
+  typing more of the search.
 - **Alternate-screen edge.** The non-alternate path (tmux `alternate-screen
   off`) is exercised rarely; copy-mode scroll compensation is applied in
   `overlay()`'s teardown once per logical draw so per-keystroke repaints don't

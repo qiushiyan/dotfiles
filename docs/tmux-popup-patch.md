@@ -32,20 +32,12 @@ stop being drawn (pane dividers vanish there). The rename-pane popup
 (`prefix M`) losing its title border to Claude's output is this bug.
 
 Root cause, in tmux `screen-redraw.c`: popups register their overlay region in
-**tty coordinates** (row 0 = top of the terminal, including the status area),
-but four drawing paths ask "is this cell under the popup?" using **window
-coordinates** (row 0 = first row *below* a top status bar) while drawing at tty
-coordinates. The protected region therefore lands `statuslines` rows below the
-popup: the popup's top rows are unprotected (overwritten) and the rows under it
-are wrongly protected (never redrawn). With the default bottom status the two
-coordinate systems coincide, which is why upstream never noticed — their
-regression test for the related fix (tmux PR #4920, commit `d71d38a`, already
-in 3.7b) uses a bottom status bar and passes despite this.
-
-The patch fixes the y passed to the overlay check in the four paths:
-`screen_redraw_draw_pane` (pane content), `screen_redraw_draw_pane_status`
-(per-pane border titles), `screen_redraw_draw_borders_cell` (pane dividers —
-the missing-`│` artifact), and `screen_redraw_draw_pane_scrollbar`.
+tty coordinates, but the drawing paths check it in window coordinates, so with
+a top status bar the protected region lands `statuslines` rows too low; the
+patched functions are listed in the header of `docs/tmux-popupfix.rb`. With the
+default bottom status the two coordinate systems coincide, which is why
+upstream's regression test for the related fix (tmux PR #4920, commit
+`d71d38a`, already in 3.7b) passes despite this.
 
 Two related config changes live in `tmux/.config/tmux/tmux.conf` and are
 independent of the patch: the `sync` terminal feature for Ghostty (atomic
@@ -57,10 +49,10 @@ app bundle) and an explicit `popup-style`/`popup-border-style` background
 
 - **Formula + embedded patch**: `/opt/homebrew/Library/Taps/qiushiyan/homebrew-local/Formula/tmux-popupfix.rb`
   (the tap is a local git repo with no remote).
-- **Tracked copy**: `docs/tmux-popupfix.rb` in this repo — the tap can be
-  recreated from it (`brew tap-new qiushiyan/local`, copy the file into its
-  `Formula/`, `brew install qiushiyan/local/tmux-popupfix`). MIGRATION note:
-  `make brew` needs this done first, since the tap has no remote to fetch.
+- **Tracked copy**: `docs/tmux-popupfix.rb`. Recreate the tap from it
+  (`brew tap-new qiushiyan/local`, copy the file into its `Formula/`,
+  `brew install qiushiyan/local/tmux-popupfix`); on a new machine `make brew`
+  needs this first, since the tap has no remote.
 - Stock Homebrew `tmux` is **unlinked**. Switching to it with
   `brew unlink tmux-popupfix && brew link tmux` drops the popup correction;
   retain it as a comparison build until the patch can be retired.

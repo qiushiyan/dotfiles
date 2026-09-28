@@ -1,6 +1,6 @@
 # tmux scripting patterns
 
-Patterns for scripting tmux panes programmatically, e.g. Claude Code driving Codex in another pane.
+Patterns for scripting tmux panes programmatically, e.g. Claude Code driving Codex in another pane, and the traps any tmux script or `tmux.conf` edit can hit.
 
 ## Query current state
 
@@ -47,15 +47,8 @@ tmux-wait-for-text -t work:1.2 -p '›' -T 15
 tmux-wait-for-text -t work:1.2 -p 'done' -F -T 30
 ```
 
-Options:
-- `-t` target pane (required)
-- `-p` pattern to match (required, regex by default)
-- `-F` treat pattern as fixed string
-- `-T` timeout in seconds (default: 15)
-- `-i` poll interval in seconds (default: 0.5)
-- `-l` history lines to search (default: 1000)
-
-Exits 0 on match, 1 on timeout. On timeout, prints last captured text to stderr.
+The pattern is an extended regex unless `-F`; `tmux-wait-for-text -h` lists the
+flags. It exits 0 on a match and 1 on timeout.
 
 ## Read pane output
 
@@ -120,3 +113,24 @@ tmux-wait-for-text -t $PANE -p '›' -T 30
 # read response (skip the question line)
 tmux capture-pane -t $PANE -p -J | sed -n "/$QUESTION/,\$p" | sed '1d'
 ```
+
+## Traps
+
+- **A missing target is not an error.** tmux 3.7c answers
+  `display-message -p -t <gone pane or window>` with exit status 0 and empty
+  output, so an existence check tests the output, as `pane_exists`/`win_exists`
+  in `scripts/lib/tmux-common.sh` do.
+- **`=name` is for session targets only.** `has-session`, `kill-session` and
+  `attach-session` take the exact-match form. `show-option` takes a pane
+  target, where `-t "=name"` resolves to nothing and the option reads back
+  empty, with exit status 0.
+- **`IFS= read -r a b c` does not split.** The whole line lands in `a`; use
+  `IFS=' '` to split on spaces.
+- **`display-popup` does not expand formats in its command.** It expands them
+  in options such as `-d`, so `#{session_name}` in the command arrives as
+  literal text. Bind through `run-shell`, which expands its command, and pass
+  values as arguments, or detect them inside the popup.
+- **A later `unbind` silently kills an earlier `bind`.** `tmux.conf` is one
+  pass, so an `unbind` below a binding for the same key removes it with no error.
+- **`message-style` needs `fill=` on 3.7.** Without it the message bar paints
+  only behind its text.

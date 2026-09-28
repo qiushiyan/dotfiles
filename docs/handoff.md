@@ -41,17 +41,9 @@ they survive the worktree switch; its prose calls itself "this brief" because
 it outlives its filename.
 
 `drift`, `show` and `check` accept the pointer's brief path from a checkout of
-its project. Drift attributes PRs to At-pickup citations; `--show` includes
-the touching commits' full stats. File citations count any file change.
-Directories and globs scope symbol searches: attribution requires an added
-or removed line containing a cited symbol. Without a symbol, those scopes
-remain unscanned. Bare symbols identify occurrence files and count file changes.
-
-`paths:` supplies fallback history when no claim citations can be scanned.
-Missing references and live queries require their own checks; a no-match
-result applies only to the reported scope. `check` warns when
-a live claim lacks an observed result or explicit unverified explanation;
-that warning leaves pickup available.
+its project. What each scans, and how little a clean result covers, is the
+CLI's own contract: `brief drift -h`, and `~/dev/brief/CLAUDE.md` for citation
+attribution and the claims `check` accepts.
 
 ## The slug is the *next* session's branch
 

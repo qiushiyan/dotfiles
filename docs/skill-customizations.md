@@ -18,7 +18,8 @@ the reasons the customization exists.
 
 [Agent skills](agent-skills.md) owns installation, sharing, and ownership tiers.
 Customized bodies stay outside the CLI lockfile; otherwise an automatic update
-can overwrite them.
+can overwrite them. An externally linked skill is not a customization: the
+project or application its folder link points into owns and updates it.
 
 ## How to judge an upstream change
 

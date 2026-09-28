@@ -73,33 +73,25 @@ Four consequences worth internalizing:
 - **The statusline reads the file, not the env, on purpose.** A running Claude
   session inherited a now-stale `$TERMINAL_THEME` from its launching shell;
   reading the file each render lets it track switches anyway.
-- **Inside tmux the file must still win — and it does, two ways.** A tmux server
-  snapshots `TERMINAL_THEME` into its environment the first time it launches and
-  seeds that value into *every* pane it spawns afterward. A shell that trusted
-  the inherited value would therefore pin all panes to whatever theme was active
-  when the server started — stale forever after a switch, so the prompt renders
-  one palette inside tmux and another outside it. Two defenses keep the file
-  authoritative: `theme.zsh` reads `~/.config/terminal-theme` **unconditionally**
-  (it is *not* gated on `$TERMINAL_THEME` already being set), and `theme-set`
-  runs `tmux set-environment -g TERMINAL_THEME` so the server's own env tracks
-  the switch too. This is generic — new or renamed themes need no extra work for
-  it. ⚠️ Don't reintroduce a `-z "$TERMINAL_THEME"` guard around the read in
-  `theme.zsh`: that one line *is* the bug, and it only surfaces inside tmux, so
-  it's easy to "optimize" back in without noticing.
+- **Inside tmux the file must still win — and it does, two ways.** A tmux
+  server snapshots `TERMINAL_THEME` the first time it launches and seeds it
+  into every pane it spawns, so a shell that trusted the inherited value would
+  pin every pane to the theme active at server start. `theme.zsh` reads
+  `~/.config/terminal-theme` **unconditionally**, and `theme-set` runs
+  `tmux set-environment -g TERMINAL_THEME` so the server's env tracks the
+  switch too; new or renamed themes need no extra work. ⚠️ Don't reintroduce a
+  `-z "$TERMINAL_THEME"` guard around the read in `theme.zsh`: that one line
+  *is* the bug, and it only surfaces inside tmux, so it's easy to "optimize"
+  back in without noticing.
 - **Ghostty can't be driven on macOS.** `theme-set` makes the *content* correct
   immediately; the *reload* is a manual keystroke. This is accepted, not a bug.
-- **A running shell catches up on its own, but only at a prompt.** `theme.zsh`
-  wraps everything it owns (`TERMINAL_THEME`, `LSCOLORS`, the autosuggest
-  style, delta/difftastic mode) in `_theme_apply` and registers a `_theme_sync`
-  precmd that re-reads the file and re-applies only when the name changed. It
-  is registered from `.zshenv`, so it sits in `precmd_functions` ahead of
-  oh-my-posh's `_omp_precmd` (registered at the end of `.zshrc`); omp spawns
-  its renderer with the shell's current env each prompt, so the very next
-  prompt already uses the new palette. The case that bought this: switching
-  themes from `prefix t` while `claude` held a shell in the foreground — that
-  shell drew its first post-exit prompt in the old palette until `exec zsh`.
-  Cost is one builtin `read` + a compare per prompt (~25 µs); the hook is
-  interactive-only. `zsh/.config/zsh/tests/theme-sync.test.zsh` pins it.
+- **A running shell catches up on its own, but only at a prompt.**
+  `theme.zsh`'s `_theme_sync` precmd re-applies everything the theme owns when
+  the file's name changed, and runs ahead of oh-my-posh's precmd, so the very
+  next prompt uses the new palette, including in a shell that a foreground
+  `claude` held during the switch (the ordering is explained in `theme.zsh`).
+  The hook is interactive-only; `zsh/.config/zsh/tests/theme-sync.test.zsh`
+  pins it.
 
 ## Ghostty: the include seam
 
@@ -136,16 +128,9 @@ Convert the profile's tagged colours into a common space before comparing them.
 [Apple colour spaces](https://developer.apple.com/documentation/appkit/nscolorspace/genericrgb),
 [Ghostty colour space](https://ghostty.org/docs/config/reference#window-colorspace).
 
-For tmux tab styling, use the theme's `@thm_window_*` slots rather than changing
-shared accents. Moon gives inactive tabs muted backgrounds and lavender text;
-the selected tab gets a purple badge and near-white name. The palette file owns
-the exact values. Keep the selected state distinct in brightness as well as hue.
-
-Moon's pane dividers use heavy lines and continuous purple highlighting.
-`pane-border-indicators=off` disables tmux's half-divider coloring in two-pane
-windows; it preserves the active-pane color. The palette owns the geometry,
-reset on each switch. Normal tmux panes have shared dividers rather than a full
-outer frame; title rows remain owned by the pane-title/context-chip lifecycle.
+Tab and divider styling belongs to each theme's tmux palette file
+(`@thm_window_*` slots, divider geometry reset on each switch), not to shared
+accents; keep the selected tab distinct in brightness as well as hue.
 
 ## Codex CLI syntax colors
 
@@ -159,14 +144,9 @@ still supply the surrounding UI. See [Codex CLI customization](https://learn.cha
 ## Neovim specifics
 
 - Colorschemes come from two places: **plugin themes** (catppuccin, gruvbox) and
-  **hand-rolled files** in `colors/` (ported from a Zed or VS Code theme's UI +
-  syntax tokens).
-- Vellum defines Snacks picker hidden/ignored paths, Git markers, and result
-  counts explicitly; their default `NonText` link is too pale for readable text.
-- Gruber Darker is a local port of the installed Zed extension (0.0.8), including
-  the Zed settings' yellow Markdown titles and italic syntax. It replaces the
-  earlier Neovim-only plugin. `config/options.lua` applies the selected
-  light/dark mode before a colorscheme loads, independently of theme plugins.
+  **hand-rolled files** in `colors/`, ported from a Zed or VS Code theme's UI
+  and syntax tokens; a port's header names its source and the deviations it
+  keeps on purpose.
 - The plugin themes are **un-gated** (all installed; the active one eager, the
   rest lazy) so the watcher can swap *any* direction — lazy.nvim's
   `ColorSchemePre` autoloads the matching plugin on `:colorscheme`.

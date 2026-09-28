@@ -88,8 +88,8 @@ run `claude-sessions-migrate`. It is all-or-nothing: it refuses while any
 session runs, verifies a hash manifest of every source file before swapping, and
 keeps each merged tree as a `projects.pre-share.<timestamp>` backup.
 
-Seeding creates the link in the first place (`_claude_link_projects` in
-`zsh/.config/zsh/claude.zsh`), and every launch re-checks it.
+Seeding creates the link in the first place (`headroom accounts add`, which
+`claude-account-add` runs), and every launch re-checks it.
 
 ## The code and its tests
 

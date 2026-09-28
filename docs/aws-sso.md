@@ -21,23 +21,16 @@ and for the Codex automation alike.
   forces the daily logins.
 - **Role credentials** (`~/.aws/cli/cache/`, from the permission set): issued
   per profile, up to 12 hours, and they keep working after the session ends.
-  AWS's own example: a 20-hour session plus a 12-hour permission set lets the
-  CLI run for 32 hours.
 
 `aws sso login` alone does **not** restart the second clock while the browser
-is still signed in to the access portal. The CLI user guide's Identity Center
-concepts page says it in one line: "If you already have an active session,
-the existing session is reused and expires when the existing session
+is still signed in to the access portal: "If you already have an active
+session, the existing session is reused and expires when the existing session
 expires." So a login that only shows "Allow access" hands the CLI a new token
 on the old session, and the 8 hours still run from the first sign-in.
-`aws sso logout` "sends an API call to the IAM Identity Center service to
-invalidate the corresponding server-side IAM Identity Center sign in session"
-(SSO Portal API, `Logout`); the sign-in after it is a real one, with the
-full duration. Sources, read 2026-09-28: AWS CLI user guide
-`cli-configure-sso-concepts` and `cli-configure-sso`, IAM Identity Center
-user guide `authconcept`, `user-interactive-sessions` and
-`user-session-duration-prereqs-considerations`, and the Portal API `Logout`
-reference.
+`aws sso logout` ends the server-side Identity Center session, so the sign-in
+after it is a real one, with the full duration. Sources, read 2026-09-28: the
+AWS CLI user guide `cli-configure-sso-concepts` (the reuse rule) and the SSO
+Portal API `Logout` reference (the server-side end).
 
 ## What `aws-login` does
 
@@ -47,27 +40,19 @@ aws-login planlab-dev         # any profile in ~/.aws/config
 aws-login --status            # what the CLI has now; exit 1 when nothing works
 ```
 
-1. `aws sso logout`: clears every cached token and role credential (all
-   profiles, since they share the one `sso-session`) and ends the session on
-   AWS's side. The CLI swallows a rejected logout call, so an already-expired
-   token does not stop the run.
-2. `aws sso login --profile <profile>`, plus `--use-device-code` when
-   `~/.config/machine` says `mini` or the flag is given. Expect the passkey
-   prompt in the browser: after step 1 the portal is signed out too, which is
-   the point. A run that only asks "Allow access" is the reuse case above and
-   means the logout did not reach the server; check the network before
-   trusting the new token's clock.
-3. `aws sts get-caller-identity --profile <profile>` proves the profile's
-   account and role resolve. Only then is the sign-in time stamped in
-   `~/.local/state/aws-login/<sso-session>`; `--status` reads it back with
-   the estimated end (`AWS_LOGIN_SESSION_HOURS`, default 8). The stamp is
-   the only record of when the session began, because the token file is
-   rewritten every hour.
+It signs out (ending the session on AWS's side and clearing every profile's
+cached credentials), signs in with the device-code flow on the mini, verifies
+with `aws sts get-caller-identity`, and only then stamps the sign-in time,
+which `--status` reads back; the script's header has the details.
 
-A failed login leaves the CLI with nothing, since the old session is already
-gone; the message says so, and exit 1 tells an agent to escalate rather than
-retry blindly. Exit 2 is a bad argument or a profile that is not in
-`~/.aws/config`, checked before anything is signed out.
+- **Expect the passkey prompt.** After the sign-out the portal is signed out
+  too. A run that only asks "Allow access" is the reuse case above: the logout
+  did not reach the server, so check the network before trusting the new
+  token's clock.
+- **A failed login leaves the CLI with nothing**, since the old session is
+  already gone; exit 1 tells an agent to escalate rather than retry blindly.
+  Exit 2 is a bad argument or a profile not in `~/.aws/config`, checked before
+  anything is signed out.
 
 ## Machines
 

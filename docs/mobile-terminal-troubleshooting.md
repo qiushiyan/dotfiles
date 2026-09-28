@@ -67,6 +67,5 @@ BSD `sleep` rejects `infinity`; adding `sleep infinity` makes the sleep guard
 exit immediately. Verify changes with `agents-status` and
 `pmset -g assertions | grep PreventSystemSleep`.
 
-The hardlink at `~/.config/zsh/utils.zsh` is benign for editing but unusual for
-Stow. If `agents` changes after a restow, compare inodes with `ls -li` before
-repairing anything.
+`~/.config/zsh` is a folder link into the repo's `zsh/.config/zsh/`, so an edit
+to `agents` in `utils.zsh` reaches every new shell with no restow.

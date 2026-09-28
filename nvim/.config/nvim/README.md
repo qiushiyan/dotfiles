@@ -96,8 +96,9 @@ Toggle current terminal `ctrl + /`
 
 ### File Explorer
 
-mini.files is the active explorer. Fyler and Snacks Explorer are disabled, with
-both trial configurations retained in `lua/plugins/file-explorer.lua`.
+mini.files is the active explorer. Fyler and Snacks Explorer stay as disabled
+trial configurations in `lua/plugins/file-explorer.lua`; switching to one also
+means swapping the `editor.mini-files` extra in `lazyvim.json`.
 
 - `<leader>e`: open at the current file's directory; `<leader>E`: toggle at cwd.
 - Edit names and lines with normal buffer commands; `=` synchronizes changes.
@@ -105,15 +106,6 @@ both trial configurations retained in `lua/plugins/file-explorer.lua`.
 - `h`: go out; `q`: close; `,`: reset navigation.
 - Dotfiles are visible except the configured exclusion names (such as `.git`,
   `.next`, `node_modules`, and `.DS_Store`).
-
-To revisit Fyler, disable mini.files and enable Fyler in `file-explorer.lua`,
-then remove `editor.mini-files` from the extras in `lazyvim.json`. Its 35% width
-and filtering configuration are preserved. To revisit Snacks Explorer, disable
-mini.files, enable Snacks' `opts.explorer`, and replace `editor.mini-files` with
-`editor.snacks_explorer` in the extras. Restart Neovim after switching.
-
-Snacks' other modules remain in use; only its explorer is disabled. Fyler can
-be cleaned from the installed plugins without deleting its saved configuration.
 
 - delete current file with command `:!rm %`
 
@@ -175,17 +167,6 @@ be cleaned from the installed plugins without deleting its saved configuration.
 - `zj` fold all level 1 headings, `zk` level 2 headings, `zl` level 3 headings
 
 - `zR` unfold all
-
-## Image test
-
-![](../wall.jpg)
-
-Reference:
-https://levelup.gitconnected.com/render-images-inside-neovim-and-tmux-bd59381d0746
-
-```bash
-nvim --clean -c ":luafile test-imge.lua"
-```
 
 ## AI
 

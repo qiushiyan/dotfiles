@@ -70,21 +70,9 @@
 # such as block-dangerous-git.sh still fire and block in bypass mode.
 #
 # Every bypass launcher passes CLAUDE_X_BYPASS, one array, so a flag lands
-# on all of them or none. Bypass is not the whole story: permissions.deny
-# rules survive it, and Claude Code 2.1.259 added a Bash check that stops
-# for a human prompt when a command does `cd DIR;` (anything but a pure
-# `&&` chain) and then greps/rgs/diffs/gits/cps/mvs a relative path while
-# any `Read(...)` deny rule is loaded (planlab commits Read(./.env)). `--setting-sources user,local` silences
-# that by not loading project settings — rejected 2026-09-03 because the
-# project source also carries the project's skills, commands, agents,
-# plugins, allow list and .mcp.json: an `x` session would lose every
-# project skill and `/` completion, and stop inheriting settings the way
-# every other Claude Code session does. The fix lived in claude/.claude/hooks/bypass-cd-read-guard.sh
-# instead: in bypass mode it refused that command shape with a message
-# telling the model to re-issue it, so the prompt was never reached. That
-# hook is dormant since 2026-09-03 (planlab dropped its Read() deny rules,
-# so the prompt no longer arms); it stays as a reference implementation.
-# Re-arming and retirement: docs/bypass-cd-read-guard.md.
+# on all of them or none. permissions.deny rules survive bypass; the dormant
+# guard for the one deny-rule prompt that stalls bypass sessions, and why
+# `--setting-sources` is not the fix: docs/bypass-cd-read-guard.md.
 #
 typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
 typeset -ga CLAUDE_X_BYPASS=(--dangerously-skip-permissions)

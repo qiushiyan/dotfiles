@@ -62,7 +62,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | tool | version | how | update |
 |---|---|---|---|
 | CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync git-lfs coreutils bat difftastic` (the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
-| tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading |
+| tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading and activating |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
 | node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'` |
 | pnpm | 11.27.1 | `get.pnpm.io/install.sh` with `PNPM_VERSION=11.27.1` → `~/Library/pnpm`; pinned to 11 to match the laptop, not the Rust-port 12 | `pnpm self-update` |
@@ -81,72 +81,36 @@ Not installed: rust, Docker, other GUI apps.
 
 ## Shell
 
-The `zsh` package is stowed, as on the laptop, so both machines run the same
-`.zshenv`, `.zshrc`, `.zlogin` and every module (`docs/zsh.md` § Machines).
-The shared files check for the tools they need, not for the machine. What is
-about being the mini lives in the tracked `zsh/.config/zsh/hosts/mini.zsh`,
-which `.zshenv` loads in every shell because the untracked `~/.config/machine`
-says `mini`. Edit it on the laptop like any other file; `mini-sync` carries
-it.
+The `zsh`, `tmux` and `ohmyposh` packages are stowed as on the laptop
+(`docs/zsh.md` § Machines). What is about being the mini lives in the tracked
+`zsh/.config/zsh/hosts/mini.zsh`: edit it on the laptop, and `mini-sync`
+carries it. The traps particular to the mini:
 
-- **`hosts/mini.zsh`** holds `PROMPT_MACHINE=mini` (below), the SSH-only
-  terminal variables (§ Terminal over SSH), the `aws` wrapper and
-  `alias v=nvim`.
-- **`aws sso login`:** `hosts/mini.zsh` wraps `aws` to add
-  `--use-device-code`. The default flow redirects the browser to a localhost
-  listener on the mini, which a laptop browser can't reach. With the
-  device-code flow the printed URL carries the code, so it works in any
-  browser; over SSH, `BROWSER` sends it to the laptop clipboard. For a
-  session with the full 8 hours, run `aws-login` instead, which signs out
-  first and picks the device-code flow here on its own (`docs/aws-sso.md`).
-- **Locale:** the laptop's ssh sends no `LANG`; the shared `.zshenv` sets
-  one. Without a UTF-8 locale, tmux marks the client non-UTF-8 and draws every
-  non-ASCII glyph (status-bar separators, icons) as `_`. tmux fixes that per
-  client when it attaches, so a client attached without it must detach and
-  attach again.
-- **`~/.zprofile`** is machine-local, as on the laptop, and repeats brew
-  shellenv; `.zlogin` then reapplies `toolchain.zsh`.
-- **nvm** is nvm's own installer's copy in `~/.nvm`, not Homebrew's as on
-  the laptop. `.zshrc`'s lazy `nvm` stub loads whichever is installed.
-- **Plugins:** oh-my-zsh and the two plugins are shallow clones at the
-  laptop's paths; oh-my-posh is from the `jandedobbeleer/oh-my-posh` tap.
-- **`cout`** records here with the system `/usr/bin/python3` (3.9) and copies
-  through `toclip`, so over SSH the copy reaches the laptop clipboard
-  (§ Clipboard and attach).
-- **Before 2026-09-25** the mini had hand-written startup files that
-  sourced a hand-picked list of modules, and every later laptop addition
-  missed the mini. They are kept in `~/.zsh-pre-stow/`.
-- **tmux** is the laptop's: the `tmux` package is stowed, so
-  `~/.config/tmux` is a folder link into the mirror, and `prefix t` switches
-  themes through `~/.local/bin/theme-set`, a link `mini-sync` keeps (§ Sync).
-  The plugins are gitignored, so they were cloned on the mini at
-  the laptop's commits into the mirror's `tmux/.config/tmux/plugins/`;
-  `mini-sync` leaves ignored paths alone. After a plugin update on the laptop,
-  run `prefix I`/`prefix U` on the mini too. `~/.tmux.conf.pre-stow` is an
-  inert hand-written config tmux never reads. Bindings that call
-  laptop-only tools fail on the mini: `prefix T` (sesh) and `prefix b`
-  (terminal-browser). `prefix y`/`Y` copy through `toclip`, so over SSH the
-  path reaches the laptop clipboard (§ Clipboard and attach).
+- **`aws sso login`:** `hosts/mini.zsh` adds `--use-device-code`, because the
+  default flow redirects to a localhost listener on the mini that a laptop
+  browser can't reach. Over SSH, `BROWSER` sends the URL to the laptop
+  clipboard. For a session with the full 8 hours, run `aws-login`
+  (`docs/aws-sso.md`).
+- **Locale on reattach:** the laptop's ssh sends no `LANG`, and tmux decides
+  per client, when it attaches, whether the client is UTF-8. A client attached
+  from a shell without a UTF-8 locale draws every non-ASCII glyph
+  (status-bar separators, icons) as `_` until it detaches and attaches again.
+- **Plugins are clones:** oh-my-zsh, zsh-autosuggestions and
+  zsh-syntax-highlighting are shallow clones at the laptop's paths, and the
+  tmux plugins are gitignored clones in the mirror's
+  `tmux/.config/tmux/plugins/`, which `mini-sync` leaves alone. After a plugin
+  update on the laptop, run `prefix I`/`prefix U` on the mini too.
+- **tmux bindings:** `prefix T` (sesh) and `prefix b` (terminal-browser) call
+  laptop-only tools and fail here. `prefix t` switches themes through the
+  mini's own `theme-set` (§ Sync); `prefix y`/`Y` and `cout` copy through
+  `toclip`, so over SSH they reach the laptop clipboard (§ Clipboard and
+  attach).
 
-**Machine badge:** `PROMPT_MACHINE=mini`, set in `hosts/mini.zsh`,
-marks everything that runs on the mini; the laptop leaves it unset and stays
-unmarked. A new machine opts in the same way, with no second config to keep
-in step:
-
-- **Prompt:** the `ohmyposh` package is stowed, so the mini renders the
-  laptop's `zen.omp.json` in the synced theme's palette. Its first segment is
-  a peach ` mini`.
-- **tmux status bar:** the shared `tmux.conf` copies the variable into
-  `@machine` whenever it is sourced, and draws the same badge at the right
-  of the top bar, beside the session badge. It stays visible while an agent holds the pane, which the
-  prompt does not.
-- **Window title:** tmux titles the Ghostty window `mini · <session>:…`,
-  which shows in the Window menu and Mission Control even with the titlebar
-  hidden.
-
-The tmux server reads the variable from its own environment, which it takes
-from the shell that started it. A server started any other way has no badge
-until the variable is set in it.
+**Machine badge:** `PROMPT_MACHINE=mini`, from `hosts/mini.zsh`, marks the
+prompt, the tmux status bar and the Ghostty window title (`mini · <session>:…`);
+the laptop leaves it unset and stays unmarked. The tmux server takes the
+variable from the shell that started it, so a server started any other way has
+no badge until the variable is set in it.
 
 **Git:** the global identity is the personal Gmail. GitHub auth goes through
 `gh auth setup-git` (HTTPS), so no private SSH key lives on the mini.
@@ -165,12 +129,9 @@ why the laptop tmux stays out of it) needs these on top of a default mini:
 - **Clipboard (OSC 52)**: every tmux between a pane and Ghostty must run
   `set-clipboard on`, because `external` drops OSC 52 sent from panes; the
   shared `tmux.conf` sets it. tmux forwards it only to a client that is
-  showing the pane. nvim's yank depends on this: for `SSH_TTY` sessions
-  `options.lua` sets `clipboard=unnamedplus` with a provider that copies to
-  both OSC 52 and the mini's pbcopy, and pastes from pbpaste. Plain `y`
-  reaches the laptop, and `p` reads what mini tools copied, such as
-  `brief start`'s pointer, without an OSC 52 read prompt. LazyVim's default,
-  an empty `clipboard` over SSH, made `p` paste a stale register from shada.
+  showing the pane. Over SSH, nvim's `y` copies to both the laptop (OSC 52)
+  and the mini's pasteboard, and `p` reads what mini tools copied, such as
+  `brief start`'s pointer, without an OSC 52 read prompt (`options.lua`).
 - **Links**: open them with **Cmd+Shift+click**. Ghostty opens OSC 8 links
   on Cmd-click, and Shift bypasses tmux's mouse capture. sshd doesn't forward
   `TERM_PROGRAM`, so `hosts/mini.zsh` sets `FORCE_HYPERLINK=1` for SSH sessions;
@@ -219,78 +180,49 @@ purpose:
 - **OSC 52 is fire-and-forget.** A terminal that ignores it, such as macOS
   Terminal.app, drops the copy without an error. The text still sits in the
   mini tmux's newest buffer, so `frommini` recovers it.
-- **`toclip` aims at the ssh client.** With both the laptop's ssh and the
-  Screen Sharing Ghostty on one session, an untargeted `load-buffer -w`
-  writes to whichever client tmux picks by activity, which can be the mini's
-  own screen. `toclip` targets the session's most recent client that has
-  `sshd` among its ancestors, and falls back to `pbcopy` when there is none.
-  Outside tmux it writes OSC 52 to the session's tty, or its caller's tty when
-  it was spawned detached. Payloads over 512 KiB are not sent through the
-  terminal; inside tmux they stay in the buffer for `frommini`.
-  `scripts/.local/share/dotfiles/tests/test-toclip.sh` pins the routing.
+- **`toclip` aims at the ssh client**, not the client tmux picks by activity,
+  so a session also shown on the Screen Sharing Ghostty still copies to the
+  laptop; an oversize payload stays in the tmux buffer for `frommini`
+  (`scripts/.local/bin/toclip`, pinned by `test-toclip.sh`).
 - **Images:** a screenshot sent with `tomini` becomes the mini's pasteboard
-  image, which Claude Code there pastes with Ctrl+V. It also stays as a file
-  in `~/.cache/clip/` for 7 days, and `tomini` prints its path. When the
-  pasteboard holds both text and an image, text wins: a file copied in Finder
-  carries its name as text and its icon as an image.
-- **One helper for both pasteboards:** `scripts/.local/share/dotfiles/pasteboard`
-  (`get`/`put`) is the single place that reads and writes a Mac's pasteboard as
-  a typed file. `tomini` and `frommini` run it on both ends, the mini's copy
-  from the mirror. Each command lands the whole payload before writing the
-  destination, so a failed read never clears a clipboard. It sets `LANG`
-  itself, because `pbcopy` garbles non-ASCII text under a caller with no
-  locale.
+  image, which Claude Code there pastes with Ctrl+V; `tomini` prints the path
+  of its file copy. `scripts/.local/share/dotfiles/pasteboard` owns the
+  text-or-image rules for both ends.
 - **Screen Sharing shares its own clipboard** with the laptop while its
   window is open (Edit → Use Shared Clipboard). That is separate from all of
   the above.
 
 ## Moving a Claude session
 
-Claude Code has no native handoff between two local machines. Remote Control
-steers a session that keeps running on its own host, and `/teleport` pulls a
-cloud session down to a terminal but can't push a local one onward.
-`claude-tomini` (`scripts/.local/bin/`, laptop only) moves one by hand, so
-work started on the laptop keeps running on the mini after the laptop leaves:
+Claude Code has no native handoff between local machines (Remote Control
+steers a session that stays on its host). `claude-tomini`
+(`scripts/.local/bin/`, laptop only) moves one by hand, so work started on the
+laptop keeps running on the mini after the laptop leaves:
 
 ```bash
 claude-tomini -n            # newest session for $PWD; check both ends, change nothing
 claude-tomini --start <id>  # move it and resume it in mini tmux session <worktree name>
 ```
 
-It moves the **code** and the **transcript**. The code is the worktree's
-branch, pushed straight into the mini's clone and checked out at the same
-`$HOME`-relative path. The transcript is the `.jsonl` and its sidecar dir,
-filed under the mini's project dir. The mini then resumes with
-`x --resume <id>`, keeping the same session id and the whole history.
+It moves the **code** (the worktree's branch, pushed straight into the mini's
+clone and checked out at the same `$HOME`-relative path) and the
+**transcript**; the mini resumes with `x --resume <id>`, keeping the session
+id and the whole history.
 
-- **Preconditions it enforces:** the session is closed on the laptop (a live
-  `sessions/<pid>.json` names it), the worktree is clean, and the session's
-  cwd is under `$HOME`. The home dirs differ (`/Users/qiushi` vs
-  `/Users/qiushiyan`), so paths map by that prefix.
+- **Preconditions it enforces:** the session is closed on the laptop, the
+  worktree is clean, and the session's cwd is under `$HOME`. The home dirs
+  differ (`/Users/qiushi` vs `/Users/qiushiyan`), so paths map by that prefix.
 - **Never overwrites work on the mini.** An existing worktree or branch there
-  only fast-forwards. The script refuses when the mini already holds this
+  only fast-forwards, and the script refuses when the mini already holds this
   transcript, since that may be a previous move's continuation; `--force`
   overrides.
-- **The push skips GitHub and the pre-push hook.** It sends the branch to
-  the temporary ref `refs/tomini/<branch>`, which the mini deletes after the
-  checkout. Git LFS content does not ride a push, so the script copies the
-  LFS objects the mini lacks from the laptop's store before the checkout. A
-  file added in an unpushed commit exists nowhere else.
 - **What does not come along:** gitignored files (`.env`, `node_modules`;
   the script lists them), background tasks and monitors, and the session's
-  `/private/tmp` scratchpad. Earlier turns still name laptop paths. Only
-  the `cwd` fields are rewritten, because thinking blocks are signed over
-  their exact text. The resume command appends a system-prompt note about
-  the move instead.
-- **The mini's first turn rebuilds the prompt cache, and that cost is
-  accepted.** The cache matches on the exact prompt from its start, and the
-  system prompt comes before the history. On the mini it differs in the
-  working directory, the environment block and the move note, and the
-  account may sit in another organization. So that turn writes the whole
-  context to the cache at the cache-write rate. It is a one-time cost per
-  move, like resuming after the cache has expired. No script change avoids
-  it, because the working directory alone breaks the match. That turn's
-  `cache_creation_input_tokens` in the mini's transcript shows the size.
+  `/private/tmp` scratchpad. Earlier turns still name laptop paths; the resume
+  adds a system-prompt note about the move.
+- **The mini's first turn rewrites the whole prompt cache**, a one-time cost
+  per move that no script change avoids: the working directory alone breaks
+  the cache match.
 - **The laptop copy stays.** Resuming it too forks the conversation. To
   come back, copy the mini's newer `.jsonl` over it by hand; there is no
   reverse script yet.
@@ -366,21 +298,12 @@ and Codex's context7 MCP server reads the same key. The mini's `~/.secrets`
 `CONTEXT7_API_KEY` line, copied by hand on 2026-09-27. mini-sync doesn't
 carry it, so after rotating the key, copy the line again.
 
-**Codex:** `~/.codex/config.toml` is **generated**, not linked, because Codex
-writes project and hook trust into it at runtime. `mini-sync` runs the
-laptop's file through `scripts/.local/share/dotfiles/mini-codex-config.py`,
-which:
-- keeps every shared setting: model, reasoning, TUI, features, context7,
-  and skill-sync's exclusions;
-- drops the ChatGPT desktop integrations (computer-use, node_repl, plugins,
-  marketplaces, `desktop`, `notify`);
-- keeps the mini's own `projects.*`, `hooks.state*` and
-  `tui.model_availability_nux` tables;
-- pins the file credential store.
-
-The output is idempotent, and the file is rewritten only when the laptop's
-config changed, so a `/model` choice made on the mini lasts until then.
-`AGENTS.md` and `themes/` are plain links into the mirror.
+**Codex:** `~/.codex/config.toml` is **generated** from the laptop's by
+`mini-sync` (what travels: `scripts/.local/share/dotfiles/mini-codex-config.py`),
+not linked, because Codex writes project and hook trust into it at runtime.
+It is rewritten only when the laptop's config changed, so a `/model` choice
+made on the mini lasts until then. `AGENTS.md` and `themes/` are plain links
+into the mirror.
 
 **Accounts:**
 - Add Claude accounts with `x-account-add <email>` as on the laptop, then
@@ -427,49 +350,31 @@ Planlab's handoff briefs are their own clone, at the path `brief` derives from
 this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
 `brief start` pulls it before a pickup; `git -C ~/dev/.handoffs/planlab-main
 pull --ff-only` refreshes it for a session that reads the files directly.
-`ph` pulls main into both machines' clones, as `pp` does for the checkout:
-from either machine, both at once, with the local output printed first.
-One machine's failure doesn't stop the other's pull. Git and ssh may not
-prompt while output is buffered, so a pull that needs a password fails.
-Where a brief lands and what `brief sync` publishes are the binary's rules,
-so after a `brief` change on the laptop run `mini-sync` before the mini
-writes to the clone rather than waiting for the timer: an older binary files
-a brief where the new one reads another slug.
+`ph` pulls main into both machines' clones from either machine, as `pp` does
+for the checkout (`zsh/.config/zsh/nav.zsh`); neither pull may prompt, so one
+that needs a password fails. Where a brief lands and what `brief sync`
+publishes are the binary's rules, so after a `brief` change on the laptop run
+`mini-sync` before the mini writes to the clone rather than waiting for the
+timer: an older binary files a brief where the new one reads another slug.
 
 ## Sync
 
 `mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way,
 and the laptop is the source of truth. **Never edit `~/dotfiles` on the
 mini.** The next sync overwrites it, so a fix found there is made on the
-laptop.
+laptop. The script's header and its `BINS`, `SECRETS` and `LINKS` lists say
+what it carries: the working tree as git sees it (uncommitted edits included,
+ignored paths never), the Codex config (§ Agent config), links into the mirror
+for the scripts the mini runs by name, and the laptop's theme, applied only
+when the laptop switches, so a `prefix t` pick on the mini lasts until then.
 
-- **dotfiles**: `rsync --delete` of this repo to `~/dotfiles`. It sends
-  everything git can see (tracked files plus untracked files that are not
-  ignored) and `.git` itself, so the mini's `git status` matches the
-  laptop's, uncommitted edits included. Ignored paths never leave the laptop:
-  `ssh/`, `vpn-private/`, purchased upstream material, app runtime state,
-  `node_modules`.
-- **CLIs**: the compiled binaries `headroom envoy brief gwt gopen` are copied from
-  `~/.local/bin` (same arch and OS family), so the mini needs no Go and no
-  source clones. `planlab` and `bench` are not copied: they are shims into a
-  checkout, and the mini generates its own (§ planlab checkout).
-- **Codex config**: regenerated as described in § Agent config.
-- **Links**: `LINKS` in the script (`theme-set`, `toclip`, `browser-clip`,
-  `mac`, `aws-login`) are made links in the mini's `~/.local/bin`, pointing into the mirror. The
-  `scripts` package is not stowed on the mini because it carries this
-  laptop's `mini-sync` LaunchAgent.
-- **Theme**: the laptop's theme name is applied by running the mini's own
-  `theme-set`, which writes `~/.config/terminal-theme` and the gitignored
-  Ghostty include there and reloads the mini's tmux. It runs only when the
-  laptop's theme differs from the last one applied (recorded in
-  `~/.local/state/mini-sync/theme` on the mini). A theme picked on the mini
-  with `prefix t` therefore lasts until the laptop switches, as a `/model`
-  choice does for the Codex config.
-- **Token files**: `SECRETS` in the script (`~/.planlab/.env`,
-  `~/.bench/.env`) are sent 600 inside 700 dirs. Only plain CLI API tokens
-  belong on that list. OAuth logins (Claude Code, Codex, gh) rotate their
-  refresh tokens, so two machines sharing one log each other out. A file
-  deleted on the laptop stays on the mini.
+- **Compiled CLIs are copied**, the binaries named in `BINS`, so the mini
+  needs no Go and no source clones. `planlab` and `bench` are not: they are
+  shims into a checkout, and the mini generates its own (§ planlab checkout).
+- **Token files**: only plain CLI API tokens belong on `SECRETS`. OAuth logins
+  (Claude Code, Codex, gh) rotate their refresh tokens, so two machines
+  sharing one log each other out. A file deleted on the laptop stays on the
+  mini.
 - **Schedule**: `com.qiushi.mini-sync` (a LaunchAgent stowed from
   `scripts/Library/`) runs `mini-sync --quiet` at load and every hour.
   An unreachable mini is a silent no-op, and real failures go to
@@ -478,10 +383,10 @@ laptop.
 
 ## Steward host
 
-Since 2026-09-22 this mini runs the steward's production host, moved from the
-shared `macmini` (planlab `docs/steward/architecture.md` § Wiring is the
-design; `/pl-deploy-steward` redeploys it). It runs in this same account, so
-it keeps its own **session home** apart from mine:
+This mini runs the steward's production host (planlab
+`docs/steward/architecture.md` § Wiring is the design; `/pl-deploy-steward`
+redeploys it). It runs in this same account, so it keeps its own **session
+home** apart from mine:
 
 | path | whose | what |
 |---|---|---|
@@ -493,8 +398,8 @@ it keeps its own **session home** apart from mine:
 | `/Library/LaunchDaemons/ai.planlab.steward.{tick,digest,sweep}.plist` | root | the three daemons, `UserName` qiushiyan |
 
 - **mini-sync doesn't touch any of it.** Its targets (`~/dotfiles`,
-  `~/.codex/config.toml`, the four CLIs in `~/.local/bin`, the token files,
-  theme) are mine. The steward's dotfiles are a real clone at the pin in
+  `~/.codex/config.toml`, the `BINS` and `LINKS` in `~/.local/bin`, the token
+  files, theme) are mine. The steward's dotfiles are a real clone at the pin in
   `services/steward/host/versions.json`, never this mirror. A skill edit
   reaches the steward only by a pin bump and a deploy.
 - **Its logins live in files** in the session home, because the Keychain is

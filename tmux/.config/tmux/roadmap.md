@@ -1,15 +1,8 @@
 # tmux: features not yet built
 
-A backlog of tmux improvements worth building. Open items follow this route to
-the current design and dormant reference docs:
-
-```
-scripts/worktree.md      the worktree popup (prefix W) + the gh PR picker
-scripts/agent-notify.md  dormant agent-done reference
-scripts/float-pane.md    floating zoom and restore
-scripts/pane-mode.md     pane mode (prefix p)
-workflow.md              how all of it is meant to be used
-```
+A backlog of tmux improvements worth building. The current design starts at
+`workflow.md`, whose sections name each feature's design doc;
+`scripts/agent-notify.md` is the dormant agent-done reference.
 
 ---
 
@@ -46,20 +39,16 @@ leave label, match, and current attributes owned by `scripts/easyjump/easyjump.p
 **What:** one key toggles a *persistent* floating shell (history + cwd preserved)
 for quick `git` / `gh` / `ls`; another dismisses it. Your layout never moves.
 
-**What already covers part of it:** the **ephemeral** scratch popup shipped as
-`prefix Z` (`scripts/float-pane.md`, "The scratch popup") — a disposable
-shell at the current pane's cwd, gone on exit. tmux 3.7's native floating panes
-(`prefix *` → `new-pane`) also give a non-modal floating shell. What neither
-gives is **persistence** across toggles, which was the point of the original
-item — this entry is now only that remainder.
+**Gap:** `prefix Z` (`scripts/float-pane.md` § The scratch popup) and tmux
+3.7's native floating panes (`prefix *`) both give a floating shell; neither
+keeps history and cwd across toggles.
 
-**Mechanism:** point the shipped scratch presentation at a persistent scratch
-session (a nested attach) instead of a fresh shell. Share only the presentation
-— the holder state machine exists to relocate a tiled pane and restore a source
-layout, and a scratch terminal has neither. NB: a persistent session brings
-back naming and idle-GC questions the ephemeral variant deliberately avoids,
-and a nested attach means the key-table staging questions too — decide before
-building.
+**Mechanism:** point the scratch presentation at a persistent scratch
+session (a nested attach) instead of a fresh shell, sharing only the
+presentation (`scripts/float-pane.md` § The container adapter). NB: a
+persistent session brings back naming and idle-GC questions the ephemeral
+variant deliberately avoids, and a nested attach means the key-table staging
+questions too — decide before building.
 
 **Effort:** small.
 
@@ -69,7 +58,5 @@ building.
 
 - Items that extend the worktree popup should follow its design guidelines
   (`scripts/worktree.md`): one surface per concept and built-in safety first.
-  `display-popup -d` supplies the repo path; the script self-detects the session
-  because formats do not expand in the popup command argument.
 - For pane-driving automation, `tmux-scripting.md` documents `send-keys` /
   `capture-pane` / `tmux-wait-for-text`.

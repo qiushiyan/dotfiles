@@ -22,23 +22,12 @@ Account lifecycle commands and failure recovery live under **Use patterns**.
 
 ## The engine: headroom
 
-This is where the underlying engine lives: **`~/dev/headroom`** — a
-standalone Go CLI installed to `~/.local/bin/headroom` via its
-`make install`. The account board (`headroom` / `headroom accounts`, with
-`--compact` for one row per account and `--json`), the session picker (`headroom sessions`, with a `--json`
-listing; it enters the project dir and execs claude itself), launch routing
-(`headroom launch` validates the account, verifies the shared-sessions
-topology, and builds the child environment from that decision alone), and
-the self-check (`headroom check`) are all engine features; `x`, `x-<name>`,
-`x-acc`, `x-select` and `x-check` are thin zsh wrappers over them — flags,
-short aliases and the post-session cd, never `CLAUDE_CONFIG_DIR`,
-`.current`, or any check a launch depends on: a shell function is frozen at
-shell init and lives for weeks, so everything that can misroute lives on
-the binary side, re-resolved from PATH at every keystroke. If a
-wrapper misbehaves, the fix is almost certainly in the engine — its mental
-model, the reverse-engineered vendor contracts (Keychain service naming, the
-OAuth usage endpoint, response-drift handling), and its verification story
-live in `~/dev/headroom/DESIGN.md`, not here.
+**`~/dev/headroom`**, a Go CLI installed to `~/.local/bin/headroom` by its
+`make install`, owns the account board, the session picker, launch routing and
+`headroom check`; the `x*` launchers in `zsh/.config/zsh/claude.zsh` are thin
+wrappers, and that file's header says why nothing that can misroute lives in
+them. A misbehaving wrapper is almost always an engine fix: its mental model,
+vendor contracts and verification live in `~/dev/headroom/DESIGN.md`.
 
 ## Model — the filesystem is the registry
 
@@ -65,46 +54,30 @@ Everything derives from that tree:
 - **Isolation.** Claude Code honors `CLAUDE_CONFIG_DIR`, and — the load-bearing
   fact — keys its macOS Keychain credentials *per config dir*, so every dir is
   an independent login and `/login` in one session can never clobber another.
-  (Details of the service-name derivation: headroom's DESIGN.md.)
-- **Sharing.** Account dirs are seeded (`headroom accounts add
-  --share-config=<dir>`, which `claude-account-add` points at the repo's
-  `claude/.claude`) with symlinks into that package, so all accounts run
-  identical settings/skills/hooks and a config edit lands everywhere. Only login state (`.claude.json`, the
-  Keychain item) and prompt history are per-account.
-- **Sessions.** Transcripts carry no credentials and are keyed by project cwd,
-  so they belong to the machine, not the account: every account's `projects/`
-  symlinks to the primary's store, and any account's picker lists every
-  session. Accounts are auth/quota lanes, never history silos. The store, its
-  retention policy and its repair runbook: `docs/claude-sessions-store.md`.
-- **Discovery.** `claude.zsh` globs the dirs at shell init and generates the
-  launchers: `x-<email>` always exists and is the guaranteed identity; a
-  short `x-<local-part>` alias (`x-yan`) is added only when the local part is
-  unique and isn't the primary's name, so a short name can never hit the
-  wrong account. Short aliases are this repo's convenience alone — headroom
-  advertises only the full identity, and every launcher body just delegates
-  to `headroom launch --account <email>`, which discovers the same dirs and
-  revalidates, so a stale or ambiguous name fails by name instead of routing
-  anywhere. Board labels come from the email each dir's `.claude.json`
-  *actually* logged in as, with a red warning when that mismatches the dir
-  name (i.e. `/login` picked the wrong account).
+  The service-name derivation: `~/dev/headroom/DESIGN.md` § The system
+  observed: the filesystem is the registry.
+- **Sharing.** Account dirs are seeded with symlinks into the repo's
+  `claude/.claude`, so all accounts run identical settings/skills/hooks and a
+  config edit lands everywhere. Only login state (`.claude.json`, the Keychain
+  item) and prompt history are per-account.
+- **Sessions** belong to the machine, not the account:
+  `docs/claude-sessions-store.md` § One store, many accounts.
+- **Launchers** are generated from the dirs at shell init: `x-<email>` always,
+  and a short `x-<local-part>` only when it is unambiguous. The naming rules
+  are `claude.zsh`'s header; headroom revalidates every name, so a stale or
+  ambiguous one fails by name instead of routing anywhere.
 
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
-- **Effort per workspace**: the default is `settings.json`'s (`modelSettings`
-  per model, then `effortLevel`). `CLAUDE_X_EFFORT` in `claude.zsh` maps dirs
-  to levels; `x`, `x-<name>` and `claude-account` launched inside a listed
-  dir add `--effort <level>`, which lasts only that session and is never
-  saved. The most specific dir wins and an explicit `x --effort …` beats the
-  table. `x-select` is not covered: headroom picks the session's dir after
-  the wrapper has run.
+- **Effort per workspace**: list the dir in `CLAUDE_X_EFFORT` in `claude.zsh`;
+  a launch inside it adds `--effort <level>` for that session only, over
+  `settings.json`'s default. Precedence and the `x-select` gap are in the
+  comment above the table.
 - **Which lane is a running session on, and how much is left in it?** Its
-  tmux context chip shows the account's email local part, or the full email
-  when lanes share one, beside its model-scoped weekly usage
-  (`yan Fable:15 opus-5[1m] ✳ 37%`). Wider panes also show 5-hour usage;
-  narrowing prioritizes the weekly on every account. `x-acc` is the complete
-  board. Rendering, quota sources, identity fallbacks, freshness, and shedding
-  live in `tmux/.config/tmux/scripts/context-chip.md`.
+  tmux context chip shows the account beside its weekly usage
+  (`yan Fable:15 opus-5[1m] ✳ 37%`); `x-acc` is the complete board. The
+  chip's rendering and quota sources: `tmux/.config/tmux/scripts/context-chip.md`.
 - **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
   headroom off the live board, then type `x`; bare `x` targets it from then
   on. For a one-off session on another account without moving `x`, that
@@ -126,32 +99,23 @@ Everything derives from that tree:
   `x-account`); like `x-<name>`, bare `x`'s target is untouched.
 - **New subscription**: `claude-account-add <email>` ≡ `headroom accounts
   add --share-config=~/dotfiles/claude/.claude <email>` plus launcher
-  regeneration — the engine makes the dir, links `projects/`, symlinks every
-  entry of the config package, and verifies the topology it just built;
-  `/login` on its first launch binds the account.
+  regeneration; the engine seeds and verifies the dir, and `/login` on its
+  first launch binds the account.
 - **Retired subscription**: `claude-account-remove <email>` (alias
   `x-account-remove`) ≡ `headroom accounts remove <email>` plus dropping the
-  generated launchers — the engine refuses while the account has a live (or
-  unverifiable) session, asks for the dir name back (`--yes` off a
-  terminal), then deletes its Keychain item (service
-  `Claude Code-credentials-` + `sha256(dir)[:8]`, the same derivation Claude
-  Code uses — headroom's one Keychain write, DESIGN.md's third documented
-  exception) and the dir, and scrubs the `.order` line. Transcripts
-  survive — they are machine-global —
-  and the picker shows the dead owner as degraded until `x` re-homes each
-  session. `.current` is never rewritten behind headroom's back: if bare `x`
-  pointed at the removed account, launches refuse until `x-acc` repicks.
-- **A `<name>.lock` "account" appears**: vendor lock debris, not an account —
-  Claude Code's config locking creates `<dir>.lock` directories and a crash
-  strands them in the accounts root (observed 2026-08-10). headroom's
-  discovery and the launcher glob both skip them, and `headroom check` names
-  stranded ones; `claude-account-remove <name>.lock` (or a plain `rm -rf`
-  with no claude running) deletes the debris.
+  generated launchers. The engine refuses while the account has a live (or
+  unverifiable) session, asks for confirmation (`--yes` off a terminal), then
+  deletes the account's Keychain item, its dir and its `.order` line
+  (`~/dev/headroom/DESIGN.md` § The account lifecycle). Transcripts survive —
+  they are machine-global — and the picker shows the dead owner as degraded
+  until `x` re-homes each session. If bare `x` pointed at the removed account,
+  launches refuse until `x-acc` repicks.
+- **A `<name>.lock` "account" appears**: vendor lock debris a crashed Claude
+  Code strands in the accounts root, not an account. Discovery skips it,
+  `headroom check` names it, and `claude-account-remove <name>.lock` (or a
+  plain `rm -rf` with no claude running) deletes it.
 - **Stale token** on a rarely-used account: the board says so — run that
-  account's `x-<name>` once. Claude Code alone refreshes tokens. Headroom's
-  routine paths write only `.current`, `state.json`, and explicit session
-  rename/delete operations; account removal is the one path that deletes a
-  vendor credential from Keychain.
+  account's `x-<name>` once. Claude Code alone refreshes tokens.
 - **After a Claude Code update**, or when the board misbehaves:
   `x-check` — a FAIL line names which reverse-engineered assumption
   broke. Run `claude-sessions-check` alongside it for the session-sharing
@@ -180,19 +144,14 @@ Everything derives from that tree:
   `CLAUDE_CONFIG_DIR`, never launch bare `claude`, never parse `.current`,
   and never parse anything headroom prints. When headroom is missing or
   refuses, they stop loudly rather than falling back; the unmanaged escape
-  hatch is `env -u CLAUDE_CONFIG_DIR claude` (or the variable set by hand). Short
-  `x-<local-part>` aliases and the reserved utility names are `claude.zsh`'s
-  own concern — headroom advertises only full identities, so there is no
-  naming policy to keep in sync.
-- `CLAUDE_ACCOUNTS_ROOT` matches headroom's default accounts root; the
-  primary's name is *not* a headroom default anymore — headroom derives it
-  from the primary's logged-in email unless `HEADROOM_PRIMARY_NAME` pins it,
-  and `claude.zsh` exports that variable from `CLAUDE_PRIMARY_NAME` so both
-  sides answer to `qiushi` by one declaration. The other `HEADROOM_*` env
-  overrides re-point headroom only (they exist for
-  its test harnesses); under one, wrapper degradations are loud or absent —
-  a launcher that doesn't exist, a preflight that refuses — never a silent
-  misroute, because the preflight follows headroom's classification.
+  hatch is `env -u CLAUDE_CONFIG_DIR claude` (or the variable set by hand).
+- `CLAUDE_ACCOUNTS_ROOT` matches headroom's default accounts root, and
+  `claude.zsh` pins headroom's primary name to `CLAUDE_PRIMARY_NAME` through
+  `HEADROOM_PRIMARY_NAME`, so both sides answer to `qiushi` by one
+  declaration. The other `HEADROOM_*` overrides exist for headroom's test
+  harnesses and re-point headroom only; under one, wrapper degradations are
+  loud or absent, never a silent misroute, because the preflight follows
+  headroom's classification.
 - tmux strips `CLAUDE_CONFIG_DIR` from the server's global environment at
   start (`tmux.conf`): a server started from inside a Claude Code session
   would otherwise hand every pane that session's account. Managed launches
@@ -200,8 +159,6 @@ Everything derives from that tree:
   *outside* them that still reads it.
 - Bypass-everything, if ever wanted, belongs in `settings.json`
   (`"permissions": { "defaultMode": "bypassPermissions" }`), not in wrappers
-  around the `claude` command. PreToolUse hooks still fire and block in
-  bypass mode — and `permissions.deny` rules survive it too, which is why
-  `docs/bypass-cd-read-guard.md` exists (a hook for a 2.1.259 prompt that
-  bypass mode does not skip; dormant since planlab dropped its `Read()`
-  deny rules, kept as a reference implementation).
+  around `claude`. Hooks and `permissions.deny` rules still apply in bypass
+  mode; the dormant guard for one deny-rule prompt is
+  `docs/bypass-cd-read-guard.md`.

@@ -83,6 +83,11 @@ cd ~/dotfiles
 Every step is **idempotent** — re-running the whole script (or a single
 step like `./scripts/bootstrap.sh brewfile`) is safe.
 
+`step_thirdparty` git-clones the shell and tmux dependencies Homebrew does not
+carry and fetches the tmux plugins without opening tmux; `step_macos_defaults`
+turns natural scrolling off (applies after logout) and sets `pmset` sleep,
+prompting for sudo. What each installs or sets is in `scripts/bootstrap.sh`.
+
 ### Things that will interrupt you
 
 | Prompt | Why | What to do |
@@ -92,39 +97,7 @@ step like `./scripts/bootstrap.sh brewfile`) is safe.
 | `mongodb-community` failure | Mongo's brew formula breaks on each new macOS major | Currently commented out in `Brewfile`. If you actually need a local Mongo server, run it via Docker. |
 | The `homebrew/cask` / `homebrew/core` "tap failed" lines | Deprecated taps; brew prints scary text but it's noise | Ignore (they're already removed from `Brewfile`). |
 | `qiushiyan/local` tap fails / `tmux-popupfix` not found | That tap is local-only (no remote) — it carries the patched tmux formula | `brew tap-new qiushiyan/local`, copy `docs/tmux-popupfix.rb` to the tap's `Formula/`, re-run → `docs/tmux-popup-patch.md` |
-| `font-sarasa-gothic` takes a while and lands **793 MB** | It ships one `Sarasa-SuperTTC.ttc` holding 480 faces — SC/TC/J/K × Mono/Term/Fixed/Gothic/UI × every weight — and only `Sarasa Term SC` is used | Let it. Splitting it out means hand-downloading the SC-only archive and leaving Homebrew's management, which is the worse trade → `docs/ghostty-fonts.md` |
-
-### What `step_thirdparty` installs
-
-A few shell/tmux dependencies live outside Homebrew (the upstreams ship
-as git repos, not formulae). The step git-clones them and, where
-needed, runs the build:
-
-| Repo | Destination | Used by |
-|---|---|---|
-| ohmyzsh/ohmyzsh | `~/.oh-my-zsh` | `.zshrc` (provides `compinit`/`compdef`) |
-| zsh-users/zsh-syntax-highlighting | `~/zsh-syntax-highlighting` | `.zshrc` |
-| zsh-users/zsh-autosuggestions | `~/.oh-my-zsh/custom/plugins/zsh-autosuggestions` | `.zshrc` plugins list |
-| tmux-plugins/tpm | `~/.config/tmux/plugins/tpm` | `tmux.conf` plugin loader |
-| yetone/smart-suggestion | `~/.config/smart-suggestion` | `.zshrc` (Go binary built in-place) |
-
-The step also runs tpm's `install_plugins` directly so the plugins
-declared in `tmux.conf` (tmux-resurrect, tmux-continuum,
-vim-tmux-navigator, catppuccin/tmux, tmux-fzf-url) are fetched without
-opening tmux and hitting `prefix + I`.
-
-### What `step_macos_defaults` sets
-
-- **Natural scrolling off** (`com.apple.swipescrolldirection = false`).
-  The single key controls **both** mouse and trackpad — the GUI's two
-  toggles are aliases for it. Takes effect after logout/reboot.
-- **Power management** via `pmset`: battery sleeps after 30 min (screen
-  off at 10), on AC it never auto-sleeps (screen off at 20). This exists
-  because stock macOS / a config profile once left `sleep=1` — the Mac
-  napped after a single idle minute. **Needs sudo**, so this step prompts
-  for your password (see the interrupt table above).
-
-Add more `defaults write` / `pmset` lines to this step over time.
+| `font-sarasa-gothic` takes a while and lands **793 MB** | One bundle of every Sarasa face | Let it → `docs/ghostty-fonts.md` § Choosing a CJK fallback |
 
 ## 5. Post-bootstrap manual setup
 
@@ -197,7 +170,8 @@ Run from a fresh terminal after bootstrap completes.
 - [ ] `git commit -S` succeeds (if you sign commits with GPG).
 - [ ] `nvim` opens, plugins load (LazyVim splash).
 - [ ] `tmux` starts, status bar themed per `~/.config/terminal-theme`.
-- [ ] `ghostty` launches with expected fonts (Iosevka, etc.).
+- [ ] `ghostty +show-face --cp=0x4E2D` names `Sarasa Term SC`, and Latin text
+      renders in the config's primary family (`docs/ghostty-fonts.md` § Verifying).
 - [ ] `node --version` prints LTS, `cargo --version` and `rustc --version` work.
 - [ ] `z <some old project>` jumps (zoxide is initialized).
 - [ ] Natural scrolling matches your preference (logout/reboot first if not).
@@ -229,7 +203,6 @@ enumerates the secret ones.
 ## Reference: old-machine cleanup
 
 Casks that drop a binary into `/usr/local/bin/` survive `brew uninstall` and
-Brewfile cleanup, because removing it needs `sudo`. The R version manager
-`rim` was the case that surfaced this — purging it fully took `sudo rm
-/usr/local/bin/rim` alongside the `brew uninstall --cask --force` and
-`brew untap`. Worth checking for any cask you retire.
+Brewfile cleanup, because removing it needs `sudo`. Retiring one (the R version
+manager `rim` is such a cask) takes `brew uninstall --cask --force`,
+`sudo rm /usr/local/bin/<binary>` and `brew untap`.

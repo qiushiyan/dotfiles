@@ -1,7 +1,7 @@
 # Mac mini (`ssh macmini-shared`)
 
-> The steward host that ran here moved to `qiushi-mini` on 2026-09-22
-> (`docs/qiushi-mini.md` § Steward host); its files on this box were removed.
+> The steward host runs on `qiushi-mini` (`docs/qiushi-mini.md` § Steward
+> host); none of its files remain on this box.
 
 A colleague's Mac mini on the company tailnet that I have a user account on,
 for development over SSH. It is a **shared, production-ish box**: the owner's
@@ -87,7 +87,8 @@ still works but isn't the primary tested route); the pnpm standalone script is
 the documented default and doesn't depend on node. `~/.zshrc` is the only
 config file so far — brew shellenv, `~/.local/bin`, the lines nvm and
 pnpm appended, and `alias x="claude --dangerously-skip-permissions"` (a
-plain alias; no headroom on the mini, so no account switching). Not stowed from this repo; it's a four-line file.
+plain alias; no headroom on the mini, so no account switching). Not stowed
+from this repo; it is a short hand-written file.
 
 Not installed: uv, go, rust, tmux, nvim. Add here when they land.
 
@@ -102,7 +103,7 @@ Not installed: uv, go, rust, tmux, nvim. Add here when they land.
 
 ## Next steps
 
-`claude` is installed but not logged in — first `ssh macmini-shared` then `claude`
-to authenticate in the browser flow. Repos go in `/Volumes/T7/qiushiyan`.
-Consider stowing a zsh/tmux subset of these dotfiles once the minimal
-`.zshrc` starts to feel thin.
+- `claude` is installed but not logged in: run it once over
+  `ssh macmini-shared` to authenticate in the browser flow.
+- Stow a zsh/tmux subset of these dotfiles once the hand-written `~/.zshrc`
+  starts to feel thin.
