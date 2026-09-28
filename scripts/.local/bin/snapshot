@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# snapshot — an APFS local snapshot of the Data volume: the net under a
+# risky operation, and, daily, the stand-in for Time Machine.
+#
+# Usage: snapshot            take one before a risky operation, then delete
+#                            the previous one taken this way (one stands)
+#        snapshot --daily    the LaunchAgent's run: take one, then delete
+#                            every local snapshot older than
+#                            SNAPSHOT_KEEP_DAYS (7); a no-op once Time
+#                            Machine has a destination, which snapshots itself
+#        snapshot --list     the local snapshot dates
+#
+# Taking and deleting need no sudo; restoring does — mount one read-only
+# and copy out of it:
+#   sudo mkdir -p /tmp/snap
+#   sudo mount_apfs -o ro -s com.apple.TimeMachine.<date>.local /System/Volumes/Data /tmp/snap
+#   cp -a /tmp/snap/Users/$USER/<path> <dest>; sudo umount /tmp/snap
+# The snapshot shares the disk it protects: it covers deletes, not a lost
+# or dead Mac. docs/local-snapshots.md.
+#
+# Exit codes: 0 done; 1 tmutil failed; 2 bad arguments.
+set -uo pipefail
+
+KEEP_DAYS=${SNAPSHOT_KEEP_DAYS:-7}
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/snapshot"
+MANUAL="$STATE_DIR/manual"   # date of the last snapshot taken without --daily
+
+usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; }
+
+mode=manual
+case $# in
+  0) ;;
+  1) case $1 in
+       --daily) mode=daily ;;
+       --list) mode=list ;;
+       -h|--help) usage; exit 0 ;;
+       *) echo "snapshot: unknown argument: $1" >&2; usage >&2; exit 2 ;;
+     esac ;;
+  *) echo "snapshot: one argument at most" >&2; exit 2 ;;
+esac
+
+dates() { tmutil listlocalsnapshotdates / 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}$'; }
+
+take() {  # take: prints the new snapshot's date
+  local out d
+  out=$(tmutil localsnapshot 2>&1)
+  d=$(printf '%s\n' "$out" | sed -n 's/.*with date: //p')
+  if [[ -z $d ]]; then
+    printf 'snapshot: tmutil localsnapshot failed: %s\n' "$out" >&2
+    return 1
+  fi
+  printf '%s\n' "$d"
+}
+
+drop() { tmutil deletelocalsnapshots "$1" >/dev/null 2>&1; }
+
+case $mode in
+  list) dates ;;
+
+  manual)
+    new=$(take) || exit 1
+    prev=$(cat "$MANUAL" 2>/dev/null)
+    # Deleted only after the new one exists, so a failed take never leaves
+    # the operation without a net. macOS may already have purged it.
+    [[ -n $prev && $prev != "$new" ]] && drop "$prev"
+    mkdir -p "$STATE_DIR" && printf '%s\n' "$new" > "$MANUAL"
+    echo "snapshot: $new${prev:+ (replaced $prev)}"
+    ;;
+
+  daily)
+    if tmutil destinationinfo 2>/dev/null | grep -q '^Name'; then
+      echo "snapshot: Time Machine has a destination; it snapshots hourly itself"
+      exit 0
+    fi
+    new=$(take) || exit 1
+    cutoff=$(date -v-"${KEEP_DAYS}"d +%Y-%m-%d-%H%M%S)
+    pruned=0
+    # The dates sort as strings, so older-than is a string comparison.
+    while read -r d; do
+      [[ $d < $cutoff ]] && drop "$d" && pruned=$((pruned+1))
+    done < <(dates)
+    echo "snapshot: $(date '+%F %T') took $new, pruned $pruned older than $KEEP_DAYS days"
+    ;;
+esac
