@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# test-aws-relogin.sh — aws-relogin's contract: sign out, sign in, verify,
+# test-aws-login.sh — aws-login's contract: sign out, sign in, verify,
 # stamp; the device-code flow on the mini; --status reads the stamp.
 #
-# Usage: bash test-aws-relogin.sh [A1 A4 ...]
+# Usage: bash test-aws-login.sh [A1 A4 ...]
 #
 # ISOLATION. `aws` is a stub on PATH that records every call and answers from
 # environment knobs (STUB_LOGIN_RC, STUB_STS_RC), and HOME is a temporary
@@ -11,11 +11,11 @@
 
 set -uo pipefail
 
-RELOGIN="$(cd "$(dirname "$0")/../../../bin" && pwd)/aws-relogin"
+LOGIN="$(cd "$(dirname "$0")/../../../bin" && pwd)/aws-login"
 PASS=0; FAIL=0; FAILED=""
 
-SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/aws-relogin-test.XXXXXX")
-REAL_STATE="$HOME/.local/state/aws-relogin"
+SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/aws-login-test.XXXXXX")
+REAL_STATE="$HOME/.local/state/aws-login"
 real_state_before() { ls -la "$REAL_STATE" 2>/dev/null | shasum; }
 REAL_STATE_BEFORE=$(real_state_before)
 cleanup() { [ -n "${KEEP:-}" ] && { echo "kept $SANDBOX"; return; }; rm -rf "${SANDBOX:-}"; }
@@ -33,7 +33,7 @@ mkdir -p "$SANDBOX/bin"
 cat > "$SANDBOX/bin/aws" <<'EOF'
 #!/bin/sh
 # Stub aws: log the call, answer like the real CLI for the subcommands
-# aws-relogin uses.
+# aws-login uses.
 printf '%s\n' "$*" >> "$STUB_LOG"
 case "$1 $2" in
   "configure list-profiles") printf 'default\nplanlab-dev\nplanlab-prod\nplanlab-legacy\n' ;;
@@ -58,11 +58,11 @@ fresh() {
     unset STUB_LOGIN_RC STUB_STS_RC XDG_STATE_HOME
 }
 calls() { cat "$STUB_LOG"; }
-stamp() { cat "$HOME/.local/state/aws-relogin/$1" 2>/dev/null; }
+stamp() { cat "$HOME/.local/state/aws-login/$1" 2>/dev/null; }
 
 CASE=A1; if want; then
     fresh
-    out=$("$RELOGIN" 2>&1); rc=$?
+    out=$("$LOGIN" 2>&1); rc=$?
     ok "A1 exit 0" 0 "$rc"
     ok "A1 logout, login, verify in order" \
        "$(printf 'sso logout\nsso login --profile planlab-prod\nsts get-caller-identity --profile planlab-prod --output text --query Arn')" \
@@ -74,26 +74,26 @@ fi
 
 CASE=A2; if want; then
     fresh
-    "$RELOGIN" planlab-dev >/dev/null 2>&1
+    "$LOGIN" planlab-dev >/dev/null 2>&1
     ok "A2 profile argument reaches login and verify" 2 "$(calls | grep -v '^configure' | grep -c -- '--profile planlab-dev')"
-    ok "A2 legacy profile stamps under its own name" 1 "$( fresh; "$RELOGIN" planlab-legacy >/dev/null 2>&1; [ -n "$(stamp planlab-legacy)" ] && echo 1 || echo 0 )"
+    ok "A2 legacy profile stamps under its own name" 1 "$( fresh; "$LOGIN" planlab-legacy >/dev/null 2>&1; [ -n "$(stamp planlab-legacy)" ] && echo 1 || echo 0 )"
 fi
 
 CASE=A3; if want; then
     fresh
-    "$RELOGIN" >/dev/null 2>&1
+    "$LOGIN" >/dev/null 2>&1
     ok "A3 laptop: browser flow" 0 "$(calls | grep -c -- '--use-device-code')"
     fresh; echo mini > "$HOME/.config/machine"
-    "$RELOGIN" >/dev/null 2>&1
+    "$LOGIN" >/dev/null 2>&1
     ok "A3 mini marker: device-code flow" "sso login --profile planlab-prod --use-device-code" "$(calls | grep '^sso login')"
     fresh
-    "$RELOGIN" --use-device-code --no-browser >/dev/null 2>&1
+    "$LOGIN" --use-device-code --no-browser >/dev/null 2>&1
     ok "A3 flags pass through" "sso login --profile planlab-prod --use-device-code --no-browser" "$(calls | grep '^sso login')"
 fi
 
 CASE=A4; if want; then
     fresh; export STUB_LOGIN_RC=1
-    out=$("$RELOGIN" 2>&1); rc=$?
+    out=$("$LOGIN" 2>&1); rc=$?
     ok "A4 login failure exits 1" 1 "$rc"
     ok "A4 no verify after failed login" 0 "$(calls | grep -c '^sts')"
     ok "A4 no stamp after failed login" "" "$(stamp planlab)"
@@ -102,31 +102,31 @@ fi
 
 CASE=A5; if want; then
     fresh; export STUB_STS_RC=254
-    "$RELOGIN" >/dev/null 2>&1; rc=$?
+    "$LOGIN" >/dev/null 2>&1; rc=$?
     ok "A5 verify failure exits 1" 1 "$rc"
     ok "A5 no stamp without credentials" "" "$(stamp planlab)"
 fi
 
 CASE=A6; if want; then
     fresh
-    out=$("$RELOGIN" --status 2>&1); rc=$?
+    out=$("$LOGIN" --status 2>&1); rc=$?
     ok "A6 status without stamp: signed in unknown, exit 0" "0 1" "$rc $(printf '%s' "$out" | grep -c 'signed in:  unknown')"
     ok "A6 status signs nothing in or out" 0 "$(calls | grep -c '^sso')"
-    "$RELOGIN" >/dev/null 2>&1
-    out=$("$RELOGIN" --status 2>&1); rc=$?
+    "$LOGIN" >/dev/null 2>&1
+    out=$("$LOGIN" --status 2>&1); rc=$?
     ok "A6 status after login: exit 0, shows session end" "0 1" "$rc $(printf '%s' "$out" | grep -c '^ends:       ~.*8-hour session')"
     export STUB_STS_RC=254
-    out=$("$RELOGIN" --status 2>&1); rc=$?
+    out=$("$LOGIN" --status 2>&1); rc=$?
     ok "A6 status without credentials exits 1" "1 1" "$rc $(printf '%s' "$out" | grep -c 'credentials: none')"
 fi
 
 CASE=A7; if want; then
     fresh
-    out=$("$RELOGIN" no-such-profile 2>&1); rc=$?
+    out=$("$LOGIN" no-such-profile 2>&1); rc=$?
     ok "A7 unknown profile exits 2 and lists profiles" "2 1" "$rc $(printf '%s' "$out" | grep -c '  planlab-prod')"
     ok "A7 unknown profile signs nothing out" 0 "$(calls | grep -c '^sso')"
-    "$RELOGIN" --bogus >/dev/null 2>&1; ok "A7 unknown option exits 2" 2 "$?"
-    "$RELOGIN" a b >/dev/null 2>&1; ok "A7 two profiles exits 2" 2 "$?"
+    "$LOGIN" --bogus >/dev/null 2>&1; ok "A7 unknown option exits 2" 2 "$?"
+    "$LOGIN" a b >/dev/null 2>&1; ok "A7 two profiles exits 2" 2 "$?"
 fi
 
 CASE=A8; if want; then

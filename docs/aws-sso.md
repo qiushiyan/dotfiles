@@ -1,11 +1,11 @@
-# AWS SSO sessions and `aws-relogin`
+# AWS SSO sessions and `aws-login`
 
 The AWS CLI signs in to planlab's IAM Identity Center through the
 `[sso-session planlab]` block in `~/.aws/config` (the same file on the laptop
 and the mini; `docs/qiushi-mini.md` § Toolchain). The organisation's session
 limit is 8 hours and not mine to change, so an agent that needs CloudWatch or
 S3 for longer than that depends on someone signing in again.
-`scripts/.local/bin/aws-relogin` is that sign-in, for a human at the terminal
+`scripts/.local/bin/aws-login` is that sign-in, for a human at the terminal
 and for the Codex automation alike.
 
 ## Three clocks, and which one `aws sso login` resets
@@ -39,12 +39,12 @@ user guide `authconcept`, `user-interactive-sessions` and
 `user-session-duration-prereqs-considerations`, and the Portal API `Logout`
 reference.
 
-## What `aws-relogin` does
+## What `aws-login` does
 
 ```bash
-aws-relogin                     # planlab-prod
-aws-relogin planlab-dev         # any profile in ~/.aws/config
-aws-relogin --status            # what the CLI has now; exit 1 when nothing works
+aws-login                     # planlab-prod
+aws-login planlab-dev         # any profile in ~/.aws/config
+aws-login --status            # what the CLI has now; exit 1 when nothing works
 ```
 
 1. `aws sso logout`: clears every cached token and role credential (all
@@ -59,8 +59,8 @@ aws-relogin --status            # what the CLI has now; exit 1 when nothing work
    trusting the new token's clock.
 3. `aws sts get-caller-identity --profile <profile>` proves the profile's
    account and role resolve. Only then is the sign-in time stamped in
-   `~/.local/state/aws-relogin/<sso-session>`; `--status` reads it back with
-   the estimated end (`AWS_RELOGIN_SESSION_HOURS`, default 8). The stamp is
+   `~/.local/state/aws-login/<sso-session>`; `--status` reads it back with
+   the estimated end (`AWS_LOGIN_SESSION_HOURS`, default 8). The stamp is
    the only record of when the session began, because the token file is
    rewritten every hour.
 
@@ -75,7 +75,7 @@ retry blindly. Exit 2 is a bad argument or a profile that is not in
   localhost. The Codex Desktop automation "Refresh planlab-prod AWS SSO"
   (`~/.codex/automations/`, runtime state, not tracked) runs every 8 hours
   and drives 1Password and the "Allow access" button by computer use. Its
-  prompt must call `aws-relogin` rather than `aws sso login`, or the run
+  prompt must call `aws-login` rather than `aws sso login`, or the run
   refreshes the token on the old session whenever it fires while the portal
   is still signed in.
 - **Mini:** `mini-sync` links the script into `~/.local/bin` (`LINKS` in the
@@ -88,9 +88,9 @@ retry blindly. Exit 2 is a bad argument or a profile that is not in
 
 The access portal lists the user's own active sessions with their start
 times (IAM Identity Center user guide, "Viewing and ending your active
-session"). After `aws-relogin`, the list should show one session started at
+session"). After `aws-login`, the list should show one session started at
 the time the script printed; a login that reused the session leaves the old
-start time in place. `aws-relogin --status` then keeps the answer local.
+start time in place. `aws-login --status` then keeps the answer local.
 
-Pinned by `scripts/.local/share/dotfiles/tests/test-aws-relogin.sh`
+Pinned by `scripts/.local/share/dotfiles/tests/test-aws-login.sh`
 (`docs/testing.md`).

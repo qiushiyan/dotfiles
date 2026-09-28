@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# aws-relogin — start a fresh IAM Identity Center session for the AWS CLI.
+# aws-login — start a fresh IAM Identity Center session for the AWS CLI.
 #
-# Usage: aws-relogin [profile] [--use-device-code] [--no-browser]
-#        aws-relogin [profile] --status
+# Usage: aws-login [profile] [--use-device-code] [--no-browser]
+#        aws-login [profile] --status
 #   profile            an SSO profile from ~/.aws/config (default: planlab-prod)
 #   --use-device-code  device-code flow instead of the browser redirect; the
 #                      default on the office mini, where the laptop's browser
@@ -25,8 +25,8 @@ set -uo pipefail
 DEFAULT_PROFILE=planlab-prod
 # The Identity Center setting is 8 hours and not ours to change; only the
 # "ends" estimate depends on it.
-SESSION_HOURS=${AWS_RELOGIN_SESSION_HOURS:-8}
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/aws-relogin"
+SESSION_HOURS=${AWS_LOGIN_SESSION_HOURS:-8}
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/aws-login"
 
 usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
 
@@ -37,10 +37,10 @@ for arg in "$@"; do
     --status) status=1 ;;
     --use-device-code) device_code=1 ;;
     --no-browser) no_browser=1 ;;
-    -*) echo "aws-relogin: unknown option: $arg" >&2; usage >&2; exit 2 ;;
+    -*) echo "aws-login: unknown option: $arg" >&2; usage >&2; exit 2 ;;
     *)
       if [[ -n $profile ]]; then
-        echo "aws-relogin: one profile at most (got '$profile' and '$arg')" >&2; exit 2
+        echo "aws-login: one profile at most (got '$profile' and '$arg')" >&2; exit 2
       fi
       profile=$arg ;;
   esac
@@ -48,7 +48,7 @@ done
 profile=${profile:-$DEFAULT_PROFILE}
 
 if ! aws configure list-profiles 2>/dev/null | grep -qx -- "$profile"; then
-  echo "aws-relogin: no profile '$profile' in ~/.aws/config; known profiles:" >&2
+  echo "aws-login: no profile '$profile' in ~/.aws/config; known profiles:" >&2
   aws configure list-profiles 2>/dev/null | sed 's/^/  /' >&2
   exit 2
 fi
@@ -68,7 +68,7 @@ if (( status )); then
   echo "profile:    $profile${session:+ (sso-session $session)}"
   arn=$(identity)
   if [[ -z $arn ]]; then
-    echo "credentials: none — run: aws-relogin $profile"
+    echo "credentials: none — run: aws-login $profile"
     exit 1
   fi
   echo "identity:   $arn"
@@ -76,14 +76,14 @@ if (( status )); then
     started=$(tr -d '[:space:]' < "$stamp")
     ends=$(( started + SESSION_HOURS * 3600 ))
     left=$(( ends - $(date +%s) ))
-    echo "signed in:  $(fmt "$started") (by aws-relogin)"
+    echo "signed in:  $(fmt "$started") (by aws-login)"
     if (( left > 0 )); then
       echo "ends:       ~$(fmt "$ends") (${SESSION_HOURS}-hour session, $(( left / 3600 ))h$(( left % 3600 / 60 ))m left)"
     else
       echo "ends:       ~$(fmt "$ends") — past the ${SESSION_HOURS}-hour limit; the role credentials still work until they expire, the next refresh will not"
     fi
   else
-    echo "signed in:  unknown (last sign-in was not through aws-relogin)"
+    echo "signed in:  unknown (last sign-in was not through aws-login)"
   fi
   exit 0
 fi
@@ -102,7 +102,7 @@ login=(aws sso login --profile "$profile")
 echo "==> ${login[*]}"
 if ! "${login[@]}"; then
   rc=$?
-  echo "aws-relogin: login failed (exit $rc); the old session is already ended, so '$profile' has no credentials until a login succeeds" >&2
+  echo "aws-login: login failed (exit $rc); the old session is already ended, so '$profile' has no credentials until a login succeeds" >&2
   exit 1
 fi
 started=$(date +%s)
@@ -110,11 +110,11 @@ started=$(date +%s)
 echo "==> aws sts get-caller-identity --profile $profile"
 arn=$(identity)
 if [[ -z $arn ]]; then
-  echo "aws-relogin: login reported success but '$profile' cannot get credentials; check the profile's account and role in ~/.aws/config" >&2
+  echo "aws-login: login reported success but '$profile' cannot get credentials; check the profile's account and role in ~/.aws/config" >&2
   exit 1
 fi
 
 mkdir -p "$STATE_DIR" && printf '%s\n' "$started" > "$stamp"
 echo "identity:   $arn"
 echo "signed in:  $(fmt "$started")"
-echo "ends:       ~$(fmt $(( started + SESSION_HOURS * 3600 ))) (${SESSION_HOURS}-hour session; run aws-relogin again after that)"
+echo "ends:       ~$(fmt $(( started + SESSION_HOURS * 3600 ))) (${SESSION_HOURS}-hour session; run aws-login again after that)"
