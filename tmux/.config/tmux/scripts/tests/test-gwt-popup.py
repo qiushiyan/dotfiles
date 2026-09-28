@@ -30,6 +30,11 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
     (repo/'.env').write_text('smoke-secret')
     bindir = home/'.local/bin'; bindir.mkdir(parents=True)
     shutil.copy2(B, bindir/'gwt')
+    # ctrl-y resolves toclip through PATH; this stub keeps the real clipboard out
+    # of reach and records the payload and the pane it was aimed at.
+    clip = home/'clip.txt'
+    (bindir/'toclip').write_text('#!/bin/sh\ncat > '+shlex.quote(str(clip))+'.tmp && printf %s "$TMUX_PANE" > '+shlex.quote(str(clip))+'.pane && mv '+shlex.quote(str(clip))+'.tmp '+shlex.quote(str(clip))+'\n')
+    (bindir/'toclip').chmod(0o755)
     env['PATH'] = str(bindir)+':'+env['PATH']
     run(['git','checkout','-qb','caller-topic'], repo)
     run(['git','-c','user.name=Test','-c','user.email=test@example.invalid','commit','--allow-empty','-qm','caller HEAD differs from main'], repo)
@@ -65,5 +70,41 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         assert (root/repo.name/'feat/popup/.env').read_text() == 'smoke-secret'
         assert run(['git','rev-parse','feat/popup'], repo).stdout.strip() == caller_sha
         print('PASS: actual popup uses caller HEAD and custom quoted root, seeds files, opens window, delivers post-create')
+
+        # Copy: the probed rows replace the bare first paint (the dirty mark only
+        # exists in them), ctrl-y copies the highlighted path and closes, and with
+        # every row marked it copies them all, one per line.
+        tree = root/repo.name/'feat/popup'
+        (tree/'untracked.txt').write_text('dirty')
+        def open_popup():
+            run(tmux+['send-keys','-t',pane,'-l','clear; '+command]); run(tmux+['send-keys','-t',pane,'Enter'])
+            deadline=time.monotonic()+8
+            while time.monotonic()<deadline:
+                cap=run(tmux+['capture-pane','-pt',pane]).stdout
+                if '* feat/popup' in cap: return
+                time.sleep(.1)
+            raise AssertionError('probed rows never replaced the bare list: '+cap)
+        def copied():
+            deadline=time.monotonic()+8
+            while time.monotonic()<deadline:
+                if clip.exists():
+                    cap=run(tmux+['capture-pane','-pt',pane]).stdout
+                    if 'ctrl-y copy path' not in cap:
+                        text=clip.read_text(); clip.unlink(); return text
+                time.sleep(.1)
+            raise AssertionError('ctrl-y did not copy and close: '+run(tmux+['capture-pane','-pt',pane]).stdout)
+        open_popup()
+        run(tmux+['send-keys','-t',pane,'-l','feat/popup']); time.sleep(.3)
+        run(tmux+['send-keys','-t',pane,'C-y'])
+        assert copied() == str(tree), 'single copy'
+        # toclip reads only the pane's session (to find its client), and in this
+        # detached session the active pane is the window ctrl-n just opened.
+        aimed = (home/'clip.txt.pane').read_text()
+        assert aimed and run(tmux+['display-message','-p','-t',aimed,'#{session_name}']).stdout.strip() == 'smoke', 'toclip aimed at the invoking session: '+aimed
+        open_popup()
+        run(tmux+['send-keys','-t',pane,'C-a']); time.sleep(.3)
+        run(tmux+['send-keys','-t',pane,'C-y'])
+        assert sorted(copied().split('\n')) == sorted([str(repo), str(tree)]), 'marked rows copy one path per line'
+        print('PASS: probed rows replace the bare list; ctrl-y copies the highlighted or marked paths aimed at the invoking session, and closes')
     finally:
         run(tmux+['kill-server'],check=False)

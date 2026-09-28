@@ -3,10 +3,13 @@
 #
 # Launched from a tmux display-popup. Lists the current repo's worktrees in fzf
 # (» marks the worktree you're in, * marks a dirty one, "· merged" marks one the
-# reap would take — @worktree_show_merged off to drop it). Rows are built in
-# parallel; serially the list was the popup's whole time-to-first-paint.
+# reap would take — @worktree_show_merged off to drop it). The bare list paints
+# at once; the * and merged marks land a moment later, when the per-worktree
+# probes finish (see bare_rows).
 #   enter        switch to the highlighted worktree's window; if the typed name
 #                matches no worktree, place that branch in one and open its window
+#   ctrl-y       copy the highlighted worktree's path — or every marked one's,
+#                one per line — and close
 #   ctrl-n       place the TYPED name in a worktree even when the query still
 #                fuzzy-matches an existing worktree. gwt resolves the name
 #                first, so an existing local or remote branch is checked out
@@ -23,7 +26,7 @@
 #                refetches the list (it's memoized for the popup's lifetime)
 #   ctrl-d/u     scroll the preview half a page (vim-style)
 #
-# switch / create / PR-checkout are EXIT operations (you land in the target
+# switch / create / PR-checkout / copy are EXIT operations (you land in the target
 # window and the popup closes); remove and reap are IN-POPUP operations (they
 # loop back to the refreshed list so you can keep going). A failed create also
 # loops back.
@@ -76,7 +79,83 @@ set -u
 # merge checks, snapshots, and removal; this script owns the tmux/fzf UI.
 source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
 
-session="$(tmux display-message -p '#{session_name}' 2>/dev/null)"
+# --- list:  "<markers> <branch>\t<path>\t<branch>"  (display = field 1) --------
+
+# Marker column: » (green) = the worktree the popup was launched from,
+# * (yellow) = dirty. Plain ANSI colors so the terminal theme maps them. A clean
+# worktree whose branch has already landed also gets a dim "· merged" tag — now
+# that merged-ness counts squash and rebase merges it is worth trusting, and
+# seeing the reap set BEFORE pressing ctrl-g is the difference between a cleanup
+# and a surprise. Disable with @worktree_show_merged off.
+#
+# One row = one `git status` (+ the merge test), so rows are built in PARALLEL
+# via wt_fanout. Even fanned out, 25 worktrees cost ~0.3s, and ~1s when a moved
+# base empties the merge memo, so these rows are not the first paint (bare_rows).
+row_for() {
+  local path="$1" branch="$2" base="$3" show_merged="$4" here=" " dirty=" " tag=""
+  [ "$path" = "$cur_top" ] && here=$'\033[32m»\033[0m'
+  if [ -n "$(git --no-optional-locks -C "$path" status --porcelain 2>/dev/null)" ]; then
+    dirty=$'\033[33m*\033[0m'
+  elif [ -n "$show_merged" ] && [ "$path" != "$main_top" ] && [ "$path" != "$cur_top" ] \
+       && [ "$branch" != "(detached)" ] && wt_merged_into "$branch" "$base"; then
+    # only where it's actionable: the main worktree and the one you're in can
+    # never be removed, and a dirty worktree can never be reaped.
+    tag=$'\033[32m · merged\033[0m'
+  fi
+  printf '%s%s %s%s\t%s\t%s\n' "$here" "$dirty" "$branch" "$tag" "$path" "$branch"
+}
+
+# "<path>\t<branch>" per worktree, in git's order. Detached entries have no
+# branch to test, but still belong in the list. Both row builders read this, so
+# the bare and probed lists hold the same rows in the same order.
+worktree_entries() {
+  git worktree list --porcelain | awk '
+    /^worktree /{p = substr($0, 10)}
+    /^branch /  {b = $2; sub("refs/heads/", "", b); print p "\t" b}
+    /^detached$/{print p "\t(detached)"}
+  '
+}
+
+list_worktrees() {
+  local base="" show_merged=""
+  case "$(tmux show-option -gqv @worktree_show_merged 2>/dev/null)" in
+    off|0|false|no|disabled) ;;
+    *) show_merged=1; base="$(wt_default_base)" ;;
+  esac
+  worktree_entries | wt_fanout row_for "$base" "$show_merged"
+}
+
+# The first paint: row_for's layout with the probed columns blank, for the cost
+# of one `git worktree list`. The picker loads these, and its load event re-runs
+# this script with --rows to swap in list_worktrees' rows once all of them are
+# ready. reload-sync keeps the bare list live meanwhile; --id-nth=2 (the path)
+# carries marks across the swap, and the cursor keeps its index because both
+# lists come from worktree_entries in the same order. --track would also block
+# typing until the swap, so it stays off.
+bare_rows() {
+  local path branch here
+  worktree_entries | while IFS=$'\t' read -r path branch; do
+    [ -n "$path" ] || continue
+    here=" "; [ "$path" = "$cur_top" ] && here=$'\033[32m»\033[0m'
+    printf '%s  %s\t%s\t%s\n' "$here" "$branch" "$path" "$branch"
+  done
+}
+
+cur_top="$(git rev-parse --show-toplevel 2>/dev/null)"   # the worktree we're IN
+
+# fzf's re-entry for the probed rows. It runs in the picker's cwd, so cur_top is
+# the parent's, and it skips every startup side effect below.
+if [ "${1:-}" = --rows ]; then
+  main_top="$(wt_main_worktree)"
+  list_worktrees
+  exit 0
+fi
+
+# The invoking client's session receives new windows; its active pane is where
+# ctrl-y's toclip finds the client to copy to, since a popup has no pane.
+IFS=$'\t' read -r session origin_pane <<EOF
+$(tmux display-message -p '#{session_name}'$'\t''#{pane_id}' 2>/dev/null)
+EOF
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "not inside a git repository: $PWD"
@@ -84,51 +163,53 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 0
 fi
 
-# --- repo identity & worktree root -------------------------------------------
-
-# Path convention, main_worktree, and default_base come from worktree-core.sh
-# (wt_worktree_root / wt_main_worktree / wt_default_base).
-wt_load_config || { echo "could not load gwt configuration"; sleep 2; exit 1; }
-wt_root="$(wt_worktree_root)" || exit 1
-cur_top="$(git rev-parse --show-toplevel 2>/dev/null)"   # the worktree we're IN
-main_top="$(wt_main_worktree)"                           # never removable either
+# Everything from here to the picker is on the first paint's path, so anything
+# the list does not need runs in the background: two gwt calls and the
+# housekeeping below were ~100ms of a ~150ms startup. Listing, switching and
+# copying therefore work even when gwt's configuration does not load; creation
+# and removal report gwt's own error.
 
 # --- trash (removal staging) --------------------------------------------------
 
-# Batch removal stages worktrees here (same filesystem as wt_root, so mv is a
-# rename) and sweeps in the background. Self-heal on startup: sweep whatever a
-# crashed/killed popup left behind — but only entries older than 2 minutes, so
-# this can never race the sweep another live popup just scheduled.
+# Batch removal stages worktrees in <gwt root's parent>/.trash (same filesystem
+# as the root, so mv is a rename) and sweeps in the background.
 wt_shell_quote() {
   local value="$1"
   value=${value//\'/\'\\\'\'}
   printf "'%s'" "$value"
 }
-WT_TRASH="${wt_root%/*}/.trash"
-tmux run-shell -b "find $(wt_shell_quote "$WT_TRASH") -mindepth 1 -maxdepth 1 -mmin +2 -exec rm -rf {} + 2>/dev/null; true" 2>/dev/null || true
+trash_dir_for() { printf '%s/.trash' "${1%/*}"; }
 
-# The other thing removal leaves behind: the refs/wt-trash snapshots taken before
-# discarding uncommitted work or force-deleting a branch. They pin objects, so
-# they expire too — same age gate, different store. @worktree_backup_days 0 keeps
-# them forever. Cheap enough to run inline (for-each-ref over a tiny namespace).
-wt_backup_days="$(tmux show-option -gqv @worktree_backup_days 2>/dev/null)"
-wt_prune_backups "${wt_backup_days:-30}"
-wt_trim_merged_cache
+# Housekeeping, beside the first paint. Nothing waits on this job;
+# await_base_fetch waits on its own pid only.
+#   - Self-heal: sweep whatever a crashed/killed popup left in the trash — only
+#     entries older than 2 minutes, so this never races the sweep another live
+#     popup just scheduled.
+#   - The other thing removal leaves behind: the refs/wt-trash snapshots taken
+#     before discarding uncommitted work or force-deleting a branch. They pin
+#     objects, so they expire too — same age gate, different store.
+#     @worktree_backup_days 0 keeps them forever.
+#   - Cap the merge memo.
+{
+  root="$(wt_worktree_root)" &&
+    tmux run-shell -b "find $(wt_shell_quote "$(trash_dir_for "$root")") -mindepth 1 -maxdepth 1 -mmin +2 -exec rm -rf {} + 2>/dev/null; true"
+  days="$(tmux show-option -gqv @worktree_backup_days)"
+  wt_prune_backups "${days:-30}"
+  wt_trim_merged_cache
+} >/dev/null 2>&1 &
 
 # --- base freshness (background) ------------------------------------------------
 
 # Every merged/unmerged verdict below is read off the base's remote-tracking ref,
 # which is frozen at your last fetch — merge a PR in the browser and its branch
 # still reads "NOT merged" here. So refresh it, but never make anyone WATCH a
-# fetch: fire it at startup (only when stale — wt_base_is_stale) and await it
-# only at the point a verdict is actually needed, by which time browsing the list
-# has usually paid for it. Bounded by `timeout` inside wt_fetch_base.
-wt_fetch_pid=""
+# fetch: fire it at startup and await it only at the point a verdict is actually
+# needed, by which time browsing the list has usually paid for it. The job reads
+# gwt's freshness window itself and fetches only when the base is stale; exit 0
+# means fresh. Bounded by `timeout` inside wt_fetch_base.
+( wt_base_is_stale || exit 0; wt_fetch_base ) >/dev/null 2>&1 &
+wt_fetch_pid=$!
 wt_fetch_note=""
-if wt_base_is_stale; then
-  wt_fetch_base >/dev/null 2>&1 &
-  wt_fetch_pid=$!
-fi
 
 # Block until the startup fetch lands. A FAILED probe is announced, not
 # swallowed: grading against a stale base is exactly the false alarm we're here
@@ -151,55 +232,14 @@ await_base_fetch() {
 fzf_colors="fg+:-1"
 _wt_theme() {
   local accent muted dim surface green red
-  accent="$(tmux show -gqv @thm_mauve 2>/dev/null)"
+  # One round trip: six `tmux show` calls were ~50ms of time-to-first-paint.
+  IFS='|' read -r accent muted dim surface green red <<EOF
+$(tmux display-message -p '#{@thm_mauve}|#{@thm_overlay_2}|#{@thm_overlay_0}|#{@thm_surface_0}|#{@thm_green}|#{@thm_red}' 2>/dev/null)
+EOF
   [ -n "$accent" ] || return 0            # no palette loaded — fzf defaults
-  muted="$(tmux show -gqv @thm_overlay_2 2>/dev/null)"
-  dim="$(tmux show -gqv @thm_overlay_0 2>/dev/null)"
-  surface="$(tmux show -gqv @thm_surface_0 2>/dev/null)"
-  green="$(tmux show -gqv @thm_green 2>/dev/null)"
-  red="$(tmux show -gqv @thm_red 2>/dev/null)"
   fzf_colors="hl:$red,hl+:$red,fg+:-1,bg+:$surface,gutter:-1,query:-1,pointer:$accent,prompt:$accent,spinner:$accent,marker:$green,info:$muted,header:$muted,label:$muted,border:$dim,preview-border:$dim"
 }
 _wt_theme
-
-# --- list:  "<markers> <branch>\t<path>\t<branch>"  (display = field 1) --------
-
-# Marker column: » (green) = the worktree the popup was launched from,
-# * (yellow) = dirty. Plain ANSI colors so the terminal theme maps them. A clean
-# worktree whose branch has already landed also gets a dim "· merged" tag — now
-# that merged-ness counts squash and rebase merges it is worth trusting, and
-# seeing the reap set BEFORE pressing ctrl-g is the difference between a cleanup
-# and a surprise. Disable with @worktree_show_merged off.
-#
-# One row = one `git status` (+ the merge test), so rows are built in PARALLEL
-# via wt_fanout — serially this was the popup's whole time-to-first-paint.
-row_for() {
-  local path="$1" branch="$2" base="$3" show_merged="$4" here=" " dirty=" " tag=""
-  [ "$path" = "$cur_top" ] && here=$'\033[32m»\033[0m'
-  if [ -n "$(git --no-optional-locks -C "$path" status --porcelain 2>/dev/null)" ]; then
-    dirty=$'\033[33m*\033[0m'
-  elif [ -n "$show_merged" ] && [ "$path" != "$main_top" ] && [ "$path" != "$cur_top" ] \
-       && [ "$branch" != "(detached)" ] && wt_merged_into "$branch" "$base"; then
-    # only where it's actionable: the main worktree and the one you're in can
-    # never be removed, and a dirty worktree can never be reaped.
-    tag=$'\033[32m · merged\033[0m'
-  fi
-  printf '%s%s %s%s\t%s\t%s\n' "$here" "$dirty" "$branch" "$tag" "$path" "$branch"
-}
-
-list_worktrees() {
-  local base="" show_merged=""
-  case "$(tmux show-option -gqv @worktree_show_merged 2>/dev/null)" in
-    off|0|false|no|disabled) ;;
-    *) show_merged=1; base="$(wt_default_base)" ;;
-  esac
-  # Detached entries have no branch to test, but still belong in the list.
-  git worktree list --porcelain | awk '
-    /^worktree /{p = substr($0, 10)}
-    /^branch /  {b = $2; sub("refs/heads/", "", b); print p "\t" b}
-    /^detached$/{print p "\t(detached)"}
-  ' | wt_fanout row_for "$base" "$show_merged"
-}
 
 # --- create / switch -----------------------------------------------------------
 
@@ -285,6 +325,22 @@ create_worktree() {
   return 0
 }
 
+# ctrl-y: `prefix y` for worktrees you are not in. Puts the paths on the
+# clipboard, one per line with no trailing newline, and reports like prefix y.
+# toclip comes from PATH (tests stub it) and is aimed at the invoking pane.
+# Returns 1 with nothing selected or a failed copy, so the caller loops back.
+copy_paths() {
+  local paths="$1" n
+  [ -n "$paths" ] || return 1
+  printf '%s' "$paths" | TMUX_PANE="$origin_pane" toclip -q || { sleep 2; return 1; }
+  n="$(printf '%s\n' "$paths" | wc -l | tr -d ' ')"
+  if [ "$n" -eq 1 ]; then
+    tmux display-message -l "copied $paths" 2>/dev/null || true
+  else
+    tmux display-message -l "copied $n worktree paths" 2>/dev/null || true
+  fi
+}
+
 # --- removal: trash-and-sweep ---------------------------------------------------
 
 # Delete a branch we have ALREADY established is contained in the base.
@@ -349,9 +405,10 @@ batch_remove() {
     esac
   fi
 
-  local trash batch i=0 removed=0 gone="" saved="" snap ref wins w
+  local wt_root trash batch i=0 removed=0 gone="" saved="" snap ref wins w
+  wt_root="$(wt_worktree_root)" || { sleep 2; return; }
   batch="$(date +%s).$$"
-  trash="$WT_TRASH/$batch"
+  trash="$(trash_dir_for "$wt_root")/$batch"
   if ! mkdir -p "$trash"; then echo "cannot create $trash"; sleep 2; return; fi
   while IFS=$'\t' read -r path branch dirty; do
     [ -n "$path" ] || continue
@@ -549,20 +606,25 @@ pick_pr() {
 
 # --- pick & dispatch ------------------------------------------------------------
 
+# fzf runs the --rows re-entry through $SHELL; the path travels in the
+# environment so no quoting survives into fzf's action syntax.
+export WT_POPUP_SELF="${BASH_SOURCE[0]}"
+
 # Looped so remove (ctrl-x) and reap (ctrl-g) can return to a refreshed list.
-# switch / create / PR-checkout break the loop with `exit`; remove, reap, a
-# cancelled PR pick, and a failed create fall through and re-run fzf.
+# switch / create / PR-checkout / copy break the loop with `exit`; remove, reap,
+# a cancelled PR pick, and a failed create or copy fall through and re-run fzf.
 # esc / ctrl-c (fzf exit 130) closes the whole popup.
 while true; do
-  out="$(list_worktrees | fzf \
+  out="$(bare_rows | fzf \
     --ansi --multi --cycle --layout=reverse \
-    --delimiter='\t' --with-nth=1 \
+    --delimiter='\t' --with-nth=1 --id-nth=2 \
     --padding=1,2 \
     --prompt='❯ ' --pointer='▌' --marker='✓' --info=inline-right \
     --ghost='filter, or type a new branch name' \
-    --header=$'enter switch/create   ctrl-n new-from-name   tab/ctrl-a mark\nctrl-x remove   ctrl-g reap merged   ctrl-p PRs   ctrl-d/u preview' \
+    --header=$'enter switch/create   ctrl-y copy path   ctrl-n new-from-name\ntab/ctrl-a mark   ctrl-x remove   ctrl-g reap merged\nctrl-p PRs   ctrl-d/u preview' \
     --print-query \
-    --expect=ctrl-n,ctrl-x,ctrl-g,ctrl-p \
+    --expect=ctrl-n,ctrl-x,ctrl-g,ctrl-p,ctrl-y \
+    --bind 'load:unbind(load)+reload-sync:bash "$WT_POPUP_SELF" --rows' \
     --bind 'ctrl-a:toggle-all,ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up' \
     --color="$fzf_colors" \
     --preview='git -C {2} -c color.status=always status -sb 2>/dev/null; echo; git -C {2} log --color=always --oneline -8 2>/dev/null' \
@@ -589,6 +651,8 @@ while true; do
     ctrl-g) reap_merged ;;
     # PR picker: exits the popup only when a worktree was actually created.
     ctrl-p) pick_pr && exit 0 ;;
+    # copy the marked rows' paths (or the highlighted one's), then close.
+    ctrl-y) copy_paths "$(printf '%s\n' "$selections" | cut -f2)" && exit 0 ;;
     # plain enter: switch to the (first) selected row; if nothing matched the
     # typed query, treat enter as "create it". Both exit the popup on success.
     *)
