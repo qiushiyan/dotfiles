@@ -40,7 +40,7 @@ Each suite owns one boundary:
 | portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive shells keep `git.zsh`'s `git()` and one fpath whatever they inherit; interactive cases run on a pty |
 | theme sync | startup + precmd switching against a throwaway `$HOME` |
 | gwt shell | completion, parent-shell entry, configured placement, caller HEAD, seeding, and compatibility shim in a temporary home |
-| git wrapper | the branch guard fires on a stale base and follows `gitguard on/off`; planlab pushes (clone and worktree) skip the pre-push hook, others run it; local repositories under a temporary home, no user git config, and a check that the live guard marker is untouched |
+| git wrapper | the branch guard fires on a stale base and follows `gitguard on/off`; under the working tree's `git/.gitconfig`, planlab pushes (clone and worktree) get `repo.pushArgs` and skip the pre-push hook, others run it; local repositories under a temporary home, no user git config, and a check that the live guard marker is untouched |
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree |
 | bypass guard | dormant hook logic through synthetic PreToolUse payloads |

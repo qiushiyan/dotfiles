@@ -17,6 +17,9 @@ setopt pipe_fail no_unset
 
 DOT="${0:A:h:h:h:h:h}"
 MODULE="$DOT/zsh/.config/zsh/git.zsh"
+# The push cases run under the working tree's own global git config, whose
+# includeIf decides which repositories get repo.pushArgs.
+GLOBAL="$DOT/git/.gitconfig"
 typeset -i PASS=0 FAIL=0
 SB="" H=""
 
@@ -57,13 +60,15 @@ eq() {  # eq <expected> <actual> <what>
   return 1
 }
 
-# A throwaway $HOME with a bare origin, a planlab clone at the path the
-# wrapper keys on by default, and an unrelated clone. Each clone's pre-push
+# A throwaway $HOME with a bare origin, a planlab clone at the path
+# git/.gitconfig's includeIf names (~/dev/planlab/main, ~ being this $HOME),
+# the include file it points at, and an unrelated clone. Each clone's pre-push
 # hook leaves a mark, so a push shows whether git ran it.
 sandbox() {
   SB=$(mktemp -d "${${TMPDIR:-/tmp}%/}/gw-test.XXXXXX"); SB=${SB:A}
   H="$SB/home"
-  mkdir -p "$H/.config" "$H/dev/planlab"
+  mkdir -p "$H/.config/git" "$H/dev/planlab"
+  cp "$DOT/git/.config/git/planlab.gitconfig" "$H/.config/git/"
   command git init -q --bare -b main "$SB/origin.git"
   command git clone -q "$SB/origin.git" "$SB/seed" 2>/dev/null
   command git -C "$SB/seed" commit -q --allow-empty -m initial
@@ -79,9 +84,11 @@ sandbox() {
 }
 
 # One zsh with nothing loaded but the module, run in <dir> against the
-# sandbox $HOME. The working tree's git.zsh, never the stowed copy.
+# sandbox $HOME. The working tree's git.zsh, never the stowed copy. Global git
+# config is /dev/null unless the caller sets PROBE_GLOBAL.
 probe() {  # probe <dir> <command>
-  ( cd "$1" && HOME="$H" command zsh -f -c 'source "$1"; eval "$2"' _ "$MODULE" "$2" )
+  ( cd "$1" && HOME="$H" GIT_CONFIG_GLOBAL="${PROBE_GLOBAL:-/dev/null}" \
+      command zsh -f -c 'source "$1"; eval "$2"' _ "$MODULE" "$2" )
 }
 
 # The sandbox guard. If $HOME did not take, the guard state below is the
@@ -137,10 +144,11 @@ test_gitguard_toggle() {
 }
 
 # A push from the planlab clone and from one of its worktrees lands without
-# running the pre-push hook, and says so.
+# running the pre-push hook, and says so: the real includeIf gives both
+# repo.pushArgs = --no-verify, and git() applies it.
 test_planlab_push_skips_hook() {
   sandbox
-  local clone="$H/dev/planlab/main" err
+  local clone="$H/dev/planlab/main" err PROBE_GLOBAL="$GLOBAL"
   command git -C "$clone" commit -q --allow-empty -m from-clone
   err=$(probe "$clone" 'git push -q origin HEAD:refs/heads/from-clone' 2>&1 >/dev/null) || {
     print -r -- "push from the clone failed: ${(qqq)err}"; return 1
@@ -156,11 +164,12 @@ test_planlab_push_skips_hook() {
     "branches the two pushes created on origin"
 }
 
-# Anywhere else a push is plain: the hook runs and nothing is announced. And
-# in the planlab clone, anything but push passes through untouched.
+# Anywhere else a push is plain: the same global config gives an unrelated
+# repository no push flags, so the hook runs and nothing is announced. And in
+# the planlab clone, anything but push passes through untouched.
 test_other_push_runs_hook() {
   sandbox
-  local err
+  local err PROBE_GLOBAL="$GLOBAL"
   command git -C "$SB/other" commit -q --allow-empty -m other
   err=$(probe "$SB/other" 'git push -q origin HEAD:refs/heads/other' 2>&1 >/dev/null) || {
     print -r -- "push failed: ${(qqq)err}"; return 1

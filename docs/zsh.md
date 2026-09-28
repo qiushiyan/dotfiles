@@ -51,7 +51,7 @@ Sourced by `.zshenv`; `toolchain.zsh` first, then the rest in glob order.
 zsh/.config/zsh/
   toolchain.zsh    # shared CLI paths, pnpm globals, default Node via nvm
   aliases.zsh
-  git.zsh          # git aliases, worktree helpers, gopen completion (binary: ~/dev/gopen), the one git() (branch guard, planlab push --no-verify), deferred completion registration
+  git.zsh          # git aliases, worktree helpers, gopen completion (binary: ~/dev/gopen), the one git() (branch guard, push flags from git config's repo.pushArgs), deferred completion registration
   nav.zsh          # n, take, drop, y, fcd, p/pp (planlab checkout; PLANLAB_DIR), ph (handoff briefs); pp/ph pull on both machines
   utils.zsh        # gitclean, loc, n, take, dotadd, …
   theme.zsh        # the $TERMINAL_THEME switch

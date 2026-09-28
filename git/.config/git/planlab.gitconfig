@@ -2,7 +2,7 @@
 #
 # planlab's pre-push hook (.githooks/pre-push) is only the git-lfs upload.
 # Everyday pushes skip it; push LFS assets with `command git push` or
-# `git lfs push --all origin <branch>`. The zsh git() wrapper in
-# ~/.config/zsh/git.zsh applies the same policy to pushes typed in a shell.
-[gopen]
+# `git lfs push --all origin <branch>`. repo.pushArgs is read by every tool
+# that pushes for you: the zsh git() wrapper (~/.config/zsh/git.zsh) and gopen.
+[repo]
 	pushArgs = --no-verify
