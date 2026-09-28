@@ -1,4 +1,4 @@
-# Case study: questions for a decision model — the steward's Jev judgments
+# Case study: classifier and judge questions — the steward's Jev judgments
 
 Read this when you write or revise a question that a classifier-style
 model answers and code acts on: a yes/no gate, a rubric grader, a closed

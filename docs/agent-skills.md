@@ -336,8 +336,8 @@ verdict into `prompt-engineering/EVIDENCE.md` with the new folder hash from
 
 1. **Graduate** — a general writing rule that is new or sharper than the
    rulebook's version. It enters the rulebook rewritten in the rulebook's
-   register and under the section it belongs to (the bar, a surface, the
-   revision pass), never pasted. Then run the rulebook's own revision pass
+   register and under the section it belongs to (a layer, every sentence, a
+   surface, the revision pass), never pasted. Then run the rulebook's own revision pass
    on the rulebook: an upstream addition is a reason to be better, not
    longer.
 2. **Mechanics** — anything about frontmatter, invocation, or routers.

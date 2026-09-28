@@ -293,8 +293,9 @@ what the input cannot show. The judge-specific sentence in *give the reason*
 went with the section. The main body is now 3592 words.
 
 The first case study landed the same day as
-`case-studies/jev-steward-judgments.md` (1854 words), written by the mini
-session. Checked against branch `37d41c0e38`: its file paths, the bands
+`case-studies/classifier-judge-questions-jev-steward.md` (1854 words, then
+named `jev-steward-judgments.md`), written by the mini session. Checked
+against branch `37d41c0e38`: its file paths, the bands
 (badge 0.6 / 0.3, residue 0.25 / 0.2), the 32k cap, the `hostWaits` join, and
 the counts (76 asking: 47 / 23 / 6; 46 non-asking, none yes; 34 residue
 files). One heading changed from "What changed, layer by layer" to "What
@@ -312,3 +313,100 @@ hit rate), and whether the rest leave it unread. Reversal condition: a
 stylised frame that changed an acting agent's behaviour on the real system,
 passes that invent situation text for agents that act, or case studies
 turning into a second rulebook that restates the body.
+
+## 2026-09-28 — restructure: the rules hang under the layers
+
+Seed: the user asked for the philosophy taught "in a more layered and
+structured approach", and the mini session's proofread of this file found
+two ways of organising it at once. The shape (three layers) was the central
+topic, while the rules lived in the bar, sorted by a different axis ("who
+reads it / what it says / what it proves"). As a result layer one sent the
+reader two sections away to the reader's world, and two rules had two
+homes: layer two's "constraints with their reasons" beside **Give the
+reason**, and layer one's "what done looks like" beside **Completion
+criteria**. The mini session proposed hanging every rule under a layer, plus
+a fourth group, "keeping it true over time".
+
+Built instead, after the user approved the design:
+
+- **Before any prose**: solve it in code first. It is the gate on whether
+  text exists at all, not a layer-two rule. Under a layer, one-layer
+  surfaces (tool results, errors), where *inform* matters most, would not
+  reach it.
+- **Write in layers**, each carrying its own rules. Layer one holds the
+  opening, the reader's world, and a checkable done (Completion criteria
+  merged, with the output contract). Layer two holds give the reason, right
+  altitude (now the one home of "steps only where order matters"), trigger,
+  action, skip, and earned emphasis. Layer three holds the traps and prove
+  what you prescribe. Formatting closes the section.
+- **Every sentence, on any surface**: cold reader, say what to do, shown
+  beats said, one home, no-ops. These are qualities of any line, including a
+  one-line error, so this group replaces the proposed fourth group. That
+  group would have brought a second axis back, since sediment and staleness
+  are the revision pass's job.
+- The defect lens is grouped under the same headings. It gains *prose doing
+  code's job* (solve-in-code had no failure name) and *no checkable done*
+  (split from *bare rule*).
+- The consumer that named the old sections, `docs/agent-skills.md`'s
+  graduate step, now names the new ones.
+
+Cold readers (three, fresh, read-only): a new `backup-check` skill from a
+user brief (restic plus Time Machine, two red lines); the error and success
+texts of a `ship deploy --env prod` staging gate (the one-layer route the
+mini session named as the risk); and the pass over `delegate/SKILL.md`,
+every line. On the layered structure, the skill reader said the rulebook's
+order "mostly matched the order of the work", and the pass reader said the
+grouped lens let "each finding trace back to its rule". The one-layer route
+failed once. **Prove what you prescribe** sat in layer three, the route
+pointed one-layer surfaces at Every sentence and their surface section, and
+the reader found the success-line rule "only by reading everything".
+
+Fixed, and where each fix came from:
+- Prove what you prescribe moved to Every sentence (error reader).
+- A claim that cannot be checked where you are becomes a pointer to where
+  the reader checks it, or ships marked unverified; the done condition
+  follows (skill reader, and the 09-28 revision reader before it, so two
+  independent readers).
+- Solve-in-code gained its skip: a mechanism outside the requested
+  artifact is offered, not built; inside a skill, a bundled script is the
+  in-scope form (skill reader).
+- `never` has one rule: a hard boundary, including one the user drew,
+  paired with what to do instead; earned emphasis points there (skill
+  reader; the upstream pairing had been lost in the fold).
+- The two Fable policies are carried as the clauses the situation calls
+  for, in the surface's terms (skill reader, and the 09-28 revision reader
+  before it). The pipeline pause clause names Give the reason as its echo
+  (error reader).
+- Done is "give … a condition", not "end on" (skill reader).
+- Trap placement has one home, layer three (skill reader).
+- An error or a refusal names the rule and the state that failed it, and
+  "the cause in one line", not "the reason line" (error reader).
+- Step 2 reads the last commit when there is no session diff; the lens no
+  longer claims to cover every rule, and a finding with no name cites its
+  rule; *buried outcome* is added (the policies gave the pass its
+  top findings); *unearned certainty* covers a claim its source
+  contradicts; *config-conditional prose* keeps its assembled-prompt scope;
+  step 5 points at the truth-claim rule instead of restating it; keeps
+  are recorded in the commit or the evidence log (pass reader).
+
+Not applied:
+- A rule for a next action the tool lacks: the fallback and solve-in-code
+  carry it.
+- Moving Context and Tools out: they are general surfaces, unlike judges.
+- A lens name for every rule: a finding cites its rule instead.
+- The `argument-hint` ambiguity and the siblings' differing header order:
+  these belong to SKILL-MECHANICS and `docs/agent-skills.md`.
+- The philosophy's summary of "state each constraint with its reason": a
+  deliberate keep, since the philosophy states the thesis the sections
+  carry.
+
+Length: 3651 → 3901 words. The prediction was shorter: the two duplicates
+went, but the lens group labels, the intro's map sentence, and the
+one-layer route cost more than they saved. Most of the growth is the
+readers' named gaps.
+
+The case study was renamed the same day, at the user's request, from
+`jev-steward-judgments.md` to `classifier-judge-questions-jev-steward.md`,
+and its title now leads with "classifier and judge questions". A session
+searching by topic ("classifier", "judge") finds it without knowing Jev or
+the steward.
