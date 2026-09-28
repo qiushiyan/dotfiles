@@ -18,8 +18,8 @@
 #   ctrl-x       remove the marked worktrees (or the highlighted one if none are
 #                marked) as ONE confirmed batch — trash-and-sweep, see below
 #   ctrl-g       reap: batch-remove every clean worktree whose branch is already
-#                merged into the default base (end-of-week cleanup in 3 keys)
-#                — "merged" counts squash and rebase merges, and the base is
+#                merged into the trunk (end-of-week cleanup in 3 keys) — gwt's
+#                verdict counts squash and rebase merges, and the trunk is
 #                refreshed first, so a PR you merged in the browser counts too
 #   ctrl-p       PR picker: list open GitHub PRs via gh; enter checks one out
 #                into a worktree, ctrl-o opens it in the browser, ctrl-r
@@ -83,71 +83,55 @@ source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
 
 # Marker column: » (green) = the worktree the popup was launched from,
 # * (yellow) = dirty. Plain ANSI colors so the terminal theme maps them. A clean
-# worktree whose branch has already landed also gets a dim "· merged" tag — now
-# that merged-ness counts squash and rebase merges it is worth trusting, and
-# seeing the reap set BEFORE pressing ctrl-g is the difference between a cleanup
-# and a surprise. Disable with @worktree_show_merged off.
+# worktree whose branch has already landed also gets a dim "· merged" tag, so
+# the reap set is visible BEFORE pressing ctrl-g. Disable with
+# @worktree_show_merged off.
 #
-# One row = one `git status` (+ the merge test), so rows are built in PARALLEL
-# via wt_fanout. Even fanned out, 25 worktrees cost ~0.3s, and ~1s when a moved
-# base empties the merge memo, so these rows are not the first paint (bare_rows).
-row_for() {
-  local path="$1" branch="$2" base="$3" show_merged="$4" here=" " dirty=" " tag=""
-  [ "$path" = "$cur_top" ] && here=$'\033[32m»\033[0m'
-  if [ -n "$(git --no-optional-locks -C "$path" status --porcelain 2>/dev/null)" ]; then
-    dirty=$'\033[33m*\033[0m'
-  elif [ -n "$show_merged" ] && [ "$path" != "$main_top" ] && [ "$path" != "$cur_top" ] \
-       && [ "$branch" != "(detached)" ] && wt_merged_into "$branch" "$base"; then
-    # only where it's actionable: the main worktree and the one you're in can
-    # never be removed, and a dirty worktree can never be reaped.
-    tag=$'\033[32m · merged\033[0m'
-  fi
-  printf '%s%s %s%s\t%s\t%s\n' "$here" "$dirty" "$branch" "$tag" "$path" "$branch"
-}
-
-# "<path>\t<branch>" per worktree, in git's order. Detached entries have no
-# branch to test, but still belong in the list. Both row builders read this, so
-# the bare and probed lists hold the same rows in the same order.
-worktree_entries() {
-  git worktree list --porcelain | awk '
-    /^worktree /{p = substr($0, 10)}
-    /^branch /  {b = $2; sub("refs/heads/", "", b); print p "\t" b}
-    /^detached$/{print p "\t(detached)"}
-  '
-}
-
-list_worktrees() {
-  local base="" show_merged=""
+# gwt list owns the probes: a status per worktree and a merged verdict against
+# the trunk (squash and rebase merges included), memoized, one Git process per
+# CPU. They cost ~0.3-1s on 25 worktrees, so they are not the first paint.
+# The tag is shown only where it is actionable: the main worktree and the one
+# you are in can never be removed, and a dirty worktree is never reaped.
+probed_rows() {
+  local json show=true
   case "$(tmux show-option -gqv @worktree_show_merged 2>/dev/null)" in
-    off|0|false|no|disabled) ;;
-    *) show_merged=1; base="$(wt_default_base)" ;;
+    off|0|false|no|disabled) show=false ;;
   esac
-  worktree_entries | wt_fanout row_for "$base" "$show_merged"
+  json="$(gwt list --json 2>/dev/null)" || { bare_rows; return; }
+  printf '%s\n' "$json" | jq -r --argjson show "$show" '
+    .worktrees[]
+    | (.branch // "(detached)") as $b
+    | (if .current then "\u001b[32m»\u001b[0m" else " " end)
+      + (if .dirty then "\u001b[33m*\u001b[0m" else " " end)
+      + " " + $b
+      + (if $show and .merged == true and (.main or .current or .dirty | not)
+         then "\u001b[32m · merged\u001b[0m" else "" end)
+      + "\t" + .path + "\t" + $b'
 }
 
-# The first paint: row_for's layout with the probed columns blank, for the cost
-# of one `git worktree list`. The picker loads these, and its load event re-runs
-# this script with --rows to swap in list_worktrees' rows once all of them are
-# ready. reload-sync keeps the bare list live meanwhile; --id-nth=2 (the path)
-# carries marks across the swap, and the cursor keeps its index because both
-# lists come from worktree_entries in the same order. --track would also block
-# typing until the swap, so it stays off.
+# The first paint: probed_rows' layout with the probed columns blank, for the
+# cost of one `git worktree list`. The picker loads these, and its load event
+# re-runs this script with --rows to swap in the probed rows once gwt returns.
+# reload-sync keeps the bare list live meanwhile; --id-nth=2 (the path) carries
+# marks across the swap, and the cursor keeps its index because gwt lists the
+# same worktrees in the same (Git's) order: bare repositories are skipped,
+# detached and prunable checkouts kept. --track would also block typing until
+# the swap, so it stays off.
 bare_rows() {
-  local path branch here
-  worktree_entries | while IFS=$'\t' read -r path branch; do
-    [ -n "$path" ] || continue
-    here=" "; [ "$path" = "$cur_top" ] && here=$'\033[32m»\033[0m'
-    printf '%s  %s\t%s\t%s\n' "$here" "$branch" "$path" "$branch"
-  done
+  git worktree list --porcelain | awk -v cur="$cur_top" '
+    function row(b) { printf "%s  %s\t%s\t%s\n", (p == cur ? "\033[32m»\033[0m" : " "), b, p, b }
+    /^worktree /{p = substr($0, 10)}
+    /^branch /  {b = $2; sub("refs/heads/", "", b); row(b)}
+    /^detached$/{row("(detached)")}
+  '
 }
 
 cur_top="$(git rev-parse --show-toplevel 2>/dev/null)"   # the worktree we're IN
 
-# fzf's re-entry for the probed rows. It runs in the picker's cwd, so cur_top is
-# the parent's, and it skips every startup side effect below.
+# fzf's re-entry for the probed rows. It runs in the picker's cwd, so gwt's
+# "current" is the parent's cur_top, and it skips every startup side effect.
 if [ "${1:-}" = --rows ]; then
-  main_top="$(wt_main_worktree)"
-  list_worktrees
+  probed_rows
   exit 0
 fi
 
@@ -181,7 +165,7 @@ wt_shell_quote() {
 trash_dir_for() { printf '%s/.trash' "${1%/*}"; }
 
 # Housekeeping, beside the first paint. Nothing waits on this job;
-# await_base_fetch waits on its own pid only.
+# await_trunk waits on its own pid only.
 #   - Self-heal: sweep whatever a crashed/killed popup left in the trash — only
 #     entries older than 2 minutes, so this never races the sweep another live
 #     popup just scheduled.
@@ -189,37 +173,39 @@ trash_dir_for() { printf '%s/.trash' "${1%/*}"; }
 #     before discarding uncommitted work or force-deleting a branch. They pin
 #     objects, so they expire too — same age gate, different store.
 #     @worktree_backup_days 0 keeps them forever.
-#   - Cap the merge memo.
+#   - Drop the shell's retired merge memos; gwt keeps its own (gwt-merged-v1).
 {
   root="$(wt_worktree_root)" &&
     tmux run-shell -b "find $(wt_shell_quote "$(trash_dir_for "$root")") -mindepth 1 -maxdepth 1 -mmin +2 -exec rm -rf {} + 2>/dev/null; true"
   days="$(tmux show-option -gqv @worktree_backup_days)"
   wt_prune_backups "${days:-30}"
-  wt_trim_merged_cache
+  common="$(git rev-parse --path-format=absolute --git-common-dir)" &&
+    rm -f "$common"/wt-merged-cache "$common"/wt-merged-cache-v2 "$common"/wt-merged-cache-v3
 } >/dev/null 2>&1 &
 
-# --- base freshness (background) ------------------------------------------------
+# --- trunk freshness (background) -----------------------------------------------
 
-# Every merged/unmerged verdict below is read off the base's remote-tracking ref,
-# which is frozen at your last fetch — merge a PR in the browser and its branch
-# still reads "NOT merged" here. So refresh it, but never make anyone WATCH a
-# fetch: fire it at startup and await it only at the point a verdict is actually
-# needed, by which time browsing the list has usually paid for it. The job reads
-# gwt's freshness window itself and fetches only when the base is stale; exit 0
-# means fresh. Bounded by `timeout` inside wt_fetch_base.
-( wt_base_is_stale || exit 0; wt_fetch_base ) >/dev/null 2>&1 &
+# Every merged verdict is read off the trunk's remote-tracking ref, which is
+# frozen at your last fetch — merge a PR in the browser and its branch still
+# reads "NOT merged". So refresh it, but never make anyone WATCH a fetch: start
+# `gwt trunk --fetch` now (it fetches only when the trunk is older than gwt's
+# fetch.max_age, bounded by fetch.timeout) and await it only where a verdict is
+# needed, by which time browsing the list has usually paid for it.
+wt_trunk_json="$(mktemp "${TMPDIR:-/tmp}/wt-trunk.XXXXXX")"
+trap 'rm -f "$wt_trunk_json"' EXIT
+gwt trunk --fetch --json > "$wt_trunk_json" 2>/dev/null &
 wt_fetch_pid=$!
-wt_fetch_note=""
 
-# Block until the startup fetch lands. A FAILED probe is announced, not
-# swallowed: grading against a stale base is exactly the false alarm we're here
-# to remove, so the user has to know when we're doing it.
-await_base_fetch() {
+# Block until the startup refresh lands. A FAILED fetch is announced, not
+# swallowed: grading against a stale trunk is exactly the false alarm we're
+# here to remove, so the user has to know when we're doing it.
+await_trunk() {
   [ -n "$wt_fetch_pid" ] || return 0
-  kill -0 "$wt_fetch_pid" 2>/dev/null && printf 'refreshing %s…\n' "$(wt_base_display)"
-  wait "$wt_fetch_pid" 2>/dev/null || wt_fetch_note="could not refresh $(wt_base_remote) — merge status is as of your last fetch"
+  kill -0 "$wt_fetch_pid" 2>/dev/null && echo "refreshing the trunk…"
+  wait "$wt_fetch_pid" 2>/dev/null
   wt_fetch_pid=""
-  [ -n "$wt_fetch_note" ] && printf '\033[33m%s\033[0m\n' "$wt_fetch_note"
+  jq -r 'select(.fetch_error) | "could not refresh \(.remote) — merge status is as of your last fetch"' \
+    "$wt_trunk_json" 2>/dev/null | while IFS= read -r note; do printf '\033[33m%s\033[0m\n' "$note"; done
   return 0
 }
 
@@ -343,7 +329,7 @@ copy_paths() {
 
 # --- removal: trash-and-sweep ---------------------------------------------------
 
-# Delete a branch we have ALREADY established is contained in the base.
+# Delete a branch gwt has ALREADY established is contained in the trunk.
 # `git branch -d` refuses a squash- or rebase-merged branch, because git's own
 # "fully merged" test is the graph-only one — so the safe -d silently left
 # exactly the branches this cleanup is most often about. We verified containment
@@ -453,25 +439,32 @@ batch_remove() {
   # warning, so unmerged work is never silently dropped.
   # `git branch -d/-D` also removes the branch's [branch …] config section.
   #
-  # "Merged" is wt_merged_into, against a base refreshed a moment ago — it counts
+  # "Merged" is gwt's verdict against a trunk refreshed a moment ago — it counts
   # squash- and rebase-merges, which the plain ancestor test cannot see. That
   # matters here more than anywhere: a shipped branch landing in the "NOT merged"
   # list is a warning you learn to ignore, and the next time it's real you force
-  # past it out of habit.
-  local base merged="" unmerged="" nm=0 nu=0 b
-  await_base_fetch
-  base="$(wt_default_base)"
-  [ "$removed" -gt 0 ] && printf 'checking branches against %s…\n' "$(wt_base_display "$base")"
+  # past it out of habit. One gwt call judges every branch; a branch it cannot
+  # judge counts as unmerged, so it is only ever deleted behind the force prompt.
+  local trunk="the trunk" branches="" verdicts="" merged="" unmerged="" nm=0 nu=0 b
+  await_trunk
+  while IFS= read -r b; do
+    [ -n "$b" ] && [ "$b" != "(detached)" ] || continue
+    git show-ref --verify --quiet "refs/heads/$b" && branches="$branches$b"$'\n'
+  done <<< "$gone"
+  if [ -n "$branches" ]; then
+    echo "checking branches against the trunk…"
+    # Unquoted on purpose: ref names cannot hold whitespace or glob characters.
+    verdicts="$(gwt merged --json $branches 2>/dev/null)"
+    trunk="$(printf '%s' "$verdicts" | jq -r '.trunk.name // "the trunk"' 2>/dev/null)" || trunk="the trunk"
+  fi
   while IFS= read -r b; do
     [ -n "$b" ] || continue
-    [ "$b" = "(detached)" ] && continue
-    git show-ref --verify --quiet "refs/heads/$b" || continue
-    if wt_merged_into "$b" "$base"; then
+    if [ "$(printf '%s' "$verdicts" | jq -r --arg b "$b" '.branches[] | select(.branch == $b) | .merged' 2>/dev/null)" = true ]; then
       merged="$merged$b"$'\n'; nm=$((nm+1))
     else
       unmerged="$unmerged$b"$'\n'; nu=$((nu+1))
     fi
-  done <<< "$gone"
+  done <<< "$branches"
   if [ "$nm" -gt 0 ]; then
     printf 'delete %d merged branch(es)? [Y/n] ' "$nm"; read -r ans
     case "$ans" in
@@ -482,7 +475,7 @@ batch_remove() {
     esac
   fi
   if [ "$nu" -gt 0 ]; then
-    printf '%d branch(es) NOT merged into %s:\n' "$nu" "$(wt_base_display "$base")"
+    printf '%d branch(es) NOT merged into %s:\n' "$nu" "$trunk"
     printf '%s' "$unmerged" | sed 's/^/  /'
     printf 'force-delete them? their tips are kept as refs first [y/N] '; read -r ans
     case "$ans" in
@@ -513,23 +506,26 @@ batch_remove() {
 }
 
 # ctrl-g: reap — batch-remove every clean worktree already merged into the
-# default base. Candidacy (linked + clean + merged incl. squash/rebase merges) is
-# wt_reap_candidates in worktree-core.sh; the current worktree is additionally
-# excluded by batch_remove's own guard. One confirm, then trash-and-sweep.
-# The base is refreshed first (await_base_fetch) — reap's whole value is that it
-# knows what has landed, and it knew nothing newer than your last fetch.
+# trunk (squash and rebase merges included), from `gwt list` run after the
+# trunk refresh lands: reap's whole value is that it knows what has landed, and
+# it knew nothing newer than your last fetch. Main, dirty, locked, detached, and
+# missing checkouts never qualify; batch_remove also skips the current one.
+# One confirm, then trash-and-sweep.
 reap_merged() {
-  local cand base
-  await_base_fetch
-  base="$(wt_base_display)"
-  echo "checking which worktrees are merged into $base…"
-  cand="$(wt_reap_candidates)"
+  local listing cand trunk
+  await_trunk
+  echo "checking which worktrees are merged into the trunk…"
+  listing="$(gwt list --json)" || { sleep 2; return; }
+  trunk="$(printf '%s' "$listing" | jq -r .trunk.name)"
+  cand="$(printf '%s' "$listing" | jq -r '.worktrees[]
+    | select(.merged == true and (.main or .dirty or .locked or .prunable | not))
+    | "\(.path)\t\(.branch)"')"
   if [ -z "$cand" ]; then
-    echo "nothing to reap — no clean worktree is fully merged into $base"
+    echo "nothing to reap — no clean worktree is fully merged into $trunk"
     sleep 1.5
     return
   fi
-  echo "reap: clean worktrees already merged into $base"
+  echo "reap: clean worktrees already merged into $trunk"
   batch_remove "$cand"
 }
 

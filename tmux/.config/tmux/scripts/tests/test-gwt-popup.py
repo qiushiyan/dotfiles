@@ -106,5 +106,29 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         run(tmux+['send-keys','-t',pane,'C-y'])
         assert sorted(copied().split('\n')) == sorted([str(repo), str(tree)]), 'marked rows copy one path per line'
         print('PASS: probed rows replace the bare list; ctrl-y copies the highlighted or marked paths aimed at the invoking session, and closes')
+
+        # Reap: gwt's verdict tags a worktree at the trunk (main) as merged, and
+        # ctrl-g removes its checkout and, after gwt merged agrees, its branch.
+        # feat/popup forked from caller-topic, which main does not contain.
+        reaped = run(['gwt','create','-n','--no-copy','reap-me','main'], repo).stdout.strip()
+        def wait_for(text):
+            deadline=time.monotonic()+10
+            while time.monotonic()<deadline:
+                cap=run(tmux+['capture-pane','-pt',pane]).stdout
+                if text in cap: return cap
+                time.sleep(.1)
+            raise AssertionError('never saw '+repr(text)+': '+cap)
+        run(tmux+['send-keys','-t',pane,'-l','clear; '+command]); run(tmux+['send-keys','-t',pane,'Enter'])
+        cap = wait_for('reap-me · merged')
+        assert 'feat/popup · merged' not in cap, cap
+        run(tmux+['send-keys','-t',pane,'C-g'])
+        wait_for('proceed? [y/N]'); run(tmux+['send-keys','-t',pane,'y','Enter'])
+        wait_for('merged branch(es)? [Y/n]'); run(tmux+['send-keys','-t',pane,'Enter'])
+        wait_for('enter switch/create')
+        assert not pathlib.Path(reaped).exists(), 'reaped checkout remains'
+        assert run(['git','show-ref','--verify','--quiet','refs/heads/reap-me'], repo, check=False).returncode == 1, 'reaped branch remains'
+        assert tree.exists() and run(['git','show-ref','--verify','--quiet','refs/heads/feat/popup'], repo, check=False).returncode == 0, 'unmerged worktree touched'
+        run(tmux+['send-keys','-t',pane,'Escape'])
+        print('PASS: gwt tags the trunk-merged worktree; ctrl-g reaps its checkout and branch and leaves unmerged work')
     finally:
         run(tmux+['kill-server'],check=False)

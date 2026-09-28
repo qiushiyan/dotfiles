@@ -27,10 +27,11 @@ through PATH, which is how the popup test substitutes a stub.
 
 ## First paint before probes
 
-Dirty marks and merged tags cost a `git status` and a merge test per worktree:
-~0.3s fanned out over 25 worktrees, ~1s after a base move empties the merge
-memo. The picker therefore opens on bare rows from `git worktree list`, with
-the probed columns blank, and swaps in the probed rows once:
+Dirty marks and merged tags come from `gwt list --json`: a status and a merge
+verdict per worktree, ~0.3-1s over 25 worktrees depending on load and on
+whether a moved trunk emptied gwt's memo. The picker therefore opens on bare
+rows from `git worktree list`, with the probed columns blank, and swaps in the
+probed rows once:
 
 ```text
 bare_rows | fzf --id-nth=2 --bind 'load:unbind(load)+reload-sync:<script> --rows'
@@ -40,13 +41,14 @@ bare_rows | fzf --id-nth=2 --bind 'load:unbind(load)+reload-sync:<script> --rows
   would stay empty until the probes finish.
 - `reload-sync` keeps the bare list live, so typing and moving never wait.
 - `--id-nth=2` (the path) carries marks across the swap. The cursor keeps its
-  index because both lists come from `worktree_entries` in the same order.
+  index because gwt lists the same worktrees in Git's order: bare repositories
+  skipped, detached and prunable checkouts kept, as `bare_rows` does.
 - No `--track`: with `--id-nth` it blocks input until a `reload-sync` completes.
 
 Startup work the list does not need runs in the background: trash sweep, backup
-pruning, the memo cap, and the fetch job, which reads gwt's freshness window
-itself. Listing, switching, and copying therefore work even if gwt's config
-fails to load. Removal resolves the gwt root when it runs.
+pruning, and `gwt trunk --fetch`. Listing, switching, and copying therefore work
+even if gwt fails; the probed rows then fall back to the bare ones. Removal
+resolves the gwt root when it runs.
 
 ## fzf is a positional protocol
 

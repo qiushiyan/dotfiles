@@ -6,7 +6,7 @@ optional list of case ids to narrow the run:
 ```bash
 bash tmux/.config/tmux/scripts/tests/test-pane-control.sh        [T5 T14 …]
 bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
-bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W2 W10 …]
+bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W15 W36 …]
 python3 tmux/.config/tmux/scripts/tests/test-gwt-popup.py        # requires gwt, tmux, fzf
 python3 tmux/.config/tmux/scripts/tests/test-popup-overlay.py --stock <known-broken-binary> --candidate <candidate-binary>
 python3 tmux/.config/tmux/scripts/tests/test-cout.py            # requires tmux, zsh, oh-my-posh
@@ -30,8 +30,8 @@ Each suite owns one boundary:
 |---|---|
 | pane control | float, restore, and pane-mode transactions on an isolated tmux socket |
 | context chip | publication, shedding, cleanup, and quota refresh without the live cache |
-| worktree core | tmux-free base, merge, snapshot, and reap rules; requires installed gwt, copied into the temporary home |
-| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery; probed rows replace the bare first paint; ctrl-y copies through a stub `toclip`; private tmux socket |
+| worktree core | tmux-free snapshots, recovery refs and their expiry, and removal parent cleanup; merge verdicts are tested in `~/dev/gwt` |
+| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery; probed rows replace the bare first paint; ctrl-y copies through a stub `toclip`; ctrl-g reaps what gwt calls merged and leaves unmerged work; private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | command/output pairing across nested shells, indexed copies, recorder retention/cleanup, and terminal rendering with the real transient prompt; private tmux sockets, a temporary home, and a fake clipboard isolate state |
 | Claude sessions | shared-store topology and repair, plus launcher routing and workspace effort, against a throwaway `$HOME` |

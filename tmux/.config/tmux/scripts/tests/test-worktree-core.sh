@@ -3,15 +3,15 @@
 #
 # Usage: bash test-worktree-core.sh [W1 W5 ...]
 #
-# Scope is the tmux-FREE support (merged-ness, base freshness, snapshots, and
-# removal). The popup's tmux glue is not exercised here; it needs a
-# scratch server (see worktree.md).
+# Scope is the tmux-FREE support the shell still owns: snapshots, recovery refs
+# and their expiry, and removal's parent cleanup. Merge verdicts, the trunk, and
+# its freshness belong to gwt and are tested in ~/dev/gwt. The popup's tmux glue
+# needs a scratch server (tests/test-gwt-popup.py).
 #
-# ISOLATION. wt_worktree_root builds paths under $HOME/dev/.worktrees, so a case
-# that ran against the real HOME would create worktrees inside the user's own
-# store — and `git fetch` against a real remote would reach the network. Every
-# case runs with HOME pointed at a sandbox and a file:// "remote" built there;
-# W12 asserts the real worktree store is untouched.
+# ISOLATION. Worktree paths derive from $HOME/dev/.worktrees, so a case that ran
+# against the real HOME would create worktrees inside the user's own store.
+# Every case runs with HOME pointed at a sandbox; W12 asserts the real worktree
+# store is untouched.
 
 set -uo pipefail
 
@@ -19,7 +19,6 @@ CORE="$(cd "$(dirname "$0")/.." && pwd)/worktree-core.sh"
 PASS=0; FAIL=0; FAILED=""
 
 SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/wt-core-test.XXXXXX")
-GWT_BIN="$(command -v gwt)" || { echo "test-worktree-core: install gwt on PATH first" >&2; exit 1; }
 REAL_WT="$HOME/dev/.worktrees"
 REAL_BEFORE=$(ls -A "$REAL_WT" 2>/dev/null | sort)
 
@@ -37,9 +36,6 @@ export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER
 export HOME="$SANDBOX"
 export XDG_CONFIG_HOME="$SANDBOX/.config"
 unset GWT_CONFIG
-mkdir -p "$SANDBOX/bin"
-cp "$GWT_BIN" "$SANDBOX/bin/gwt" || exit 1
-export PATH="$SANDBOX/bin:$PATH"
 export GIT_CONFIG_GLOBAL="$SANDBOX/gitconfig"; : > "$GIT_CONFIG_GLOBAL"
 
 # Run a core function inside a repo: C <repo> <fn> [args...]
@@ -47,150 +43,19 @@ C() { (cd "$1" && shift && source "$CORE" && "$@" 2>&1); }
 # Same, reporting only the exit status — for the predicates.
 Cq() { (cd "$1" && shift && source "$CORE" && "$@" >/dev/null 2>&1) && echo yes || echo no; }
 
-# --- fixture: an "upstream" carrying every way work lands on a base ------------
-#
-# up/ is a BARE remote (a non-bare one refuses a push to its checked-out branch);
-# repo/ pushes to it, so origin/HEAD resolves the way it does in real life. Four
-# branches, one per merge style — the point of the fixture is that only ONE of
-# them is an ancestor of the base.
-UP="$SANDBOX/up.git"
-git init -q --bare -b main "$UP"
+# --- fixture: a repository with one tracked file --------------------------------
 
 REPO="$SANDBOX/repo"
 git init -q -b main "$REPO"
-git -C "$REPO" remote add origin "$UP"
-git -C "$REPO" commit -q --allow-empty -m init
-git -C "$REPO" push -q -u origin main
-git -C "$REPO" remote set-head origin -a >/dev/null 2>&1
-
-mkbranch() {  # two commits on a branch off main
-    git -C "$REPO" checkout -q -b "$1" main
-    for i in 1 2; do echo "$1-$i" >> "$REPO/$1.txt"; git -C "$REPO" add .; git -C "$REPO" commit -qm "$1 c$i"; done
-    git -C "$REPO" checkout -q main
-}
-mkbranch squashed
-mkbranch rebased
-mkbranch trumerged
-mkbranch open
-
-git -C "$REPO" merge -q --squash squashed >/dev/null && git -C "$REPO" commit -qm "squashed (#1)"
-# NB: no -q — cherry-pick has no such flag, and swallowing its output turned a
-# fixture that never rebased anything into a green "not merged" verdict.
-git -C "$REPO" cherry-pick $(git -C "$REPO" rev-list --reverse main..rebased) >/dev/null \
-  || { echo "fixture: cherry-pick failed"; exit 1; }
-git -C "$REPO" merge -q --no-ff trumerged -m "Merge trumerged"
-git -C "$REPO" push -q origin main
-git -C "$REPO" fetch -q origin
-
-# --- merged-ness --------------------------------------------------------------
-
-# W1  The graph-visible case. A real merge commit makes the branch an ancestor;
-#     this is the only style the old `merge-base --is-ancestor` test could see.
-CASE=W1; want "$@" && ok W1 yes "$(Cq "$REPO" wt_merged_into trumerged origin/main)"
-
-# W2  THE BUG. GitHub's "Squash and merge" puts one brand-new commit on the base
-#     that shares no history with the branch, so the ancestor test says "not
-#     merged" about work that is demonstrably shipped — and ctrl-x then demands
-#     a force-delete "drops their commits" for every squash-merged branch.
-CASE=W2; want "$@" && ok W2 yes "$(Cq "$REPO" wt_merged_into squashed origin/main)"
-
-# W3  "Rebase and merge" re-authors the commits: same patches, new SHAs, still
-#     not ancestors. Caught per-commit rather than by the collapsed tree.
-CASE=W3; want "$@" && ok W3 yes "$(Cq "$REPO" wt_merged_into rebased origin/main)"
-
-# W4  The verdict that must stay NO. Everything above widens what counts as
-#     merged, and the cost of widening too far is a silently deleted branch.
-CASE=W4; want "$@" && ok W4 no "$(Cq "$REPO" wt_merged_into open origin/main)"
-
-# W5  A branch with no net change against the merge base has no patch to match
-#     on; an empty diff must not read as "already applied".
-git -C "$REPO" checkout -q -b noop main
-echo x > "$REPO/x"; git -C "$REPO" add .; git -C "$REPO" commit -qm add
-git -C "$REPO" rm -q "$REPO/x"; git -C "$REPO" commit -qm remove
-git -C "$REPO" checkout -q main
-CASE=W5; want "$@" && ok W5 no "$(Cq "$REPO" wt_merged_into noop origin/main)"
-
-# --- the memo -----------------------------------------------------------------
-#
-# Both cases poison the cache with a verdict we know is WRONG. That is the only
-# way to prove the memo is really being read rather than silently recomputed —
-# and, in W23, that a moved base doesn't reuse it.
-
-CACHE="$(C "$REPO" wt_merged_cache_file)"
-poison() { printf '%s %s %s\n' "$(git -C "$REPO" rev-parse "$1^{commit}")" \
-                               "$(git -C "$REPO" rev-parse origin/main^{commit})" "$2" > "$CACHE"; }
-
-# W22  A hit is served from the memo. Without it, the popup recomputes a
-#      patch-id scan per worktree on every open to get an answer that only
-#      changes when a ref moves.
-poison open 1
-CASE=W22; want "$@" && ok W22 yes "$(Cq "$REPO" wt_merged_into open origin/main)"
-
-# W23  ...and the key is BOTH shas, so advancing the base retires the entry.
-#      A memo keyed on the branch alone would keep answering "merged" after the
-#      base moved — a cached verdict is what gets a branch force-deleted.
-git -C "$REPO" commit -q --allow-empty -m "base moves on"
-git -C "$REPO" push -q origin main && git -C "$REPO" fetch -q origin
-CASE=W23; want "$@" && ok W23 no "$(Cq "$REPO" wt_merged_into open origin/main)"
-rm -f "$CACHE"
-
-# --- base resolution ----------------------------------------------------------
-
-# W6  The base is the origin/HEAD symref, whatever the default branch is called.
-CASE=W6; want "$@" && ok W6 origin/HEAD "$(C "$REPO" wt_default_base)"
-
-# W7  ...but a HUMAN must never be shown "origin/HEAD" — "not merged into
-#     origin/HEAD" reads as an internal error, not as a fact about main.
-CASE=W7; want "$@" && ok W7 origin/main "$(C "$REPO" wt_base_display)"
-
-# W8  The remote to refresh comes from the FULL ref name. Splitting the short
-#     name on "/" would read a local branch `feat/x` as a remote called `feat`.
-CASE=W8; want "$@" && ok W8 origin "$(C "$REPO" wt_base_remote)"
-
-# W9  A repo with no remote has nothing to fetch — the base falls back to a
-#     local branch, and wt_base_remote must stay silent rather than guess.
-LOCAL="$SANDBOX/local"; git init -q -b main "$LOCAL"; git -C "$LOCAL" commit -q --allow-empty -m init
-CASE=W9; want "$@" && ok W9 "" "$(C "$LOCAL" wt_base_remote)"
-
-# --- base freshness -----------------------------------------------------------
-
-# W10  A fetch that was killed mid-flight truncates FETCH_HEAD to empty with a
-#      FRESH mtime. Testing mtime alone reads that as "just fetched" and skips
-#      the refresh — the state where the answer is least trustworthy.
-: > "$REPO/.git/FETCH_HEAD"
-CASE=W10; want "$@" && ok W10 yes "$(Cq "$REPO" wt_base_is_stale)"
-
-# W11  A real recent fetch is fresh, so the popup skips the network.
-git -C "$REPO" fetch -q origin
-CASE=W11; want "$@" && ok W11 no "$(Cq "$REPO" wt_base_is_stale)"
-
-# --- fan-out ------------------------------------------------------------------
-
-# W13  Output order must be INPUT order, not completion order. The rows carry
-#      the markers the popup draws, so a list that reshuffles itself between
-#      openings is a list you can't build muscle memory on.
-#      Completion order here is c, b, a — the reverse of input order.
-slow_echo() { case "$1" in a) sleep 0.3 ;; b) sleep 0.15 ;; esac; printf '%s%s\n' "$1" "$2"; }
-CASE=W13; want "$@" && ok W13 "a1 b2 c3" "$(
-    (source "$CORE"; printf 'a\t1\nb\t2\nc\t3\n' | wt_fanout slow_echo) | tr '\n' ' ' | sed 's/ $//')"
-
-# W14  A bare `wait` inside the fan-out must not adopt the CALLER's background
-#      job. The popup starts a base fetch in the background and awaits it later;
-#      a fan-out that waited on it would block the list on the network — the one
-#      thing backgrounding that fetch exists to prevent.
-CASE=W14; want "$@" && ok W14 fast "$(
-    ( source "$CORE" >/dev/null 2>&1
-      sleep 5 & CALLER=$!
-      start=$SECONDS
-      printf 'x\t1\n' | wt_fanout printf >/dev/null
-      [ $((SECONDS - start)) -lt 3 ] && echo fast || echo "blocked for $((SECONDS - start))s"
-      kill "$CALLER" 2>/dev/null ) )"
+echo base > "$REPO/tracked.txt"
+git -C "$REPO" add tracked.txt
+git -C "$REPO" commit -qm init
 
 # --- pre-deletion safety net ---------------------------------------------------
 
 SNAP="$SANDBOX/dev/.worktrees/proj/snapme"
 git -C "$REPO" worktree add -q "$SNAP" -b snapme main
-printf 'tracked-edit\n' >> "$SNAP/squashed.txt"
+printf 'tracked-edit\n' >> "$SNAP/tracked.txt"
 printf 'brand new\n' > "$SNAP/untracked.txt"
 printf 'ignored\n' > "$SNAP/ignore-me"
 printf 'ignore-me\n' > "$SNAP/.gitignore"
@@ -202,7 +67,7 @@ SNAP_SHA=$(C "$SNAP" wt_snapshot_worktree "$SNAP" "test snapshot")
 CASE=W15; want "$@" && ok W15 "brand new" "$(git -C "$REPO" show "$SNAP_SHA:untracked.txt" 2>&1)"
 
 # W16  Tracked edits ride along too.
-CASE=W16; want "$@" && ok W16 yes "$(case "$(git -C "$REPO" show "$SNAP_SHA:squashed.txt" 2>&1)" in *tracked-edit*) echo yes;; *) echo no;; esac)"
+CASE=W16; want "$@" && ok W16 yes "$(case "$(git -C "$REPO" show "$SNAP_SHA:tracked.txt" 2>&1)" in *tracked-edit*) echo yes;; *) echo no;; esac)"
 
 # W17  ...but ignored paths do NOT. `add -A` obeys .gitignore, which is what
 #      keeps a node_modules out of the snapshot (and the snapshot instant).
@@ -263,61 +128,6 @@ CASE=W39; if want "$@"; then
   mkdir -p "$PARENTS-other/nested"
   C "$REPO" wt_remove_empty_parents "$PARENTS" "$PARENTS-other/nested/removed"
   ok W39-outside-preserved yes "$([ -d "$PARENTS-other/nested" ] && echo yes || echo no)"
-fi
-
-# Configuration durations need not be whole minutes (BSD find -mmin refuses them).
-CASE=W40; if want "$@"; then
-  mkdir -p "$XDG_CONFIG_HOME/gwt"
-  printf 'fetch.max_age = "90s"\n' > "$XDG_CONFIG_HOME/gwt/config.toml"
-  printf 'fresh\n' > "$REPO/.git/FETCH_HEAD"
-  ok W40-fresh no "$(Cq "$REPO" wt_base_is_stale)"
-  touch -t 200001010000 "$REPO/.git/FETCH_HEAD"
-  ok W40-stale yes "$(Cq "$REPO" wt_base_is_stale)"
-fi
-
-# Matching non-merge patches cannot account for edits made in a merge commit.
-CASE=W41; if want "$@"; then
-  MERGE_REPO="$SANDBOX/merge-edits"
-  git init -q -b main "$MERGE_REPO"
-  git -C "$MERGE_REPO" commit -qm initial --allow-empty
-  git -C "$MERGE_REPO" checkout -qb feature
-  echo feature > "$MERGE_REPO/feature"
-  git -C "$MERGE_REPO" add feature
-  git -C "$MERGE_REPO" commit -qm feature
-  FEATURE_SHA=$(git -C "$MERGE_REPO" rev-parse HEAD)
-  git -C "$MERGE_REPO" checkout -qb side main
-  echo side > "$MERGE_REPO/side"
-  git -C "$MERGE_REPO" add side
-  git -C "$MERGE_REPO" commit -qm side
-  SIDE_SHA=$(git -C "$MERGE_REPO" rev-parse HEAD)
-  git -C "$MERGE_REPO" checkout -q feature
-  git -C "$MERGE_REPO" merge --no-ff --no-commit side >/dev/null 2>&1
-  echo keep > "$MERGE_REPO/merge-only"
-  git -C "$MERGE_REPO" add merge-only
-  git -C "$MERGE_REPO" commit -qm 'merge edits'
-  git -C "$MERGE_REPO" checkout -q main
-  git -C "$MERGE_REPO" cherry-pick "$FEATURE_SHA" "$SIDE_SHA" >/dev/null
-  printf '%s %s 1\n' "$(git -C "$MERGE_REPO" rev-parse feature)" "$(git -C "$MERGE_REPO" rev-parse main)" > "$MERGE_REPO/.git/wt-merged-cache"
-  ok W41-merge-edits-preserved no "$(Cq "$MERGE_REPO" wt_merged_into feature main)"
-fi
-
-# Whitespace can carry code semantics even though git cherry ignores it.
-CASE=W42; if want "$@"; then
-  WS_REPO="$SANDBOX/whitespace-edits"
-  git init -q -b main "$WS_REPO"
-  git -C "$WS_REPO" commit -qm initial --allow-empty
-  git -C "$WS_REPO" checkout -qb feature
-  printf "if True:\n    print('one')\n    print('two')\n" > "$WS_REPO/script.py"
-  git -C "$WS_REPO" add script.py
-  git -C "$WS_REPO" commit -qm feature
-  git -C "$WS_REPO" checkout -q main
-  git -C "$WS_REPO" merge --squash feature >/dev/null
-  git -C "$WS_REPO" commit -qm squash
-  git -C "$WS_REPO" checkout -q feature
-  printf "if True:\n    print('one')\nprint('two')\n" > "$WS_REPO/script.py"
-  git -C "$WS_REPO" commit -qam reindent
-  printf '%s %s 1\n' "$(git -C "$WS_REPO" rev-parse feature)" "$(git -C "$WS_REPO" rev-parse main)" > "$WS_REPO/.git/wt-merged-cache-v2"
-  ok W42-whitespace-preserved no "$(Cq "$WS_REPO" wt_merged_into feature main)"
 fi
 
 # --- sandbox guard ------------------------------------------------------------

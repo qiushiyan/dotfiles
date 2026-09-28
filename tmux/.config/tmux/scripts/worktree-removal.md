@@ -24,40 +24,33 @@ Collect window ids before moving directories: after a rename, a pane's cwd
 reports the new path and no longer matches the worktree being removed. Search
 all sessions because a deleted cwd is broken wherever its window lives.
 
-## Merged means content reached the base
+## Merged means content reached the trunk
 
-`wt_merged_into <branch> <base>` is the single verdict used by reap and branch
-deletion:
+`gwt` owns the verdict (`~/dev/gwt/README.md` § Listing and merge verdicts):
+the popup's `· merged` tag and reap read `gwt list --json`, and branch cleanup
+after a removal reads `gwt merged --json <branches>`. One trunk, the remote
+default branch, serves all of them and `gwt remove`, so they cannot disagree.
 
 | Integration | Detection |
 |---|---|
 | merge commit / fast-forward | branch tip is an ancestor |
-| squash merge | collapsed branch patch already exists on base |
-| rebase merge | every branch commit's patch already exists on base |
+| squash merge | collapsed branch patch already exists on the trunk |
+| rebase merge | every branch commit's patch already exists on the trunk |
 
-Run the graph check first, then patch checks. `git branch -d` sees only graph
-ancestry, so a branch proven squash-merged may require `-D`; this is safe only
-after the independent patch verdict. Per-commit patch matches omit merge commits,
-so unintegrated merge commits stay protected unless their combined branch patch
-is proven squash-merged. Patch matches also require a clean merge that leaves
-the base tree unchanged (Git 2.38+), preserving whitespace-only changes that
-patch IDs ignore. Later edits to the same lines on base can leave integration
-unconfirmed.
+`git branch -d` sees only graph ancestry, so a branch proven squash-merged may
+require `-D`; this is safe only after gwt's independent patch verdict. A branch
+gwt cannot judge counts as unmerged here and is deleted only behind the force
+prompt, with its tip kept as a recovery ref. Manual application with edits and
+merges into a non-default branch remain unproven and require that path.
 
-Manual application with edits and merges into a non-default base remain
-unproven and require the force path.
+## Freshness
 
-## Freshness and cache
-
-A correct algorithm against a stale base is still wrong. The popup starts a
-bounded background fetch when `FETCH_HEAD` is stale and waits only when a
-verdict is requested. A truncated `FETCH_HEAD` is stale even with a fresh
-mtime. Fetch failure is reported instead of silently grading against old state.
-
-Merged verdicts cache on `(branch sha, base sha)` in
-`<git-common-dir>/wt-merged-cache-v3`. Ref movement creates a new key; the
-filename versions the verdict policy so older verdicts cannot bypass new guards. A branch-only key could preserve a dangerous
-stale `merged` answer.
+A correct algorithm against a stale trunk is still wrong. The popup starts
+`gwt trunk --fetch` in the background at launch (a bounded fetch, only when the
+trunk is older than gwt's `fetch.max_age`) and waits for it only when reap or
+branch cleanup needs a verdict. A failed fetch is reported instead of silently
+grading against old state. gwt memoizes verdicts per branch and trunk commit;
+the shell's old `wt-merged-cache*` files are deleted at popup startup.
 
 ## Recovery refs
 
@@ -85,8 +78,10 @@ and can turn a single removal into a minute-long pause.
 
 ## Verification
 
-`tests/test-worktree-core.sh` owns merge styles, stale/truncated fetch state,
-cache-key poisoning, snapshots, and reap candidates. Creation and slot refusal
-are tested in `~/dev/gwt`. Popup tests
-must also prove dirty-decline behavior, collect-before-move window cleanup, and
-that failed snapshots preserve the worktree.
+`~/dev/gwt` owns merge styles, trunk choice, stale or truncated fetch state,
+and memo keys. `tests/test-worktree-core.sh` owns snapshots, recovery refs and
+their expiry, and parent cleanup. `tests/test-gwt-popup.py` drives reap end to
+end: gwt's tag, the confirmations, checkout and branch removal, and unmerged
+work left alone. Popup tests should also prove dirty-decline behavior,
+collect-before-move window cleanup, and that failed snapshots preserve the
+worktree.
