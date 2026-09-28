@@ -115,9 +115,8 @@ For this repository the bindings are:
   set, so its cost is reported apart from package-local and landing-page costs,
   under the shared first-read budget.
 - **Proposals and evidence:** a shipped proposal is deleted; Git holds it. The
-  tree keeps no status pages and no evidence tiers, so the check block's
-  status-page loop is skipped and its `<live docs>` are the git pathspecs
-  `':(glob)docs/*.md' CLAUDE.md`.
+  tree keeps no evidence tiers and owes no production reads, so the check
+  block's `<live docs>` are the git pathspecs `':(glob)docs/*.md' CLAUDE.md`.
 - **Paths** are written from the repository root.
 - **The protected set** — echoes a distillation keeps in meaning, not in
   narration: the red-line summaries in the root `CLAUDE.md` (details:

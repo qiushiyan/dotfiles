@@ -69,7 +69,7 @@ A change has landed. Bring the project's docs back in line with it so that a sen
 6. **Verify** every doc you touched:
 
    - re-read it end-to-end as a cold reader: does it hand over the mental model without a tour of the files?
-   - the standards' check block (§ Before you commit a doc change) — its greps see what a re-read does not. Skip the status-page loop where the tree has no status page; where the design doc is `CLAUDE.md` and there is no `docs/`, the design-doc checks scan `CLAUDE.md`.
+   - the standards' check block (§ Before you commit a doc change) — its greps see what a re-read does not. Where the design doc is `CLAUDE.md` and there is no `docs/`, the design-doc checks scan `CLAUDE.md`.
 
 7. **Check the surfaces above the docs.** An onboarding or bootstrap skill, if the project has one: a new top-level doc its routing misses, a renamed doc on its always-read list, a drifted path — routine edits inside an existing doc leave it alone. `CLAUDE.md` / `AGENTS.md` (the standards' § The hot path) changes only when a cross-cutting rule appeared or one's framing rotted, which most branches don't do.
 
