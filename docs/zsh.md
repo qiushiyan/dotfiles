@@ -60,7 +60,7 @@ zsh/.config/zsh/
   claude-sessions.zsh  # shared session store: migration + drift check (tests/ has its harness)
   codex.zsh        # Codex accounts through headroom (cx, cx-<name>); plain `codex` stays the vendor default
   xcode.zsh
-  tmux-utils.zsh
+  tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep, tmux-wait-for-text
   cout.zsh        # cout + execution boundaries for the pane recorder
   proxy.zsh
   hosts/<machine>.zsh  # one machine's identity (§ Machines); outside the glob
@@ -138,7 +138,10 @@ installed (over SSH to the mini, the laptop's; `docs/qiushi-mini.md`
 status. The first real command initializes recording synchronously, keeping
 Python setup off shell startup. `preexec` saves exact command text and emits a
 private start marker; `precmd`/`zshexit` emit its end marker. Standalone copies
-and empty/cancelled prompts create no record.
+and empty/cancelled prompts create no record. The `precmd` publication is the
+prompt's only tmux round trip: it also carries the agent-status sweep from
+`tmux-utils.zsh` and unregisters that module's standalone hook
+(`tmux/.config/tmux/scripts/context-chip.md` § Ownership).
 
 `tmux/.config/tmux/scripts/tmux-cout.py` owns the pane's `pipe-pane` recorder,
 completed records, indexes, and retention. Markers and output share an ordered

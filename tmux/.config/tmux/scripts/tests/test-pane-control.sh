@@ -12,6 +12,7 @@ OUTER="pcouter-$$"
 CONF="$HOME/.config/tmux/tmux.conf"
 FLOAT="$HOME/.config/tmux/scripts/tmux-float-pane.sh"
 RELOC="$HOME/.config/tmux/scripts/tmux-pane-relocate.sh"
+LIB="$HOME/.config/tmux/scripts/lib/tmux-common.sh"
 
 PASS=0; FAIL=0; FAILED=""
 
@@ -851,6 +852,15 @@ t27() {
     check "T27 scratch is drawn on the live client, not the ghost" \
         "$(O capture-pane -p -t o | grep -c 'scratch ·' || true)" "1"
     T display-popup -C 2>/dev/null; sleep 0.5       # no -c: best client = live
+
+    # The pane-mode picker takes the same client name from its binding. It
+    # used to accept any name `display -c` answered for — the ghost answers.
+    T new-window -d -t t 2>/dev/null; sleep 0.3
+    R "$RELOC" pick "$P" "$C" >/dev/null 2>&1 &
+    sleep 2
+    check "T27 the pick popup is drawn on the live client, not the ghost" \
+        "$(O capture-pane -p -t o | grep -c 'move pane to' || true)" "1"
+    T display-popup -C 2>/dev/null; sleep 0.5
     kill -9 "$ghost" 2>/dev/null                    # stopped process; would outlive the suite
 }
 
@@ -1187,11 +1197,85 @@ t37() {
     O send-keys -t o Escape; sleep 0.3
 }
 
+# ---------------------------------------------------------------------------
+# T38 — the shared library's contract, starting with the trap it exists for:
+# tmux 3.7c answers `display-message -t <gone pane>` with status 0 and empty
+# output, so an existence check on the status calls every dead pane alive.
+# The float's private copies did; a toggle on a dead pane then got as far as
+# creating a holder session before break-pane failed. The session-created
+# hook makes that transient holder observable. Also pinned: nothing keeps a
+# private copy to drift back, and the palette helper's output format, which
+# every fzf popup passes straight to `fzf --color`.
+# ---------------------------------------------------------------------------
+t38() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    P=$(T display -p -t "$W" '#{pane_id}')
+    lib() { TMUX="$SOCKPATH,0,0" bash -c ". '$LIB'; $1" 2>/dev/null; }
+    check "T38 a live pane exists"   "$(lib "pane_exists $P && echo y || echo n")" "y"
+    check "T38 a dead pane does not" "$(lib 'pane_exists %9999 && echo y || echo n')" "n"
+    check "T38 a live window exists" "$(lib "win_exists $W && echo y || echo n")" "y"
+    check "T38 a dead window does not" "$(lib 'win_exists @9999 && echo y || echo n')" "n"
+    check "T38 no script keeps a private existence check" \
+        "$(grep -l '^[[:space:]]*\(pane_exists\|win_exists\)[[:space:]]*()' "$HOME"/.config/tmux/scripts/*.sh 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+    T set-hook -g session-created 'set -ga @t38_created x'
+    RS "$FLOAT" toggle %9999 >/dev/null 2>&1
+    check "T38 floating a dead pane touches nothing (no holder, even briefly)" \
+        "[$(T show -gqv @t38_created)]" "[]"
+
+    cols=$(lib fzf_colors_from_palette)
+    check "T38 palette colours are one fzf --color line of 15 fields" \
+        "$(printf '%s\n' "$cols" | wc -l | tr -d ' ') $(printf '%s' "$cols" | tr ',' '\n' | grep -c ':')" "1 15"
+    check "T38 ...taken from the live palette" \
+        "$(printf '%s' "$cols" | cut -d, -f1,4,7)" \
+        "hl:$(T show -gv @thm_red),bg+:$(T show -gv @thm_surface_0),pointer:$(T show -gv @thm_mauve)"
+    T set -gu @thm_mauve
+    check "T38 with no palette fzf keeps its defaults" "$(lib fzf_colors_from_palette)" "fg+:-1"
+}
+
+# ---------------------------------------------------------------------------
+# T39 — the rename popup, end to end on a real client. prefix M passes the
+# pane as a run-shell ARGUMENT (the float's shape) instead of stashing it in a
+# global env var between the binding and the popup, which raced when two
+# clients acted at once. The label must land on the pane M was pressed on,
+# even though focus moves while the popup is open.
+# ---------------------------------------------------------------------------
+t39() {
+    fresh; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; sleep 0.3
+    A=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
+    B=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
+    mb=$(T list-keys -T prefix | awk '$4=="M"')
+    check "T39 prefix M passes the pane as an argument, with no global stash" \
+        "$(printf '%s' "$mb" | grep -c "tmux-rename-pane.sh open '#{pane_id}'" || true)$(printf '%s' "$mb" | grep -c 'set-environment' || true)" "10"
+
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T39 client attached" "no client"; return; fi
+    T select-pane -t "$A"
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o M; sleep 2
+    check "T39 the rename popup opened" "$(O capture-pane -p -t o | grep -c 'pane title >' || true)" "1"
+    T select-pane -t "$B"                       # focus moves while it is open
+    O send-keys -t o -l 'notes'; sleep 0.3; O send-keys -t o Enter; sleep 1
+    check "T39 the label landed on the pane M was pressed on" \
+        "$(T display -p -t "$A" '#{pane_title}')" "notes"
+    check "T39 the other pane kept its title" \
+        "$(T display -p -t "$B" '#{pane_title}' | grep -c '^notes$' || true)" "0"
+    check "T39 naming froze the title and raised the border" \
+        "$(T show -pv -t "$A" allow-set-title) $(T show -wv -t "$W" pane-border-status)" "off top"
+    check "T39 no global env stash exists" \
+        "$(T show-environment -g 2>/dev/null | grep -c '^RENAME_PANE' || true)" "0"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
 for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t9 t10 t11 t14 \
          t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24 t25 t26 t27 \
-         t28 t29 t30 t31 t32 t33 t34 t35 t36 t37; do
+         t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

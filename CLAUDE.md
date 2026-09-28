@@ -96,7 +96,7 @@ Installation caveats and synchronization behavior live in `docs/agent-skills.md`
 Read the owning docs before changing a feature that spans packages:
 
 - **Claude context chip** (`claude/`, `tmux/`, `zsh/`):
-  `tmux/.config/tmux/workflow.md`. `tmux-claude-ctx.sh` alone turns pane
+  `tmux/.config/tmux/workflow.md`. `tmux-agent-status.sh` alone turns pane
   borders off; weekly quota comes from headroom.
 - **tmux pane control:** floating and relocation use
   `tmux/.config/tmux/scripts/float-pane.md`; pane-mode bindings and undo use

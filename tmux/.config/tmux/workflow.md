@@ -81,7 +81,7 @@ One worktree per window keeps parallel agents from stepping on each other. (See 
 Within a project you'll have a few windows — worktrees, a notes window, a long-running process.
 
 - **Create:** `prefix c` (at the end) or **`prefix N`** (right after the current one).
-- **Move:** `prefix C-h` / `prefix C-l` for previous/next, **`prefix Tab`** for the last window, **`prefix 1`–`9`** to jump straight to one by number.
+- **Move:** `prefix C-h` / `prefix C-l` for previous/next (`prefix C-p` / `C-n` also work), **`prefix Tab`** for the last window, **`prefix 1`–`9`** to jump straight to one by number.
 - **Reorder:** `Shift-Left` / `Shift-Right` (no prefix) slide the current window left/right.
 - **Rename:** `prefix m`. **Close:** `prefix x` (asks to confirm — it's a whole task).
 
@@ -129,7 +129,8 @@ remember.
 |--|--|
 | `h/j/k/l` | push the pane (swap, or move to that edge) |
 | `H/J/K/L` | resize · arrow keys move the *cursor* between panes |
-| `m` / `M` | mark a pane / move this pane to the mark — works across windows and sessions |
+| `g` / `p` / `G` | hold this pane (leaves the mode, so you can walk to any window or session) / put the held pane here / release the hold |
+| `w` | pick another window of this session from a popup with a preview; `Enter` moves this pane there |
 | `u` | undo the last push · `e` spread evenly · `Space` toggle row/column |
 | `z` | float it · `b` break it into its own window |
 | `Esc` | done |
@@ -138,8 +139,13 @@ remember.
 prefix keys are deliberately switched off so a stray `prefix x` can't kill
 something behind the overlay.
 
+While a pane is held, the row under the status bar says **✋ HOLDING** and what
+it is, through ordinary window navigation; `prefix p p` puts it down as the
+full-height right column of the window you're in, and you stay in pane mode to
+place it with `h/j/k/l`.
+
 Float and restore design: `scripts/float-pane.md`. Directional push, undo, and
-mark-and-move: `scripts/pane-mode.md`.
+hold/put/pick: `scripts/pane-mode.md`.
 
 ## Reading back & copying output (copy mode)
 

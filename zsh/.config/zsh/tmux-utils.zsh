@@ -77,18 +77,16 @@ _codex_in_pane() {
     esac
   done
   local _codex_path=$(_codex_display_path "$_codex_dir")
+  local _codex_status=$HOME/.config/tmux/scripts/tmux-agent-status.sh
 
-  command tmux set-option -p -t "$_codex_pane" @codex_path "$_codex_path" 2>/dev/null
-  command tmux set-option -p -t "$_codex_pane" @codex_active 1 2>/dev/null
-  command tmux set-option -w -t "$_codex_pane" pane-border-status top 2>/dev/null
+  # The owner (tmux-agent-status.sh) knows which options mark Codex's lifetime;
+  # the wrapper only says when it starts and ends. Synchronous, so the marker
+  # is gone before the next prompt's sweep looks for it.
+  command bash "$_codex_status" activate codex "$_codex_path" "$_codex_pane" 2>/dev/null
 
   "${_codex_launcher[@]}" "$@" || _codex_rc=$?
 
-  command tmux set-option -p -u -t "$_codex_pane" @codex_active 2>/dev/null
-  command tmux set-option -p -u -t "$_codex_pane" @codex_path 2>/dev/null
-  command tmux run-shell -b \
-    "bash '$HOME/.config/tmux/scripts/tmux-claude-ctx.sh' reconcile '$_codex_pane'" \
-    2>/dev/null
+  command bash "$_codex_status" clear codex "$_codex_pane" 2>/dev/null
   return $_codex_rc
 }
 
@@ -188,43 +186,63 @@ tmux-wait-for-text() {
 }
 
 # --------------------------------------------------------------------
-# Agent pane-border sweep (see tmux.conf "pane borders" block)
+# Agent status sweep on every prompt (see tmux.conf "pane borders" block)
 # --------------------------------------------------------------------
-# Claude Code publishes its context-usage % into the pane-local @claude_ctx
-# option via its statusline script; its SessionEnd hook clears it on normal
-# exit. When claude dies without the hook (SIGKILL, crash), the chip and the
-# border row would linger — but the shell prompt coming back IS the signal
-# that the pane's foreground program is gone... unless it's merely SUSPENDED:
-# a stopped job (Ctrl-Z'd claude) keeps its chip, so the sweep skips while
-# one exists. One server-side conditional per prompt: a no-op round-trip when
-# the pane carries no chip; a clear when it does — which also tombstones the
-# recorded session id, so an orphaned statusline subprocess of the dead
-# claude can't republish the chip after this cleanup (see tmux-claude-ctx.sh).
-# The codex wrapper normally clears @codex_active itself; the prompt sweep is
-# its interrupt/crash backstop. A suspended agent keeps its own marker.
-if [[ -n ${TMUX_PANE:-} ]]; then
-  _agent_border_sweep() {
-    # only a suspended CLAUDE job exempts the sweep — matching any stopped
-    # job would let a ^Z'd editor disable hard-kill cleanup here forever.
-    # Anchored to the two launch spellings: `claude …` directly, or the `x`
-    # wrapper function (a function-wrapped command's jobtext is the function
-    # invocation, not the underlying command).
-    local _j _claude_suspended=0 _codex_suspended=0
+# Claude Code publishes its chip through its statusline and clears it from
+# its SessionEnd hook; the codex wrapper above marks Codex's lifetime. When an
+# agent dies without its own cleanup (SIGKILL, crash, interrupt), the shell
+# prompt coming back IS the signal that it no longer owns the pane... unless
+# it is merely SUSPENDED: a stopped job keeps its status, so that agent is
+# left out of the sweep while one exists.
+#
+# The prompt path stays one server-side conditional: a no-op when no listed
+# agent's presence marker is set, and only on a hit a background run of the
+# owner's `sweep` verb, which drops the state (Claude's drop tombstones the
+# recorded session, so an orphaned statusline subprocess of the dead claude
+# cannot republish afterwards) and reconciles the border. The option names
+# come from the vocabulary the owner uses (lib/agent-vocab.sh).
+#
+# _agent_border_sweep_cmds leaves the tmux argv in $reply rather than running
+# it, so the prompt's one tmux round trip can carry it: cout's precmd, which
+# runs after oh-my-posh's, chains its own publication in front and drops this
+# standalone hook (cout.zsh, _cout_setup). Without cout, _agent_border_sweep
+# runs it alone.
+if [[ -o interactive && -n ${TMUX_PANE:-} &&
+      -r $HOME/.config/tmux/scripts/lib/agent-vocab.sh ]]; then
+  source "$HOME/.config/tmux/scripts/lib/agent-vocab.sh"
+
+  _agent_border_sweep_cmds() {
+    reply=()
+    # Only a suspended job of the agent itself exempts it — matching any
+    # stopped job would let a ^Z'd editor disable hard-kill cleanup forever.
+    # Claude is anchored to its two launch spellings: `claude …` directly, or
+    # the `x` wrapper function (a function-wrapped command's jobtext is the
+    # function invocation, not the underlying command).
+    local _j _claude_suspended=0 _codex_suspended=0 _cond= _agents=
     for _j in ${(k)jobstates}; do
       [[ $jobstates[$_j] == suspended* ]] || continue
       [[ $jobtexts[$_j] == (claude|x)( *|) ]] && _claude_suspended=1
       [[ $jobtexts[$_j] == codex( *|) ]] && _codex_suspended=1
     done
     if (( ! _claude_suspended )); then
-      command tmux if-shell -F -t "$TMUX_PANE" '#{n:@claude_ctx}' \
-        "run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh clear $TMUX_PANE'" \
-        2>/dev/null
+      _cond="#{n:$AGENT_CLAUDE_PRESENCE}"; _agents=claude
     fi
     if (( ! _codex_suspended )); then
-      command tmux if-shell -F -t "$TMUX_PANE" '#{n:@codex_active}' \
-        "set-option -p -u -t '$TMUX_PANE' @codex_active ; set-option -p -u -t '$TMUX_PANE' @codex_path ; run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh reconcile $TMUX_PANE'" \
-        2>/dev/null
+      if [[ -n $_cond ]]; then
+        _cond="#{||:$_cond,#{n:$AGENT_CODEX_PRESENCE}}"; _agents+=" codex"
+      else
+        _cond="#{n:$AGENT_CODEX_PRESENCE}"; _agents=codex
+      fi
     fi
+    [[ -n $_cond ]] || return 0
+    reply=(if-shell -F -t "$TMUX_PANE" "$_cond"
+      "run-shell -b 'bash $AGENT_STATUS_BIN sweep $TMUX_PANE $_agents'")
+  }
+
+  _agent_border_sweep() {
+    local -a reply
+    _agent_border_sweep_cmds
+    (( $#reply )) && command tmux "${reply[@]}" 2>/dev/null
     return 0
   }
   autoload -Uz add-zsh-hook

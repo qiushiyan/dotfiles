@@ -30,9 +30,9 @@
 #
 # STATE lives in pane-local user options on the floated pane, never in globals.
 # The pane is the identity that moves, so the metadata moves with it — and two
-# panes can be floated at once without colliding. (The older `prefix P` /
-# rename-pane popups stash context in GLOBAL env vars; that idiom races when
-# two clients act at once, which is why nothing here uses it.)
+# panes can be floated at once without colliding. (A global stash — the retired
+# `prefix P` picker and the old rename popup used one — races when two clients
+# act at once, which is why nothing here uses it.)
 #
 #   @fl_phase   preparing | floating | restoring — presence means the pane is
 #               mid-float. `preparing` is written LAST during setup, so an
@@ -62,8 +62,12 @@
 
 set -uo pipefail
 
+# msg, pane_exists, win_exists, tiled_panes, apply_order_and_layout,
+# PANE_LABEL_FMT, live_client, resolve_border, reconcile_borders.
+# shellcheck source=lib/tmux-common.sh
+. "${BASH_SOURCE[0]%/*}/lib/tmux-common.sh"
+
 SELF="$HOME/.config/tmux/scripts/tmux-float-pane.sh"
-CLAUDE_CTX="$HOME/.config/tmux/scripts/tmux-claude-ctx.sh"
 
 # Container geometry. Percentages of the client, leaving a frame of live
 # window visible around the edge — the reason to float rather than zoom.
@@ -92,21 +96,11 @@ SCRATCH_W="${SCRATCH_W:-75%}"
 SCRATCH_H="${SCRATCH_H:-75%}"
 SCRATCH_BORDER_DEFAULT=rounded
 
-msg() { tmux display-message "$*" 2>/dev/null || true; }
-
 # --- small helpers over tmux state -------------------------------------------
-
-# Tiled (non-floating) pane ids of a window, in index order. The `-f` filter is
-# server-side, so this never sees a native floating pane.
-tiled_panes() {
-    tmux list-panes -t "$1" -f '#{==:#{pane_floating_flag},0}' -F '#{pane_id}' 2>/dev/null
-}
 
 pane_opt()     { tmux show -pqv -t "$1" "$2" 2>/dev/null; }
 set_pane_opt() { tmux set -p -t "$1" "$2" "$3" 2>/dev/null; }
 unset_pane_opt() { tmux set -p -u -t "$1" "$2" 2>/dev/null; }
-
-pane_exists()  { tmux display-message -p -t "$1" '#{pane_id}' >/dev/null 2>&1; }
 
 # Is this pane currently sitting inside a session we marked as a holder? That,
 # not the recorded metadata, is what says whether a float's move happened.
@@ -115,60 +109,7 @@ pane_in_holder() {
     s=$(tmux display-message -p -t "$1" '#{session_name}' 2>/dev/null) || return 1
     [ -n "$s" ] && [ -n "$(tmux show -qv -t "$s" @fl_holder_nonce 2>/dev/null)" ]
 }
-win_exists()   { tmux display-message -p -t "$1" '#{window_id}' >/dev/null 2>&1; }
 sess_exists()  { tmux has-session -t "=$1" 2>/dev/null; }
-
-# Border state is WINDOW-scoped and shared between producers, so relocation is
-# reconciled by the single owner, with no target (= all-window sweep). A moved
-# pane strands markers on BOTH ends, and a targeted call can only fix one.
-reconcile() { TMUX_PANE= bash "$CLAUDE_CTX" reconcile >/dev/null 2>&1 || true; }
-
-# A `-c <name>` target resolves a client by tty NAME, first match in attach
-# order — and tmux does not skip a SUSPENDED client there, although
-# list-clients hides one (cmd_find_client vs sort_get_clients, 3.7b). So a
-# client that was suspended and never resumed (stock suspend-client, then
-# `tmux attach` again from the same terminal) is a ghost that shares the live
-# client's name and precedes it in the list: it wins the lookup, the popup is
-# drawn onto a stopped client, and nothing appears. Seen live 2026-08-16 —
-# both the float and the scratch went dark for a day. Keep the name only if it
-# resolves to a client list-clients can see; otherwise pass no client at all
-# and let tmux pick the session's most recently active one, which on the
-# keypress path is the client that pressed the key.
-live_client() {
-    local name="$1" pid
-    [ -n "$name" ] || return 0
-    pid=$(tmux display-message -p -c "$name" '#{client_pid}' 2>/dev/null)
-    [ -n "$pid" ] || return 0
-    tmux list-clients -F '#{client_pid}' 2>/dev/null | grep -qx "$pid" && printf '%s' "$name"
-    return 0
-}
-
-# Validate a @*_border override — display-popup rejects an unknown value
-# outright, which would fail the whole presentation over a typo.
-resolve_border() { # <@option> <default>
-    local b
-    b=$(tmux show -gqv "$1" 2>/dev/null)
-    case "$b" in
-        single|rounded|double|heavy|simple|padded|none) printf '%s' "$b" ;;
-        "") printf '%s' "$2" ;;
-        *)  msg "float: ignoring invalid $1 '$b'"; printf '%s' "$2" ;;
-    esac
-}
-
-# Restore `want_order` (space-separated pane ids) as the window's tiled pane
-# ORDER, then apply `layout`. Order first: the layout string is positional.
-apply_order_and_layout() {
-    local win="$1" want_order="$2" layout="$3" i=0 want have
-    for want in $want_order; do
-        pane_exists "$want" || { i=$((i + 1)); continue; }
-        have=$(tiled_panes "$win" | sed -n "$((i + 1))p")
-        [ -n "$have" ] && [ "$have" != "$want" ] && \
-            tmux swap-pane -d -s "$want" -t "$have" 2>/dev/null
-        i=$((i + 1))
-    done
-    [ -n "$layout" ] && tmux select-layout -t "$win" "$layout" 2>/dev/null
-    return 0
-}
 
 # --- float --------------------------------------------------------------------
 
@@ -240,11 +181,9 @@ open_container() {
 
     # Title the float after what is IN it — the pane's label if it has one, else
     # the running command. (It used to show the holder's nonce, a pid-epoch pair
-    # that told the user nothing.) Same rule as pane-border-format: a title
-    # equal to the hostname is tmux's unset default, not a real label.
+    # that told the user nothing.)
     local title
-    title=$(tmux display-message -p -t "$pane" \
-        '#{?#{==:#{pane_title},#{host}},#{pane_current_command},#{pane_title}}' 2>/dev/null)
+    title=$(pane_fmt "$pane" "$PANE_LABEL_FMT")
     [ -n "$title" ] || title="zoom"
 
     local args=(-E -w "$FLOAT_W" -h "$FLOAT_H" -b "$border" -T " $title ")
@@ -365,7 +304,7 @@ float_pane() {
     fi
     set_pane_opt "$pane" @fl_phase floating
 
-    reconcile
+    reconcile_borders
 
     # Testing seam: stop with the float staged but never presented — the state a
     # container that died on the spot would leave, which is what the recovery
@@ -487,7 +426,7 @@ restore_pane() {
             tmux kill-session -t "=$h" 2>/dev/null
         fi
         clear_state "$pane"
-        reconcile
+        reconcile_borders
         return 0
     fi
 
@@ -563,7 +502,7 @@ restore_pane() {
             tmux rename-session -t "=$holder" "recovered-${holder#_float_}" 2>/dev/null
         fi
         clear_state "$pane"
-        reconcile
+        reconcile_borders
         msg "float: source window is gone — pane left in a recovered session"
         return 0
     fi
@@ -585,7 +524,7 @@ restore_pane() {
         fi
     fi
 
-    reconcile
+    reconcile_borders
     return 0
 }
 
@@ -727,7 +666,7 @@ surface_orphan_holders() {
         tmux set -t "$s" -u @fl_holder_nonce 2>/dev/null
         tmux rename-session -t "=$s" "recovered-${s#_float_}" 2>/dev/null
     done < <(holder_sessions)
-    reconcile
+    reconcile_borders
     return 0
 }
 

@@ -60,13 +60,24 @@ _cout_finish() {
 
 _cout_precmd() {
   emulate -L zsh
-  (( _cout_broken )) && return 0
-  [[ -n $_cout_store ]] || return 0
-  _cout_finish
-  # Publish the expected completion ID. Readers wait for that exact record;
-  # recorder lag must never make cout silently select the previous command.
-  command tmux set-option -p -t "$TMUX_PANE" @cout-state "$_cout_session $_cout_last" \; \
-    set-option -p -t "$TMUX_PANE" @cout-ready 1 2>/dev/null
+  local -a cmds reply
+  if (( ! _cout_broken )) && [[ -n $_cout_store ]]; then
+    _cout_finish
+    # Publish the expected completion ID. Readers wait for that exact record;
+    # recorder lag must never make cout silently select the previous command.
+    cmds=(set-option -p -t "$TMUX_PANE" @cout-state "$_cout_session $_cout_last" \;
+      set-option -p -t "$TMUX_PANE" @cout-ready 1)
+  fi
+  # The prompt's other tmux work rides the same round trip, after cout's own
+  # publication (tmux-utils.zsh, the agent status sweep).
+  if (( _cout_carries_sweep )); then
+    _agent_border_sweep_cmds
+    if (( $#reply )); then
+      (( $#cmds )) && cmds+=(\;)
+      cmds+=("${reply[@]}")
+    fi
+  fi
+  (( $#cmds )) && command tmux "${cmds[@]}" 2>/dev/null
   return 0
 }
 
@@ -84,10 +95,17 @@ _cout_setup() {
   # Initialize on the first real command, without adding Python startup or
   # background setup processes to shell startup.
   typeset -g _cout_store='' _cout_session='' _cout_pending=0
-  typeset -g _cout_sequence=0 _cout_last=- _cout_broken=0
+  typeset -g _cout_sequence=0 _cout_last=- _cout_broken=0 _cout_carries_sweep=0
   command tmux set-option -p -t "$TMUX_PANE" @cout-ready 0 2>/dev/null
   autoload -Uz add-zsh-hook
   add-zsh-hook preexec _cout_preexec
   add-zsh-hook precmd _cout_precmd
   add-zsh-hook zshexit _cout_finish
+  # One tmux round trip per prompt: this hook runs after oh-my-posh's, so it
+  # takes over the agent status sweep (tmux-utils.zsh) and chains it behind
+  # its own publication; the standalone sweep hook would be a second trip.
+  if (( $+functions[_agent_border_sweep_cmds] )); then
+    add-zsh-hook -d precmd _agent_border_sweep
+    _cout_carries_sweep=1
+  fi
 }

@@ -1,16 +1,18 @@
 # Agent-done notifications — dormant reference
 
-**Status: disabled.** `tmux-agent-done.sh` exits before setting any state, so no
-dot or `◷ N` badge can appear. The feature was noisy and fragile in daily use;
-the inert display and hook wiring remain only to make a future redesign cheap.
+**Status: disabled.** `tmux-agent-status.sh done` returns before setting any
+state, so no dot or `◷ N` badge can appear. The feature was noisy and fragile in
+daily use; the inert display and hook wiring remain only to make a future
+redesign cheap. Both verbs live in the per-pane agent-status owner
+(`context-chip.md`, Ownership) rather than in scripts of their own.
 
 Do not add Codex notification wiring while the setter is disabled.
 
 ## Model worth keeping
 
 ```text
-agent hook → tmux-agent-done.sh → window @agent_done
-           → tmux-agent-recount.sh → session @agents_ready
+agent hook → tmux-agent-status.sh done → window @agent_done
+           → tmux-agent-status.sh recount → session @agents_ready
            → tmux.conf renders dot + count
 
 navigation binding → clear destination window → recount
@@ -36,8 +38,8 @@ Treat revival as a redesign, not removal of one `exit 0`:
 Current implementation surfaces:
 
 ```text
-tmux/.config/tmux/scripts/tmux-agent-done.sh
-tmux/.config/tmux/scripts/tmux-agent-recount.sh
-tmux/.config/tmux/tmux.conf                 # formats + navigation clears
-claude/.claude/settings.json                # completion hooks
+tmux/.config/tmux/scripts/tmux-agent-status.sh   # done, recount
+tmux/.config/tmux/tmux.conf                      # formats + navigation clears
+claude/.claude/settings.json                     # Stop/Notification hooks
+tmux/.config/tmux/scripts/tmux-worktree.sh       # clears the window it opens
 ```

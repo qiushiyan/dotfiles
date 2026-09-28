@@ -6,10 +6,10 @@
 # The chip has no user-visible failure alarm — a stale model id or a chip that
 # stopped updating looks exactly like a correct one, and the two halves that
 # can break it are both easy to break silently: the SERVER-side compare-and-set
-# gate at the tail of statusline-command.sh (which must accept a real change
-# and refuse a no-op, three times a second, per live session) and the unset
-# list in tmux-claude-ctx.sh's drop_branch (which must retire every option it
-# publishes). Each case below says which of those it holds down.
+# gate the statusline builds with tmux-agent-status.sh's agent_claude_publish
+# (which must accept a real change and refuse a no-op, three times a second,
+# per live session) and the owner's drop (which must retire every option the
+# vocabulary publishes). Each case below says which of those it holds down.
 #
 # Runs entirely on a throwaway socket, against the WORKING TREE's scripts —
 # never the live server, never the stowed copies. Usage:
@@ -25,7 +25,9 @@ SOCK="ctxtest-$$"
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(cd "$HERE/../../../../.." && pwd)
 STATUSLINE="$REPO/claude/.claude/commands/statusline-command.sh"
-CTX="$REPO/tmux/.config/tmux/scripts/tmux-claude-ctx.sh"
+CTX="$REPO/tmux/.config/tmux/scripts/tmux-agent-status.sh"
+VOCAB="$REPO/tmux/.config/tmux/scripts/lib/agent-vocab.sh"
+COUT="$REPO/zsh/.config/zsh/cout.zsh"
 CONF="$REPO/tmux/.config/tmux/tmux.conf"
 ZUTIL="$REPO/zsh/.config/zsh/tmux-utils.zsh"
 
@@ -135,7 +137,7 @@ pub() {
 # would keep these cases green while a broken fallback left production inert.
 ends() {
     printf '{"session_id":"%s"}' "$1" | env HOME="$SANDBOX_HOME" \
-        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" clear-session
+        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" clear claude
     sleep 0.4
 }
 
@@ -143,7 +145,7 @@ ends() {
 # pane's tombstone, and the ONLY thing that does. Same rule: no pane argument.
 starts() {
     printf '{"session_id":"%s","source":"resume"}' "$1" | env HOME="$SANDBOX_HOME" \
-        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" activate-session
+        TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$CTX" activate claude
     sleep 0.3
 }
 
@@ -569,11 +571,11 @@ c18() {
     # SessionStart entry with the right matcher carries the verb", not on
     # where in the array it sits — a position pin fails on any unrelated
     # hook added above it while proving nothing more.
-    check "C18 exactly one SessionStart entry wires activate-session on real starts" \
+    check "C18 exactly one SessionStart entry wires activate claude on real starts" \
         "$(jq -r '[(.hooks.SessionStart // [])[]
                    | select(.matcher == "startup|resume|clear|fork"
                             and ([.hooks[]?.command]
-                                 | index("bash ~/.config/tmux/scripts/tmux-claude-ctx.sh activate-session")))]
+                                 | index("bash ~/.config/tmux/scripts/tmux-agent-status.sh activate claude")))]
                   | length' "$REPO/claude/.claude/settings.json")" \
         "1"
     check "C18 no SessionStart entry activates on compact" \
@@ -906,9 +908,101 @@ STUB
     rm -rf "$SANDBOX_HOME/.cache" "$fakebin"
 }
 
+# ---------------------------------------------------------------------------
+# C27 — one vocabulary. The option names live in lib/agent-vocab.sh and the
+# verbs in tmux-agent-status.sh; producers call them instead of spelling the
+# names. Drift is silent in every direction: a field the border reads but
+# nothing publishes draws nothing, a published field the border forgot never
+# shows, a producer's private copy of the list stops matching the owner's
+# drop, and a publish whose values shift one slot writes every field wrong.
+# The render path also has a budget — one tmux call, no process spawned — so
+# the library half of the owner, which the statusline sources, is held to it.
+# ---------------------------------------------------------------------------
+c27() {
+    local fields drawn
+    fields=$(bash -c ". '$VOCAB'; printf '%s\n' \$AGENT_CLAUDE_FIELDS" | sort)
+    drawn=$(grep '^set -g pane-border-format' "$CONF" | grep -o '@claude_ctx[a-z0-9_]*' | sort -u)
+    check "C27 (premise) the vocabulary lists the chip's fields" \
+        "$(printf '%s\n' "$fields" | grep -c .)" "7"
+    check "C27 the border reads no option the vocabulary does not publish" \
+        "$(comm -13 <(printf '%s\n' "$fields") <(printf '%s\n' "$drawn"))" ""
+    check "C27 every published field but the owner is drawn" \
+        "$(comm -23 <(printf '%s\n' "$fields") <(printf '%s\n' "$drawn") | grep -vx '@claude_ctx_sid')" ""
+    check "C27 the statusline spells no agent option" \
+        "$(grep -v '^[[:space:]]*#' "$STATUSLINE" | grep -c '@claude_ctx\|@codex_' || true)" "0"
+    check "C27 the zsh prompt sweep and codex wrapper spell no agent option" \
+        "$(grep -v '^[[:space:]]*#' "$ZUTIL" | grep -c '@claude_ctx\|@codex_' || true)" "0"
+    check "C27 the statusline issues exactly one tmux command" \
+        "$(grep -v '^[[:space:]]*#' "$STATUSLINE" | grep -c '^[[:space:]]*tmux ' || true)" "1"
+    check "C27 the owner's sourced half runs no subprocess" \
+        "$(sed -n '1,/^\[ "\${BASH_SOURCE\[0\]}" = "\$0" \] || return 0$/p' "$CTX" \
+            | grep -v '^[[:space:]]*#' | grep -c '\$([^(]\|`' || true)" "0"
+    check "C27 a value count off the vocabulary publishes nothing" \
+        "$(bash -c ". '$CTX'; agent_claude_publish %1 60 sid-A && echo built || echo refused")" "refused"
+    check "C27 the full count builds the gate" \
+        "$(bash -c ". '$CTX'; agent_claude_publish %1 60 sid-A m a 5 6 F && echo built || echo refused")" "built"
+}
+
+# ---------------------------------------------------------------------------
+# C28 — the prompt sweep's verb. The shell prompt returning means no listed
+# agent owns the pane any more: its state goes, Claude's with a tombstone so
+# an orphaned statusline render cannot resurrect it. An agent left off the
+# list (the zsh caller omits one with a suspended job) keeps its state, and
+# its presence keeps the border row up.
+# ---------------------------------------------------------------------------
+c28() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    T set -p -t "$PANE" @codex_active 1
+    T set -p -t "$PANE" @codex_path planlab/main
+    env HOME="$SANDBOX_HOME" TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" \
+        bash "$CTX" sweep "$PANE" claude
+    check "C28 sweep drops the listed agent's chip" "$(opt @claude_ctx)$(opt @claude_ctx_model)" ""
+    check "C28 tombstoning its recorded session" "$(opt @claude_ctx_dead)" "sid-A"
+    check "C28 an agent left off the list keeps its state" "$(opt @codex_active)" "1"
+    check "C28 and its presence keeps the border up" "$(status)" "top"
+    env HOME="$SANDBOX_HOME" TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" \
+        bash "$CTX" sweep "$PANE"
+    check "C28 an empty list sweeps every agent" "$(opt @codex_active)$(opt @codex_path)" ""
+    check "C28 and the border drops with the last one" "$(effective_status)" "off"
+}
+
+# ---------------------------------------------------------------------------
+# C29 — one prompt, one tmux round trip. cout's precmd runs after oh-my-posh's
+# and publishes the command it just recorded; the agent sweep rides the same
+# call instead of paying two more. The case drives the real zsh modules (no
+# rc files: -f) with a logging tmux first on PATH, and a Claude chip left
+# behind as a hard kill would leave it — the prompt must clear it through
+# that single call.
+# ---------------------------------------------------------------------------
+c29() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000
+    local bin="$SANDBOX/logbin" log="$SANDBOX/tmux-calls" hooks="$SANDBOX/precmd-hooks"
+    mkdir -p "$bin"
+    printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s"\nexec "%s" "$@"\n' "$log" "$(command -v tmux)" > "$bin/tmux"
+    chmod +x "$bin/tmux"
+    env HOME="$SANDBOX_HOME" PATH="$bin:$PATH" TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" \
+        zsh -f -i -c "source '$ZUTIL'; source '$COUT'; _cout_setup
+            print -rl -- \$precmd_functions > '$hooks'
+            : > '$log'
+            _cout_store=$SANDBOX/no-store _cout_session=s1 _cout_last=s1-7
+            _cout_precmd" >/dev/null 2>&1
+    sleep 0.8   # the sweep verb runs in the background on the server
+    check "C29 cout's hook took over the standalone sweep hook" \
+        "$(grep -cx _cout_precmd "$hooks" 2>/dev/null || true) $(grep -cx _agent_border_sweep "$hooks" 2>/dev/null || true)" "1 0"
+    check "C29 the prompt made one tmux call" "$(grep -c . "$log" 2>/dev/null || echo 0)" "1"
+    check "C29 that call publishes cout's record, then gates the sweep" \
+        "$(grep -c '@cout-ready 1 ; if-shell -F' "$log" 2>/dev/null || true)" "1"
+    check "C29 cout's record was published" "$(opt @cout-state)" "s1 s1-7"
+    check "C29 the prompt swept the dead Claude's chip" "$(opt @claude_ctx)" ""
+    check "C29 tombstoning its session" "$(opt @claude_ctx_dead)" "sid-A"
+    rm -rf "$bin" "$log" "$hooks"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

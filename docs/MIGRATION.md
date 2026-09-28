@@ -106,13 +106,12 @@ needed, runs the build:
 | zsh-users/zsh-syntax-highlighting | `~/zsh-syntax-highlighting` | `.zshrc` |
 | zsh-users/zsh-autosuggestions | `~/.oh-my-zsh/custom/plugins/zsh-autosuggestions` | `.zshrc` plugins list |
 | tmux-plugins/tpm | `~/.config/tmux/plugins/tpm` | `tmux.conf` plugin loader |
-| jimeh/tmuxifier | `~/.config/tmux/plugins/tmuxifier` | `.zshrc` (`tmuxifier init`) |
 | yetone/smart-suggestion | `~/.config/smart-suggestion` | `.zshrc` (Go binary built in-place) |
 
 The step also runs tpm's `install_plugins` directly so the plugins
-declared in `tmux.conf` (tmux-sensible, tmux-resurrect,
-vim-tmux-navigator, catppuccin/tmux) are fetched without opening tmux
-and hitting `prefix + I`.
+declared in `tmux.conf` (tmux-resurrect, tmux-continuum,
+vim-tmux-navigator, catppuccin/tmux, tmux-fzf-url) are fetched without
+opening tmux and hitting `prefix + I`.
 
 ### What `step_macos_defaults` sets
 

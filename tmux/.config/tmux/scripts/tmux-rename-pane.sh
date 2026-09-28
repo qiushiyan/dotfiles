@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# tmux-rename-pane.sh — label the current pane, from a popup text prompt.
+# tmux-rename-pane.sh — label a pane, from a popup text prompt.
 #
-# Bound to `prefix M`. The target pane id is stashed in the tmux global env var
-# RENAME_PANE_TARGET by the key binding (via `run-shell`, which expands formats);
-# we can't take it as a script argument because `display-popup` does NOT expand
-# #{...} in its command argument. Same idiom as tmux-move-pane.sh.
+#   open <pane> [client]   bound to `prefix M` (run-shell -b); opens the popup
+#   prompt <pane>          INTERNAL: runs inside the popup
+#
+# The pane id travels as an ARGUMENT end to end. `display-popup` does not
+# expand #{...} in its command argument, so the binding goes through run-shell,
+# which does, and this script opens the popup itself — the float's pattern.
+# (It used to be stashed in a global env var between the binding and the
+# popup, which races when two clients act at once.)
 #
 # This is a FREE-TEXT field, not a picker: whatever you type is the label, verbatim.
 # fzf is here only as a line editor — `--disabled` turns off matching and the input
@@ -27,47 +31,68 @@
 #   Esc    -> cancel, pane untouched
 set -uo pipefail
 
+# shellcheck source=lib/tmux-common.sh
+. "${BASH_SOURCE[0]%/*}/lib/tmux-common.sh"
+
+SELF="$HOME/.config/tmux/scripts/tmux-rename-pane.sh"
+
 die() { printf '\n  %s\n' "$*" >&2; sleep 1.8; exit 1; }
 
-# --- resolve the target pane (stashed by the key binding, then consumed) ---
-PANE=$(tmux show-environment -g RENAME_PANE_TARGET 2>/dev/null | cut -d= -f2-)
-tmux set-environment -gu RENAME_PANE_TARGET 2>/dev/null || true
-case "$PANE" in
-  %[0-9]*) : ;;
-  *) die "couldn't determine the pane (got: '${PANE}')" ;;
+valid_pane() { case "${1:-}" in %[0-9]*) return 0 ;; esac; return 1; }
+
+# 60x5 = a 58x3 interior: prompt line, hint line, and no wasted space. The
+# frame is the global popup-border-lines (rounded), like every transient dialog.
+open_popup() {
+    local pane="$1" client args
+    valid_pane "$pane" && pane_exists "$pane" || { msg "rename: no such pane"; return 1; }
+    args=(-E -w 60 -h 5 -T ' rename pane ')
+    client=$(live_client "${2:-}")
+    [ -n "$client" ] && args+=(-c "$client")
+    tmux display-popup "${args[@]}" "exec bash '$SELF' prompt '$pane'"
+}
+
+prompt() {
+    local pane="$1" current label st
+    valid_pane "$pane" || die "couldn't determine the pane (got: '${pane}')"
+
+    # Prefill with the label only if it's YOURS. Naming a pane sets allow-set-title off
+    # on it (see tmux.conf), so that option doubles as a reliable "is this label mine?"
+    # flag — without it we'd prefill the hostname, or whatever status the program
+    # inside last painted over the title.
+    current=$(pane_fmt "$pane" '#{?allow-set-title,,#{pane_title}}')
+
+    # --print-query is the whole point: it echoes the typed line. Exit 130 is Esc/^C;
+    # with no list to match against, Enter exits 1 and still prints the query.
+    label=$(: | fzf \
+              --print-query --disabled --no-mouse --no-info --no-separator \
+              --prompt='pane title > ' \
+              --header='Enter apply · empty clears · Esc cancel' \
+              --query="$current" \
+              --height=100% --reverse --border=none)
+    st=$?
+    [ "$st" = 130 ] && return 0
+
+    label=$(printf '%s' "$label" | sed -n 1p)
+
+    # trim surrounding whitespace; a blank label means "reset"
+    label="${label#"${label%%[![:space:]]*}"}"
+    label="${label%"${label##*[![:space:]]}"}"
+
+    if [ -z "$label" ]; then
+        tmux select-pane -t "$pane" -T ""
+        tmux set-option -p -u -t "$pane" allow-set-title
+        # border OFF is owned by the reconciler: it keeps the row when another pane
+        # in the window is still named or shows agent status (see tmux.conf)
+        bash "$AGENT_STATUS" reconcile "$pane"
+    else
+        tmux set-option -w -t "$pane" pane-border-status top
+        tmux set-option -p -t "$pane" allow-set-title off
+        tmux select-pane -t "$pane" -T "$label"
+    fi
+}
+
+case "${1:-}" in
+    open)   open_popup "${2:-}" "${3:-}" ;;
+    prompt) prompt "${2:-}" ;;
+    *) printf 'usage: %s {open <pane> [client]|prompt <pane>}\n' "${0##*/}" >&2; exit 64 ;;
 esac
-
-# Prefill with the label only if it's YOURS. Naming a pane sets allow-set-title off on
-# it (see tmux.conf), so that option doubles as a reliable "is this label mine?" flag —
-# without it we'd prefill the hostname, or whatever status the program inside last
-# painted over the title.
-current=$(tmux display-message -p -t "$PANE" '#{?allow-set-title,,#{pane_title}}')
-
-# --print-query is the whole point: it echoes the typed line. Exit 130 is Esc/^C;
-# with no list to match against, Enter exits 1 and still prints the query.
-label=$(: | fzf \
-          --print-query --disabled --no-mouse --no-info --no-separator \
-          --prompt='pane title > ' \
-          --header='Enter apply · empty clears · Esc cancel' \
-          --query="$current" \
-          --height=100% --reverse --border=none)
-st=$?
-[ "$st" = 130 ] && exit 0
-
-label=$(printf '%s' "$label" | sed -n 1p)
-
-# trim surrounding whitespace; a blank label means "reset"
-label="${label#"${label%%[![:space:]]*}"}"
-label="${label%"${label##*[![:space:]]}"}"
-
-if [ -z "$label" ]; then
-  tmux select-pane -t "$PANE" -T ""
-  tmux set-option -p -u -t "$PANE" allow-set-title
-  # border OFF is owned by the reconciler: it keeps the row when another pane
-  # in the window is still named or shows a Claude context chip (see tmux.conf)
-  bash "$HOME/.config/tmux/scripts/tmux-claude-ctx.sh" reconcile "$PANE"
-else
-  tmux set-option -w -t "$PANE" pane-border-status top
-  tmux set-option -p -t "$PANE" allow-set-title off
-  tmux select-pane -t "$PANE" -T "$label"
-fi

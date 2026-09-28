@@ -78,6 +78,7 @@ set -u
 # gwt owns creation and seeding. The shell support file owns listing,
 # merge checks, snapshots, and removal; this script owns the tmux/fzf UI.
 source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
+. "${BASH_SOURCE[0]%/*}/lib/tmux-common.sh"   # fzf_colors_from_palette
 
 # --- list:  "<markers> <branch>\t<path>\t<branch>"  (display = field 1) --------
 
@@ -215,17 +216,7 @@ await_trunk() {
 # (tmux.conf force-loads the palette file on start and on every theme switch),
 # so the popup reads its colors from tmux at launch instead of keeping
 # per-theme tables — a new theme styles this UI with no change here.
-fzf_colors="fg+:-1"
-_wt_theme() {
-  local accent muted dim surface green red
-  # One round trip: six `tmux show` calls were ~50ms of time-to-first-paint.
-  IFS='|' read -r accent muted dim surface green red <<EOF
-$(tmux display-message -p '#{@thm_mauve}|#{@thm_overlay_2}|#{@thm_overlay_0}|#{@thm_surface_0}|#{@thm_green}|#{@thm_red}' 2>/dev/null)
-EOF
-  [ -n "$accent" ] || return 0            # no palette loaded — fzf defaults
-  fzf_colors="hl:$red,hl+:$red,fg+:-1,bg+:$surface,gutter:-1,query:-1,pointer:$accent,prompt:$accent,spinner:$accent,marker:$green,info:$muted,header:$muted,label:$muted,border:$dim,preview-border:$dim"
-}
-_wt_theme
+fzf_colors="$(fzf_colors_from_palette)"
 
 # --- create / switch -----------------------------------------------------------
 
@@ -288,8 +279,7 @@ switch_worktree() {
   # landing on a worktree window clears its agent-done dot (by window id, so a
   # duplicate name can't send it to the wrong window) and refreshes the ◷ badge.
   tmux set-option -w -t "$wid" @agent_done 0 2>/dev/null || true
-  [ -f "$HOME/.config/tmux/scripts/tmux-agent-recount.sh" ] && \
-    bash "$HOME/.config/tmux/scripts/tmux-agent-recount.sh" 2>/dev/null || true
+  bash "${BASH_SOURCE[0]%/*}/tmux-agent-status.sh" recount 2>/dev/null || true
 }
 
 # returns 0 on success (worktree created, window opened → caller exits popup);

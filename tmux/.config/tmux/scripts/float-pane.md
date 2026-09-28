@@ -12,7 +12,10 @@ One control plane for moving panes around, in three parts:
   behind one key. `tmux-pane-relocate.sh` + the `panes` table in `tmux.conf`.
 
 Requires **tmux 3.7b**. Tests: `scripts/tests/test-pane-control.sh` (the
-isolation rules a new case must honour are in the repo's `CLAUDE.md`).
+isolation rules a new case must honour are in `docs/testing.md`). Helpers both
+scripts share — existence checks, tiled-pane listing, order-then-layout replay,
+`live_client`, border validation, the fzf palette — live in
+`scripts/lib/tmux-common.sh`.
 
 ---
 
@@ -65,7 +68,7 @@ Two tmux behaviours dictate the binding's shape:
 ### Its frame
 
 The float draws a **heavy** border while the global `popup-border-lines` stays
-`rounded` for the worktree and rename popups. Those are transient dialogs; the
+`rounded` for the worktree, rename, and pick popups. Those are transient dialogs; the
 float is a pane you sit and work in, so it earns a heavier edge to separate it
 from the live window showing through behind it. Override with
 `tmux set -g @float_border <single|rounded|double|heavy|simple|padded|none>` —
@@ -142,9 +145,9 @@ exactly the machinery this deliberately does not have.
 ### State lives on the pane
 
 All float metadata is in pane-local user options (`@fl_*`), so it travels with
-the pane and two panes can be floated at once without colliding. The rename-pane
-popup stashes context in a *global* env var, which races when two clients act at
-once — nothing here does that.
+the pane and two panes can be floated at once without colliding. A global stash
+would race when two clients act at once; no popup here uses one (the rename
+popup did until it took the float's argument-passing shape).
 
 ### Two transaction rules
 
@@ -256,9 +259,9 @@ keeps the last good save, and the user gets a message saying why.
 
 ## Pane mode
 
-Directional push, the identity-aware undo journal, and mark-and-move are an
-independent control surface. Their model and verification live in
-`pane-mode.md`.
+Directional push, the identity-aware undo journal, and the cross-window moves
+(hold, put, pick) are an independent control surface. Their model and
+verification live in `pane-mode.md`.
 
 ## Native floating panes are filtered everywhere
 
@@ -271,6 +274,13 @@ tmux says `cannot swap floating panes`.
 
 ## Traps that cost real debugging
 
+- **A missing target is not an error.** tmux 3.7c answers
+  `display-message -p -t <gone pane or window>` with exit status 0 and empty
+  output, so an existence check must test the output. The float's own copies
+  tested the status and called every dead pane alive: a toggle on a dead pane
+  got as far as creating a holder session before `break-pane` failed, and a
+  scratch for a dead pane opened at `$HOME`. The shared
+  `pane_exists`/`win_exists` test the output; T38 pins it.
 - **A `-c <tty>` target can resolve to a ghost.** `cmd_find_client` matches by
   tty name, first in attach order, and does **not** skip a suspended client —
   while `list-clients` hides one (`sort_get_clients` drops
@@ -279,10 +289,12 @@ tmux says `cannot swap floating panes`.
   shares the live client's name, precedes it, wins the lookup, and every popup
   is drawn onto a stopped tty: float and scratch both went dark for a day
   (2026-08-16), and the ghost was invisible to `list-clients` the whole time.
-  `live_client()` keeps a client name only if the pid it resolves to is one
-  `list-clients` shows, else passes no `-c` and lets tmux pick the session's
-  most recently active client — on the keypress path, the one that pressed
-  the key. Pinned by T27, which manufactures a real ghost. Diagnosis, if it
+  `live_client()` (`lib/tmux-common.sh`) keeps a client name only if the pid it
+  resolves to is one `list-clients` shows, else passes no `-c` and lets tmux
+  pick the most recently active client — on the keypress path, the one that
+  pressed the key. Every popup opened from a script goes through it: float,
+  scratch, pick, rename. Pinned by T27, which manufactures a real ghost and
+  opens the scratch and the pick on it. Diagnosis, if it
   ever recurs: `tmux display -p -c <tty> '#{client_pid} #{client_flags}'`
   showing `suspended` while `list-clients` shows a different pid; cure:
   `kill -9` the stopped `tmux attach` in the outer shell's job table.

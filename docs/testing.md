@@ -29,8 +29,8 @@ Each suite owns one boundary:
 
 | Suite | Contract |
 |---|---|
-| pane control | float, restore, and pane-mode transactions on an isolated tmux socket |
-| context chip | publication, shedding, cleanup, and quota refresh without the live cache |
+| pane control | float, restore, pane-mode, and rename-popup transactions, plus the shared script library's contract (existence checks, live client, palette colours), on an isolated tmux socket |
+| context chip | publication, shedding, cleanup, and quota refresh without the live cache; one agent-status vocabulary across the statusline, owner, border, and zsh; the prompt sweep in a single tmux round trip |
 | worktree core | tmux-free snapshots, recovery refs and their expiry, and removal parent cleanup; merge verdicts are tested in `~/dev/gwt` |
 | gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery; probed rows replace the bare first paint; ctrl-y copies through a stub `toclip`; ctrl-g reaps what gwt calls merged and leaves unmerged work; private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |

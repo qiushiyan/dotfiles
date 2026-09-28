@@ -64,22 +64,12 @@
 
 set -uo pipefail
 
-CLAUDE_CTX="$HOME/.config/tmux/scripts/tmux-claude-ctx.sh"
+# msg, pane_fmt, pane_exists, win_exists, tiled_panes, apply_order_and_layout,
+# PANE_LABEL_FMT, live_client, fzf_colors_from_palette, reconcile_borders.
+# shellcheck source=lib/tmux-common.sh
+. "${BASH_SOURCE[0]%/*}/lib/tmux-common.sh"
+
 JOURNAL_DEPTH=20
-
-msg() { tmux display-message "$*" 2>/dev/null || true; }
-
-tiled_panes() {
-    tmux list-panes -t "$1" -f '#{==:#{pane_floating_flag},0}' -F '#{pane_id}' 2>/dev/null
-}
-# Non-empty output, not the exit status: tmux 3.7b exits 0 for a target that
-# no longer exists and prints nothing (verified) — an rc check calls every dead
-# pane alive.
-pane_exists() { [ -n "$(tmux display-message -p -t "$1" '#{pane_id}' 2>/dev/null)" ]; }
-win_exists()  { [ -n "$(tmux display-message -p -t "$1" '#{window_id}' 2>/dev/null)" ]; }
-reconcile()   { TMUX_PANE= bash "$CLAUDE_CTX" reconcile >/dev/null 2>&1 || true; }
-pane_fmt()    { tmux display-message -p -t "$1" "$2" 2>/dev/null; }
-
 SELF="$HOME/.config/tmux/scripts/tmux-pane-relocate.sh"
 
 # Why a pane cannot be moved between windows, as a word — or nothing when it
@@ -115,7 +105,7 @@ journal_push() {
 }
 
 journal_pop() {
-    local win="$1" cur rec rest order layout i=0 want have
+    local win="$1" cur rec rest order layout
     cur=$(tmux show -wqv -t "$win" @pane_journal 2>/dev/null)
     [ -n "$cur" ] || { msg "pane: nothing to undo"; return 0; }
     rec=$(printf '%s' "$cur" | head -1)
@@ -138,15 +128,8 @@ journal_pop() {
 
     tmux set -w -t "$win" @pane_journal "$rest" 2>/dev/null
 
-    for want in $order; do
-        pane_exists "$want" || { i=$((i + 1)); continue; }
-        have=$(tiled_panes "$win" | sed -n "$((i + 1))p")
-        [ -n "$have" ] && [ "$have" != "$want" ] && \
-            tmux swap-pane -d -s "$want" -t "$have" 2>/dev/null
-        i=$((i + 1))
-    done
-    [ -n "$layout" ] && tmux select-layout -t "$win" "$layout" 2>/dev/null
-    reconcile
+    apply_order_and_layout "$win" "$order" "$layout"
+    reconcile_borders
 }
 
 # --- push ---------------------------------------------------------------------
@@ -206,7 +189,7 @@ push() {
             msg "pane: could not move to the ${dir} edge"; return 0; }
         tmux select-pane -t "$pane" 2>/dev/null
     fi
-    reconcile
+    reconcile_borders
 }
 
 # --- place: the one cross-window move -----------------------------------------
@@ -234,7 +217,7 @@ place() { # <source pane> <target pane>
     tmux select-pane -t "$src" 2>/dev/null
     journal_clear "$tgt_win"
     win_exists "$src_win" && journal_clear "$src_win"
-    reconcile
+    reconcile_borders
 }
 
 # The pane a put lands next to: the target window's active pane, unless that
@@ -264,9 +247,7 @@ hold() {
         floated)      msg "pane: close the float first (prefix z)"; return 0 ;;
     esac
     # Display label, snapshotted now: what was picked up, and where it was.
-    # Same title rule as the float and the border: a title equal to the
-    # hostname is tmux's unset default, so show the command instead.
-    label=$(pane_fmt "$pane" '#{?#{==:#{pane_title},#{host}},#{pane_current_command},#{pane_title}} · window #{window_index}')
+    label=$(pane_fmt "$pane" "$PANE_LABEL_FMT · window #{window_index}")
     tmux set -g @pane_hold "$pane" 2>/dev/null
     tmux set -g @pane_hold_label "$label" 2>/dev/null
     msg "pane: holding $label — go to a window and press prefix p p"
@@ -326,7 +307,7 @@ break_pane() {
     [ -n "$win" ] || return 0
     journal_clear "$win"
     tmux break-pane -s "$pane" 2>/dev/null
-    reconcile
+    reconcile_borders
 }
 
 # --- pick: the popup front end ------------------------------------------------
@@ -341,8 +322,13 @@ break_pane() {
 # while the table is already set.
 
 pick() {
-    local pane="${1:-}" client="${2:-}" why others
+    local pane="${1:-}" client why others
     [ -n "$pane" ] || pane=$(tmux display-message -p '#{pane_id}')
+    # Resolved ONCE and carried through the popup to reenter: a ghost client
+    # (suspended, sharing the live one's tty name) would otherwise win both the
+    # popup's -c and the re-entry's switch-client -c. Empty means "let tmux
+    # pick", which on the keypress path is the client that pressed w.
+    client=$(live_client "${2:-}")
     why=$(unmovable_reason "$pane")
     case "$why" in
         gone)         return 0 ;;
@@ -354,20 +340,23 @@ pick() {
         msg "pane: no other window in this session (b breaks it into a new one)"
         reenter "$client"; return 0
     fi
-    local args=(-E -w 72% -h 60% -b "$(popup_border)" -T ' move pane to ')
-    [ -n "$client" ] && tmux display-message -p -c "$client" '' >/dev/null 2>&1 && args+=(-c "$client")
+    # A transient dialog: the global popup-border-lines frame (rounded), like
+    # the worktree and rename popups — not the float's heavy one.
+    local args=(-E -w 72% -h 60% -T ' move pane to ')
+    [ -n "$client" ] && args+=(-c "$client")
     tmux display-popup "${args[@]}" "exec bash '$SELF' pick-ui '$pane' '$client'"
 }
 
-reenter() { # <client> — back into pane mode on the client that started the pick
-    [ -n "${1:-}" ] || return 0
-    tmux switch-client -c "$1" -T panes 2>/dev/null || true
-    tmux refresh-client -S -t "$1" 2>/dev/null || true   # redraw the cheat sheet row now
-}
-
-popup_border() {
-    local b; b=$(tmux show -gqv @float_border 2>/dev/null)
-    case "$b" in single|rounded|double|heavy|simple|padded|none) printf '%s' "$b" ;; *) printf 'rounded' ;; esac
+# Back into pane mode on the client that started the pick; with no (live)
+# client name, tmux's best client — the most recently active one.
+reenter() { # [client]
+    if [ -n "${1:-}" ]; then
+        tmux switch-client -c "$1" -T panes 2>/dev/null || true
+        tmux refresh-client -S -t "$1" 2>/dev/null || true   # redraw the cheat sheet row now
+    else
+        tmux switch-client -T panes 2>/dev/null || true
+        tmux refresh-client -S 2>/dev/null || true
+    fi
 }
 
 # "<window_id>\t<index>: <name>  · <n> pane(s)" for every other window of the
@@ -381,18 +370,9 @@ other_windows() { # <pane>
 
 pick_ui() {
     local pane="$1" client="${2:-}" sel win target
-    local fzf_colors="fg+:-1" accent muted dim surface green red
-    # fzf colours from the live tmux palette — same trick as the worktree popup.
-    accent=$(tmux show -gqv @thm_mauve 2>/dev/null)
-    if [ -n "$accent" ]; then
-        muted=$(tmux show -gqv @thm_overlay_2); dim=$(tmux show -gqv @thm_overlay_0)
-        surface=$(tmux show -gqv @thm_surface_0); green=$(tmux show -gqv @thm_green)
-        red=$(tmux show -gqv @thm_red)
-        fzf_colors="hl:$red,hl+:$red,fg+:-1,bg+:$surface,gutter:-1,query:-1,pointer:$accent,prompt:$accent,spinner:$accent,marker:$green,info:$muted,header:$muted,label:$muted,border:$dim,preview-border:$dim"
-    fi
     sel=$(other_windows "$pane" | fzf --ansi --no-sort --delimiter '	' --with-nth 2 \
         --prompt '⇢  ' --header '  enter move here · esc cancel' \
-        --color "$fzf_colors" --layout reverse \
+        --color "$(fzf_colors_from_palette)" --layout reverse \
         --preview "bash '$SELF' preview {1}" --preview-window 'right,60%,border-left' \
         --bind 'tab:down,btab:up')
     win=${sel%%	*}
@@ -413,7 +393,7 @@ preview() { # <window_id>
     tmux display-message -p -t "$win" '#{window_index}: #{window_name}' 2>/dev/null
     echo
     tmux list-panes -t "$win" -f '#{==:#{pane_floating_flag},0}' \
-        -F '#{?pane_active,▶,·} #{?#{==:#{pane_title},#{host}},#{pane_current_command},#{pane_title}}  #{pane_width}x#{pane_height}  #{s|^'"$HOME"'|~|:#{pane_current_path}}' 2>/dev/null
+        -F "#{?pane_active,▶,·} $PANE_LABEL_FMT  #{pane_width}x#{pane_height}  #{s|^$HOME|~|:#{pane_current_path}}" 2>/dev/null
     active=$(tiled_target_in "$win")
     [ -n "$active" ] || return 0
     echo; printf -- '─────\n'

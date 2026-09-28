@@ -90,7 +90,6 @@ step_thirdparty() {
         "https://github.com/zsh-users/zsh-syntax-highlighting.git|$HOME/zsh-syntax-highlighting"
         "https://github.com/zsh-users/zsh-autosuggestions|$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
         "https://github.com/tmux-plugins/tpm|$HOME/.config/tmux/plugins/tpm"
-        "https://github.com/jimeh/tmuxifier|$HOME/.config/tmux/plugins/tmuxifier"
         "https://github.com/yetone/smart-suggestion|$HOME/.config/smart-suggestion"
     )
 
@@ -121,7 +120,8 @@ step_thirdparty() {
     fi
 
     # Trigger tpm to fetch the rest of the tmux plugins declared in tmux.conf
-    # (tmux-sensible, tmux-resurrect, vim-tmux-navigator, catppuccin/tmux).
+    # (tmux-resurrect, tmux-continuum, vim-tmux-navigator, catppuccin/tmux,
+    # tmux-fzf-url).
     # tpm only auto-installs from inside tmux on `prefix + I`; running its
     # install_plugins script here makes the bootstrap fully non-interactive.
     if [[ -x "$HOME/.config/tmux/plugins/tpm/bin/install_plugins" ]]; then

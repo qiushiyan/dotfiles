@@ -517,43 +517,25 @@ else
     printf '%s' "${out}${line}"
 fi
 
-# Push the percentage, model id and account lane to the tmux pane border (the @claude_ctx
-# chip; drawing, ownership, and teardown live in tmux.conf +
-# tmux-claude-ctx.sh). One tmux round-trip per render, with the whole gate
-# SERVER-side: publish only when the tombstone isn't ours (a statusline
-# subprocess can outlive a killed Claude — a tombstoned session id must not
-# resurrect the chip it just had cleaned up; the barrier holds until the id
-# legitimately starts again, since resume KEEPS the session id — SessionStart
-# discharges it via tmux-claude-ctx.sh activate-session) AND something
-# actually changed —
-# the integer, the MODEL (/model switches mid-session, so it can't be written
-# once and forgotten), or the OWNER: a successor session resuming at its
-# predecessor's exact percentage must still record its own sid, or the
-# predecessor's late cleanup would pass its owner check and erase the
-# successor's chip. The ACCOUNT gets a gate arm like the rest even though it
-# is fixed for the life of a session (headroom sets the env once, at launch):
-# a pane published by a PRE-account version of this script is a normal state
-# in a stowed live repo, and with the other three unchanged only an account
-# arm backfills it — the arm also self-heals a tampered option and keeps the
-# gate honest on its own terms instead of leaning on "resume mints a new
-# session id" staying true of the vendor.
-# The three QUOTA values — the 5-hour percentage, the model-scoped weekly and
-# the model it is scoped to — get arms for the ordinary reason instead: unlike
-# the account they genuinely change, and unlike the context percentage they can
-# legitimately go EMPTY (the weekly's window rolls over, the refresher cannot
-# reach headroom, the payload carries no rate_limits on API billing). Empty is
-# a value here, not an absence to be skipped, and the !=  comparison treats it
-# as one — which is what lets a stale weekly stop being drawn rather than
-# linger. They still move slowly enough that the arms rarely fire: percentages
-# are integers, and the weekly's own source only changes every few minutes.
-# At steady state no arm fires, so an unchanged septuple writes nothing
-# (set-option triggers redraw/layout work even for an unchanged value, and this
-# runs ~3×/sec while streaming). Every accepted write records all seven values
-# and reconciles the window's border in the background — accepted writes are
-# sparse, and the reconcile doubles as passive repair after pane relocation.
-if [ -n "${TMUX_PANE:-}" ] && [ "${SESSION_ID:--}" != "-" ]; then
-    tmux if-shell -F -t "$TMUX_PANE" \
-        "#{&&:#{!=:#{@claude_ctx_dead},$SESSION_ID},#{||:#{!=:#{@claude_ctx},$PERCENT_USED},#{||:#{!=:#{@claude_ctx_sid},$SESSION_ID},#{||:#{!=:#{@claude_ctx_model},$MODEL_ID},#{||:#{!=:#{@claude_ctx_account},$ACCOUNT},#{||:#{!=:#{@claude_ctx_5h},$FIVE_HOUR},#{||:#{!=:#{@claude_ctx_wk},$WEEK_PCT},#{!=:#{@claude_ctx_wk_model},$WEEK_MODEL}}}}}}}}" \
-        "set-option -p -t '$TMUX_PANE' @claude_ctx '$PERCENT_USED' ; set-option -p -t '$TMUX_PANE' @claude_ctx_sid '$SESSION_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_model '$MODEL_ID' ; set-option -p -t '$TMUX_PANE' @claude_ctx_account '$ACCOUNT' ; set-option -p -t '$TMUX_PANE' @claude_ctx_5h '$FIVE_HOUR' ; set-option -p -t '$TMUX_PANE' @claude_ctx_wk '$WEEK_PCT' ; set-option -p -t '$TMUX_PANE' @claude_ctx_wk_model '$WEEK_MODEL' ; run-shell -b 'bash $HOME/.config/tmux/scripts/tmux-claude-ctx.sh reconcile $TMUX_PANE'" \
-        2>/dev/null || true
+# Publish the chip to the tmux pane border. tmux-agent-status.sh owns the
+# vocabulary and the gate: sourcing it (a builtin read, no process) yields
+# agent_claude_publish, which builds ONE server-side compare-and-set — accept
+# only when this session is not tombstoned and some value changed, write every
+# field, reconcile the border in the background. Every value gets a gate arm:
+# the percentage and MODEL change mid-session (/model); the OWNER lets a
+# successor resuming at its predecessor's exact values record its own sid; the
+# ACCOUNT is fixed per session but backfills a pane published before the
+# option existed, a normal state in a stowed live repo; and the three QUOTA
+# values can legitimately go EMPTY (the weekly window rolls over, the refresher
+# cannot reach headroom, API billing carries no rate_limits) — empty is a
+# value, which is what lets a stale weekly stop being drawn. At steady state no
+# arm fires and nothing is written; this runs ~3×/sec while streaming.
+# Arguments follow AGENT_CLAUDE_FIELDS (lib/agent-vocab.sh); a count that
+# disagrees with the vocabulary publishes nothing rather than misaligned values.
+AGENT_STATUS_LIB="$HOME/.config/tmux/scripts/tmux-agent-status.sh"
+if [ -n "${TMUX_PANE:-}" ] && [ "${SESSION_ID:--}" != "-" ] && [ -r "$AGENT_STATUS_LIB" ] &&
+   . "$AGENT_STATUS_LIB" &&
+   agent_claude_publish "$TMUX_PANE" "$PERCENT_USED" "$SESSION_ID" "$MODEL_ID" \
+       "$ACCOUNT" "$FIVE_HOUR" "$WEEK_PCT" "$WEEK_MODEL"; then
+    tmux if-shell -F -t "$TMUX_PANE" "$AGENT_GATE" "$AGENT_PUBLISH" 2>/dev/null || true
 fi

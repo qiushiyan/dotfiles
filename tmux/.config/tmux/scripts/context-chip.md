@@ -9,15 +9,42 @@ statusline, quota cache, pane-border lifecycle, or responsive shedding.
 Claude statusline payload ─┬→ context + model + 5-hour
 headroom quota cache ──────┘
             ↓
-statusline-command.sh publishes pane options
+statusline-command.sh sources tmux-agent-status.sh,
+publishes pane options through agent_claude_publish
             ↓
 tmux.conf renders the pane border
 
-SessionEnd / zsh precmd / pane-exited / pane move
-            → tmux-claude-ctx.sh → clear or reconcile
+SessionStart / SessionEnd / zsh precmd / codex wrapper / pane-exited / pane move
+            → tmux-agent-status.sh → activate, clear, sweep, or reconcile
 ```
 
-The pane options are the boundary:
+## Ownership
+
+One script owns per-pane agent status: `tmux-agent-status.sh`. The option
+names are defined once in `lib/agent-vocab.sh`, which the owner, the
+statusline (through the owner), and the zsh prompt sweep read. Producers say
+*when* — a render, a hook, a prompt, a Codex launch — and the owner says
+*which options* change:
+
+```text
+activate claude | codex    SessionStart discharge; Codex launch
+clear claude | codex       SessionEnd (owner-checked); Codex exit
+sweep <pane> [agent...]    the prompt returned: drop, tombstoning Claude's sid
+reconcile [target]         the only path that turns the border row off
+done / recount             dormant agent-done badge (agent-notify.md)
+```
+
+The render path has a budget: one server-side `if-shell` per render, no
+process spawned. The statusline therefore *sources* the owner and calls its
+spawn-free builder instead of running a verb. The zsh prompt keeps one tmux
+round trip per prompt: `cout`'s precmd, which runs after oh-my-posh's, carries
+its own publication and the sweep's presence test in a single call, and the
+owner's `sweep` is spawned only when an agent's marker is actually set.
+`tmux.conf` stays the renderer and names the options it draws; the chip suite
+checks that every name it reads is one the vocabulary publishes.
+
+The Claude options themselves, the boundary between the statusline and the
+border (the owner's header documents each one's semantics):
 
 ```text
 @claude_ctx          context percentage; existence gate for the chip
@@ -28,8 +55,8 @@ The pane options are the boundary:
 @claude_ctx_wk_model weekly model label
 ```
 
-The statusline republishes only changed values. `tmux-claude-ctx.sh` is the
-single owner of turning the border off.
+The statusline republishes only changed values. `tmux-agent-status.sh
+reconcile` is the single owner of turning the border off.
 
 ## Quota sources
 
@@ -83,7 +110,8 @@ Each quota value earns its own colour: muted below 50, yellow from 50, red from
 Cleanup has overlapping owners because exits are incomplete signals:
 
 - Claude `SessionEnd` handles normal exits.
-- zsh `precmd` catches hard kills; a suspended Claude process remains live.
+- zsh `precmd` catches hard kills; a suspended Claude process remains live. The
+  same sweep backs up the Codex wrapper's own exit cleanup.
 - tmux `pane-exited` handles closed panes.
 - break, join, and move paths reconcile after relocation.
 
@@ -94,10 +122,12 @@ resurrecting its chip. It lasts only until that conversation starts again;
 ## Verification
 
 ```text
-publisher: claude/.claude/commands/statusline-command.sh
-control:   tmux/.config/tmux/scripts/tmux-claude-ctx.sh
-render:    tmux/.config/tmux/tmux.conf, "pane borders"
-tests:     tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh
+publisher:  claude/.claude/commands/statusline-command.sh
+vocabulary: tmux/.config/tmux/scripts/lib/agent-vocab.sh
+owner:      tmux/.config/tmux/scripts/tmux-agent-status.sh
+prompt:     zsh/.config/zsh/tmux-utils.zsh, cout.zsh
+render:     tmux/.config/tmux/tmux.conf, "pane borders"
+tests:      tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh
 ```
 
 Exercise full-width and split panes across accounts, including low weekly

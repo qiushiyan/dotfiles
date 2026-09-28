@@ -105,7 +105,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/tmux/scripts/tmux-agent-done.sh"
+            "command": "bash ~/.config/tmux/scripts/tmux-agent-status.sh done"
           }
         ]
       }
@@ -115,7 +115,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/tmux/scripts/tmux-agent-done.sh"
+            "command": "bash ~/.config/tmux/scripts/tmux-agent-status.sh done"
           }
         ]
       }
@@ -125,7 +125,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/tmux/scripts/tmux-claude-ctx.sh clear-session"
+            "command": "bash ~/.config/tmux/scripts/tmux-agent-status.sh clear claude"
           }
         ]
       }
@@ -136,7 +136,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/tmux/scripts/tmux-claude-ctx.sh activate-session"
+            "command": "bash ~/.config/tmux/scripts/tmux-agent-status.sh activate claude"
           }
         ]
       }

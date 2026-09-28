@@ -121,7 +121,7 @@ end
 -- over RPC because "is this path worth copying" is a buffer-domain question —
 -- buftype, .git/ edit files (COMMIT_EDITMSG, rebase-todo), Claude Code's
 -- Ctrl+G claude-prompt-*.md are all real files an outside `[ -f ]` check
--- can't reject. Same push pattern as tmux-claude-ctx.sh's @ options.
+-- can't reject. Same push pattern as tmux-agent-status.sh's @ options.
 -- The explicit -t matters: `tmux set -p` without it falls back to the
 -- *client's* active pane when TMUX_PANE is unset (true inside display-popup),
 -- silently writing some other pane's options.
