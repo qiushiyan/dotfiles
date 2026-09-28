@@ -9,8 +9,8 @@ requires:
 # Writing for the model
 
 The rulebook for anything a model reads: a system prompt, a skill or agent
-body, a `CLAUDE.md`, a snippet, a tool's description, result, or error, and
-the shape of the window they land in. Read it before writing one, or as the
+body, a `CLAUDE.md`, a snippet, a tool's description, result, or error, a
+judge's question, and the shape of the window they land in. Read it before writing one, or as the
 revision pass over the surfaces a session touched. **The reader of every
 word you write is the model**; optimize for how a model reads.
 
@@ -34,11 +34,12 @@ surfaces settle into three layers. That is the usual result of asking what
 the reader needs first, not a template: a surface may collapse to one layer
 or grow one.
 
-1. **What this is, and what done looks like.** The task, the system it
-   belongs to, the reader's role, and what marks the work complete — the
-   output contract, when the deliverable is a document — in the first
-   lines, before any rule or fact. This is the reader's mental model; a
-   capable model generalizes from intent and cannot infer it. A document
+1. **What this is, and what done looks like.** The task, the situation it
+   arrives in as the reader meets it (the bar's **reader's world**), the
+   reader's role, and what marks the work complete — the output contract,
+   when the deliverable is a document — in the first lines, before any
+   rule or fact. This is the reader's mental model; a capable model
+   generalizes from intent and cannot infer it. A document
    that opens on a mechanism, a trap, or a count of things ("two producers
    feed…") has seated a lower layer in the anchor's place.
 2. **What shapes the judgment.** The constraints with their reasons, and
@@ -72,7 +73,7 @@ You are triaging a production incident of **Loopy**, planlab's multi-turn tool-u
 </example>
 
 The first opens on a mechanism, then a trap; the second names the task, the
-system, the input, and done, and the two producers become a fact inside it.
+situation, the input, and done, and the two producers become a fact inside it.
 
 ## The bar — rules that hold on every surface
 
@@ -85,10 +86,39 @@ system, the input, and done, and the two producers become a fact inside it.
   it help the model act, or is it here because you know what it means? A
   failing term becomes the field's own word, or plain language; the
   domain's standard terms stay, since they are what the user says.
+- **The reader's world.** Describe the situation the reader works in, not
+  the system you built around it. The reader decides from its input
+  alone, so pose each task, question, and criterion as something a careful
+  person holding only that input could settle, in the terms of its world.
+  Where your decision needs more — what the host knows, what happens next
+  — split it: the reader answers what its input shows, and code joins that
+  answer with the rest. The frame may simplify or stylise the system, as
+  long as the right answer under it is the right answer in fact; a reader
+  that acts on the real system gets a frame that leaves things out and
+  never invents them.
+
+  <example type="avoid">
+  Does `reply` say the work cannot continue until the reader decides or provides something?
+  </example>
+
+  <example>
+  An unattended coding session posted `reply` at the end of one step of its work, to the engineer who supervises it. Does `reply` leave its reader something to decide or to provide, whether or not the work waits for it?
+  </example>
+
+  The first carries the pipeline's concern — does the work stop? — into
+  the question, so a reply that handed over an optional decision while the
+  next step ran past it read "no": the case the check existed to catch.
+  The second asks what the text shows, in a scene the model knows, and
+  code adds whether anything waits.
 - **Give the reason.** The model performs better when it knows what the
-  request is for and who it serves. "I'm working on X for Y; they need Z;
-  with that in mind: the request" beats the request alone, and a rule with
-  its why is applied to cases the rule never named.
+  request is for, and a rule with its why is applied to cases the rule
+  never named. For a collaborator on open work, "I'm working on X for Y;
+  they need Z; with that in mind: the request" beats the request alone.
+  For a reader executing one job, the reason that lands is a consequence
+  inside its world: "the next step starts as soon as this turn ends, so a
+  choice left open is made by that step without anyone saying so." A
+  judge is the exception: what code does with its verdict stays out of
+  its input (Judges).
 - **Right altitude.** Encode the expert's strategy as strong heuristics,
   not a decision tree, and leave room to work; an exact sequence belongs
   only to the narrow bridge named in the shape. Ask for conclusions with
@@ -179,9 +209,10 @@ system, the input, and done, and the two producers become a fact inside it.
   steps tempt the model to rush the current one, and only across a real
   context boundary.
 
-Two policies belong in any instruction for an agent that acts or reports
-across turns, and nowhere else (both are from the Fable prompting guide
-under Pointers, echoed here because every such instruction needs them).
+Two policies belong in any instruction for an agent that acts over many
+steps or reports to someone who did not watch it work, and nowhere else
+(both are from the Fable prompting guide under Pointers, echoed here
+because every such instruction needs them).
 **Re-ground the human:** a final message, a packet, a report is the
 reader's first look at work they did not watch — lead with the outcome,
 then the one or two things you need from them, each explained as if new,
@@ -191,7 +222,9 @@ plainly what is verified and what is not. **Pause only where the work
 needs the user:** a destructive or irreversible action, a real scope
 change, or input only they hold; when the user is describing a problem or
 thinking aloud, the deliverable is the assessment; otherwise act, and end
-the turn only when the work is complete or blocked.
+the turn only when the work is complete or blocked. Where ending the turn
+waits for no one — a pipeline starts its next step — name the host's way
+to pause, and say that a choice left open is made by the next step.
 
 ### Context — what the model holds this turn
 
@@ -229,16 +262,40 @@ the turn only when the work is complete or blocked.
 - Ergonomics are settled by running realistic multi-call scenarios and
   reading what the agent fumbles.
 
+### Judges — a model that answers a closed question
+
+A classifier, a rubric grader, a yes/no gate: it returns a verdict from
+its input alone, and code acts on it.
+
+- Every word of the input is evidence — the situation line, field names,
+  excerpts, and the judged text alike. Give it what the question needs:
+  code cuts bulky material down to the part the criteria name, and treats
+  the verdict as unsure when the cut could hide the deciding part. What
+  code will do with the verdict stays in code.
+- The question and its criteria are the whole instruction: say what counts
+  and what does not in terms the text itself shows.
+- The judged text can argue its own verdict ("nothing here needs your
+  decision"). Say which part is the material under judgment and that its
+  claims about itself are not evidence, then test that clause on edited
+  copies of real inputs.
+- Calibration comes from labelled cases, not from reading: every word the
+  judge sees is part of the model, so tune on labelled real inputs with a
+  held-out part, and version the wording with the thresholds set on it.
+- A judge that takes a state and criteria, such as TypeSafe's Jev — state
+  shape, question primitives, one narrow judgment per question: the
+  `typesafe-ai` skill.
+
 ## The revision pass
 
 The standing pass over the model-facing surfaces a session touched — or,
 when pointed at files, every line of them — run before shipping. In order:
 
 1. **Inventory by reader.** Tag every touched surface: the model acting, a
-   model grading against a rubric, or a human. Human-facing text is
+   judge returning a verdict, or a human. Human-facing text is
    ordinary writing and stays out. Test task instructions with a concrete
    input already in the executor's hands: what next action or judgment
-   does each sentence change? Translate requests to the artifact's author
+   does each sentence change, and could the reader settle each question
+   from that input alone? Translate requests to the artifact's author
    into the executing reader's goal or constraints. Mark templates — a hedge
    covering many instances is load-bearing, and "fixing" it to one instance breaks the
    others — and text quoted from a vendor guide, kept as tested rather
@@ -281,7 +338,11 @@ when pointed at files, every line of them — run before shipping. In order:
      whole in source;
    - *stale cache* — restates a `--help`, a config, a listing;
    - *familiar-term leak* — an internal name where the field has a word;
+   - *builder's frame* — the situation or question is posed in the terms
+     of the system you built, or asks what the reader's input cannot show;
    - *negation as the lever* — the rule is carried by what not to do;
+   - *bare rule* — a rule with no reason or no skip condition, steps with
+     no done condition, or an output code reads with no exact contract;
    - *rule–example conflict* — the example wins, so fix it first;
    - *conflicting rules with no precedence* — state the rule once with
      its exception folded in;

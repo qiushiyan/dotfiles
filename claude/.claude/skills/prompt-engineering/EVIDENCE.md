@@ -202,3 +202,91 @@ Loopy's leak rate per 1,000 final replies (62 / 1k baseline, 30 days to
 09-25) — a runtime outcome this pass did not test. Reversal condition: the
 guide growing past ~20 KB again, or passes citing the register wrongly
 (e.g. glossing NEC terms for a contract reader).
+
+## 2026-09-28 — the reader's world, and judges
+
+Seed: a jev prompt pass on the office mini (`b60cab46`, worktree
+`feat/steward-jev-prompt-pass`, 09-27 → 09-28). The user opened it asking to
+"think from first principles what the model receiving the prompts is
+actually solving outside of our development terms", and closed it asking how
+the rulebook helped. The user's reading: prompts should be written "in the
+situation where the model is called, rather than from the developer's
+understanding … a mock-up description, so long as it makes sense for the
+model executing the job … probably not emphasized enough".
+
+Corpus. Mini sessions are not in the laptop obelisk index, so their raw
+JSONL was copied and read with `jq`: `b60cab46` with its consult voices
+`a694a7d3`/`660c467b` (linked, not independent), and `ba19dcc8` (PR B,
+`steward/recorded-judgments-closeout`, 09-26 → 09-27), which authored the
+badge questions. 9 of the mini's 32 transcripts mention the rulebook path, so
+every laptop count below undercounts. Laptop obelisk: user turns with
+`source='claude'`, non-meta, non-sidechain, excluding `#…` briefs, `You
+are…` dispatches and continuation summaries, since 09-08 13:00 UTC.
+
+Usage since the second pass (laptop): 63 invocations / 41 sessions, all by
+path, 16 sessions re-invoked. The main door is now the tabtype `prompt-check`
+snippet ("Review and revise the model-facing surfaces this session
+touched…"). Standing asks inside the invoking prompts: concise/short 5 / 63,
+structure 3 / 63. Only 9 of the 63 windows have Edit-tool edits (7 longer, 2
+shorter): with permissions bypassed most writes go through Bash, so the
+edit-delta measure is too thin to read. Rule names cited in assistant text
+(52 invoking sessions): one home 21, cold reader 20, plumbing 17, truth claim
+12, no-op 11, negation 9, solve-in-code 0. The mini agent credited
+solve-in-code with the largest effect without naming it, so name counts miss
+paraphrase and are no cut signal.
+
+| finding | evidence | verdict |
+|---|---|---|
+| the frame is the builder's system, not the reader's situation | PR B's `blocks_next` ("Does `reply` say the work cannot continue until the reader decides or provides something?") passed a review in which two cold voices were told to judge the jev prompts against this rulebook (`ba19dcc8`, review-r1 brief 09-27 09:18 UTC). It read the handovers the badge exists for (an optional decision left open while the next step runs) at 0.05–0.19, "right under its own definition" (`b60cab46` tool result 22:16). The replacement is a situation line plus "leave its reader something to decide or to provide … whether or not the work waits", with code adding the wait fact. On the same stored replies it scores seq 64 at 0.07 → 0.87 and seq 97 at 0.16 → 0.92 (spike, 23:00). Independent support: `b60cab46`/`ba19dcc8`; laptop `2f010ad7` (09-21, "imagine yourself as the model executing the doc loop … based on [the rulebook]"); the 09-25 house pass ("the listed register was the author's, not the customer's") | **instructions**. Layer one names the situation as the reader meets it. New bar rule **The reader's world**: answerable from the input, split the decision so code joins what the input cannot show, a stylised frame allowed when it keeps the right answer, and an acting reader's frame omits but never invents. The badge pair is its example. **Give the reason** now separates the collaborator template from a consequence inside an executor's world. Revision step 1 carries the answerability test; the lens gains *builder's frame* |
+| no guidance for closed-question judges | Astra's ablation over 60 real calls ($0.00445): "the stronger observed mechanism is treating 'no hold' as 'no prerequisite decision'" (`b60cab46` tool result 22:06). The wording had been tuned on one card's 18 replies; the pass built a 123-reply labelled set with a held-out half, and the situation text is part of the question set's version digest (mini branch `8312867659`, `questions.ts`) | **instructions**: a short **Judges** surface section covering input as evidence, self-arguing text, and calibration by labels. `typesafe-ai` stays the vendor home. Single workstream: watch it |
+| mini sessions invisible to the index | 9 / 32 mini transcripts touch the rulebook | no change here; the next pass reads the mini by hand |
+
+The cause is attributed to the rulebook, not to the authors. The first-layer
+words "the system it belongs to" and a developer-story reason example were
+the mini agent's inference; no session shows an author quoting them. What the
+record does show is that fragments of the rule already existed and did not
+catch the badge. Revision step 1 translated author requests into the
+reader's goal, the familiar-term test covered names, and solve-in-code's
+*inform* covered missing facts, yet the reviewers applied mechanics: one
+thing per question, leaks, and cuts. Deliberate keep: "never invents" is an
+earned `never`, because a reader that acts on the real system turns an
+invented fact into a wrong action.
+
+Cold readers (two, fresh, read-only, scenarios with no hint of the change):
+authoring route — a judge in front of a merge bot's auto-merge, the request
+written in the builder's terms (`merge-block`, `queued/held/merged`, lockfile
+diffs); revision route — the pass over a headless verify session's prompt
+written in pipeline plumbing. Both applied the new rule unprompted. The judge
+never saw the internal names or the bot's states, code joined what it knew,
+the description's self-claims were marked not evidence, and trust waited on
+a labelled replay with edited copies. The session prompt's "the drain
+advances the task unless a hold row exists" became "code review starts when
+your turn ends", with nothing invented and the grader cut. Fixed from their
+reports: *give the reason*'s consequence conflicted with a judge's input (a
+judge now gets no consequence of its verdict, stated once with its home in
+Judges); oversized evidence (code cuts to what the criteria name, and a cut
+that could hide the deciding part makes the verdict unsure); the `typesafe-ai`
+pointer now says what it settles; two Judges bullets repeated the
+situation-line point (merged); "the criteria are the whole instruction" now
+names the question too; the pause policy assumed ending the turn waits (a
+pipeline session is now told the host's way to pause), and its trigger
+"across turns" now reads "over many steps or reports to someone who did not
+watch"; the lens had no name for a missing reason, skip, done condition, or
+output contract (*bare rule*). Not applied: an escape for truth claims whose
+source is unreachable, which came from the read-only scenario and not from
+real passes; tagging outputs by reader, which the re-ground policy, *bare
+rule*, and solve-in-code already carry.
+
+Length: 3192 → 3830 words (`wc -w`). The named gaps are the reader's world
+with its example pair (both readers called the pair the most useful text for
+their task), Judges, the pipeline pause clause, and two lens entries. Neither
+reader found a no-op, so nothing was cut.
+
+Next pass should measure, after 2026-09-28, on both machines: whether prompt
+passes over questions for a model (judges, gates, graders) name the
+*builder's frame* or answerability, and whether their questions ask what
+the input shows (target: every judge question passes the answerability test
+as written); whether a judge wording change ships with a labelled replay.
+Reversal condition: a stylised frame that changed an acting agent's
+behaviour on the real system, or passes that invent situation text for
+agents that act.
