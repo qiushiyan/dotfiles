@@ -10,9 +10,10 @@ requires:
 
 The rulebook for anything a model reads: a system prompt, a skill or agent
 body, a `CLAUDE.md`, a snippet, a tool's description, result, or error, a
-judge's question, and the shape of the window they land in. Read it before writing one, or as the
-revision pass over the surfaces a session touched. **The reader of every
-word you write is the model**; optimize for how a model reads.
+judge's question, and the shape of the window they land in. Read it
+before writing one, or as the revision pass over the surfaces a session
+touched. **The reader of every word you write is the model**; optimize for
+how a model reads.
 
 ## The philosophy
 
@@ -116,9 +117,7 @@ situation, the input, and done, and the two producers become a fact inside it.
   they need Z; with that in mind: the request" beats the request alone.
   For a reader executing one job, the reason that lands is a consequence
   inside its world: "the next step starts as soon as this turn ends, so a
-  choice left open is made by that step without anyone saying so." A
-  judge is the exception: what code does with its verdict stays out of
-  its input (Judges).
+  choice left open is made by that step without anyone saying so."
 - **Right altitude.** Encode the expert's strategy as strong heuristics,
   not a decision tree, and leave room to work; an exact sequence belongs
   only to the narrow bridge named in the shape. Ask for conclusions with
@@ -261,29 +260,6 @@ to pause, and say that a choice left open is made by the next step.
   block; a threshold nudge fires once, with why the threshold matters.
 - Ergonomics are settled by running realistic multi-call scenarios and
   reading what the agent fumbles.
-
-### Judges — a model that answers a closed question
-
-A classifier, a rubric grader, a yes/no gate: it returns a verdict from
-its input alone, and code acts on it.
-
-- Every word of the input is evidence — the situation line, field names,
-  excerpts, and the judged text alike. Give it what the question needs:
-  code cuts bulky material down to the part the criteria name, and treats
-  the verdict as unsure when the cut could hide the deciding part. What
-  code will do with the verdict stays in code.
-- The question and its criteria are the whole instruction: say what counts
-  and what does not in terms the text itself shows.
-- The judged text can argue its own verdict ("nothing here needs your
-  decision"). Say which part is the material under judgment and that its
-  claims about itself are not evidence, then test that clause on edited
-  copies of real inputs.
-- Calibration comes from labelled cases, not from reading: every word the
-  judge sees is part of the model, so tune on labelled real inputs with a
-  held-out part, and version the wording with the thresholds set on it.
-- A judge that takes a state and criteria, such as TypeSafe's Jev — state
-  shape, question primitives, one narrow judgment per question: the
-  `typesafe-ai` skill.
 
 ## The revision pass
 

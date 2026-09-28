@@ -282,11 +282,22 @@ with its example pair (both readers called the pair the most useful text for
 their task), Judges, the pipeline pause clause, and two lens entries. Neither
 reader found a no-op, so nothing was cut.
 
+Decided by the user, same day: the Judges section leaves the main body,
+because most sessions never write for a classifier-style model. Material
+of that kind goes into a case-study folder beside this file: one domain pass
+per file, read only by sessions working in that domain (Jev first). The mini
+session writes the first case study from its own pass. The removed section
+(in `93e11fa`, with its cold-reader fixes) is starting material. Its general
+half stays in the body: the reader's world, answerability, and code joining
+what the input cannot show. The judge-specific sentence in *give the reason*
+went with the section. The main body is now 3592 words.
+
 Next pass should measure, after 2026-09-28, on both machines: whether prompt
 passes over questions for a model (judges, gates, graders) name the
 *builder's frame* or answerability, and whether their questions ask what
 the input shows (target: every judge question passes the answerability test
-as written); whether a judge wording change ships with a labelled replay.
-Reversal condition: a stylised frame that changed an acting agent's
-behaviour on the real system, or passes that invent situation text for
-agents that act.
+as written); whether sessions in a case study's domain read it (the pointer's
+hit rate), and whether the rest leave it unread. Reversal condition: a
+stylised frame that changed an acting agent's behaviour on the real system,
+passes that invent situation text for agents that act, or case studies
+turning into a second rulebook that restates the body.
