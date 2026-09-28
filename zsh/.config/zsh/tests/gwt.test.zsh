@@ -4,7 +4,7 @@ emulate -L zsh
 setopt err_exit pipe_fail
 module="${0:A:h:h}/git.zsh"
 core="${0:A:h:h:h:h:h}/tmux/.config/tmux/scripts/worktree-core.sh"
-binary="$(command -v gwt)" || { print -u2 'gwt.test: install gwt on PATH first'; exit 1; }
+binary="$(whence -p gwt)" || { print -u2 'gwt.test: install gwt on PATH first'; exit 1; }
 sandbox="$(mktemp -d)"; sandbox="${sandbox:A}"
 trap 'cd /; command rm -rf "$sandbox"' EXIT
 export HOME="$sandbox" XDG_CONFIG_HOME="$sandbox/config"
@@ -47,4 +47,27 @@ if gwtcd --non-interactive feat/helper 2>/dev/null; then
   print -u2 'occupied path unexpectedly succeeded'; exit 1
 fi
 [[ "$PWD" == "$sandbox/topic" ]]
-print 'PASS: gwtcd completion, configured placement, caller HEAD, main seeding, failure cwd, and compatibility shim'
+# gwt --cd enters the checkout; without it the function is a passthrough.
+gwt --cd -n feat/flag
+[[ "$PWD" == "$sandbox/custom trees/repo/feat/flag" ]]
+cd "$sandbox/topic"
+gwt create feat/plain --cd --non-interactive
+[[ "$PWD" == "$sandbox/custom trees/repo/feat/plain" ]]
+cd "$sandbox/topic"
+[[ "$(gwt path feat/flag)" == "$sandbox/custom trees/repo/feat/flag" ]]
+[[ "$PWD" == "$sandbox/topic" ]]
+rc=0; gwt --cd remove feat/flag 2>/dev/null || rc=$?
+(( rc == 2 )) && [[ -d "$sandbox/custom trees/repo/feat/flag" ]]
+rc=0; gwt --cd --json -n feat/json 2>/dev/null || rc=$?
+(( rc == 2 )) && [[ ! -e "$sandbox/custom trees/repo/feat/json" ]]
+rc=0; gwt --cd -n feat/flag 2>/dev/null || rc=$?
+(( rc == 1 )) && [[ "$PWD" == "$sandbox/topic" ]]
+# The bare binary refuses --cd before creating anything.
+rc=0; command gwt --cd -n feat/bare 2>/dev/null || rc=$?
+(( rc == 2 )) && [[ ! -e "$sandbox/custom trees/repo/feat/bare" ]]
+[[ "$(gwt --cd --help)" == *'--cd'* ]]
+words=(gwt ''); CURRENT=2
+[[ "$(_gwt)" == *'--cd['* ]]
+words=(gwtcd ''); CURRENT=2
+[[ "$(_gwt)" != *'--cd['* ]]
+print 'PASS: gwtcd completion, configured placement, caller HEAD, main seeding, failure cwd, compatibility shim, and gwt --cd'

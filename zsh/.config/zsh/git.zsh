@@ -626,21 +626,43 @@ _gitswitch() {
   _arguments '1:profile:(personal marswave cola)'
 }
 
-# gwt is the compiled CLI in ~/.local/bin. Keep directory changes explicit:
-# gwtcd adds only the parent-shell cd that a binary cannot perform.
-gwtcd() {
+# gwt is the compiled CLI in ~/.local/bin. This function adds only the
+# parent-shell cd that a binary cannot perform: with --cd it strips the flag,
+# creates through the binary, and enters the printed path. Everything else is
+# forwarded untouched, so the binary keeps owning arguments and output.
+gwt() {
   emulate -L zsh
-  local arg dest
+  local arg dest enter=0 literal=0
+  local -a args
   for arg in "$@"; do
+    if (( literal )); then args+=("$arg"); continue; fi
     case "$arg" in
-      -h|--help) print -r -- "Usage: gwtcd <branch> [base] [create-options]"
-        print -r -- "Create a worktree and enter it. See gwt --help for creation options."; return ;;
-      --json) print -u2 "gwtcd: --json is for gwt; gwtcd needs its path output"; return 2 ;;
+      --) literal=1; args+=("$arg") ;;
+      --cd) enter=1 ;;
+      *) args+=("$arg") ;;
     esac
   done
-  dest="$(command gwt create "$@")" || return $?
-  [[ -n "$dest" ]] || { print -u2 "gwtcd: gwt returned no worktree path; inspect git worktree list"; return 1; }
+  (( enter )) || { command gwt "$@"; return }
+  case "$args[1]" in
+    resolve|path|remove|config) print -u2 "gwt: --cd is only for create"; return 2 ;;
+    create) ;;
+    *) args=(create "$args[@]") ;;
+  esac
+  for arg in "$args[@]"; do
+    case "$arg" in
+      --) break ;;
+      -h|--help) command gwt "$args[@]"; return ;;
+      --json) print -u2 "gwt: --cd needs the path output; drop --json or the --cd"; return 2 ;;
+    esac
+  done
+  dest="$(command gwt "$args[@]")" || return $?
+  [[ -n "$dest" ]] || { print -u2 "gwt: no worktree path returned; inspect git worktree list"; return 1; }
   cd -- "$dest"
+}
+
+# Older spelling of gwt --cd.
+gwtcd() {
+  gwt --cd "$@"
 }
 
 # Completes local branches AND remote-only branch names (lstrip=3 drops
@@ -675,7 +697,9 @@ _gwt() {
         '1:branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))'
       ;;
     *)
-      _arguments \
+      local -a enter
+      [[ "$words[1]" == gwt ]] && enter=('--cd[enter the new worktree in this shell]')
+      _arguments "${enter[@]}" \
         '--new[create a new branch even if a remote branch of that name exists]' \
         '--non-interactive[use the configured base without confirmation]' \
         '--no-copy[skip ignored prerequisites]' \

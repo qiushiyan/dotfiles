@@ -15,14 +15,15 @@ The scripts own syntax. These docs own the constraints behind it.
 `gwt` on PATH (source: `~/dev/gwt`) owns branch resolution,
 worktree creation, ignored-file seeding, listing, the trunk, and every merged
 verdict. Its callers are the tmux popup,
-`brief start`, the `enter-worktree` skill, and the optional `gwtcd` shell helper.
+`brief start`, the `enter-worktree` skill, and the zsh `gwt` function, which
+adds the parent-shell cd behind `--cd` and forwards everything else.
 
 ```text
 resolution, creation, seeding       → gwt binary
 listing, trunk, merged verdicts      → gwt list / merged / trunk
 snapshots, recovery refs, trash      → worktree-core.sh
 tmux window, popup, send-keys        → tmux-worktree.sh
-parent-shell cd                      → gwtcd helper
+parent-shell cd (gwt --cd, gwtcd)    → zsh gwt function
 brief lifecycle diagnosis/resume     → brief CLI
 ```
 
@@ -36,7 +37,7 @@ merged into the trunk; the popup's richer cleanup (batches, snapshots, trash,
 windows) stays here and asks gwt for the same verdicts.
 
 The shell core retains a forwarding CLI for already-running shells that still
-hold the old function. Run `zshreload` to pick up the binary and `gwtcd` helper.
+hold the old function. Run `zshreload` to pick up the binary and the `--cd` wrapper.
 
 ## Mental model
 
