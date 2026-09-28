@@ -75,7 +75,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
 | portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
 
-Personal CLIs (headroom, envoy, brief, gwt) come from the laptop through
+Personal CLIs (headroom, envoy, brief, gwt, gopen) come from the laptop through
 `mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
 Not installed: rust, Docker, other GUI apps.
 
@@ -449,7 +449,7 @@ laptop.
   laptop's, uncommitted edits included. Ignored paths never leave the laptop:
   `ssh/`, `vpn-private/`, purchased upstream material, app runtime state,
   `node_modules`.
-- **CLIs**: the compiled binaries `headroom envoy brief gwt` are copied from
+- **CLIs**: the compiled binaries `headroom envoy brief gwt gopen` are copied from
   `~/.local/bin` (same arch and OS family), so the mini needs no Go and no
   source clones. `planlab` and `bench` are not copied: they are shims into a
   checkout, and the mini generates its own (§ planlab checkout).
