@@ -33,7 +33,7 @@ reads them from the environment.
   it for the user to make. `docs/qiushi-mini.md` § Sync.
 - Edits are live; no build. Use `make restow` after file additions or removals
   that require new links. `dotadd <path>` brings an unmanaged file under Stow.
-- Commit directly on `main`; leave pushes to the user.
+- Commit directly on the current branch without asking; leave pushes to the user.
 - For shortcut or usage questions, read the tool's config and
   `tmux/.config/tmux/workflow.md`; treat the request as read-only.
 - For theme additions or ports, follow `.claude/skills/add-theme/SKILL.md`
@@ -51,56 +51,42 @@ require the user's judgment; routine implementation choices are yours.
 
 ## Skill maintenance
 
-For skill, lesson, or agent-doc work, read `docs/agent-skills.md` for ownership
-and `docs/doc-loop.md` for the session conventions. Ownership determines whether
-a skill's body may be edited and where lessons belong. Lessons under
-`lessons/.config/lessons/` are reference material, not invokable skills.
+For skill, lesson, or agent-doc work, read `docs/agent-skills.md` (ownership,
+installation caveats, synchronization) and `docs/doc-loop.md` (session
+conventions). Ownership decides whether a skill's body may be edited and where
+lessons belong; lessons under `lessons/.config/lessons/` are reference
+material, not invokable skills.
 
-Edit personal skills in `claude/.claude/skills/`; `~/.agents/skills` is a
-symlink alias shared with Codex. Repo-local skills live in `.claude/skills/`.
-Edit externally linked skills in their owning projects. Codex's bundled
-`~/.codex/skills/.system/` has a separate lifecycle.
-
-Before an upstream update, check for uncommitted skill edits. Keep custom
-skills and forks outside `claude/.agents/.skill-lock.json`, because updates
-replace managed files. For adapted skills, read `docs/skill-customizations.md`
-for what an upgrade must preserve.
-
-Install upstream skills globally with both agents selected:
+Edit personal skills in `claude/.claude/skills/` (`~/.agents/skills` is its
+alias, shared with Codex) and repo-local skills in `.claude/skills/`; edit
+externally linked skills in their owning projects. Keep custom skills and
+forks out of `claude/.agents/.skill-lock.json`, because updates replace managed
+files; `docs/skill-customizations.md` says what an upgrade of an adapted skill
+must preserve. Install or update upstream skills globally, both agents
+selected, after checking for uncommitted skill edits:
 
 ```bash
 npx skills@latest add <owner/repo> --skill <skill-name> -g -a claude-code codex -y
-```
-
-Update managed skills with global scope:
-
-```bash
 npx skills@latest update -g -y
 ```
 
-The existing folder links handle these installs; no `--copy`, per-skill
-symlinks, or restow is needed.
-
 After any skill edit, install, update, or removal, and after editing
-`docs/documentation-standards.md`, run `skill-sync`, then `skill-sync --check`.
-The command derives Codex metadata and exclusions from Claude headers, global
-invocation overrides, and the tracked skill-policy manifest. Other metadata
-remains hand-editable. Review and commit skills, generated metadata/config,
-policy, and lockfile changes together. External source changes belong in their
-owning repositories; runtime metadata stays outside Git.
-
-Installation caveats and synchronization behavior live in `docs/agent-skills.md`.
+`docs/documentation-standards.md`, run `skill-sync`, then `skill-sync --check`,
+and commit skills, generated metadata/config, policy, and lockfile together.
 
 ## Cross-package features
 
 Read the owning docs before changing a feature that spans packages:
 
 - **Claude context chip** (`claude/`, `tmux/`, `zsh/`):
-  `tmux/.config/tmux/workflow.md`. `tmux-agent-status.sh` alone turns pane
-  borders off; weekly quota comes from headroom.
+  `tmux/.config/tmux/scripts/context-chip.md`. `tmux-agent-status.sh` alone
+  turns pane borders off; weekly quota comes from headroom.
 - **tmux pane control:** floating and relocation use
   `tmux/.config/tmux/scripts/float-pane.md`; pane-mode bindings and undo use
   `tmux/.config/tmux/scripts/pane-mode.md`.
+- **Worktrees** (`tmux/`, `~/dev/gwt`, the clean-worktrees skill):
+  `tmux/.config/tmux/scripts/worktree.md`. gwt owns placement, listing and
+  every merged verdict; the `prefix W` popup owns windows and removal.
 - **Claude accounts:** `docs/claude-accounts.md`. The `x*` launchers in
   `zsh/.config/zsh/claude.zsh` delegate routing and validation to headroom
   (`~/dev/headroom`); engine fixes belong in that project.
@@ -126,9 +112,6 @@ Additional routes beyond the feature docs above:
   `docs/macmini.md`.
 - My own office Mac mini (`ssh qiushi-mini`), reached over the company
   tailnet and kept in sync by `mini-sync`: `docs/qiushi-mini.md`.
-- tmux design-doc index: `tmux/.config/tmux/roadmap.md`.
+- Unbuilt tmux features: `tmux/.config/tmux/roadmap.md`.
 - TabType prompt snippets: `tabtype/CLAUDE.md`.
 
-## Convention 
-
-Commit directly on current branch, no ask.
