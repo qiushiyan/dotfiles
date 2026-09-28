@@ -1,7 +1,6 @@
 # Dotfiles
 
-This public repository manages the user's live machine configuration with
-GNU Stow. Package trees mirror `$HOME`: `zsh/.zshrc` maps to `~/.zshrc`,
+This is the user's dotfiles collection managed with GNU Stow. Package trees mirror `$HOME`: `zsh/.zshrc` maps to `~/.zshrc`,
 `nvim/.config/nvim/` to `~/.config/nvim/`. **Files are symlinked, so edits
 here affect the live system immediately.** `docs/` and `vpn-private/` are
 excluded from Stow; `make list` and the tree show the packages.
@@ -128,3 +127,7 @@ Additional routes beyond the feature docs above:
   tailnet and kept in sync by `mini-sync`: `docs/qiushi-mini.md`.
 - tmux design-doc index: `tmux/.config/tmux/roadmap.md`.
 - TabType prompt snippets: `tabtype/CLAUDE.md`.
+
+## Convention 
+
+Commit directly on current branch, no ask.
