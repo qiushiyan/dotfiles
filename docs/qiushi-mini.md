@@ -321,7 +321,8 @@ into the mirror.
 
 `~/dev/planlab/main` is a real clone (`gh repo clone planlab-ai/main`), not
 part of the mirror. You work in it and pull it like any repo; `p` jumps to it,
-and `pp` (`zsh/.config/zsh/nav.zsh`) pulls it here and on the laptop.
+and `pp` (`zsh/.config/zsh/nav.zsh`) pulls it and the handoff briefs clone
+(below) here and on the laptop, all four in parallel.
 Commits use a repo-local identity (`qiushi@planlab.ai` /
 `qiushiyan`), as on the laptop. The `planlab` and `bench` launchers come
 from each package's own install (`pnpm planlab:install`,
@@ -350,9 +351,9 @@ Planlab's handoff briefs are their own clone, at the path `brief` derives from
 this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
 `brief start` pulls it before a pickup; `git -C ~/dev/.handoffs/planlab-main
 pull --ff-only` refreshes it for a session that reads the files directly.
-`ph` pulls main into both machines' clones from either machine, as `pp` does
-for the checkout (`zsh/.config/zsh/nav.zsh`); neither pull may prompt, so one
-that needs a password fails. Where a brief lands and what `brief sync`
+`pp` pulls main into both machines' clones along with the checkout, from
+either machine; a briefs clone on another branch fails its pull. No pull may
+prompt, so one that needs a password fails. Where a brief lands and what `brief sync`
 publishes are the binary's rules, so after a `brief` change on the laptop run
 `mini-sync` before the mini writes to the clone rather than waiting for the
 timer: an older binary files a brief where the new one reads another slug.
