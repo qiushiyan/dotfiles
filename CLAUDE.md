@@ -23,7 +23,10 @@ reads them from the environment.
    is `zsh/.config/zsh/tests/stow-reach.test.zsh`.
 3. **Tests must isolate live state and exercise the intended behavior.**
    An escaped sandbox can corrupt the machine; a test that exercised nothing
-   can still pass. Read `docs/testing.md` before adding a case.
+   can still pass. Run suites and experiments from a scratch directory, never
+   from this checkout: an empty path read from test state resolves to `.`,
+   and one such delete emptied the repository, `.git` included. Read
+   `docs/testing.md` before adding a case.
 
 ## Working here
 
