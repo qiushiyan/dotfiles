@@ -16,6 +16,13 @@ useConfigOnly = true
 [includeIf "gitdir:~/dev/marswave/"]
   path = ~/.gitconfig.marswave
 
+# planlab's push flags for tools that run git directly (gopen -y). Two patterns:
+# the clone's own .git, and its linked worktrees' gitdirs beneath it.
+[includeIf "gitdir:~/dev/planlab/main/.git"]
+  path = ~/.config/git/planlab.gitconfig
+[includeIf "gitdir:~/dev/planlab/main/.git/worktrees/"]
+  path = ~/.config/git/planlab.gitconfig
+
 [core]
 editor = nvim
 pager = delta

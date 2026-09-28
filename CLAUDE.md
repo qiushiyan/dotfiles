@@ -41,8 +41,8 @@ reads them from the environment.
   model across tools.
 - For shell startup, files sourced by `.zshrc`, or shell slowness, read
   `docs/zsh.md` first. Keep `zsh/.config/zsh/git.zsh` usable without zle or
-  rc dependencies: tmux's `scripts/tmux-gopen.sh` sources it non-interactively
-  for `prefix g`.
+  rc dependencies: `.zshenv` sources it in every zsh, non-interactive ones
+  included.
 
 For implementation requests, finish the authorized work and report the outcome
 and verification, including anything unverified. For design discussions, deliver
