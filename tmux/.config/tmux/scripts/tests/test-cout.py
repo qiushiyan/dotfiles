@@ -23,6 +23,9 @@ class CoutTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="cout-test-")
         self.home = Path(self.temp.name)
+        # Work from the sandbox, so a relative path can never name the checkout.
+        self.addCleanup(os.chdir, os.getcwd())
+        os.chdir(self.home)
         self.socket = str(self.home / "tmux.sock")
         self.env = dict(os.environ, HOME=str(self.home), ZDOTDIR=str(self.home),
                         XDG_CACHE_HOME=str(self.home / "cache"),
@@ -71,6 +74,19 @@ class CoutTest(unittest.TestCase):
     def tmux(self, *args):
         return subprocess.check_output(["tmux", "-S", self.socket, *args],
                                        env=self.env, text=True)
+
+    def store(self):
+        """The pane's store, refused unless it lies inside this test's cache.
+
+        An unset option is Path("") == Path("."), the working directory: a
+        delete through it once emptied the dotfiles checkout.
+        """
+        name = self.option("@cout-store")
+        cache = (self.home / "cache").resolve()
+        store = Path(name)
+        if not name or not store.is_absolute() or cache not in store.resolve().parents:
+            self.fail(f"@cout-store {name!r} is not a store inside {cache}")
+        return store
 
     def option(self, name):
         return self.tmux("show-options", "-pqv", "-t", self.pane, name).strip()
@@ -170,7 +186,7 @@ class CoutTest(unittest.TestCase):
         self.execute("print child")
         self.assertEqual(self.capture(), "$ print child\nchild\n")
         self.execute("exit")
-        store = Path(self.option("@cout-store"))
+        store = self.store()
         exited = next(p for p in store.glob("*.command") if p.read_text() == "exit")
         self.wait(lambda: exited.with_suffix(".json").exists())
         self.assertEqual(self.capture(index=2), "$ print parent_b\nparent_b\n")
@@ -195,7 +211,7 @@ class CoutTest(unittest.TestCase):
 
     def test_exec_reload_and_foreign_pipe_are_isolated(self):
         self.execute("print old")
-        old_store = self.option("@cout-store")
+        old_store = str(self.store())
         before = set(Path(old_store).glob("*.command"))
         self.execute("exec zsh")
         self.assertEqual(self.option("@cout-store"), old_store)
@@ -223,7 +239,7 @@ class CoutTest(unittest.TestCase):
 
     def test_removed_cache_reports_once_and_reload_recovers(self):
         self.execute("print retained")
-        store = Path(self.option("@cout-store"))
+        store = self.store()
         shutil.rmtree(store)
         self.execute("print one")
         self.execute("print two")
@@ -236,7 +252,7 @@ class CoutTest(unittest.TestCase):
 
     def test_killed_recorder_reports_promptly_and_reload_reaps_cache(self):
         self.execute("print retained")
-        store = Path(self.option("@cout-store"))
+        store = self.store()
         pid = json.loads((store / "recorder.json").read_text())["pid"]
         os.kill(pid, signal.SIGKILL)
         self.execute("print one")
@@ -253,7 +269,7 @@ class CoutTest(unittest.TestCase):
 
     def test_recorder_fault_keeps_completed_records_until_recovery(self):
         self.execute("print retained")
-        store = Path(self.option("@cout-store"))
+        store = self.store()
         identity = self.option("@cout-state").split()[1]
         saved = (store / f"{identity}.raw").read_bytes()
         self.execute("_cout_mark invalid")
@@ -291,7 +307,7 @@ class CoutTest(unittest.TestCase):
         helper.write_text(helper.read_text().replace("MAX_RECORD = 16 * 1024 * 1024", "MAX_RECORD = 1024")
                           .replace("MAX_CACHE = 64 * 1024 * 1024", "MAX_CACHE = 2048")
                           .replace("MAX_RECORDS = 50", "MAX_RECORDS = 3"))
-        store = Path(self.option("@cout-store"))
+        store = self.store()
         self.tmux("pipe-pane", "-t", self.pane)
         self.wait(lambda: not store.exists())
         self.execute("exec zsh")
@@ -303,7 +319,7 @@ class CoutTest(unittest.TestCase):
             self.execute(f"print short-{number}")
         self.assertIn("short-1", self.capture(index=3))
         self.assertIn("unavailable", self.capture(success=False, index=4))
-        store = Path(self.option("@cout-store"))
+        store = self.store()
         self.assertEqual(len(list(store.glob("*.command"))), 3)
         self.assertLessEqual(sum(p.stat().st_size for p in store.glob("*.raw")), 2048)
         self.assertEqual(store.stat().st_mode & 0o777, 0o700)
@@ -391,7 +407,7 @@ class CoutTest(unittest.TestCase):
         self.tmux("send-keys", "-t", self.pane, "C-c")
         self.wait(lambda: self.option("@cout-ready") == "1")
         self.execute("for i in {1..80}; do print row-$i; done")
-        store = Path(self.option("@cout-store"))
+        store = self.store()
         identity = self.option("@cout-state").split()[1]
         (store / f"{identity}.raw").unlink()
         result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
