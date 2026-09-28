@@ -33,7 +33,7 @@ Each suite owns one boundary:
 | gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery on a private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | command/output pairing across nested shells, indexed copies, recorder retention/cleanup, and terminal rendering with the real transient prompt; private tmux sockets, a temporary home, and a fake clipboard isolate state |
-| Claude sessions | shared-store topology and repair against a throwaway `$HOME` |
+| Claude sessions | shared-store topology and repair, plus launcher routing and workspace effort, against a throwaway `$HOME` |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
 | portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive cases run on a pty |
 | theme sync | startup + precmd switching against a throwaway `$HOME` |

@@ -1,6 +1,7 @@
 #!/usr/bin/env zsh
 # Sandbox harness for the permanent surfaces of the shared-sessions toolkit:
-# launcher enforcement of the shared-projects topology, migration abort paths,
+# launcher enforcement of the shared-projects topology, the launchers'
+# per-workspace effort flag, migration abort paths,
 # obelisk reindex verification, and drift-check verdict classification.
 # Everything runs against a throwaway $HOME with stubbed pgrep/lsof/claude/
 # obelisk — no real account dir, vendor tree, or index is touched.
@@ -204,6 +205,46 @@ test_generated_launcher_routes_without_repinning() (
     || { print "launcher routed elsewhere:"; cat "$SB/claude.log" 2>/dev/null; return 1 }
   [[ "$(<"$H/.claude-accounts/.current")" == "b@x.com" ]] \
     || { print "named launcher moved .current: $(cat "$H/.claude-accounts/.current" 2>/dev/null)"; return 1 }
+)
+
+# Workspace effort rides into claude as a launch flag: inside a listed dir
+# (a subdir, or a symlink to it) the session gets `--effort <level>`;
+# outside — including a lookalike prefix — it gets none, so settings.json's
+# default stands.
+test_effort_follows_workspace() (
+  sandbox
+  mkdir -p "$H/wiki/notes" "$H/dotfiles-old"
+  ln -s "$H/wiki" "$SB/wiki-link"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  local d
+  for d in "$H/dotfiles" "$H/wiki/notes" "$SB/wiki-link" "$H/dotfiles-old" "$H"; do
+    ( cd "$d" && x ) || { print "x failed in $d"; return 1 }
+  done
+  local -a got=("${(@f)$(<"$SB/claude.log")}")
+  local want=(high high high none none) i
+  for i in {1..5}; do
+    if [[ "$want[i]" == none ]]; then
+      [[ "$got[i]" != *--effort* ]] || { print "launch $i got an effort it should not: $got[i]"; return 1 }
+    else
+      [[ "$got[i]" == *"--effort $want[i] "* ]] || { print "launch $i: expected --effort $want[i], got: $got[i]"; return 1 }
+    fi
+  done
+)
+
+# The most specific dir wins whatever the table's order, and an explicit
+# --effort on the command line beats the table instead of doubling up.
+test_effort_specific_dir_and_explicit_flag_win() (
+  sandbox
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  CLAUDE_X_EFFORT=("$H/dotfiles" high "$H/dotfiles/claude" medium)
+  ( cd "$H/dotfiles/claude/.claude" && x ) || { print "x failed"; return 1 }
+  ( cd "$H/dotfiles" && x --effort=max ) || { print "x --effort=max failed"; return 1 }
+  local -a got=("${(@f)$(<"$SB/claude.log")}")
+  [[ "$got[1]" == *"--effort medium "* ]] || { print "subdir entry lost to its parent: $got[1]"; return 1 }
+  [[ "$got[2]" != *"--effort "* && "$got[2]" == *--effort=max* ]] \
+    || { print "explicit flag did not replace the table's: $got[2]"; return 1 }
 )
 
 test_account_add_fails_when_canonical_is_link() (
@@ -461,6 +502,8 @@ t "empty .current refuses instead of primary fallback"   test_launch_refuses_emp
 t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_without_headroom
 t "root override cannot skip the topology preflight"     test_launch_preflight_survives_root_override
 t "generated launcher routes without repinning bare x"   test_generated_launcher_routes_without_repinning
+t "workspace effort applies inside listed dirs only"     test_effort_follows_workspace
+t "specific dir and explicit --effort win"               test_effort_specific_dir_and_explicit_flag_win
 t "account-add fails closed on symlinked canonical"      test_account_add_fails_when_canonical_is_link
 t "x-select cds from non-empty advice, status through"   test_x_select_cds_from_advice
 t "x-select stays put on empty advice"                   test_x_select_stays_put_on_empty_advice

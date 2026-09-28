@@ -88,6 +88,19 @@
 #
 typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
 typeset -ga CLAUDE_X_BYPASS=(--dangerously-skip-permissions)
+# Per-workspace effort for every launch that starts in $PWD (x, x-<name>,
+# claude-account). The default stays settings.json's (modelSettings, then
+# effortLevel); a launch inside a listed dir adds `--effort <level>`, which
+# Claude Code applies to that one session and never saves. Pairs of <dir>
+# <level> (low medium high xhigh max); a dir covers its subdirs, and the most
+# specific match wins, so order carries no meaning. An explicit `--effort`
+# on the command line beats the table; CLAUDE_CODE_EFFORT_LEVEL beats both.
+# x-select is not covered: headroom picks its dir after the wrapper has run.
+# Like every table here, edits reach a shell at its next init (zshreload).
+typeset -ga CLAUDE_X_EFFORT=(
+  "$HOME/wiki"      high
+  "$HOME/dotfiles"  high
+)
 typeset -g CLAUDE_PRIMARY_NAME="qiushi"   # x-qiushi ≡ default ~/.claude
 # headroom derives the primary's name from the logged-in email unless told;
 # pin it to ours so `.current`, `--account qiushi` and x-qiushi agree even
@@ -236,11 +249,31 @@ _claude_launch() {
   # temp files — child-process caches included) land in ./.tmp instead;
   # cleanup becomes manual, so it stays off by default.
   # CLAUDE_CODE_TMPDIR="$PWD/.tmp" \
-  if [[ -n "$sel" ]]; then
-    headroom launch --account "$sel" -- "$@"
-  else
-    headroom launch -- "$@"
+  local -a effort=()
+  if (( ! ${argv[(I)(--effort|--effort=*)]} )) && _claude_workspace_effort; then
+    effort=(--effort "$REPLY")
   fi
+  if [[ -n "$sel" ]]; then
+    headroom launch --account "$sel" -- "${effort[@]}" "$@"
+  else
+    headroom launch -- "${effort[@]}" "$@"
+  fi
+}
+
+# The level CLAUDE_X_EFFORT gives $PWD, in $REPLY; status 1 when no listed
+# dir covers it. Both sides are resolved (:A), so a symlinked path matches
+# its target and ~/dotfiles-old never matches ~/dotfiles.
+_claude_workspace_effort() {
+  emulate -L zsh
+  local here="${PWD:A}" dir level root best=""
+  REPLY=""
+  for dir level in "${CLAUDE_X_EFFORT[@]}"; do
+    root="${dir:A}"
+    if [[ "$here" == "$root" || "$here" == "$root"/* ]] && (( ${#root} > ${#best} )); then
+      best="$root" REPLY="$level"
+    fi
+  done
+  [[ -n "$REPLY" ]]
 }
 
 # Bypassed permissions on the default account (.current; the board's enter

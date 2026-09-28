@@ -91,6 +91,13 @@ Everything derives from that tree:
 ## Use patterns
 
 - **Daily**: `x`. Nothing else.
+- **Effort per workspace**: `settings.json` holds the default (`modelSettings`
+  per model, then `effortLevel`). `CLAUDE_X_EFFORT` in `claude.zsh` maps dirs
+  to levels (`~/wiki` and `~/dotfiles` run at `high`); `x`, `x-<name>` and
+  `claude-account` launched inside one add `--effort <level>`, which lasts
+  only that session. The most specific dir wins, an explicit `x --effort …`
+  beats the table, and `x-select` is not covered: headroom picks the
+  session's dir after the wrapper has run.
 - **Which lane is a running session on, and how much is left in it?** Its
   tmux context chip shows the account's email local part, or the full email
   when lanes share one, beside its model-scoped weekly usage
