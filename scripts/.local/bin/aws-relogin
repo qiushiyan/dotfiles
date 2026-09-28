@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# aws-relogin — start a fresh IAM Identity Center session for the AWS CLI.
+#
+# Usage: aws-relogin [profile] [--use-device-code] [--no-browser]
+#        aws-relogin [profile] --status
+#   profile            an SSO profile from ~/.aws/config (default: planlab-prod)
+#   --use-device-code  device-code flow instead of the browser redirect; the
+#                      default on the office mini, where the laptop's browser
+#                      cannot reach the mini's localhost listener
+#   --no-browser       print the sign-in URL instead of opening a browser
+#   --status           report the current session and exit 1 when the profile
+#                      has no working credentials; signs nothing in or out
+#
+# Why sign out first: `aws sso login` on its own reuses an Identity Center
+# session that is still alive, and the new token inherits that session's end
+# ("If you already have an active session, the existing session is reused and
+# expires when the existing session expires" — AWS CLI user guide, IAM Identity
+# Center concepts). `aws sso logout` ends the session on AWS's side, so the
+# login that follows starts a new one with the full duration. docs/aws-sso.md.
+#
+# Exit codes: 0 signed in and verified; 1 login or verification failed, or
+# --status found no credentials; 2 bad arguments or unknown profile.
+set -uo pipefail
+
+DEFAULT_PROFILE=planlab-prod
+# The Identity Center setting is 8 hours and not ours to change; only the
+# "ends" estimate depends on it.
+SESSION_HOURS=${AWS_RELOGIN_SESSION_HOURS:-8}
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/aws-relogin"
+
+usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
+
+profile="" status=0 device_code=0 no_browser=0
+for arg in "$@"; do
+  case $arg in
+    -h|--help) usage; exit 0 ;;
+    --status) status=1 ;;
+    --use-device-code) device_code=1 ;;
+    --no-browser) no_browser=1 ;;
+    -*) echo "aws-relogin: unknown option: $arg" >&2; usage >&2; exit 2 ;;
+    *)
+      if [[ -n $profile ]]; then
+        echo "aws-relogin: one profile at most (got '$profile' and '$arg')" >&2; exit 2
+      fi
+      profile=$arg ;;
+  esac
+done
+profile=${profile:-$DEFAULT_PROFILE}
+
+if ! aws configure list-profiles 2>/dev/null | grep -qx -- "$profile"; then
+  echo "aws-relogin: no profile '$profile' in ~/.aws/config; known profiles:" >&2
+  aws configure list-profiles 2>/dev/null | sed 's/^/  /' >&2
+  exit 2
+fi
+
+# Profiles that share an [sso-session] share one sign-in, so the login stamp
+# is keyed by the session; a legacy profile (no sso_session) is its own key.
+session=$(aws configure get sso_session --profile "$profile" 2>/dev/null || true)
+stamp="$STATE_DIR/${session:-$profile}"
+
+fmt() {  # fmt <epoch>: local time; BSD date here, GNU date as a fallback
+  date -r "$1" '+%Y-%m-%d %H:%M %Z' 2>/dev/null || date -d "@$1" '+%Y-%m-%d %H:%M %Z'
+}
+
+identity() { aws sts get-caller-identity --profile "$profile" --output text --query Arn 2>/dev/null; }
+
+if (( status )); then
+  echo "profile:    $profile${session:+ (sso-session $session)}"
+  arn=$(identity)
+  if [[ -z $arn ]]; then
+    echo "credentials: none — run: aws-relogin $profile"
+    exit 1
+  fi
+  echo "identity:   $arn"
+  if [[ -r $stamp ]]; then
+    started=$(tr -d '[:space:]' < "$stamp")
+    ends=$(( started + SESSION_HOURS * 3600 ))
+    left=$(( ends - $(date +%s) ))
+    echo "signed in:  $(fmt "$started") (by aws-relogin)"
+    if (( left > 0 )); then
+      echo "ends:       ~$(fmt "$ends") (${SESSION_HOURS}-hour session, $(( left / 3600 ))h$(( left % 3600 / 60 ))m left)"
+    else
+      echo "ends:       ~$(fmt "$ends") — past the ${SESSION_HOURS}-hour limit; the role credentials still work until they expire, the next refresh will not"
+    fi
+  else
+    echo "signed in:  unknown (last sign-in was not through aws-relogin)"
+  fi
+  exit 0
+fi
+
+if (( ! device_code )) && [[ -r $HOME/.config/machine ]] \
+   && [[ $(tr -d '[:space:]' < "$HOME/.config/machine") == mini ]]; then
+  device_code=1
+fi
+
+echo "==> aws sso logout (ends the current Identity Center session)"
+aws sso logout
+
+login=(aws sso login --profile "$profile")
+(( device_code )) && login+=(--use-device-code)
+(( no_browser )) && login+=(--no-browser)
+echo "==> ${login[*]}"
+if ! "${login[@]}"; then
+  rc=$?
+  echo "aws-relogin: login failed (exit $rc); the old session is already ended, so '$profile' has no credentials until a login succeeds" >&2
+  exit 1
+fi
+started=$(date +%s)
+
+echo "==> aws sts get-caller-identity --profile $profile"
+arn=$(identity)
+if [[ -z $arn ]]; then
+  echo "aws-relogin: login reported success but '$profile' cannot get credentials; check the profile's account and role in ~/.aws/config" >&2
+  exit 1
+fi
+
+mkdir -p "$STATE_DIR" && printf '%s\n' "$started" > "$stamp"
+echo "identity:   $arn"
+echo "signed in:  $(fmt "$started")"
+echo "ends:       ~$(fmt $(( started + SESSION_HOURS * 3600 ))) (${SESSION_HOURS}-hour session; run aws-relogin again after that)"

@@ -96,7 +96,9 @@ it.
   `--use-device-code`. The default flow redirects the browser to a localhost
   listener on the mini, which a laptop browser can't reach. With the
   device-code flow the printed URL carries the code, so it works in any
-  browser; over SSH, `BROWSER` sends it to the laptop clipboard.
+  browser; over SSH, `BROWSER` sends it to the laptop clipboard. For a
+  session with the full 8 hours, run `aws-relogin` instead, which signs out
+  first and picks the device-code flow here on its own (`docs/aws-sso.md`).
 - **Locale:** the laptop's ssh sends no `LANG`; the shared `.zshenv` sets
   one. Without a UTF-8 locale, tmux marks the client non-UTF-8 and draws every
   non-ASCII glyph (status-bar separators, icons) as `_`. tmux fixes that per
@@ -453,7 +455,7 @@ laptop.
   checkout, and the mini generates its own (§ planlab checkout).
 - **Codex config**: regenerated as described in § Agent config.
 - **Links**: `LINKS` in the script (`theme-set`, `toclip`, `browser-clip`,
-  `mac`) are made links in the mini's `~/.local/bin`, pointing into the mirror. The
+  `mac`, `aws-relogin`) are made links in the mini's `~/.local/bin`, pointing into the mirror. The
   `scripts` package is not stowed on the mini because it carries this
   laptop's `mini-sync` LaunchAgent.
 - **Theme**: the laptop's theme name is applied by running the mini's own
