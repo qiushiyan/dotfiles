@@ -22,6 +22,7 @@ zsh  zsh/.config/zsh/tests/bypass-cd-read-guard.test.zsh         # runs whole
 python3 scripts/.local/share/dotfiles/tests/test_skill_sync.py # requires uv
 bash scripts/.local/share/dotfiles/tests/test-toclip.sh         [K1 K5 …]
 bash scripts/.local/share/dotfiles/tests/test-aws-login.sh    [A1 A4 …]
+bash scripts/.local/share/dotfiles/tests/test-snapshot.sh     [S1 S4 …]
 bash nvim/.config/nvim/tests/test-claude-prompt-reference.sh    # runs whole
 ```
 
@@ -47,6 +48,7 @@ Each suite owns one boundary:
 | skill sync | invocation overrides, refreshed cloud exclusions, runtime metadata recovery, metadata preservation, byte-exact document copies, validation before writes, and symlink destinations; every case runs a copied script with a temporary home, manifests, and sentinel checkout, so scope regressions stay in the sandbox |
 | toclip | which clipboard a copy reaches: pbcopy at the screen, the ssh client (not tmux's activity pick) inside tmux, the buffer kept for oversize payloads; private tmux socket, real clients on ptys, a stub pbcopy, and K8 asserts the real clipboard is untouched |
 | aws-login | sign out, sign in, verify, then stamp; the device-code flow only on the mini marker; `--status` from the stamp; a stub `aws` on PATH records the calls, a temporary `HOME` holds the stamp, and A8 asserts the real state directory is untouched |
+| snapshot | a plain run deletes the previous plain run's snapshot only after the new one exists; `--daily` prunes by age and stands down once Time Machine has a destination; a stub `tmutil` on PATH keeps the snapshot dates in a sandbox file, a temporary `HOME` holds the state, and S7 asserts the real state directory is untouched |
 | Claude reply reference | Ctrl+G buffers open the right reply, history and whole-turn views, `:wq` exits with the draft byte-exact, closing either window never strands the editor, the layout follows pane width, lookalike files are ignored; the working tree's full Neovim config against a fixture `CLAUDE_CONFIG_DIR` naming the suite as the claude process, temp XDG state, tmux unset |
 
 The table is a routing map. Case ids and complete behavior inventories stay in

@@ -103,10 +103,11 @@ shared skill, so CLI instructions and query guidance update with its body.
 Keep its default invocation enabled; a manual-only override would prevent
 Claude from following the automatic documentation route.
 
-`rules/scoping.md` is inline rather than a pointer, because it has to shape
-every proposal from the first turn. Codex's global `AGENTS.md`
-(`codex/.codex/AGENTS.md`) carries the same text after the find-docs pointer;
-edit both together.
+`rules/scoping.md` and `rules/snapshots.md` are inline rather than pointers,
+because each has to act from the first turn: scoping on every proposal, the
+snapshot rule before the first destructive command. Codex's global `AGENTS.md`
+(`codex/.codex/AGENTS.md`) carries the same text after the find-docs pointer,
+in that order; edit each pair together.
 
 `grill-with-docs` composes `grilling` with `domain-modeling`; the upstream
 `grill-me` alias adds nothing beyond `grilling`, so it is not installed. When
