@@ -14,8 +14,8 @@ judge's question, and the shape of the window they land in. Read it
 before writing one, or as the revision pass over the surfaces a session
 touched. **The reader of every word you write is the model**; optimize for
 how a model reads. It follows the order of the work — what belongs in text
-at all, the layers, every sentence, the surface — and the revision pass
-walks the same map.
+at all, the layers, every sentence, the surface — and the revision pass's
+defect lens is grouped the same way.
 
 ## The philosophy
 
@@ -85,7 +85,7 @@ it.
   never invents them.
 
   <example type="avoid">
-  You are the `verify-review` operation in the steward's drain, stage 4 of 7. Your reply is stored as a `turn_reply` row; when your turn ends the drain moves the task to `review.owed` unless a `hold` row exists.
+  You are the `acceptance-check` operation in the steward's drain, stage 4 of 7. Your reply is stored as a `turn_reply` row; when your turn ends the drain moves the task to `review.owed` unless a `hold` row exists.
   </example>
 
   <example>
@@ -180,9 +180,10 @@ alike.
 - **One home per behaviour.** Give each rule one authoritative place and
   echo it only on purpose, naming the home the echo serves — accidental
   copies drift apart and over-trigger. The environment is a home too: a
-  `--help`, a config file, a listing; a document that restates it is a
-  cache that goes stale, so cache only what the model cannot find by
-  looking. When a prompt is assembled from modes or flags, branch in the
+  `--help`, a config file, a listing, a count or version or date that
+  changes; a document that restates it is a cache that goes stale, so
+  derive it at render time, point at it, or cache only what the model
+  cannot find by looking. When a prompt is assembled from modes or flags, branch in the
   composer, never in the prose: the model reads one world.
 - **No-ops and sediment.** An instruction the model already obeys by
   default pays load to say nothing; delete the sentence rather than trim
@@ -227,22 +228,22 @@ alike.
   context boundary.
 
 Two policies belong in any instruction for an agent that acts over many
-steps or reports to someone who did not watch it work, and nowhere else
-(both are from the Fable prompting guide under Pointers, echoed here
-because every such instruction needs them). Carry the clauses the surface's
-situation calls for, in its own terms.
-**Re-ground the human:** a final message, a packet, a report is the
-reader's first look at work they did not watch — lead with the outcome,
-then the one or two things you need from them, each explained as if new,
-leaving behind the vocabulary built while working; before reporting
-progress, audit each claim against a tool result from the session and say
-plainly what is verified and what is not. **Pause only where the work
-needs the user:** a destructive or irreversible action, a real scope
-change, or input only they hold; when the user is describing a problem or
-thinking aloud, the deliverable is the assessment; otherwise act, and end
-the turn only when the work is complete or blocked. Where ending the turn
-waits for no one — a pipeline starts its next step — name the host's way
-to pause, with the consequence under **Give the reason** as its reason.
+steps or reports to someone who did not watch it work, and nowhere else.
+Carry the clauses the surface's situation calls for, in its own terms.
+
+- **Re-ground the human.** A final message, a packet, a report is the
+  reader's first look at work they did not watch: lead with the outcome,
+  then the one or two things you need from them, each explained as if new,
+  leaving behind the vocabulary built while working. Before reporting
+  progress, audit each claim against a tool result from the session and
+  say plainly what is verified and what is not.
+- **Pause only where the work needs the user.** That is a destructive or
+  irreversible action, a real scope change, or input only they hold. When
+  the user is describing a problem or thinking aloud, the deliverable is
+  the assessment; otherwise act, and end the turn only when the work is
+  complete or blocked. Where ending the turn waits for no one — a pipeline
+  starts its next step — name the host's way to pause, with the
+  consequence under **Give the reason** as its reason.
 
 ### Context — what the model holds this turn
 
@@ -342,9 +343,6 @@ when pointed at files, every line of them — run before shipping. In order:
        code reads with no exact contract.
    - **Layer two**
      - *bare rule* — a rule with no reason, or no skip condition.
-   - **Layer three**
-     - *volatile facts in a durable prompt* — derive at render time or
-       point at a source.
    - **Formatting**
      - *flat hierarchy* — layers rendered as one paragraph, or bullets
        that run to paragraphs;
@@ -355,7 +353,8 @@ when pointed at files, every line of them — run before shipping. In order:
      - *familiar-term leak* — an internal name where the field has a word;
      - *negation as the lever* — the rule is carried by what not to do;
      - *rule–example conflict* — the example wins, so fix it first;
-     - *stale cache* — restates a `--help`, a config, a listing;
+     - *stale cache* — restates a `--help`, a config, a listing, or a
+       fact that changes;
      - *conflicting rules with no precedence* — state the rule once with
        its exception folded in;
      - *config-conditional prose* — a mode or flag branched in the text of
@@ -370,9 +369,9 @@ when pointed at files, every line of them — run before shipping. In order:
      - *opaque returns and errors* — ids without meaning, failures without
        a next action.
 5. **Verify and record.** Check each truth claim as **Prove what you
-   prescribe** says, and say in the commit what you verified and how. Read every touched file once more as one
-   whole, cold — a cold reader with a concrete scenario where a no-op or a
-   route is in doubt. Name the deliberate keeps — a sanctioned echo, a
+   prescribe** says, and say in the commit what you verified and how. Read
+   every touched file once more as one whole, cold — a cold reader with a
+   concrete scenario where a no-op or a route is in doubt. Name the deliberate keeps — a sanctioned echo, a
    load-bearing hedge, an earned `never` — with their reasons, in the
    commit or the surface's evidence log, so the next pass does not undo
    them.
@@ -399,11 +398,12 @@ gap was filled.
   long turns, effort, refusal classes, memory, and which instructions a
   prior model needed that this one performs unprompted:
   `~/dotfiles/references/fable-prompting-guide.md`.
+- Case studies — past passes in one domain, which most sessions never
+  need, each named below by its trigger; `case-studies/README.md` says
+  when and how to add one.
 - Writing a question a classifier or judge answers — a yes/no gate, a
   rubric grader, TypeSafe's Jev:
-  `case-studies/classifier-judge-questions-jev-steward.md`. Case studies
-  hold domain passes most sessions never need, each named here by its
-  trigger; `case-studies/README.md` says when and how to add one.
+  `case-studies/classifier-judge-questions-jev-steward.md`.
 - A project's own prompting guide, when its `CLAUDE.md` names one (planlab:
   `docs/loopy/prompting-guide.md`), answers that repo's calibrations: which
   terms pass the familiar-term test there, which emphasis is earned, where

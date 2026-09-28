@@ -417,3 +417,35 @@ cannot hold, backed by evidence) and naming for the search that should find
 it (topic first, then domain). It also asks for writing that transfers:
 organised around a neighbouring writer's questions, closing with what
 transfers, what does not, and whose it is. The Pointers line names it.
+
+Second proofread by the mini session, same day. Applied:
+- The intro claimed the whole revision pass "walks the same map"; only
+  step 4's lens is grouped that way, and the intro now says so.
+- *volatile facts in a durable prompt* had no home in the body. The mini
+  proposed a new sentence under layer three. Instead the fact that changes
+  (a count, a version, a date) joined the stale-cache clause of **One home
+  per behaviour**, whose special case it is, and the two lens entries
+  merged into *stale cache*. That leaves one lens entry fewer, not one rule
+  more; layer three keeps the trap-placement rule as its own.
+- The two policies ran together in one paragraph, a *flat hierarchy* by the
+  body's own lens (a defect since 09-04, not from the restructure). They
+  are now a two-item list.
+- The Pointers line for the case study also described the whole folder. It
+  is now one line for the folder, pointing at the README, and one trigger
+  line per case study.
+- The reader's-world example named `verify-review` in the avoid half and an
+  acceptance check in the target half, which are different steward
+  operations. Both now describe the acceptance check.
+- A broken wrap in step 5.
+
+Decided by the user: the two policies are general rules, not the Fable
+guide's. The attribution is gone, because the models in use are all at that
+level now. Also decided by the user: the planlab internals in the public
+case study (paths, thresholds, design) stay; trimming them was "a security
+over-concern". The mini's claim that the case study "goes further than the
+body" was inaccurate, since the body's examples already name Loopy,
+`#bug_reports` and the steward.
+
+Two Fable mentions remain, both facts about that model rather than rules
+attributed to it: right altitude's reasoning-extraction refusal note, and
+the pointer to `references/fable-prompting-guide.md`.
