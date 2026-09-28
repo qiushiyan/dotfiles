@@ -29,7 +29,12 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
     run(['git','-c','user.name=Test','-c','user.email=test@example.invalid','commit','-qm','initial'], repo)
     (repo/'.env').write_text('smoke-secret')
     bindir = home/'.local/bin'; bindir.mkdir(parents=True)
-    shutil.copy2(B, bindir/'gwt')
+    shutil.copy2(B, bindir/'gwt-real')
+    # gwt on PATH is the real binary behind a switch: while $HOME/slow-list
+    # exists, `gwt list` answers 3s late, which is how the first-paint case
+    # holds the probed rows back.
+    (bindir/'gwt').write_text('#!/bin/sh\n[ "$1" = list ] && [ -e "$HOME/slow-list" ] && sleep 3\nexec "$(dirname "$0")/gwt-real" "$@"\n')
+    (bindir/'gwt').chmod(0o755)
     # ctrl-y resolves toclip through PATH; this stub keeps the real clipboard out
     # of reach and records the payload and the pane it was aimed at.
     clip = home/'clip.txt'
@@ -109,8 +114,13 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
 
         # Reap: gwt's verdict tags a worktree at the trunk (main) as merged, and
         # ctrl-g removes its checkout and, after gwt merged agrees, its branch.
-        # feat/popup forked from caller-topic, which main does not contain.
+        # The tag and the reap share one eligibility rule: feat/popup (forked
+        # from caller-topic, which main does not contain) is clean here, so only
+        # its unmerged verdict protects it; locked-me is merged but locked.
+        (tree/'untracked.txt').unlink()
         reaped = run(['gwt','create','-n','--no-copy','reap-me','main'], repo).stdout.strip()
+        locked = run(['gwt','create','-n','--no-copy','locked-me','main'], repo).stdout.strip()
+        run(['git','worktree','lock',locked], repo)
         def wait_for(text):
             deadline=time.monotonic()+10
             while time.monotonic()<deadline:
@@ -120,7 +130,7 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
             raise AssertionError('never saw '+repr(text)+': '+cap)
         run(tmux+['send-keys','-t',pane,'-l','clear; '+command]); run(tmux+['send-keys','-t',pane,'Enter'])
         cap = wait_for('reap-me · merged')
-        assert 'feat/popup · merged' not in cap, cap
+        assert 'feat/popup · merged' not in cap and 'locked-me · merged' not in cap and 'locked-me' in cap, cap
         run(tmux+['send-keys','-t',pane,'C-g'])
         wait_for('proceed? [y/N]'); run(tmux+['send-keys','-t',pane,'y','Enter'])
         wait_for('merged branch(es)? [Y/n]'); run(tmux+['send-keys','-t',pane,'Enter'])
@@ -128,7 +138,37 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         assert not pathlib.Path(reaped).exists(), 'reaped checkout remains'
         assert run(['git','show-ref','--verify','--quiet','refs/heads/reap-me'], repo, check=False).returncode == 1, 'reaped branch remains'
         assert tree.exists() and run(['git','show-ref','--verify','--quiet','refs/heads/feat/popup'], repo, check=False).returncode == 0, 'unmerged worktree touched'
+        assert pathlib.Path(locked).exists(), 'locked worktree reaped'
         run(tmux+['send-keys','-t',pane,'Escape'])
-        print('PASS: gwt tags the trunk-merged worktree; ctrl-g reaps its checkout and branch and leaves unmerged work')
+        print('PASS: gwt tags the trunk-merged worktree; ctrl-g reaps its checkout and branch and leaves unmerged and locked work')
+
+        # First paint: with gwt list held back, the bare rows are on screen at
+        # once and take a query and a mark; the probed rows then replace them
+        # (feat/popup gains its dirty mark) with the query and the mark intact.
+        (tree/'untracked.txt').write_text('dirty')
+        (home/'slow-list').touch()
+        # Start from a settled shell: the previous popup gone, the screen clear.
+        deadline=time.monotonic()+8
+        while 'enter switch/create' in run(tmux+['capture-pane','-pt',pane]).stdout and time.monotonic()<deadline:
+            time.sleep(.1)
+        run(tmux+['send-keys','-t',pane,'-l','clear; echo settled']); run(tmux+['send-keys','-t',pane,'Enter'])
+        deadline=time.monotonic()+8
+        while 'settled' not in run(tmux+['capture-pane','-pt',pane]).stdout.splitlines() and time.monotonic()<deadline:
+            time.sleep(.1)
+        run(tmux+['send-keys','-t',pane,'-l',command]); run(tmux+['send-keys','-t',pane,'Enter'])
+        started = time.monotonic()
+        cap = wait_for('locked-me')
+        elapsed = time.monotonic() - started
+        assert elapsed < 2 and '* feat/popup' not in cap, 'bare rows waited on gwt list (%.2fs): %s' % (elapsed, cap)
+        run(tmux+['send-keys','-t',pane,'-l','feat/pop']); time.sleep(.3)
+        run(tmux+['send-keys','-t',pane,'Tab']); time.sleep(.3)
+        cap = run(tmux+['capture-pane','-pt',pane]).stdout
+        assert 'feat/pop' in cap and '✓' in cap and '* feat/popup' not in cap, 'typing or marking waited on the probes: '+cap
+        cap = wait_for('* feat/popup')
+        row = next(l for l in cap.splitlines() if '* feat/popup' in l)
+        assert '✓' in row and 'locked-me' not in cap and 'feat/pop' in cap, 'query or mark lost across the swap: '+cap
+        run(tmux+['send-keys','-t',pane,'Escape'])
+        (home/'slow-list').unlink()
+        print('PASS: bare rows paint before gwt list returns, take a query and a mark, and keep both across the swap')
     finally:
         run(tmux+['kill-server'],check=False)

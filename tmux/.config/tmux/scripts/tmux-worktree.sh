@@ -91,22 +91,25 @@ source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
 # gwt list owns the probes: a status per worktree and a merged verdict against
 # the trunk (squash and rebase merges included), memoized, one Git process per
 # CPU. They cost ~0.3-1s on 25 worktrees, so they are not the first paint.
-# The tag is shown only where it is actionable: the main worktree and the one
-# you are in can never be removed, and a dirty worktree is never reaped.
+
+# One eligibility rule for the "· merged" tag and for ctrl-g, so the tag marks
+# exactly the reap set: merged into the trunk, and removable — not the main
+# worktree or the one you are in, clean, unlocked, and still on disk.
+WT_REAPABLE='def reapable: .merged == true and (.main or .current or .dirty or .locked or .prunable | not);'
+
 probed_rows() {
   local json show=true
   case "$(tmux show-option -gqv @worktree_show_merged 2>/dev/null)" in
     off|0|false|no|disabled) show=false ;;
   esac
   json="$(gwt list --json 2>/dev/null)" || { bare_rows; return; }
-  printf '%s\n' "$json" | jq -r --argjson show "$show" '
+  printf '%s\n' "$json" | jq -r --argjson show "$show" "$WT_REAPABLE"'
     .worktrees[]
     | (.branch // "(detached)") as $b
     | (if .current then "\u001b[32m»\u001b[0m" else " " end)
       + (if .dirty then "\u001b[33m*\u001b[0m" else " " end)
       + " " + $b
-      + (if $show and .merged == true and (.main or .current or .dirty | not)
-         then "\u001b[32m · merged\u001b[0m" else "" end)
+      + (if $show and reapable then "\u001b[32m · merged\u001b[0m" else "" end)
       + "\t" + .path + "\t" + $b'
 }
 
@@ -495,21 +498,18 @@ batch_remove() {
   sleep 0.8
 }
 
-# ctrl-g: reap — batch-remove every clean worktree already merged into the
-# trunk (squash and rebase merges included), from `gwt list` run after the
+# ctrl-g: reap — batch-remove every worktree WT_REAPABLE admits (merged into
+# the trunk, squash and rebase merges included), from `gwt list` run after the
 # trunk refresh lands: reap's whole value is that it knows what has landed, and
-# it knew nothing newer than your last fetch. Main, dirty, locked, detached, and
-# missing checkouts never qualify; batch_remove also skips the current one.
-# One confirm, then trash-and-sweep.
+# it knew nothing newer than your last fetch. One confirm, then trash-and-sweep.
 reap_merged() {
   local listing cand trunk
   await_trunk
   echo "checking which worktrees are merged into the trunk…"
   listing="$(gwt list --json)" || { sleep 2; return; }
   trunk="$(printf '%s' "$listing" | jq -r .trunk.name)"
-  cand="$(printf '%s' "$listing" | jq -r '.worktrees[]
-    | select(.merged == true and (.main or .dirty or .locked or .prunable | not))
-    | "\(.path)\t\(.branch)"')"
+  cand="$(printf '%s' "$listing" | jq -r "$WT_REAPABLE"'
+    .worktrees[] | select(reapable) | "\(.path)\t\(.branch)"')"
   if [ -z "$cand" ]; then
     echo "nothing to reap — no clean worktree is fully merged into $trunk"
     sleep 1.5

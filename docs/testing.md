@@ -32,7 +32,7 @@ Each suite owns one boundary:
 | pane control | float, restore, pane-mode, and rename-popup transactions, plus the shared script library's contract (existence checks, live client, palette colours), on an isolated tmux socket |
 | context chip | publication, shedding, cleanup, and quota refresh without the live cache; one agent-status vocabulary across the statusline, owner, border, and zsh; the prompt sweep in a single tmux round trip |
 | worktree core | tmux-free snapshots, recovery refs and their expiry, and removal parent cleanup; merge verdicts are tested in `~/dev/gwt` |
-| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery; probed rows replace the bare first paint; ctrl-y copies through a stub `toclip`; ctrl-g reaps what gwt calls merged and leaves unmerged work; private tmux socket |
+| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery; the bare first paint shows before a held-back `gwt list` and keeps a query and a mark across the swap; ctrl-y copies through a stub `toclip`; the merged tag and ctrl-g share one eligibility rule, leaving unmerged and locked work; private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | command/output pairing across nested shells, indexed copies, recorder retention/cleanup, and terminal rendering with the real transient prompt; private tmux sockets, a temporary home, and a fake clipboard isolate state |
 | Claude sessions | shared-store topology and repair, plus launcher routing and workspace effort, against a throwaway `$HOME` |
