@@ -39,6 +39,12 @@ class AuditTests(unittest.TestCase):
             "GIT_TERMINAL_PROMPT": "0",
             "AUDIT_LSOF_LOG": str(self.sandbox / "lsof.log"),
         }
+        # Merged verdicts come from gwt; run the installed binary from the
+        # sandbox's PATH (a case may replace it with a stub).
+        installed = shutil.which("gwt")
+        if not installed:
+            self.fail("install gwt on PATH first: the audit's merged verdict comes from `gwt merged`")
+        shutil.copy2(installed, self.bin / "gwt")
         # Inventory only synthetic processes; never inspect the live session.
         self.stub("lsof", '#!/bin/sh\nprintf "called\\n" >> "$AUDIT_LSOF_LOG"\n'
                   'printf "n%s\\n" "$HOME"\n')
@@ -143,6 +149,37 @@ class AuditTests(unittest.TestCase):
         self.assertEqual(self.git("worktree", "list", "--porcelain"), registry)
         self.assertEqual((path / "tracked.txt").read_text(), "merged work\n")
         self.assertEqual((self.sandbox / "lsof.log").read_text(), "called\n")
+
+    def test_squash_merged_checkout_is_candidate(self):
+        path = self.checkout("squashed")
+        (path / "tracked.txt").write_text("squashed work\n")
+        self.git("commit", "-am", "Squashed work", cwd=path)
+        head = self.git("rev-parse", "HEAD", cwd=path).strip()
+        # GitHub's "Squash and merge": the same change lands as a new commit
+        # that shares no history with the checkout's branch.
+        (self.repo / "tracked.txt").write_text("squashed work\n")
+        self.git("commit", "-am", "Squashed work (#1)")
+        self.git("push", "origin", "main")
+        ancestry = subprocess.run(["git", "-C", str(self.repo), "merge-base", "--is-ancestor", head, "main"],
+                                  env=self.env, capture_output=True)
+        self.assertEqual(ancestry.returncode, 1, "the fixture must defeat the ancestry check")
+        report = self.audit()
+        row = self.row(report, path)
+        self.assertTrue(row["merged"])
+        self.assertEqual([item["path"] for item in report["candidates"]], [str(path)])
+        self.assertIn("merged into refreshed", report["candidates"][0]["reason"])
+
+    def test_failed_merge_verdict_keeps_graph_merged_checkout(self):
+        path = self.checkout("merged")
+        (path / "tracked.txt").write_text("merged work\n")
+        self.git("commit", "-am", "Merged work", cwd=path)
+        self.git("push", "origin", "HEAD:main", cwd=path)
+        self.stub("gwt", "#!/bin/sh\necho 'gwt: broken' >&2\nexit 1\n")
+        report = self.audit()
+        row = self.row(report, path)
+        self.assertIsNone(row["merged"])
+        self.assertEqual(report["candidates"], [])
+        self.assertTrue(any("gwt merged" in error for error in row["errors"]), row["errors"])
 
     def test_old_remote_backed_unmerged_tip_is_candidate(self):
         path = self.divergent("old-work")

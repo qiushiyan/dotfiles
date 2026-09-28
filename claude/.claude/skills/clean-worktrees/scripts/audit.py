@@ -92,6 +92,27 @@ def repository(path, should_fetch, base):
     return info
 
 
+def merged_verdict(path, head, base_head):
+    """Is HEAD's work already in the verified base: gwt's verdict, returned as
+    (True | False | None, error). It is the one definition of "merged" that gwt
+    remove and the tmux popup also use (ancestry, squash, or rebase, and a
+    patch match only when merging would leave the base unchanged). --into
+    judges against the base this audit verified, and gwt never fetches here."""
+    try:
+        result = subprocess.run(["gwt", "merged", "--json", "--into", base_head, head],
+                                cwd=path, capture_output=True, text=True, timeout=120,
+                                env={**os.environ, "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0"})
+    except (OSError, subprocess.SubprocessError) as error:
+        return None, problem(error)
+    try:
+        verdict = json.loads(result.stdout)["branches"][0]
+    except (ValueError, KeyError, IndexError, TypeError):
+        return None, result.stderr.strip() or f"exit {result.returncode} without a verdict"
+    if verdict.get("merged") is None:
+        return None, verdict.get("error") or "no verdict"
+    return bool(verdict["merged"]), None
+
+
 def activity(path, head):
     samples = [(float(git(path, "show", "-s", "--format=%ct", head)), "HEAD commit")]
     reflog = git(path, "reflog", "show", "-1", "--format=%gD", "--date=unix", "HEAD")
@@ -150,10 +171,9 @@ def inspect(entry, repo, root, cutoff, cwds, process_error):
                 row["remote_contains"].append(ref)
         row["merged"] = None
         if repo.get("base_head"):
-            check = run(path, "merge-base", "--is-ancestor", row["head"], repo["base_head"])
-            if check.returncode not in (0, 1):
-                check.check_returncode()
-            row["merged"] = check.returncode == 0
+            row["merged"], error = merged_verdict(path, row["head"], repo["base_head"])
+            if error:
+                row["errors"].append("merged verdict (gwt merged): " + error)
         row["activity"] = activity(path, row["head"])
         row["inactive"] = row["activity"]["timestamp"] < cutoff
         if git(path, "rev-parse", "HEAD").strip() != row["head"]:
@@ -164,7 +184,8 @@ def inspect(entry, repo, root, cutoff, cwds, process_error):
         if not merged_fresh and not (row["inactive"] and row["remote_contains"]):
             reasons.append("unresolved merge or inactivity; review PR evidence or retain")
         if not reasons and not row["errors"]:
-            row["reason"] = ("HEAD contained in refreshed " + repo["base"] if merged_fresh else
+            row["reason"] = ("HEAD merged into refreshed " + repo["base"] + " (gwt: ancestry, squash or rebase)"
+                             if merged_fresh else
                              "inactive since " + row["activity"]["date"] + "; tip reachable from refreshed remote")
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         row["errors"].append(problem(error))
@@ -174,8 +195,9 @@ def inspect(entry, repo, root, cutoff, cwds, process_error):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         "The output contains evidence plus candidates/kept accepted by remove.py. "
-        "Candidates use Git ancestry or inactive remote-backed tips; squash/rebase PR "
-        "proof remains for agent review. Activity includes commit/reflog, .git marker, "
+        "Candidates use gwt's merged verdict (ancestry, squash or rebase) against the "
+        "verified base, or inactive remote-backed tips; what neither settles remains for "
+        "agent review of PR evidence. Activity includes commit/reflog, .git marker, "
         "tracked/nonignored files and ignored files outside the remover's cache exclusions."))
     parser.add_argument("root", nargs="?", type=Path,
                         help="root to audit; default: worktree_root from gwt config show")

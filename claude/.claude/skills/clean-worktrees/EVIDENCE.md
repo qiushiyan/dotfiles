@@ -71,3 +71,21 @@ The combined suite passes all 20 tests in 13.00 seconds. A cached-only smoke
 audit of the live worktree root found 13 checkouts with no probe errors and zero
 proposed removals; it did not fetch or remove checkouts. The cold reader otherwise
 confirmed the updated ownership and retry instructions were clear.
+
+## Merged verdict from gwt — 28 September 2026
+
+The audit's merged evidence came from `git merge-base --is-ancestor` alone,
+so every squash- or rebase-merged checkout fell to "unresolved" and waited on a
+GitHub PR lookup, while `gwt remove` and the tmux popup already called the same
+branch merged. A review round (codex, dotfiles `review-r1`) flagged the two
+definitions. The audit now asks `gwt merged --json --into <verified base>
+<HEAD>` per checkout: the base stays the one the audit verified against
+advertised remote heads, gwt fetches nothing, and a detached HEAD is judged by
+commit id. gwt accepts a patch match only when merging would leave the base's
+exact contents unchanged; its own suite pins merge, squash, rebase, whitespace,
+and merge-commit edits.
+
+Two cases were added and failed before the change: a squash-merged checkout
+is now a candidate, and a gwt failure keeps even a graph-merged checkout
+(fail closed, with the error on the row). The suites pass all 23 tests in
+19.1 seconds with the installed gwt copied onto the sandbox PATH.

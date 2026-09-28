@@ -31,10 +31,14 @@ candidates. Activity includes checkout history and local-file edits. Keep dirty,
 locked, running, or uncertain work. The inactive path requires
 the tip to remain reachable from a refreshed remote ref; the merged path
 requires proof that the current HEAD reached the intended integration branch.
+The audit takes that proof from `gwt merged`, the verdict gwt remove and the
+tmux popup also use: merge, squash, and rebase integration all count, and a
+patch match counts only when merging would leave the base unchanged.
 
-For unresolved squash/rebase merges, batch GitHub PR metadata by repository,
-then query unresolved branches. A matching branch name is insufficient: the
-merged PR head must equal or contain the checkout's HEAD. The checkout can
+PR evidence settles what the audit leaves unresolved, such as work applied by
+hand with edits or merged into another branch. Batch GitHub PR metadata by
+repository, then query unresolved branches. A matching branch name is
+insufficient: the merged PR head must equal or contain the checkout's HEAD. The checkout can
 predate the final PR commit or include later unmerged work. Check the PR's target
 branch too. List limits are caps, not proof of absence; fetch a missing PR head
 only when its ancestry would settle the candidate.
