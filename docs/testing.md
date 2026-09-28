@@ -15,6 +15,7 @@ zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/portability.test.zsh                 # requires fzf, zoxide, oh-my-posh
 zsh  zsh/.config/zsh/tests/theme-sync.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/gwt.test.zsh                         # requires gwt on PATH
+zsh  zsh/.config/zsh/tests/git-wrapper.test.zsh                 # runs whole
 zsh  zsh/.config/zsh/tests/cwd-guard.test.zsh                    # runs whole
 zsh  zsh/.config/zsh/tests/stow-reach.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/bypass-cd-read-guard.test.zsh         # runs whole
@@ -36,9 +37,10 @@ Each suite owns one boundary:
 | cout | command/output pairing across nested shells, indexed copies, recorder retention/cleanup, and terminal rendering with the real transient prompt; private tmux sockets, a temporary home, and a fake clipboard isolate state |
 | Claude sessions | shared-store topology and repair, plus launcher routing and workspace effort, against a throwaway `$HOME` |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
-| portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive cases run on a pty |
+| portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive shells keep `git.zsh`'s `git()` and one fpath whatever they inherit; interactive cases run on a pty |
 | theme sync | startup + precmd switching against a throwaway `$HOME` |
 | gwt shell | completion, parent-shell entry, configured placement, caller HEAD, seeding, and compatibility shim in a temporary home |
+| git wrapper | the branch guard fires on a stale base and follows `gitguard on/off`; planlab pushes (clone and worktree) skip the pre-push hook, others run it; local repositories under a temporary home, no user git config, and a check that the live guard marker is untouched |
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree |
 | bypass guard | dormant hook logic through synthetic PreToolUse payloads |

@@ -118,6 +118,23 @@ export ENABLE_LSP_TOOLS=1
 # --------------------------------------------------------------------
 ZSH_THEME=""
 plugins=(history zsh-autosuggestions)
+
+# One fpath in every context, or oh-my-zsh deletes and rebuilds the completion
+# dump (200-350 ms) whenever it differs from the recorded one. `brew shellenv` in
+# ~/.zprofile exports FPATH, so without this a child shell inherits oh-my-zsh's
+# entries and adds them again. Drop inherited oh-my-zsh entries, pin the two
+# directories that only login shells add, and keep FPATH out of the
+# environment. docs/zsh.md § Completion dump.
+typeset -gU fpath
+fpath=(/opt/homebrew/share/zsh/site-functions(N/) ${fpath:#$ZSH/*} $HOME/.orbstack/shell/completions/zsh(N/))
+typeset +x FPATH
+
+# Bind autosuggestion widgets once, at the first prompt, instead of rebinding
+# every widget before every prompt. Safe while every widget exists by then:
+# zsh-syntax-highlighting hooks zle-line-pre-redraw rather than wrapping
+# widgets, and fzf, Oh My Posh and this file define theirs at startup.
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+
 source "$ZSH/oh-my-zsh.sh"
 
 # --------------------------------------------------------------------
@@ -128,9 +145,6 @@ source "$HOME/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 # Register git.zsh completions (compdef needs compinit, set up by oh-my-zsh
 # above). git.zsh itself is already sourced once by .zshenv's *.zsh glob.
 _git_zsh_register_completions
-
-# tmuxifier
-(( $+commands[tmuxifier] )) && eval "$(tmuxifier init -)"
 
 # nvm — lazy-loaded. toolchain.zsh resolved the default Node into $NVM_BIN;
 # re-apply the shared tool paths after login-shell and plugin setup, which
@@ -190,22 +204,6 @@ pl-bedrock() {
   echo "pl-bedrock: Bedrock creds loaded into shell"
 }
 
-# Default `git push` to --no-verify inside the planlab/main clone (and all its
-# worktrees), bypassing the git-lfs pre-push upload hook. Safe for everyday
-# commits that don't touch LFS-tracked binaries (png/svg/xml/xer/pdf/...); when
-# you DO change an asset, run a real push with `command git push` (bypasses this
-# function) or force the blobs with `git lfs push --all origin <branch>`.
-# Keys off the shared common git dir so it matches the clone and any worktree,
-# wherever the worktree lives. -ef compares inodes, so relative-vs-absolute
-# paths still match. Only spawns a subprocess on `push`; every other git command
-# short-circuits and runs untouched.
-git() {
-  if [[ "$1" == push ]] && \
-     [[ "$(command git rev-parse --git-common-dir 2>/dev/null)" -ef "$HOME/dev/planlab/main/.git" ]]; then
-    print -P "%F{242}↳ push --no-verify (skipping git-lfs pre-push)%f" >&2
-    shift
-    command git push --no-verify "$@"
-  else
-    command git "$@"
-  fi
-}
+# git() — the branch-creation guard and planlab's push --no-verify — lives in
+# ~/.config/zsh/git.zsh. Don't define another git() here: it would replace that
+# one in every interactive shell.

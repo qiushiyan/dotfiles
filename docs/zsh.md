@@ -30,7 +30,8 @@ recreate — a new machine gets it from running those installers, not from
 stowing. It matters to the load order anyway: its unconditional `brew shellenv`
 runs _after_ `.zshenv` and re-prepends Homebrew's paths. `.zshrc` reapplies
 `toolchain.zsh` after plugin setup; `.zlogin` covers login shells, including
-non-interactive `zsh -lc` calls.
+non-interactive `zsh -lc` calls. `brew shellenv` also exports `FPATH`, which
+`.zshrc` undoes (§ Completion dump).
 
 `toolchain.zsh` owns CLI install directories for every shell mode. Add new
 tool paths there. Codex's `shell_environment_policy` inherits its parent
@@ -50,7 +51,7 @@ Sourced by `.zshenv`; `toolchain.zsh` first, then the rest in glob order.
 zsh/.config/zsh/
   toolchain.zsh    # shared CLI paths, pnpm globals, default Node via nvm
   aliases.zsh
-  git.zsh          # git aliases, gopen/worktree helpers (also tmux prefix g), deferred completion registration
+  git.zsh          # git aliases, worktree helpers, gopen completion (binary: ~/dev/gopen), the one git() (branch guard, planlab push --no-verify), deferred completion registration
   nav.zsh          # n, take, drop, y, fcd, p/pp (planlab checkout; PLANLAB_DIR), ph (handoff briefs); pp/ph pull on both machines
   utils.zsh        # gitclean, loc, n, take, dotadd, …
   theme.zsh        # the $TERMINAL_THEME switch
@@ -74,8 +75,8 @@ A new module reaches every machine without a list to update. Two rules keep
 that working:
 
 - **Check for the tool, not the machine.** A line that needs something a
-  machine may lack guards on it: `(( $+commands[tmuxifier] ))`,
-  `[[ -r ~/.cargo/env ]]`. The GCP variables are set only where `gcloud` is
+  machine may lack guards on it: `[[ -r ~/.cargo/env ]]`, or a `(N/)` glob
+  qualifier on a completion directory. The GCP variables are set only where `gcloud` is
   installed, and the lazy `nvm` stub loads Homebrew's nvm or the installer's
   copy, whichever exists. A `toolchain.zsh` PATH entry for a directory a
   machine lacks is a harmless miss. A module that only defines functions
@@ -104,6 +105,25 @@ that did not load, or a host file that did not load from its marker.
 - **Package manager** — pnpm preferred over npm.
 - **Editing** — `set -o vi`; vim keybindings everywhere.
 - **Secrets** — `~/.secrets`, untracked, mode `600`, sourced by `.zshrc`.
+
+## Completion dump
+
+oh-my-zsh keeps compinit's dump in `~/.zcompdump-<host>-<version>` and deletes
+it whenever the fpath recorded there differs from the current one; a rebuild
+adds 200–350 ms to that shell's start. So `.zshrc` gives every interactive shell
+the same fpath before it sources oh-my-zsh: it drops inherited `$ZSH/*`
+entries, deduplicates (`typeset -U`), pins Homebrew's and OrbStack's
+completion directories, and unexports `FPATH`.
+
+The export is the trap. `brew shellenv` runs `export FPATH`, so a child shell
+(nested `zsh`, `zshreload`, a tmux pane whose server captured the variable)
+used to inherit its parent's oh-my-zsh entries and add them again. Each such
+context had a different fpath and rewrote the shared dump. The two pinned
+directories are the ones only login shells add, through `~/.zprofile`; without
+the pin a non-login shell lacked `brew`, `docker` and `orb` completions and
+recorded yet another fpath. A new completion directory belongs in that pin,
+guarded with `(N/)`, not on an exported `FPATH`. `tests/portability.test.zsh`
+checks that an inherited `FPATH` changes nothing and does not leak.
 
 ## Copying a command and its output
 
@@ -180,6 +200,17 @@ Hard-won during a startup-perf and robustness pass. Read before editing.
   `compinit`. `git.zsh` is sourced once, by `.zshenv`, which stubs `compdef` out
   to suppress errors; `.zshrc` calls `_git_zsh_register_completions` afterward.
   Don't re-source whole files just to register completions.
+- **A function in `.zshrc` replaces a module's function of the same name**,
+  because `.zshrc` runs after `.zshenv` sourced the modules. A planlab-only
+  `git()` there once replaced `git.zsh`'s, so `gitguard on` silently did
+  nothing in interactive shells. Extend the module's function instead;
+  `tests/portability.test.zsh` checks that `git()` comes from `git.zsh`.
+- **Autosuggestions bind their widgets once**, at the first prompt
+  (`ZSH_AUTOSUGGEST_MANUAL_REBIND=1` in `.zshrc`); the default rebinds every
+  widget before every prompt, ~5 ms each time. It is safe because every widget
+  exists by then, and zsh-syntax-highlighting uses `zle-line-pre-redraw` hooks
+  rather than wrapping widgets. A widget created later gets no suggestion
+  handling until `_zsh_autosuggest_bind_widgets` runs.
 - **`EQUALS` expansion is off, machine-wide** (`unsetopt EQUALS`, last line of
   `.zshenv`). By default zsh expands any word starting with `=` to the path of
   that command — `=ls` → `/bin/ls`, on assignment right-hand sides and

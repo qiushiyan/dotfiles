@@ -870,9 +870,13 @@ _gwt() {
 }
 
 # --------------------------------------------------------------------
-# git (wrapper) - warn before creating a branch off a stale base
+# git (wrapper) - stale-base branch guard; planlab pushes skip LFS hook
 # --------------------------------------------------------------------
-# Intercepts branch-creating invocations typed at the prompt
+# The one git() for every shell. .zshenv sources this module everywhere,
+# so a second git() elsewhere (say, in .zshrc) silently replaces this one
+# and disables both behaviors below.
+#
+# Branch guard. Intercepts branch-creating invocations typed at the prompt
 #   git switch -c/-C/--create <name>
 #   git checkout -b/-B <name>
 #   git branch <name>
@@ -896,6 +900,17 @@ _gwt() {
 # Toggle: `gitguard on|off` (persistent, all shells, immediate — it's a
 # marker file checked when a creation is detected, so no per-call cost).
 # GIT_GUARD_OFF=1 additionally disables it for the current shell only.
+#
+# planlab push. `git push` inside the planlab clone (PLANLAB_DIR, nav.zsh)
+# or any of its worktrees becomes `git push --no-verify`, skipping the
+# git-lfs pre-push upload hook. Safe for everyday commits that don't touch
+# LFS-tracked binaries (png/svg/xml/xer/pdf/...); when you DO change an
+# asset, push with `command git push` (bypasses this function) or force
+# the blobs with `git lfs push --all origin <branch>`. It keys off the
+# shared common git dir, so it matches the clone and every worktree
+# wherever it lives; -ef compares inodes, so relative and absolute paths
+# still match. Unlike the guard it needs no terminal, so agent shells get
+# it too. Only `push` spawns the extra rev-parse.
 # --------------------------------------------------------------------
 
 : ${GIT_GUARD_MAX_AGE:=600}   # seconds a previous fetch counts as fresh
@@ -912,6 +927,13 @@ git() {
         fi
         ;;
     esac
+  fi
+  if [[ "$1" == push ]] &&
+     [[ "$(command git rev-parse --git-common-dir 2>/dev/null)" -ef "${PLANLAB_DIR:-$HOME/dev/planlab/main}/.git" ]]; then
+    print -P "%F{242}↳ push --no-verify (skipping git-lfs pre-push)%f" >&2
+    shift
+    command git push --no-verify "$@"
+    return
   fi
   command git "$@"
 }

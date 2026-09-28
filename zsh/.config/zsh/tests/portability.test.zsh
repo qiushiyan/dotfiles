@@ -48,7 +48,7 @@ eq() {  # eq <expected> <actual> <what>
 
 # A bare machine: a throwaway $HOME holding only what stow links from the zsh
 # package, plus stand-ins for the two plugin checkouts .zshrc sources from
-# $HOME. No ~/.cargo, ~/.bun, tmuxifier, ~/.secrets or ~/.config/machine —
+# $HOME. No ~/.cargo, ~/.bun, ~/.orbstack, ~/.secrets or ~/.config/machine —
 # the laptop-only state every guard must tolerate. ~/.config/zsh links into
 # the working tree as stow links it; nothing here writes through it.
 sandbox() {
@@ -129,7 +129,30 @@ test_interactive_startup_is_silent() {
 test_interactive_shell_carries_shared_behaviour() {
   sandbox
   eq "on 1 1 1 1" "$(probe_tty '$options[ignore_eof] $+functions[_guard_ctrl_d] $+functions[git] $+functions[_cout_setup] $CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR')" \
-    "ignore_eof, Ctrl-D guard, planlab git wrapper, cout hooks, Claude env"
+    "ignore_eof, Ctrl-D guard, git wrapper, cout hooks, Claude env"
+}
+
+# git.zsh's git() carries the branch guard and the planlab push; a git()
+# defined in .zshrc once replaced it in every interactive shell, silently
+# disabling `gitguard on`. tests/git-wrapper.test.zsh covers what it does.
+test_interactive_git_is_git_zsh() {
+  sandbox
+  eq "$H/.config/zsh/git.zsh" "$(probe_tty '${functions_source[git]}')" \
+    "file that defines the interactive shell's git()"
+}
+
+# oh-my-zsh rebuilds its completion dump whenever fpath differs from the one
+# it recorded, so an interactive shell must reach it with one fpath whatever
+# it inherited. `brew shellenv` exports FPATH; a parent's oh-my-zsh entries
+# and duplicates must not come back, and FPATH must not leave the shell.
+test_fpath_ignores_inheritance() {
+  sandbox
+  local want got
+  want=$(probe_tty '${(j.:.)fpath} exported=$(env | grep -c "^FPATH=")')
+  [[ $want == *" exported=0" ]] || { print -r -- "FPATH exported: ${(qqq)want}"; return 1 }
+  CLEAN_ENV+=(FPATH="$H/.oh-my-zsh/plugins/history:$H/.oh-my-zsh/functions:${want% *}:${want%%:*}")
+  got=$(probe_tty '${(j.:.)fpath} exported=$(env | grep -c "^FPATH=")')
+  eq "$want" "$got" "fpath after inheriting oh-my-zsh entries and a duplicate"
 }
 
 # Without ~/.config/machine no host file loads: no badge, no mini wrappers.
@@ -166,6 +189,8 @@ t "non-interactive startup is silent on a bare machine"    test_noninteractive_s
 t "every module loads, with no allowlist"                  test_every_module_loads
 t "interactive startup is silent on a bare machine"        test_interactive_startup_is_silent
 t "interactive shell carries the shared behaviour"         test_interactive_shell_carries_shared_behaviour
+t "interactive git() is git.zsh's, not shadowed"           test_interactive_git_is_git_zsh
+t "fpath ignores what the shell inherited"                 test_fpath_ignores_inheritance
 t "no ~/.config/machine loads no host file"                test_no_marker_loads_no_host
 t "~/.config/machine loads its tracked host file"          test_marker_loads_its_host
 t "an unknown machine warns only interactively"            test_unknown_marker_warns_only_interactively

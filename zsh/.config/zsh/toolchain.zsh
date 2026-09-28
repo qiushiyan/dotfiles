@@ -4,7 +4,6 @@
 
 typeset -U path PATH
 export PATH="\
-$HOME/.config/tmux/plugins/tmuxifier/bin:\
 $HOME/.bun/bin:\
 $HOME/bin:\
 $HOME/.local/bin:\

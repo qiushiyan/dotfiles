@@ -8,7 +8,7 @@
 # cannot validate the inherited $PWD against `.`, and settles on PWD="." with
 # no way left to recover the real path. The tell is the row of
 #   shell-init: error retrieving current directory: getcwd: cannot access ...
-# lines: every bash that startup spawns (brew shellenv, tmuxifier) prints one.
+# lines: every bash that startup spawns (brew shellenv) prints one.
 #
 # PWD="." is then fatal for an interactive shell: zsh-syntax-highlighting's path
 # check (main-highlighter.zsh, the ZSH_HIGHLIGHT_DIRS_BLACKLIST walk) climbs
