@@ -221,6 +221,22 @@ error, and the friction is gone from every future session. The
 instruction layer's job is then the part code cannot carry — which
 command answers which question, and the rare path nobody would find.
 
+## A counterweight to a prior sits where the prior fires
+
+Some priors are not a guessed name but a judgment the model brings to
+every plan: slice the work into small PRs, price the options in days. A
+rule that loads with one workflow arrives after the proposal. The one-PR
+rule lived in the spec skill and a handoff section, yet the user still
+redirected a PR sequence in 11 of 92 planlab sessions over two weeks,
+mostly after first replies and consult syntheses; and the one always-loaded
+line on the subject argued the other way ("split large work into PR-sized
+children"). Put the counterweight in the always-loaded layer every host and
+voice reads, keep the reasoning behind a pointer, and audit always-loaded
+text for lines that side with the prior. Tracker metadata is a second way
+in: a card's priority and a requester's ETA ask read as design criteria
+unless something says whose they are (scoping pass, 2026-09-28; receipts in
+planlab's `.agents/skills/pl-bench-tasks/EVIDENCE.md`).
+
 ## What the doctrine gap looks like
 
 The instructions of one toolkit presented a staged evidence command as the

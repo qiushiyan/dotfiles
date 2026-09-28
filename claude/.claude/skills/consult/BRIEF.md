@@ -28,7 +28,9 @@ or a log sees it. No cause, no fix. Then what any answer has to satisfy: the
 constraints from outside this session — compatibility, operational limits, a
 decision the user made, work already committed elsewhere. This session's own
 analysis is not a constraint; it goes under "What we believe", where the voice
-is meant to attack it.»
+is meant to attack it. A ticket's priority or a requested delivery date is not
+one either: leave it out, since the voice judges the design, not the
+schedule.»
 
 Those constraints are fixed; on them your job is defects in the *execution* —
 internal consistency, gaps, edge cases. If you believe one is fatally flawed,
@@ -69,9 +71,9 @@ you have read on.
 Reason from first principles, grounded in the code you read — an analysis that
 doesn't cite the files it stands on is guessing. Judge any direction by how
 fully it solves the real problem on a clean structural footing, not by how
-little it disturbs: prefer the shape that makes the problem disappear over the
-patch that quiets it. A structural claim needs the code that proves it and the
-cost it carries.
+little it disturbs or how soon it ships: prefer the shape that makes the
+problem disappear over the patch that quiets it. A structural claim needs the
+code that proves it and the cost it carries.
 
 ## The design bar
 

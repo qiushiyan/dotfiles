@@ -126,6 +126,15 @@ shared skill, so CLI instructions and query guidance update with its body.
 Keep its default invocation enabled; a manual-only override would prevent
 Claude from following the automatic documentation route.
 
+`rules/scoping.md` — one PR by default, and designs judged by fit rather than
+delivery time — is inline rather than a pointer, because it has to shape every
+proposal from the first turn. Codex's global `AGENTS.md` carries the same text
+after the find-docs pointer; edit both together. Consult voices inherit it from
+either file, and planlab's root `AGENTS.md` § Scoping work states the same
+default for that team. The reasoning and its evidence live in
+`~/.config/lessons/collaboration/pr-boundaries.md` and planlab's
+`.agents/skills/pl-bench-tasks/EVIDENCE.md`.
+
 `grilling` owns Matt Pocock's interview workflow. `grill-with-docs` composes it
 with `domain-modeling` for glossary and ADR work. The upstream `grill-me` alias
 adds no behavior beyond `grilling`, so it is not installed. When updating a
