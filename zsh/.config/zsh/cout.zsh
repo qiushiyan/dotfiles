@@ -1,16 +1,7 @@
 # Command records belong to a shell session; the pane recorder owns output.
-cout() {
-  emulate -L zsh
-  if (( $# > 1 )); then
-    print -u2 'Usage: cout [positive index] (default: 1, the last command)'
-    return 2
-  fi
-  if [[ -z ${TMUX:-} || -z ${TMUX_PANE:-} ]]; then
-    print -u2 'cout: run this inside tmux.'
-    return 1
-  fi
-  command python3 "$HOME/.config/tmux/scripts/tmux-cout.py" --pane "$TMUX_PANE" --index "${1-1}"
-}
+# The `cout` binary on PATH (~/dev/cout, whose README owns the design) is the
+# recorder and the copy command; these hooks mark where each command starts
+# and ends in the pane's output stream.
 
 _cout_mark() {
   # Private OSC frames travel in the same ordered byte stream as program output.
@@ -83,7 +74,7 @@ _cout_precmd() {
 
 _cout_start() {
   emulate -L zsh
-  local -a setup=("${(@f)$(command python3 "$HOME/.config/tmux/scripts/tmux-cout.py" setup --pane "$TMUX_PANE")}")
+  local -a setup=("${(@f)$(command cout setup --pane "$TMUX_PANE")}")
   (( ${#setup} == 2 )) || return 1
   typeset -g _cout_store=$setup[1] _cout_session=$setup[2]
   _cout_mark "S;$_cout_session;$$"
@@ -92,8 +83,8 @@ _cout_start() {
 _cout_setup() {
   emulate -L zsh
   [[ -o interactive && -n ${TMUX:-} && -n ${TMUX_PANE:-} ]] || return 0
-  # Initialize on the first real command, without adding Python startup or
-  # background setup processes to shell startup.
+  # Initialize on the first real command, keeping setup's process and tmux
+  # round trips out of shell startup.
   typeset -g _cout_store='' _cout_session='' _cout_pending=0
   typeset -g _cout_sequence=0 _cout_last=- _cout_broken=0 _cout_carries_sweep=0
   command tmux set-option -p -t "$TMUX_PANE" @cout-ready 0 2>/dev/null

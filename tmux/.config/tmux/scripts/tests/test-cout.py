@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Exercise cout with real Zsh/Oh My Posh on a private tmux socket."""
+"""Exercise the cout binary with real Zsh/Oh My Posh on a private tmux socket.
+
+The binary under test is $COUT_BIN, else the installed `cout` on PATH
+(~/dev/cout; `make install`). Its unit tests live in that repository.
+"""
 
 import os
 import json
@@ -14,11 +18,13 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[5]
-HELPER = ROOT / "tmux/.config/tmux/scripts/tmux-cout.py"
+COUT = os.environ.get("COUT_BIN") or shutil.which("cout")
+TMUX = shutil.which("tmux")
 MODULE = ROOT / "zsh/.config/zsh/cout.zsh"
 PROMPT = ROOT / "ohmyposh/.config/ohmyposh/zen.omp.json"
 
 
+@unittest.skipUnless(COUT and Path(COUT).is_file(), "cout binary not found; set COUT_BIN or install it")
 class CoutTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="cout-test-")
@@ -37,15 +43,14 @@ class CoutTest(unittest.TestCase):
         clipboard = self.home / "bin/pbcopy"
         clipboard.write_text('#!/bin/sh\ncat > "$HOME/clipboard"\n')
         clipboard.chmod(0o700)
-        # The helper copies through toclip when it is on PATH; this stub shadows
+        # cout copies through toclip when it is on PATH; this stub shadows
         # the installed one, records the pane it was aimed from, then copies.
         toclip = self.home / "bin/toclip"
         toclip.write_text('#!/bin/sh\nprintf %s "$TMUX_PANE" > "$HOME/toclip-pane"\nexec pbcopy\n')
         toclip.chmod(0o700)
+        # The pane's shell and the tmux binding find the binary under test first.
+        (self.home / "bin/cout").symlink_to(Path(COUT).resolve())
         self.env["PATH"] = str(self.home / "bin") + ":" + self.env["PATH"]
-        helper = self.home / ".config/tmux/scripts/tmux-cout.py"
-        helper.parent.mkdir(parents=True)
-        shutil.copyfile(HELPER, helper)
         (self.home / ".zshrc").write_text(
             f'source "{MODULE}"\n'
             f'eval "$(oh-my-posh init zsh --config {PROMPT})"\n'
@@ -109,8 +114,7 @@ class CoutTest(unittest.TestCase):
         time.sleep(.1)
 
     def capture(self, success=True, index=1):
-        result = subprocess.run(["python3", str(HELPER), "--pane", self.pane,
-                                 "--index", str(index), "--print"],
+        result = subprocess.run([COUT, "--pane", self.pane, "--print", str(index)],
                                 env=self.env, text=True, capture_output=True)
         self.assertEqual(result.returncode == 0, success, result.stderr + result.stdout)
         return result.stdout if success else result.stderr
@@ -230,7 +234,7 @@ class CoutTest(unittest.TestCase):
         # Another logger takes over the pipe; setup must leave it running.
         self.tmux("pipe-pane", "-O", "-t", self.pane, "cat > " + shlex.quote(str(self.home / "foreign")))
         self.wait(lambda: not Path(old_store).exists())
-        result = subprocess.run(["python3", str(HELPER), "setup", "--pane", self.pane],
+        result = subprocess.run([COUT, "setup", "--pane", self.pane],
                                 env=self.env, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("already has an output pipe", result.stderr)
@@ -283,14 +287,20 @@ class CoutTest(unittest.TestCase):
 
     def test_selected_copy_survives_starting_another_command(self):
         self.execute("print selected")
-        helper = self.home / ".config/tmux/scripts/tmux-cout.py"
-        helper.write_text(helper.read_text().replace('    data = raw.read_bytes()',
-            '    (Path.home() / "render-started").touch()\n'
-            '    while not (Path.home() / "render-release").exists():\n'
-            '        time.sleep(.01)\n'
-            '    data = raw.read_bytes()'))
-        process = subprocess.Popen(["python3", str(helper), "--pane", self.pane],
-                                   env=self.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # Hold the copy after it selected its record, at the start of its
+        # private render server; every other tmux call passes straight through.
+        wrapper = self.home / "hold/tmux"
+        wrapper.parent.mkdir()
+        wrapper.write_text(
+            '#!/bin/sh\n'
+            'case "$*" in *cout-render-*new-session*)\n'
+            '  touch "$HOLD/render-started"\n'
+            '  while [ ! -e "$HOLD/render-release" ]; do sleep 0.01; done ;;\n'
+            f'esac\nexec {shlex.quote(TMUX)} "$@"\n')
+        wrapper.chmod(0o700)
+        env = dict(self.env, HOLD=str(self.home), PATH=f"{wrapper.parent}:{self.env['PATH']}")
+        process = subprocess.Popen([COUT, "--pane", self.pane],
+                                   env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         try:
             self.wait(lambda: (self.home / "render-started").exists())
             self.execute("print next")
@@ -303,10 +313,9 @@ class CoutTest(unittest.TestCase):
 
     def test_recording_limits_prune_and_refuse_truncated_output(self):
         self.execute("true")
-        helper = self.home / ".config/tmux/scripts/tmux-cout.py"
-        helper.write_text(helper.read_text().replace("MAX_RECORD = 16 * 1024 * 1024", "MAX_RECORD = 1024")
-                          .replace("MAX_CACHE = 64 * 1024 * 1024", "MAX_CACHE = 2048")
-                          .replace("MAX_RECORDS = 50", "MAX_RECORDS = 3"))
+        # Limits belong to the recorder, so they apply to the next one setup
+        # attaches: from a shell that exports them, after this pipe closes.
+        self.execute("export COUT_LIMITS=1024,2048,3")
         store = self.store()
         self.tmux("pipe-pane", "-t", self.pane)
         self.wait(lambda: not store.exists())
@@ -343,7 +352,7 @@ class CoutTest(unittest.TestCase):
         (self.home / "clipboard").write_text("untouched")
         # An already-running shell can still be publishing the previous format.
         self.tmux("set-option", "-pu", "-t", self.pane, "@cout-state")
-        result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
+        result = subprocess.run([COUT, "--pane", self.pane],
                                 env=self.env, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("zshreload", result.stderr)
@@ -361,27 +370,52 @@ class CoutTest(unittest.TestCase):
         self.wait(lambda: self.option("@test-generation") != generation)
         time.sleep(.1)
         self.assertEqual(self.capture(), expected)
-        binding = next(line for line in (ROOT / "tmux/.config/tmux/tmux.conf").read_text().splitlines()
-                       if line.startswith("bind-key o "))
-        binding_file = self.home / "binding.conf"
-        binding_file.write_text(binding + "\n")
-        self.tmux("source-file", str(binding_file))
+        binding = self.bind_shortcut()
         installed = self.tmux("list-keys", "-T", "prefix")
-        self.assertIn("tmux-cout.py", installed)
-        # Run the exact bound action; no attached client is needed by the suite.
-        action = shlex.split(binding)[2:]
-        action[-1] = action[-1].replace("#{pane_id}", self.pane)
-        self.tmux(*action)
+        self.assertIn("cout --pane", installed)
+        self.assertNotIn("python", binding)
+        self.press_shortcut(binding)
         self.wait(lambda: (self.home / "clipboard").exists())
         self.assertEqual((self.home / "clipboard").read_text(), expected)
         # run-shell has no TMUX_PANE; toclip must still aim from the bound pane.
         self.assertEqual((self.home / "toclip-pane").read_text(), self.pane)
 
+    def bind_shortcut(self):
+        binding = next(line for line in (ROOT / "tmux/.config/tmux/tmux.conf").read_text().splitlines()
+                       if line.startswith("bind-key o "))
+        binding_file = self.home / "binding.conf"
+        binding_file.write_text(binding + "\n")
+        self.tmux("source-file", str(binding_file))
+        return binding
+
+    def press_shortcut(self, binding):
+        # Run the exact bound action; no attached client is needed by the suite.
+        action = shlex.split(binding)[2:]
+        action[-1] = action[-1].replace("#{pane_id}", self.pane)
+        self.tmux(*action)
+
+    def test_shortcut_failure_leaves_no_popup(self):
+        # run-shell shows a non-zero exit or any output in a view-mode popup;
+        # --notify reports in the status line and exits 0 instead.
+        (self.home / "clipboard").write_text("untouched")
+        status = self.home / "cout-status"
+        wrapper = self.home / "bin/cout"
+        wrapper.unlink()
+        wrapper.write_text(f'#!/bin/sh\n{shlex.quote(str(Path(COUT).resolve()))} "$@"\n'
+                           f'code=$?\necho $code > {shlex.quote(str(status))}\nexit $code\n')
+        wrapper.chmod(0o700)
+        self.press_shortcut(self.bind_shortcut())
+        self.wait(lambda: status.exists())
+        time.sleep(.2)  # run-shell reacts to the job's exit after it happens
+        self.assertEqual(status.read_text().strip(), "0")
+        self.assertEqual(self.tmux("display-message", "-p", "-t", self.pane, "#{pane_in_mode}").strip(), "0")
+        self.assertEqual((self.home / "clipboard").read_text(), "untouched")
+
     def test_toclip_refusal_reaches_the_user(self):
         self.execute("print hello")
         (self.home / "bin/toclip").write_text(
             "#!/bin/sh\necho 'toclip: too large; kept as the newest tmux buffer - run frommini' >&2\nexit 1\n")
-        result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
+        result = subprocess.run([COUT, "--pane", self.pane],
                                 env=self.env, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("run frommini", result.stderr)
@@ -410,7 +444,7 @@ class CoutTest(unittest.TestCase):
         store = self.store()
         identity = self.option("@cout-state").split()[1]
         (store / f"{identity}.raw").unlink()
-        result = subprocess.run(["python3", str(HELPER), "--pane", self.pane],
+        result = subprocess.run([COUT, "--pane", self.pane],
                                 env=self.env, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("recording is no longer retained", result.stderr)

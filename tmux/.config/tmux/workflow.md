@@ -151,6 +151,8 @@ hold/put/pick: `scripts/pane-mode.md`.
 
 - **`cout`** or **`cout 1`**: copy the latest completed command and its output.
 - **`cout N`**: copy the Nth most recent command; `cout 2` selects the previous one.
+- **`cout --print N`**: write the same text to stdout instead of the clipboard,
+  e.g. to hand an agent a failing run; `--pane %3` reads another pane.
 - **`prefix o`**: copy the latest command from the selected pane. This overrides
   tmux's stock next-pane shortcut; use `prefix h/j/k/l` for pane navigation.
 

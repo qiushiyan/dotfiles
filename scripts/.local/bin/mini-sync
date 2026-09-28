@@ -16,7 +16,7 @@ REPO="$HOME/dotfiles"
 # Compiled, self-contained CLIs from ~/.local/bin. Launcher shims that exec
 # into a local checkout (planlab, bench) do not belong here: they point at
 # laptop paths.
-BINS=(headroom envoy brief gwt gopen)
+BINS=(headroom envoy brief gwt gopen cout)
 # Token files (paths relative to $HOME), sent 600 in 700 dirs. Only CLI API
 # tokens belong here. OAuth logins (Claude Code, Codex, gh) rotate their
 # refresh tokens, so two machines sharing one log each other out; the mini

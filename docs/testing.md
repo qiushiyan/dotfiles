@@ -9,7 +9,7 @@ bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
 bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W15 W36 …]
 python3 tmux/.config/tmux/scripts/tests/test-gwt-popup.py        # requires gwt, tmux, fzf
 python3 tmux/.config/tmux/scripts/tests/test-popup-overlay.py --stock <known-broken-binary> --candidate <candidate-binary>
-python3 tmux/.config/tmux/scripts/tests/test-cout.py            # requires tmux, zsh, oh-my-posh
+python3 tmux/.config/tmux/scripts/tests/test-cout.py            # requires tmux, zsh, oh-my-posh, cout (or COUT_BIN)
 zsh  zsh/.config/zsh/tests/claude-sessions.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/portability.test.zsh                 # requires fzf, zoxide, oh-my-posh
@@ -34,7 +34,7 @@ Each suite owns one boundary:
 | worktree core | tmux-free snapshots, recovery refs and their expiry, and removal parent cleanup; merge verdicts are tested in `~/dev/gwt` |
 | gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery; the bare first paint shows before a held-back `gwt list` and keeps a query and a mark across the swap; ctrl-y copies through a stub `toclip`; the merged tag and ctrl-g share one eligibility rule, leaving unmerged and locked work; private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
-| cout | command/output pairing across nested shells, indexed copies, recorder retention/cleanup, and terminal rendering with the real transient prompt; private tmux sockets, a temporary home, and a fake clipboard isolate state |
+| cout | the installed `cout` binary end to end (or `$COUT_BIN`): command/output pairing across nested shells, indexed copies, recorder retention/cleanup, terminal rendering with the real transient prompt, and `prefix o` leaving no popup; private tmux sockets, a temporary home, and a fake clipboard isolate state, and every store path is checked to lie inside the sandbox before a delete. Parser, store, and replay unit tests are in `~/dev/cout` |
 | Claude sessions | shared-store topology and repair, plus launcher routing and workspace effort, against a throwaway `$HOME` |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
 | portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive shells keep `git.zsh`'s `git()` and one fpath whatever they inherit; interactive cases run on a pty |

@@ -75,7 +75,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
 | portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
 
-Personal CLIs (headroom, envoy, brief, gwt, gopen) come from the laptop through
+Personal CLIs (headroom, envoy, brief, gwt, gopen, cout) come from the laptop through
 `mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
 Not installed: rust, Docker, other GUI apps.
 

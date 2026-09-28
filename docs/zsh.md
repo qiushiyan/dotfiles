@@ -54,7 +54,7 @@ zsh/.config/zsh/
   codex.zsh        # Codex accounts through headroom (cx, cx-<name>); plain `codex` stays the vendor default
   xcode.zsh
   tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep, tmux-wait-for-text
-  cout.zsh        # cout + execution boundaries for the pane recorder
+  cout.zsh        # execution boundaries for the cout recorder (~/dev/cout)
   proxy.zsh
   hosts/<machine>.zsh  # one machine's identity (§ Machines); outside the glob
   tests/           # suites (docs/testing.md); outside the glob
@@ -123,8 +123,14 @@ checks that an inherited `FPATH` changes nothing and does not leak.
 `cout [N]` and tmux `prefix o` copy a completed command and its terminal output
 to the clipboard of the machine you sit at, through `toclip` when it is
 installed (over SSH to the mini, the laptop's; `docs/qiushi-mini.md`
-§ Clipboard and attach), else `pbcopy`. Usage belongs to `tmux/.config/tmux/workflow.md`
+§ Clipboard and attach), else `pbcopy`; `cout --print N` writes the same text
+to stdout for agents. Usage belongs to `tmux/.config/tmux/workflow.md`
 § Reading back & copying output (copy mode).
+
+The engine is the `cout` CLI (`~/dev/cout`, installed in `~/.local/bin` and
+copied to the mini by `mini-sync`). Its README owns the pane's `pipe-pane`
+recorder, the marker protocol, completed records and indexes, retention and
+its limits, and replay.
 
 `zsh/.config/zsh/cout.zsh` owns execution boundaries and shell identity:
 `preexec` saves the exact command text and marks the start, `precmd`/`zshexit`
@@ -133,9 +139,7 @@ the exit status. Standalone copies and empty or cancelled prompts create no
 record. The `precmd` also carries the prompt's tmux round trip
 (`tmux/.config/tmux/scripts/context-chip.md` § Ownership).
 
-`tmux/.config/tmux/scripts/tmux-cout.py` owns the pane's `pipe-pane` recorder,
-completed records, indexes, and retention, with its limits at the top of the
-file. Every active execution receives output, so a parent `zsh` or `ssh` record
+Every active execution receives output, so a parent `zsh` or `ssh` record
 contains the nested interaction; a local child shell has its own index, and
 `exec zsh` starts a new one. Shared history and prompt themes do not determine
 boundaries.
@@ -152,7 +156,7 @@ interrupts recording and prompts for a reload, and setup refuses to replace
 another logger.
 
 `zshreload` picks up changed shell hooks but reuses the pane's live recorder,
-so a change to recording code or retention needs a new pane. After a recorder
+so a new `cout` build or changed retention needs a new pane. After a recorder
 failure, reload the shell and run a new command to resume capture; earlier
 output is gone. The isolated suite is in `docs/testing.md`.
 
