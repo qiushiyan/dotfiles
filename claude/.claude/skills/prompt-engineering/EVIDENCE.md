@@ -449,3 +449,9 @@ body" was inaccurate, since the body's examples already name Loopy,
 Two Fable mentions remain, both facts about that model rather than rules
 attributed to it: right altitude's reasoning-extraction refusal note, and
 the pointer to `references/fable-prompting-guide.md`.
+
+Decided by the user, same day: the two remaining Fable mentions are rules
+for prompting any model, so they are generalized. The reasoning-extraction
+note in right altitude drops "on the Fable generation", and the pointer
+describes the vendor guide as the guide for current models. The file keeps
+its name, `references/fable-prompting-guide.md`.

@@ -124,8 +124,7 @@ it.
   see which part is the narrow bridge and which is open field. Ask for
   conclusions with their evidence. A written intermediate the workflow
   needs — a plan before the build — is output and fine to ask for; "show
-  your thinking" can trigger a reasoning-extraction refusal on the Fable
-  generation.
+  your thinking" can trigger a reasoning-extraction refusal.
 - **Trigger, action, skip.** A behavioural rule carries when it fires,
   what it does, and when not to — the skip condition is what stops
   over-triggering, and a mandated output section carries its skip ("if
@@ -394,9 +393,9 @@ gap was filled.
 - Tools whose instructions are shaped by usage history — what to teach,
   what to move into the engine, cold readers:
   `~/.config/lessons/agent-tooling/usage-lessons.md`.
-- The Fable prompting guide — behaviours of the current Claude generation:
-  long turns, effort, refusal classes, memory, and which instructions a
-  prior model needed that this one performs unprompted:
+- The vendor's prompting guide for current models — long turns, effort,
+  refusal classes, memory, and which instructions older models needed that
+  current ones perform unprompted:
   `~/dotfiles/references/fable-prompting-guide.md`.
 - Case studies — past passes in one domain, which most sessions never
   need, each named below by its trigger; `case-studies/README.md` says
