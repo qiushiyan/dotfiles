@@ -1,8 +1,10 @@
 # slackkit — one personal Slack toolkit for coding agents
 
-**Status: proposal, unbuilt.** Delete this file when the work ships; its
-surviving decisions then live in `~/dev/slackkit`'s own docs, slack-digest's
-`DESIGN.md`, and `docs/agent-skills.md` here. Settled 2026-09-29 from a
+**Status: built 2026-09-29, except the PlanLab half, which is an open PR.**
+slackkit exists with its library, CLI, skill and manifest, slack-digest
+imports it, and this repo links the skill and carries the token store to the
+mini. Delete this file when the PlanLab PR merges; its surviving decisions
+live in `~/dev/slackkit/DESIGN.md` and slack-digest's `DESIGN.md`. Settled 2026-09-29 from a
 session-history analysis and a consult round (`consult-r1/codex-gpt-6-astra`,
 job `~/.local/state/envoy/jobs/dotfiles-4f711dad/consult-r1+4`); the design
 follows that voice's position where the two differed.
@@ -197,11 +199,11 @@ skill-map row that name `pl-slack` point at the guide for bot mechanics and at
 
 ## Sequencing
 
-One PR per repository, because the repositories are the seam and slackkit has
-to exist before the digest can import it: slackkit first (library, CLI,
-skill, manifest, docs); then slack-digest; then dotfiles and PlanLab, which
-are independent of each other. Each PR is a correct merge state on its own;
-the digest keeps working on its old code until its PR lands.
+The personal repositories (slackkit, slack-digest, dotfiles) take direct
+commits on `main`, in that order, since slackkit has to exist before the
+digest imports it. PlanLab is a team repository and takes a PR. Each commit
+is a correct state on its own; the digest kept working on its old code until
+its commit landed.
 
 ## Test plan the consult pinned
 

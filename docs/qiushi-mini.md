@@ -388,7 +388,9 @@ when the laptop switches, so a `prefix t` pick on the mini lasts until then.
 
 - **slack-digest** — the daily Slack briefing (`~/dev/slack-digest` on the
   laptop, not cloned here). `mini-sync` carries the binary and
-  `~/.config/slack-digest` (tokens included); the LaunchAgent
+  `~/.config/slack-digest` (config and workspace notes) and slackkit's
+  token store `~/.config/slack` (read by `slack-digest` and the `slack`
+  CLI, also carried); the LaunchAgent
   `com.qiushi.slack-digest` runs it at 08:30 and is installed from the
   laptop with `make -C ~/dev/slack-digest install-mini`. Its ledger and
   digests live only here, in `~/.local/share/slack-digest/`; log

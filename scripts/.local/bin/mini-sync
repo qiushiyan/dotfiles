@@ -16,13 +16,14 @@ REPO="$HOME/dotfiles"
 # Compiled, self-contained CLIs from ~/.local/bin. Launcher shims that exec
 # into a local checkout (planlab, bench) do not belong here: they point at
 # laptop paths.
-BINS=(headroom envoy brief gwt gopen cout slack-digest)
+BINS=(headroom envoy brief gwt gopen cout slack-digest slack)
 # Token files or directories (paths relative to $HOME), sent 600 in 700
 # dirs. Only CLI API tokens belong here, with the private config that travels
-# beside them (~/.config/slack-digest: tokens.env, config, workspace notes). OAuth logins (Claude Code, Codex, gh) rotate their
-# refresh tokens, so two machines sharing one log each other out; the mini
-# logs in on its own.
-SECRETS=(.planlab/.env .bench/.env .config/slack-digest)
+# beside them (~/.config/slack: slackkit's tokens.env, read by slack and
+# slack-digest; ~/.config/slack-digest: config, workspace notes). OAuth logins
+# (Claude Code, Codex, gh) rotate their refresh tokens, so two machines
+# sharing one log each other out; the mini logs in on its own.
+SECRETS=(.planlab/.env .bench/.env .config/slack .config/slack-digest)
 # Mirror scripts the mini runs by name. The scripts package is not stowed
 # there (it carries this laptop's mini-sync LaunchAgent), so each gets a
 # link in the mini's ~/.local/bin, pointing into the mirror.
@@ -59,8 +60,12 @@ excludes="$work/excludes"
 git -C "$REPO" ls-files -o -i --exclude-standard --directory | sed 's|^|/|' > "$excludes"
 echo '.DS_Store' >> "$excludes"
 
+# Skills owned by other projects are links out of the tree (read-email →
+# ~/dev/mailkit, slack → ~/dev/slackkit); the mini has no such checkouts, so
+# --copy-unsafe-links carries those as real directories. Links inside the
+# tree stay links.
 say "==> dotfiles → $HOST:~/dotfiles"
-rsync -a --delete ${dry[@]+"${dry[@]}"} --exclude-from="$excludes" \
+rsync -a --delete --copy-unsafe-links ${dry[@]+"${dry[@]}"} --exclude-from="$excludes" \
   "$REPO/" "$HOST:dotfiles/"
 
 # Codex's config.toml can't be a link like the claude package: Codex writes
