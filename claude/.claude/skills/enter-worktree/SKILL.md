@@ -11,12 +11,14 @@ scope, using the repository's naming conventions.
 Use `gwt create --non-interactive` with the chosen branch. Supply a base as
 the next argument when the discussion chooses one; otherwise let gwt apply
 its configuration. On success, stdout is the absolute worktree path;
-diagnostics go to stderr. Pass that path to `session-cd`:
+diagnostics go to stderr. Pass that path to `session-cd`, holding it in a
+variable other than `path`: the Bash tool runs zsh, where `path` is tied to
+`PATH`, so assigning it hides `tmux` and every other command from the script.
 
 <example>
 ```bash
-path=$(gwt create --non-interactive feat/answer-attachments) &&
-  ~/.agents/skills/enter-worktree/scripts/session-cd "$path"
+wt=$(gwt create --non-interactive feat/answer-attachments) &&
+  ~/.agents/skills/enter-worktree/scripts/session-cd "$wt"
 ```
 </example>
 

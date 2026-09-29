@@ -14,9 +14,15 @@ dest=$(cd "$1" 2>/dev/null && pwd -P) || die "no such directory: $1"
 pane=${TMUX_PANE:-}
 [[ -n $pane ]] || die "Claude Code is not running inside tmux"
 
+# A caller in zsh that assigns `path` rewrites PATH; name that instead of
+# letting a missing tmux read as a missing pane.
+for cmd in tmux ps jq grep sed tr; do
+  command -v "$cmd" >/dev/null || die "$cmd not found on PATH=$PATH"
+done
+
 # The pane must host this Claude process: walk up from our parent to the
 # pane's root process.
-root=$(tmux display-message -p -t "$pane" '#{pane_pid}' 2>/dev/null) || die "tmux pane $pane is gone"
+root=$(tmux display-message -p -t "$pane" '#{pane_pid}' 2>&1) || die "cannot query tmux pane $pane: $root"
 pid=$PPID
 while [[ $pid -gt 1 && $pid -ne $root ]]; do
   pid=$(ps -o ppid= -p "$pid" | tr -d ' ')
