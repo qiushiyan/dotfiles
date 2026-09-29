@@ -64,7 +64,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync git-lfs coreutils bat difftastic` (the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
 | tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading and activating |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
-| node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'` |
+| node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'`; then move the versioned node path in Portless's service and slack-digest's agent (§ Personal jobs) |
 | pnpm | 11.27.1 | `get.pnpm.io/install.sh` with `PNPM_VERSION=11.27.1` → `~/Library/pnpm`; pinned to 11 to match the laptop, not the Rust-port 12 | `pnpm self-update` |
 | Claude Code | 2.1.280 | native `claude.ai/install.sh` → `~/.local/bin/claude` | auto-updates |
 | Codex CLI | 0.155.1 | `chatgpt.com/codex/install.sh` → `~/.local/bin/codex` | `codex update` |
@@ -392,8 +392,12 @@ when the laptop switches, so a `prefix t` pick on the mini lasts until then.
   `com.qiushi.slack-digest` runs it at 08:30 and is installed from the
   laptop with `make -C ~/dev/slack-digest install-mini`. Its ledger and
   digests live only here, in `~/.local/share/slack-digest/`; log
-  `~/Library/Logs/slack-digest.log`. The repo's `DESIGN.md` § Where it runs
-  has the rest.
+  `~/Library/Logs/slack-digest.log`. The agent's PATH names nvm's node by
+  version, for planlab's CLI; after a node upgrade, edit
+  `launchd/com.qiushi.slack-digest.plist` and re-run `install-mini`, or
+  planlab's briefing loses its deploy state. From the laptop,
+  `slack-digest items|show|reply|done|ignore` reach the ledger here over
+  ssh. The repo's `DESIGN.md` § Where it runs has the rest.
 
 ## Steward host
 
