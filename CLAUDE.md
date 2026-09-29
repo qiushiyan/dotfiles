@@ -2,8 +2,8 @@
 
 This is the user's dotfiles collection managed with GNU Stow. Package trees mirror `$HOME`: `zsh/.zshrc` maps to `~/.zshrc`,
 `nvim/.config/nvim/` to `~/.config/nvim/`. **Files are symlinked, so edits
-here affect the live system immediately.** `docs/` and `vpn-private/` are
-excluded from Stow; `make list` and the tree show the packages.
+here affect the live system immediately.** `docs/` is excluded from Stow;
+`make list` and the tree show the packages.
 
 Keep configuration reproducible without bringing private state into Git.
 Secrets belong in untracked `~/.secrets`, sourced by `.zshrc`; tracked config
@@ -110,6 +110,8 @@ Additional routes beyond the feature docs above:
 
 - Auto-compaction settings: `docs/claude-autocompact.md`.
 - AWS SSO sessions and the `aws-login` wrapper: `docs/aws-sso.md`.
+- What protects uncommitted and gitignored state, local snapshots, and
+  recovery after a loss: `docs/recovery.md`.
 - Dormant Claude `cd` read guard: `docs/bypass-cd-read-guard.md`.
 - The colleague's Mac mini (`ssh macmini-shared`), including access etiquette:
   `docs/macmini.md`.

@@ -49,7 +49,7 @@ if ! ssh -o BatchMode=yes -o ConnectTimeout=5 "$HOST" true 2>/dev/null; then
 fi
 
 # Everything git can see (tracked + untracked-not-ignored) plus .git itself.
-# Ignored paths stay behind: ssh config, vpn-private/, purchased upstream
+# Ignored paths stay behind: ssh config, purchased upstream
 # material, app runtime state, node_modules. Anchored so a name excludes
 # only that path.
 work=$(mktemp -d "${TMPDIR:-/tmp}/mini-sync.XXXXXX")

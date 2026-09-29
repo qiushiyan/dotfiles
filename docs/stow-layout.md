@@ -13,7 +13,8 @@ folding — is the whole safety property, and it holds only while the target
 directory already exists.
 
 `PACKAGES` in the Makefile is `*/` minus `docs/` and `vpn-private/`, so
-repo-only documentation and the gitignored local backup are never stowed.
+repo-only documentation is never stowed, and neither is a credentials folder
+restored into the checkout from the password manager (`docs/recovery.md`).
 
 ## Directories that must stay real
 

@@ -7,7 +7,7 @@
 
   <!-- A daily APFS snapshot of the Data volume, kept 7 days, while Time
        Machine has no destination; once it has one, the run is a no-op.
-       docs/local-snapshots.md. -->
+       docs/recovery.md. -->
   <key>ProgramArguments</key>
   <array>
     <string>/Users/qiushi/.local/bin/snapshot</string>

@@ -16,7 +16,7 @@
 #   sudo mount_apfs -o ro -s com.apple.TimeMachine.<date>.local /System/Volumes/Data /tmp/snap
 #   cp -a /tmp/snap/Users/$USER/<path> <dest>; sudo umount /tmp/snap
 # The snapshot shares the disk it protects: it covers deletes, not a lost
-# or dead Mac. docs/local-snapshots.md.
+# or dead Mac. docs/recovery.md.
 #
 # Exit codes: 0 done; 1 tmutil failed; 2 bad arguments.
 set -uo pipefail

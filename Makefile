@@ -1,6 +1,7 @@
 # Not every top-level dir is a stow package — filter out the repo-only ones so
 # `install`/`restow` never symlinks them into $HOME:
-#   vpn-private/  local backup/handoff folder (gitignored)
+#   vpn-private/  credentials live in the password manager; a copy restored
+#                 here is never stowed (docs/recovery.md)
 #   docs/         repo documentation, lives here only
 PACKAGES := $(filter-out vpn-private/ docs/,$(sort $(dir $(wildcard */))))
 
