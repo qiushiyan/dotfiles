@@ -104,6 +104,9 @@ trust_level = "trusted"
 [projects."/Users/qiushi/dev/gwt"]
 trust_level = "trusted"
 
+[projects."/Users/qiushi/dev/slack-digest"]
+trust_level = "trusted"
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
@@ -263,6 +266,42 @@ enabled = false
 
 [[skills.config]]
 path = "~/.codex/skills/.system/skill-installer/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/docs/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/docx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/google-workspace/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/import-memory/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/morning/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/pdf/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/pptx/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/skill-creator/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/xlsx/SKILL.md"
 enabled = false
 
 [[skills.config]]
