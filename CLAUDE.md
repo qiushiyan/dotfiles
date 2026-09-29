@@ -119,5 +119,8 @@ Additional routes beyond the feature docs above:
 - My own office Mac mini (`ssh qiushi-mini`), reached over the company
   tailnet and kept in sync by `mini-sync`: `docs/qiushi-mini.md`.
 - Unbuilt tmux features: `tmux/.config/tmux/roadmap.md`.
+- Unbuilt: the personal Slack toolkit (library, `slack` CLI and skill in
+  `~/dev/slackkit`, replacing `slack-followup` and PlanLab's `pl-slack`):
+  `docs/slackkit-plan.md` (proposal).
 - TabType prompt snippets: `tabtype/CLAUDE.md`.
 
