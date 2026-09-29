@@ -372,15 +372,28 @@ when the laptop switches, so a `prefix t` pick on the mini lasts until then.
 - **Compiled CLIs are copied**, the binaries named in `BINS`, so the mini
   needs no Go and no source clones. `planlab` and `bench` are not: they are
   shims into a checkout, and the mini generates its own (§ planlab checkout).
-- **Token files**: only plain CLI API tokens belong on `SECRETS`. OAuth logins
-  (Claude Code, Codex, gh) rotate their refresh tokens, so two machines
-  sharing one log each other out. A file deleted on the laptop stays on the
-  mini.
+- **Token files**: only plain CLI API tokens belong on `SECRETS`, as a file
+  or a directory with the private config that travels beside them. OAuth
+  logins (Claude Code, Codex, gh) rotate their refresh tokens, so two
+  machines sharing one log each other out. A file deleted on the laptop stays
+  on the mini. Parents are created 700 when missing and otherwise left alone,
+  so `~/.config` keeps its mode.
 - **Schedule**: `com.qiushi.mini-sync` (a LaunchAgent stowed from
   `scripts/Library/`) runs `mini-sync --quiet` at load and every hour.
   An unreachable mini is a silent no-op, and real failures go to
   `~/Library/Logs/mini-sync.log`. Run `mini-sync` by hand for a change you
   want there now; `-n` previews it.
+
+## Personal jobs
+
+- **slack-digest** — the daily Slack briefing (`~/dev/slack-digest` on the
+  laptop, not cloned here). `mini-sync` carries the binary and
+  `~/.config/slack-digest` (tokens included); the LaunchAgent
+  `com.qiushi.slack-digest` runs it at 08:30 and is installed from the
+  laptop with `make -C ~/dev/slack-digest install-mini`. Its ledger and
+  digests live only here, in `~/.local/share/slack-digest/`; log
+  `~/Library/Logs/slack-digest.log`. The repo's `DESIGN.md` § Where it runs
+  has the rest.
 
 ## Steward host
 

@@ -16,12 +16,13 @@ REPO="$HOME/dotfiles"
 # Compiled, self-contained CLIs from ~/.local/bin. Launcher shims that exec
 # into a local checkout (planlab, bench) do not belong here: they point at
 # laptop paths.
-BINS=(headroom envoy brief gwt gopen cout)
-# Token files (paths relative to $HOME), sent 600 in 700 dirs. Only CLI API
-# tokens belong here. OAuth logins (Claude Code, Codex, gh) rotate their
+BINS=(headroom envoy brief gwt gopen cout slack-digest)
+# Token files or directories (paths relative to $HOME), sent 600 in 700
+# dirs. Only CLI API tokens belong here, with the private config that travels
+# beside them (~/.config/slack-digest: tokens.env, config, workspace notes). OAuth logins (Claude Code, Codex, gh) rotate their
 # refresh tokens, so two machines sharing one log each other out; the mini
 # logs in on its own.
-SECRETS=(.planlab/.env .bench/.env)
+SECRETS=(.planlab/.env .bench/.env .config/slack-digest)
 # Mirror scripts the mini runs by name. The scripts package is not stowed
 # there (it carries this laptop's mini-sync LaunchAgent), so each gets a
 # link in the mini's ~/.local/bin, pointing into the mirror.
@@ -91,10 +92,17 @@ rsync -a ${dry[@]+"${dry[@]}"} "${bins[@]}" "$HOST:.local/bin/"
 say "==> ${SECRETS[*]} → $HOST:~"
 secrets=()
 for s in "${SECRETS[@]}"; do
-  [[ -f $HOME/$s ]] && secrets+=("$HOME/./$s")
+  [[ -e $HOME/$s ]] && secrets+=("$HOME/./$s")
 done
-# -R keeps the path after /./; --chmod applies to the dirs it creates too.
-(( ${#secrets[@]} )) && rsync -aR --chmod=D700,F600 ${dry[@]+"${dry[@]}"} "${secrets[@]}" "$HOST:"
+# -R keeps the path after /./. Parents are made on the mini first (700 when
+# new, untouched when present) and --no-implied-dirs keeps rsync off them, so
+# --chmod reaches only the listed paths: ~/.config itself stays as it is.
+if (( ${#secrets[@]} )); then
+  parents=()
+  for s in "${SECRETS[@]}"; do [[ -e $HOME/$s && $s == */* ]] && parents+=("${s%/*}"); done
+  (( ${#dry[@]} || ${#parents[@]} == 0 )) || ssh "$HOST" "umask 077 && mkdir -p ${parents[*]}"
+  rsync -aR --no-implied-dirs --chmod=D700,F600 ${dry[@]+"${dry[@]}"} "${secrets[@]}" "$HOST:"
+fi
 
 say "==> ${LINKS[*]} → $HOST:~/.local/bin (links into the mirror)"
 if (( ${#dry[@]} )); then
