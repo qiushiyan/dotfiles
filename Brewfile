@@ -137,6 +137,7 @@ brew "gnupg"
 brew "jandedobbeleer/oh-my-posh/oh-my-posh"
 
 # === GUI apps (casks) ===
+cask "1password-cli"
 cask "codex"
 cask "discord"
 # cask "karabiner-elements"
