@@ -395,9 +395,10 @@ when the laptop switches, so a `prefix t` pick on the mini lasts until then.
   `~/Library/Logs/slack-digest.log`. The agent's PATH names nvm's node by
   version, for planlab's CLI; after a node upgrade, edit
   `launchd/com.qiushi.slack-digest.plist` and re-run `install-mini`, or
-  planlab's briefing loses its deploy state. From the laptop,
-  `slack-digest items|show|reply|done|ignore` reach the ledger here over
-  ssh. The repo's `DESIGN.md` § Where it runs has the rest.
+  planlab's briefing loses its deploy state. The ledger and the run records
+  stay here too; from the laptop, every `slack-digest` subcommand (items,
+  replies, replay, tracing) reaches them over ssh. The repo's `DESIGN.md`
+  § Where it runs has the rest.
 
 ## Steward host
 
