@@ -1,6 +1,6 @@
 # slackkit — one personal Slack toolkit for coding agents
 
-**Status: built 2026-09-29, except the PlanLab half, which is an open PR.**
+**Status: built 2026-09-29, except the PlanLab half, which is open as planlab-ai/main#8203.**
 slackkit exists with its library, CLI, skill and manifest, slack-digest
 imports it, and this repo links the skill and carries the token store to the
 mini. Delete this file when the PlanLab PR merges; its surviving decisions
