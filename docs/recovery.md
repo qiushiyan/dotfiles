@@ -15,17 +15,43 @@ cost, and after a loss to know where each piece comes back from.
   Machine backup once the laptop has a backup destination. Nothing else holds
   a copy: GitHub never sees them, and the mini's mirror excludes every ignored
   path.
-- **Credentials:** the password manager, never this tree. The home-VPN handoff
-  (subscription, node configs, router notes) lives there as documents.
-  `vpn-private/` stays in `.gitignore` and out of `PACKAGES` so that a copy
-  restored into the checkout can be neither committed to this public repo nor
-  stowed.
+- **Credentials:** the password manager, never this tree (§ Credentials in
+  1Password). `vpn-private/` stays in `.gitignore` and out of `PACKAGES` so
+  that a copy restored into the checkout can be neither committed to this
+  public repo nor stowed.
 - **Rebuildable state:** the tool that writes it — `prefix I` for tmux
   plugins, `skill-sync` for synced skills, `theme-set` for Ghostty's generated
   theme, `pnpm install` for `node_modules`.
 - **Files an agent session wrote or edited:** as a last resort, agent session
   history. The tool calls carry the written content, and obelisk's index keeps
   it after the transcript file is gone; the obelisk skill queries it.
+
+## Credentials in 1Password
+
+The home-VPN handoff is one Document item, `vpn-private`, in the Private vault
+of the Planlab 1Password account. `README.md` is the item's document;
+`SECRETS.md` and the Clash configs `nexitally-full.yaml` and
+`nexitally-whitelist.yaml` are files in its `add more` section.
+
+Agents reach it through the desktop app's CLI integration: the first `op` call
+in a session raises a Touch ID prompt on the user's screen, and the
+authorization lasts until 10 idle minutes or 12 hours pass. A service account
+would skip the prompt, but it cannot reach a Private vault. `OP_ACCOUNT`, set
+in `~/.secrets`, picks the account, because the CLI lists it twice and refuses
+to guess.
+
+```bash
+d=$(mktemp -d); chmod 700 "$d"
+op read "op://Private/vpn-private/SECRETS.md" --out-file "$d/SECRETS.md"            # any of the files
+op document edit vpn-private "$d/README.md" --vault Private                           # replace README.md
+op item edit vpn-private --vault Private "add more.SECRETS\\.md[file]=$d/SECRETS.md"   # replace a section file
+rm -rf "$d"
+```
+
+The files are credentials: print nothing from them, and remove the directory
+once the upload is done. The escaped dot matters — unescaped, `op` splits the
+name into a section and a field, and the upload lands as a stray file named
+`md` beside the original.
 
 ## The mini's mirror is not a backup
 

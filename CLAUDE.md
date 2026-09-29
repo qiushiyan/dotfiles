@@ -110,8 +110,9 @@ Additional routes beyond the feature docs above:
 
 - Auto-compaction settings: `docs/claude-autocompact.md`.
 - AWS SSO sessions and the `aws-login` wrapper: `docs/aws-sso.md`.
-- What protects uncommitted and gitignored state, local snapshots, and
-  recovery after a loss: `docs/recovery.md`.
+- What protects uncommitted and gitignored state, local snapshots, recovery
+  after a loss, and reading or editing the VPN credentials in 1Password:
+  `docs/recovery.md`.
 - Dormant Claude `cd` read guard: `docs/bypass-cd-read-guard.md`.
 - The colleague's Mac mini (`ssh macmini-shared`), including access etiquette:
   `docs/macmini.md`.
