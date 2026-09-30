@@ -937,10 +937,14 @@ brief() {
 
 _brief() {
   # The binary owns brief detection; resolve's bare form is the completion
-  # feed (file scan only — no network on this path).
+  # feed (file scan only — no network on this path). With nothing to offer,
+  # show why (no repo, no handoff folder here) instead of completing silently.
+  local out
   local -a slugs
-  slugs=(${(f)"$("$HOME/.local/bin/brief" resolve 2>/dev/null)"})
-  (( $#slugs )) && _describe 'brief' slugs
+  out=$("$HOME/.local/bin/brief" resolve 2>&1) || { _message -r "${out#brief: }"; return 1 }
+  slugs=(${(f)out})
+  (( $#slugs )) || { _message -r 'no live briefs in this project'; return 1 }
+  _describe 'brief' slugs
 }
 
 # --------------------------------------------------------------------
