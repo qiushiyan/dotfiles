@@ -322,7 +322,8 @@ into the mirror.
 `~/dev/planlab/main` is a real clone (`gh repo clone planlab-ai/main`), not
 part of the mirror. You work in it and pull it like any repo; `p` jumps to it,
 and `pp` (`zsh/.config/zsh/nav.zsh`) pulls it and the handoff briefs clone
-(below) here and on the laptop, all four in parallel.
+(below) here and on the laptop, all four in parallel; `pp --cd` then enters
+the checkout.
 Commits use a repo-local identity (`qiushi@planlab.ai` /
 `qiushiyan`), as on the laptop. The `planlab` and `bench` launchers come
 from each package's own install (`pnpm planlab:install`,

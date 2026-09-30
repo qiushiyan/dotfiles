@@ -118,7 +118,8 @@ _pull_both() {
 # handoff briefs on both machines, from anywhere, all four in parallel. The
 # checkout pulls whatever branch it is on, passing pp's arguments to
 # `git pull`. The briefs clone tracks main only, so a briefs checkout on any
-# other branch is an error rather than a pull. `pp` shadows Homebrew nss's
+# other branch is an error rather than a pull. `pp --cd` then enters the
+# checkout, even after a failed pull, and keeps the pull's status. `pp` shadows Homebrew nss's
 # certificate printer; `command pp` still reaches it.
 : ${PLANLAB_DIR:=$HOME/dev/planlab/main}
 : ${PLANLAB_HANDOFFS_DIR:=$HOME/dev/.handoffs/planlab-main}
@@ -130,10 +131,15 @@ p() {
 
 pp() {
   emulate -L zsh
+  local enter=${@[(Ie)--cd]} rc=0
+  (( enter )) && argv[enter]=()
   _pull_both \
     planlab "$PLANLAB_DIR" "git pull ${(j: :)${(q)@}}" \
     handoffs "$PLANLAB_HANDOFFS_DIR" \
-    'test "$(git branch --show-current)" = main || { echo "not on main" >&2; exit 1; }; git pull --ff-only origin main'
+    'test "$(git branch --show-current)" = main || { echo "not on main" >&2; exit 1; }; git pull --ff-only origin main' \
+    || rc=$?
+  (( enter )) && cd -- "$PLANLAB_DIR"
+  return rc
 }
 
 # --------------------------------------------------------------------

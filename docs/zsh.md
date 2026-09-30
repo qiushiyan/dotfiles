@@ -45,7 +45,7 @@ zsh/.config/zsh/
   toolchain.zsh    # shared CLI paths, pnpm globals, default Node via nvm
   aliases.zsh
   git.zsh          # git aliases, worktree helpers, the one git() wrapper
-  nav.zsh          # jumps and pulls: p/pp (planlab checkout + handoff briefs), y, fcd
+  nav.zsh          # jumps and pulls: p/pp [--cd] (planlab checkout + handoff briefs), y, fcd
   utils.zsh        # loc, dotadd, cpwd, the mobile `agents` session, …
   theme.zsh        # the $TERMINAL_THEME switch
   cwd-guard.zsh    # deleted-cwd defenses: _cwd_guard at startup, zshreload (tests/ has its harness)
