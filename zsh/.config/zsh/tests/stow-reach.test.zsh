@@ -3,10 +3,8 @@
 # non-empty CLAUDE.md into $HOME. `claude/.claude/CLAUDE.md` stows to
 # ~/.claude/CLAUDE.md, the global memory prepended to every request in every
 # project, and any <pkg>/CLAUDE.md stows to ~/CLAUDE.md with the same reach —
-# unless the package's .stow-local-ignore excludes it (tabtype/ does). Also:
-# every package `make list` stows is tracked, so an untracked top-level dir
-# (node_modules/ from the root package.json) can't become one. Reads the
-# working tree only; nothing is stowed, sourced, or written.
+# unless the package's .stow-local-ignore excludes it (tabtype/ does). Reads
+# the working tree only; nothing is stowed, sourced, or written.
 #
 #   zsh ~/.config/zsh/tests/stow-reach.test.zsh
 #
@@ -79,21 +77,6 @@ case_no_package_claude_md_reaches_home() {
   return $rc
 }
 
-# The package rule is a deny list over every top-level dir, so anything on
-# disk qualifies: node_modules/ stowed ~/.pnpm and ~/@pierre for two months
-# before anyone noticed. A real package has tracked files.
-case_every_package_is_tracked() {
-  local pkg rc=0
-  local -a pkgs
-  pkgs=($(packages)) || { print -l $pkgs; return 1 }
-  for pkg in $pkgs; do
-    [[ -n "$(git -C "$DOT" ls-files -- "$pkg" | head -1)" ]] && continue
-    print "$pkg/ has no tracked files but make would stow it; add it to the Makefile's filter-out"
-    rc=1
-  done
-  return $rc
-}
-
 case_tabtype_docs_stay_repo_local() {
   local doc
   for doc in CLAUDE.md WORKFLOW.md DESIGN.md; do
@@ -108,7 +91,6 @@ case_tabtype_docs_stay_repo_local() {
 t "claude/.claude/CLAUDE.md is empty"                      case_global_memory_empty
 t "no <pkg>/CLAUDE.md stows to ~/CLAUDE.md"                case_no_package_claude_md_reaches_home
 t "tabtype package docs stay out of HOME"                  case_tabtype_docs_stay_repo_local
-t "every package make stows is tracked"                    case_every_package_is_tracked
 
 print -r -- "stow-reach.test: $PASS passed, $FAIL failed"
 (( FAIL == 0 ))

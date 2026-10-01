@@ -5,7 +5,6 @@
 # n - Open file/directory in neovim
 # --------------------------------------------------------------------
 n() {
-  emulate -L zsh
   local parent_dir file_name
   if [ $# -eq 0 ]; then
     nvim .
