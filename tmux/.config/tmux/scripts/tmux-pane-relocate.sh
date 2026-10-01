@@ -14,7 +14,7 @@
 #   pick <pane> <client>               popup: choose a window, place <pane> there
 #   break [pane]                       break-pane, with the journal invalidated
 #   undo [window]                      undo the last PUSH in this window
-#   pick-ui / preview / targets        INTERNAL: the picker popup's parts
+#   pick-ui / preview                  INTERNAL: the picker popup's parts
 #
 # CROSS-WINDOW MOVES ARE HOLD → WALK → PUT. `hold` records ONE pane id in the
 # global option @pane_hold (plus a display label in @pane_hold_label) and the
@@ -409,7 +409,6 @@ case "${1:-}" in
     pick)    pick "${2:-}" "${3:-}" ;;
     pick-ui) pick_ui "${2:?pane required}" "${3:-}" ;;
     preview) preview "${2:?window required}" ;;
-    targets) other_windows "${2:?pane required}" ;;
     break)   break_pane "${2:-}" ;;
     undo)    journal_pop "${2:-$(tmux display-message -p '#{window_id}')}" ;;
     *) printf 'usage: %s {push <dir>|hold|put|release|pick|break|undo} [target]\n' "${0##*/}" >&2; exit 64 ;;
