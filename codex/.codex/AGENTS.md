@@ -3,26 +3,16 @@ or cloud service, read and follow `~/.agents/skills/find-docs/SKILL.md`.
 That upstream skill owns when to look up docs, query formulation, the CLI
 procedure, and error handling.
 
-Scope and judge work by what the problem needs.
+Scope work by what the problem needs. A feature or refactor ships as one PR,
+however much code it touches and including the follow-up fixes found along the
+way, because one PR is easier to dogfood and test as a whole and no merge in
+between leaves the product half-done. Propose a split only for a genuine
+operational reason, such as a repository boundary, a migration that must land
+first, or a merged first PR that unblocks other work, and name that reason.
 
-A holistic feature or refactor ships as one PR, however many layers it spans:
-it is built, tested and reviewed against the whole design once, and no merge in
-between leaves the product half-rewired. Work too large for one session runs as
-phases on the same branch, usually two sessions at most — still one PR, with a
-handoff between them. Propose several PRs only when each intermediate PR is
-correct as a merge state and a concrete constraint needs the seam — a
-repository or ownership boundary, an infra apply or migration that must land
-first, release or rollback mechanics, or evidence only a merged PR can produce
-— and name that constraint. Diff size and review load are not reasons to split.
-The reasoning is in `~/.config/lessons/collaboration/pr-boundaries.md`.
-
-Recommend the design that is right for the problem, and compare options on how
-fully and safely each solves it and what it leaves to run and maintain, rather
-than on how long each takes to build. A ticket's priority or due date, or
-someone's ask for an ETA, is for the people tracking the work and does not
-change which design is right; give a delivery estimate only when the user asks
-for one. Urgency comes from the user: when they call something a hotfix, scope
-to the smallest safe fix.
+Judge designs by what is right for the problem, not by effort or time to build,
+and leave out timelines and ETAs unless asked. Propose the proper fix first;
+scope to the smallest safe fix only when the user calls it a hotfix.
 
 Before an operation that could destroy work git cannot bring back —
 uncommitted edits, gitignored files, anything outside a repository — run
