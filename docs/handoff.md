@@ -14,8 +14,8 @@ The loop is split so that staleness cannot misroute a session:
 - **`~/dev/brief`** (a separate repo, not stowed) — the `brief` CLI: the
   project-folder scheme, the fenced head grammar, the git/gh join, worktree
   placement, and the pickup pointer. **Read its `CLAUDE.md` before changing
-  any surface this repo consumes** — it carries the mental model and consumer
-  discovery rule.
+  any surface this repo consumes** — it carries the contracts and the
+  consumer rule, and routes to its `docs/` for each domain.
 - **`claude/.claude/skills/{handoff,distill-handoffs}/`** (here) — the judgment
   half: what a brief says, when one is earned, what a sweep verdict is. Prose
   only; the mechanism is the CLI (`brief closeout` is the sweep's input,
@@ -42,8 +42,9 @@ it outlives its filename.
 
 `drift`, `show` and `check` accept the pointer's brief path from a checkout of
 its project. What each scans, and how little a clean result covers, is the
-CLI's own contract: `brief drift -h`, and `~/dev/brief/CLAUDE.md` for citation
-attribution and the claims `check` accepts.
+CLI's own contract: `brief drift -h`, `~/dev/brief/docs/drift.md` for citation
+attribution, and `~/dev/brief/docs/brief-format.md` for the claims `check`
+accepts.
 
 ## The slug is the *next* session's branch
 
