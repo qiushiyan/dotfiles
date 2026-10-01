@@ -25,6 +25,7 @@ SOCK="ctxtest-$$"
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(cd "$HERE/../../../../.." && pwd)
 STATUSLINE="$REPO/claude/.claude/commands/statusline-command.sh"
+CHIP="$REPO/claude/.claude/commands/statusline-chip.sh"
 CTX="$REPO/tmux/.config/tmux/scripts/tmux-agent-status.sh"
 VOCAB="$REPO/tmux/.config/tmux/scripts/lib/agent-vocab.sh"
 COUT="$REPO/zsh/.config/zsh/cout.zsh"
@@ -132,7 +133,7 @@ pub() {
     # network, and write the user's live ~/.cache — the C9 guard catches that,
     # and it caught it once for real. C22 is where the spawn itself is tested,
     # by pointing this at a stub instead of clearing it.
-    printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME=gruber_darker \
+    printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME="${PUB_THEME:-gruber_darker}" \
         CLAUDE_CTX_REFRESH_CMD="${REFRESH_CMD-}" \
         TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$STATUSLINE" >/dev/null 2>&1
     sleep 0.4   # the accepted branch reconciles the border in the background
@@ -181,6 +182,19 @@ border() {
 # the severity colours are asserted against.
 styled() { T display-message -p -t "$PANE" "$(T show -gv pane-border-format)"; }
 has()    { case "$2" in *"$3"*) ok "$1" ;; *) no "$1" "no [$3] in [$2]" ;; esac; }
+
+# The statusline's own text, colours stripped: render <dir> [VAR=value ...].
+# Outside tmux (nothing publishes) and never refreshing; HOME is the sandbox's
+# physical path because git reports physical paths. The extra assignments
+# override the defaults (env applies them in order).
+render() {
+    local dir="$1"; shift
+    printf '{"session_id":"sid-R","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$dir" \
+        | env -u TMUX -u TMUX_PANE -u CLAUDE_CONFIG_DIR -u COLUMNS -u ANTHROPIC_BASE_URL \
+            HOME="$(cd "$SANDBOX_HOME" && pwd -P)" TERMINAL_THEME=gruber_darker CLAUDE_CTX_REFRESH_CMD= \
+            GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 "$@" bash "$STATUSLINE" 2>/dev/null \
+        | sed $'s/\033\\[[0-9;]*m//g'
+}
 
 ok()   { PASS=$((PASS+1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; }
 no()   { FAIL=$((FAIL+1)); FAILED="$FAILED $2"; printf '  \033[31mFAIL\033[0m %s\n       %s\n' "$1" "$2"; }
@@ -387,51 +401,6 @@ c10() {
         "$(opt @claude_ctx_account)" "evilfgred"
     check "C10 percentage not corrupted" "$(opt @claude_ctx)" "50"
     check "C10 no style injected on the border" "$(border)" " evilfgred fable-5 ✳ 50% "
-}
-
-# ---------------------------------------------------------------------------
-# C11 — the chip sheds by priority as the pane narrows: model below 55
-# columns, account below 40, the percentage never. Pure display — the options
-# underneath must survive every threshold crossing untouched, so widening the
-# pane restores the full chip without a republish. This is the case that
-# fails if a width gate is dropped (labels crowd a narrow pane), inverted, or
-# written with tmux's STRING comparisons instead of arithmetic e|>=.
-# ---------------------------------------------------------------------------
-c11() {
-    fresh || return
-    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
-    check "C11 a wide pane affords all three" "$(border)" " yan opus-5[1m] ✳ 60% "
-    T resize-window -t t -x 48 2>/dev/null; sleep 0.2
-    check "C11 below 55 columns the model yields first" "$(border)" " yan ✳ 60% "
-    T resize-window -t t -x 35 2>/dev/null; sleep 0.2
-    check "C11 below 40 columns the account yields too" "$(border)" " ✳ 60% "
-    T resize-window -t t -x 200 2>/dev/null; sleep 0.2
-    check "C11 widening restores the full chip" "$(border)" " yan opus-5[1m] ✳ 60% "
-    check "C11 hiding never touched the options" "$(opt @claude_ctx_account)" "yan"
-}
-
-# ---------------------------------------------------------------------------
-# C12 — the live-upgrade state. This repo is stowed live configuration: a pane
-# whose chip was published by the PREVIOUS statusline (no account option yet)
-# is a normal state right after an upgrade, not a hypothetical. If its
-# percentage, owner and model then hold steady, the render must still backfill
-# the missing account — and having backfilled once, fall quiescent again: an
-# arm that keeps accepting identical renders is the 3×/sec write regression C3
-# exists to prevent, just wearing a new option.
-# ---------------------------------------------------------------------------
-c12() {
-    fresh || return
-    # What the pre-account publisher left behind: three options, no account.
-    T set -p -t "$PANE" @claude_ctx 60
-    T set -p -t "$PANE" @claude_ctx_sid sid-A
-    T set -p -t "$PANE" @claude_ctx_model 'opus-5[1m]'
-    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
-    check "C12 unchanged triple still backfills the account" \
-        "$(opt @claude_ctx_account)" "yan"
-    check "C12 the rest untouched" "$(opt @claude_ctx)" "60"
-    T set -w -t "$WIN" pane-border-status off
-    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
-    check "C12 backfilled once, quiescent after" "$(status)" "off"
 }
 
 # ---------------------------------------------------------------------------
@@ -740,10 +709,10 @@ c21() {
 # ---------------------------------------------------------------------------
 # C22 — the refresher trigger. The render path must never WAIT on headroom, and
 # a window full of panes must not spawn one refresher per pane per render, so
-# the trigger is throttled on the last ATTEMPT and suppressed while a sibling
-# holds the lock. Both are invisible when they break — the chip keeps working
-# and the machine just does more work — so they are asserted against a stub
-# standing in for the real refresher.
+# the trigger is throttled on the last ATTEMPT, which the refresher stamps
+# before it fetches (C26). Both are invisible when they break — the chip keeps
+# working and the machine just does more work — so they are asserted against a
+# stub standing in for the real refresher.
 # ---------------------------------------------------------------------------
 c22() {
     fresh || return
@@ -771,24 +740,11 @@ c22() {
     pub sid-B 'claude-opus-5[1m]' 380000 "$lane" 5
     check "C22 a recent attempt suppresses the next" "$(spawns "$marker")" "0"
 
-    # Stale enough to re-arm, but a sibling pane is already inside a refresh.
+    # An attempt older than five minutes: the trigger fires again.
     rm -f "$marker"
     quota "$lane" 400 51 Fable 400 3600
-    mkdir -p "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
-    pub sid-C 'claude-opus-5[1m]' 390000 "$lane" 5
-    check "C22 the lock suppresses a duplicate refresher" "$(spawns "$marker")" "0"
-    check "C22 and the stale line is still drawn meanwhile" "$(opt @claude_ctx_wk)" "51"
-
-    # An abandoned lock must not prevent the refresher's own sweep running.
-    touch -t 202001010000 "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
-    pub sid-C 'claude-opus-5[1m]' 390000 "$lane" 5
-    check "C22 an abandoned lock lets recovery run" "$(spawns "$marker")" "1"
-
-    # Lock gone, still stale: the trigger fires again.
-    rm -f "$marker"
-    rmdir "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
-    pub sid-D 'claude-opus-5[1m]' 400000 "$lane" 5
-    check "C22 a stale line with no lock re-arms it" \
+    pub sid-C 'claude-opus-5[1m]' 400000 "$lane" 5
+    check "C22 a stale attempt re-arms it" \
         "$(head -1 "$marker" 2>/dev/null)" "$lane"
 
     unset REFRESH_CMD
@@ -870,7 +826,11 @@ c24() {
 # pane narrows. The scoped weekly yields first WHATEVER its value: an urgent
 # one is still the lowest-priority field, and its colour is the only alarm it
 # gets. The 5h/7d pair moves as one group — a gate on one number alone would
-# leave a lone figure standing where a reader expects the pair.
+# leave a lone figure standing where a reader expects the pair. Shedding is
+# pure display: the options survive every crossing, so widening restores the
+# chip without a republish. The exact boundaries are what catch a gate that
+# was dropped, inverted, or written with tmux's STRING comparison instead of
+# arithmetic e|>=.
 # ---------------------------------------------------------------------------
 c25() {
     fresh || return
@@ -898,6 +858,7 @@ c25() {
         done
         T resize-window -t t -x 39
         check "C25 a sliver keeps context" "$(border)" " ✳ 22% "
+        check "C25 hiding never touched the options" "$(opt @claude_ctx_account)" "${lane%%@*}"
         T resize-window -t t -x 140
         check "C25 widening restores every field without republishing" "$(border)" \
             " ${lane%%@*} fable-5-1:high 5h:12 7d:41 Fable:98 ✳ 22% "
@@ -905,35 +866,44 @@ c25() {
     rm -rf "$SANDBOX_HOME/.cache"
 }
 
-# Exercise stale-lock recovery through the real refresher with fake headroom.
+# ---------------------------------------------------------------------------
+# C26 — the real refresher against a fake headroom: it stamps its attempt
+# BEFORE the slow fetch (so concurrent renders stop re-spawning it and a
+# refresher killed mid-fetch cannot freeze the lane), then publishes what
+# headroom's store holds for the CLAUDE row of this email — the fake lists a
+# codex row with the same email first, as a live `headroom limits` does.
+# ---------------------------------------------------------------------------
 c26() {
     fresh || return
     local lane=recovery@example.test
     local cache="$SANDBOX_HOME/.cache/claude-ctx"
     local fakebin="$SANDBOX/fake-headroom"
-    mkdir -p "$fakebin" "$cache/$lane.lock"
+    mkdir -p "$fakebin" "$cache"
     quota "$lane" 86400 67 Fable 86400 -60
-    touch -t 202001010000 "$cache/$lane.lock"
     cat > "$fakebin/headroom" <<'STUB'
 #!/bin/bash
-if [ "${1:-}" = limits ]; then
-    printf '%s\n' '{"accounts":[{"email":"recovery@example.test","usage":{"observed_at":"2026-01-01T00:00:00Z","limits":[{"kind":"weekly_scoped","percent_state":"ok","identity_state":"ok","percent":79,"model":"Fable","resets_at":"2099-01-01T00:00:00Z"}]}}]}'
-fi
+case "${1:-}" in
+limits) printf '%s\n' '{"accounts":[{"email":"recovery@example.test","vendor":"codex","usage":{"limits":[]}},{"email":"recovery@example.test","vendor":"claude","usage":{"observed_at":"2026-01-01T00:00:00Z","limits":[{"kind":"weekly_scoped","percent_state":"ok","identity_state":"ok","percent":79,"model":"Fable","resets_at":"2099-01-01T00:00:00Z"}]}}]}' ;;
+*) sleep 2 ;;   # any fetching surface: refresh, --json
+esac
 STUB
     chmod +x "$fakebin/headroom"
     local PATH="$fakebin:$PATH"
     export PATH
     REFRESH_CMD="$REPO/claude/.claude/commands/claude-quota-refresh.sh"
     pub sid-A claude-fable-5-1 220000 "$lane" 15
-    for _ in $(seq 1 30); do
-        [ ! -d "$cache/$lane.lock" ] && break
+    # The fake fetch sleeps 2s; the stamp must land well inside it.
+    local at state=stale
+    for _ in $(seq 1 15); do
+        read -r at _ < "$cache/$lane.quota"
+        [ $(( $(date +%s) - at )) -lt 60 ] && { state=fresh; break; }
         sleep 0.1
     done
-    check "C26 the real refresher retires the abandoned lock" \
-        "$([ -d "$cache/$lane.lock" ] && echo locked || echo clear)" "clear"
+    check "C26 the attempt is stamped before the fetch returns" "$state" "fresh"
+    sleep 2   # let the refresher finish before its cache is removed
     pub sid-A claude-fable-5-1 220000 "$lane" 15
-    check "C26 recovered weekly reaches the pane" "$(opt @claude_ctx_wk)" "79"
-    check "C26 recovered weekly keeps its label" "$(opt @claude_ctx_wk_model)" "Fable"
+    check "C26 the claude row reaches the pane" "$(opt @claude_ctx_wk)" "79"
+    check "C26 with its label" "$(opt @claude_ctx_wk_model)" "Fable"
     unset REFRESH_CMD
     rm -rf "$SANDBOX_HOME/.cache" "$fakebin"
 }
@@ -959,11 +929,11 @@ c27() {
     check "C27 every published field but the owner is drawn" \
         "$(comm -23 <(printf '%s\n' "$fields") <(printf '%s\n' "$drawn") | grep -vx '@claude_ctx_sid')" ""
     check "C27 the statusline spells no agent option" \
-        "$(grep -v '^[[:space:]]*#' "$STATUSLINE" | grep -c '@claude_ctx\|@codex_' || true)" "0"
+        "$(cat "$STATUSLINE" "$CHIP" | grep -v '^[[:space:]]*#' | grep -c '@claude_ctx\|@codex_' || true)" "0"
     check "C27 the zsh prompt sweep and codex wrapper spell no agent option" \
         "$(grep -v '^[[:space:]]*#' "$ZUTIL" | grep -c '@claude_ctx\|@codex_' || true)" "0"
     check "C27 the statusline issues exactly one tmux command" \
-        "$(grep -v '^[[:space:]]*#' "$STATUSLINE" | grep -c '^[[:space:]]*tmux ' || true)" "1"
+        "$(cat "$STATUSLINE" "$CHIP" | grep -v '^[[:space:]]*#' | grep -c '^[[:space:]]*tmux ' || true)" "1"
     check "C27 the owner's sourced half runs no subprocess" \
         "$(sed -n '1,/^\[ "\${BASH_SOURCE\[0\]}" = "\$0" \] || return 0$/p' "$CTX" \
             | grep -v '^[[:space:]]*#' | grep -c '\$([^(]\|`' || true)" "0"
@@ -1090,9 +1060,59 @@ c31() {
     rm -rf "$SANDBOX_HOME/.cache"
 }
 
+# ---------------------------------------------------------------------------
+# C32 — the statusline's own text. Everything above reads the border; this is
+# the line Claude Code draws under the prompt, colours stripped. A branch is
+# the porcelain header minus any "...upstream" (a dotted name like release-1.2
+# once lost everything after its first dot), an unborn branch is its name, the
+# counts are staged files, +added -removed lines against HEAD and untracked
+# files, a linked worktree draws its main checkout behind the clone glyph
+# (U+F24D, once saved as a bare space), and ~/dev and ~ are abbreviated only
+# on a whole path component.
+# ---------------------------------------------------------------------------
+c32() {
+    local home repo wt
+    home=$(cd "$SANDBOX_HOME" && pwd -P)   # git reports physical paths
+    repo="$home/dev/proj"; wt="$home/dev/.worktrees/proj/x"
+    # The suite's own git, isolated from the user's config and hooks.
+    g() { env GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 git -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
+    mkdir -p "$repo/sub" "${home}2/x"
+    g -C "$repo" init -b main
+    check "C32 an unborn branch is its name" "$(render "$repo")" "proj | main | 0%"
+    printf '1\n2\n3\n' > "$repo/a.txt"; printf 'k\n' > "$repo/sub/k.txt"
+    g -C "$repo" add -A; g -C "$repo" commit -m init
+    g -C "$repo" checkout -b release-1.2; g -C "$repo" branch -u main
+    printf '1\n2\nx\ny\n' > "$repo/a.txt"            # unstaged: +2 -1
+    printf 'b\n' > "$repo/b.txt"; g -C "$repo" add b.txt   # staged new file: +1
+    printf 'c\n' > "$repo/c.txt"                       # untracked
+    check "C32 a dotted branch keeps its dots and drops its upstream" \
+        "$(render "$repo")" "proj | release-1.2 | 0% | +1 +3 -1 ?1"
+    g -C "$repo" worktree add -b feat/x.y "$wt"
+    check "C32 a linked worktree draws its main checkout and subpath" \
+        "$(render "$wt/sub")" "$(printf '\xef\x89\x8d') proj/sub | feat/x.y | 0%"
+    check "C32 a sibling of HOME is not abbreviated" \
+        "$(render "${home}2/x")" "${home}2/x | 0%"
+    check "C32 HOME itself is ~" "$(render "$home")" "~ | 0%"
+    rm -rf "$SANDBOX_HOME/dev" "${home}2"
+}
+
+# ---------------------------------------------------------------------------
+# C33 — a theme the palette has no arm for (a port that reached theme-set but
+# not statusline-palette.sh) once ended the statusline before the chip was
+# published: the border froze at its last values and the line went blank. The
+# chip publishes before the palette is consulted, and the line falls back to
+# the default colours.
+# ---------------------------------------------------------------------------
+c33() {
+    fresh || return
+    PUB_THEME=no_such_theme pub sid-A 'claude-opus-5[1m]' 600000
+    check "C33 an unknown theme still publishes the chip" "$(opt @claude_ctx)" "60"
+    check "C33 and the line still draws" "$(render / TERMINAL_THEME=no_such_theme)" "/ | 0%"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32 c33; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

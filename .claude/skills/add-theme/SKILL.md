@@ -109,7 +109,7 @@ patch("zsh/.config/zsh/theme.zsh", "\n)\n\n_theme_apply() {",
       ")\n\n_theme_apply() {")
 
 # Claude statusline: the arm before the `*)` fallthrough; decimal RGB from hex: printf '%d;%d;%d' 0x4E 0xCD 0xC4
-patch("claude/.claude/commands/statusline-command.sh", "    *)\n        echo \"statusline: unknown",
+patch("claude/.claude/commands/statusline-palette.sh", "    *)\n        return 1",
       f"    {NAME})\n"
       "        # Blue-slate bg (#1a2125). RED is the rosy error color (5.7:1), not the hot-pink ANSI red (3.7:1).\n"
       "        CYAN=$'\\033[38;2;78;205;196m'       # Teal #4ECDC4\n"
@@ -119,7 +119,7 @@ patch("claude/.claude/commands/statusline-command.sh", "    *)\n        echo \"s
       "        PINK=$'\\033[38;2;155;89;182m'       # Purple #9B59B6\n"
       "        LAVENDER=$'\\033[38;2;102;217;239m'  # Sky blue #66D9EF\n"
       "        ;;\n"
-      "    *)\n        echo \"statusline: unknown")
+      "    *)\n        return 1")
 
 # oh-my-posh: appended as the last palette (text insert keeps the file's formatting)
 patch("ohmyposh/.config/ohmyposh/zen.omp.json", "\n      }\n    }\n",
@@ -160,7 +160,7 @@ PY
 
 ```bash
 cd ~/dotfiles; NAME=forest_night; DASHED=forest-night
-bash -n scripts/.local/bin/theme-set && bash -n claude/.claude/commands/statusline-command.sh \
+bash -n scripts/.local/bin/theme-set && bash -n claude/.claude/commands/statusline-palette.sh \
   && zsh -n zsh/.config/zsh/theme.zsh && jq -e ".palettes.list.$NAME" ohmyposh/.config/ohmyposh/zen.omp.json >/dev/null && echo syntax-ok
 # hand-rolled scheme: --clean sees colors/; a plugin scheme needs the full config so lazy is on the rtp
 nvim --clean --headless "+set rtp+=$HOME/.config/nvim" "+colorscheme $DASHED" \
@@ -169,7 +169,7 @@ nvim --headless "+colorscheme $DASHED" "+lua print(vim.g.colors_name, require('c
 oh-my-posh cache clear
 theme-set $NAME               # → "tmux:    reloaded (+env)"; "source-file failed" points at the tmux.conf edit
 printf '{"model":{"id":"claude-fable-5-1"},"workspace":{"current_dir":"/tmp"},"session_id":"x","context_window":{"context_window_size":200000,"total_input_tokens":1000,"total_output_tokens":0}}' \
-  | bash claude/.claude/commands/statusline-command.sh | cat -v | head -1     # → six escapes render, no "unknown theme"
+  | bash claude/.claude/commands/statusline-command.sh 2>&1 | cat -v | head -1  # → six escapes render, no "unknown theme"
 ```
 
 Leave the theme switched on — the user judges it by looking, and Ghostty takes
@@ -177,7 +177,7 @@ it on ⌘⇧, — and commit the theme alone, by path, since the working tree
 usually holds unrelated edits:
 
 ```bash
-git add scripts/.local/bin/theme-set zsh/.config/zsh/theme.zsh claude/.claude/commands/statusline-command.sh \
+git add scripts/.local/bin/theme-set zsh/.config/zsh/theme.zsh claude/.claude/commands/statusline-palette.sh \
   ohmyposh/.config/ohmyposh/zen.omp.json tmux/.config/tmux/tmux.conf tmux/.config/tmux/themes/${NAME}_tmux.conf \
   nvim/.config/nvim/lua/config/theme.lua nvim/.config/nvim/lua/config/palette.lua \
   nvim/.config/nvim/colors/$DASHED.lua ghostty/.config/ghostty/themes/$DASHED

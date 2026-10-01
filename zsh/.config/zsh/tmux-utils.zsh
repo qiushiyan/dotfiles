@@ -10,12 +10,13 @@
 # item independently, so a long current-dir used to erase the branch/PR at the
 # right edge. Publish a compact path separately: linked worktrees resolve to
 # their main checkout (~/dev/.worktrees/main/feat/x -> planlab/main), ~/dev is
-# implicit, and other home paths use ~. This is the same path convention as the
-# Claude statusline. Non-interactive calls and calls outside tmux pass through.
+# implicit, and other home paths use ~ — the Claude statusline's convention,
+# from the one definition both source (tmux scripts/lib/display-path.sh). The
+# Codex footer already shows the branch. Non-interactive calls and calls
+# outside tmux pass through.
 _codex_display_path() {
   emulate -L zsh
-  local _codex_dir=${1:-$PWD} _codex_display _codex_git_dir _codex_home
-  local _codex_git_common _codex_toplevel
+  local _codex_dir=${1:-$PWD} _codex_home DISPLAY_PATH DISPLAY_PATH_LINKED
   local -a _codex_git_dirs
 
   if [[ $_codex_dir != /* ]]; then
@@ -23,30 +24,13 @@ _codex_display_path() {
   fi
   _codex_dir=$(builtin cd -q -- "$_codex_dir" 2>/dev/null && pwd -P) || return 1
   _codex_home=$(builtin cd -q -- "$HOME" 2>/dev/null && pwd -P) || _codex_home=$HOME
-  _codex_display=$_codex_dir
 
   _codex_git_dirs=("${(@f)$(command git -C "$_codex_dir" rev-parse \
     --path-format=absolute --git-dir --git-common-dir --show-toplevel 2>/dev/null)}")
-  if (( ${#_codex_git_dirs} >= 3 )); then
-    _codex_git_dir=${_codex_git_dirs[1]}
-    _codex_git_common=${_codex_git_dirs[2]}
-    _codex_toplevel=${_codex_git_dirs[3]}
-    if [[ -n $_codex_git_common && -n $_codex_toplevel && \
-          $_codex_git_dir != $_codex_git_common ]]; then
-      # Preserve a cwd below the worktree root, but do not repeat the branch:
-      # the Codex footer already owns that label.
-      _codex_display="${_codex_git_common%/.git}${_codex_dir#"$_codex_toplevel"}"
-    fi
-  fi
-
-  if [[ $_codex_display == "$_codex_home/dev/"* ]]; then
-    _codex_display=${_codex_display#"$_codex_home/dev/"}
-  elif [[ $_codex_display == "$_codex_home" ]]; then
-    _codex_display='~'
-  elif [[ $_codex_display == "$_codex_home/"* ]]; then
-    _codex_display="~/${_codex_display#"$_codex_home/"}"
-  fi
-  print -r -- "$_codex_display"
+  source "$HOME/.config/tmux/scripts/lib/display-path.sh" || return 1
+  display_path "$_codex_dir" "$_codex_home" \
+    "${_codex_git_dirs[1]-}" "${_codex_git_dirs[2]-}" "${_codex_git_dirs[3]-}"
+  print -r -- "$DISPLAY_PATH"
 }
 
 # _codex_in_pane <n> <launcher word 1..n> [codex args...]

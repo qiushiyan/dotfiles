@@ -31,7 +31,7 @@ table.
 |---|---|---|
 | zsh `ls`/completion colors | `$TERMINAL_THEME` → a `_THEME_SPEC` row | `zsh/.config/zsh/theme.zsh` |
 | oh-my-posh prompt | palette `template` on `$TERMINAL_THEME` | `ohmyposh/.config/ohmyposh/zen.omp.json` |
-| Claude Code statusline | reads the file each render | `claude/.claude/commands/statusline-command.sh` |
+| Claude Code statusline | reads the file each render | `claude/.claude/commands/statusline-palette.sh` |
 | tmux | reads the file when the config loads | `tmux/.config/tmux/tmux.conf` + `tmux/.config/tmux/themes/<theme>_tmux.conf` |
 | Neovim | reads file/env at startup, then watches the file | `nvim/.config/nvim/lua/config/theme.lua`, `colors/`, `lua/plugins/theme.lua` |
 | Ghostty | a generated include file | `ghostty/.config/ghostty/auto/theme.ghostty` (+ `themes/`, `config`) |

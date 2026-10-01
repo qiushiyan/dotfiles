@@ -7,7 +7,7 @@
 # readers take the names from here:
 #
 #   tmux-agent-status.sh        the owner (clear/activate/sweep/reconcile/done)
-#   statusline-command.sh       sources the owner and calls its publish builder
+#   statusline-chip.sh          sources the owner and calls its publish builder
 #   zsh tmux-utils.zsh          the prompt sweep's presence test
 #
 # Both bash and zsh source this file, so it holds plain scalar assignments

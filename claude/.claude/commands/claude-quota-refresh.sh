@@ -52,17 +52,21 @@
 # a row whose reset instant the vendor left null — where age is the only
 # evidence available.
 #
-# Refreshing is `headroom --json` (the fetching surface, behind headroom's own
-# cross-process claim, so concurrent runs are safe and the budget is respected
-# without this script knowing anything about it); reading back is
-# `headroom limits`, which touches disk alone and spends nothing. The read is
-# by EMAIL, not `--account`: headroom knows the primary by its configured name
-# ("qiushi") while the lane the statusline computes is an email, and only the
-# email identifies both kinds of lane.
+# Refreshing is `headroom refresh --vendor claude` (the unprobed fetching
+# surface, behind headroom's own cross-process claim, so concurrent runs are
+# safe and the budget is respected without this script knowing anything about
+# it); reading back is `headroom limits`, which touches disk alone and spends
+# nothing. The read is by EMAIL, not `--account`: headroom knows the primary by
+# its configured name ("qiushi") while the lane the statusline computes is an
+# email, and only the email identifies both kinds of lane. The email alone is
+# not unique — a Codex subscription on the same address is its own row — so
+# the row is the claude one.
 #
-# Cheap exit is the common case — the lock is held by a sibling pane's spawn,
-# or there is no lane to ask about. Always exits 0; a failing refresh must
-# leave the chip drawing what it had, not error into a render.
+# No lock of its own: the attempt is stamped BEFORE the fetch, which is what
+# stops sibling renders re-spawning this script, and a run killed mid-fetch
+# leaves a stamp that simply ages out — nothing can freeze the lane. Always
+# exits 0; a failing refresh must leave the chip drawing what it had, not error
+# into a render.
 
 set -u
 
@@ -79,17 +83,8 @@ CACHE_DIR="$HOME/.cache/claude-ctx"
 LANE_KEY="${LANE//[^a-zA-Z0-9._@-]/}"
 [ -n "$LANE_KEY" ] || exit 0
 CACHE="$CACHE_DIR/$LANE_KEY.quota"
-LOCK="$CACHE_DIR/$LANE_KEY.lock"
 
 mkdir -p "$CACHE_DIR" 2>/dev/null || exit 0
-
-# A refresher killed between mkdir and its trap leaves the lock standing, and a
-# lock nothing clears would freeze this lane's chip permanently. Sweep one that
-# is older than any honest run could still be inside — the whole sequence is
-# two headroom invocations, well under a second — before contending.
-find "$LOCK" -maxdepth 0 -mmin +2 -exec rmdir {} + 2>/dev/null
-mkdir "$LOCK" 2>/dev/null || exit 0
-trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 
 # One line out of headroom's document. The row is selected by DECODED identity
 # (kind == "weekly_scoped"), never by the rendered label — "Fable (7d)" is
@@ -101,9 +96,9 @@ trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 # and it self-selects without this script carrying a model name that would go
 # stale on its own schedule.
 read_lane() {
-    headroom limits 2>/dev/null | jq -r --arg e "$LANE" '
+    headroom limits --vendor claude 2>/dev/null | jq -r --arg e "$LANE" '
       def esc: gsub("[^a-zA-Z0-9._-]"; "");
-      ([.accounts[]? | select(.email == $e)] | first) as $a
+      ([.accounts[]? | select(.email == $e and .vendor == "claude")] | first) as $a
       | ($a.usage // null) as $u
       | ([$u.limits[]?
           | select(.kind == "weekly_scoped")
@@ -134,17 +129,16 @@ write_line() {
     rm -f "$tmp" 2>/dev/null
 }
 
-# Cold start: publish whatever is already on disk BEFORE spending ~300ms on a
-# fetch, so a pane that has just come up draws a number on its next render
-# instead of on the one after the network answers. Skipped once the file
-# exists, where it would only rewrite what the reader already has.
-[ -e "$CACHE" ] || write_line "$(read_lane)"
+# Stamp the attempt with whatever is already on disk BEFORE the fetch: the
+# reader's throttle sees it at once, so concurrent renders stop spawning
+# refreshers, and a cold pane draws a number before the network answers.
+write_line "$(read_lane)"
 
 # The fetch. Its own output is discarded — it is spent for its side effect on
 # headroom's store, which the read below replays. Budget-permitting is
 # headroom's decision, not this script's; a refused refresh simply leaves the
 # previous observation in place and the read still succeeds.
-headroom --json >/dev/null 2>&1
+headroom refresh --vendor claude >/dev/null 2>&1
 
 write_line "$(read_lane)"
 
