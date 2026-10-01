@@ -703,6 +703,7 @@ _gwt() {
         '--new[create a new branch even if a remote branch of that name exists]' \
         '--non-interactive[use the configured base without confirmation]' \
         '--no-copy[skip ignored prerequisites]' \
+        '--no-clipboard[do not copy the new path to the clipboard]' \
         '--no-fetch[use cached remote refs]' \
         '--json[print structured output]' \
         '1:branch or command:('"$commands"' $(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null; git for-each-ref --format="%(refname:lstrip=3)" refs/remotes 2>/dev/null | grep -v "^HEAD$"))' \

@@ -33,14 +33,14 @@ Each suite owns one boundary:
 | pane control | float, restore, pane-mode, and rename-popup transactions, plus the shared script library's contract (existence checks, live client, palette colours), on an isolated tmux socket |
 | context chip | publication, shedding, cleanup, and quota refresh without the live cache; one agent-status vocabulary across the statusline, owner, border, and zsh; the prompt sweep in a single tmux round trip |
 | worktree core | tmux-free snapshots, recovery refs and their expiry, and removal parent cleanup; merge verdicts are tested in `~/dev/gwt` |
-| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery; the bare first paint shows before a held-back `gwt list` and keeps a query and a mark across the swap; ctrl-y copies through a stub `toclip`; the merged tag and ctrl-g share one eligibility rule, leaving unmerged and locked work; private tmux socket |
+| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery, and copies the new path; the bare first paint shows before a held-back `gwt list` and keeps a query and a mark across the swap; ctrl-y copies the highlighted or marked paths; both copies go through a stub `toclip`; the merged tag and ctrl-g share one eligibility rule, leaving unmerged and locked work; private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | the installed `cout` binary end to end (or `$COUT_BIN`): command/output pairing across nested shells, indexed copies, recorder retention/cleanup, terminal rendering with the real transient prompt, and `prefix o` leaving no popup; private tmux sockets, a temporary home, and a fake clipboard isolate state, and every store path is checked to lie inside the sandbox before a delete. Parser, store, and replay unit tests are in `~/dev/cout` |
 | Claude sessions | shared-store topology and repair, plus launcher routing and workspace effort, against a throwaway `$HOME` |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
 | portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive shells keep `git.zsh`'s `git()` and one fpath whatever they inherit; interactive cases run on a pty |
 | theme sync | startup + precmd switching against a throwaway `$HOME` |
-| gwt shell | completion, parent-shell entry, configured placement, caller HEAD, seeding, and compatibility shim in a temporary home |
+| gwt shell | completion, parent-shell entry, configured placement, caller HEAD, seeding, and compatibility shim in a temporary home with a stub `toclip` |
 | git wrapper | the branch guard fires on a stale base and follows `gitguard on/off`; under the working tree's `git/.gitconfig`, planlab pushes (clone and worktree) get `repo.pushArgs` and skip the pre-push hook, others run it; local repositories under a temporary home, no user git config, and a check that the live guard marker is untouched |
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree |

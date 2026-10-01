@@ -12,6 +12,10 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 unset GWT_CONFIG GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR
 mkdir -p "$sandbox/bin" "$XDG_CONFIG_HOME/gwt"
 cp "$binary" "$sandbox/bin/gwt"
+# At a terminal gwt copies each new path; this stub keeps the real clipboard out.
+print -r -- '#!/bin/sh
+cat > "$HOME/clipboard"' > "$sandbox/bin/toclip"
+chmod +x "$sandbox/bin/toclip"
 export PATH="$sandbox/bin:$PATH"
 source "$module"
 # Capture completion specifications; no terminal or completion widget needed.
@@ -67,7 +71,7 @@ rc=0; command gwt --cd -n feat/bare 2>/dev/null || rc=$?
 (( rc == 2 )) && [[ ! -e "$sandbox/custom trees/repo/feat/bare" ]]
 [[ "$(gwt --cd --help)" == *'--cd'* ]]
 words=(gwt ''); CURRENT=2
-[[ "$(_gwt)" == *'--cd['* ]]
+[[ "$(_gwt)" == *'--cd['* && "$(_gwt)" == *'--no-clipboard['* ]]
 words=(gwtcd ''); CURRENT=2
 [[ "$(_gwt)" != *'--cd['* ]]
 print 'PASS: gwtcd completion, configured placement, caller HEAD, main seeding, failure cwd, compatibility shim, and gwt --cd'

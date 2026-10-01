@@ -74,7 +74,11 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         else: raise AssertionError('no seeded destination window: '+str(rows)+'\n'+cap)
         assert (root/repo.name/'feat/popup/.env').read_text() == 'smoke-secret'
         assert run(['git','rev-parse','feat/popup'], repo).stdout.strip() == caller_sha
-        print('PASS: actual popup uses caller HEAD and custom quoted root, seeds files, opens window, delivers post-create')
+        # gwt ran at the pane's terminal, so it copied the new path; clear that
+        # so the ctrl-y checks below see only ctrl-y's own copies.
+        assert clip.read_text() == str(root/repo.name/'feat/popup'), 'creation copies its path'
+        clip.unlink()
+        print('PASS: actual popup uses caller HEAD and custom quoted root, seeds files, opens window, delivers post-create, copies the path')
 
         # Copy: the probed rows replace the bare first paint (the dirty mark only
         # exists in them), ctrl-y copies the highlighted path and closes, and with
