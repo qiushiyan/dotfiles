@@ -1,5 +1,6 @@
 # ~/.config/zsh/tmux-utils.zsh
-# tmux helper functions for scripting panes (used by pair-coding skill)
+# tmux helpers: the Codex border wrapper, the prompt agent-status sweep, and
+# the pair-coding helpers
 
 # --------------------------------------------------------------------
 # codex - Put Codex's work and runtime state on the pane border

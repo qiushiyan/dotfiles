@@ -22,16 +22,10 @@ fi
 export LANG LC_ALL
 
 # Custom functions (sourced here so they're available in all zsh invocations)
-# Stub compdef to suppress errors; remove it after so compinit can define the real one
-(( $+functions[compdef] )) || { compdef() { : }; _compdef_stub=1 }
 for f in ~/.config/zsh/*.zsh(N); do
   [[ "$f:t" == "toolchain.zsh" ]] && continue
   source "$f"
 done
-if (( _compdef_stub )); then
-  unfunction compdef
-  unset _compdef_stub
-fi
 
 # ── This machine ──────────────────────────────────  docs/zsh.md § Machines
 # Everything above is shared: it checks for the tools it needs rather than for

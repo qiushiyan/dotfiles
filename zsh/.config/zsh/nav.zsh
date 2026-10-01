@@ -5,6 +5,8 @@
 # n - Open file/directory in neovim
 # --------------------------------------------------------------------
 n() {
+  emulate -L zsh
+  local parent_dir file_name
   if [ $# -eq 0 ]; then
     nvim .
   else
@@ -79,7 +81,7 @@ drop() {
 _pull_both() {
   emulate -L zsh
   setopt no_monitor
-  local here=laptop there=mini host=${MINI_SYNC_HOST:-qiushi-mini}
+  local here=laptop there=mini host=${MINI_HOST:-qiushi-mini}
   [[ $USER == qiushiyan ]] && here=mini there=laptop host=qiushi-mac
   local quiet='export GIT_TERMINAL_PROMPT=0 GIT_MERGE_AUTOEDIT=no'
   local out=$(mktemp -d "${TMPDIR:-/tmp}/pull-both.XXXXXX")
@@ -152,12 +154,4 @@ y() {
     builtin cd -- "$cwd"
   fi
   rm -f -- "$tmp"
-}
-
-# --------------------------------------------------------------------
-# fcd - Fuzzy cd using z history
-# --------------------------------------------------------------------
-fcd() {
-  local dir
-  dir=$(cat ~/.z | cut -d'|' -f1 | fzf --tac --no-sort) && cd "$dir"
 }

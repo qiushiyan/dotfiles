@@ -57,7 +57,7 @@ export HEADROOM_CODEX_LAUNCHER_FORMAT="cx-%s"
 # envoy's Codex voices would otherwise always run on ~/.codex — no Claude
 # session carries a CODEX_HOME to inherit — whatever the board says. See the
 # ENVOY_CLAUDE_CMD note in claude.zsh for why this is guarded.
-if (( $+commands[headroom] )); then
+if whence -p headroom >/dev/null; then
   export ENVOY_CODEX_CMD="headroom launch --vendor codex --"
 fi
 # Local parts that never get a short launcher alias: cx-<these> are utilities.

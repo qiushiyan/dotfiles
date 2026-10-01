@@ -105,8 +105,9 @@ export HEADROOM_LAUNCHER_FORMAT="x-%s"
 # envoy splits this on whitespace and runs no shell. Exported only when
 # headroom exists: envoy never falls back from a configured launcher, so on a
 # machine without headroom the variable must stay unset for envoy to work.
-# (The Codex twin lives in codex.zsh.)
-if (( $+commands[headroom] )); then
+# (The Codex twin lives in codex.zsh.) whence -p, not $+commands: the first
+# $commands lookup hashes every PATH dir, ~3 ms of every shell's startup.
+if whence -p headroom >/dev/null; then
   export ENVOY_CLAUDE_CMD="headroom launch --"
 fi
 # Local parts that never get a short launcher alias: x-<these> are utilities.
