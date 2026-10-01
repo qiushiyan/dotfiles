@@ -9,7 +9,7 @@ readonly state_dir="${HOME}/Library/Application Support/CodexMaintenance"
 readonly log_dir="${HOME}/Library/Logs/CodexMaintenance"
 readonly last_run_file="${state_dir}/keep-codex-fast.last-run"
 readonly report_log="${log_dir}/keep-codex-fast-report.log"
-readonly skill_dir="${HOME}/.codex/skills/keep-codex-fast"
+readonly skill_dir="${HOME}/.agents/skills/keep-codex-fast"
 
 mkdir -p "${state_dir}" "${log_dir}"
 
