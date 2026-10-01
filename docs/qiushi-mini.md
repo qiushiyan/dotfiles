@@ -73,6 +73,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
 | poppler | 26.09.0 | `brew install poppler` (`pdftotext` for planlab `debug:run` document reads) | `brew upgrade` |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
+| obelisk | the laptop's (0.2.6-rc.0 on 2026-10-01) | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` covers the mini's own sessions | `mini-sync` keeps it at the laptop's version (§ Sync) |
 | portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
 
 Personal CLIs (headroom, envoy, brief, gwt, gopen, cout) come from the laptop through
@@ -364,15 +365,22 @@ timer: an older binary files a brief where the new one reads another slug.
 `mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way,
 and the laptop is the source of truth. **Never edit `~/dotfiles` on the
 mini.** The next sync overwrites it, so a fix found there is made on the
-laptop. The script's header and its `BINS`, `SECRETS` and `LINKS` lists say
-what it carries: the working tree as git sees it (uncommitted edits included,
-ignored paths never), the Codex config (§ Agent config), links into the mirror
-for the scripts the mini runs by name, and the laptop's theme, applied only
-when the laptop switches, so a `prefix t` pick on the mini lasts until then.
+laptop. The script's header and its `BINS`, `SECRETS`, `ENGINES` and `LINKS`
+lists say what it carries: the working tree as git sees it (uncommitted edits
+included, ignored paths never), the Codex config (§ Agent config), engine
+versions, links into the mirror for the scripts the mini runs by name, and
+the laptop's theme, applied only when the laptop switches, so a `prefix t`
+pick on the mini lasts until then.
 
 - **Compiled CLIs are copied**, the binaries named in `BINS`, so the mini
   needs no Go and no source clones. `planlab` and `bench` are not: they are
   shims into a checkout, and the mini generates its own (§ planlab checkout).
+- **Engines are version-matched**, the pnpm globals named in `ENGINES`
+  (`@obelisk-apps/cli`): a skill in the mirror is written against the
+  laptop's engine, so when the mini's version differs, the mini runs
+  `pnpm add -g` for the laptop's exact version. They are node packages, so
+  they are installed, not copied like `BINS`. A new entry installs on the
+  next sync; an engine absent on the laptop is skipped.
 - **Token files**: only plain CLI API tokens belong on `SECRETS`, as a file
   or a directory with the private config that travels beside them. OAuth
   logins (Claude Code, Codex, gh) rotate their refresh tokens, so two

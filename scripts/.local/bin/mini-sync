@@ -5,7 +5,8 @@
 # Why a mirror and not `git pull`: skills and tools iterate uncommitted, and
 # the mirror carries the working tree as-is. See docs/qiushi-mini.md § Sync.
 #
-# Also: CLI token files (SECRETS) and the laptop's theme, below.
+# Also: CLI token files (SECRETS), pnpm-global engines at the laptop's
+# version (ENGINES), and the laptop's theme, below.
 #
 # Usage: mini-sync [-n|--dry-run] [-q|--quiet]
 #   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
@@ -28,6 +29,10 @@ SECRETS=(.planlab/.env .bench/.env .config/slack .config/slack-digest)
 # there (it carries this laptop's mini-sync LaunchAgent), so each gets a
 # link in the mini's ~/.local/bin, pointing into the mirror.
 LINKS=(theme-set toclip browser-clip mac aws-login snapshot)
+# pnpm-global CLIs behind skills the mirror carries. A skill is written
+# against the laptop's engine, so the mini installs the laptop's exact version
+# whenever its own differs. Not copied like BINS: they are node packages.
+ENGINES=(@obelisk-apps/cli)
 # The mini records the last theme this script applied there, so a theme
 # picked on the mini (prefix t) lasts until the laptop switches.
 THEME_STATE=.local/state/mini-sync/theme
@@ -133,6 +138,34 @@ else
   else
     ssh "$HOST" "~/.local/bin/theme-set $theme >/dev/null && mkdir -p ~/${THEME_STATE%/*} && echo $theme > ~/$THEME_STATE"
     say "    applied $theme"
+  fi
+fi
+
+# Last, so a failed install cannot hold back the steps above. The version
+# check is one pnpm call per side; pnpm itself runs only when they differ.
+say "==> ${ENGINES[*]} → $HOST (pnpm global, laptop's versions)"
+local_json=$(zsh -c 'pnpm ls -g --json')
+remote_json=$(ssh "$HOST" 'pnpm ls -g --json')
+installs=()
+for e in "${ENGINES[@]}"; do
+  want=$(jq -r --arg p "$e" '.[0].dependencies[$p].version // empty' <<<"$local_json")
+  have=$(jq -r --arg p "$e" '.[0].dependencies[$p].version // empty' <<<"$remote_json")
+  if [[ -z $want ]]; then
+    echo "mini-sync: skipping $e (not installed here)" >&2
+  elif [[ $want != "$have" ]]; then
+    installs+=("$e@$want")
+    say "    $e ${have:-absent} → $want"
+  fi
+done
+if (( ${#installs[@]} == 0 )); then
+  say "    unchanged"
+elif (( ${#dry[@]} )); then
+  say "    would install ${installs[*]}"
+else
+  if (( quiet )); then
+    ssh "$HOST" "pnpm add -g ${installs[*]}" >/dev/null
+  else
+    ssh "$HOST" "pnpm add -g ${installs[*]}"
   fi
 fi
 

@@ -20,7 +20,9 @@ pnpm's bin directory survives node upgrades where an nvm-scoped npm global does
 not. On 2026-08-24 there were briefly two copies -- an npm global at 0.2.5
 shadowing a pnpm global still at 0.2.2 -- and a version without --nonce loses
 invocation identity silently, so the npm copy was removed rather than kept in
-sync. Do not reinstall with `npm install -g`.
+sync. Do not reinstall with `npm install -g`. The office mini has its own
+pnpm global copy; mini-sync installs the laptop's version there whenever the
+two differ (docs/qiushi-mini.md § Sync), so upgrade the laptop only.
 
 Pin the exact version when upgrading: pnpm's packument cache serves a stale
 `latest` for a day or so after a release, and `pnpm add -g
