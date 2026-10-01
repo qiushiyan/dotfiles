@@ -1,4 +1,4 @@
-# shellcheck shell=bash disable=SC2034  # the results are read by the sourcer
+# shellcheck shell=bash disable=SC2034,SC2088  # results read by the sourcer; ~ is meant literally
 # lib/display-path.sh — the compact workspace path agents show, defined once.
 #
 #   display_path <dir> <home> <git-dir> <git-common-dir> <toplevel>
