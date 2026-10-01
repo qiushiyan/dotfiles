@@ -12,9 +12,7 @@
 # — which inherited a now-stale $TERMINAL_THEME from its launching shell — still
 # tracks theme switches on the next statusline render. Env is only the fallback.
 THEME=""
-if [ -r "$HOME/.config/terminal-theme" ]; then
-    THEME=$(tr -d '[:space:]' < "$HOME/.config/terminal-theme")
-fi
+[ -r "$HOME/.config/terminal-theme" ] && read -r THEME < "$HOME/.config/terminal-theme"
 THEME="${THEME:-${TERMINAL_THEME:-gruber_darker}}"
 
 # 24-bit truecolor escape: $'\033[38;2;R;G;Bm'
@@ -164,7 +162,7 @@ esac
 DIM=$'\033[2m'
 RESET=$'\033[0m'
 
-input=$(cat)
+IFS= read -r -d '' input
 
 # Single jq call to extract all values. The directory comes LAST: read splits
 # on whitespace and only the final variable swallows the remainder, so a path
@@ -224,6 +222,15 @@ esac
 case "$SEVEN_DAY" in
     ''|*[!0-9]*) SEVEN_DAY="" ;;
 esac
+
+# Validate jq extraction succeeded
+if [ -z "$CURRENT_DIR" ]; then
+    echo "statusline: invalid input" >&2
+    exit 1
+fi
+exec 3< <(git -C "$CURRENT_DIR" rev-parse --path-format=absolute --git-dir --git-common-dir --show-toplevel 2>/dev/null)
+exec 4< <(git -C "$CURRENT_DIR" --no-optional-locks status -b --porcelain 2>/dev/null)
+exec 5< <(git -C "$CURRENT_DIR" --no-optional-locks diff HEAD --numstat 2>/dev/null)
 
 # Which account lane this session burns. EVERY lane is labeled, the primary
 # included: "which account is this session spending" is the same question
@@ -364,34 +371,22 @@ if [ -n "$QUOTA_LANE" ] && [ -r "$QUOTA_FILE" ]; then
 fi
 
 # Re-arm the refresher when its last ATTEMPT (not its last success) has aged
-# out. The lock test is what keeps a busy window cheap: six panes rendering
-# three times a second all see the same stale stamp for the ~400ms a refresh
-# takes, and without it every one of those renders would spawn a process that
-# does nothing but discover the lock and exit. An abandoned lock must let the
-# refresher run so its stale-lock sweep can recover; otherwise this gate keeps
-# that sweep unreachable forever. Match the refresher's two-minute cutoff.
-# The mtime lookup runs only for an overdue cache with a lock. The refresher
-# stays detached so rendering never waits for headroom.
+# out. The refresher stamps its attempt before fetching, so sibling panes stop
+# re-arming it within milliseconds; it stays detached so rendering never waits
+# for headroom, and the git readers' descriptors are closed in it.
 # CLAUDE_CTX_REFRESH_CMD is a test lever, not a setting. UNSET (production)
 # means the refresher beside this script; set-but-EMPTY turns refreshing off;
 # set to a path substitutes that. The chip suite needs all three: it drives
 # this script for real, so an unlevered spawn would reach past its sandbox to
 # the live headroom store and the network — but a suite that only ever
-# disabled the spawn would leave the trigger, the throttle and the lock test
-# below permanently untested, which is how they would rot.
+# disabled the spawn would leave the trigger, the throttle below
+# permanently untested, which is how they would rot.
 QUOTA_REFRESH="${CLAUDE_CTX_REFRESH_CMD-${BASH_SOURCE[0]%/*}/claude-quota-refresh.sh}"
 if [ -n "$LANE_EMAIL" ] && [ -n "$QUOTA_REFRESH" ] &&
-   [ "$((NOW - QUOTA_AT))" -gt 300 ] && [ -r "$QUOTA_REFRESH" ] &&
-   { [ ! -d "${QUOTA_FILE%.quota}.lock" ] ||
-     [ -n "$(find "${QUOTA_FILE%.quota}.lock" -maxdepth 0 -mmin +2 -print 2>/dev/null)" ]; }; then
-    ( bash "$QUOTA_REFRESH" "$LANE_EMAIL" >/dev/null 2>&1 & ) 2>/dev/null
+   [ "$((NOW - QUOTA_AT))" -gt 300 ] && [ -r "$QUOTA_REFRESH" ]; then
+    ( bash "$QUOTA_REFRESH" "$LANE_EMAIL" >/dev/null 2>&1 3<&- 4<&- 5<&- & ) 2>/dev/null
 fi
 
-# Validate jq extraction succeeded
-if [ -z "$CURRENT_DIR" ]; then
-    echo "statusline: invalid input" >&2
-    exit 1
-fi
 
 if [ "$CONTEXT_SIZE" -gt 0 ] 2>/dev/null; then
     PERCENT_USED=$((CURRENT_TOKENS * 100 / CONTEXT_SIZE))
@@ -409,9 +404,9 @@ fi
 # paths under $HOME abbreviate to ~/...; everything else stays as-is.
 DISPLAY_DIR="$CURRENT_DIR"
 WT_MARK=""
-GIT_DIRS=$(git -C "$CURRENT_DIR" rev-parse --path-format=absolute --git-dir --git-common-dir --show-toplevel 2>/dev/null)
-if [ -n "$GIT_DIRS" ]; then
-    { read -r GIT_DIR; read -r GIT_COMMON; read -r TOPLEVEL; } <<< "$GIT_DIRS"
+GIT_DIR=""; GIT_COMMON=""; TOPLEVEL=""
+{ read -r GIT_DIR; read -r GIT_COMMON; read -r TOPLEVEL; } <&3; exec 3<&-
+if [ -n "$GIT_DIR" ]; then
     if [ -n "$GIT_COMMON" ] && [ -n "$TOPLEVEL" ] && [ "$GIT_DIR" != "$GIT_COMMON" ]; then
         # Keep any subpath below the worktree root so deeper cwds stay visible.
         DISPLAY_DIR="${GIT_COMMON%/.git}${CURRENT_DIR#$TOPLEVEL}"
@@ -442,46 +437,33 @@ if [ -n "$ANTHROPIC_BASE_URL" ]; then
     API_DISPLAY="${YELLOW}API${RESET}"; API_PLAIN="API"
 fi
 
-# Git information - single call for all data
-GIT_OUTPUT=$(git -C "$CURRENT_DIR" --no-optional-locks status -b --porcelain 2>/dev/null)
-if [ $? -eq 0 ] && [ -n "$GIT_OUTPUT" ]; then
-    # First line has branch: ## branch...tracking
-    BRANCH=$(echo "$GIT_OUTPUT" | head -1 | sed 's/^## \([^.]*\).*/\1/')
-
-    # Rest of lines are file status
-    read -r STAGED UNSTAGED UNTRACKED <<< "$(echo "$GIT_OUTPUT" | tail -n +2 | awk '
-      BEGIN { s=0; u=0; q=0 }
-      /^[MADRC]/ { s++ }
-      /^.[MD]/ { u++ }
-      /^\?\?/ { q++ }
-      END { print s, u, q }
-    ')"
-
-    # Line-diff summary (+added -removed) replaces the old unstaged FILE count.
-    # `git diff HEAD --numstat` walks tracked files once and covers staged AND
-    # unstaged changes together without double-counting a file touched in both
-    # (two separate calls — one for the index, one for the worktree — would sum
-    # a modified-then-staged file's lines twice). Untracked files carry no diff
-    # against HEAD and stay represented by the separate "?N" count below.
-    DIFF_STATS=$(git -C "$CURRENT_DIR" --no-optional-locks diff HEAD --numstat 2>/dev/null)
-    read -r DIFF_ADDED DIFF_REMOVED <<< "$(echo "$DIFF_STATS" | awk '
-      BEGIN { a=0; d=0 }
-      $1 ~ /^[0-9]+$/ { a+=$1 }
-      $2 ~ /^[0-9]+$/ { d+=$2 }
-      END { print a, d }
-    ')"
-
-    # Build git status string - only show non-zero counts. GIT_PLAIN mirrors the
-    # visible text (no ANSI) so the wrapper can measure its width.
-    GIT_STATUS=""; GIT_PLAIN=""
-    [ "$STAGED" -gt 0 ] 2>/dev/null && { GIT_STATUS="${GIT_STATUS}${GREEN}+${STAGED}${RESET} "; GIT_PLAIN="${GIT_PLAIN}+${STAGED} "; }
-    if [ "${DIFF_ADDED:-0}" -gt 0 ] 2>/dev/null || [ "${DIFF_REMOVED:-0}" -gt 0 ] 2>/dev/null; then
+# Git information. Both reads were started in parallel above. The branch is
+# the porcelain header minus "## " and any "...upstream" suffix (git forbids
+# ".." in a ref, so "..." is unambiguous; a dotted branch like release-1.2
+# survives). `git diff HEAD --numstat` walks tracked files once and covers
+# staged AND unstaged changes without double-counting a file touched in both.
+# Untracked files carry no diff against HEAD and stay the separate "?N" count.
+BRANCH=""; GIT_STATUS=""; GIT_PLAIN=""
+STAGED=0; UNTRACKED=0; DIFF_ADDED=0; DIFF_REMOVED=0
+if IFS= read -r line <&4; then
+    BRANCH=${line#'## '}; BRANCH=${BRANCH%%...*}
+    BRANCH=${BRANCH#No commits yet on }
+    while IFS= read -r line; do
+        case "$line" in [MADRC]*) STAGED=$((STAGED+1)) ;; '??'*) UNTRACKED=$((UNTRACKED+1)) ;; esac
+    done <&4
+    while read -r a d _; do
+        case "$a" in ''|*[!0-9]*) ;; *) DIFF_ADDED=$((DIFF_ADDED+a)) ;; esac
+        case "$d" in ''|*[!0-9]*) ;; *) DIFF_REMOVED=$((DIFF_REMOVED+d)) ;; esac
+    done <&5
+    [ "$STAGED" -gt 0 ] && { GIT_STATUS="${GIT_STATUS}${GREEN}+${STAGED}${RESET} "; GIT_PLAIN="${GIT_PLAIN}+${STAGED} "; }
+    if [ "$DIFF_ADDED" -gt 0 ] || [ "$DIFF_REMOVED" -gt 0 ]; then
         GIT_STATUS="${GIT_STATUS}${GREEN}+${DIFF_ADDED}${RESET} ${RED}-${DIFF_REMOVED}${RESET} "
         GIT_PLAIN="${GIT_PLAIN}+${DIFF_ADDED} -${DIFF_REMOVED} "
     fi
-    [ "$UNTRACKED" -gt 0 ] 2>/dev/null && { GIT_STATUS="${GIT_STATUS}?${UNTRACKED} "; GIT_PLAIN="${GIT_PLAIN}?${UNTRACKED} "; }
-    GIT_STATUS="${GIT_STATUS% }"; GIT_PLAIN="${GIT_PLAIN% }"  # trim trailing space
+    [ "$UNTRACKED" -gt 0 ] && { GIT_STATUS="${GIT_STATUS}?${UNTRACKED} "; GIT_PLAIN="${GIT_PLAIN}?${UNTRACKED} "; }
+    GIT_STATUS="${GIT_STATUS% }"; GIT_PLAIN="${GIT_PLAIN% }"
 fi
+exec 4<&- 5<&-
 
 # Assemble the line as ordered segments, each carrying its colored form and its
 # plain (visible) text. render_segments decides between one line and wrapping.

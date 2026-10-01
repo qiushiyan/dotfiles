@@ -740,10 +740,10 @@ c21() {
 # ---------------------------------------------------------------------------
 # C22 — the refresher trigger. The render path must never WAIT on headroom, and
 # a window full of panes must not spawn one refresher per pane per render, so
-# the trigger is throttled on the last ATTEMPT and suppressed while a sibling
-# holds the lock. Both are invisible when they break — the chip keeps working
-# and the machine just does more work — so they are asserted against a stub
-# standing in for the real refresher.
+# the trigger is throttled on the last ATTEMPT, which the refresher stamps
+# before it fetches (C26). Both are invisible when they break — the chip keeps
+# working and the machine just does more work — so they are asserted against a
+# stub standing in for the real refresher.
 # ---------------------------------------------------------------------------
 c22() {
     fresh || return
@@ -771,24 +771,11 @@ c22() {
     pub sid-B 'claude-opus-5[1m]' 380000 "$lane" 5
     check "C22 a recent attempt suppresses the next" "$(spawns "$marker")" "0"
 
-    # Stale enough to re-arm, but a sibling pane is already inside a refresh.
+    # An attempt older than five minutes: the trigger fires again.
     rm -f "$marker"
     quota "$lane" 400 51 Fable 400 3600
-    mkdir -p "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
-    pub sid-C 'claude-opus-5[1m]' 390000 "$lane" 5
-    check "C22 the lock suppresses a duplicate refresher" "$(spawns "$marker")" "0"
-    check "C22 and the stale line is still drawn meanwhile" "$(opt @claude_ctx_wk)" "51"
-
-    # An abandoned lock must not prevent the refresher's own sweep running.
-    touch -t 202001010000 "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
-    pub sid-C 'claude-opus-5[1m]' 390000 "$lane" 5
-    check "C22 an abandoned lock lets recovery run" "$(spawns "$marker")" "1"
-
-    # Lock gone, still stale: the trigger fires again.
-    rm -f "$marker"
-    rmdir "$SANDBOX_HOME/.cache/claude-ctx/$lane.lock"
-    pub sid-D 'claude-opus-5[1m]' 400000 "$lane" 5
-    check "C22 a stale line with no lock re-arms it" \
+    pub sid-C 'claude-opus-5[1m]' 400000 "$lane" 5
+    check "C22 a stale attempt re-arms it" \
         "$(head -1 "$marker" 2>/dev/null)" "$lane"
 
     unset REFRESH_CMD
@@ -905,35 +892,44 @@ c25() {
     rm -rf "$SANDBOX_HOME/.cache"
 }
 
-# Exercise stale-lock recovery through the real refresher with fake headroom.
+# ---------------------------------------------------------------------------
+# C26 — the real refresher against a fake headroom: it stamps its attempt
+# BEFORE the slow fetch (so concurrent renders stop re-spawning it and a
+# refresher killed mid-fetch cannot freeze the lane), then publishes what
+# headroom's store holds for the CLAUDE row of this email — the fake lists a
+# codex row with the same email first, as a live `headroom limits` does.
+# ---------------------------------------------------------------------------
 c26() {
     fresh || return
     local lane=recovery@example.test
     local cache="$SANDBOX_HOME/.cache/claude-ctx"
     local fakebin="$SANDBOX/fake-headroom"
-    mkdir -p "$fakebin" "$cache/$lane.lock"
+    mkdir -p "$fakebin" "$cache"
     quota "$lane" 86400 67 Fable 86400 -60
-    touch -t 202001010000 "$cache/$lane.lock"
     cat > "$fakebin/headroom" <<'STUB'
 #!/bin/bash
-if [ "${1:-}" = limits ]; then
-    printf '%s\n' '{"accounts":[{"email":"recovery@example.test","usage":{"observed_at":"2026-01-01T00:00:00Z","limits":[{"kind":"weekly_scoped","percent_state":"ok","identity_state":"ok","percent":79,"model":"Fable","resets_at":"2099-01-01T00:00:00Z"}]}}]}'
-fi
+case "${1:-}" in
+limits) printf '%s\n' '{"accounts":[{"email":"recovery@example.test","vendor":"codex","usage":{"limits":[]}},{"email":"recovery@example.test","vendor":"claude","usage":{"observed_at":"2026-01-01T00:00:00Z","limits":[{"kind":"weekly_scoped","percent_state":"ok","identity_state":"ok","percent":79,"model":"Fable","resets_at":"2099-01-01T00:00:00Z"}]}}]}' ;;
+*) sleep 2 ;;   # any fetching surface: refresh, --json
+esac
 STUB
     chmod +x "$fakebin/headroom"
     local PATH="$fakebin:$PATH"
     export PATH
     REFRESH_CMD="$REPO/claude/.claude/commands/claude-quota-refresh.sh"
     pub sid-A claude-fable-5-1 220000 "$lane" 15
-    for _ in $(seq 1 30); do
-        [ ! -d "$cache/$lane.lock" ] && break
+    # The fake fetch sleeps 2s; the stamp must land well inside it.
+    local at state=stale
+    for _ in $(seq 1 15); do
+        read -r at _ < "$cache/$lane.quota"
+        [ $(( $(date +%s) - at )) -lt 60 ] && { state=fresh; break; }
         sleep 0.1
     done
-    check "C26 the real refresher retires the abandoned lock" \
-        "$([ -d "$cache/$lane.lock" ] && echo locked || echo clear)" "clear"
+    check "C26 the attempt is stamped before the fetch returns" "$state" "fresh"
+    sleep 2   # let the refresher finish before its cache is removed
     pub sid-A claude-fable-5-1 220000 "$lane" 15
-    check "C26 recovered weekly reaches the pane" "$(opt @claude_ctx_wk)" "79"
-    check "C26 recovered weekly keeps its label" "$(opt @claude_ctx_wk_model)" "Fable"
+    check "C26 the claude row reaches the pane" "$(opt @claude_ctx_wk)" "79"
+    check "C26 with its label" "$(opt @claude_ctx_wk_model)" "Fable"
     unset REFRESH_CMD
     rm -rf "$SANDBOX_HOME/.cache" "$fakebin"
 }
@@ -1090,9 +1086,45 @@ c31() {
     rm -rf "$SANDBOX_HOME/.cache"
 }
 
+# ---------------------------------------------------------------------------
+# C32 — the statusline's own text. Everything above reads the border; this is
+# the line Claude Code draws under the prompt, colours stripped. A branch is
+# the porcelain header minus any "...upstream" (a dotted name like release-1.2
+# once lost everything after its first dot), an unborn branch is its name, the
+# counts are staged files, +added -removed lines against HEAD and untracked
+# files, and a path under ~/dev drops that prefix.
+# ---------------------------------------------------------------------------
+c32() {
+    local home repo
+    home=$(cd "$SANDBOX_HOME" && pwd -P)   # git reports physical paths
+    repo="$home/dev/proj"
+    # The suite's own git, isolated from the user's config and hooks.
+    g() { env GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 git -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
+    # render <dir>: the line for a payload at <dir>, outside tmux, never refreshing.
+    render() {
+        printf '{"session_id":"sid-R","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$1" \
+            | env -u TMUX -u TMUX_PANE -u CLAUDE_CONFIG_DIR -u COLUMNS -u ANTHROPIC_BASE_URL \
+                HOME="$home" TERMINAL_THEME=gruber_darker CLAUDE_CTX_REFRESH_CMD= \
+                GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 bash "$STATUSLINE" 2>/dev/null \
+            | sed $'s/\033\\[[0-9;]*m//g'
+    }
+    mkdir -p "$repo"
+    g -C "$repo" init -b main
+    check "C32 an unborn branch is its name" "$(render "$repo")" "proj | main | 0%"
+    printf '1\n2\n3\n' > "$repo/a.txt"
+    g -C "$repo" add -A; g -C "$repo" commit -m init
+    g -C "$repo" checkout -b release-1.2; g -C "$repo" branch -u main
+    printf '1\n2\nx\ny\n' > "$repo/a.txt"            # unstaged: +2 -1
+    printf 'b\n' > "$repo/b.txt"; g -C "$repo" add b.txt   # staged new file: +1
+    printf 'c\n' > "$repo/c.txt"                       # untracked
+    check "C32 a dotted branch keeps its dots and drops its upstream" \
+        "$(render "$repo")" "proj | release-1.2 | 0% | +1 +3 -1 ?1"
+    rm -rf "$SANDBOX_HOME/dev"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

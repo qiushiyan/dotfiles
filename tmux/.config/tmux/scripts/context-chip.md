@@ -70,9 +70,10 @@ render path   → shell-builtin cache read; never waits for headroom
 
 Claude's payload carries the account-wide windows and omits one once it resets,
 so those figures need no freshness rule here. It has no model-scoped limit; a
-detached refresher updates that cache after five minutes when no sibling pane
-owns a fresh lock. Locks older than two minutes allow a refresher through so
-its stale-lock sweep can recover from an interrupted run.
+detached refresher updates that cache once its last attempt is five minutes
+old. It stamps the attempt before fetching, so sibling panes stop re-spawning
+it at once and an interrupted run only ages out; headroom's own claim
+serializes the fetch.
 
 An aged cache value is safe while its usage window is live because usage only
 rises. After the window rolls over, stale low usage would promise headroom that
@@ -142,7 +143,7 @@ tests:      tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh
 ```
 
 Exercise full-width and split panes across accounts, including an urgent
-model-scoped weekly on a pane too narrow to show it. Cover abandoned-lock recovery, hard kill,
+model-scoped weekly on a pane too narrow to show it. Cover the attempt stamp, hard kill,
 same-pane resume, and pane relocation. Stub the refresher for trigger checks;
 stub `headroom` and use a temporary home when exercising the real refresher,
 so tests never touch the live accounts cache.
