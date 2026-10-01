@@ -52,10 +52,13 @@ The runner refuses a path outside the root and a checkout a process is
 working in, archives the ignored files outside its cache exclusions, then
 calls `gwt remove --keep-branch --expect-head <audited HEAD>`. gwt refuses
 main, locked, dirty or moved checkouts, keeps branches, and keeps a detached
-HEAD as a recovery ref. A refusal is a kept candidate; forcing it changes the
-scope. The report directory holds each result, archive and recovery ref. Report
-directories expire after gwt's `recovery.keep` (`gwt config show`), like gwt's
-own recovery refs.
+HEAD as a recovery ref. A refusal is a kept candidate (`skipped`); forcing it
+changes the scope. `failed` means the checkout may already be gone, and its
+archive is kept: report it with the archive path. The report directory holds
+each result, archive and recovery ref. Report directories the runner made
+(those with its `plan.json`) expire after gwt's `recovery.keep`
+(`gwt config show`), like gwt's own recovery refs; nothing else under the
+backup root is touched.
 
 After an interruption, reconcile the recorded results with disk and Git, and
 re-audit unresolved candidates before retrying: an inactive checkout may have
