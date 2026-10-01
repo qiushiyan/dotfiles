@@ -73,7 +73,7 @@ You want to work on a feature without disturbing `main` or another agent — giv
 - Press **`enter`** on a listed worktree to jump to its window (created if it doesn't exist yet).
 - Press **`ctrl-y`** to copy the highlighted worktree's path and close — `prefix y` for a worktree you're not in. With rows marked (`tab`, `ctrl-a` for all), it copies every marked path, one per line. The list opens at once; the `*` and `· merged` marks fill in a moment later.
 - Mark several with **`tab`** (or all with **`ctrl-a`**) and press **`ctrl-x`** to remove them as one confirmed batch — deletion is instant, dirty ones need an extra explicit discard, and branch deletion is offered in aggregate.
-- Press **`ctrl-g`** to *reap*: batch-remove every clean worktree whose content has reached the default base, including squash and rebase merges — end-of-week cleanup in three keystrokes.
+- Press **`ctrl-g`** to *reap*: batch-remove every clean worktree whose content has reached the trunk, including squash and rebase merges — end-of-week cleanup in three keystrokes.
 - Press **`ctrl-p`** to pick an open GitHub PR and check it out into a fresh worktree (`ctrl-o` opens it in the browser instead).
 
 One worktree per window keeps parallel agents from stepping on each other. (See `scripts/worktree.md` for the design.)
