@@ -94,9 +94,12 @@ Seeding creates the link in the first place (`headroom accounts add`, which
 ## The code and its tests
 
 The session toolkit is `zsh/.config/zsh/claude-sessions.zsh`; its sandbox
-harness is in `zsh/.config/zsh/tests/`. The harness also covers `claude.zsh`'s
-launchers, building headroom from `~/dev/headroom` so it exercises the real
-wrapper→engine seam — run it after touching any of the three.
+harness is in `zsh/.config/zsh/tests/`. The harness also covers what
+`claude.zsh`'s launchers add to headroom (the refusal without it, named-launch
+routing, workspace effort, x-select's cd), building headroom from
+`~/dev/headroom` so routing crosses the real wrapper→engine seam — run it after
+touching any of the three. Topology, environment and `.current` policy are
+headroom's own tests.
 `claude-sessions-check` verifies the sharing machinery on the live system, and
 its `--canary` proves cross-account resume end to end at the cost of one request
 on two accounts.

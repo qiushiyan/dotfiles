@@ -151,8 +151,8 @@ Everything derives from that tree:
   `HEADROOM_PRIMARY_NAME`, so both sides answer to `qiushi` by one
   declaration. The other `HEADROOM_*` overrides exist for headroom's test
   harnesses and re-point headroom only; under one, wrapper degradations are
-  loud or absent, never a silent misroute, because the preflight follows
-  headroom's classification.
+  loud or absent, never a silent misroute, because headroom revalidates every
+  name a wrapper passes.
 - tmux strips `CLAUDE_CONFIG_DIR` from the server's global environment at
   start (`tmux.conf`): a server started from inside a Claude Code session
   would otherwise hand every pane that session's account. Managed launches

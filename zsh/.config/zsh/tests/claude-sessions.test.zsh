@@ -1,8 +1,10 @@
 #!/usr/bin/env zsh
 # Sandbox harness for the permanent surfaces of the shared-sessions toolkit:
-# launcher enforcement of the shared-projects topology, the launchers'
-# per-workspace effort flag, migration abort paths,
-# obelisk reindex verification, and drift-check verdict classification.
+# what claude.zsh's launchers add on top of headroom (the refusal without it,
+# named-launch routing, the per-workspace effort flag, x-select's cd),
+# migration abort paths, obelisk reindex verification, and drift-check
+# verdict classification. Topology, environment and `.current` policy are
+# headroom's and tested there (~/dev/headroom internal/app, internal/accounts).
 # Everything runs against a throwaway $HOME with stubbed pgrep/lsof/claude/
 # obelisk — no real account dir, vendor tree, or index is touched.
 #
@@ -66,8 +68,8 @@ t() {
 sandbox() {
   # No trailing slash in the template: TMPDIR carries one on macOS, and the
   # doubled slash it would put in $H survives zsh string comparison while
-  # headroom's Go paths are lexically cleaned — the preflight would then skip
-  # every dir it should check.
+  # headroom's Go paths are lexically cleaned — its topology check would then
+  # skip every dir it should check.
   SB=$(mktemp -d "${${TMPDIR:-/tmp}%/}/cs-test.XXXXXX")
   H="$SB/home"
   CLAUDE_ACCOUNTS_ROOT="$H/.claude-accounts"
@@ -107,59 +109,7 @@ seed_obelisk_db() {
     INSERT INTO memories VALUES ('mem-1', 'a durable conclusion');"
 }
 
-# --- launcher enforcement ----------------------------------------------------
-
-test_launch_blocks_real_projects_dir() (
-  sandbox
-  seed_account a@x.com
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$CLAUDE_ZSH"
-  local rc=0
-  _claude_launch "a@x.com" 2>/dev/null || rc=$?
-  [[ $rc -ne 0 ]] || { print "launch proceeded against a real projects dir"; return 1 }
-  [[ ! -f "$SB/claude.log" ]] || { print "claude was invoked despite the violation"; return 1 }
-)
-
-test_launch_allows_correct_link() (
-  sandbox
-  mkdir -p "$H/.claude-accounts/a@x.com"
-  ln -s "$H/.claude/projects" "$H/.claude-accounts/a@x.com/projects"
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$CLAUDE_ZSH"
-  _claude_launch "a@x.com" || { print "launch blocked a correct topology"; return 1 }
-  grep -q "cfg=$H/.claude-accounts/a@x.com" "$SB/claude.log" 2>/dev/null \
-    || { print "claude did not receive exactly the account's config dir:"; cat "$SB/claude.log" 2>/dev/null; return 1 }
-)
-
-# The incident this pins: a tmux server started inside a Claude Code session
-# carries that session's CLAUDE_CONFIG_DIR, and a "primary" launch that
-# inherits instead of constructing its environment silently runs on the
-# wrong account. The managed path must strip it.
-test_launch_primary_strips_polluted_env() (
-  sandbox
-  mkdir -p "$H/.claude-accounts/a@x.com"
-  ln -s "$H/.claude/projects" "$H/.claude-accounts/a@x.com/projects"
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  export CLAUDE_CONFIG_DIR="$H/.claude-accounts/a@x.com"
-  source "$CLAUDE_ZSH"
-  x || { print "bare x failed"; return 1 }
-  grep -q "cfg=unset" "$SB/claude.log" 2>/dev/null \
-    || { print "primary launch leaked the inherited CLAUDE_CONFIG_DIR:"; cat "$SB/claude.log" 2>/dev/null; return 1 }
-)
-
-# An empty .current is corruption, not a choice: the launch refuses instead
-# of silently becoming "primary, permissions bypassed".
-test_launch_refuses_empty_current() (
-  sandbox
-  mkdir -p "$H/.claude-accounts"
-  : >| "$H/.claude-accounts/.current"
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$CLAUDE_ZSH"
-  local rc=0
-  x 2>/dev/null || rc=$?
-  [[ $rc -ne 0 ]] || { print "empty .current launched anyway"; return 1 }
-  [[ ! -f "$SB/claude.log" ]] || { print "claude was invoked on corrupt routing state"; return 1 }
-)
+# --- launchers: what the wrapper adds to headroom ---------------------------
 
 # No headroom, no launch: falling back to bare `claude` would recreate the
 # inherited-environment misroute in exactly the shells most likely to have it.
@@ -172,21 +122,6 @@ test_launch_refuses_without_headroom() (
   x 2>/dev/null || rc=$?
   [[ $rc -eq 127 ]] || { print "missing headroom returned rc=$rc, expected 127"; return 1 }
   [[ ! -f "$SB/claude.log" ]] || { print "claude ran without the managed path"; return 1 }
-)
-
-# A HEADROOM_* root override must not silently disable the topology
-# preflight: which check applies comes from headroom's own classification of
-# the target, never from the wrapper prefix-matching its own idea of the
-# accounts root against a dir headroom resolved under a different one.
-test_launch_preflight_survives_root_override() (
-  sandbox
-  mkdir -p "$SB/altroot/b@x.com/projects"   # a real dir: topology violation
-  export HOME="$H" PATH="$SB/bin:$PATH" HEADROOM_ACCOUNTS_ROOT="$SB/altroot"
-  source "$CLAUDE_ZSH"
-  local rc=0
-  _claude_launch "b@x.com" 2>/dev/null || rc=$?
-  [[ $rc -ne 0 ]] || { print "override root skipped the topology preflight"; return 1 }
-  [[ ! -f "$SB/claude.log" ]] || { print "claude ran over broken topology"; return 1 }
 )
 
 # A named launch is scoped: it routes to its account and leaves .current
@@ -247,18 +182,6 @@ test_effort_specific_dir_and_explicit_flag_win() (
     || { print "explicit flag did not replace the table's: $got[2]"; return 1 }
 )
 
-test_account_add_fails_when_canonical_is_link() (
-  sandbox
-  mkdir -p "$H/elsewhere"
-  rm -rf "$H/.claude/projects"
-  ln -s "$H/elsewhere" "$H/.claude/projects"
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$CLAUDE_ZSH"
-  local rc=0
-  claude-account-add new@x.com >/dev/null 2>&1 || rc=$?
-  [[ $rc -ne 0 ]] || { print "claude-account-add reported success over a symlinked canonical store"; return 1 }
-)
-
 # --- x-select: the wrapper's whole job is the cd afterwards -------------------
 
 # The advisory cd-file contract, wrapper side: non-empty and absolute means
@@ -305,35 +228,6 @@ EOS
   x-select || rc=$?
   [[ $rc -eq 1 ]] || { print "exit status not passed through: rc=$rc, want 1"; return 1 }
   [[ "$PWD" == "$H" ]] || { print "cd'd on empty advice: $PWD"; return 1 }
-)
-
-# The regression that would have caught the 2026-08-03 incident: a frozen
-# old-generation x-select (decision-line protocol, field 3 read as a config
-# dir) driving the *current* binary. `headroom resume` is a tombstone now, so
-# this must fail loudly, create no directory in the cwd, and launch nothing —
-# a stale shell gets told, never misrouted.
-test_stale_wrapper_fails_loudly() (
-  sandbox
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$CLAUDE_ZSH"
-  x-select() {
-    emulate -L zsh
-    local out dir id cfgdir
-    out=$(headroom resume) || return
-    IFS=$'\t' read -r dir id cfgdir <<< "$out"
-    if [[ -z "$dir" || -z "$id" ]]; then
-      print -u2 "x-select: unexpected decision line from headroom resume"
-      return 1
-    fi
-    cd -- "$dir" && _claude_launch "$cfgdir" --dangerously-skip-permissions --resume "$id"
-  }
-  cd "$H"
-  local rc=0
-  x-select 2>/dev/null || rc=$?
-  [[ $rc -eq 2 ]] || { print "stale x-select rc=$rc, want the tombstone's 2"; return 1 }
-  local -a strays=("$H"/*@*(N/))
-  (( ${#strays} == 0 )) || { print "stray account dir created in cwd: $strays"; return 1 }
-  [[ ! -f "$SB/claude.log" ]] || { print "claude ran from a stale wrapper"; return 1 }
 )
 
 # --- migration abort paths ---------------------------------------------------
@@ -484,30 +378,14 @@ test_canary_request_failure_is_inconclusive() (
   [[ $rc -eq 2 ]] || { print "failed canary request returned rc=$rc, expected INCONCLUSIVE(2)"; return 1 }
 )
 
-test_check_rejects_unknown_flag() (
-  sandbox
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$SESSIONS_ZSH"
-  local rc=0
-  claude-sessions-check --canry >/dev/null 2>&1 || rc=$?
-  [[ $rc -eq 2 ]] || { print "unknown flag returned rc=$rc instead of usage(2)"; return 1 }
-)
-
 # ------------------------------------------------------------------------------
 
-t "launch blocks a real per-account projects dir"        test_launch_blocks_real_projects_dir
-t "launch allows the correct shared link"                test_launch_allows_correct_link
-t "primary launch strips an inherited CLAUDE_CONFIG_DIR" test_launch_primary_strips_polluted_env
-t "empty .current refuses instead of primary fallback"   test_launch_refuses_empty_current
 t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_without_headroom
-t "root override cannot skip the topology preflight"     test_launch_preflight_survives_root_override
 t "generated launcher routes without repinning bare x"   test_generated_launcher_routes_without_repinning
 t "workspace effort applies inside listed dirs only"     test_effort_follows_workspace
 t "specific dir and explicit --effort win"               test_effort_specific_dir_and_explicit_flag_win
-t "account-add fails closed on symlinked canonical"      test_account_add_fails_when_canonical_is_link
 t "x-select cds from non-empty advice, status through"   test_x_select_cds_from_advice
 t "x-select stays put on empty advice"                   test_x_select_stays_put_on_empty_advice
-t "stale-generation x-select fails loudly, creates none" test_stale_wrapper_fails_loudly
 t "migrate aborts when a deduplicated source mutates"    test_migrate_aborts_when_dedupe_mutates
 t "migrate aborts when a new source file appears"        test_migrate_aborts_on_new_file
 t "migrate rejects a mistyped flag with usage(2)"        test_migrate_rejects_unknown_flag
@@ -517,7 +395,6 @@ t "migrate happy path still merges and links"            test_migrate_happy_path
 t "reindex fails when the index pass no-ops"             test_reindex_fails_on_noop
 t "reindex fails when pre-existing sessions are lost"    test_reindex_fails_on_session_loss
 t "canary request failure is INCONCLUSIVE, not FAIL"     test_canary_request_failure_is_inconclusive
-t "check rejects a mistyped flag with usage(2)"          test_check_rejects_unknown_flag
 
 rm -rf "${TMPDIR:-/tmp}"/cs-test.*(N) "${TMPDIR:-/tmp}"/cs-test-headroom.*(N)
 print -r -- "----"
