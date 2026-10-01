@@ -18,7 +18,9 @@ collect target window ids
 
 The main worktree and the worktree that launched the popup are never removable.
 Declining dirty-work confirmation removes only clean selections. A worktree that
-cannot be snapshotted stays in place.
+cannot be snapshotted stays in place. A failed status probe is unknown state,
+not clean: reap skips a row `gwt list` reports with an `error`, and batch
+removal treats a probe failure on an existing directory as dirty.
 
 Collect window ids before moving directories: after a rename, a pane's cwd
 reports the new path and no longer matches the worktree being removed. Search
@@ -76,7 +78,7 @@ and can turn a single removal into a minute-long pause.
 `~/dev/gwt` owns merge styles, trunk choice, stale or truncated fetch state,
 and memo keys. `tests/test-worktree-core.sh` owns snapshots, recovery refs and
 their expiry, and parent cleanup. `tests/test-gwt-popup.py` drives reap end to
-end: gwt's tag, the confirmations, checkout and branch removal, and unmerged
-work left alone. Popup tests should also prove dirty-decline behavior,
-collect-before-move window cleanup, and that failed snapshots preserve the
-worktree.
+end: gwt's tag, the confirmations, checkout and branch removal, unmerged,
+locked, and unprobed work left alone, and the exact-name window fallback; its
+ctrl-x case proves a worktree that cannot be snapshotted stays. Popup tests
+should also prove dirty-decline behavior and collect-before-move window cleanup.

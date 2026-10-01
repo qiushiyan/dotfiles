@@ -75,8 +75,8 @@
 
 set -u
 
-# gwt owns creation and seeding. The shell support file owns listing,
-# merge checks, snapshots, and removal; this script owns the tmux/fzf UI.
+# gwt owns creation, seeding, listing, and verdicts; worktree-core.sh owns
+# snapshots and recovery refs; this script owns the tmux/fzf UI and removal flow.
 source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
 . "${BASH_SOURCE[0]%/*}/lib/tmux-common.sh"   # fzf_colors_from_palette
 
@@ -94,8 +94,9 @@ source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
 
 # One eligibility rule for the "· merged" tag and for ctrl-g, so the tag marks
 # exactly the reap set: merged into the trunk, and removable — not the main
-# worktree or the one you are in, clean, unlocked, and still on disk.
-WT_REAPABLE='def reapable: .merged == true and (.main or .current or .dirty or .locked or .prunable | not);'
+# worktree or the one you are in, clean, unlocked, and still on disk. A row
+# whose status probe failed (.error) is unknown state, so it is never reaped.
+WT_REAPABLE='def reapable: .merged == true and (.main or .current or .dirty or .locked or .prunable or .error | not);'
 
 probed_rows() {
   local json show=true
@@ -179,7 +180,7 @@ trash_dir_for() { printf '%s/.trash' "${1%/*}"; }
 #     @worktree_backup_days 0 keeps them forever.
 #   - Drop the shell's retired merge memos; gwt keeps its own (gwt-merged-v1).
 {
-  root="$(wt_worktree_root)" &&
+  root="$(gwt path)" &&
     tmux run-shell -b "find $(wt_shell_quote "$(trash_dir_for "$root")") -mindepth 1 -maxdepth 1 -mmin +2 -exec rm -rf {} + 2>/dev/null; true"
   days="$(tmux show-option -gqv @worktree_backup_days)"
   wt_prune_backups "${days:-30}"
@@ -349,14 +350,16 @@ delete_merged_branch() {
 # (declining drops the dirty ones from the batch and removes just the clean).
 # The main worktree and the worktree the popup runs in are never removed.
 batch_remove() {
-  local main entries="" path branch dirty n=0 ndirty=0 ans
+  local main entries="" path branch dirty st n=0 ndirty=0 ans
   main="$(wt_main_worktree)"
   while IFS=$'\t' read -r path branch; do
     [ -n "$path" ] || continue
     if [ "$path" = "$main" ];    then echo "skipping the main worktree ($branch)"; continue; fi
     if [ "$path" = "$cur_top" ]; then echo "skipping the worktree you're in ($branch)"; continue; fi
     dirty=0
-    [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ] && { dirty=1; ndirty=$((ndirty+1)); }
+    # A failed probe is unknown dirt, not clean: snapshot or keep, never discard.
+    if ! st="$(git -C "$path" status --porcelain 2>/dev/null)"; then [ -d "$path" ] && st=unknown; fi
+    [ -n "$st" ] && { dirty=1; ndirty=$((ndirty+1)); }
     entries="$entries$path"$'\t'"$branch"$'\t'"$dirty"$'\n'
     n=$((n+1))
   done <<< "$1"
@@ -385,7 +388,7 @@ batch_remove() {
   fi
 
   local wt_root trash batch i=0 removed=0 gone="" saved="" snap ref wins w
-  wt_root="$(wt_worktree_root)" || { sleep 2; return; }
+  wt_root="$(gwt path)" || { sleep 2; return; }
   batch="$(date +%s).$$"
   trash="$(trash_dir_for "$wt_root")/$batch"
   if ! mkdir -p "$trash"; then echo "cannot create $trash"; sleep 2; return; fi
@@ -411,11 +414,13 @@ batch_remove() {
       gone="$gone$branch"$'\n'
       # every session, not just this one — a window left pointing at a deleted
       # directory is broken wherever it lives. Name match stays as the fallback
-      # for a window whose pane has cd'd elsewhere.
+      # for a window whose pane has cd'd elsewhere — exact on both parts (=),
+      # since a bare target also matches a name prefix: removing reap-me would
+      # kill reap-me-too's window.
       while IFS= read -r w; do
         [ -n "$w" ] && tmux kill-window -t "$w" 2>/dev/null
       done <<< "$wins"
-      tmux kill-window -t "$session:$(win_name "$branch")" 2>/dev/null || true
+      tmux kill-window -t "=$session:=$(win_name "$branch")" 2>/dev/null || true
     else
       echo "could not move $branch ($path) — skipped"
     fi
