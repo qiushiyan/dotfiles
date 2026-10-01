@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/block-dangerous-git.sh"
+            "command": "~/.claude/hooks/block-dangerous-git.py"
           },
           {
             "type": "command",

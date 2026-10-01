@@ -48,7 +48,7 @@ Each suite owns one boundary:
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree, over the packages `make -s list` names |
 | bypass guard | dormant hook logic through synthetic PreToolUse payloads |
-| dangerous-git hook | force/delete/mirror pushes and work-destroying commands refused, the `branch -D` gate and its per-command bypass, ordinary pushes and inert text passed, through synthetic PreToolUse payloads |
+| dangerous-git hook | force and mirror pushes and work-destroying commands refused in any argument order, force-with-lease and remote deletes passed, the `branch -D` gate and its per-command bypass, quoted, heredoc and comment text inert, through synthetic PreToolUse payloads |
 | rm guard | a recursive rm of a protected path is refused in every spelling (trailing slash, `..`, symlink, literal `~`, /var→/private/var) and every other call passes through unchanged; probes see only a logging stub `rm` |
 | account launchers | which x-*/cx-* names exist and which account each hands headroom (unique local part only, never the primary's or a utility's name, ambiguity drops the alias, `.lock` skipped); stub headroom, throwaway `$HOME` |
 | skill sync | invocation overrides, refreshed cloud exclusions, runtime metadata recovery, metadata preservation, byte-exact document copies, validation before writes, and symlink destinations; every case runs a copied script with a temporary home, manifests, and sentinel checkout, so scope regressions stay in the sandbox |
