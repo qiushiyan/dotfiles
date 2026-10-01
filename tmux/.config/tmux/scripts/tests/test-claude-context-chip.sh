@@ -177,6 +177,11 @@ border() {
         | sed 's/#\[[^]]*\]//g'
 }
 
+# The border with its styles left in, palette already expanded to hex — what
+# the severity colours are asserted against.
+styled() { T display-message -p -t "$PANE" "$(T show -gv pane-border-format)"; }
+has()    { case "$2" in *"$3"*) ok "$1" ;; *) no "$1" "no [$3] in [$2]" ;; esac; }
+
 ok()   { PASS=$((PASS+1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; }
 no()   { FAIL=$((FAIL+1)); FAILED="$FAILED $2"; printf '  \033[31mFAIL\033[0m %s\n       %s\n' "$1" "$2"; }
 check(){ [ "$2" = "$3" ] && ok "$1" || no "$1" "expected [$3] got [$2]"; }
@@ -1056,9 +1061,38 @@ c30() {
     check "C30 percentage not corrupted" "$(opt @claude_ctx)" "50"
 }
 
+# ---------------------------------------------------------------------------
+# C31 — colour is the only severity signal the quota numbers have, and
+# border() strips it, so a ramp that broke would pass every other case. Calm
+# 5h/7d wear the quiet accent — a step above the muted fields, never the
+# alarm colours — and each number moves up the ramp on its OWN value. The
+# model-scoped weekly stays muted while calm: it is the demoted field.
+# ---------------------------------------------------------------------------
+c31() {
+    fresh || return
+    local lane=tone@example.test accent muted yellow red
+    accent=$(T show -gv @thm_sapphire); muted=$(T show -gv @thm_overlay_1)
+    yellow=$(T show -gv @thm_yellow);  red=$(T show -gv @thm_red)
+    check "C31 (premise) the palette is loaded and the accent is its own colour" \
+        "$([ -n "$accent" ] && [ "$accent" != "$muted" ] && [ "$accent" != "$yellow" ] &&
+           [ "$accent" != "$red" ] && echo distinct)" "distinct"
+    quota "$lane" 10 15 Fable 10 3600
+    pub sid-A claude-fable-5-1 220000 "$lane" 12 49 high
+    has "C31 a calm 5-hour wears the accent"  "$(styled)" "#[fg=$accent] 5h:12"
+    has "C31 a calm 7-day wears the accent"   "$(styled)" "#[fg=$accent] 7d:49"
+    has "C31 a calm scoped weekly stays muted" "$(styled)" "#[fg=$muted] Fable:15"
+    has "C31 the account stays muted"         "$(styled)" "#[fg=$muted] tone "
+    quota "$lane" 10 90 Fable 10 3600
+    pub sid-A claude-fable-5-1 220000 "$lane" 50 90 high
+    has "C31 50 turns one number yellow"      "$(styled)" "#[fg=$yellow] 5h:50"
+    has "C31 90 turns its neighbour red"      "$(styled)" "#[fg=$red] 7d:90"
+    has "C31 an urgent scoped weekly is red"  "$(styled)" "#[fg=$red] Fable:90"
+    rm -rf "$SANDBOX_HOME/.cache"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

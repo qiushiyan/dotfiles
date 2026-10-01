@@ -110,8 +110,11 @@ always       → context remains
 A half-split of the usual client is about 100 columns, so the 140 gate is what
 keeps the model-scoped weekly to full-width panes.
 
-Each quota value earns its own colour: muted below 50, yellow from 50, red from
-90. The context percentage follows the same attention scale.
+Each quota value earns its own colour: calm below 50, yellow from 50, red from
+90. Calm is a quiet accent (`@thm_sapphire`) for the 5-hour and 7-day figures,
+so the numbers worth a glance stand a step above the muted account and model
+without competing with the context percentage, and muted for the model-scoped
+weekly. The context percentage follows the same attention scale from green.
 
 ## Lifecycle
 
