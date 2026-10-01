@@ -3,8 +3,11 @@
 # non-empty CLAUDE.md into $HOME. `claude/.claude/CLAUDE.md` stows to
 # ~/.claude/CLAUDE.md, the global memory prepended to every request in every
 # project, and any <pkg>/CLAUDE.md stows to ~/CLAUDE.md with the same reach —
-# unless the package's .stow-local-ignore excludes it (tabtype/ does). Reads
-# the working tree only; nothing is stowed, sourced, or written.
+# unless the package's .stow-local-ignore excludes it (tabtype/ does). The
+# same exclusions keep repo-only directories and entry points out of HOME:
+# the Makefile's package list and scripts/.stow-local-ignore. Reads the
+# working tree; `make list` and a `stow -n` dry run work in scratch
+# directories, and nothing is stowed or written outside them.
 #
 #   zsh ~/.config/zsh/tests/stow-reach.test.zsh
 #
@@ -88,9 +91,43 @@ case_tabtype_docs_stay_repo_local() {
   return 0
 }
 
+# The Makefile's package list leaves out the top-level directories that are not
+# packages, whether or not this checkout has them: docs/ and references/ are
+# repo-only reading, node_modules/ is the root package.json's install, and
+# vpn-private/ is never stowed. Asked of the real Makefile in a scratch
+# directory holding all four beside one real package.
+case_list_skips_non_packages() {
+  local tmp out rc=0
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/sr-list.XXXXXX") || return 1
+  mkdir -p "$tmp"/{docs,references,node_modules,vpn-private,zsh}
+  out=$(make -s -f "$DOT/Makefile" -C "$tmp" list 2>&1)
+  [[ "$out" == "zsh/" ]] || { print "make -s list in a tree of non-packages and zsh/ said: ${(qqq)out}"; rc=1 }
+  [[ -n "$tmp" && -d "$tmp" ]] && rm -rf -- "$tmp"
+  return $rc
+}
+
+# scripts/ holds repo-only entry points run as ./scripts/<name>; its
+# .stow-local-ignore keeps them out of HOME. Asked of stow itself, as a dry run
+# into a scratch target, so a regex that stopped matching fails here too.
+case_scripts_entry_points_stay_repo_local() {
+  (( $+commands[stow] )) || { print "stow is not installed"; return 1 }
+  local tmp plan rc=0
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/sr-stow.XXXXXX") || return 1
+  plan=$(stow -n -v -d "$DOT" -t "$tmp" scripts 2>&1)
+  [[ "$plan" == *"LINK: .local "* ]] || { print "stow planned no link for scripts/.local (nothing exercised): $plan"; rc=1 }
+  local f
+  for f in bootstrap.sh list-secrets.sh; do
+    [[ "$plan" == *"LINK: $f "* ]] && { print "stow would link scripts/$f into HOME"; rc=1 }
+  done
+  [[ -n "$tmp" && -d "$tmp" ]] && rm -rf -- "$tmp"
+  return $rc
+}
+
 t "claude/.claude/CLAUDE.md is empty"                      case_global_memory_empty
 t "no <pkg>/CLAUDE.md stows to ~/CLAUDE.md"                case_no_package_claude_md_reaches_home
 t "tabtype package docs stay out of HOME"                  case_tabtype_docs_stay_repo_local
+t "make list names no non-package directory"              case_list_skips_non_packages
+t "scripts entry points stay out of HOME"                  case_scripts_entry_points_stay_repo_local
 
 print -r -- "stow-reach.test: $PASS passed, $FAIL failed"
 (( FAIL == 0 ))
