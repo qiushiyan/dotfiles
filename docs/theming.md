@@ -29,7 +29,7 @@ table.
 
 | Consumer | reads the name via | palette lives in |
 |---|---|---|
-| zsh `ls`/completion colors | `case "$TERMINAL_THEME"` | `zsh/.config/zsh/theme.zsh` |
+| zsh `ls`/completion colors | `$TERMINAL_THEME` → a `_THEME_SPEC` row | `zsh/.config/zsh/theme.zsh` |
 | oh-my-posh prompt | palette `template` on `$TERMINAL_THEME` | `ohmyposh/.config/ohmyposh/zen.omp.json` |
 | Claude Code statusline | reads the file each render | `claude/.claude/commands/statusline-command.sh` |
 | tmux | reads the file when the config loads | `tmux/.config/tmux/tmux.conf` + `tmux/.config/tmux/themes/<theme>_tmux.conf` |

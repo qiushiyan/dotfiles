@@ -4,8 +4,7 @@
 #
 # Local mechanics: DISABLE_LS_COLORS=true makes oh-my-zsh leave LSCOLORS/LS_COLORS
 # to us (so we own the `ls` alias here too). The codes index the terminal's
-# 16-color palette (set by Ghostty's theme); the per-theme arms differ only to
-# tune bold-vs-plain for the background.
+# 16-color palette (set by Ghostty's theme), so one row per theme is enough.
 
 # The state file is the single source of truth — read it unconditionally so an
 # inherited value can never win. This matters inside tmux: the server captures
@@ -25,8 +24,34 @@
 
 export DISABLE_LS_COLORS=true
 
+# Theme name → "<bg> <suggestion fg> [<dir LSCOLORS letter> <dir LS_COLORS>]".
+# bg (dark|light) sets the rest: directories bold bright cyan on dark (G,
+# 1;36) and plain blue on light (e, 34), and delta's and difftastic's mode. A
+# row overrides the directory pair only when its palette needs it. The
+# suggestion fg is zsh-autosuggestions' color: ANSI 8 (the theme's bright
+# black) where it reads on the background, else the fixed mid-gray 242
+# (#6c6c6c), which no theme remaps. Every theme-set name needs a row.
+typeset -gA _THEME_SPEC=(
+    gruber_darker        'dark 8'         # charcoal; #808080 replaces Zed's near-black slot 8 (4.50:1)
+    catppuccin_mocha     'dark 8'         # oh-my-zsh's own defaults, owned here explicitly
+    tailwind_light       'light 242'      # white #ffffff
+    tokyo_night_moon     'dark 8'         # #222436
+    gruvbox_dark         'dark 8'         # #282828
+    vitesse_light_soft   'light 242'      # cream #f1f0e9; its slot 8 #aaaaaa is too faint
+    night_owl            'dark 8'         # navy #011627; slot 8 #575656, dim but legible
+    orng_light           'light 242'      # peach #fff7f1, dir = string blue #0062d1; slot 8 #8a8a8a borderline
+    forest_night         'dark 8'         # slate #1a2125; slot 8 is the palette's #6b7280, chosen for this
+    waffle_cat           'dark 8 E 1;34'  # syrup; ANSI blue is honey, so bold dirs stay warm; oat slot 8 5.03:1
+    vellum               'light 242'      # white, dir = blue-700 #1447e6; slot 8 #737373 (4.7:1), 242 matches
+    token_meridian_light 'light 8'        # Meridian paper; slot 8 is the upstream comment ink
+    token_ultra_dark     'dark 8'         # ultra charcoal; slot 8 is upstream fg3 (4.3:1)
+    raindrop             'dark 8'         # blue frame #152435; slot 8 is the comment slate (3.82:1)
+)
+
 _theme_apply() {
-    local _t
+    emulate -L zsh
+    local _t _bg _bsd _gnu
+    local -a _spec
     # builtin read, not $(tr ...): this also runs per prompt, so no fork.
     if [[ -r "$HOME/.config/terminal-theme" ]] && read -r _t < "$HOME/.config/terminal-theme"; then
         TERMINAL_THEME=${_t//[[:space:]]/}
@@ -34,160 +59,18 @@ _theme_apply() {
     : "${TERMINAL_THEME:=gruber_darker}"
     export TERMINAL_THEME
 
-case "$TERMINAL_THEME" in
-    gruber_darker)
-        # Gruber charcoal: bold cyan directories; readable source gray suggestions.
-        export LSCOLORS='Gxfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # #808080 replaces Zed's near-black ANSI slot 8, for 4.50:1 contrast.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    catppuccin_mocha)
-        # Dark bg: bold/bright dir for emphasis. Matches oh-my-zsh's
-        # built-in default, kept here so we own the value explicitly.
-        export LSCOLORS='Gxfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # On the dark bg the plugin's default fg=8 already reads well; set it
-        # explicitly so the value is owned here alongside the light variant.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    tailwind_light)
-        # White bg (#ffffff), like the other light themes: non-bold dark hues. The
-        # LSCOLORS/LS_COLORS codes index the terminal's 16-color palette, which
-        # ghostty's tailwind-light-contrast theme supplies, so the light-theme
-        # strings carry over unchanged.
-        export LSCOLORS='exfxcxdxbxegedabagacad'
-        export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # Mid-gray (242 = #6c6c6c, not remapped by the theme) for the grayed
-        # inline suggestion — reads clearly on the white paper bg.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+light-mode'
-        export DFT_BACKGROUND='light'
-        ;;
-    tokyo_night_moon)
-        # Dark bg (#222436): bold/bright dir for emphasis, same as catppuccin_mocha.
-        export LSCOLORS='Gxfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # On the dark bg the plugin's default fg=8 reads well; set it explicitly
-        # so the value is owned here alongside the other arms.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    gruvbox_dark)
-        # Dark bg (#282828): bold/bright dir for emphasis, same as the other dark arms.
-        export LSCOLORS='Gxfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # Dark bg → the plugin default fg=8 reads well; set explicitly to own it.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    vitesse_light_soft)
-        # Soft cream bg (#f1f0e9), like the other light themes: non-bold dark hues. The
-        # codes index the 16-color palette ghostty's vitesse-light-soft theme
-        # supplies, so the light-theme strings carry over unchanged.
-        export LSCOLORS='exfxcxdxbxegedabagacad'
-        export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # fg=8 maps to vitesse's #aaaaaa — too faint on the cream bg; the fixed
-        # mid-gray (242 = #6c6c6c) reads clearly while staying muted.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+light-mode'
-        export DFT_BACKGROUND='light'
-        ;;
-    night_owl)
-        # Deep navy bg (#011627): bold/bright dir for emphasis, same as the other dark arms.
-        export LSCOLORS='Gxfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # fg=8 maps to Night Owl's #575656 — dim but legible on the navy bg; own it explicitly.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    orng_light)
-        # Peach paper bg (#fff7f1), like the other light themes: non-bold dark hues. The
-        # codes index the 16-color palette ghostty's orng-light theme supplies
-        # (dir = its string blue #0062d1), so the light-theme strings carry over.
-        export LSCOLORS='exfxcxdxbxegedabagacad'
-        export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # fg=8 maps to orng's #8a8a8a — borderline on the peach bg; the fixed
-        # mid-gray (242 = #6c6c6c) reads clearly while staying muted.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+light-mode'
-        export DFT_BACKGROUND='light'
-        ;;
-    forest_night)
-        # Blue-slate bg (#1a2125): bold/bright dir for emphasis, same as the other dark arms.
-        export LSCOLORS='Gxfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # fg=8 maps to the ghostty palette's #6b7280 (the theme's dark_foreground,
-        # chosen over the VS Code #4a5568 bright-black for exactly this) — legible on the slate.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    waffle_cat)
-        # Syrup bg; ANSI blue is honey, so bold directories stay warm.
-        export LSCOLORS='Exfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # Upstream oat #a58c82 is 5.03:1 on #292025; no bright-black substitution.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    vellum)
-        # White paper bg (#ffffff), like the other light themes: non-bold dark hues.
-        # The codes index the 16-color palette ghostty's vellum theme supplies
-        # (dir = Tailwind blue-700 #1447e6), so the light-theme strings carry over.
-        export LSCOLORS='exfxcxdxbxegedabagacad'
-        export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        # fg=8 is vellum's neutral-500 #737373 (4.7:1 on white); the fixed mid-gray
-        # 242 = #6c6c6c matches the other light arms and stays muted.
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
-        # delta (git pager) + difftastic follow the same light/dark choice.
-        export DELTA_FEATURES='+light-mode'
-        export DFT_BACKGROUND='light'
-        ;;
-    token_meridian_light)
-        # Meridian paper: non-bold ANSI blue directories, upstream comment ink suggestions.
-        export LSCOLORS='exfxcxdxbxegedabagacad'
-        export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        export DELTA_FEATURES='+light-mode'
-        export DFT_BACKGROUND='light'
-        ;;
-    token_ultra_dark)
-        # Ultra charcoal: bright cyan directories; upstream fg3 suggestions (4.3:1).
-        export LSCOLORS='Gxfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    raindrop)
-        # Blue frame (#152435); original comment slate in ANSI 8 is 3.82:1.
-        export LSCOLORS='Gxfxcxdxbxegedabagacad'
-        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-        export DELTA_FEATURES='+dark-mode'
-        export DFT_BACKGROUND='dark'
-        ;;
-    *)
+    _spec=(${=_THEME_SPEC[$TERMINAL_THEME]-})
+    if (( ! $#_spec )); then
         print -ru2 "theme.zsh: unknown TERMINAL_THEME '$TERMINAL_THEME'"
-        ;;
-esac
+        return
+    fi
+    _bg=$_spec[1] _bsd=G _gnu='1;36'
+    [[ $_bg == light ]] && _bsd=e _gnu=34
+    (( $#_spec > 2 )) && _bsd=$_spec[3] _gnu=$_spec[4]
+    export LSCOLORS="${_bsd}xfxcxdxbxegedabagacad"
+    export LS_COLORS="di=${_gnu}:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43"
+    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=$_spec[2]"
+    export DELTA_FEATURES="+$_bg-mode" DFT_BACKGROUND=$_bg
 }
 
 _theme_apply

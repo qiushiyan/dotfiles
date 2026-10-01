@@ -45,7 +45,7 @@ zsh/.config/zsh/
   toolchain.zsh    # shared CLI paths, pnpm globals, default Node via nvm
   aliases.zsh
   git.zsh          # git aliases, worktree helpers, the one git() wrapper
-  nav.zsh          # jumps and pulls: p/pp [--cd] (planlab checkout + handoff briefs), y, fcd
+  nav.zsh          # jumps and pulls: p/pp [--cd] (planlab checkout + handoff briefs), y
   utils.zsh        # loc, dotadd, cpwd, the mobile `agents` session, …
   theme.zsh        # the $TERMINAL_THEME switch
   cwd-guard.zsh    # deleted-cwd defenses: _cwd_guard at startup, zshreload (tests/ has its harness)
@@ -53,7 +53,7 @@ zsh/.config/zsh/
   claude-sessions.zsh  # shared session store: migration + drift check (tests/ has its harness)
   codex.zsh        # Codex accounts through headroom (cx, cx-<name>); plain `codex` stays the vendor default
   xcode.zsh
-  tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep, tmux-wait-for-text
+  tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep, pair-coding helpers
   cout.zsh        # execution boundaries for the cout recorder (~/dev/cout)
   proxy.zsh
   hosts/<machine>.zsh  # one machine's identity (§ Machines); outside the glob

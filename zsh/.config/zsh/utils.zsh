@@ -31,26 +31,16 @@ zed() {
 # Bypass with: command rm -rf <path>
 # --------------------------------------------------------------------
 rm() {
-  # Only intervene when -r or -R (recursive) is present
-  local has_recursive=false
-  local args=()
+  emulate -L zsh
+  # Only intervene when -r or -R (recursive) is present, alone or combined (-rf)
+  local arg resolved has_recursive=false
   for arg in "$@"; do
-    case "$arg" in
-      --)           args+=("$arg"); break ;;
-      -r|-R|--recursive) has_recursive=true; args+=("$arg") ;;
-      -*)
-        # Check combined short flags: -rf, -Rf, etc.
-        if [[ "$arg" =~ ^-[^-]*[rR] ]]; then
-          has_recursive=true
-        fi
-        args+=("$arg")
-        ;;
-      *)  args+=("$arg") ;;
-    esac
+    [[ "$arg" == -- ]] && break
+    [[ "$arg" == --recursive || "$arg" =~ ^-[^-]*[rR] ]] && has_recursive=true
   done
 
   if $has_recursive; then
-    local protected=(
+    local -a protected=(
       "$HOME"
       "/"
       "/System"
@@ -66,25 +56,19 @@ rm() {
       "$HOME/dotfiles"
       "$HOME/workspace"
     )
+    # :P is realpath(3) that tolerates missing trailing parts: it makes the
+    # path absolute and resolves symlinks, `..` and trailing slashes on both
+    # sides, so /var meets its own /private/var and a missing path is free.
+    protected=(${protected:P})
 
     for arg in "$@"; do
       [[ "$arg" == -* ]] && continue
-      # Resolve to absolute path, strip trailing slashes
-      local resolved="${arg/#\~/$HOME}"
-      [[ "$resolved" != /* ]] && resolved="$PWD/$resolved"
-      resolved="${resolved%/}"
-      # Resolve .. and symlinks
-      resolved="$(cd "$resolved" 2>/dev/null && pwd -P \
-        || python3 -c 'import os,sys; print(os.path.normpath(sys.argv[1]))' "$resolved" 2>/dev/null \
-        || echo "$resolved")"
-
-      for p in "${protected[@]}"; do
-        if [[ "$resolved" == "${p%/}" ]]; then
-          print -P "%F{red}Blocked:%f rm -r on protected path: $resolved" >&2
-          echo "Use 'command rm' to override if you really mean it." >&2
-          return 1
-        fi
-      done
+      resolved=${${arg/#\~/$HOME}:P}
+      if (( ${protected[(Ie)$resolved]} )); then
+        print -P "%F{red}Blocked:%f rm -r on protected path: $resolved" >&2
+        echo "Use 'command rm' to override if you really mean it." >&2
+        return 1
+      fi
     done
   fi
 

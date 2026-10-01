@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 One name in `~/.config/terminal-theme`; every terminal-side tool maps it to
 its own hand-tuned palette. Nine surfaces: three new files (Ghostty, tmux,
-Neovim) and six shared files that each gain an arm. Done when
+Neovim) and six shared files that each gain an arm or a row. Done when
 `theme-set <name>` reports every reload, the theme is live for the user to
 judge, and one commit holds exactly its files. A tool that does not pick the
 switch up → `docs/theming.md`.
@@ -73,14 +73,15 @@ built-in keeps its spaced name in theme-set (`theme = Rose Pine Dawn`).
 
 One script, one run; it stops before writing if any anchor is not exactly
 once in its file. The anchors are structural (the `*)` fallthroughs, each
-list's closing) and survive every port, so a port replaces the NAME line, the
-colors and the comments, nothing else. Light and dark differ in five places:
+list's or table's closing) and survive every port, so a port replaces the NAME
+line, the colors and the comments, nothing else. Light and dark differ in five
+places:
 
 | | dark | light |
 |---|---|---|
 | theme.lua `background` (`BG` in the script) | `"dark"` | `"light"` |
 | theme-set `bold-color` | warmer and brighter than fg — the bright yellow (`#FFB74D`) | deeper and more saturated than fg (orng `#c94d24`) |
-| zsh arm | `LSCOLORS='Gxfxcx…'`, `di=1;36`, `fg=8`, `+dark-mode` / `dark` | `LSCOLORS='exfxcx…'`, `di=34`, `fg=242`, `+light-mode` / `light` — copy `orng_light)` whole |
+| zsh row (`'<bg> <fg>'`) | `'dark 8'` | `'light 242'` — `'light 8'` only when slot 8 reads on the paper |
 | oh-my-posh `lavender` | the fg | the `pink` value |
 | tmux `session=` (the pill) | `@thm_green` | `@thm_surface_1` — the green is too dark for the ink icon |
 
@@ -102,17 +103,10 @@ assert s2 != s, "THEMES line"; p.write_text(s2); print("patched THEMES")
 patch("scripts/.local/bin/theme-set", "  esac\n}\n",
       f"    {NAME})     printf 'theme = {DASHED}\\nbold-color = #FFB74D\\n' ;;\n  esac\n}}\n")
 
-# zsh: the arm before the `*)` fallthrough
-patch("zsh/.config/zsh/theme.zsh", "    *)\n        print -ru2",
-      f"    {NAME})\n"
-      "        # Blue-slate bg (#1a2125): bold/bright dir for emphasis, same as the other dark arms.\n"
-      "        export LSCOLORS='Gxfxcxdxbxegedabagacad'\n"
-      "        export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'\n"
-      "        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'\n"
-      "        export DELTA_FEATURES='+dark-mode'\n"
-      "        export DFT_BACKGROUND='dark'\n"
-      "        ;;\n"
-      "    *)\n        print -ru2")
+# zsh: a row at the end of the _THEME_SPEC table; bg and the suggestion color decide the rest
+patch("zsh/.config/zsh/theme.zsh", "\n)\n\n_theme_apply() {",
+      f"\n    {NAME:<20} '{BG} 8'         # slate #1a2125; slot 8 is the palette's #6b7280, chosen for this\n"
+      ")\n\n_theme_apply() {")
 
 # Claude statusline: the arm before the `*)` fallthrough; decimal RGB from hex: printf '%d;%d;%d' 0x4E 0xCD 0xC4
 patch("claude/.claude/commands/statusline-command.sh", "    *)\n        echo \"statusline: unknown",

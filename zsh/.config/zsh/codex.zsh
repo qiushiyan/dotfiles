@@ -1,7 +1,9 @@
 # ~/.config/zsh/codex.zsh
 # Codex CLI — several subscriptions, launched through headroom.
 #
-# The Codex counterpart of claude.zsh, deliberately smaller. One state dir
+# The Codex counterpart of claude.zsh, deliberately smaller, and built on its
+# shared launch layer (_headroom_required, _account_launchers), which .zshenv's
+# glob sources first. One state dir
 # ("home") per extra subscription lives at ~/.codex-accounts/<email>; the
 # default ~/.codex is the primary. headroom's own files sit beside them:
 #
@@ -57,7 +59,7 @@ export HEADROOM_CODEX_LAUNCHER_FORMAT="cx-%s"
 # envoy's Codex voices would otherwise always run on ~/.codex — no Claude
 # session carries a CODEX_HOME to inherit — whatever the board says. See the
 # ENVOY_CLAUDE_CMD note in claude.zsh for why this is guarded.
-if (( $+commands[headroom] )); then
+if whence -p headroom >/dev/null; then
   export ENVOY_CODEX_CMD="headroom launch --vendor codex --"
 fi
 # Local parts that never get a short launcher alias: cx-<these> are utilities.
@@ -71,10 +73,7 @@ typeset -ga CODEX_CX_RESERVED=(account-add accounts acc)
 _codex_launch() {
   emulate -L zsh
   local sel="$1"; shift
-  if ! command -v headroom >/dev/null 2>&1; then
-    print -u2 "codex accounts: headroom not found (is ~/.local/bin on PATH?) — codex was not started"
-    return 127
-  fi
+  _headroom_required codex || return
   if [[ -n "$sel" ]]; then
     _codex_in_pane 6 headroom launch --vendor codex --account "$sel" -- "$@"
   else
@@ -101,31 +100,9 @@ cx-account-add() {
   _codex_gen_launchers
 }
 
-# cx-<email> always exists and is the guaranteed identity; a short
-# cx-<local-part> is added only when the local part is unique among accounts,
-# is not the primary's name and is not a utility, so a short name can never
-# launch the wrong account. Runs at every shell init: one glob, no subprocess.
+# One cx-<name> per account home; the naming rule is _account_launchers'
+# (claude.zsh).
 _codex_gen_launchers() {
-  emulate -L zsh
-  local d email name
-  local -A count   # local part → number of accounts claiming it
-  for d in "$CODEX_ACCOUNTS_ROOT"/*(/N); do
-    name="${${d:t}%%@*}"
-    count[$name]=$(( ${count[$name]:-0} + 1 ))
-  done
-  for d in "$CODEX_ACCOUNTS_ROOT"/*(/N); do
-    email="${d:t}" name="${email%%@*}"
-    functions[cx-$email]="_codex_launch ${(q)email} \"\$@\""
-    if [[ "$name" != "$email" && "$name" != "$CODEX_PRIMARY_NAME" ]] && (( ! ${CODEX_CX_RESERVED[(Ie)$name]} )); then
-      if (( count[$name] == 1 )); then
-        functions[cx-$name]="cx-${(q)email} \"\$@\""
-      else
-        # a newly added account made this local part ambiguous — drop the
-        # stale alias rather than let it point at either account
-        unfunction "cx-$name" 2>/dev/null || true
-      fi
-    fi
-  done
-  functions[cx-$CODEX_PRIMARY_NAME]="_codex_launch $CODEX_PRIMARY_NAME \"\$@\""
+  _account_launchers cx "$CODEX_ACCOUNTS_ROOT" "$CODEX_PRIMARY_NAME" _codex_launch "${CODEX_CX_RESERVED[@]}"
 }
 _codex_gen_launchers

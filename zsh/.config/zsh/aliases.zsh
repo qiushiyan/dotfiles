@@ -88,11 +88,8 @@ node-scripts() {
 }
 
 # --------------------------------------------------------------------
-# Dev Scripts & SSH
+# SSH
 # --------------------------------------------------------------------
-alias devitell="~/.config/scripts/dev-itell.sh"
-alias devmanager="~/.config/scripts/dev-marswave-manager.sh"
-alias devengine="~/.config/scripts/dev-marswave-engine.sh"
 alias sshstaging="ssh marswave.staging"
 alias sshprod="ssh marswave.production"
 alias sshmini="ssh mini"

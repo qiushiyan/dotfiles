@@ -4,7 +4,9 @@
 # $HOME and asserts the three things docs/theming.md promises — startup reads
 # the state file (not an inherited env value), the _theme_sync precmd
 # re-applies when the file changes under a running shell, and the hook is
-# registered ahead of any prompt renderer that comes later.
+# registered ahead of any prompt renderer that comes later — plus that every
+# name theme-set accepts has a theme.zsh entry (an unknown name prints an
+# error from every shell, agents' included).
 #
 #   zsh ~/.config/zsh/tests/theme-sync.test.zsh
 #
@@ -103,11 +105,28 @@ print -r -- night_owl >"$HOME/.config/terminal-theme"
 local f; for f in $precmd_functions; do $f; done' | tail -1)" "value seen by a later precmd"
 }
 
+# The cross-file invariant: theme-set's own usage line lists the names it
+# accepts, and each must apply cleanly at startup, with no stderr.
+test_every_theme_set_name_applies() {
+  sandbox gruber_darker
+  local usage n out bad=0
+  usage=$(HOME="$H" bash "$DOT/scripts/.local/bin/theme-set")
+  local -a names=(${(s:|:)${${(M)${(f)usage}:#usage:*}#*<}%>})
+  (( $#names > 1 )) || { print -r -- "no names parsed from theme-set's usage: $usage"; return 1 }
+  for n in $names; do
+    print -r -- "$n" >| "$H/.config/terminal-theme"
+    out=$(env -u DFT_BACKGROUND HOME="$H" command zsh -f -c "source $MOD; print -r -- \$DFT_BACKGROUND" 2>&1)
+    [[ "$out" == (dark|light) ]] || { print -r -- "$n: ${(qqq)out}"; bad=1 }
+  done
+  return bad
+}
+
 t "throwaway \$HOME holds (else everything below is void)" test_sandbox_holds
 t "the state file beats an inherited TERMINAL_THEME"        test_file_beats_inherited_env
 t "_theme_sync is registered in interactive shells only"    test_hook_registered_interactive_only
 t "a file change is re-applied at the next precmd"          test_sync_reapplies_on_change
 t "_theme_sync runs ahead of later-registered precmds"      test_sync_runs_before_later_hooks
+t "every theme-set name applies without error"             test_every_theme_set_name_applies
 
 rm -rf "${TMPDIR:-/tmp}"/ts-test.*(N)
 print -r -- "----"
