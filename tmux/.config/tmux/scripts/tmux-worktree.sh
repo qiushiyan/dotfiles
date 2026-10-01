@@ -254,9 +254,6 @@ switch_worktree() {
                           | awk -F'\t' -v n="$win" '$2 == n {print $1; exit}')"
   [ -n "$wid" ] || wid="$(tmux new-window -t "$session" -n "$win" -c "$path" -P -F '#{window_id}')"
   tmux select-window -t "$wid" 2>/dev/null || true
-  # landing on a worktree window clears its agent-done dot (by window id, so a
-  # duplicate name can't send it to the wrong window).
-  tmux set-option -w -t "$wid" @agent_done 0 2>/dev/null || true
 }
 
 # returns 0 on success (worktree created, window opened → caller exits popup);
