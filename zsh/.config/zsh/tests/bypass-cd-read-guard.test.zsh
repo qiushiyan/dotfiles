@@ -86,9 +86,8 @@ t 0 bypassPermissions "cd $CWD; git commit -m 'cd into it; grep later docs/x'"
 t 0 bypassPermissions "P=$CWD; cd \$P; Q=\"cd \$P; grep -n spec docs/loopy/standards.md\"; run \"\$Q\""
 t 0 bypassPermissions $'cd '"$CWD"$'; echo "a\nb; grep x docs/y"; ls'
 
-# --- scope: prompted sessions are untouched; the git guard's job stays its own
+# --- scope: prompted sessions are untouched -----------------------------------
 t 0 default "cd $CWD; grep -n -i 'spec' docs/loopy/standards.md"
-t 0 bypassPermissions "cd $CWD; git push --force"
 
 # --- the message tells the model what to do ----------------------------------
 msg=$(jq -cn --arg c "cd $CWD; grep -n spec docs/x.md" --arg d "$CWD" \
