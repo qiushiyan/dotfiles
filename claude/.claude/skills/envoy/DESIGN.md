@@ -4,7 +4,7 @@ The skill bodies say what to do; this file records **why** — the assumptions
 and rejected alternatives a future redesign needs but can't see in the skills
 themselves. Deliberately unlinked from any SKILL.md: runtime agents never
 need it. It describes current state only; the history behind it lives in the
-engine's evidence log (`~/dev/envoy/DESIGN.md`) and the skills' own
+engine's evidence log (`~/dev/envoy/EVIDENCE.md`) and the skills' own
 (`../review/EVIDENCE.md`, shared by review and consult).
 
 ## The governing lesson
@@ -198,8 +198,8 @@ duet instead. Don't grow the engine.
 
 ## The improvement loop
 
-Real usage is the test bench: the engine repo's `usage-lab` skill mines the
-central job store and session transcripts for friction — workarounds,
+Real usage is the test bench: `/improve-tool`, run against the engine, mines
+the central job store and session transcripts for friction — workarounds,
 hand-rolled repetition, drift between skills and installed binary,
 unexercised margins — and routes each finding to an engine change, a skill
 change, or a recorded lesson. Findings land here as current state; their
