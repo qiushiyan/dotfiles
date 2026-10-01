@@ -118,7 +118,7 @@ hi("PmenuSbar", { bg = c.bg_float })
 hi("PmenuThumb", { bg = c.fg_gutter })
 
 -- Statusline
-hi("StatusLine", { fg = c.fg_dim, bg = c.bg_float })
+hi("StatusLine", { fg = c.fg_dim, bg = "#e4eae0" }) -- pale sage band, an intentional accent on the cream
 hi("StatusLineNC", { fg = c.fg_dark, bg = c.bg_sidebar })
 
 -- Tabline

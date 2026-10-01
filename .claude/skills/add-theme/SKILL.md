@@ -58,7 +58,8 @@ built-in keeps its spaced name in theme-set (`theme = Rose Pine Dawn`).
   - hand-rolled `nvim/.config/nvim/colors/<name-dashed>.lua` — copy the
     exemplar group for group and map the source's token colors onto it
     (keywords, functions, strings, properties, types, constants, comments;
-    diff and diagnostic tints blended onto the background).
+    diff and diagnostic tints blended onto the background). The `StatusLine`
+    bg is the lualine band, so make it one step off the background.
   - a plugin — `grep -n '<owner/repo>' nvim/.config/nvim/lua/plugins/theme.lua`
     first: a spec may already exist (`rose-pine/neovim` does, disabled); edit
     that one (drop its `enabled = false`) rather than adding a second, since
@@ -67,7 +68,9 @@ built-in keeps its spaced name in theme-set (`theme = Rose Pine Dawn`).
     `name = "<name>"` as the catppuccin entry has, so the lock file keys it
     predictably. Install with `nvim --headless "+Lazy! install" +qa`; the
     colorscheme name is what the plugin registers: `ls
-    ~/.local/share/nvim/lazy/<name>/colors`.
+    ~/.local/share/nvim/lazy/<name>/colors`. The lualine band is the plugin's
+    `StatusLine` bg; if that barely differs from the editor background, give
+    the colorscheme a `band_override` entry in `lua/plugins/ui.lua`.
 
 ## 4. Patch the six shared files
 
@@ -88,7 +91,6 @@ colors and the comments, nothing else. Light and dark differ in five places:
 cd ~/dotfiles && python3 - <<'PY'
 import pathlib, re, sys
 NAME, DASHED, LABEL, KEY, BG = "forest_night", "forest-night", "forest night", "F", "dark"   # KEY: a letter no menu row uses yet
-LUA_PAT = DASHED.replace("-", "%-")
 
 def patch(path, old, new):
     p = pathlib.Path(path); s = p.read_text()
@@ -145,20 +147,9 @@ assert f' {KEY} "' not in "\n".join(lines[i-12:i+1]), f"menu key {KEY} is taken"
 lines[i] += " \\"; lines.insert(i + 1, f'\t"{LABEL}" {KEY} "run-shell \'~/.local/bin/theme-set {NAME}\'"')
 p.write_text("\n".join(lines)); print("patched menu row")
 
-# Neovim: the name → colorscheme map, and a palette branch for the lualine bar
+# Neovim: the name → colorscheme map
 patch("nvim/.config/nvim/lua/config/theme.lua", "\n}\n\nM.name = resolve()",
       f'\n  {NAME} = {{ colorscheme = "{DASHED}", background = "{BG}" }},\n}}\n\nM.name = resolve()')
-patch("nvim/.config/nvim/lua/config/palette.lua", '  elseif scheme:match("^gruvbox") then',
-      f'  elseif scheme:match("^{LUA_PAT}") then\n'
-      '    return {\n'
-      '      base = "#1a2125", mantle = "#14191c", crust = "#0d1113",\n'
-      '      surface0 = "#222a30", surface1 = "#3a4a55", surface2 = "#4a5568",\n'
-      '      text = "#c9d1d9", subtext0 = "#6b7280", subtext1 = "#a8b3bd", overlay0 = "#4a5568", overlay1 = "#6b7280",\n'
-      '      blue = "#66D9EF", green = "#8FBC8F", red = "#c78a7a", yellow = "#F39C12",\n'
-      '      mauve = "#9B59B6", teal = "#4ECDC4", pink = "#9B59B6", sky = "#4ECDC4",\n'
-      '      bar_bg = "#222a30", -- one step up from base, so the statusline reads as a band\n'
-      '    }\n'
-      '  elseif scheme:match("^gruvbox") then')
 PY
 ```
 
@@ -169,9 +160,9 @@ cd ~/dotfiles; NAME=forest_night; DASHED=forest-night
 bash -n scripts/.local/bin/theme-set && bash -n claude/.claude/commands/statusline-command.sh \
   && zsh -n zsh/.config/zsh/theme.zsh && jq -e ".palettes.list.$NAME" ohmyposh/.config/ohmyposh/zen.omp.json >/dev/null && echo syntax-ok
 # hand-rolled scheme: --clean sees colors/; a plugin scheme needs the full config so lazy is on the rtp
-nvim --clean --headless "+set rtp+=$HOME/.config/nvim" "+colorscheme $DASHED" \
-  "+lua print(vim.g.colors_name, require('config.palette').get_palette().base)" +q     # → forest-night #1a2125
-nvim --headless "+colorscheme $DASHED" "+lua print(vim.g.colors_name, require('config.palette').get_palette().base)" +qa
+BAND="+lua local h = vim.api.nvim_get_hl(0, { name = 'StatusLine', link = false }) print(vim.g.colors_name, ('#%06x'):format(h.reverse and h.fg or h.bg))"
+nvim --clean --headless "+set rtp+=$HOME/.config/nvim" "+colorscheme $DASHED" "$BAND" +q   # → forest-night #222a30, the band
+nvim --headless "+colorscheme $DASHED" "$BAND" +qa
 oh-my-posh cache clear
 theme-set $NAME               # → "tmux:    reloaded (+env)"; "source-file failed" points at the tmux.conf edit
 printf '{"model":{"id":"claude-fable-5-1"},"workspace":{"current_dir":"/tmp"},"session_id":"x","context_window":{"context_window_size":200000,"total_input_tokens":1000,"total_output_tokens":0}}' \
@@ -185,7 +176,7 @@ usually holds unrelated edits:
 ```bash
 git add scripts/.local/bin/theme-set zsh/.config/zsh/theme.zsh claude/.claude/commands/statusline-command.sh \
   ohmyposh/.config/ohmyposh/zen.omp.json tmux/.config/tmux/tmux.conf tmux/.config/tmux/themes/${NAME}_tmux.conf \
-  nvim/.config/nvim/lua/config/theme.lua nvim/.config/nvim/lua/config/palette.lua \
+  nvim/.config/nvim/lua/config/theme.lua \
   nvim/.config/nvim/colors/$DASHED.lua ghostty/.config/ghostty/themes/$DASHED
 # plugin scheme: lua/plugins/theme.lua instead of colors/, and only the theme's lock hunk:
 #   git add -p nvim/.config/nvim/lazy-lock.json; a Ghostty built-in adds no themes/ file

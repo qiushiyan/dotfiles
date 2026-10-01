@@ -108,7 +108,7 @@ hi("PmenuSbar", { bg = c.bg_float })
 hi("PmenuThumb", { bg = c.fg_gutter })
 
 -- Statusline
-hi("StatusLine", { fg = c.fg_dim, bg = c.bg_highlight })
+hi("StatusLine", { fg = c.fg_dim, bg = c.bg_float }) -- the Zed status/tab bar surface
 hi("StatusLineNC", { fg = c.fg_dark, bg = c.bg_float })
 
 -- Tabline

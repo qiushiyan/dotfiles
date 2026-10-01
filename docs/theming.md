@@ -152,4 +152,10 @@ still supply the surrounding UI. See [Codex CLI customization](https://learn.cha
   `ColorSchemePre` autoloads the matching plugin on `:colorscheme`.
 - The file watcher lives in `lua/config/autocmds.lua` (polls, not `fs_event` —
   the latter goes stale on macOS atomic renames). The name→colorscheme map is in
-  `lua/config/theme.lua`; `lua/config/palette.lua` feeds the custom statusline.
+  `lua/config/theme.lua`.
+- The lualine band takes its colours from the active colorscheme:
+  `StatusLine` bg, `Normal` fg, and `Comment` fg for secondary text. A
+  hand-rolled scheme sets its band on its `StatusLine` line; a plugin scheme
+  whose `StatusLine` reads as no band gets an entry in `lua/plugins/ui.lua`'s
+  `band_override`. Lualine re-reads the colours on `ColorScheme`, so the band
+  follows a live switch.
