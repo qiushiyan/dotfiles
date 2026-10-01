@@ -3,7 +3,6 @@
 emulate -L zsh
 setopt err_exit pipe_fail
 module="${0:A:h:h}/git.zsh"
-core="${0:A:h:h:h:h:h}/tmux/.config/tmux/scripts/worktree-core.sh"
 binary="$(whence -p gwt)" || { print -u2 'gwt.test: install gwt on PATH first'; exit 1; }
 sandbox="$(mktemp -d)"; sandbox="${sandbox:A}"
 trap 'cd /; command rm -rf "$sandbox"' EXIT
@@ -41,13 +40,9 @@ command git commit --allow-empty -qm initial
 command git worktree add -qb topic "$sandbox/topic"
 cd "$sandbox/topic"
 command git commit --allow-empty -qm topic
-expected="$(command git rev-parse HEAD)"
 gwtcd --non-interactive feat/helper
 [[ "$PWD" == "$sandbox/custom trees/repo/feat/helper" ]]
 cd "$sandbox/topic"
-path_from_shim="$(bash "$core" create feat/shim)"
-[[ "$path_from_shim" == "$sandbox/custom trees/repo/feat/shim" ]]
-[[ "$(command git -C "$path_from_shim" rev-parse HEAD)" == "$expected" ]]
 # A refused creation must fail and leave the parent shell in its original directory.
 rc=0; gwtcd --non-interactive feat/helper 2>/dev/null || rc=$?
 [[ $rc == 1 && "$PWD" == "$sandbox/topic" ]]
@@ -72,4 +67,4 @@ words=(gwt ''); CURRENT=2
 [[ "$(_gwt)" == *'--cd['* && "$(_gwt)" == *'--no-clipboard['* ]]
 words=(gwtcd ''); CURRENT=2
 [[ "$(_gwt)" != *'--cd['* ]]
-print 'PASS: completion and subcommand list, configured placement, failure cwd, compatibility shim, and gwt --cd'
+print 'PASS: completion and subcommand list, configured placement, failure cwd, and gwt --cd'

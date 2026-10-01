@@ -1,84 +1,53 @@
-# Worktree removal and recovery
+# Worktree removal — the popup's part
 
-Satellite of `worktree.md`. Read this when changing merged detection, reap,
-batch removal, branch deletion, trash, or recovery refs.
+Satellite of `worktree.md`. Read this when changing ctrl-x, reap, branch
+prompts, or how removal treats windows. `gwt remove` is the engine: it owns
+refusals, the merged verdict, recovery refs, their expiry and the trash
+(`~/dev/gwt/README.md` § Removal). The popup owns the prompts and the windows.
 
-## Safety pipeline
+## Flow
 
 ```text
-collect target window ids
-  → confirm batch + dirty state
-  → snapshot dirty work and unmerged branch tips
-  → move worktrees to batch trash
-  → git worktree prune
-  → kill collected windows
-  → delete branches by verified merged verdict
-  → background-sweep this batch
+gwt list --json            → dirty flags, main/current skipped, reap set
+confirm batch, then dirty  → declining drops the dirty selections
+collect window ids         → per path, every session
+gwt remove --keep-branch [--discard-dirty] <paths>
+kill collected windows     → plus the exact-name fallback
+gwt merged <branches>      → one [Y/n] for merged, one force [y/N] for the rest
+gwt remove <merged>  /  gwt remove --force <unmerged>
 ```
 
-The main worktree and the worktree that launched the popup are never removable.
-Declining dirty-work confirmation removes only clean selections. A worktree that
-cannot be snapshotted stays in place. A failed status probe is unknown state,
-not clean: reap skips a row `gwt list` reports with an `error`, and batch
-removal treats a probe failure on an existing directory as dirty.
+The `· merged` tag and ctrl-g select the same rows, `.removable and .merged`:
+`removable` is the rule `gwt remove` applies, so the tag marks exactly the reap
+set. An unreadable status is dirty in gwt's listing, so it is never tagged or
+reaped, and ctrl-x keeps it when gwt cannot snapshot it. Print every refusal
+and every recovery ref gwt reports; the ref is the only way back.
 
-Collect window ids before moving directories: after a rename, a pane's cwd
-reports the new path and no longer matches the worktree being removed. Search
-all sessions because a deleted cwd is broken wherever its window lives.
+## Windows
 
-## Merged means content reached the trunk
-
-`gwt` owns the verdict (`~/dev/gwt/README.md` § Listing and merge verdicts):
-the popup's `· merged` tag and reap read `gwt list --json`, and branch cleanup
-after a removal reads `gwt merged --json <branches>`. One trunk, the remote
-default branch, serves all of them and `gwt remove`, so they cannot disagree.
-Squash and rebase merges count; that README section owns how each merge style
-is detected.
-
-`git branch -d` sees only graph ancestry, so a branch proven squash-merged may
-require `-D`; this is safe only after gwt's independent patch verdict. A branch
-gwt cannot judge counts as unmerged here and is deleted only behind the force
-prompt, with its tip kept as a recovery ref. Manual application with edits and
-merges into a non-default branch remain unproven and require that path.
+Collect window ids before gwt moves the checkouts: after a rename, a pane's
+cwd reports the new path and no longer matches. Search all sessions, because
+a deleted cwd is broken wherever its window lives. The name fallback matches
+exactly (`=session:=name`), since a bare tmux target also matches a prefix.
 
 ## Freshness
 
-A correct algorithm against a stale trunk is still wrong. The popup starts
-`gwt trunk --fetch` in the background at launch (a bounded fetch, only when the
-trunk is older than gwt's `fetch.max_age`) and waits for it only when reap or
-branch cleanup needs a verdict. A failed fetch is reported instead of silently
-grading against old state. gwt memoizes verdicts per branch and trunk commit.
+The popup starts `gwt trunk --fetch` in the background at launch and waits for
+it only when reap or the branch prompts need a verdict; a failed fetch is
+announced, not swallowed. A branch gwt cannot judge counts as unmerged and
+goes only behind the force prompt.
 
-## Recovery refs
+## Recovery expiry
 
-Before destructive work, create `refs/wt-trash/<batch>/<slot>-<branch>`:
-
-- dirty worktree → a commit built with a scratch `GIT_INDEX_FILE`, parented on
-  HEAD, including untracked but not ignored files;
-- unmerged branch → the branch tip.
-
-Slots prevent ref path collisions between names such as `feat` and `feat/x`.
-Print the ref and its recovery command. `@worktree_backup_days` controls expiry;
-zero keeps recovery refs indefinitely.
-
-## Trash
-
-Moving to same-filesystem batch trash is immediate even with large dependency
-trees. Sweep only that batch in a background tmux job. Startup may reap abandoned
-trash older than the age gate; it never removes the whole root, which could race
-another live popup.
-
-After each successful move, remove only that worktree's empty parent directories,
-stopping at the repository's worktree root or the first non-empty parent. Never
-scan the root recursively: that visits every surviving checkout's dependencies
-and can turn a single removal into a minute-long pause.
+gwt's `recovery.keep` (default `30d`, `0` keeps refs) replaced the tmux option
+`@worktree_backup_days`, which nothing reads any more. Set it in
+`~/.config/gwt/config.toml` under `[recovery]`.
 
 ## Verification
 
-`~/dev/gwt` owns merge styles, trunk choice, stale or truncated fetch state,
-and memo keys. `tests/test-worktree-core.sh` owns snapshots, recovery refs and
-their expiry, and parent cleanup. `tests/test-gwt-popup.py` drives reap end to
-end: gwt's tag, the confirmations, checkout and branch removal, unmerged,
-locked, and unprobed work left alone, and the exact-name window fallback; its
-ctrl-x case proves a worktree that cannot be snapshotted stays. Popup tests
-should also prove dirty-decline behavior and collect-before-move window cleanup.
+`make -C ~/dev/gwt check` owns refusals, snapshots, recovery refs, expiry, the
+trash sweep and merge styles. `tests/test-gwt-popup.py` drives the popup end to
+end: reap's tag and reap set, unmerged, locked and unprobed work left alone,
+the exact-name fallback, declined and accepted dirty removal with its printed
+snapshot ref, another session's window killed, and a forced unmerged branch
+keeping its tip.

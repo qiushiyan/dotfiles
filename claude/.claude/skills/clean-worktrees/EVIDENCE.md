@@ -89,3 +89,18 @@ Two cases were added and failed before the change: a squash-merged checkout
 is now a candidate, and a gwt failure keeps even a graph-merged checkout
 (fail closed, with the error on the row). The suites pass all 23 tests in
 19.1 seconds with the installed gwt copied onto the sandbox PATH.
+
+## Removal delegated to gwt — 1 October 2026
+
+Three engines removed worktrees (this runner, the tmux popup, `gwt remove`),
+each with its own guards and recovery store, and this runner's archives and
+`refs/clean-worktrees` refs never expired: 4.3 GB of archives and 58 refs in
+planlab. The runner now keeps only what gwt deliberately does not do (the
+root scope, the process check, the ignored-file archive) and removes through
+`gwt remove --keep-branch --expect-head <audited HEAD>`, whose one refusal
+rule covers main, locked, nesting, dirty, index-hidden and moved checkouts.
+gwt pins a detached HEAD in `refs/wt-trash`; a kept branch needs no pin. The
+preview mode went with the duplicated checks; `--apply` stays as the latch.
+Report directories, with any legacy `refs/clean-worktrees/<directory>/` refs,
+expire after gwt's `recovery.keep`. The expiry case failed against the old
+runner. The suites pass all 24 tests in 22 seconds.

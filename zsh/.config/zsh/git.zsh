@@ -697,9 +697,12 @@ _gwt() {
         '*:local branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
       ;;
     remove)
-      _arguments '--force[allow deleting unmerged commits; protects dirty worktrees]' \
-        '--json[report each removal step as JSON]' \
-        '1:local branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
+      _arguments '--force[delete an unmerged branch, keeping its tip as a recovery ref]' \
+        '--discard-dirty[snapshot uncommitted work to a recovery ref, then remove]' \
+        '--keep-branch[remove the checkout only]' \
+        '--expect-head[refuse unless the target is still at this commit]:commit:' \
+        '--json[print one JSON object per target]' \
+        '*:local branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
       ;;
     path|resolve)
       local -a flags

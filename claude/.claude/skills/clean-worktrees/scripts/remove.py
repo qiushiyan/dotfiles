@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply an audited worktree selection; preview unless --apply is supplied."""
+"""Archive ignored files, then remove an audited selection with gwt remove."""
 
 import argparse
 import concurrent.futures
@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -18,8 +19,8 @@ import time
 DISCARD = {"node_modules", ".next", ".turbo", "__pycache__"}
 
 
-def command(args):
-    return subprocess.run(args, capture_output=True, text=True, check=True,
+def command(args, cwd=None):
+    return subprocess.run(args, cwd=cwd, capture_output=True, text=True, check=True,
                           env={**os.environ, "GIT_OPTIONAL_LOCKS": "0"})
 
 
@@ -44,33 +45,6 @@ def cwd_in_use(path):
     output = command(["lsof", "-a", "-d", "cwd", "-Fn"]).stdout
     return any(within(Path(line[1:]).resolve(), path)
                for line in output.splitlines() if line.startswith("n/"))
-
-
-def inspect(item, root):
-    path = Path(item["path"]).expanduser().absolute()
-    if path != path.resolve() or path == root or not within(path, root):
-        raise ValueError("path must be a real directory strictly inside the selected root")
-    if not (path / ".git").is_file():
-        raise ValueError("not a linked worktree with an existing checkout")
-    entries = records(path)
-    anchor = Path(entries[0]["worktree"]).resolve()
-    entry = next(e for e in entries if Path(e["worktree"]).resolve() == path)
-    if path == anchor or "locked" in entry:
-        raise ValueError("main or locked worktree")
-    if any(within(Path(e["worktree"]).resolve(), path) and
-           Path(e["worktree"]).resolve() != path for e in entries):
-        raise ValueError("contains another registered worktree")
-    if git(path, "rev-parse", "HEAD").strip() != item["head"]:
-        raise ValueError("HEAD changed since the audit")
-    # Both status and normal removal can miss edits hidden by these index flags.
-    flags = git(path, "ls-files", "-v", "-z").split("\0")
-    if any(row[:1].islower() or row.startswith("S ") for row in flags):
-        raise ValueError("assume-unchanged or skip-worktree index flags can hide local edits")
-    if git(path, "status", "--porcelain=v1", "--untracked-files=all").strip():
-        raise ValueError("uncommitted or untracked files")
-    if cwd_in_use(path):
-        raise ValueError("a process has its working directory here")
-    return path, anchor, entry.get("branch")
 
 
 def ignored(path):
@@ -133,32 +107,69 @@ def write_json(path, data):
 
 
 def remove(item, root, output):
+    """Archive, then gwt removes the checkout and keeps its branch. gwt refuses
+    main, current, locked, nesting and dirty checkouts (index-hidden edits too)
+    and a HEAD that moved since the audit, and keeps a detached HEAD as a
+    recovery ref."""
     result = {**item, "status": "skipped"}
     slot = hashlib.sha256(item["path"].encode()).hexdigest()[:20]
+    archive = output / (slot + ".tar.gz")
     try:
-        path, anchor, branch = inspect(item, root)
-        result.update(repo=str(anchor), branch=branch, archive=str(output / (slot + ".tar.gz")))
-        result["saved_files"] = backup(path, Path(result["archive"]))
-        # Refresh after backup and immediately before each removal, not once per batch.
-        if inspect(item, root) != (path, anchor, branch):
-            raise ValueError("worktree registration changed during backup")
-        # Keep even detached commits reachable after the worktree's reflog disappears.
-        ref = "refs/clean-worktrees/" + output.name + "/" + slot
-        git(anchor, "update-ref", ref, item["head"], "")
-        result["recovery_ref"] = ref
+        path = Path(item["path"]).expanduser().absolute()
+        # A symlink alias handed to Git once deleted the real checkout.
+        if path != path.resolve() or path == root or not within(path, root):
+            raise ValueError("path must be a real directory strictly inside the selected root")
+        if cwd_in_use(path):
+            raise ValueError("a process has its working directory here")
+        anchor = Path(records(path)[0]["worktree"])
+        result.update(repo=str(anchor), archive=str(archive))
+        result["saved_files"] = backup(path, archive)
         result["status"] = "removing"
         write_json(output / (slot + ".json"), result)
-        git(anchor, "worktree", "remove", str(path))
-        if path.exists() or any(Path(e["worktree"]).resolve() == path for e in records(anchor)):
-            raise ValueError("removal returned but path or registration remains")
-        result["status"] = "removed"
-    except (OSError, ValueError, KeyError, StopIteration, tarfile.TarError,
+        gwt = subprocess.run(["gwt", "remove", "--keep-branch", "--expect-head", item["head"],
+                              "--json", str(path)], cwd=anchor, capture_output=True, text=True)
+        outcome = json.loads(gwt.stdout)
+        result.update(branch=outcome.get("branch") or None, recovery_ref=outcome.get("recovery_ref"))
+        if not outcome["ok"]:
+            result["status"] = "failed" if outcome["worktree_removed"] else "skipped"
+            result["detail"] = outcome["error"]
+        else:
+            result["status"] = "removed"
+    except (OSError, ValueError, KeyError, IndexError, tarfile.TarError,
             subprocess.CalledProcessError) as error:
         result["status"] = "failed" if result["status"] == "removing" else "skipped"
         result["detail"] = (error.stderr.strip() if isinstance(error, subprocess.CalledProcessError)
                             else str(error))
+    if result["status"] == "skipped" and archive.exists():
+        archive.unlink()  # the checkout stays, so its files need no copy
+        result.pop("archive", None)
     write_json(output / (slot + ".json"), result)
     return result
+
+
+def expire(backup_root, keep):
+    """Drop report directories older than gwt's recovery.keep (0 keeps them):
+    archives otherwise grow without bound. Runs before 2026-10 also pinned
+    refs/clean-worktrees/<directory>/…; those go with their directory."""
+    if keep <= 0 or not backup_root.is_dir():
+        return
+    for directory in backup_root.iterdir():
+        if not directory.is_dir() or time.time() - directory.stat().st_mtime <= keep:
+            continue
+        repos = set()
+        for record in directory.glob("*.json"):
+            try:
+                repos.add(json.loads(record.read_text()).get("repo"))
+            except (OSError, ValueError, AttributeError):
+                pass
+        for repo in repos - {None}:
+            try:
+                for ref in git(repo, "for-each-ref", "--format=%(refname)",
+                               "refs/clean-worktrees/" + directory.name).split():
+                    git(repo, "update-ref", "-d", ref)
+            except (OSError, subprocess.CalledProcessError):
+                pass  # a vanished repository leaves no refs to drop
+        shutil.rmtree(directory)
 
 
 def main():
@@ -166,9 +177,11 @@ def main():
         'Plan JSON: {"root":"/absolute/root", "candidates":['
         '{"path":"/absolute/root/checkout", "head":"full commit SHA", '
         '"reason":"audit evidence"}]}. Optional "kept" records are copied into the report. '
-        'Archives and recovery refs are retained; branches are never deleted.'))
+        "Branches are kept. Report directories, with their archives, expire after gwt's "
+        "recovery.keep (gwt config show)."))
     parser.add_argument("plan", type=Path)
-    parser.add_argument("--apply", action="store_true", help="back up and remove the audited selection")
+    parser.add_argument("--apply", action="store_true", required=True,
+                        help="archive and remove; there is no preview, since gwt checks each candidate as it removes it")
     parser.add_argument("--jobs", type=int, choices=range(1, 5), default=4,
                         help="maximum concurrent backup/removal workers (default: 4)")
     parser.add_argument("--backup-root", type=Path,
@@ -183,17 +196,14 @@ def main():
     for item in candidates:
         if not item.get("reason") or not item.get("head"):
             parser.error("each candidate needs its audited HEAD and eligibility evidence")
-    if not args.apply:
-        for item in candidates:
-            try:
-                inspect(item, root)
-                print(json.dumps({"path": item["path"], "status": "ready", "reason": item["reason"]}))
-            except (OSError, ValueError, StopIteration, subprocess.CalledProcessError) as error:
-                print(json.dumps({"path": item["path"], "status": "skipped", "detail": str(error)}))
-        return
+    try:
+        keep = json.loads(command(["gwt", "config", "show", "--json"]).stdout)["recovery"]["keep"]
+    except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
+        parser.error("cannot read gwt's recovery.keep: " + str(error) + "; install gwt with make -C ~/dev/gwt install")
     backup_root = (args.backup_root or root.parent / "worktree-cleanup-backups").expanduser().resolve()
     if within(backup_root, root):
         parser.error("backup root must be outside the cleanup root")
+    expire(backup_root, keep)
     backup_root.mkdir(parents=True, exist_ok=True)
     output = Path(tempfile.mkdtemp(prefix=datetime.datetime.now().strftime("%Y%m%d-%H%M%S-"),
                                    dir=backup_root))

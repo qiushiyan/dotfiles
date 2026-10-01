@@ -88,8 +88,9 @@ Read the owning docs before changing a feature that spans packages:
   `tmux/.config/tmux/scripts/float-pane.md`; pane-mode bindings and undo use
   `tmux/.config/tmux/scripts/pane-mode.md`.
 - **Worktrees** (`tmux/`, `~/dev/gwt`, the clean-worktrees skill):
-  `tmux/.config/tmux/scripts/worktree.md`. gwt owns placement, listing and
-  every merged verdict; the `prefix W` popup owns windows and removal.
+  `tmux/.config/tmux/scripts/worktree.md`. gwt owns placement, listing,
+  every merged verdict and removal; the `prefix W` popup owns windows and
+  prompts.
 - **Claude accounts:** `docs/claude-accounts.md`. The `x*` launchers in
   `zsh/.config/zsh/claude.zsh` delegate routing and validation to headroom
   (`~/dev/headroom`); engine fixes belong in that project.

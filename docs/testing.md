@@ -6,7 +6,6 @@ optional list of case ids to narrow the run:
 ```bash
 bash tmux/.config/tmux/scripts/tests/test-pane-control.sh        [T5 T14 …]
 bash tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh [C2 C7 …]
-bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W15 W36 …]
 python3 tmux/.config/tmux/scripts/tests/test-gwt-popup.py        # requires gwt, tmux, fzf
 python3 tmux/.config/tmux/scripts/tests/test-popup-overlay.py --stock <known-broken-binary> --candidate <candidate-binary>
 python3 tmux/.config/tmux/scripts/tests/test-cout.py            # requires tmux, zsh, oh-my-posh, cout (or COUT_BIN)
@@ -35,15 +34,14 @@ Each suite owns one boundary:
 |---|---|
 | pane control | float, restore (every degraded branch), sweep and save, pane-mode, and rename-popup transactions, plus the shared script library's contract (existence checks, float state, live client, palette colours), on an isolated tmux socket against the working tree |
 | context chip | publication, shedding, cleanup, and quota refresh without the live cache; one agent-status vocabulary across the statusline, owner, border, and zsh; the prompt sweep in a single tmux round trip; the statusline's own line (branch, counts, display path, unknown-theme fallback) |
-| worktree core | tmux-free snapshots, recovery refs and their expiry, and removal parent cleanup; merge verdicts are tested in `~/dev/gwt` |
-| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery, and copies the new path; the bare first paint shows before a held-back `gwt list` and keeps a query and a mark across the swap; ctrl-y copies the highlighted or marked paths; both copies go through a stub `toclip`; the merged tag and ctrl-g share one eligibility rule, leaving unmerged, locked, and unprobed (status-error) work and prefix-named windows; ctrl-x keeps a worktree it cannot snapshot; private tmux socket |
+| gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery, and copies the new path; the bare first paint shows before a held-back `gwt list` and keeps a query and a mark across the swap; ctrl-y copies the highlighted or marked paths; both copies go through a stub `toclip`; the merged tag and ctrl-g both read gwt's `removable`, leaving unmerged, locked, and unprobed (status-error) work and prefix-named windows; ctrl-x keeps a worktree gwt cannot snapshot, keeps declined dirty work, and on acceptance prints the snapshot ref, kills another session's window on it, and force-deletes an unmerged branch only with its tip kept; removal itself (refusals, snapshots, recovery refs, expiry, trash sweep) is tested in `~/dev/gwt`; private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | the installed `cout` binary end to end (or `$COUT_BIN`): command/output pairing across nested shells, indexed copies, recorder retention/cleanup, terminal rendering with the real transient prompt, and `prefix o` leaving no popup; private tmux sockets, a temporary home, and a fake clipboard isolate state, and every store path is checked to lie inside the sandbox before a delete. Parser, store, and replay unit tests are in `~/dev/cout` |
 | Claude launch | what `claude.zsh`'s launchers add to headroom (refusal without it, named routing, workspace effort, x-select's cd) through a headroom built from `~/dev/headroom`, against a throwaway `$HOME`; topology, retention and environment policy are tested in headroom |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
 | portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive shells keep `git.zsh`'s `git()` and one fpath whatever they inherit; interactive cases run on a pty |
 | theme sync | startup + precmd switching against a throwaway `$HOME`; every theme-set name applies without error |
-| gwt shell | the subcommand list (checked against `gwt --help`), completion, parent-shell entry and `--cd` refusals, configured placement, and compatibility shim in a temporary home with a stub `toclip`; caller HEAD and seeding are tested in `~/dev/gwt` |
+| gwt shell | the subcommand list (checked against `gwt --help`), completion, parent-shell entry and `--cd` refusals, and configured placement in a temporary home with a stub `toclip`; caller HEAD and seeding are tested in `~/dev/gwt` |
 | git wrapper | the branch guard fires on a stale base and follows `gitguard on/off`; under the working tree's `git/.gitconfig`, planlab pushes (clone and worktree) get `repo.pushArgs` and skip the pre-push hook, others run it; local repositories under a temporary home, no user git config, and a check that the live guard marker is untouched |
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree, over the packages `make -s list` names |
