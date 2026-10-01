@@ -6,8 +6,8 @@ statusline, quota cache, pane-border lifecycle, or responsive shedding.
 ## Flow
 
 ```text
-Claude statusline payload ─┬→ context + model + 5-hour
-headroom quota cache ──────┘
+Claude statusline payload ─┬→ context + model + effort + 5-hour + 7-day
+headroom quota cache ──────┘→ model-scoped weekly
             ↓
 statusline-command.sh sources tmux-agent-status.sh,
 publishes pane options through agent_claude_publish
@@ -48,11 +48,13 @@ border (the owner's header documents each one's semantics):
 
 ```text
 @claude_ctx          context percentage; existence gate for the chip
-@claude_ctx_model    reported model, updated after /model
 @claude_ctx_account  quota lane
+@claude_ctx_model    reported model, updated after /model
+@claude_ctx_effort   reasoning effort, updated after /effort
 @claude_ctx_5h       five-hour usage
+@claude_ctx_7d       all-models weekly usage
 @claude_ctx_wk       model-scoped weekly usage
-@claude_ctx_wk_model weekly model label
+@claude_ctx_wk_model model-scoped weekly's model label
 ```
 
 The statusline republishes only changed values. `tmux-agent-status.sh
@@ -61,20 +63,20 @@ reconcile` is the single owner of turning the border off.
 ## Quota sources
 
 ```text
-5-hour        → Claude statusline payload
+5-hour, 7-day → Claude statusline payload
 model weekly  → headroom limits → ~/.cache/claude-ctx/<lane>.quota
 render path   → shell-builtin cache read; never waits for headroom
 ```
 
-Claude's payload exposes an all-models weekly number, not the model-scoped limit
-that normally stops work. A detached refresher updates the scoped cache after
-five minutes when no sibling pane owns a fresh lock. Locks older than two
-minutes allow a refresher through so its stale-lock sweep can recover from an
-interrupted run.
+Claude's payload carries the account-wide windows and omits one once it resets,
+so those figures need no freshness rule here. It has no model-scoped limit; a
+detached refresher updates that cache after five minutes when no sibling pane
+owns a fresh lock. Locks older than two minutes allow a refresher through so
+its stale-lock sweep can recover from an interrupted run.
 
-An aged value is safe while its usage window is live because usage only rises.
-After the window rolls over, stale low usage would promise headroom that may not
-exist, so the number disappears. An untrusted zero is never published.
+An aged cache value is safe while its usage window is live because usage only
+rises. After the window rolls over, stale low usage would promise headroom that
+may not exist, so the number disappears. An untrusted zero is never published.
 
 ## Identity and layout
 
@@ -84,23 +86,29 @@ the `CLAUDE_CONFIG_DIR` chosen by headroom; the primary comes from
 the full email. A config directory outside `~/.claude-accounts/` uses its
 basename.
 
-Fields are ordered by scope:
+Fields are ordered by priority, and context anchors the right edge:
 
 ```text
-account  5h  model-weekly  model  context
-lane facts ←──────────────→ session facts
+account  model:effort  5h 7d  model-weekly  context
+highest ←────────────────────→ lowest       always
 ```
 
-The model-scoped weekly has priority over the 5-hour figure on every account,
-even at low usage. Responsive shedding follows pane width:
+Effort qualifies the model and is drawn as its suffix, so the pair sheds as one
+field. The 5-hour and 7-day figures are one group behind one width gate. The
+model-scoped weekly ranks last because the scoped model is rarely the one in
+use: it yields first whatever its value, and colour is the only alarm it gets.
+Responsive shedding follows pane width, lowest priority first:
 
 ```text
-<140 columns → 5-hour drops
-<55          → account drops
-<40          → model drops; weekly drops below 85%
+<140 columns → model-weekly drops
+<80          → 5h and 7d drop
+<55          → model:effort drops
+<40          → account drops
 always       → context remains
-weekly ≥85   → survives at any width
 ```
+
+A half-split of the usual client is about 100 columns, so the 140 gate is what
+keeps the model-scoped weekly to full-width panes.
 
 Each quota value earns its own colour: muted below 50, yellow from 50, red from
 90. The context percentage follows the same attention scale.
@@ -130,8 +138,8 @@ render:     tmux/.config/tmux/tmux.conf, "pane borders"
 tests:      tmux/.config/tmux/scripts/tests/test-claude-context-chip.sh
 ```
 
-Exercise full-width and split panes across accounts, including low weekly
-usage beside urgent 5-hour usage. Cover abandoned-lock recovery, hard kill,
+Exercise full-width and split panes across accounts, including an urgent
+model-scoped weekly on a pane too narrow to show it. Cover abandoned-lock recovery, hard kill,
 same-pane resume, and pane relocation. Stub the refresher for trigger checks;
 stub `headroom` and use a temporary home when exercising the real refresher,
 so tests never touch the live accounts cache.

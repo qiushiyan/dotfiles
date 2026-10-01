@@ -75,8 +75,9 @@ Everything derives from that tree:
   `settings.json`'s default. Precedence and the `x-select` gap are in the
   comment above the table.
 - **Which lane is a running session on, and how much is left in it?** Its
-  tmux context chip shows the account beside its weekly usage
-  (`yan Fable:15 opus-5[1m] ✳ 37%`); `x-acc` is the complete board. The
+  tmux context chip leads with the account, then the model and the lane's
+  5-hour and 7-day usage (`yan opus-5[1m]:high 5h:23 7d:41 ✳ 37%`); `x-acc`
+  is the complete board. The
   chip's rendering and quota sources: `tmux/.config/tmux/scripts/context-chip.md`.
 - **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
   headroom off the live board, then type `x`; bare `x` targets it from then

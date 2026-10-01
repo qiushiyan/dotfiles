@@ -6,11 +6,11 @@
 # Why a file at all. The chip's other fields come free with the render — the
 # context %, the model and the account lane are all in the payload Claude Code
 # hands the statusline, or in a path it already parsed. The model-scoped weekly
-# ("Fable (7d)", routinely the limit that actually stops work while the
-# all-models figure sits far lower) is in neither: Claude Code's payload
-# carries only `rate_limits.seven_day`, which is the ALL-MODELS weekly. The one
-# reachable source is headroom, and headroom's fetching surfaces cost ~300ms
-# and spend a request against a per-account budget of roughly one a minute.
+# ("Fable (7d)", the limit that stops work on that model while the all-models
+# figure sits far lower) is in neither: the weekly Claude Code's payload
+# carries, `rate_limits.seven_day`, is the ALL-MODELS one. The one reachable
+# source is headroom, and headroom's fetching surfaces cost ~300ms and spend a
+# request against a per-account budget of roughly one a minute.
 # A statusline renders ~3×/second, per pane. So the render reads a file, and
 # this script is what puts something in it.
 #

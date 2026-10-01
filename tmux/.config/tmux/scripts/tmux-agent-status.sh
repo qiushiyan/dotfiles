@@ -75,6 +75,9 @@
 #   @claude_ctx_model  the model id minus its "claude-" prefix. Cosmetic: never
 #                      the presence marker, so a pane holding only this draws
 #                      nothing.
+#   @claude_ctx_effort the reasoning effort in force, drawn as a suffix of the
+#                      model ("opus-5[1m]:high") and never without it. Empty
+#                      when the model takes no effort parameter.
 #   @claude_ctx_account
 #                      the account lane the session burns — the email local
 #                      part (full email when two lanes share one), for EVERY
@@ -82,13 +85,16 @@
 #                      could not read an email. Fixed per session; its gate arm
 #                      only ever fires to backfill a pane published before the
 #                      option existed.
-#   @claude_ctx_5h     the account's 5-hour usage. Can go EMPTY on a live
-#                      session (API billing carries no rate limits), so empty
-#                      is a value the gate writes, never a state to skip.
+#   @claude_ctx_5h     the account's 5-hour usage, and
+#   @claude_ctx_7d     its all-models weekly usage — one group on the border,
+#                      both off the vendor payload. Either can go EMPTY on a
+#                      live session (API billing carries no rate limits; a
+#                      window that reset is dropped), so empty is a value the
+#                      gate writes, never a state to skip.
 #   @claude_ctx_wk     the MODEL-SCOPED weekly usage, and
 #   @claude_ctx_wk_model
 #                      the model it is scoped to — one field on the border. The
-#                      vendor payload carries only the all-models weekly, so
+#                      vendor payload does not carry a model-scoped limit, so
 #                      this comes from headroom via the cache
 #                      ~/.claude/commands/claude-quota-refresh.sh keeps warm,
 #                      and empties once that reading stops describing a window

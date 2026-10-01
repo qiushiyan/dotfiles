@@ -41,14 +41,16 @@ The worktree popup names windows after their branch automatically; rename ad-hoc
 
 ## The Claude context chip
 
-A Claude pane shows **account · 5-hour · model-weekly · model · context** on
-the top-right border (`yan 5h:23 Fable:15 opus-5[1m] ✳ 37%`). Each percentage
-draws muted → yellow → red as it becomes urgent. Half-width panes keep the
-model-weekly quota and hide the 5-hour figure. Context remains at every width;
-an urgent weekly quota does too.
+A Claude pane shows **account · model:effort · 5-hour · 7-day · model-weekly ·
+context** on the top-right border
+(`yan opus-5[1m]:high 5h:23 7d:41 Fable:15 ✳ 37%`). Each percentage draws
+muted → yellow → red as it becomes urgent. The order is the priority: as a
+pane narrows it loses the model-weekly quota first (a half-width pane already
+hides it), then the 5-hour and 7-day pair, then the model, then the account.
+Context remains at every width.
 
-The account is the quota lane, not a generic process label. The weekly number
-comes from headroom because Claude's payload lacks the model-scoped limit.
+The account is the quota lane, not a generic process label. The model-weekly
+number comes from headroom because Claude's payload lacks the model-scoped limit.
 Mechanics, cache freshness, responsive thresholds, and cleanup ownership:
 `scripts/context-chip.md`.
 

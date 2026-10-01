@@ -185,17 +185,23 @@ input=$(cat)
 # so the border format needs ONE presence test (a length check) rather than a
 # length check plus a sentinel comparison.
 #
-# rate_limits.five_hour is the vendor's own figure for the account THIS session
-# burns — live, exact, and already in hand, so the chip's 5-hour number costs
-# nothing beyond this field. Its sibling rate_limits.seven_day is deliberately
-# NOT read: that is the ALL-MODELS weekly, and the weekly the chip shows is the
-# model-scoped one (routinely far higher — 94% against 54% on one lane the day
-# this was written), which the payload does not carry at all. That one comes
-# from headroom, off the cache file read further down.
+# effort.level is the reasoning effort in force ("high", "xhigh"), present only
+# while the model takes one. It gets the model id's scrub and the same "-"
+# placeholder, and the border draws it as a suffix of the model
+# ("opus-5[1m]:high"), never as a field of its own.
+#
+# rate_limits.five_hour and rate_limits.seven_day are the vendor's own figures
+# for the account THIS session burns — live, exact, and already in hand, so the
+# chip's two account-wide numbers cost nothing beyond these fields. seven_day
+# is the ALL-MODELS weekly. The model-scoped weekly, which the payload does not
+# carry at all, comes from headroom, off the cache file read further down.
+# Either window may be absent on its own (the vendor drops one once it resets).
 # used_percentage is documented as a float and observed as an integer, so it is
 # rounded; a value that survives that and still is not a plain integer is
 # treated as absent below rather than pushed at a tmux format.
-read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID FIVE_HOUR CURRENT_DIR <<< "$(echo "$input" | jq -r '
+read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID EFFORT FIVE_HOUR SEVEN_DAY CURRENT_DIR <<< "$(echo "$input" | jq -r '
+  def pct: if . == null then "-" else (round | tostring) end;
+  def token: if . == "" then "-" else . end;
   .context_window as $ctx |
   ($ctx.current_usage // {}) as $usage |
   (if $ctx.current_usage != null then
@@ -204,14 +210,19 @@ read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID FIVE_HOUR CURRENT_DIR <<
     $ctx.total_input_tokens + $ctx.total_output_tokens
   end) as $tokens |
   ((.model.id // "") | gsub("[^a-zA-Z0-9._\\[\\]-]"; "")) as $model |
-  ((.rate_limits.five_hour.used_percentage // null) as $fh |
-   if $fh == null then "-" else ($fh | round | tostring) end) as $five |
-  "\($ctx.context_window_size) \($tokens) \(.session_id // "-") \(if $model == "" then "-" else $model end) \($five) \(.workspace.current_dir)"
+  ((.effort.level? // "") | tostring | gsub("[^a-zA-Z0-9._-]"; "")) as $effort |
+  ((.rate_limits.five_hour.used_percentage // null) | pct) as $five |
+  ((.rate_limits.seven_day.used_percentage // null) | pct) as $seven |
+  "\($ctx.context_window_size) \($tokens) \(.session_id // "-") \($model | token) \($effort | token) \($five) \($seven) \(.workspace.current_dir)"
 ')"
 [ "$MODEL_ID" = "-" ] && MODEL_ID=""
 MODEL_ID="${MODEL_ID#claude-}"
+[ "$EFFORT" = "-" ] && EFFORT=""
 case "$FIVE_HOUR" in
     ''|*[!0-9]*) FIVE_HOUR="" ;;
+esac
+case "$SEVEN_DAY" in
+    ''|*[!0-9]*) SEVEN_DAY="" ;;
 esac
 
 # Which account lane this session burns. EVERY lane is labeled, the primary
@@ -340,7 +351,7 @@ if [ -n "$QUOTA_LANE" ] && [ -r "$QUOTA_FILE" ]; then
                 esac ;;
             *) [ "$q_res" -gt "$NOW" ] && live=1 ;;
         esac
-        # An unlabeled number beside 5h:NN could be anything, so the model name
+        # An unlabeled number beside 7d:NN could be anything, so the model name
         # is as load-bearing as the percentage; "-" in either field means the
         # refresher had nothing trustworthy and the chip shows nothing.
         if [ "$live" = 1 ] && [ -n "$q_model" ] && [ "$q_model" != "-" ]; then
@@ -522,11 +533,11 @@ fi
 # agent_claude_publish, which builds ONE server-side compare-and-set — accept
 # only when this session is not tombstoned and some value changed, write every
 # field, reconcile the border in the background. Every value gets a gate arm:
-# the percentage and MODEL change mid-session (/model); the OWNER lets a
-# successor resuming at its predecessor's exact values record its own sid; the
-# ACCOUNT is fixed per session but backfills a pane published before the
-# option existed, a normal state in a stowed live repo; and the three QUOTA
-# values can legitimately go EMPTY (the weekly window rolls over, the refresher
+# the percentage, MODEL and EFFORT change mid-session (/model, /effort); the
+# OWNER lets a successor resuming at its predecessor's exact values record its
+# own sid; the ACCOUNT is fixed per session but backfills a pane published
+# before the option existed, a normal state in a stowed live repo; and the
+# QUOTA values can legitimately go EMPTY (a window rolls over, the refresher
 # cannot reach headroom, API billing carries no rate_limits) — empty is a
 # value, which is what lets a stale weekly stop being drawn. At steady state no
 # arm fires and nothing is written; this runs ~3×/sec while streaming.
@@ -535,7 +546,7 @@ fi
 AGENT_STATUS_LIB="$HOME/.config/tmux/scripts/tmux-agent-status.sh"
 if [ -n "${TMUX_PANE:-}" ] && [ "${SESSION_ID:--}" != "-" ] && [ -r "$AGENT_STATUS_LIB" ] &&
    . "$AGENT_STATUS_LIB" &&
-   agent_claude_publish "$TMUX_PANE" "$PERCENT_USED" "$SESSION_ID" "$MODEL_ID" \
-       "$ACCOUNT" "$FIVE_HOUR" "$WEEK_PCT" "$WEEK_MODEL"; then
+   agent_claude_publish "$TMUX_PANE" "$PERCENT_USED" "$SESSION_ID" "$MODEL_ID" "$EFFORT" \
+       "$ACCOUNT" "$FIVE_HOUR" "$SEVEN_DAY" "$WEEK_PCT" "$WEEK_MODEL"; then
     tmux if-shell -F -t "$TMUX_PANE" "$AGENT_GATE" "$AGENT_PUBLISH" 2>/dev/null || true
 fi

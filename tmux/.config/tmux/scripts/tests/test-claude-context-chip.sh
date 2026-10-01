@@ -102,17 +102,24 @@ fresh() {
 # they fall through to the DEFAULT socket, the user's live server, where these
 # pane ids don't exist and every assertion below would pass for the wrong
 # reason) and to the sandbox HOME.
-# A 5th arg is the payload's rate_limits.five_hour percentage — the vendor's
-# own 5-hour figure, which reaches the chip straight off this document. Absent
-# means a payload with no rate_limits key at all, which is a real state (API
-# billing has no subscription limits) and not the same as a zero.
+# The 5th and 6th args are the payload's rate_limits.five_hour and
+# rate_limits.seven_day percentages — the vendor's own account-wide figures,
+# which reach the chip straight off this document. Either may be given alone
+# (the vendor drops a window once it resets); both absent means a payload with
+# no rate_limits key at all, which is a real state (API billing has no
+# subscription limits) and not the same as a zero. A 7th arg is effort.level,
+# absent when the model takes no effort parameter.
 pub() {
-    local sid="$1" model="$2" tokens="$3" acct="${4:-}" five="${5:-}" payload rl=""
-    [ -n "$five" ] && rl=$(printf ',"rate_limits":{"five_hour":{"used_percentage":%s,"resets_at":9999999999}}' "$five")
+    local sid="$1" model="$2" tokens="$3" acct="${4:-}" five="${5:-}" seven="${6:-}" effort="${7:-}"
+    local payload extra="" windows=""
+    [ -n "$five" ] && windows=$(printf '"five_hour":{"used_percentage":%s,"resets_at":9999999999}' "$five")
+    [ -n "$seven" ] && windows="${windows:+$windows,}$(printf '"seven_day":{"used_percentage":%s,"resets_at":9999999999}' "$seven")"
+    [ -n "$windows" ] && extra=",\"rate_limits\":{$windows}"
+    [ -n "$effort" ] && extra="$extra$(printf ',"effort":{"level":"%s"}' "$effort")"
     if [ "$model" = "-" ]; then
-        payload=$(printf '{"session_id":"%s","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' "$sid" "$SANDBOX" "$tokens" "$rl")
+        payload=$(printf '{"session_id":"%s","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' "$sid" "$SANDBOX" "$tokens" "$extra")
     else
-        payload=$(printf '{"session_id":"%s","model":{"id":"%s"},"workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' "$sid" "$model" "$SANDBOX" "$tokens" "$rl")
+        payload=$(printf '{"session_id":"%s","model":{"id":"%s"},"workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' "$sid" "$model" "$SANDBOX" "$tokens" "$extra")
     fi
     local -a acct_env
     case "$acct" in
@@ -378,8 +385,8 @@ c10() {
 }
 
 # ---------------------------------------------------------------------------
-# C11 — the chip sheds by priority as the pane narrows: account below 55
-# columns, model below 40, the percentage never. Pure display — the options
+# C11 — the chip sheds by priority as the pane narrows: model below 55
+# columns, account below 40, the percentage never. Pure display — the options
 # underneath must survive every threshold crossing untouched, so widening the
 # pane restores the full chip without a republish. This is the case that
 # fails if a width gate is dropped (labels crowd a narrow pane), inverted, or
@@ -390,9 +397,9 @@ c11() {
     pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
     check "C11 a wide pane affords all three" "$(border)" " yan opus-5[1m] ✳ 60% "
     T resize-window -t t -x 48 2>/dev/null; sleep 0.2
-    check "C11 below 55 columns the account yields first" "$(border)" " opus-5[1m] ✳ 60% "
+    check "C11 below 55 columns the model yields first" "$(border)" " yan ✳ 60% "
     T resize-window -t t -x 35 2>/dev/null; sleep 0.2
-    check "C11 below 40 columns the model yields too" "$(border)" " ✳ 60% "
+    check "C11 below 40 columns the account yields too" "$(border)" " ✳ 60% "
     T resize-window -t t -x 200 2>/dev/null; sleep 0.2
     check "C11 widening restores the full chip" "$(border)" " yan opus-5[1m] ✳ 60% "
     check "C11 hiding never touched the options" "$(opt @claude_ctx_account)" "yan"
@@ -653,9 +660,9 @@ quota() {
 }
 
 # ---------------------------------------------------------------------------
-# C21 — the two quota numbers. The 5-hour figure rides in on Claude Code's own
-# payload; the model-scoped weekly comes off the cache file, and the whole
-# question there is WHEN AN OLD READING IS STILL AN ANSWER. Inside a live
+# C21 — the quota numbers. The 5-hour and all-models weekly figures ride in on
+# Claude Code's own payload; the model-scoped weekly comes off the cache file,
+# and the whole question there is WHEN AN OLD READING IS STILL AN ANSWER. Inside a live
 # window usage only climbs, so an aged figure understates and is safe to draw;
 # once the window has ended the same figure describes a window nobody is
 # spending against, and a low number there reads as headroom that may not
@@ -669,18 +676,25 @@ c21() {
     mkdir -p "$SANDBOX_HOME/.claude-accounts/$lane"
 
     quota "$lane" 10 51 Fable 60 3600
-    pub sid-A 'claude-opus-5[1m]' 370000 "$lane" 23.5
+    pub sid-A 'claude-opus-5[1m]' 370000 "$lane" 23.5 41.2
     check "C21 the scoped weekly is published" "$(opt @claude_ctx_wk)" "51"
     check "C21 with the model it is scoped to" "$(opt @claude_ctx_wk_model)" "Fable"
     # 23.5 rounds, and it must arrive as a bare integer: the border feeds it to
     # e|/ for the severity colour, which is integer arithmetic.
     check "C21 the 5-hour figure is rounded off the payload" "$(opt @claude_ctx_5h)" "24"
+    check "C21 and so is the all-models weekly" "$(opt @claude_ctx_7d)" "41"
+
+    # The vendor drops a window once it resets, so either arrives alone.
+    pub sid-A 'claude-opus-5[1m]' 375000 "$lane" "" 41.2
+    check "C21 a payload with only the weekly empties the 5-hour" "$(opt @claude_ctx_5h)" ""
+    check "C21 and keeps the weekly" "$(opt @claude_ctx_7d)" "41"
 
     # A payload with no rate_limits at all — API billing. The weekly, which
     # comes from somewhere else entirely, must be untouched by that.
     pub sid-A 'claude-opus-5[1m]' 380000 "$lane"
-    check "C21 no rate_limits leaves the 5-hour empty" "$(opt @claude_ctx_5h)" ""
-    check "C21 and does not disturb the weekly" "$(opt @claude_ctx_wk)" "51"
+    check "C21 no rate_limits leaves both payload figures empty" \
+        "$(opt @claude_ctx_5h)$(opt @claude_ctx_7d)" ""
+    check "C21 and does not disturb the scoped weekly" "$(opt @claude_ctx_wk)" "51"
 
     # The window ended a minute ago.
     quota "$lane" 10 51 Fable 60 -60
@@ -845,32 +859,43 @@ c24() {
     check "C24 wrapper reconciles the border on exit" "$(effective_status)" "off"
 }
 
-# Weekly priority is independent of account identity and usage severity.
+# ---------------------------------------------------------------------------
+# C25 — the priority ladder, on every lane: account, model:effort, the 5h/7d
+# pair, the model-scoped weekly, each outliving everything to its right as the
+# pane narrows. The scoped weekly yields first WHATEVER its value: an urgent
+# one is still the lowest-priority field, and its colour is the only alarm it
+# gets. The 5h/7d pair moves as one group — a gate on one number alone would
+# leave a lone figure standing where a reader expects the pair.
+# ---------------------------------------------------------------------------
 c25() {
     fresh || return
     local lane width
     for lane in work@example.test personal@example.test; do
-        quota "$lane" 10 15 Fable 10 3600
-        pub sid-A claude-fable-5-1 220000 "$lane" 98
+        quota "$lane" 10 98 Fable 10 3600
+        pub sid-A claude-fable-5-1 220000 "$lane" 12 41 high
         T resize-window -t t -x 200
-        check "C25 wide $lane shows both limits" "$(border)" \
-            " ${lane%%@*} 5h:98 Fable:15 fable-5-1 ✳ 22% "
-        for width in 139 102 75 55; do
+        check "C25 wide $lane shows every field in priority order" "$(border)" \
+            " ${lane%%@*} fable-5-1:high 5h:12 7d:41 Fable:98 ✳ 22% "
+        for width in 139 102 80; do
             T resize-window -t t -x "$width"
-            check "C25 $lane at $width prioritizes calm weekly over hot 5h" "$(border)" \
-                " ${lane%%@*} Fable:15 fable-5-1 ✳ 22% "
+            check "C25 $lane at $width sheds an urgent scoped weekly first" "$(border)" \
+                " ${lane%%@*} fable-5-1:high 5h:12 7d:41 ✳ 22% "
         done
-        T resize-window -t t -x 40
-        check "C25 weekly survives without the account" "$(border)" \
-            " Fable:15 fable-5-1 ✳ 22% "
+        for width in 79 55; do
+            T resize-window -t t -x "$width"
+            check "C25 $lane at $width sheds the 5h/7d pair together" "$(border)" \
+                " ${lane%%@*} fable-5-1:high ✳ 22% "
+        done
+        for width in 54 40; do
+            T resize-window -t t -x "$width"
+            check "C25 $lane at $width keeps the account over the model" "$(border)" \
+                " ${lane%%@*} ✳ 22% "
+        done
         T resize-window -t t -x 39
         check "C25 a sliver keeps context" "$(border)" " ✳ 22% "
-        quota "$lane" 10 98 Fable 10 3600
-        pub sid-A claude-fable-5-1 220000 "$lane" 98
-        check "C25 urgent weekly survives a sliver" "$(border)" " Fable:98 ✳ 22% "
         T resize-window -t t -x 140
-        check "C25 widening restores both without republishing" "$(border)" \
-            " ${lane%%@*} 5h:98 Fable:98 fable-5-1 ✳ 22% "
+        check "C25 widening restores every field without republishing" "$(border)" \
+            " ${lane%%@*} fable-5-1:high 5h:12 7d:41 Fable:98 ✳ 22% "
     done
     rm -rf "$SANDBOX_HOME/.cache"
 }
@@ -923,7 +948,7 @@ c27() {
     fields=$(bash -c ". '$VOCAB'; printf '%s\n' \$AGENT_CLAUDE_FIELDS" | sort)
     drawn=$(grep '^set -g pane-border-format' "$CONF" | grep -o '@claude_ctx[a-z0-9_]*' | sort -u)
     check "C27 (premise) the vocabulary lists the chip's fields" \
-        "$(printf '%s\n' "$fields" | grep -c .)" "7"
+        "$(printf '%s\n' "$fields" | grep -c .)" "9"
     check "C27 the border reads no option the vocabulary does not publish" \
         "$(comm -13 <(printf '%s\n' "$fields") <(printf '%s\n' "$drawn"))" ""
     check "C27 every published field but the owner is drawn" \
@@ -940,7 +965,7 @@ c27() {
     check "C27 a value count off the vocabulary publishes nothing" \
         "$(bash -c ". '$CTX'; agent_claude_publish %1 60 sid-A && echo built || echo refused")" "refused"
     check "C27 the full count builds the gate" \
-        "$(bash -c ". '$CTX'; agent_claude_publish %1 60 sid-A m a 5 6 F && echo built || echo refused")" "built"
+        "$(bash -c ". '$CTX'; agent_claude_publish %1 60 sid-A m e a 5 7 6 F && echo built || echo refused")" "built"
 }
 
 # ---------------------------------------------------------------------------
@@ -1000,9 +1025,40 @@ c29() {
     rm -rf "$bin" "$log" "$hooks"
 }
 
+# ---------------------------------------------------------------------------
+# C30 — effort rides the model. It is a suffix of the model field, never a
+# field of its own: with no model there is nothing for it to qualify, and it
+# sheds with the model as one unit. /effort changes it mid-session with every
+# other value unchanged, so it needs its own gate arm — the C2 trap, for the
+# new option. It is untrusted text on the same two paths as the model id.
+# ---------------------------------------------------------------------------
+c30() {
+    fresh || return
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai' "" "" high
+    check "C30 effort published" "$(opt @claude_ctx_effort)" "high"
+    check "C30 border joins it to the model" "$(border)" " yan opus-5[1m]:high ✳ 60% "
+    T set -w -t "$WIN" pane-border-status off
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai' "" "" xhigh
+    check "C30 an effort-only change is accepted" "$(opt @claude_ctx_effort)" "xhigh"
+    check "C30 and reconciles the border" "$(status)" "top"
+    T resize-window -t t -x 48 2>/dev/null; sleep 0.2
+    check "C30 effort sheds with the model" "$(border)" " yan ✳ 60% "
+    T resize-window -t t -x 200 2>/dev/null; sleep 0.2
+    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
+    check "C30 a model with no effort empties it" "$(opt @claude_ctx_effort)" ""
+    check "C30 and the model stands alone, no stray colon" "$(border)" " yan opus-5[1m] ✳ 60% "
+    pub sid-A - 600000 'yan@planlab.ai' "" "" high
+    check "C30 effort without a model draws nothing" "$(border)" " yan ✳ 60% "
+    pub sid-A 'claude-opus-5[1m]' 500000 'yan@planlab.ai' "" "" "hi gh, #[fg=red]'; kill-server"
+    check "C30 server survived a hostile effort" \
+        "$(T list-sessions -F '#{session_name}' 2>/dev/null | head -1)" "t"
+    check "C30 effort reduced to one inert token" "$(opt @claude_ctx_effort)" "highfgredkill-server"
+    check "C30 percentage not corrupted" "$(opt @claude_ctx)" "50"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

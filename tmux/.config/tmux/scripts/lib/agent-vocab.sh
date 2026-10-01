@@ -25,7 +25,7 @@ AGENT_STATUS_BIN="$HOME/.config/tmux/scripts/tmux-agent-status.sh"
 AGENT_CLAUDE_PRESENCE=@claude_ctx
 AGENT_CLAUDE_OWNER=@claude_ctx_sid
 AGENT_CLAUDE_TOMBSTONE=@claude_ctx_dead
-AGENT_CLAUDE_FIELDS="@claude_ctx @claude_ctx_sid @claude_ctx_model @claude_ctx_account @claude_ctx_5h @claude_ctx_wk @claude_ctx_wk_model"
+AGENT_CLAUDE_FIELDS="@claude_ctx @claude_ctx_sid @claude_ctx_model @claude_ctx_effort @claude_ctx_account @claude_ctx_5h @claude_ctx_7d @claude_ctx_wk @claude_ctx_wk_model"
 
 # Codex. The zsh wrapper activates it for exactly the TUI's lifetime; Codex
 # itself writes its runtime state into pane_title. PRESENCE is 1 while it runs;
