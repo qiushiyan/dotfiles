@@ -31,7 +31,6 @@ activate claude | codex    SessionStart discharge; Codex launch
 clear claude | codex       SessionEnd (owner-checked); Codex exit
 sweep <pane> [agent...]    the prompt returned: drop, tombstoning Claude's sid
 reconcile [target]         the only path that turns the border row off
-done / recount             dormant agent-done badge (agent-notify.md)
 ```
 
 The render path has a budget: one server-side `if-shell` per render, no

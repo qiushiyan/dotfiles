@@ -1,8 +1,7 @@
 # tmux: features not yet built
 
 A backlog of tmux improvements worth building. The current design starts at
-`workflow.md`, whose sections name each feature's design doc;
-`scripts/agent-notify.md` is the dormant agent-done reference.
+`workflow.md`, whose sections name each feature's design doc.
 
 ---
 

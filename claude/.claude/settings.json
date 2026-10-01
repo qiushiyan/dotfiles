@@ -100,26 +100,6 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.config/tmux/scripts/tmux-agent-status.sh done"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.config/tmux/scripts/tmux-agent-status.sh done"
-          }
-        ]
-      }
-    ],
     "SessionEnd": [
       {
         "hooks": [
