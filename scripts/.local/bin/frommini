@@ -10,7 +10,7 @@
 # See docs/qiushi-mini.md § Clipboard and attach.
 set -euo pipefail
 
-HOST=${MINI_HOST:-mini}
+HOST=${MINI_HOST:-qiushi-mini}
 PB="$HOME/dotfiles/scripts/.local/share/dotfiles/pasteboard"
 PB_MINI='~/dotfiles/scripts/.local/share/dotfiles/pasteboard'
 

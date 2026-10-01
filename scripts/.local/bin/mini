@@ -13,7 +13,7 @@ set -euo pipefail
 
 case $(basename "$0") in
   mac) HOST=${REMOTE_HOST:-qiushi-mac} ;;
-  *)   HOST=${REMOTE_HOST:-${MINI_HOST:-mini}} ;;
+  *)   HOST=${REMOTE_HOST:-${MINI_HOST:-qiushi-mini}} ;;
 esac
 me=$(basename "$0")
 

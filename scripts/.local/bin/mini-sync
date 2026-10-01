@@ -12,7 +12,7 @@
 #   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
 set -euo pipefail
 
-HOST=${MINI_SYNC_HOST:-qiushi-mini}
+HOST=${MINI_HOST:-qiushi-mini}
 REPO="$HOME/dotfiles"
 # Compiled, self-contained CLIs from ~/.local/bin. Launcher shims that exec
 # into a local checkout (planlab, bench) do not belong here: they point at
@@ -42,7 +42,7 @@ for arg in "$@"; do
   case $arg in
     -n|--dry-run) dry=(--dry-run --itemize-changes) ;;
     -q|--quiet) quiet=1 ;;
-    -h|--help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "mini-sync: unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
