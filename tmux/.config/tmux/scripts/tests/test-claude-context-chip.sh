@@ -1106,18 +1106,20 @@ c31() {
 # the porcelain header minus any "...upstream" (a dotted name like release-1.2
 # once lost everything after its first dot), an unborn branch is its name, the
 # counts are staged files, +added -removed lines against HEAD and untracked
-# files, and a path under ~/dev drops that prefix.
+# files, a linked worktree draws its main checkout behind the clone glyph
+# (U+F24D, once saved as a bare space), and ~/dev and ~ are abbreviated only
+# on a whole path component.
 # ---------------------------------------------------------------------------
 c32() {
-    local home repo
+    local home repo wt
     home=$(cd "$SANDBOX_HOME" && pwd -P)   # git reports physical paths
-    repo="$home/dev/proj"
+    repo="$home/dev/proj"; wt="$home/dev/.worktrees/proj/x"
     # The suite's own git, isolated from the user's config and hooks.
     g() { env GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 git -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
-    mkdir -p "$repo"
+    mkdir -p "$repo/sub" "${home}2/x"
     g -C "$repo" init -b main
     check "C32 an unborn branch is its name" "$(render "$repo")" "proj | main | 0%"
-    printf '1\n2\n3\n' > "$repo/a.txt"
+    printf '1\n2\n3\n' > "$repo/a.txt"; printf 'k\n' > "$repo/sub/k.txt"
     g -C "$repo" add -A; g -C "$repo" commit -m init
     g -C "$repo" checkout -b release-1.2; g -C "$repo" branch -u main
     printf '1\n2\nx\ny\n' > "$repo/a.txt"            # unstaged: +2 -1
@@ -1125,7 +1127,13 @@ c32() {
     printf 'c\n' > "$repo/c.txt"                       # untracked
     check "C32 a dotted branch keeps its dots and drops its upstream" \
         "$(render "$repo")" "proj | release-1.2 | 0% | +1 +3 -1 ?1"
-    rm -rf "$SANDBOX_HOME/dev"
+    g -C "$repo" worktree add -b feat/x.y "$wt"
+    check "C32 a linked worktree draws its main checkout and subpath" \
+        "$(render "$wt/sub")" "$(printf '\xef\x89\x8d') proj/sub | feat/x.y | 0%"
+    check "C32 a sibling of HOME is not abbreviated" \
+        "$(render "${home}2/x")" "${home}2/x | 0%"
+    check "C32 HOME itself is ~" "$(render "$home")" "~ | 0%"
+    rm -rf "$SANDBOX_HOME/dev" "${home}2"
 }
 
 # ---------------------------------------------------------------------------
