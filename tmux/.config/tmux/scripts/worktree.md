@@ -16,7 +16,10 @@ The scripts own syntax. These docs own the constraints behind it.
 worktree creation, ignored-file seeding, listing, the trunk, and every merged
 verdict. Its callers are the tmux popup,
 `brief start`, the `enter-worktree` skill, and the zsh `gwt` function, which
-adds the parent-shell cd behind `--cd` and forwards everything else.
+adds the parent-shell cd behind `--cd` and forwards everything else. That
+function and its completion share one subcommand list, `_gwt_commands` in
+`git.zsh`; a binary subcommand missing from it turns `gwt --cd <subcommand>`
+into a branch of that name, so `gwt.test.zsh` checks it against `gwt --help`.
 
 ```text
 resolution, creation, seeding       → gwt binary
