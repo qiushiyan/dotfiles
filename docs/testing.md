@@ -33,7 +33,7 @@ Each suite owns one boundary:
 | Suite | Contract |
 |---|---|
 | pane control | float, restore (every degraded branch), sweep and save, pane-mode, and rename-popup transactions, plus the shared script library's contract (existence checks, float state, live client, palette colours), on an isolated tmux socket against the working tree |
-| context chip | publication, shedding, cleanup, and quota refresh without the live cache; one agent-status vocabulary across the statusline, owner, border, and zsh; the prompt sweep in a single tmux round trip; the statusline's own line (branch, counts, display path, unknown-theme fallback) |
+| context chip | publication, shedding, cleanup, and quota refresh without the live cache; one agent-status vocabulary across the statusline, owner, border, and zsh; the prompt sweep in a single tmux round trip; the statusline's own line (branch, counts, display path, unknown-theme fallback); the test server's plugins reach only the sandbox `HOME` |
 | gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery, and copies the new path; the bare first paint shows before a held-back `gwt list` and keeps a query and a mark across the swap; ctrl-y copies the highlighted or marked paths; both copies go through a stub `toclip`; the merged tag and ctrl-g both read gwt's `removable`, leaving unmerged, locked, and unprobed (status-error) work and prefix-named windows; ctrl-x keeps a worktree gwt cannot snapshot, keeps declined dirty work, and on acceptance prints the snapshot ref, kills another session's window on it, and force-deletes an unmerged branch only with its tip kept; removal itself (refusals, snapshots, recovery refs, expiry, trash sweep) is tested in `~/dev/gwt`; private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | the installed `cout` binary end to end (or `$COUT_BIN`): command/output pairing across nested shells, indexed copies, recorder retention/cleanup, terminal rendering with the real transient prompt, and `prefix o` leaving no popup; private tmux sockets, a temporary home, and a fake clipboard isolate state, and every store path is checked to lie inside the sandbox before a delete. Parser, store, and replay unit tests are in `~/dev/cout` |
@@ -44,7 +44,7 @@ Each suite owns one boundary:
 | gwt shell | the subcommand list (checked against `gwt --help`), completion, parent-shell entry and `--cd` refusals, and configured placement in a temporary home with a stub `toclip`; caller HEAD and seeding are tested in `~/dev/gwt` |
 | git wrapper | the branch guard fires on a stale base and follows `gitguard on/off`; under the working tree's `git/.gitconfig`, planlab pushes (clone and worktree) get `repo.pushArgs` and skip the pre-push hook, others run it; local repositories under a temporary home, no user git config, and a check that the live guard marker is untouched |
 | cwd guard | deleted-directory recovery without touching the caller |
-| Stow reach | root-memory and package-ignore invariants from the working tree, over the packages `make -s list` names |
+| Stow reach | root-memory and package-ignore invariants from the working tree, over the packages `make -s list` names; the list leaves out non-package directories and `scripts/` keeps its entry points out of `HOME`, through `make list` and a `stow -n` dry run in scratch directories |
 | dangerous-git hook | force and mirror pushes and work-destroying commands refused in any argument order, force-with-lease and remote deletes passed, the `branch -D` gate and its per-command bypass, quoted, heredoc and comment text inert, through synthetic PreToolUse payloads |
 | rm guard | a recursive rm of a protected path is refused in every spelling (trailing slash, `..`, symlink, literal `~`, /var→/private/var) and every other call passes through unchanged; probes see only a logging stub `rm` |
 | account launchers | which x-*/cx-* names exist and which account each hands headroom (unique local part only, never the primary's or a utility's name, ambiguity drops the alias, `.lock` skipped); stub headroom, throwaway `$HOME` |
@@ -53,15 +53,16 @@ Each suite owns one boundary:
 | aws-login | sign out, sign in, verify, then stamp; the device-code flow only on the mini marker; `--status` from the stamp; a stub `aws` on PATH records the calls, a temporary `HOME` holds the stamp, and A8 asserts the real state directory is untouched |
 | snapshot | a plain run deletes the previous plain run's snapshot only after the new one exists; `--daily` prunes by age and stands down once Time Machine has a destination; a stub `tmutil` on PATH keeps the snapshot dates in a sandbox file, a temporary `HOME` holds the state, and S7 asserts the real state directory is untouched |
 | Claude reply reference | Ctrl+G buffers open the right reply, history and whole-turn views, `:wq` exits with the draft byte-exact, closing either window never strands the editor, the layout follows pane width, lookalike files are ignored; the working tree's full Neovim config against a fixture `CLAUDE_CONFIG_DIR` naming the suite as the claude process, temp XDG state, tmux unset |
-| statusline band | the lualine band takes the active colorscheme's `StatusLine` bg and `Normal` fg at startup and after a live `:colorscheme`; the working tree's full Neovim config, a temporary `HOME` holding the theme file, temp XDG state, tmux unset |
+| statusline band | the lualine band takes the active colorscheme's `StatusLine` bg and `Normal` fg at startup and after a theme-file rewrite that the live watcher applies; the working tree's full Neovim config, a temporary `HOME` holding the theme file, temp XDG state, tmux unset |
 
 The table is a routing map. Case ids and complete behavior inventories stay in
 the suites.
 
 The chip and pane-control suites drive the working tree's scripts rather than
-the stowed copies (the pane suite through a sandbox `HOME` whose
-`~/.config/tmux/scripts` is the tree), which is what lets them grade a branch
-instead of whatever happens to be installed.
+the stowed copies, which is what lets them grade a branch instead of whatever
+happens to be installed. Both start the test server under a sandbox `HOME`
+whose `~/.config/tmux` links the tree's `tmux.conf`, scripts and themes and the
+installed plugins.
 
 ## A test that escapes its sandbox corrupts live state
 
@@ -79,7 +80,15 @@ reason. A green suite that tested nothing is the failure mode to fear here.
 **Redirect shared state that lives _outside_ tmux.** resurrect's save directory
 is a single path shared by all servers unless `@resurrect-dir` is set, so a test
 reaching the real `save.sh` overwrites the user's session snapshot; `fresh()`
-sandboxes it and T21 asserts the real directory was never touched. Likewise
+sandboxes it and T21 asserts the real directory was never touched. The test
+server's own plugins are the same hazard: TPM reads its plugin list from
+`$HOME/.config/tmux/tmux.conf`, not tmux's `-f` file, and the plugins act on
+`$HOME` (continuum deletes `~/Library/LaunchAgents/Tmux.Start.plist` on every
+load, and restores a snapshot on start unless `~/tmux_no_auto_restore`
+exists). A server started under the caller's `HOME` runs them against the live
+machine; one whose sandbox lacks the config link runs with no plugins at all,
+and the cases that depend on them pass over nothing. C34 and T12 hold both
+down. Likewise
 the sessions toolkit reads and writes under `$HOME`, so every case in its suite
 exports a throwaway `HOME` before running anything — ad-hoc verification that
 skips the override edits the user's real accounts and session state. Global

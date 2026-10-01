@@ -37,14 +37,42 @@ T() { tmux -L "$SOCK" "$@"; }
 
 SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/ctx-chip-test.XXXXXX")
 SANDBOX_RESURRECT="$SANDBOX/resurrect"
-# A HOME of our own. Both scripts under test resolve a sibling through
-# $HOME/.config/tmux/scripts — the statusline's backgrounded `reconcile` call
-# most of all — so the override is what keeps this suite on the working tree;
-# the symlink is the only thing in it, which also means the statusline finds no
-# ~/.config/terminal-theme and takes $TERMINAL_THEME, off the user's live one.
+# A HOME of our own, for the test server and every script alike. Both scripts
+# under test resolve a sibling through $HOME/.config/tmux/scripts — the
+# statusline's backgrounded `reconcile` call most of all — so the override is
+# what keeps this suite on the working tree. The server needs it as much: TPM
+# reads its plugin list from $HOME/.config/tmux/tmux.conf, not tmux's -f file,
+# and the plugins it loads act on $HOME — continuum's boot handler deletes
+# ~/Library/LaunchAgents/Tmux.Start.plist, and resurrect and continuum save and
+# restore sessions. Under the caller's HOME they act on the live machine.
+# The config, scripts and themes are this tree's; plugins are the installed
+# ones (not in Git). There is no ~/.config/terminal-theme, so the statusline
+# takes $TERMINAL_THEME and the server the default palette, not the live one.
 SANDBOX_HOME="$SANDBOX/home"
 mkdir -p "$SANDBOX_RESURRECT" "$SANDBOX_HOME/.config/tmux"
+ln -s "$REPO/tmux/.config/tmux/tmux.conf" "$SANDBOX_HOME/.config/tmux/tmux.conf"
 ln -s "$REPO/tmux/.config/tmux/scripts" "$SANDBOX_HOME/.config/tmux/scripts"
+ln -s "$REPO/tmux/.config/tmux/themes" "$SANDBOX_HOME/.config/tmux/themes"
+ln -s "$HOME/.config/tmux/plugins" "$SANDBOX_HOME/.config/tmux/plugins"
+# continuum's own switch for its restore-on-start, which would otherwise replay
+# a snapshot into a test server whenever no other tmux process is running.
+: > "$SANDBOX_HOME/tmux_no_auto_restore"
+
+# The caller's own copies of what those plugins touch, fingerprinted before any
+# server starts; C34 asserts they are unchanged. resurrect prefers the legacy
+# ~/.tmux/resurrect whenever it exists, so watch the directory it would use.
+REAL_PLIST="$HOME/Library/LaunchAgents/Tmux.Start.plist"
+if [ -d "$HOME/.tmux/resurrect" ]; then
+    REAL_RESURRECT="$HOME/.tmux/resurrect"
+else
+    REAL_RESURRECT="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
+fi
+fingerprint() { # <path> — inode and mtime, or "absent"; a link's own target
+    if [ -L "$1" ]; then printf 'link %s' "$(readlink "$1")"
+    else stat -f '%i %m' "$1" 2>/dev/null || echo absent; fi
+}
+REAL_PLIST_AT_START=$(fingerprint "$REAL_PLIST")
+REAL_LAST_AT_START=$(fingerprint "$REAL_RESURRECT/last")
 
 cleanup() {
     T kill-server 2>/dev/null
@@ -63,7 +91,11 @@ fresh() {
     # That raced invisibly against every case here and cost a debugging pass.
     # A pane occupied by a non-shell process is also the truthful model of the
     # thing under test — a pane with Claude running in it.
-    T -f "$CONF" new-session -d -s t -x 200 -y 50 'sleep 100000' 2>/dev/null
+    # The server starts under the sandbox HOME, and without inherited XDG
+    # roots, which TPM and resurrect would prefer to it: the plugins it loads
+    # then reach only the sandbox. C34 holds this down.
+    env -u XDG_CONFIG_HOME -u XDG_DATA_HOME HOME="$SANDBOX_HOME" \
+        tmux -L "$SOCK" -f "$CONF" new-session -d -s t -x 200 -y 50 'sleep 100000' 2>/dev/null
     # new-session RETURNING is not the server being ready — the config is still
     # loading behind it, plugins included. A pane id read too early comes back
     # EMPTY, and an empty id doesn't fail: every later command targets nothing,
@@ -197,7 +229,7 @@ render() {
 }
 
 ok()   { PASS=$((PASS+1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; }
-no()   { FAIL=$((FAIL+1)); FAILED="$FAILED $2"; printf '  \033[31mFAIL\033[0m %s\n       %s\n' "$1" "$2"; }
+no()   { FAIL=$((FAIL+1)); FAILED="$FAILED ${1%% *}"; printf '  \033[31mFAIL\033[0m %s\n       %s\n' "$1" "$2"; }
 check(){ [ "$2" = "$3" ] && ok "$1" || no "$1" "expected [$3] got [$2]"; }
 want() { case " ${WANT:-} " in *" $1 "*) return 0;; esac; [ -z "${WANT:-}" ]; }
 
@@ -376,9 +408,13 @@ c9() {
     # And the sandbox HOME stays a shell: anything written into it means a
     # script wrote to $HOME on a path this suite exercises.
     check "C9 nothing was written into the sandbox HOME" \
-        "$(find "$SANDBOX_HOME" -mindepth 1 -not -path "$SANDBOX_HOME/.config" \
+        "$(find "$SANDBOX_HOME" -mindepth 1 -not -path "$SANDBOX_HOME/tmux_no_auto_restore" \
+            -not -path "$SANDBOX_HOME/.config" \
             -not -path "$SANDBOX_HOME/.config/tmux" \
-            -not -path "$SANDBOX_HOME/.config/tmux/scripts" | wc -l | tr -d ' ')" "0"
+            -not -path "$SANDBOX_HOME/.config/tmux/tmux.conf" \
+            -not -path "$SANDBOX_HOME/.config/tmux/scripts" \
+            -not -path "$SANDBOX_HOME/.config/tmux/themes" \
+            -not -path "$SANDBOX_HOME/.config/tmux/plugins" | wc -l | tr -d ' ')" "0"
 }
 
 # ---------------------------------------------------------------------------
@@ -871,20 +907,25 @@ c25() {
 # BEFORE the slow fetch (so concurrent renders stop re-spawning it and a
 # refresher killed mid-fetch cannot freeze the lane), then publishes what
 # headroom's store holds for the CLAUDE row of this email — the fake lists a
-# codex row with the same email first, as a live `headroom limits` does.
+# codex row with the same email first, as a live `headroom limits` does. The
+# fake's store holds a stale 55 until `refresh --vendor claude` completes and
+# turns it into 79, so the new number reaches the border only through the
+# refresher's fetch.
 # ---------------------------------------------------------------------------
 c26() {
     fresh || return
     local lane=recovery@example.test
     local cache="$SANDBOX_HOME/.cache/claude-ctx"
-    local fakebin="$SANDBOX/fake-headroom"
+    local fakebin="$SANDBOX/fake-headroom" store="$SANDBOX/fake-headroom-store"
     mkdir -p "$fakebin" "$cache"
+    echo 55 > "$store"
     quota "$lane" 86400 67 Fable 86400 -60
-    cat > "$fakebin/headroom" <<'STUB'
+    cat > "$fakebin/headroom" <<STUB
 #!/bin/bash
-case "${1:-}" in
-limits) printf '%s\n' '{"accounts":[{"email":"recovery@example.test","vendor":"codex","usage":{"limits":[]}},{"email":"recovery@example.test","vendor":"claude","usage":{"observed_at":"2026-01-01T00:00:00Z","limits":[{"kind":"weekly_scoped","percent_state":"ok","identity_state":"ok","percent":79,"model":"Fable","resets_at":"2099-01-01T00:00:00Z"}]}}]}' ;;
-*) sleep 2 ;;   # any fetching surface: refresh, --json
+case "\$*" in
+limits*) printf '{"accounts":[{"email":"recovery@example.test","vendor":"codex","usage":{"limits":[]}},{"email":"recovery@example.test","vendor":"claude","usage":{"observed_at":"2026-01-01T00:00:00Z","limits":[{"kind":"weekly_scoped","percent_state":"ok","identity_state":"ok","percent":%s,"model":"Fable","resets_at":"2099-01-01T00:00:00Z"}]}}]}\n' "\$(cat '$store')" ;;
+"refresh --vendor claude") sleep 2; echo 79 > '$store' ;;
+*) sleep 2 ;;   # any other fetching surface leaves the store stale
 esac
 STUB
     chmod +x "$fakebin/headroom"
@@ -892,20 +933,28 @@ STUB
     export PATH
     REFRESH_CMD="$REPO/claude/.claude/commands/claude-quota-refresh.sh"
     pub sid-A claude-fable-5-1 220000 "$lane" 15
-    # The fake fetch sleeps 2s; the stamp must land well inside it.
-    local at state=stale
+    # The fake fetch sleeps 2s; the stamp must land well inside it, carrying
+    # the store as it stood.
+    local at lk pct state=stale
     for _ in $(seq 1 15); do
-        read -r at _ < "$cache/$lane.quota"
+        read -r at lk pct _ < "$cache/$lane.quota"
         [ $(( $(date +%s) - at )) -lt 60 ] && { state=fresh; break; }
         sleep 0.1
     done
     check "C26 the attempt is stamped before the fetch returns" "$state" "fresh"
-    sleep 2   # let the refresher finish before its cache is removed
+    check "C26 the stamp carries the store as it stood" "$pct" "55"
+    # Then the fetch completes and the refresher rereads the store.
+    for _ in $(seq 1 50); do
+        read -r at lk pct _ < "$cache/$lane.quota"
+        [ "$pct" = 79 ] && break
+        sleep 0.1
+    done
     pub sid-A claude-fable-5-1 220000 "$lane" 15
-    check "C26 the claude row reaches the pane" "$(opt @claude_ctx_wk)" "79"
+    check "C26 the refreshed claude row reaches the pane" "$(opt @claude_ctx_wk)" "79"
     check "C26 with its label" "$(opt @claude_ctx_wk_model)" "Fable"
+    has "C26 and the border draws it" "$(border)" "Fable:79"
     unset REFRESH_CMD
-    rm -rf "$SANDBOX_HOME/.cache" "$fakebin"
+    rm -rf "$SANDBOX_HOME/.cache" "$fakebin" "$store"
 }
 
 # ---------------------------------------------------------------------------
@@ -1110,9 +1159,40 @@ c33() {
     check "C33 and the line still draws" "$(render / TERMINAL_THEME=no_such_theme)" "/ | 0%"
 }
 
+# ---------------------------------------------------------------------------
+# C34 — the test server's own isolation guard (see docs/testing.md). The
+# server loads the production plugins, and they act on whatever HOME it was
+# started with: continuum's boot handler deletes
+# ~/Library/LaunchAgents/Tmux.Start.plist on every load, and continuum and
+# resurrect save and restore sessions there. A sentinel at that path in the
+# sandbox must be consumed, which proves the plugins loaded and ran here; the
+# caller's own plist and resurrect `last` must be exactly as the suite found
+# them.
+# ---------------------------------------------------------------------------
+c34() {
+    local plist="$SANDBOX_HOME/Library/LaunchAgents/Tmux.Start.plist" gone=no
+    mkdir -p "$(dirname "$plist")"
+    echo sentinel > "$plist"
+    fresh || { rm -rf "$SANDBOX_HOME/Library"; return; }
+    check "C34 the server runs under the sandbox HOME" \
+        "$(T show-environment -g HOME 2>/dev/null)" "HOME=$SANDBOX_HOME"
+    for _ in $(seq 1 50); do
+        [ -e "$plist" ] || { gone=yes; break; }
+        sleep 0.1
+    done
+    check "C34 the plugins ran against the sandbox HOME" "$gone" "yes"
+    check "C34 TPM loaded the plugins from the sandbox config" \
+        "$( [ -n "$(T show -gqv @resurrect-restore-script-path)" ] && echo loaded || echo missing)" "loaded"
+    check "C34 the caller's boot plist is untouched" \
+        "$(fingerprint "$REAL_PLIST")" "$REAL_PLIST_AT_START"
+    check "C34 the caller's resurrect save is untouched" \
+        "$(fingerprint "$REAL_RESURRECT/last")" "$REAL_LAST_AT_START"
+    rm -rf "$SANDBOX_HOME/Library"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32 c33; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32 c33 c34; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

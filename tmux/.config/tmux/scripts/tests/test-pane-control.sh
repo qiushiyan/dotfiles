@@ -33,16 +33,23 @@ SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/pane-control-test.XXXXXX")
 SANDBOX_RESURRECT="$SANDBOX/resurrect"
 mkdir -p "$SANDBOX_RESURRECT"
 
-# The HOME the test server, its panes, and every script run under. scripts and
-# themes are this tree's; plugins are the installed ones (not in Git), which
-# T21 needs to reach resurrect's real save.sh. The empty .zshrc keeps the
-# user's rc out of the test panes: its precmd hooks are production code and
-# would be a second writer on the server under test (docs/testing.md).
+# The HOME the test server, its panes, and every script run under. The config,
+# scripts and themes are this tree's; plugins are the installed ones (not in
+# Git), which T21 needs to reach resurrect's real save.sh. TPM reads its plugin
+# list from $HOME/.config/tmux/tmux.conf, not tmux's -f file, so without that
+# link the server runs with no plugins and T12 checks an ordering nothing
+# contests. The halt file is continuum's own switch for its restore-on-start,
+# which would otherwise replay a sandbox snapshot into a later case's server
+# whenever no other tmux process happens to be running. The empty .zshrc keeps
+# the user's rc out of the test panes: its precmd hooks are production code
+# and would be a second writer on the server under test (docs/testing.md).
 SANDBOX_HOME="$SANDBOX/home"
 mkdir -p "$SANDBOX_HOME/.config/tmux"
+ln -s "$TREE/tmux.conf" "$SANDBOX_HOME/.config/tmux/tmux.conf"
 ln -s "$TREE/scripts" "$SANDBOX_HOME/.config/tmux/scripts"
 ln -s "$TREE/themes" "$SANDBOX_HOME/.config/tmux/themes"
 ln -s "$HOME/.config/tmux/plugins" "$SANDBOX_HOME/.config/tmux/plugins"
+: > "$SANDBOX_HOME/tmux_no_auto_restore"
 : > "$SANDBOX_HOME/.zshrc"
 
 # The real save directory — asserted untouched by T21, never written to. Mirror
@@ -81,7 +88,9 @@ wait_for() { # <want> <cmd...>
 # case fails here rather than passing on nothing (callers: `fresh || return`).
 fresh() {
     T kill-server 2>/dev/null; sleep 0.2       # let the old server finish exiting
-    HOME="$SANDBOX_HOME" T -f "$CONF" new-session -d -s t -x 200 -y 50 2>/dev/null
+    # No inherited XDG roots: TPM and resurrect prefer them to HOME.
+    env -u XDG_CONFIG_HOME -u XDG_DATA_HOME HOME="$SANDBOX_HOME" \
+        tmux -L "$SOCK" -f "$CONF" new-session -d -s t -x 200 -y 50 2>/dev/null
     SOCKPATH=""
     wait_for 1 eval 'T list-panes -t t -F "#{pane_id}" | grep -c "^%"'
     SOCKPATH=$(T display -p '#{socket_path}' 2>/dev/null)
@@ -340,9 +349,14 @@ t9() {
 # ---------------------------------------------------------------------------
 # T12 — continuum's timer saves through the float-normalising wrapper. Nothing
 # else drives that path (T34 covers prefix p and the status row on a client).
+# resurrect sets its own save path on every load, so the config's override
+# holds only if it runs after TPM; the premise proves the plugin loaded and
+# contested it (its restore path is set by the same function).
 # ---------------------------------------------------------------------------
 t12() {
     fresh || return
+    check "T12 (premise) TPM loaded resurrect on the test server" \
+        "$(T show -gqv @resurrect-restore-script-path | grep -c '/tmux-resurrect/scripts/restore.sh$')" "1"
     check "T12 resurrect save routed through the wrapper" \
         "$(T show -gv @resurrect-save-script-path | grep -c 'tmux-resurrect-save.sh')" "1"
 }
@@ -1311,7 +1325,10 @@ t42() {
 # skipped (its container may still be attaching); the sweep runs only on
 # client-attached, so without the re-check nothing would look at it again
 # until the next attach. Sweep the instant the float is staged: only the
-# re-check, after the grace, can bring the pane home.
+# re-check, after the grace, can bring the pane home. Ages are whole seconds
+# (session_created against date +%s), so a 1s grace can already read as
+# expired on the first pass; this case runs a 3s grace and checks both halves —
+# the first pass leaves the holder alone, and the re-check then restores it.
 # ---------------------------------------------------------------------------
 t43() {
     fresh || return; W=$(T display -p -t t '#{window_id}')
@@ -1319,7 +1336,18 @@ t43() {
     before=$(tiled "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
     RS "$FLOAT" toggle "$P" >/dev/null 2>&1
-    R "$FLOAT" sweep >/dev/null 2>&1                # grace is 1s here; this is inside it
+    local created age
+    created=$(T list-sessions -F '#{session_created} #{session_name}' | awk '$2 ~ /^_float_/ {print $1; exit}')
+    age=$(( $(date +%s) - ${created:-0} ))
+    check "T43 (premise) the holder is younger than the grace" \
+        "$( [ -n "$created" ] && [ "$age" -lt 2 ] && echo young || echo "age=$age")" "young"
+    HOME="$SANDBOX_HOME" TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=3 \
+        bash "$FLOAT" sweep >/dev/null 2>&1 &
+    local sweeper=$!
+    sleep 1                                       # well inside the 3s re-check sleep
+    check "T43 the first pass leaves a young holder alone" \
+        "$(tiled "$W" | grep -c "$P" || true) $(holders)" "0 1"
+    wait "$sweeper"
     check "T43 the sweep's re-check restored a holder that was too young at first" \
         "$(tiled "$W")" "$before"
     check "T43 holder cleaned up" "$(holders)" "0"
