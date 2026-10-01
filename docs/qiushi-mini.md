@@ -302,8 +302,9 @@ carry it, so after rotating the key, copy the line again.
 **Codex:** `~/.codex/config.toml` is **generated** from the laptop's by
 `mini-sync` (what travels: `scripts/.local/share/dotfiles/mini-codex-config.py`),
 not linked, because Codex writes project and hook trust into it at runtime.
-It is rewritten only when the laptop's config changed, so a `/model` choice
-made on the mini lasts until then. `AGENTS.md` and `themes/` are plain links
+Each sync rewrites it whenever it differs from what the laptop's config
+derives, so a setting changed on the mini outside the runtime-owned tables, a
+`/model` choice included, is reverted within the hour. `AGENTS.md` and `themes/` are plain links
 into the mirror.
 
 **Accounts:**
