@@ -9,8 +9,8 @@ statusline, quota cache, pane-border lifecycle, or responsive shedding.
 Claude statusline payload ─┬→ context + model + effort + 5-hour + 7-day
 headroom quota cache ──────┘→ model-scoped weekly
             ↓
-statusline-command.sh sources tmux-agent-status.sh,
-publishes pane options through agent_claude_publish
+statusline-chip.sh (sourced by statusline-command.sh before it draws)
+sources tmux-agent-status.sh, publishes pane options through agent_claude_publish
             ↓
 tmux.conf renders the pane border
 
@@ -134,7 +134,7 @@ resurrecting its chip. It lasts only until that conversation starts again;
 ## Verification
 
 ```text
-publisher:  claude/.claude/commands/statusline-command.sh
+publisher:  claude/.claude/commands/statusline-chip.sh (run by statusline-command.sh)
 vocabulary: tmux/.config/tmux/scripts/lib/agent-vocab.sh
 owner:      tmux/.config/tmux/scripts/tmux-agent-status.sh
 prompt:     zsh/.config/zsh/tmux-utils.zsh, cout.zsh

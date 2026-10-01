@@ -25,6 +25,7 @@ SOCK="ctxtest-$$"
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(cd "$HERE/../../../../.." && pwd)
 STATUSLINE="$REPO/claude/.claude/commands/statusline-command.sh"
+CHIP="$REPO/claude/.claude/commands/statusline-chip.sh"
 CTX="$REPO/tmux/.config/tmux/scripts/tmux-agent-status.sh"
 VOCAB="$REPO/tmux/.config/tmux/scripts/lib/agent-vocab.sh"
 COUT="$REPO/zsh/.config/zsh/cout.zsh"
@@ -132,7 +133,7 @@ pub() {
     # network, and write the user's live ~/.cache — the C9 guard catches that,
     # and it caught it once for real. C22 is where the spawn itself is tested,
     # by pointing this at a stub instead of clearing it.
-    printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME=gruber_darker \
+    printf '%s' "$payload" | env "${acct_env[@]}" HOME="$SANDBOX_HOME" TERMINAL_THEME="${PUB_THEME:-gruber_darker}" \
         CLAUDE_CTX_REFRESH_CMD="${REFRESH_CMD-}" \
         TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" bash "$STATUSLINE" >/dev/null 2>&1
     sleep 0.4   # the accepted branch reconciles the border in the background
@@ -181,6 +182,19 @@ border() {
 # the severity colours are asserted against.
 styled() { T display-message -p -t "$PANE" "$(T show -gv pane-border-format)"; }
 has()    { case "$2" in *"$3"*) ok "$1" ;; *) no "$1" "no [$3] in [$2]" ;; esac; }
+
+# The statusline's own text, colours stripped: render <dir> [VAR=value ...].
+# Outside tmux (nothing publishes) and never refreshing; HOME is the sandbox's
+# physical path because git reports physical paths. The extra assignments
+# override the defaults (env applies them in order).
+render() {
+    local dir="$1"; shift
+    printf '{"session_id":"sid-R","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$dir" \
+        | env -u TMUX -u TMUX_PANE -u CLAUDE_CONFIG_DIR -u COLUMNS -u ANTHROPIC_BASE_URL \
+            HOME="$(cd "$SANDBOX_HOME" && pwd -P)" TERMINAL_THEME=gruber_darker CLAUDE_CTX_REFRESH_CMD= \
+            GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 "$@" bash "$STATUSLINE" 2>/dev/null \
+        | sed $'s/\033\\[[0-9;]*m//g'
+}
 
 ok()   { PASS=$((PASS+1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; }
 no()   { FAIL=$((FAIL+1)); FAILED="$FAILED $2"; printf '  \033[31mFAIL\033[0m %s\n       %s\n' "$1" "$2"; }
@@ -955,11 +969,11 @@ c27() {
     check "C27 every published field but the owner is drawn" \
         "$(comm -23 <(printf '%s\n' "$fields") <(printf '%s\n' "$drawn") | grep -vx '@claude_ctx_sid')" ""
     check "C27 the statusline spells no agent option" \
-        "$(grep -v '^[[:space:]]*#' "$STATUSLINE" | grep -c '@claude_ctx\|@codex_' || true)" "0"
+        "$(cat "$STATUSLINE" "$CHIP" | grep -v '^[[:space:]]*#' | grep -c '@claude_ctx\|@codex_' || true)" "0"
     check "C27 the zsh prompt sweep and codex wrapper spell no agent option" \
         "$(grep -v '^[[:space:]]*#' "$ZUTIL" | grep -c '@claude_ctx\|@codex_' || true)" "0"
     check "C27 the statusline issues exactly one tmux command" \
-        "$(grep -v '^[[:space:]]*#' "$STATUSLINE" | grep -c '^[[:space:]]*tmux ' || true)" "1"
+        "$(cat "$STATUSLINE" "$CHIP" | grep -v '^[[:space:]]*#' | grep -c '^[[:space:]]*tmux ' || true)" "1"
     check "C27 the owner's sourced half runs no subprocess" \
         "$(sed -n '1,/^\[ "\${BASH_SOURCE\[0\]}" = "\$0" \] || return 0$/p' "$CTX" \
             | grep -v '^[[:space:]]*#' | grep -c '\$([^(]\|`' || true)" "0"
@@ -1100,14 +1114,6 @@ c32() {
     repo="$home/dev/proj"
     # The suite's own git, isolated from the user's config and hooks.
     g() { env GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 git -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
-    # render <dir>: the line for a payload at <dir>, outside tmux, never refreshing.
-    render() {
-        printf '{"session_id":"sid-R","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$1" \
-            | env -u TMUX -u TMUX_PANE -u CLAUDE_CONFIG_DIR -u COLUMNS -u ANTHROPIC_BASE_URL \
-                HOME="$home" TERMINAL_THEME=gruber_darker CLAUDE_CTX_REFRESH_CMD= \
-                GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 bash "$STATUSLINE" 2>/dev/null \
-            | sed $'s/\033\\[[0-9;]*m//g'
-    }
     mkdir -p "$repo"
     g -C "$repo" init -b main
     check "C32 an unborn branch is its name" "$(render "$repo")" "proj | main | 0%"
@@ -1122,9 +1128,23 @@ c32() {
     rm -rf "$SANDBOX_HOME/dev"
 }
 
+# ---------------------------------------------------------------------------
+# C33 — a theme the palette has no arm for (a port that reached theme-set but
+# not statusline-palette.sh) once ended the statusline before the chip was
+# published: the border froze at its last values and the line went blank. The
+# chip publishes before the palette is consulted, and the line falls back to
+# the default colours.
+# ---------------------------------------------------------------------------
+c33() {
+    fresh || return
+    PUB_THEME=no_such_theme pub sid-A 'claude-opus-5[1m]' 600000
+    check "C33 an unknown theme still publishes the chip" "$(opt @claude_ctx)" "60"
+    check "C33 and the line still draws" "$(render / TERMINAL_THEME=no_such_theme)" "/ | 0%"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32 c33; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done
