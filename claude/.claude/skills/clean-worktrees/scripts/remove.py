@@ -131,7 +131,10 @@ def remove(item, root, output):
         outcome = json.loads(gwt.stdout)
         result.update(branch=outcome.get("branch") or None, recovery_ref=outcome.get("recovery_ref"))
         if not outcome["ok"]:
-            result["status"] = "failed" if outcome["worktree_removed"] else "skipped"
+            # Skipped only while the checkout is still there: a partial removal
+            # keeps the archive, the only copy of its ignored files.
+            gone = outcome["worktree_removed"] or not path.is_dir()
+            result["status"] = "failed" if gone else "skipped"
             result["detail"] = outcome["error"]
         else:
             result["status"] = "removed"
@@ -147,14 +150,26 @@ def remove(item, root, output):
     return result
 
 
+def ours(directory):
+    """Whether this runner made the directory: its plan.json is a plan."""
+    try:
+        plan = json.loads((directory / "plan.json").read_text())
+    except (OSError, ValueError):
+        return False
+    return isinstance(plan, dict) and "root" in plan and isinstance(plan.get("candidates"), list)
+
+
 def expire(backup_root, keep):
     """Drop report directories older than gwt's recovery.keep (0 keeps them):
-    archives otherwise grow without bound. Runs before 2026-10 also pinned
-    refs/clean-worktrees/<directory>/…; those go with their directory."""
+    archives otherwise grow without bound. Only directories this runner made
+    expire; anything else under the backup root is left alone. Runs before
+    2026-10 also pinned refs/clean-worktrees/<directory>/…; those go with their
+    directory."""
     if keep <= 0 or not backup_root.is_dir():
         return
     for directory in backup_root.iterdir():
-        if not directory.is_dir() or time.time() - directory.stat().st_mtime <= keep:
+        if (directory.is_symlink() or not directory.is_dir() or not ours(directory)
+                or time.time() - directory.stat().st_mtime <= keep):
             continue
         repos = set()
         for record in directory.glob("*.json"):

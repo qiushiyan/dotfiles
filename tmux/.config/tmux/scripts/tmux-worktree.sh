@@ -356,31 +356,27 @@ batch_remove() {
     esac
   fi
 
-  # Collect the windows BEFORE gwt moves the checkouts: a pane whose cwd is
-  # renamed out from under it reports the NEW path, so afterwards nothing
-  # matches any more.
-  local wins="" w gone removed=0 branches="" b
+  # Stop the writers first: kill every window on a selected checkout, in every
+  # session, before gwt reads the checkout for the last time, so nothing writes
+  # between gwt's final dirt check and the move. It has to be before anyway: a
+  # pane whose cwd is renamed out from under it reports the NEW path, so
+  # afterwards nothing matches any more. Name match is the fallback for a
+  # window whose pane has cd'd elsewhere — exact on both parts (=), since a
+  # bare target also matches a name prefix: removing reap-me would kill
+  # reap-me-too. A checkout gwt then refuses stays, without its windows.
+  local w gone removed=0 branches="" b
   set --
   while IFS=$'\t' read -r path branch dirty; do
     [ -n "$path" ] || continue
     set -- "$@" "$path"
-    for w in $(windows_for_path "$path" -a); do wins="$wins$path"$'\t'"$w"$'\n'; done
+    for w in $(windows_for_path "$path" -a); do tmux kill-window -t "$w" 2>/dev/null; done
+    [ "$branch" = "(detached)" ] || tmux kill-window -t "=$session:=$(win_name "$branch")" 2>/dev/null || true
   done <<< "$entries"
   gone="$(gwt_remove --keep-branch $discard "$@")"
   while IFS=$'\x1f' read -r path branch; do
     [ -n "$path" ] || continue
     removed=$((removed+1))
-    # Every session: a window left pointing at a deleted directory is broken
-    # wherever it lives. Name match stays as the fallback for a window whose
-    # pane has cd'd elsewhere — exact on both parts (=), since a bare target
-    # also matches a name prefix: removing reap-me would kill reap-me-too.
-    for w in $(printf '%s' "$wins" | awk -F'\t' -v p="$path" '$1 == p {print $2}'); do
-      tmux kill-window -t "$w" 2>/dev/null
-    done
-    if [ -n "$branch" ]; then
-      tmux kill-window -t "=$session:=$(win_name "$branch")" 2>/dev/null || true
-      branches="$branches$branch"$'\n'
-    fi
+    [ -n "$branch" ] && branches="$branches$branch"$'\n'
   done <<< "$gone"
   echo "removed $removed worktree(s)"
 

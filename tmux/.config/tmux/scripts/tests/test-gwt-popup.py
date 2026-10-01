@@ -32,8 +32,12 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
     shutil.copy2(B, bindir/'gwt-real')
     # gwt on PATH is the real binary behind a switch: while $HOME/slow-list
     # exists, `gwt list` answers 3s late, which is how the first-paint case
-    # holds the probed rows back.
-    (bindir/'gwt').write_text('#!/bin/sh\n[ "$1" = list ] && [ -e "$HOME/slow-list" ] && sleep 3\nexec "$(dirname "$0")/gwt-real" "$@"\n')
+    # holds the probed rows back. Each `gwt remove` first records every pane's
+    # cwd on the test server, which shows whether the popup stopped the
+    # checkout's writers before gwt read it.
+    (bindir/'gwt').write_text('#!/bin/sh\n[ "$1" = list ] && [ -e "$HOME/slow-list" ] && sleep 3\n'
+                              '[ "$1" = remove ] && tmux list-panes -a -F "#{pane_current_path}" >> "$HOME/panes-at-remove"\n'
+                              'exec "$(dirname "$0")/gwt-real" "$@"\n')
     (bindir/'gwt').chmod(0o755)
     # ctrl-y resolves toclip through PATH; this stub keeps the real clipboard out
     # of reach and records the payload and the pane it was aimed at.
@@ -162,7 +166,7 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         # on it: wait for text only this run prints.
         wait_for('broken-me  (dirty'); run(tmux+['send-keys','-t',pane,'y','Enter'])
         wait_for('also remove the 1 dirty one(s)?'); run(tmux+['send-keys','-t',pane,'y','Enter'])
-        wait_for('could not remove broken-me: could not snapshot')
+        wait_for('could not remove broken-me: could not read')
         wait_for('enter switch/create')
         assert (broken/'precious.txt').read_text() == 'only copy', 'ctrl-x discarded the unprobed worktree'
         (broken/'.git').chmod(0o644)
@@ -210,8 +214,10 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         assert any(r.endswith(' '+unmerged_tip) for r in refs), 'forced tip not kept: '+str(refs)
         panes = run(tmux+['list-panes','-a','-F','#{pane_current_path}']).stdout
         assert str(dirty) not in panes and run(tmux+['has-session','-t','other'], check=False).returncode != 0, 'other session kept a window on the removed worktree'
+        at_remove = (home/'panes-at-remove').read_text()
+        assert str(repo) in at_remove and str(dirty) not in at_remove.split('\n'), 'a window still worked in the checkout when gwt remove ran: '+at_remove
         run(tmux+['send-keys','-t',pane,'Escape'])
-        print('PASS: ctrl-x keeps declined dirty work; accepted, gwt snapshots it to a printed ref, another session loses its window, and a forced unmerged branch keeps its tip')
+        print('PASS: ctrl-x keeps declined dirty work; accepted, another session loses its window before gwt runs, gwt snapshots the work to a printed ref, and a forced unmerged branch keeps its tip')
 
         # First paint: with gwt list held back, the bare rows are on screen at
         # once and take a query and a mark; the probed rows then replace them

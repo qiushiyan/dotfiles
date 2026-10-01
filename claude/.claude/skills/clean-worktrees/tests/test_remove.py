@@ -241,16 +241,36 @@ class RemoveTests(unittest.TestCase):
         old, fresh = self.backups / "20260801-120000-old", self.backups / "20260930-120000-new"
         for directory in (old, fresh):
             directory.mkdir(parents=True)
+            (directory / "plan.json").write_text(json.dumps({"root": str(self.root), "candidates": []}))
             (directory / "slot.json").write_text(json.dumps({"repo": str(self.repo)}))
             (directory / "slot.tar.gz").write_text("archive")
             self.git("update-ref", "refs/clean-worktrees/" + directory.name + "/slot", self.initial_head)
+        # Old too, and named like a report, but without a plan the runner wrote.
+        unrelated = self.backups / "20260801-120000-mine"
+        unrelated.mkdir()
+        (unrelated / "keep.txt").write_text("not the runner's")
         month = 31 * 86400
-        os.utime(old, (os.stat(old).st_atime - month, os.stat(old).st_mtime - month))
+        for directory in (old, unrelated):
+            os.utime(directory, (os.stat(directory).st_atime - month, os.stat(directory).st_mtime - month))
         self.invoke([])
         self.assertFalse(old.exists())
         self.assertTrue((fresh / "slot.tar.gz").exists())
+        self.assertEqual((unrelated / "keep.txt").read_text(), "not the runner's")
         refs = self.git("for-each-ref", "--format=%(refname)", "refs/clean-worktrees").split()
         self.assertEqual(refs, ["refs/clean-worktrees/" + fresh.name + "/slot"])
+
+    def test_archive_outlives_a_removal_that_failed_after_the_move(self):
+        path = self.checkout("partial")
+        (path / ".env").write_text("only copy\n")
+        # gwt moves the checkout into its trash, then cannot unregister it.
+        admin = self.repo / ".git" / "worktrees"
+        admin.chmod(0o555)
+        self.addCleanup(admin.chmod, 0o755)
+        result, = self.invoke([self.candidate(path)])
+        self.assertFalse(path.exists())
+        self.assertEqual(result["status"], "failed", result)
+        with tarfile.open(result["archive"]) as archive:
+            self.assertEqual(archive.extractfile(".env").read(), b"only copy\n")
 
     def test_active_process_working_directory_is_kept(self):
         path = self.checkout("active")
