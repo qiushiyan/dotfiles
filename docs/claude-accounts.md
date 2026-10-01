@@ -161,5 +161,4 @@ Everything derives from that tree:
 - Bypass-everything, if ever wanted, belongs in `settings.json`
   (`"permissions": { "defaultMode": "bypassPermissions" }`), not in wrappers
   around `claude`. Hooks and `permissions.deny` rules still apply in bypass
-  mode; the dormant guard for one deny-rule prompt is
-  `docs/bypass-cd-read-guard.md`.
+  mode.

@@ -113,7 +113,6 @@ Additional routes beyond the feature docs above:
 - What protects uncommitted and gitignored state, local snapshots, recovery
   after a loss, and reading or editing the VPN credentials in 1Password:
   `docs/recovery.md`.
-- Dormant Claude `cd` read guard: `docs/bypass-cd-read-guard.md`.
 - The colleague's Mac mini (`ssh macmini-shared`), including access etiquette:
   `docs/macmini.md`.
 - My own office Mac mini (`ssh qiushi-mini`), reached over the company
