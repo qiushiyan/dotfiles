@@ -67,12 +67,10 @@
 # To bypass permissions on every invocation instead — plain `claude`
 # included — set  "permissions": { "defaultMode": "bypassPermissions" }  in
 # claude/.claude/settings.json (shared by all accounts). PreToolUse hooks
-# such as block-dangerous-git.sh still fire and block in bypass mode.
+# such as block-dangerous-git.py still fire and block in bypass mode.
 #
 # Every bypass launcher passes CLAUDE_X_BYPASS, one array, so a flag lands
-# on all of them or none. permissions.deny rules survive bypass; the dormant
-# guard for the one deny-rule prompt that stalls bypass sessions, and why
-# `--setting-sources` is not the fix: docs/bypass-cd-read-guard.md.
+# on all of them or none. permissions.deny rules survive bypass.
 #
 typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
 typeset -ga CLAUDE_X_BYPASS=(--dangerously-skip-permissions)
