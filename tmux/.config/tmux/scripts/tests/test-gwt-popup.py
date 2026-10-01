@@ -121,10 +121,19 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         # The tag and the reap share one eligibility rule: feat/popup (forked
         # from caller-topic, which main does not contain) is clean here, so only
         # its unmerged verdict protects it; locked-me is merged but locked.
+        # broken-me is merged but its status probe fails (unreadable .git), so
+        # its untracked work is unknown state: never tagged, never reaped, and
+        # ctrl-x treats it as dirt it must snapshot, keeping it when it cannot.
+        # reap-me-too is another window whose name starts with reap-me; reaping
+        # reap-me must not kill it by name prefix.
         (tree/'untracked.txt').unlink()
         reaped = run(['gwt','create','-n','--no-copy','reap-me','main'], repo).stdout.strip()
         locked = run(['gwt','create','-n','--no-copy','locked-me','main'], repo).stdout.strip()
         run(['git','worktree','lock',locked], repo)
+        broken = pathlib.Path(run(['gwt','create','-n','--no-copy','broken-me','main'], repo).stdout.strip())
+        (broken/'precious.txt').write_text('only copy')
+        (broken/'.git').chmod(0)
+        run(tmux+['new-window','-d','-t','smoke:','-n','reap-me-too'])
         def wait_for(text):
             deadline=time.monotonic()+10
             while time.monotonic()<deadline:
@@ -135,6 +144,7 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         run(tmux+['send-keys','-t',pane,'-l','clear; '+command]); run(tmux+['send-keys','-t',pane,'Enter'])
         cap = wait_for('reap-me · merged')
         assert 'feat/popup · merged' not in cap and 'locked-me · merged' not in cap and 'locked-me' in cap, cap
+        assert 'broken-me · merged' not in cap and 'broken-me' in cap, cap
         run(tmux+['send-keys','-t',pane,'C-g'])
         wait_for('proceed? [y/N]'); run(tmux+['send-keys','-t',pane,'y','Enter'])
         wait_for('merged branch(es)? [Y/n]'); run(tmux+['send-keys','-t',pane,'Enter'])
@@ -143,8 +153,19 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         assert run(['git','show-ref','--verify','--quiet','refs/heads/reap-me'], repo, check=False).returncode == 1, 'reaped branch remains'
         assert tree.exists() and run(['git','show-ref','--verify','--quiet','refs/heads/feat/popup'], repo, check=False).returncode == 0, 'unmerged worktree touched'
         assert pathlib.Path(locked).exists(), 'locked worktree reaped'
+        assert (broken/'precious.txt').exists(), 'unprobed worktree reaped'
+        windows = run(tmux+['list-windows','-t','smoke','-F','#W']).stdout.split()
+        assert 'reap-me-too' in windows, 'reaping reap-me killed a window by name prefix: '+str(windows)
+        run(tmux+['send-keys','-t',pane,'-l','broken-me']); time.sleep(.3)
+        run(tmux+['send-keys','-t',pane,'C-x'])
+        wait_for('proceed? [y/N]'); run(tmux+['send-keys','-t',pane,'y','Enter'])
+        wait_for('also remove the 1 dirty one(s)?'); run(tmux+['send-keys','-t',pane,'y','Enter'])
+        wait_for('could not snapshot broken-me — keeping it')
+        wait_for('enter switch/create')
+        assert (broken/'precious.txt').read_text() == 'only copy', 'ctrl-x discarded the unprobed worktree'
+        (broken/'.git').chmod(0o644)
         run(tmux+['send-keys','-t',pane,'Escape'])
-        print('PASS: gwt tags the trunk-merged worktree; ctrl-g reaps its checkout and branch and leaves unmerged and locked work')
+        print('PASS: gwt tags the trunk-merged worktree; ctrl-g reaps its checkout and branch and leaves unmerged, locked, unprobed work and prefix-named windows; ctrl-x keeps an unprobed worktree it cannot snapshot')
 
         # First paint: with gwt list held back, the bare rows are on screen at
         # once and take a query and a mark; the probed rows then replace them
@@ -176,3 +197,5 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         print('PASS: bare rows paint before gwt list returns, take a query and a mark, and keep both across the swap')
     finally:
         run(tmux+['kill-server'],check=False)
+        for gitfile in root.glob('*/broken-me/.git'):
+            gitfile.chmod(0o644)

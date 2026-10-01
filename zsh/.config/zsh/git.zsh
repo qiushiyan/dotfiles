@@ -630,6 +630,9 @@ _gitswitch() {
 # parent-shell cd that a binary cannot perform: with --cd it strips the flag,
 # creates through the binary, and enters the printed path. Everything else is
 # forwarded untouched, so the binary keeps owning arguments and output.
+# The binary's subcommands: --cd refuses all but create (a stale list once
+# turned `gwt --cd list` into `gwt create list`), and _gwt offers them.
+typeset -ga _gwt_commands=(create resolve path remove list merged trunk config)
 gwt() {
   emulate -L zsh
   local arg dest enter=0 literal=0
@@ -643,11 +646,11 @@ gwt() {
     esac
   done
   (( enter )) || { command gwt "$@"; return }
-  case "$args[1]" in
-    resolve|path|remove|config) print -u2 "gwt: --cd is only for create"; return 2 ;;
-    create) ;;
-    *) args=(create "$args[@]") ;;
-  esac
+  if (( $_gwt_commands[(Ie)$args[1]] )); then
+    [[ "$args[1]" == create ]] || { print -u2 "gwt: --cd is only for create"; return 2 }
+  else
+    args=(create "$args[@]")
+  fi
   for arg in "$args[@]"; do
     case "$arg" in
       --) break ;;
@@ -669,7 +672,7 @@ gwtcd() {
 # refs/remotes/<remote>/, which is the form you actually type — gwt resolves the
 # remote itself).
 _gwt() {
-  local subcommand="$words[2]" commands="create resolve path remove config"
+  local subcommand="$words[2]" commands="$_gwt_commands"
   if [[ "$words[1]" == gwtcd ]]; then
     subcommand=""
     commands=""
@@ -678,12 +681,21 @@ _gwt() {
     _arguments '2:action:(show)' '--json[print effective values and sources as JSON]'
     return
   fi
-  if [[ "$subcommand" == (create|resolve|path|remove) ]]; then
+  if (( $_gwt_commands[(Ie)$subcommand] )); then
     commands=""
     words=("$words[1]" "${words[@]:2}")
     (( CURRENT-- ))
   fi
   case "$subcommand" in
+    list|trunk)
+      _arguments '--fetch[refresh a stale trunk first]' '--json[print structured output]'
+      ;;
+    merged)
+      _arguments '(--into)--fetch[refresh a stale trunk first]' \
+        '(--fetch)--into[judge against this revision instead of the trunk]:revision:($(git for-each-ref --format="%(refname\:short)" refs/heads refs/remotes 2>/dev/null))' \
+        '--json[print structured output]' \
+        '*:local branch:($(git for-each-ref --format="%(refname:short)" refs/heads 2>/dev/null))'
+      ;;
     remove)
       _arguments '--force[allow deleting unmerged commits; protects dirty worktrees]' \
         '--json[report each removal step as JSON]' \

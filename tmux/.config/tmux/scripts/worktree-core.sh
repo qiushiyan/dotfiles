@@ -5,14 +5,10 @@
 # This file keeps what only the popup's trash-and-sweep removal needs.
 # The CLI shim at the bottom keeps already-running shells usable after migration.
 
-# --- repo identity & worktree root -------------------------------------------
+# --- removal housekeeping ------------------------------------------------------
 
-# Read placement from gwt so changing worktree_root also changes cleanup's bounds.
-wt_worktree_root() {
-  gwt path
-}
-
-# After moving a worktree away, remove only its empty branch-name parents.
+# After moving a worktree away, remove only its empty branch-name parents below
+# <root> (the caller's `gwt path`, so cleanup's bounds follow worktree_root).
 # Paths come from Git's absolute worktree list. Never scan sibling checkouts:
 # even an empty-directory find walks all their dependency trees.
 wt_remove_empty_parents() {
@@ -25,7 +21,7 @@ wt_remove_empty_parents() {
   return 0
 }
 
-# The main (first) worktree — canonical home for gitignored files we seed from.
+# The main (first) worktree: never removable.
 wt_main_worktree() {
   git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}'
 }

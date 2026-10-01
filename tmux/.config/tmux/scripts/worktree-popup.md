@@ -12,7 +12,7 @@ ctrl-y    → copy highlighted path, or marked paths one per line; close
 ctrl-n    → force-create typed name
 tab       → mark rows
 ctrl-x    → remove marked rows, or highlighted row when none are marked
-ctrl-g    → reap clean worktrees merged into the default base
+ctrl-g    → reap clean worktrees merged into the trunk
 ctrl-p    → open PR picker
 esc       → leave current picker
 ```
@@ -40,7 +40,9 @@ row matches; treating it as failure would break create-from-query.
 
 Window names are presentation, not identity: `feat/x` and `feat-x` collide, and
 users can rename windows. Find a worktree window by pane path first and sanitized
-name only as fallback. Target newly created windows by `#{window_id}`.
+name only as fallback, matched exactly (`=session:=name`): a bare tmux target
+also matches a name prefix, so removing `reap-me` would kill `reap-me-too`.
+Target newly created windows by `#{window_id}`.
 
 A popup has no pane, so copy hands `toclip` the invoking client's active pane;
 `toclip` needs only that pane's session to find the client.
