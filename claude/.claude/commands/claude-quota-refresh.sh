@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # claude-quota-refresh.sh — keep one account lane's model-scoped weekly quota
-# on disk for the tmux Claude chip. Spawned detached by statusline-command.sh;
+# on disk for the tmux Claude chip. Spawned detached by statusline-chip.sh;
 # never on its render path.
 #
 # Why a file at all. The chip's other fields come free with the render — the

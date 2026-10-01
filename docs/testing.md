@@ -88,11 +88,11 @@ load, and restores a snapshot on start unless `~/tmux_no_auto_restore`
 exists). A server started under the caller's `HOME` runs them against the live
 machine; one whose sandbox lacks the config link runs with no plugins at all,
 and the cases that depend on them pass over nothing. C34 and T12 hold both
-down. Likewise
-the sessions toolkit reads and writes under `$HOME`, so every case in its suite
-exports a throwaway `HOME` before running anything — ad-hoc verification that
-skips the override edits the user's real accounts and session state. Global
-patterns like `pkill` need the same care.
+down. Likewise headroom reads and writes the account dirs and the session
+store under `$HOME`, so every case in the Claude launch and account-launcher
+suites exports a throwaway `HOME` before running anything — ad-hoc
+verification that skips the override edits the user's real accounts and
+session state. Global patterns like `pkill` need the same care.
 
 Each suite carries a guard case for exactly this reason; when you add state that
 crosses the sandbox boundary, add the guard alongside it (the chip suite's C9

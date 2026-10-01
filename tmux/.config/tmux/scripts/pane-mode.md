@@ -62,8 +62,9 @@ usable again.
 
 `pick` captures its source pane as an argument before the popup opens and never
 reads the hold: another client may replace the hold while the popup is up. It
-re-enters pane mode itself on every exit path. Its client name goes through
-`live_client` (`float-pane.md`, "Traps") for both the popup and the re-entry.
+re-enters pane mode itself on every exit path. It resolves its client once
+through `live_client` (`float-pane.md` § Traps) and uses that name for both
+the lib's `popup()` and the re-entry.
 The popup is a transient dialog, so it keeps the global rounded frame.
 
 ## Verification
