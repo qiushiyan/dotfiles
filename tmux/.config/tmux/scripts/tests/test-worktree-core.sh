@@ -92,9 +92,11 @@ C "$REPO" wt_prune_backups 30 >/dev/null
 CASE=W20; want "$@" && ok W20 "1" "$(git -C "$REPO" for-each-ref --format='%(refname)' refs/wt-trash | wc -l | tr -d ' ')"
 
 # W21  ...and 0 days must not be read as "expire everything now" — it's the
-#      documented way to keep snapshots forever.
+#      documented way to keep snapshots forever. The old-epoch ref is what a
+#      misread would drop; the recent one would survive a same-second run.
+C "$REPO" wt_backup_ref 1700000000.2 001 old "$SNAP_SHA" >/dev/null
 C "$REPO" wt_prune_backups 0 >/dev/null
-CASE=W21; want "$@" && ok W21 "1" "$(git -C "$REPO" for-each-ref --format='%(refname)' refs/wt-trash | wc -l | tr -d ' ')"
+CASE=W21; want "$@" && ok W21 "2" "$(git -C "$REPO" for-each-ref --format='%(refname)' refs/wt-trash | wc -l | tr -d ' ')"
 
 # Placement slot checks live in ~/dev/gwt/internal/worktree/worktree_test.go.
 
@@ -132,7 +134,7 @@ fi
 
 # --- sandbox guard ------------------------------------------------------------
 
-# W12  Every case above ran with HOME redirected. Without that, wt_worktree_root
+# W12  Every case above ran with HOME redirected. Without that, `gwt path`
 #      resolves into the user's live ~/dev/.worktrees and the suite creates real
 #      worktrees there — a green run that damaged the machine.
 CASE=W12; want "$@" && ok W12 "$REAL_BEFORE" "$(ls -A "$REAL_WT" 2>/dev/null | sort)"
