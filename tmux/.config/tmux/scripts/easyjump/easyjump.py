@@ -688,7 +688,7 @@ def _get_tmux_vars(*tmux_var_names: str) -> typing.Dict[str, str]:
 def interactive(screen: Screen) -> typing.Optional[Position]:
     # flash.nvim-style loop: type characters to narrow; matches and labels
     # update live on every keystroke. A label key jumps to that match; Enter
-    # jumps to the nearest (unlabelled) match; Escape or an empty keypress
+    # jumps to the nearest match (also labelled); Escape or an empty keypress
     # cancels. With autojump on, a query that leaves exactly one match jumps
     # immediately (forward typing only — a backspace down to one match waits).
     # Returns the chosen position — the jump runs after the overlay is torn

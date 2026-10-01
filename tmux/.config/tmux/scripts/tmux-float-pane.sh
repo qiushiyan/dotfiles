@@ -4,9 +4,10 @@
 # stays visible and LIVE behind it. A second `prefix z` puts it back exactly.
 #
 # WHY A HOLDER SESSION. tmux cannot display an existing pane inside a popup,
-# and tmux 3.7's native floating panes explicitly cannot yet convert between
-# floating and tiled ("Many obvious features are not yet available ... the
-# ability to ... change them between floating and tiles" — CHANGES 3.6b→3.7).
+# and tmux 3.7 cannot turn a tiled pane into a floating one ("Many obvious
+# features are not yet available ... the ability to ... change them between
+# floating and tiles" — CHANGES 3.6b→3.7; move-pane does tile a native float,
+# but nothing goes the other way).
 # So the pane is genuinely relocated: broken out into a detached *holder*
 # session, and a container (a popup running a nested `attach`) displays that
 # session. The pane keeps running throughout — only its geometry changes.
@@ -62,8 +63,8 @@
 
 set -uo pipefail
 
-# msg, pane_exists, win_exists, tiled_panes, apply_order_and_layout,
-# PANE_LABEL_FMT, live_client, resolve_border, reconcile_borders.
+# msg, pane_fmt, pane_exists, win_exists, tiled_panes, apply_order_and_layout,
+# PANE_LABEL_FMT, popup, resolve_border, reconcile_borders.
 # shellcheck source=lib/tmux-common.sh
 . "${BASH_SOURCE[0]%/*}/lib/tmux-common.sh"
 
@@ -103,15 +104,18 @@ set_pane_opt() { tmux set -p -t "$1" "$2" "$3" 2>/dev/null; }
 unset_pane_opt() { tmux set -p -u -t "$1" "$2" 2>/dev/null; }
 
 # Is this pane currently sitting inside a session we marked as a holder? That,
-# not the recorded metadata, is what says whether a float's move happened.
-pane_in_holder() {
-    local s
-    s=$(tmux display-message -p -t "$1" '#{session_name}' 2>/dev/null) || return 1
-    [ -n "$s" ] && [ -n "$(tmux show -qv -t "$s" @fl_holder_nonce 2>/dev/null)" ]
-}
+# not the recorded metadata, is what says whether a float's move happened. (The
+# session's option resolves in the pane's format.)
+pane_in_holder() { [ -n "$(pane_fmt "$1" '#{@fl_holder_nonce}')" ]; }
 sess_exists()  { tmux has-session -t "=$1" 2>/dev/null; }
 
-# --- float --------------------------------------------------------------------
+# Kill a holder session, but only one that is still marked as ours.
+drop_holder() { # <session>
+    [ -n "$1" ] && sess_exists "$1" && \
+        [ -n "$(tmux show -qv -t "$1" @fl_holder_nonce 2>/dev/null)" ] && \
+        tmux kill-session -t "=$1" 2>/dev/null
+    return 0
+}
 
 # --- the container adapter ----------------------------------------------------
 # Together these are the only code that knows the holder is shown by a popup
@@ -166,6 +170,15 @@ container_release_keys() {
     done
 }
 
+# Hand a holder to the user as a normal `recovered-*` session — its keys back,
+# its mark gone — for a pane with nowhere to go home to. Never kill a live pane
+# the user cares about to tidy up.
+surface_holder() { # <session>
+    container_release_keys "$1"
+    tmux set -t "$1" -u @fl_holder_nonce 2>/dev/null
+    tmux rename-session -t "=$1" "recovered-${1#_float_}" 2>/dev/null
+}
+
 # Detaching the nested client ends the blocking attach inside the container,
 # which is what triggers that container's own restore.
 container_dismiss() {
@@ -186,41 +199,29 @@ open_container() {
     title=$(pane_fmt "$pane" "$PANE_LABEL_FMT")
     [ -n "$title" ] || title="zoom"
 
-    local args=(-E -w "$FLOAT_W" -h "$FLOAT_H" -b "$border" -T " $title ")
-    client=$(live_client "$client")
-    [ -n "$client" ] && args+=(-c "$client")
-
-    # display-popup BLOCKS its issuing command until dismissed, which is why
-    # the key binding calls this script with `run-shell -b`.
-    tmux display-popup "${args[@]}" \
+    popup "$client" -E -w "$FLOAT_W" -h "$FLOAT_H" -b "$border" -T " $title " \
         "exec bash '$SELF' container '$pane' '$holder' '$sock'"
 }
 
 float_pane() {
     local pane="$1" client="${2:-}"
 
-    pane_exists "$pane" || { msg "float: no such pane"; return 1; }
-
-    # A native floating pane has nothing to float INTO and cannot be swapped.
-    if [ "$(tmux display-message -p -t "$pane" '#{pane_floating_flag}')" = 1 ]; then
-        msg "float: this is already a floating pane"; return 1
-    fi
-
-    # Already floated (e.g. a second client raced us). Idempotent no-op.
-    [ -n "$(pane_opt "$pane" @fl_phase)" ] && return 0
+    case "$(pane_float_state "$pane")" in
+        gone)   msg "float: no such pane"; return 1 ;;
+        # A native floating pane has nothing to float INTO and cannot be swapped.
+        native) msg "float: this is already a floating pane"; return 1 ;;
+        # Already floated (e.g. a second client raced us). Idempotent no-op.
+        phased) return 0 ;;
+        # A pane in a holder with no phase is still the floated pane itself,
+        # seen through its container, its state missing (mid-clear, or joined
+        # in by hand) — toggling THAT would break it out into a second holder
+        # and strand the first float's restore metadata.
+        holder) msg "float: already inside a float"; return 1 ;;
+    esac
 
     local win sess
     win=$(tmux display-message -p -t "$pane" '#{window_id}')
     sess=$(tmux display-message -p -t "$pane" '#{session_name}')
-
-    # A pane already sitting in a holder is the floated pane itself, seen
-    # through its container. The phase check above catches it in practice;
-    # this holds the invariant even for a holder pane whose state is missing
-    # (mid-clear, or joined in by hand) — toggling THAT would break the pane
-    # out into a second holder and strand the first float's restore metadata.
-    if [ -n "$(tmux show -qv -t "$sess" @fl_holder_nonce 2>/dev/null)" ]; then
-        msg "float: already inside a float"; return 1
-    fi
 
     # Floating the only tiled pane would destroy the window and leave nothing
     # behind the container — which is the entire value of this over zoom.
@@ -351,12 +352,9 @@ scratch_popup() {
 
     # SCRATCH_SRC_PANE rides in so a script run inside the scratch can
     # send-keys back to the pane it was opened from.
-    local args=(-E -d "$dir" -w "$SCRATCH_W" -h "$SCRATCH_H" -b "$border"
-                -T " scratch · ${dir##*/} " -e SCRATCH_SRC_PANE="$pane")
-    client=$(live_client "$client")
-    [ -n "$client" ] && args+=(-c "$client")
-
-    tmux display-popup "${args[@]}" "${SCRATCH_CMD:-exec ${SHELL:-bash} -il}"
+    popup "$client" -E -d "$dir" -w "$SCRATCH_W" -h "$SCRATCH_H" -b "$border" \
+        -T " scratch · ${dir##*/} " -e SCRATCH_SRC_PANE="$pane" \
+        "${SCRATCH_CMD:-exec ${SHELL:-bash} -il}"
 }
 
 # --- restore ------------------------------------------------------------------
@@ -420,11 +418,7 @@ restore_pane() {
         # drop it rather than leaving it to be surfaced as a junk `recovered-*`
         # session — waiting for it to be *empty* never fires, since the
         # placeholder is only killed after a successful break-pane.
-        local h; h=$(pane_opt "$pane" @fl_holder)
-        if [ -n "$h" ] && sess_exists "$h" && \
-           [ -n "$(tmux show -qv -t "$h" @fl_holder_nonce 2>/dev/null)" ]; then
-            tmux kill-session -t "=$h" 2>/dev/null
-        fi
+        drop_holder "$(pane_opt "$pane" @fl_holder)"
         clear_state "$pane"
         reconcile_borders
         return 0
@@ -493,14 +487,9 @@ restore_pane() {
     fi
 
     if [ -z "$landed" ]; then
-        # Nowhere to go home to. NEVER kill the pane to satisfy cleanup — it is
-        # a live process the user cares about. Surface the holder instead, so
-        # the pane is reachable rather than hidden in an internal session.
-        if [ -n "$holder" ] && sess_exists "$holder"; then
-            container_release_keys "$holder"
-            tmux set -t "$holder" -u @fl_holder_nonce 2>/dev/null
-            tmux rename-session -t "=$holder" "recovered-${holder#_float_}" 2>/dev/null
-        fi
+        # Nowhere to go home to. Surface the holder, so the pane is reachable
+        # rather than hidden in an internal session.
+        [ -n "$holder" ] && sess_exists "$holder" && surface_holder "$holder"
         clear_state "$pane"
         reconcile_borders
         msg "float: source window is gone — pane left in a recovered session"
@@ -539,15 +528,8 @@ clear_state() {
 
 # --- sweep / save -------------------------------------------------------------
 
-# Every pane sitting in a session we marked as a holder. Crash recovery: the
-# container's shell is what normally calls restore, and a SIGKILL skips it.
-# GOTCHA: no `=` prefix on the show-option target. `=name` is the exact-match
-# form for a target-SESSION (has-session, kill-session, attach-session all take
-# it), but show-option's target is a target-PANE, where `=name` resolves to
-# nothing and the option reads back EMPTY with rc=0 — a silent miss, not an
-# error. Using it here made every holder look unmarked, so the sweep found
-# nothing and a killed container stranded its pane. Holder names carry a pid
-# and an epoch, so plain-name matching is unambiguous.
+# Crash recovery: the container's shell is what normally calls restore, and a
+# SIGKILL skips it, leaving the pane in a holder with nothing showing it.
 #
 # STRANDED means "no container is showing it", not merely "in a holder". The
 # sweep runs from the client-attached hook, and a float's own container IS a
@@ -562,72 +544,57 @@ clear_state() {
 # client attaching could otherwise undo an in-flight float.
 FLOAT_GRACE_SECS="${FLOAT_GRACE_SECS:-5}"
 
+# GOTCHA: no `=` prefix on a show-option target (drop_holder, the @fl_pane read
+# below). `=name` is the exact-match form for a target-SESSION (has-session,
+# kill-session, attach-session all take it), but show-option's target is a
+# target-PANE, where `=name` resolves to nothing and the option reads back
+# EMPTY with rc=0 — a silent miss, not an error. It once made every holder look
+# unmarked, so the sweep found nothing and a killed container stranded its
+# pane. Holder names carry a pid and an epoch, so plain-name matching is
+# unambiguous.
 holder_sessions() { # every session we marked as a holder
-    local s
-    while IFS= read -r s; do
-        [ -n "$(tmux show -qv -t "$s" @fl_holder_nonce 2>/dev/null)" ] && printf '%s\n' "$s"
-    done < <(tmux list-sessions -F '#{session_name}' 2>/dev/null)
+    tmux list-sessions -f '#{!=:#{@fl_holder_nonce},}' -F '#{session_name}' 2>/dev/null
 }
 
-# Crash recovery: holders with nothing showing them.
-stranded_panes() {
-    local s attached created now
-    now=$(date +%s)
-    while IFS=' ' read -r s attached created; do
-        [ -n "$(tmux show -qv -t "$s" @fl_holder_nonce 2>/dev/null)" ] || continue
-        [ "${attached:-0}" -gt 0 ] && continue                       # live float
-        [ $((now - ${created:-0})) -lt "$FLOAT_GRACE_SECS" ] && continue  # in flight
-        tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null
-    done < <(tmux list-sessions -F '#{session_name} #{session_attached} #{session_created}' 2>/dev/null)
-
-    # ...plus any pane carrying a phase while sitting OUTSIDE a holder. That is
-    # a float interrupted before its move completed: the pane is still in its
-    # own window, so no holder enumerates it, yet the phase makes `toggle`
-    # refuse it — leave it and the float is wedged for that pane forever.
-    # Scanning panes directly rather than trusting a marker on the holder means
-    # this holds however the interruption left the holder.
-    local p ph
-    while IFS=' ' read -r p ph; do
-        [ -n "${ph:-}" ] || continue
-        pane_in_holder "$p" || printf '%s\n' "$p"
-    done < <(tmux list-panes -a -F '#{pane_id} #{@fl_phase}' 2>/dev/null)
-}
-
-# Every floated pane, live containers included — the save path must normalise
-# an ACTIVE float, which is precisely what the stranded predicate skips.
-all_float_panes() {
-    local s
-    while IFS= read -r s; do
-        tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null
-    done < <(holder_sessions)
-}
-
-# Holders skipped only because they are still inside the grace window.
-young_holders() {
-    local s attached created now
-    now=$(date +%s)
-    while IFS=' ' read -r s attached created; do
-        [ -n "$(tmux show -qv -t "$s" @fl_holder_nonce 2>/dev/null)" ] || continue
-        [ "${attached:-0}" -gt 0 ] && continue
-        [ $((now - ${created:-0})) -lt "$FLOAT_GRACE_SECS" ] && printf '%s\n' "$s"
-    done < <(tmux list-sessions -F '#{session_name} #{session_attached} #{session_created}' 2>/dev/null)
+# The float census: ONE list-panes over the whole server, filtered here. Each
+# line says whether the pane's session is a holder (H — a session option
+# resolves in a pane format) and whether the pane carries a phase (P), with
+# `-` for no, since awk collapses an empty field. Asking each session for its
+# mark instead cost a round trip per session, on every client-attached.
+#
+#   stranded  in an unattached holder past the grace window — plus any pane
+#             carrying a phase while sitting OUTSIDE a holder. That is a float
+#             interrupted before its move completed: the pane is still in its
+#             own window, so no holder enumerates it, yet the phase makes
+#             `toggle` refuse it — leave it and the float is wedged for that
+#             pane forever.
+#   young     in an unattached holder still inside the grace window
+#   held      in any holder, live containers included — the save path must
+#             normalise an ACTIVE float, which is precisely what stranded skips
+float_panes() { # <stranded|young|held>
+    tmux list-panes -a -F '#{pane_id} #{?#{@fl_holder_nonce},H,-} #{?#{@fl_phase},P,-} #{session_attached} #{session_created}' 2>/dev/null |
+        awk -v want="$1" -v now="$(date +%s)" -v grace="$FLOAT_GRACE_SECS" '
+            $2 == "H" { if (want == "held") print $1
+                        else if ($4 == 0 && (now - $5 < grace) == (want == "young")) print $1
+                        next }
+            $3 == "P" && want == "stranded" { print $1 }'
 }
 
 sweep() {
     local p
     while IFS= read -r p; do
         [ -n "$p" ] && restore_pane "$p"
-    done < <(stranded_panes)
+    done < <(float_panes stranded)
 
     # A holder that was too young to judge would otherwise never be recovered:
     # the sweep only runs on client-attached, so nothing would look at it again
     # until the NEXT attach. Wait out the grace and re-check once. The hook runs
     # this backgrounded, so the sleep costs nothing interactive.
-    if [ -n "$(young_holders)" ]; then
+    if [ -n "$(float_panes young)" ]; then
         sleep "$FLOAT_GRACE_SECS"
         while IFS= read -r p; do
             [ -n "$p" ] && restore_pane "$p"
-        done < <(stranded_panes)
+        done < <(float_panes stranded)
     fi
     surface_orphan_holders
     return 0
@@ -640,31 +607,23 @@ sweep() {
 # pane the user cares about, alive and invisible in an internal session. Make it
 # a normal, reachable session rather than leaving it hidden.
 surface_orphan_holders() {
-    local s p has_state
+    local s panes owned
     while IFS= read -r s; do
         [ -n "$s" ] || continue
         [ "$(tmux display-message -p -t "$s" '#{session_attached}' 2>/dev/null)" != 0 ] && continue
-        has_state=""
-        while IFS= read -r p; do
-            [ -n "$(pane_opt "$p" @fl_phase)" ] && { has_state=1; break; }
-        done < <(tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null)
-        [ -n "$has_state" ] && continue
+        # "<pane> <P|->" per pane: a phased pane is restore's to handle
+        panes=$(tmux list-panes -s -t "=$s" -F '#{pane_id} #{?#{@fl_phase},P,-}' 2>/dev/null)
+        case "$panes" in *' P'*) continue ;; esac
 
         # A holder that never received the pane it was made for holds nothing
         # but the placeholder shell we spawned. Surfacing that as a `recovered-*`
         # session would manufacture junk out of a cleanup; drop it instead.
-        local owned; owned=$(tmux show -qv -t "$s" @fl_pane 2>/dev/null)
-        if [ -n "$owned" ] && ! printf '%s\n' \
-             "$(tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null)" \
-             | grep -qx "$owned"; then
-            tmux kill-session -t "=$s" 2>/dev/null
+        owned=$(tmux show -qv -t "$s" @fl_pane 2>/dev/null)
+        if [ -z "$panes" ] || { [ -n "$owned" ] && ! printf '%s\n' "$panes" | grep -q "^$owned "; }; then
+            drop_holder "$s"
             continue
         fi
-        [ -z "$(tmux list-panes -s -t "=$s" -F '#{pane_id}' 2>/dev/null)" ] && {
-            tmux kill-session -t "=$s" 2>/dev/null; continue; }
-        container_release_keys "$s"
-        tmux set -t "$s" -u @fl_holder_nonce 2>/dev/null
-        tmux rename-session -t "=$s" "recovered-${s#_float_}" 2>/dev/null
+        surface_holder "$s"
     done < <(holder_sessions)
     reconcile_borders
     return 0
@@ -680,21 +639,21 @@ surface_orphan_holders() {
 # recorded as unrelated things. Aborting keeps the last good save instead.
 prepare_save() {
     local i=0 s p
-    # Close any live container first, so its client goes away with the popup
-    # instead of being re-homed onto another session when the holder dies
-    # (detach-on-destroy is off here).
+    # Close any live container first, so the popup goes before the pane moves.
+    # (The holder-local detach-on-destroy, container_restrict_keys, would detach
+    # it anyway once the restore empties the holder.)
     while IFS= read -r s; do
         [ -n "$s" ] && container_dismiss "$s"
     done < <(holder_sessions)
     while IFS= read -r p; do
         [ -n "$p" ] && restore_pane "$p"
-    done < <(all_float_panes)
+    done < <(float_panes held)
     while [ $i -lt 40 ]; do
-        [ -z "$(all_float_panes)" ] && return 0
+        [ -z "$(float_panes held)" ] && return 0
         sleep 0.1
         i=$((i + 1))
     done
-    [ -z "$(all_float_panes)" ] && return 0
+    [ -z "$(float_panes held)" ] && return 0
     msg "resurrect save skipped — a floated pane could not be restored"
     return 1
 }

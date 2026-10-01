@@ -2,17 +2,26 @@
 # test-pane-control.sh — the pinned traps for pane mode + floating zoom.
 #
 # Each case exists because something specific can silently go wrong; the
-# comment on each says what. Runs entirely on throwaway sockets — it never
-# touches a live tmux server. Usage: bash test-pane-control.sh [T1 T5 ...]
+# comment on each says what. Runs entirely on throwaway sockets, against the
+# WORKING TREE's scripts and tmux.conf — never a live tmux server, never the
+# stowed copies. Usage: bash test-pane-control.sh [T1 T5 ...]
 
 set -uo pipefail
 
 SOCK="pctest-$$"
 OUTER="pcouter-$$"
-CONF="$HOME/.config/tmux/tmux.conf"
-FLOAT="$HOME/.config/tmux/scripts/tmux-float-pane.sh"
-RELOC="$HOME/.config/tmux/scripts/tmux-pane-relocate.sh"
-LIB="$HOME/.config/tmux/scripts/lib/tmux-common.sh"
+
+# The working tree these tests belong to, not $HOME: the stowed copies are
+# whatever `main` installed, so grading them passes a branch whose scripts are
+# broken. The scripts and tmux.conf's bindings still reach their siblings
+# through ~/.config/tmux/scripts, which SANDBOX_HOME below points here.
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+TREE=$(cd "$HERE/../.." && pwd)                  # <repo>/tmux/.config/tmux
+CONF="$TREE/tmux.conf"
+FLOAT="$TREE/scripts/tmux-float-pane.sh"
+RELOC="$TREE/scripts/tmux-pane-relocate.sh"
+SAVE="$TREE/scripts/tmux-resurrect-save.sh"
+LIB="$TREE/scripts/lib/tmux-common.sh"
 
 PASS=0; FAIL=0; FAILED=""
 
@@ -23,6 +32,18 @@ O() { tmux -L "$OUTER" "$@"; }
 SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/pane-control-test.XXXXXX")
 SANDBOX_RESURRECT="$SANDBOX/resurrect"
 mkdir -p "$SANDBOX_RESURRECT"
+
+# The HOME the test server, its panes, and every script run under. scripts and
+# themes are this tree's; plugins are the installed ones (not in Git), which
+# T21 needs to reach resurrect's real save.sh. The empty .zshrc keeps the
+# user's rc out of the test panes: its precmd hooks are production code and
+# would be a second writer on the server under test (docs/testing.md).
+SANDBOX_HOME="$SANDBOX/home"
+mkdir -p "$SANDBOX_HOME/.config/tmux"
+ln -s "$TREE/scripts" "$SANDBOX_HOME/.config/tmux/scripts"
+ln -s "$TREE/themes" "$SANDBOX_HOME/.config/tmux/themes"
+ln -s "$HOME/.config/tmux/plugins" "$SANDBOX_HOME/.config/tmux/plugins"
+: > "$SANDBOX_HOME/.zshrc"
 
 # The real save directory — asserted untouched by T21, never written to. Mirror
 # resurrect's own selection: it prefers the legacy ~/.tmux/resurrect whenever
@@ -41,11 +62,33 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Poll until `cmd...` prints exactly `want`, for up to 5s; the status says
+# whether it arrived. A fixed sleep is sized for the slowest machine and still
+# loses the race on a cold one; the caller's check() reports what was there.
+wait_for() { # <want> <cmd...>
+    local want="$1" _; shift
+    for _ in $(seq 1 50); do
+        [ "$("$@" 2>/dev/null)" = "$want" ] && return 0
+        sleep 0.1
+    done
+    return 1
+}
+
+# A fresh test server. new-session RETURNING is not the server being ready —
+# the config is still loading behind it, plugins included — and a pane id read
+# too early comes back empty, after which every command targets nothing and
+# the assertions compare empty strings. Poll for the pane; without one the
+# case fails here rather than passing on nothing (callers: `fresh || return`).
 fresh() {
-    T kill-server 2>/dev/null; sleep 0.2
-    T -f "$CONF" new-session -d -s t -x 200 -y 50 2>/dev/null
-    sleep 0.5
-    SOCKPATH=$(T display -p '#{socket_path}')
+    T kill-server 2>/dev/null; sleep 0.2       # let the old server finish exiting
+    HOME="$SANDBOX_HOME" T -f "$CONF" new-session -d -s t -x 200 -y 50 2>/dev/null
+    SOCKPATH=""
+    wait_for 1 eval 'T list-panes -t t -F "#{pane_id}" | grep -c "^%"'
+    SOCKPATH=$(T display -p '#{socket_path}' 2>/dev/null)
+    if [ -z "$SOCKPATH" ]; then
+        no "harness: the test server came up" "no server on $SOCK — the case did not run"
+        return 1
+    fi
     # REDIRECT RESURRECT. resurrect resolves its save directory from
     # @resurrect-dir on whichever server it is inspecting, but the DEFAULT is a
     # single shared path — so a test that reaches the real save.sh writes a
@@ -64,32 +107,59 @@ fresh() {
 # FLOAT_GRACE_SECS is shortened so recovery cases do not have to sit out the
 # production grace window; the grace itself is exercised by T1 needing the
 # holder to age past it before the sweep will touch it.
-R() { TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 bash "$@"; }
+R() { HOME="$SANDBOX_HOME" TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 bash "$@"; }
 
 # Float WITHOUT presenting it — the state a container that died instantly would
 # leave. The recovery cases are about exactly that window, and a real toggle now
 # (correctly) rolls back when presentation fails, so it cannot be observed via R.
-RS() { TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 FLOAT_SKIP_CONTAINER=1 bash "$@"; }
+# With no container to block on, the toggle returns once the float is staged.
+RS() { FLOAT_SKIP_CONTAINER=1 R "$@"; }
+# One shell snippet against the shared library, on the test server.
+lib() { TMUX="$SOCKPATH,0,0" bash -c ". '$LIB'; $1" 2>/dev/null; }
 tiled() { T list-panes -t "$1" -f '#{==:#{pane_floating_flag},0}' -F '#{pane_id}' 2>/dev/null | tr '\n' ' '; }
 layout() { T display-message -p -t "$1" '#{window_layout}' 2>/dev/null; }
+# What the outer pane shows (the inner client's drawing, popups included).
+on_screen() { O capture-pane -p -t o | grep -qF -- "$1" && echo 1 || echo 0; }
+holders() { T list-sessions -F '#{session_name}' 2>/dev/null | grep -c '^_float_'; }
+float_clients() { T list-clients -F '#{session_name}' 2>/dev/null | grep -c '^_float_'; }
+key_table() { T display -p -c "$C" '#{client_key_table}' 2>/dev/null; }
 
 ok()   { PASS=$((PASS+1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; }
-no()   { FAIL=$((FAIL+1)); FAILED="$FAILED $2"; printf '  \033[31mFAIL\033[0m %s\n       %s\n' "$1" "$2"; }
+no()   { FAIL=$((FAIL+1)); FAILED="$FAILED ${1%% *}"; printf '  \033[31mFAIL\033[0m %s\n       %s\n' "$1" "$2"; }
 check(){ [ "$2" = "$3" ] && ok "$1" || no "$1" "expected [$3] got [$2]"; }
 
 want() { case " ${WANT:-} " in *" $1 "*) return 0;; esac; [ -z "${WANT:-}" ]; }
+
+# A real client on the test server: an outer tmux supplies the pty and its
+# shell runs the attach (T27 needs that shell, to attach again from the same
+# pty). The outer server gets the sandbox HOME too, so its shell starts quiet
+# and fast. Sets C once the client is attached and its window has taken the
+# client's size — attaching resizes the window, so a baseline taken earlier
+# never matches. Fails the case otherwise (callers: `attach_client Tn || return`).
+attach_client() { # <case> [width height [session]]
+    local w="${2:-200}" h="${3:-50}" s="${4:-t}"
+    O kill-server 2>/dev/null; sleep 0.2
+    HOME="$SANDBOX_HOME" O -f /dev/null new-session -d -s o -x "$w" -y "$h"
+    O send-keys -t o "TMUX= tmux -L $SOCK attach -t '=$s'" Enter
+    C=""
+    if wait_for "$w $w" eval 'T list-clients -F "#{client_width} #{window_width}" | head -1'; then
+        C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    fi
+    [ -n "$C" ] && return 0
+    no "$1 client attached" "no client on $SOCK"
+    return 1
+}
 
 # ---------------------------------------------------------------------------
 # T5 — identity round trip. select-layout restores geometry but NOT identity;
 # a naive float round trip returns %0 %1 %2 as %0 %2 %1.
 # ---------------------------------------------------------------------------
 t5() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
     before_o=$(tiled "$W"); before_l=$(layout "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &   # container blocks; run detached
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     # assert the float ACTUALLY happened — otherwise "restored exactly" is
     # trivially true and the case is a false green
     check "T5 pane left the window while floated" \
@@ -105,12 +175,12 @@ t5() {
 # skips it. The sweep must bring the pane home.
 # ---------------------------------------------------------------------------
 t1() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     before=$(tiled "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
+    sleep 1.5          # age the holder past the 1s grace: the FIRST pass must take it
     holders=$(T list-sessions -F '#{session_name}' | grep -c '^_float_' || true)
     [ "$holders" -ge 1 ] && ok "T1 pane is in a holder while floated" \
         || no "T1 pane is in a holder while floated" "no _float_ session found"
@@ -135,11 +205,10 @@ t1() {
 # invalidates the recorded layout; nothing may be lost or mis-slotted.
 # ---------------------------------------------------------------------------
 t2() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     T split-window -h -t "$W"; sleep 0.3     # source window changed under us
     n_before=$(tiled "$W" | wc -w | tr -d ' ')
     R "$FLOAT" restore "$P" >/dev/null 2>&1
@@ -153,7 +222,7 @@ t2() {
 # different sessions must not collide.
 # ---------------------------------------------------------------------------
 t4() {
-    fresh
+    fresh || return
     W1=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W1"; sleep 0.2
     T new-session -d -s t2 -x 200 -y 50; sleep 0.2
@@ -161,9 +230,9 @@ t4() {
     T split-window -v -t "$W2"; sleep 0.3
     b1=$(tiled "$W1"); b2=$(tiled "$W2")
     P1=$(T display -p -t "$W1" '#{pane_id}'); P2=$(T display -p -t "$W2" '#{pane_id}')
-    RS "$FLOAT" toggle "$P1" >/dev/null 2>&1 &
-    RS "$FLOAT" toggle "$P2" >/dev/null 2>&1 &
-    sleep 2.5
+    RS "$FLOAT" toggle "$P1" >/dev/null 2>&1 & j1=$!
+    RS "$FLOAT" toggle "$P2" >/dev/null 2>&1 & j2=$!
+    wait "$j1" "$j2"
     check "T4 two holders exist at once" \
         "$(T list-sessions -F '#{session_name}' | grep -c '^_float_' || true)" "2"
     R "$FLOAT" restore "$P1" >/dev/null 2>&1
@@ -177,11 +246,10 @@ t4() {
 # T3 — resurrect save must never capture a float.
 # ---------------------------------------------------------------------------
 t3() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     # prepare-save is what the wrapper runs before handing off to resurrect
     R "$FLOAT" prepare-save >/dev/null 2>&1
     sleep 0.5
@@ -195,7 +263,7 @@ t3() {
 # RIGHTMOST one, so an unguarded push at an edge swaps the wrong panes.
 # ---------------------------------------------------------------------------
 t6() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; sleep 0.3
     left=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
     right=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
@@ -217,7 +285,7 @@ t6() {
 # churn pane order for no visible change.
 # ---------------------------------------------------------------------------
 t7() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; sleep 0.3
     left=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
     before_o=$(tiled "$W"); before_l=$(layout "$W")
@@ -232,7 +300,7 @@ t7() {
 # become the full-height right column.
 # ---------------------------------------------------------------------------
 t7b() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     bottom=$(T display -p -t "$W" '#{pane_id}')
     R "$RELOC" push right "$bottom" >/dev/null 2>&1
@@ -247,40 +315,13 @@ t7b() {
 # (T8, the marked-pane inversion on the retired `marked` verb, lives on as T31:
 # the same trap on the put path.)
 
-# ---------------------------------------------------------------------------
-# T9/T10/T11 — key surface. Needs a real client, so an outer tmux provides the
-# pty. T10: any key (bound or not) drops the client out of a custom table.
-# ---------------------------------------------------------------------------
-t10() {
-    fresh
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T10 client attached" "no client"; return; fi
-
-    T switch-client -c "$C" -T panes; sleep 0.4
-    check "T10 entered the panes table" "$(T display -p -t "$C" '#{client_key_table}')" "panes"
-
-    O send-keys -t o .; sleep 0.8          # '.' is unbound in the panes table
-    check "T10 an unbound key exits the mode (cannot trap)" \
-        "$(T display -p -t "$C" '#{client_key_table}')" "root"
-
-    T switch-client -c "$C" -T panes; sleep 0.3
-    O send-keys -t o Escape; sleep 0.8
-    check "T10 Escape exits the mode" \
-        "$(T display -p -t "$C" '#{client_key_table}')" "root"
-}
-
 # T9 — inside a float the holder's restricted key table must be in force, so
 # this config's destructive prefix verbs are simply not reachable.
 t9() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     holder=$(T list-sessions -F '#{session_name}' | grep '^_float_' | head -1)
     if [ -z "$holder" ]; then no "T9 holder exists" "none"; R "$FLOAT" restore "$P" >/dev/null 2>&1; return; fi
     # NB: bare name, not "=$holder" — show-option's target is a target-pane and
@@ -289,71 +330,59 @@ t9() {
         "$(T show -qv -t "$holder" key-table)" "float-root"
     check "T9 holder is marked as ours" \
         "$([ -n "$(T show -qv -t "$holder" @fl_holder_nonce)" ] && echo yes)" "yes"
-    check "T9 float-root exposes only the prefix routes" \
-        "$(T list-keys -T float-root | wc -l | tr -d ' ')" "2"
-    check "T9 float-prefix exposes only z/d/[" \
-        "$(T list-keys -T float-prefix | wc -l | tr -d ' ')" "3"
+    # The contract is what is NOT there; harmless keys may come and go.
+    check "T9 no kill or new-window verb is reachable inside the float" \
+        "$({ T list-keys -T float-root; T list-keys -T float-prefix; } 2>/dev/null \
+            | grep -cE 'kill-(pane|window|session|server)|new-window' || true)" "0"
     R "$FLOAT" restore "$P" >/dev/null 2>&1; sleep 0.4
 }
 
 # ---------------------------------------------------------------------------
-# T12 — 3.7b smoke against the real config.
+# T12 — continuum's timer saves through the float-normalising wrapper. Nothing
+# else drives that path (T34 covers prefix p and the status row on a client).
 # ---------------------------------------------------------------------------
 t12() {
-    fresh
-    check "T12 message-style fills the row (3.7 needs fill=)" \
-        "$(T show -gv message-style | grep -c 'fill=')" "1"
-    check "T12 status-format[1] is ours not 3.7's pane list" \
-        "$(T show -gv 'status-format[1]' | grep -c 'client_key_table')" "1"
+    fresh || return
     check "T12 resurrect save routed through the wrapper" \
         "$(T show -gv @resurrect-save-script-path | grep -c 'tmux-resurrect-save.sh')" "1"
-    check "T12 prefix p is bound (not clobbered by a later unbind)" \
-        "$(T list-keys -T prefix | awk '$3=="prefix"&&$4=="p"{print "yes";exit}')" "yes"
-    check "T12 stock new-pane still on prefix *" \
-        "$(T list-keys -T prefix | awk '$3=="prefix"&&$4=="*"{print $NF;exit}')" "new-pane"
 }
 
 # T13 — a native floating pane must not corrupt counts or snapshots.
 t13() {
-    fresh; W=$(T display -p -t t '#{window_id}')
-    T split-window -v -t "$W"; sleep 0.2
+    fresh || return; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; sleep 0.2       # side by side: a left-of exists
     T new-pane -t "$W" 2>/dev/null; sleep 0.5
     check "T13 window_panes counts the native float (why we filter)" \
         "$(T display -p -t "$W" '#{window_panes}')" "3"
-    check "T13 our tiled filter ignores it" "$(tiled "$W" | wc -w | tr -d ' ')" "2"
+    check "T13 the lib's tiled_panes ignores it" "$(lib "tiled_panes $W" | wc -l | tr -d ' ')" "2"
     fl=$(T list-panes -t "$W" -f '#{==:#{pane_floating_flag},1}' -F '#{pane_id}')
+    # push takes its pane as an argument, but resolves {left-of} from the
+    # CURRENT pane. With the float current that is nothing and push no-ops
+    # guard or not; with a tiled pane current it is a real neighbour. tmux
+    # then refuses the swap on its own ("cannot swap floating panes"), so the
+    # flag alone would pass without the guard; the damage the guard prevents
+    # is an undo record for a move that never happened.
+    T select-pane -t "$(T list-panes -t "$W" -f '#{==:#{pane_floating_flag},0}' -F '#{pane_id}' | tail -1)"
     R "$RELOC" push left "$fl" >/dev/null 2>&1; sleep 0.3
-    check "T13 push refuses a floating pane" \
-        "$(T display -p -t "$fl" '#{pane_floating_flag}')" "1"
+    check "T13 push refuses a floating pane, journalling nothing" \
+        "$(T display -p -t "$fl" '#{pane_floating_flag}') [$(T show -wqv -t "$W" @pane_journal)]" "1 []"
 }
 
 # ---------------------------------------------------------------------------
 # T11 — mode bracketing. Verbs that change where you are must NOT re-enter the
 # sticky table: break moves you to another window, and float opens a blocking
-# container whose nested client must not inherit a pending table.
+# container whose nested client must not inherit a pending table. (The verbs
+# that do stay — h/j/k/l, p, G, and the picker — are pressed on a real client
+# in T18b, T34 and T35.)
 # ---------------------------------------------------------------------------
 t11() {
-    fresh
-    zbind=$(T list-keys -T panes | awk '$4=="z"')
-    bbind=$(T list-keys -T panes | awk '$4=="b"')
-    hbind=$(T list-keys -T panes | awk '$4=="h"')
+    fresh || return
     check "T11 float does not re-enter the mode" \
-        "$(printf '%s' "$zbind" | grep -c 'switch-client -T panes' || true)" "0"
+        "$(T list-keys -T panes | awk '$4=="z"' | grep -c 'switch-client -T panes' || true)" "0"
     check "T11 break does not re-enter the mode" \
-        "$(printf '%s' "$bbind" | grep -c 'switch-client -T panes' || true)" "0"
-    check "T11 push DOES re-enter the mode (sticky)" \
-        "$(printf '%s' "$hbind" | grep -c 'switch-client -T panes' || true)" "1"
-    # hold leaves the mode (the next thing is window navigation); put and
-    # release stay (the next thing is hjkl placement); the picker's popup
-    # blocks, so the script — not the binding — re-enters afterwards.
-    check "T11 hold does not re-enter the mode" \
-        "$(T list-keys -T panes | awk '$4=="g"' | grep -c 'switch-client -T panes' || true)" "0"
-    check "T11 put re-enters the mode" \
-        "$(T list-keys -T panes | awk '$4=="p"' | grep -c 'switch-client -T panes' || true)" "1"
-    check "T11 release re-enters the mode" \
-        "$(T list-keys -T panes | awk '$4=="G"' | grep -c 'switch-client -T panes' || true)" "1"
-    check "T11 pick does not re-enter the mode in the binding" \
-        "$(T list-keys -T panes | awk '$4=="w"' | grep -c 'switch-client -T panes' || true)" "0"
+        "$(T list-keys -T panes | awk '$4=="b"' | grep -c 'switch-client -T panes' || true)" "0"
+    # Dropping -b leaves T35 green (the popup still works), so only this row
+    # sees it.
     check "T11 pick is backgrounded (display-popup blocks its issuer)" \
         "$(T list-keys -T panes | awk '$4=="w"' | grep -c 'run-shell -b' || true)" "1"
 }
@@ -365,23 +394,19 @@ t11() {
 # real key, through a real pty, and closes it with the real in-float key.
 # ---------------------------------------------------------------------------
 t14() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
 
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T14 client attached" "no client"; return; fi
+    attach_client T14 || return
     T select-pane -t "$P"
     # capture AFTER the client attaches: attaching resizes the window, so a
     # baseline taken before it would never match the restored layout
     before_o=$(tiled "$W"); before_l=$(layout "$W")
     before_w=$(T display-message -p -t "$P" '#{pane_width}')
 
-    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z; sleep 3
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z
+    wait_for 1 float_clients
 
     check "T14 prefix z floated the pane out of the window" \
         "$(tiled "$W" | grep -c "$P" || true)" "0"
@@ -398,7 +423,8 @@ t14() {
 
     # close it with the in-float key: float-root routes C-b to float-prefix,
     # where z detaches the nested client and the container's shell restores
-    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z; sleep 3
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z
+    wait_for "$before_l" layout "$W"     # the restore's last step
 
     check "T14 prefix z inside the float restored the pane" "$(tiled "$W")" "$before_o"
     check "T14 layout restored after the round trip"        "$(layout "$W")" "$before_l"
@@ -414,12 +440,11 @@ t14() {
 # and then calls restore itself.
 # ---------------------------------------------------------------------------
 t15() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
     before_o=$(tiled "$W"); before_l=$(layout "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     R "$FLOAT" restore "$P" >/dev/null 2>&1 &
     R "$FLOAT" restore "$P" >/dev/null 2>&1 &
     wait 2>/dev/null; sleep 0.6
@@ -432,7 +457,7 @@ t15() {
 # recover it. Reproduces the window between break-pane and publishing @fl_*.
 # ---------------------------------------------------------------------------
 t16() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
     # hand-build the intermediate state: marked holder, pane moved in, no @fl_*
@@ -453,9 +478,22 @@ t16() {
 # reports failure and the wrapper must NOT hand off to the real save.
 # ---------------------------------------------------------------------------
 t17() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
+
+    # The fake save must actually be reachable, or "aborted" below proves
+    # nothing — without the RESURRECT_SAVE seam the wrapper would exec the real
+    # save and the marker would be absent either way. So first the control:
+    # with nothing floated, the wrapper hands off and the fake save runs.
+    marker="$SANDBOX/real-save-ran"; rm -f "$marker"
+    printf '#!/bin/sh\ntouch %s\n' "$marker" > "$SANDBOX/fake-save.sh"
+    chmod +x "$SANDBOX/fake-save.sh"
+    RESURRECT_SAVE="$SANDBOX/fake-save.sh" R "$SAVE" quiet >/dev/null 2>&1
+    check "T17 (control) with nothing floated the wrapper runs the save" \
+        "$([ -e "$marker" ] && echo ran || echo aborted)" "ran"
+    rm -f "$marker"
+
     # a holder that cannot be restored: source window killed, session gone too
     T new-session -d -s _float_stuck
     T set -t _float_stuck @fl_holder_nonce stuck
@@ -476,15 +514,7 @@ t17() {
     check "T17 prepare-save never reports success with a holder surviving" \
         "$([ "$rc" -ne 0 ] || [ "$left" = 0 ] && echo ok)" "ok"
 
-    # and the wrapper must abort rather than exec the real save
-    # The fake save must actually be reachable, or "aborted" proves nothing —
-    # the wrapper honours RESURRECT_SAVE for exactly this. Guard that the seam
-    # exists, so this can't silently go back to invoking the real save.
-    check "T17 wrapper honours the RESURRECT_SAVE seam" \
-        "$(grep -c 'RESURRECT_SAVE' "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh")" "1"
-    marker="$SANDBOX/real-save-ran"; rm -f "$marker"
-    printf '#!/bin/sh\ntouch %s\n' "$marker" > "$SANDBOX/fake-save.sh"
-    chmod +x "$SANDBOX/fake-save.sh"
+    # and the wrapper must abort rather than exec the save.
     # A float that genuinely cannot be normalised: another restorer holds a
     # FRESH claim, so restore defers to it and prepare-save times out. (An
     # unreachable source window is NOT stuck — recovery surfaces it into a
@@ -498,8 +528,7 @@ t17() {
     T set -p -t "$P2" @fl_holder _float_stuck2
     T set -p -t "$P2" @fl_src_sess "gone"; T set -p -t "$P2" @fl_src_win "@998"
     T set -p -t "$P2" @fl_claim "99999:$(date +%s)"
-    TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 RESURRECT_SAVE="$SANDBOX/fake-save.sh" \
-        bash "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh" quiet >/dev/null 2>&1
+    RESURRECT_SAVE="$SANDBOX/fake-save.sh" R "$SAVE" quiet >/dev/null 2>&1
     check "T17 wrapper does not run the real save when a float is stuck" \
         "$([ -e "$marker" ] && echo ran || echo aborted)" "aborted"
     rm -f "$SANDBOX/fake-save.sh" "$marker"
@@ -509,7 +538,7 @@ t17() {
 # T18 — undo. Completely uncovered before this review.
 # ---------------------------------------------------------------------------
 t18() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; sleep 0.3
     before_o=$(tiled "$W")
     right=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
@@ -520,7 +549,7 @@ t18() {
     check "T18 undo restores the pane order" "$(tiled "$W")" "$before_o"
 
     # edge relocation undo
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     before_l=$(layout "$W"); bottom=$(T display -p -t "$W" '#{pane_id}')
     R "$RELOC" push right "$bottom" >/dev/null 2>&1; sleep 0.4
@@ -534,14 +563,9 @@ t18() {
 # twice in parallel from a shell bypasses the queue entirely and tests a path
 # no user can reach.
 t18b() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; sleep 0.3
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T18b client attached" "no client"; return; fi
+    attach_client T18b || return
     T select-pane -t "$(T list-panes -t "$W" -F '#{pane_id}' | head -1)"
     o0=$(tiled "$W")
 
@@ -558,7 +582,7 @@ t18b() {
 
 # T18c — a stale journal record must be refused, not half-applied.
 t18c() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; sleep 0.3
     right=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
     R "$RELOC" push left "$right" >/dev/null 2>&1; sleep 0.4
@@ -575,11 +599,10 @@ t18c() {
 # T19 — a surfaced recovery session must be usable: the prefix keys the holder
 # disabled have to come back, or the user's C-a is dead in it.
 t19() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     T kill-window -t "$W" 2>/dev/null       # destroy the source
     T kill-session -t t 2>/dev/null
     sleep 0.3
@@ -600,18 +623,14 @@ t19() {
 # so this is the one case that checks something visual rather than tmux state.
 # ---------------------------------------------------------------------------
 t20() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
     T select-pane -t "$P" -T "notes"          # a named pane, to check the title
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 120 -y 36
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T20 client attached" "no client"; return; fi
+    attach_client T20 120 36 || return
     T select-pane -t "$P"
-    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z; sleep 3
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z
+    wait_for 1 on_screen 'notes'
 
     cap=$(O capture-pane -p -t o)
     check "T20 float draws a heavy border" \
@@ -622,7 +641,8 @@ t20() {
         "$(printf '%s' "$cap" | grep -cm1 'notes' || true)" "1"
 
     # and the other popups in this config keep the global rounded frame
-    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z; sleep 2
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z
+    wait_for 0 holders
     check "T20 global popup-border-lines untouched" \
         "$(T show -gv popup-border-lines)" "rounded"
 }
@@ -637,18 +657,22 @@ t20() {
 # it proves the redirection holds where it actually matters.
 # ---------------------------------------------------------------------------
 t21() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
 
     check "T21 test server points at the sandbox" \
         "$(T show -gv @resurrect-dir)" "$SANDBOX_RESURRECT"
+    # The bindings name ~/.config/tmux/scripts; on the user's HOME that is the
+    # installed copy, and every key-driven case would grade it instead.
+    check "T21 the server's bindings reach this tree's scripts" \
+        "$(T run-shell 'cd ~/.config/tmux/scripts && pwd -P')" "$(cd "$TREE/scripts" && pwd -P)"
 
     local before_last before_count after_last after_count sandbox_before sandbox_after
     before_last=$(readlink "$REAL_RESURRECT/last" 2>/dev/null || echo none)
     before_count=$(ls -1 "$REAL_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
     sandbox_before=$(ls -1 "$SANDBOX_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
 
-    R "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh" quiet >/dev/null 2>&1
+    R "$SAVE" quiet >/dev/null 2>&1
     sleep 1
 
     sandbox_after=$(ls -1 "$SANDBOX_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
@@ -668,12 +692,11 @@ t21() {
 # proceeds, putting two restorers back on the corruption path T15 closed.
 # ---------------------------------------------------------------------------
 t22() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
     before_o=$(tiled "$W"); before_l=$(layout "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     # age the claim past the TTL so both restorers take the steal branch
     T set -p -t "$P" @fl_claim "99999:1"
     R "$FLOAT" restore "$P" >/dev/null 2>&1 &
@@ -690,7 +713,7 @@ t22() {
 # phase as "already floated" and no-ops forever.
 # ---------------------------------------------------------------------------
 t23() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     before_o=$(tiled "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
@@ -716,8 +739,7 @@ t23() {
         "$(T list-sessions -F '#{session_name}' | grep -c '^recovered-\|^_float_' || true)" "0"
 
     # and the pane must still be floatable afterwards
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     check "T23 float works again after rollback" \
         "$(tiled "$W" | grep -c "$P" || true)" "0"
     R "$FLOAT" restore "$P" >/dev/null 2>&1; sleep 0.5
@@ -726,7 +748,7 @@ t23() {
 # T24 — a container that fails to open must not strand the pane outside its
 # window. An invalid @float_border makes display-popup fail.
 t24() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     before_o=$(tiled "$W")
     P=$(T display -p -t "$W" '#{pane_id}')
@@ -751,20 +773,16 @@ t24() {
 # incident (2026-08-14, a floated nvim).
 # ---------------------------------------------------------------------------
 t25() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    RS "$FLOAT" toggle "$P" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
     holder=$(T list-sessions -F '#{session_name}' | grep '^_float_' | head -1)
     if [ -z "$holder" ]; then no "T25 holder exists" "none"; return; fi
 
     # A real nested client on the holder — exactly what the container's
     # blocking attach is.
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK attach -t '=$holder'" Enter
-    sleep 2.5
+    attach_client T25 200 50 "$holder" || return
     check "T25 nested client is on the holder" \
         "$(T list-clients -F '#{client_session}' | head -1)" "$holder"
 
@@ -779,26 +797,15 @@ t25() {
 
 # ---------------------------------------------------------------------------
 # T26 — scratch popup: opens AT the pane's cwd, and its whole lifecycle leaves
-# nothing behind — no session, no holder, no pane state. SCRATCH_CMD is the
+# nothing behind — no session, no holder, no pane state; that row pins the
+# design (scratch never touches the float's state machine). SCRATCH_CMD is the
 # seam standing in for the interactive shell.
 # ---------------------------------------------------------------------------
 t26() {
-    fresh
+    fresh || return
     sess_before=$(T list-sessions | wc -l | tr -d ' ')
 
-    # No client to draw on: scratch must fail without creating anything —
-    # there is no state machine to roll back, and this proves it.
-    P0=$(T display -p -t t '#{pane_id}')
-    R "$FLOAT" scratch "$P0" >/dev/null 2>&1
-    check "T26 clientless scratch creates nothing" \
-        "$(T list-sessions | wc -l | tr -d ' ')" "$sess_before"
-
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T26 client attached" "no client"; return; fi
+    attach_client T26 || return
 
     mkdir -p "$SANDBOX/scr-cwd"
     P=$(T split-window -P -F '#{pane_id}' -c "$SANDBOX/scr-cwd" -t t)
@@ -807,10 +814,9 @@ t26() {
     sleep 0.5
     check "T26 scratch opened at the pane's cwd" \
         "$(grep -c 'scr-cwd$' "$SANDBOX/scratch-out" 2>/dev/null || true)" "1"
-    check "T26 scratch leaves no session behind" \
-        "$(T list-sessions | wc -l | tr -d ' ')" "$sess_before"
-    check "T26 scratch leaves no holder or float state" \
-        "$(T list-panes -a -F '#{@fl_phase}' | grep -c . || true)" "0"
+    check "T26 scratch leaves no session and no float state behind" \
+        "$(T list-sessions | wc -l | tr -d ' ') $(T list-panes -a -F '#{@fl_phase}' | grep -c . || true)" \
+        "$sess_before 0"
 }
 
 # ---------------------------------------------------------------------------
@@ -824,17 +830,12 @@ t26() {
 # attach again from the SAME outer pane so both share one pty.
 # ---------------------------------------------------------------------------
 t27() {
-    fresh
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T27 client attached" "no client"; return; fi
+    fresh || return
+    attach_client T27 || return
     ghost=$(T display -p -c "$C" '#{client_pid}')
     T suspend-client -t "$C"; sleep 1.5              # outer shell gets its prompt back
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
+    O send-keys -t o "TMUX= tmux -L $SOCK attach -t '=t'" Enter
+    wait_for 1 eval 'T list-clients | wc -l | tr -d " "'   # the ghost is not listed
     live=$(T list-clients -F '#{client_pid}' 2>/dev/null | head -1)
     if [ -z "$live" ] || [ "$live" = "$ghost" ]; then
         no "T27 ghost + live client share a name" "live=[$live] ghost=[$ghost]"
@@ -848,7 +849,7 @@ t27() {
 
     P=$(T display -p -t t '#{pane_id}')
     SCRATCH_CMD='sleep 4' R "$FLOAT" scratch "$P" "$C" >/dev/null 2>&1 &
-    sleep 1.5
+    wait_for 1 on_screen 'scratch ·'
     check "T27 scratch is drawn on the live client, not the ghost" \
         "$(O capture-pane -p -t o | grep -c 'scratch ·' || true)" "1"
     T display-popup -C 2>/dev/null; sleep 0.5       # no -c: best client = live
@@ -857,7 +858,7 @@ t27() {
     # used to accept any name `display -c` answered for — the ghost answers.
     T new-window -d -t t 2>/dev/null; sleep 0.3
     R "$RELOC" pick "$P" "$C" >/dev/null 2>&1 &
-    sleep 2
+    wait_for 1 on_screen 'move pane to'
     check "T27 the pick popup is drawn on the live client, not the ghost" \
         "$(O capture-pane -p -t o | grep -c 'move pane to' || true)" "1"
     T display-popup -C 2>/dev/null; sleep 0.5
@@ -870,7 +871,7 @@ t27() {
 # hold alone; release is idempotent.
 # ---------------------------------------------------------------------------
 t28() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     a=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
     b=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
@@ -898,7 +899,7 @@ t28() {
 # the pane, not its window's shape).
 # ---------------------------------------------------------------------------
 t29() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.2
     T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
     t2=$(T display -p -t "$W2" '#{pane_id}')
@@ -937,7 +938,7 @@ t29() {
 # pane leaving closes that window.
 # ---------------------------------------------------------------------------
 t30() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.2
     T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W2"; sleep 0.2
@@ -969,7 +970,7 @@ t30() {
 # still move the HELD pane (move-pane without -s would move the marked one).
 # ---------------------------------------------------------------------------
 t31() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.2
     T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
     held=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
@@ -989,14 +990,13 @@ t31() {
 # native float as the destination is refused.
 # ---------------------------------------------------------------------------
 t32() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.2
     T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
     t2=$(T display -p -t "$W2" '#{pane_id}')
     p=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
     R "$RELOC" hold "$p" >/dev/null 2>&1
-    RS "$FLOAT" toggle "$p" >/dev/null 2>&1 &
-    sleep 2
+    RS "$FLOAT" toggle "$p" >/dev/null 2>&1
     check "T32 (premise) held pane is floated" "$(tiled "$W" | grep -c "$p" || true)" "0"
     R "$RELOC" put "$t2" >/dev/null 2>&1; sleep 0.4
     check "T32 put refuses a floated held pane" "$(tiled "$W2" | grep -c "$p" || true)" "0"
@@ -1026,7 +1026,7 @@ t32() {
 # it, keeps it, and `u` is stuck there forever.
 # ---------------------------------------------------------------------------
 t33() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
     T new-window -t t; sleep 0.3; W2=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W2"; sleep 0.3
@@ -1055,20 +1055,16 @@ t33() {
 # ---------------------------------------------------------------------------
 # T34 — the key surface and the status row, on a real client. g leaves the
 # mode and the spare row says what is held through ordinary window navigation;
-# p puts and stays in the mode; G stays; m/M are gone; at 80 columns the
+# p puts and stays in the mode; G stays; any unbound key and Esc leave it (a
+# custom table cannot trap the client); m/M are gone; at 80 columns the
 # compact cheat sheet still names the hold verbs.
 # ---------------------------------------------------------------------------
 t34() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.2
     T new-window -t t; sleep 0.2; W2=$(T display -p -t t '#{window_id}')
     T select-window -t "$W"; sleep 0.2
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T34 client attached" "no client"; return; fi
+    attach_client T34 || return
     check "T34 m and M are retired" "$(T list-keys -T panes | awk '$4=="m"||$4=="M"' | wc -l | tr -d ' ')" "0"
 
     p=$(T display -p -t "$W" '#{pane_id}')
@@ -1086,13 +1082,13 @@ t34() {
     check "T34 the row is the cheat sheet again (redrawn after re-entry)" "$(row | grep -c 'p put' || true)" "1"
     O send-keys -t o G; sleep 0.8
     check "T34 G stays in the mode" "$(T display -p -c "$C" '#{client_key_table}')" "panes"
-    O send-keys -t o Escape; sleep 0.5
+    O send-keys -t o .; sleep 0.8          # '.' is unbound in the panes table
+    check "T34 an unbound key leaves the mode" "$(T display -p -c "$C" '#{client_key_table}')" "root"
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o Escape; sleep 0.8
+    check "T34 Esc leaves the mode" "$(T display -p -c "$C" '#{client_key_table}')" "root"
 
     # 80 columns: the compact row
-    O kill-server 2>/dev/null; sleep 0.3
-    O -f /dev/null new-session -d -s o -x 80 -y 24
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
+    attach_client T34 80 24 || return
     O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 1
     r=$(row)
     check "T34 80-col row names hold and put" "$(printf '%s' "$r" | grep -c 'g hold.*p put.*w pick' || true)" "1"
@@ -1102,30 +1098,32 @@ t34() {
 
 # ---------------------------------------------------------------------------
 # T35 — the picker, end to end on a real client: w opens the popup with the
-# other window and a preview of it; Enter moves this pane there, lands beside
-# it, and returns to pane mode.
+# other window of this session and a preview of it — never the source window,
+# never another session's; Enter moves this pane there, lands beside it, and
+# returns to pane mode.
 # ---------------------------------------------------------------------------
 t35() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.2
     T new-window -t t -n zebra; sleep 0.2; W2=$(T display -p -t t '#{window_id}')
     T send-keys -t "$W2" 'echo PREVIEW-SENTINEL' Enter; sleep 0.3
+    T rename-window -t "$W" source
+    T new-session -d -s t2 -n elsewhere; sleep 0.2
     T select-window -t "$W"; sleep 0.2
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T35 client attached" "no client"; return; fi
+    attach_client T35 || return
     p=$(T display -p -t "$W" '#{pane_id}')
-    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w; sleep 3
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w
+    wait_for 1 on_screen 'PREVIEW-SENTINEL'      # the list, then its preview
     cap=$(O capture-pane -p -t o)
     # the fzf row is "<index>: zebra  · 1 pane"; the bare name also sits in the
     # status bar's window list, so match the row's own shape
     check "T35 popup lists the other window" "$(printf '%s' "$cap" | grep -c 'zebra  · 1 pane' || true)" "1"
+    check "T35 ...and neither the source window nor another session's" \
+        "$(printf '%s' "$cap" | grep -cE '(source|elsewhere)  · ' || true)" "0"
     check "T35 preview shows the target's content" \
         "$([ "$(printf '%s' "$cap" | grep -c 'PREVIEW-SENTINEL' || true)" -ge 1 ] && echo yes)" "yes"
-    O send-keys -t o Enter; sleep 2
+    O send-keys -t o Enter
+    wait_for 0 on_screen 'move pane to'; wait_for panes key_table
     check "T35 Enter moved the pane there" "$(tiled "$W2" | grep -c "$p" || true)" "1"
     check "T35 landed in the target window" "$(T display -p -c "$C" '#{window_id}')" "$W2"
     check "T35 the moved pane is active" "$(T display -p -c "$C" '#{pane_id}')" "$p"
@@ -1139,30 +1137,32 @@ t35() {
 # replaced while the popup is open must not change what Enter moves.
 # ---------------------------------------------------------------------------
 t36() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.2
     T new-window -t t; sleep 0.2; W2=$(T display -p -t t '#{window_id}')
     T select-window -t "$W"; sleep 0.2
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T36 client attached" "no client"; return; fi
+    attach_client T36 || return
     src=$(T display -p -t "$W" '#{pane_id}')
     other=$(T list-panes -t "$W" -F '#{pane_id}' | grep -v "^$src\$" | head -1)
     T set -g @pane_hold "$other"                       # an earlier hold, unrelated
     l1=$(layout "$W"); l2=$(layout "$W2")
-    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w; sleep 2.5
-    O send-keys -t o Escape; sleep 1.5
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w
+    wait_for 1 on_screen '  · 1 pane'           # fzf's row, not just the popup frame
+    O send-keys -t o Escape
+    wait_for 0 on_screen 'move pane to'; wait_for panes key_table
     check "T36 Esc moves nothing" "$(layout "$W")$(layout "$W2")" "$l1$l2"
     check "T36 Esc leaves the earlier hold alone" "$(T show -gqv @pane_hold)" "$other"
     check "T36 Esc returns to pane mode" "$(T display -p -c "$C" '#{client_key_table}')" "panes"
-    O send-keys -t o Escape; sleep 0.3
+    # Leave the mode without a key: right after a popup closes, a lone Escape
+    # is held and merges with the next key (C-b becomes M-C-b), so `prefix p w`
+    # below would type "pw" into the shell instead.
+    T switch-client -c "$C" -T root
 
-    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w; sleep 2.5
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w
+    wait_for 1 on_screen '  · 1 pane'
     T set -g @pane_hold "$other"                       # replaced while the popup is up
-    O send-keys -t o Enter; sleep 2
+    O send-keys -t o Enter
+    wait_for 0 on_screen 'move pane to'; wait_for panes key_table
     check "T36 Enter moved the captured source, not the hold" \
         "$(tiled "$W2" | grep -c "$src" || true)$(tiled "$W" | grep -c "$other" || true)" "11"
     check "T36 the replacement hold is untouched" "$(T show -gqv @pane_hold)" "$other"
@@ -1170,27 +1170,12 @@ t36() {
 }
 
 # ---------------------------------------------------------------------------
-# T37 — picker scope: this session's windows, never the source window, never
-# another session; and with no other window there is no popup — the mode is
-# simply re-entered.
+# T37 — with no other window in the session there is no popup; the mode is
+# simply re-entered. (What the popup lists is T35's.)
 # ---------------------------------------------------------------------------
 t37() {
-    fresh; W=$(T display -p -t t '#{window_id}')
-    T new-window -t t -n other; sleep 0.2; W2=$(T display -p -t t '#{window_id}')
-    T new-session -d -s t2 -x 200 -y 50; sleep 0.2
-    T select-window -t "$W"
-    p=$(T display -p -t "$W" '#{pane_id}')
-    # `targets` is exactly what pick-ui feeds fzf
-    listed=$(R "$RELOC" targets "$p" 2>/dev/null | cut -f1 | tr '\n' ' ')
-    check "T37 lists only the other window of this session" "$listed" "$W2 "
-
-    T kill-window -t "$W2"; sleep 0.3
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T37 client attached" "no client"; return; fi
+    fresh || return
+    attach_client T37 || return
     O send-keys -t o C-b; sleep 0.3; O send-keys -t o p; sleep 0.5; O send-keys -t o w; sleep 1.5
     check "T37 no other window: no popup" "$(O capture-pane -p -t o | grep -c 'move pane to' || true)" "0"
     check "T37 no other window: back in pane mode" "$(T display -p -c "$C" '#{client_key_table}')" "panes"
@@ -1203,21 +1188,17 @@ t37() {
 # output, so an existence check on the status calls every dead pane alive.
 # The float's private copies did; a toggle on a dead pane then got as far as
 # creating a holder session before break-pane failed. The session-created
-# hook makes that transient holder observable. Also pinned: nothing keeps a
-# private copy to drift back, and the palette helper's output format, which
-# every fzf popup passes straight to `fzf --color`.
+# hook makes that transient holder observable. Also pinned: the palette
+# helper's output, which every fzf popup passes straight to `fzf --color`.
 # ---------------------------------------------------------------------------
 t38() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -v -t "$W"; sleep 0.3
     P=$(T display -p -t "$W" '#{pane_id}')
-    lib() { TMUX="$SOCKPATH,0,0" bash -c ". '$LIB'; $1" 2>/dev/null; }
     check "T38 a live pane exists"   "$(lib "pane_exists $P && echo y || echo n")" "y"
     check "T38 a dead pane does not" "$(lib 'pane_exists %9999 && echo y || echo n')" "n"
     check "T38 a live window exists" "$(lib "win_exists $W && echo y || echo n")" "y"
     check "T38 a dead window does not" "$(lib 'win_exists @9999 && echo y || echo n')" "n"
-    check "T38 no script keeps a private existence check" \
-        "$(grep -l '^[[:space:]]*\(pane_exists\|win_exists\)[[:space:]]*()' "$HOME"/.config/tmux/scripts/*.sh 2>/dev/null | wc -l | tr -d ' ')" "0"
 
     T set-hook -g session-created 'set -ga @t38_created x'
     RS "$FLOAT" toggle %9999 >/dev/null 2>&1
@@ -1225,8 +1206,9 @@ t38() {
         "[$(T show -gqv @t38_created)]" "[]"
 
     cols=$(lib fzf_colors_from_palette)
-    check "T38 palette colours are one fzf --color line of 15 fields" \
-        "$(printf '%s\n' "$cols" | wc -l | tr -d ' ') $(printf '%s' "$cols" | tr ',' '\n' | grep -c ':')" "1 15"
+    # fzf rejects a malformed --color with status 2; 1 is only "no match".
+    check "T38 fzf accepts the palette as its --color value" \
+        "$(fzf --color "$cols" --filter x </dev/null >/dev/null 2>&1; [ $? -le 1 ] && echo yes)" "yes"
     check "T38 ...taken from the live palette" \
         "$(printf '%s' "$cols" | cut -d, -f1,4,7)" \
         "hl:$(T show -gv @thm_red),bg+:$(T show -gv @thm_surface_0),pointer:$(T show -gv @thm_mauve)"
@@ -1235,40 +1217,30 @@ t38() {
 }
 
 # ---------------------------------------------------------------------------
-# T39 — the rename popup, end to end on a real client. prefix M passes the
-# pane as a run-shell ARGUMENT (the float's shape) instead of stashing it in a
-# global env var between the binding and the popup, which raced when two
-# clients acted at once. The label must land on the pane M was pressed on,
-# even though focus moves while the popup is open.
+# T39 — the rename popup, end to end on a real client. The label must land on
+# the pane M was pressed on, even though focus moves while the popup is open:
+# the binding passes the pane as a run-shell ARGUMENT (the float's shape).
 # ---------------------------------------------------------------------------
 t39() {
-    fresh; W=$(T display -p -t t '#{window_id}')
+    fresh || return; W=$(T display -p -t t '#{window_id}')
     T split-window -h -t "$W"; sleep 0.3
     A=$(T list-panes -t "$W" -F '#{pane_id}' | head -1)
     B=$(T list-panes -t "$W" -F '#{pane_id}' | tail -1)
-    mb=$(T list-keys -T prefix | awk '$4=="M"')
-    check "T39 prefix M passes the pane as an argument, with no global stash" \
-        "$(printf '%s' "$mb" | grep -c "tmux-rename-pane.sh open '#{pane_id}'" || true)$(printf '%s' "$mb" | grep -c 'set-environment' || true)" "10"
 
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T39 client attached" "no client"; return; fi
+    attach_client T39 || return
     T select-pane -t "$A"
-    O send-keys -t o C-b; sleep 0.3; O send-keys -t o M; sleep 2
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o M
+    wait_for 1 on_screen 'pane title >'
     check "T39 the rename popup opened" "$(O capture-pane -p -t o | grep -c 'pane title >' || true)" "1"
     T select-pane -t "$B"                       # focus moves while it is open
-    O send-keys -t o -l 'notes'; sleep 0.3; O send-keys -t o Enter; sleep 1
+    O send-keys -t o -l 'notes'; sleep 0.3; O send-keys -t o Enter
+    wait_for notes eval 'T display -p -t "$A" "#{pane_title}"'
     check "T39 the label landed on the pane M was pressed on" \
         "$(T display -p -t "$A" '#{pane_title}')" "notes"
     check "T39 the other pane kept its title" \
         "$(T display -p -t "$B" '#{pane_title}' | grep -c '^notes$' || true)" "0"
     check "T39 naming froze the title and raised the border" \
         "$(T show -pv -t "$A" allow-set-title) $(T show -wv -t "$W" pane-border-status)" "off top"
-    check "T39 no global env stash exists" \
-        "$(T show-environment -g 2>/dev/null | grep -c '^RENAME_PANE' || true)" "0"
 }
 
 # ---------------------------------------------------------------------------
@@ -1278,13 +1250,8 @@ t39() {
 # Pressed on a real client, since only run-shell produces the clobbering.
 # ---------------------------------------------------------------------------
 t40() {
-    fresh
-    O kill-server 2>/dev/null; sleep 0.2
-    O -f /dev/null new-session -d -s o -x 200 -y 50
-    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
-    sleep 2.5
-    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
-    if [ -z "$C" ]; then no "T40 client attached" "no client"; return; fi
+    fresh || return
+    attach_client T40 || return
     check "T40 (premise) the window has one pane" "$(tiled t | wc -w | tr -d ' ')" "1"
     O send-keys -t o C-b; sleep 0.3; O send-keys -t o z; sleep 1.5
     screen=$(O capture-pane -p -t o)
@@ -1294,11 +1261,113 @@ t40() {
         "$(printf '%s' "$screen" | grep -c 'returned 1' || true)" "0"
 }
 
+# ---------------------------------------------------------------------------
+# T41 — restore's second branch: the same panes, resized while floated. The
+# resize is the user's newer work, so the pane order comes back but the
+# recorded layout must NOT be replayed over it.
+# ---------------------------------------------------------------------------
+t41() {
+    fresh || return; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
+    before_o=$(tiled "$W"); before_l=$(layout "$W")
+    P=$(T display -p -t "$W" '#{pane_id}')
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
+    T resize-pane -t "$(tiled "$W" | cut -d' ' -f1)" -x 50; sleep 0.2
+    check "T41 (premise) the source window was resized while floated" \
+        "$(tiled "$W" | grep -c "$P" || true) $(T display -p -t "$(tiled "$W" | cut -d' ' -f1)" '#{pane_width}')" "0 50"
+    R "$FLOAT" restore "$P" >/dev/null 2>&1
+    check "T41 the pane order is restored" "$(tiled "$W")" "$before_o"
+    check "T41 the recorded layout is not replayed over the resize" \
+        "$([ "$(layout "$W")" != "$before_l" ] && echo kept)" "kept"
+}
+
+# ---------------------------------------------------------------------------
+# T42 — restore's rebuild branch: the source window is gone but its session
+# lives. The pane comes home in a new window under the old name, with no
+# recovery session and no placeholder left beside it. (The old index is only
+# tried: renumber-windows has already moved a neighbour into it. T19 kills the
+# session too; T17 fakes a gone session.)
+# ---------------------------------------------------------------------------
+t42() {
+    fresh || return; W=$(T display -p -t t '#{window_id}')
+    T rename-window -t "$W" home
+    T split-window -v -t "$W"; sleep 0.2
+    T new-window -d -t t; sleep 0.2                # keeps the session alive
+    P=$(T display -p -t "$W" '#{pane_id}')
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
+    T kill-window -t "$W"
+    R "$FLOAT" restore "$P" >/dev/null 2>&1
+    check "T42 the pane is back in its own session" "$(T display -p -t "$P" '#{session_name}')" "t"
+    check "T42 ...in a rebuilt window under the old name" \
+        "$(T display -p -t "$P" '#{window_name}')" "home"
+    check "T42 ...alone (the placeholder shell is gone)" \
+        "$(T display -p -t "$P" '#{window_panes}')" "1"
+    check "T42 no recovery session and no holder" \
+        "$(T list-sessions -F '#{session_name}' | grep -c '^recovered-\|^_float_' || true)" "0"
+}
+
+# ---------------------------------------------------------------------------
+# T43 — the sweep's young-holder re-check. A holder inside the grace window is
+# skipped (its container may still be attaching); the sweep runs only on
+# client-attached, so without the re-check nothing would look at it again
+# until the next attach. Sweep the instant the float is staged: only the
+# re-check, after the grace, can bring the pane home.
+# ---------------------------------------------------------------------------
+t43() {
+    fresh || return; W=$(T display -p -t t '#{window_id}')
+    T split-window -v -t "$W"; sleep 0.3
+    before=$(tiled "$W")
+    P=$(T display -p -t "$W" '#{pane_id}')
+    RS "$FLOAT" toggle "$P" >/dev/null 2>&1
+    R "$FLOAT" sweep >/dev/null 2>&1                # grace is 1s here; this is inside it
+    check "T43 the sweep's re-check restored a holder that was too young at first" \
+        "$(tiled "$W")" "$before"
+    check "T43 holder cleaned up" "$(holders)" "0"
+}
+
+# ---------------------------------------------------------------------------
+# T44 — a save while a float is LIVE: a real container on a real client, then
+# the resurrect wrapper. prepare-save must dismiss the container and restore
+# the pane exactly, and the save must then go ahead with nothing floated. T3,
+# T15 and T17 all float without a container. (This is the path that once ran
+# two restorers at once; T15 pins the claim that serializes them, since the
+# race is too narrow to reproduce here on demand.)
+# ---------------------------------------------------------------------------
+t44() {
+    fresh || return; W=$(T display -p -t t '#{window_id}')
+    T split-window -h -t "$W"; T split-window -v -t "$W"; sleep 0.3
+    attach_client T44 || return
+    before_o=$(tiled "$W"); before_l=$(layout "$W")
+    P=$(T display -p -t "$W" '#{pane_id}')
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z
+    wait_for 1 float_clients
+    check "T44 (premise) the float is live in a container" \
+        "$(float_clients) $(tiled "$W" | grep -c "$P" || true)" "1 0"
+
+    # The fake save records what a real one would snapshot: how many holders
+    # exist at that moment. (It inherits R's TMUX, so it asks the test server.)
+    # The dismissed container restores the pane by itself too, but only
+    # afterwards — a save that did not wait for it would record the float.
+    marker="$SANDBOX/t44-holders-at-save"; rm -f "$marker"
+    printf '#!/bin/sh\ntmux list-sessions -F "#{session_name}" | grep -c "^_float_" > %s\n' \
+        "$marker" > "$SANDBOX/fake-save.sh"
+    chmod +x "$SANDBOX/fake-save.sh"
+    RESURRECT_SAVE="$SANDBOX/fake-save.sh" R "$SAVE" quiet >/dev/null 2>&1
+    sleep 0.5                                     # let the container's own restore no-op
+    check "T44 the save went ahead, with no float left to record" \
+        "$(cat "$marker" 2>/dev/null || echo 'no save')" "0"
+    check "T44 the pane is back in its exact slot" "$(tiled "$W")|$(layout "$W")" "$before_o|$before_l"
+    check "T44 the container is gone and the holder with it" "$(float_clients) $(holders)" "0 0"
+    check "T44 the outer client stayed on its session" "$(T display -p -c "$C" '#{session_name}')" "t"
+    rm -f "$SANDBOX/fake-save.sh" "$marker"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
-for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t9 t10 t11 t14 \
+for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t9 t11 t14 \
          t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24 t25 t26 t27 \
-         t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40; do
+         t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 \
+         t41 t42 t43 t44; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

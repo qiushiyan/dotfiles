@@ -14,7 +14,7 @@
 #   pick <pane> <client>               popup: choose a window, place <pane> there
 #   break [pane]                       break-pane, with the journal invalidated
 #   undo [window]                      undo the last PUSH in this window
-#   pick-ui / preview / targets        INTERNAL: the picker popup's parts
+#   pick-ui / preview                  INTERNAL: the picker popup's parts
 #
 # CROSS-WINDOW MOVES ARE HOLD → WALK → PUT. `hold` records ONE pane id in the
 # global option @pane_hold (plus a display label in @pane_hold_label) and the
@@ -64,8 +64,9 @@
 
 set -uo pipefail
 
-# msg, pane_fmt, pane_exists, win_exists, tiled_panes, apply_order_and_layout,
-# PANE_LABEL_FMT, live_client, fzf_colors_from_palette, reconcile_borders.
+# msg, pane_fmt, pane_exists, win_exists, pane_float_state, tiled_panes,
+# apply_order_and_layout, PANE_LABEL_FMT, live_client, popup,
+# fzf_colors_from_palette, reconcile_borders.
 # shellcheck source=lib/tmux-common.sh
 . "${BASH_SOURCE[0]%/*}/lib/tmux-common.sh"
 
@@ -73,21 +74,20 @@ JOURNAL_DEPTH=20
 SELF="$HOME/.config/tmux/scripts/tmux-pane-relocate.sh"
 
 # Why a pane cannot be moved between windows, as a word — or nothing when it
-# can. Native floats (tmux 3.7 `prefix *`) have no tiled slot to move to and
-# cannot be returned to one. A pane mid-float under tmux-float-pane.sh
-# (`prefix z`) is sitting in a `_float_*` holder session with restore metadata
-# on it: moving it from there would bypass the float's restore transaction and
-# leave the container restoring a pane that has already gone elsewhere. The
-# phase option is the normal signal; the holder-session check holds the
-# invariant for a pane whose options were lost mid-clear.
+# can. Native floats (tmux 3.7 `prefix *`) are refused by policy: 3.7 can tile
+# one with move-pane, but nothing here can float a tiled pane again, so a move
+# would be one-way. A pane mid-float under tmux-float-pane.sh (`prefix z`) is
+# sitting in a `_float_*` holder session with restore metadata on it: moving it
+# from there would bypass the float's restore transaction and leave the
+# container restoring a pane that has already gone elsewhere. The phase is the
+# normal signal; the holder mark holds the invariant for a pane whose options
+# were lost mid-clear (pane_float_state reads both).
 unmovable_reason() {
-    local pane="$1" sess
-    pane_exists "$pane" || { printf 'gone'; return; }
-    [ "$(pane_fmt "$pane" '#{pane_floating_flag}')" = 1 ] && { printf 'native-float'; return; }
-    [ -n "$(tmux show -pqv -t "$pane" @fl_phase 2>/dev/null)" ] && { printf 'floated'; return; }
-    sess=$(pane_fmt "$pane" '#{session_name}')
-    [ -n "$sess" ] && [ -n "$(tmux show -qv -t "$sess" @fl_holder_nonce 2>/dev/null)" ] && { printf 'floated'; return; }
-    printf ''
+    case "$(pane_float_state "$1")" in
+        gone)          printf 'gone' ;;
+        native)        printf 'native-float' ;;
+        phased|holder) printf 'floated' ;;
+    esac
 }
 
 journal_clear() { tmux set -w -u -t "$1" @pane_journal 2>/dev/null || true; }
@@ -342,9 +342,8 @@ pick() {
     fi
     # A transient dialog: the global popup-border-lines frame (rounded), like
     # the worktree and rename popups — not the float's heavy one.
-    local args=(-E -w 72% -h 60% -T ' move pane to ')
-    [ -n "$client" ] && args+=(-c "$client")
-    tmux display-popup "${args[@]}" "exec bash '$SELF' pick-ui '$pane' '$client'"
+    popup "$client" -E -w 72% -h 60% -T ' move pane to ' \
+        "exec bash '$SELF' pick-ui '$pane' '$client'"
 }
 
 # Back into pane mode on the client that started the pick; with no (live)
@@ -410,7 +409,6 @@ case "${1:-}" in
     pick)    pick "${2:-}" "${3:-}" ;;
     pick-ui) pick_ui "${2:?pane required}" "${3:-}" ;;
     preview) preview "${2:?window required}" ;;
-    targets) other_windows "${2:?pane required}" ;;
     break)   break_pane "${2:-}" ;;
     undo)    journal_pop "${2:-$(tmux display-message -p '#{window_id}')}" ;;
     *) printf 'usage: %s {push <dir>|hold|put|release|pick|break|undo} [target]\n' "${0##*/}" >&2; exit 64 ;;

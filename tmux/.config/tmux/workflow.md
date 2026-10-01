@@ -136,9 +136,9 @@ remember.
 | `z` | float it · `b` break it into its own window |
 | `Esc` | done |
 
-**Inside a float** only `prefix z` (close) and `prefix d` work — the rest of the
-prefix keys are deliberately switched off so a stray `prefix x` can't kill
-something behind the overlay.
+**Inside a float** only `prefix z` (close), `prefix d`, and `prefix [` (copy
+mode) work — the rest of the prefix keys are deliberately switched off so a
+stray `prefix x` can't kill something behind the overlay.
 
 While a pane is held, the row under the status bar says **✋ HOLDING** and what
 it is, through ordinary window navigation; `prefix p p` puts it down as the
