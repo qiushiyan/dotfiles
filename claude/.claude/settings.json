@@ -78,15 +78,6 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/copy-plan-to-clipboard.sh"
-          }
-        ]
-      },
-      {
         "matcher": "Bash",
         "hooks": [
           {
