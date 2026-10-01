@@ -37,18 +37,16 @@ tmux send-keys -t work:1.2 Escape   # escape key
 
 ## Wait for output (synchronization)
 
-Instead of fixed `sleep` calls, poll for a specific prompt or text pattern using `tmux-wait-for-text` (defined in `zsh/.config/zsh/tmux-utils.zsh`, loaded in every shell):
+Instead of fixed `sleep` calls, poll the pane for a specific prompt or text
+pattern, with a bound so a prompt that never comes cannot hang the script:
 
 ```bash
 # wait up to 15s for codex's › prompt to appear
-tmux-wait-for-text -t work:1.2 -p '›' -T 15
-
-# wait for a specific string (fixed match, not regex)
-tmux-wait-for-text -t work:1.2 -p 'done' -F -T 30
+for _ in $(seq 30); do
+  tmux capture-pane -t work:1.2 -p -J | grep -q '›' && break
+  sleep 0.5
+done
 ```
-
-The pattern is an extended regex unless `-F`; `tmux-wait-for-text -h` lists the
-flags. It exits 0 on a match and 1 on timeout.
 
 ## Read pane output
 
@@ -85,8 +83,7 @@ tmux capture-pane -t work:1.2 -p -J | sed -n '/your message here/,$p' | sed '1d'
 ```bash
 tmux send-keys -t work:1.2 "codex" Enter
 
-# wait for codex prompt instead of fixed sleep
-tmux-wait-for-text -t work:1.2 -p '›' -T 10
+# then wait for its › prompt as above, instead of a fixed sleep
 
 tmux send-keys -t work:1.2 -l -- "your prompt"
 sleep 0.5
@@ -99,16 +96,14 @@ tmux send-keys -t work:1.2 Enter
 PANE="work:1.2"
 QUESTION="What does this function do?"
 
-# wait for codex to be ready
-tmux-wait-for-text -t $PANE -p '›' -T 10
+# (wait for codex's › prompt first, as above)
 
 # send question
 tmux send-keys -t $PANE -l -- "$QUESTION"
 sleep 0.5
 tmux send-keys -t $PANE Enter
 
-# wait for response (poll for next prompt)
-tmux-wait-for-text -t $PANE -p '›' -T 30
+# wait for the response: poll for the next prompt, as above, with a longer bound
 
 # read response (skip the question line)
 tmux capture-pane -t $PANE -p -J | sed -n "/$QUESTION/,\$p" | sed '1d'

@@ -58,4 +58,4 @@ questions too — decide before building.
 - Items that extend the worktree popup should follow its design guidelines
   (`scripts/worktree.md`): one surface per concept and built-in safety first.
 - For pane-driving automation, `tmux-scripting.md` documents `send-keys` /
-  `capture-pane` / `tmux-wait-for-text`.
+  `capture-pane` and polling for a prompt.
