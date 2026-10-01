@@ -9,10 +9,18 @@ set -uo pipefail
 
 SOCK="pctest-$$"
 OUTER="pcouter-$$"
-CONF="$HOME/.config/tmux/tmux.conf"
-FLOAT="$HOME/.config/tmux/scripts/tmux-float-pane.sh"
-RELOC="$HOME/.config/tmux/scripts/tmux-pane-relocate.sh"
-LIB="$HOME/.config/tmux/scripts/lib/tmux-common.sh"
+
+# The working tree these tests belong to, not $HOME: the stowed copies are
+# whatever `main` installed, so grading them passes a branch whose scripts are
+# broken. The scripts and tmux.conf's bindings still reach their siblings
+# through ~/.config/tmux/scripts, which SANDBOX_HOME below points here.
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+TREE=$(cd "$HERE/../.." && pwd)                  # <repo>/tmux/.config/tmux
+CONF="$TREE/tmux.conf"
+FLOAT="$TREE/scripts/tmux-float-pane.sh"
+RELOC="$TREE/scripts/tmux-pane-relocate.sh"
+SAVE="$TREE/scripts/tmux-resurrect-save.sh"
+LIB="$TREE/scripts/lib/tmux-common.sh"
 
 PASS=0; FAIL=0; FAILED=""
 
@@ -23,6 +31,18 @@ O() { tmux -L "$OUTER" "$@"; }
 SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/pane-control-test.XXXXXX")
 SANDBOX_RESURRECT="$SANDBOX/resurrect"
 mkdir -p "$SANDBOX_RESURRECT"
+
+# The HOME the test server, its panes, and every script run under. scripts and
+# themes are this tree's; plugins are the installed ones (not in Git), which
+# T21 needs to reach resurrect's real save.sh. The empty .zshrc keeps the
+# user's rc out of the test panes: its precmd hooks are production code and
+# would be a second writer on the server under test (docs/testing.md).
+SANDBOX_HOME="$SANDBOX/home"
+mkdir -p "$SANDBOX_HOME/.config/tmux"
+ln -s "$TREE/scripts" "$SANDBOX_HOME/.config/tmux/scripts"
+ln -s "$TREE/themes" "$SANDBOX_HOME/.config/tmux/themes"
+ln -s "$HOME/.config/tmux/plugins" "$SANDBOX_HOME/.config/tmux/plugins"
+: > "$SANDBOX_HOME/.zshrc"
 
 # The real save directory — asserted untouched by T21, never written to. Mirror
 # resurrect's own selection: it prefers the legacy ~/.tmux/resurrect whenever
@@ -43,7 +63,7 @@ trap cleanup EXIT
 
 fresh() {
     T kill-server 2>/dev/null; sleep 0.2
-    T -f "$CONF" new-session -d -s t -x 200 -y 50 2>/dev/null
+    HOME="$SANDBOX_HOME" T -f "$CONF" new-session -d -s t -x 200 -y 50 2>/dev/null
     sleep 0.5
     SOCKPATH=$(T display -p '#{socket_path}')
     # REDIRECT RESURRECT. resurrect resolves its save directory from
@@ -64,12 +84,12 @@ fresh() {
 # FLOAT_GRACE_SECS is shortened so recovery cases do not have to sit out the
 # production grace window; the grace itself is exercised by T1 needing the
 # holder to age past it before the sweep will touch it.
-R() { TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 bash "$@"; }
+R() { HOME="$SANDBOX_HOME" TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 bash "$@"; }
 
 # Float WITHOUT presenting it — the state a container that died instantly would
 # leave. The recovery cases are about exactly that window, and a real toggle now
 # (correctly) rolls back when presentation fails, so it cannot be observed via R.
-RS() { TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 FLOAT_SKIP_CONTAINER=1 bash "$@"; }
+RS() { FLOAT_SKIP_CONTAINER=1 R "$@"; }
 tiled() { T list-panes -t "$1" -f '#{==:#{pane_floating_flag},0}' -F '#{pane_id}' 2>/dev/null | tr '\n' ' '; }
 layout() { T display-message -p -t "$1" '#{window_layout}' 2>/dev/null; }
 
@@ -481,7 +501,7 @@ t17() {
     # the wrapper honours RESURRECT_SAVE for exactly this. Guard that the seam
     # exists, so this can't silently go back to invoking the real save.
     check "T17 wrapper honours the RESURRECT_SAVE seam" \
-        "$(grep -c 'RESURRECT_SAVE' "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh")" "1"
+        "$(grep -c 'RESURRECT_SAVE' "$SAVE")" "1"
     marker="$SANDBOX/real-save-ran"; rm -f "$marker"
     printf '#!/bin/sh\ntouch %s\n' "$marker" > "$SANDBOX/fake-save.sh"
     chmod +x "$SANDBOX/fake-save.sh"
@@ -498,8 +518,7 @@ t17() {
     T set -p -t "$P2" @fl_holder _float_stuck2
     T set -p -t "$P2" @fl_src_sess "gone"; T set -p -t "$P2" @fl_src_win "@998"
     T set -p -t "$P2" @fl_claim "99999:$(date +%s)"
-    TMUX="$SOCKPATH,0,0" FLOAT_GRACE_SECS=1 RESURRECT_SAVE="$SANDBOX/fake-save.sh" \
-        bash "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh" quiet >/dev/null 2>&1
+    RESURRECT_SAVE="$SANDBOX/fake-save.sh" R "$SAVE" quiet >/dev/null 2>&1
     check "T17 wrapper does not run the real save when a float is stuck" \
         "$([ -e "$marker" ] && echo ran || echo aborted)" "aborted"
     rm -f "$SANDBOX/fake-save.sh" "$marker"
@@ -642,13 +661,17 @@ t21() {
 
     check "T21 test server points at the sandbox" \
         "$(T show -gv @resurrect-dir)" "$SANDBOX_RESURRECT"
+    # The bindings name ~/.config/tmux/scripts; on the user's HOME that is the
+    # installed copy, and every key-driven case would grade it instead.
+    check "T21 the server's bindings reach this tree's scripts" \
+        "$(T run-shell 'cd ~/.config/tmux/scripts && pwd -P')" "$(cd "$TREE/scripts" && pwd -P)"
 
     local before_last before_count after_last after_count sandbox_before sandbox_after
     before_last=$(readlink "$REAL_RESURRECT/last" 2>/dev/null || echo none)
     before_count=$(ls -1 "$REAL_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
     sandbox_before=$(ls -1 "$SANDBOX_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
 
-    R "$HOME/.config/tmux/scripts/tmux-resurrect-save.sh" quiet >/dev/null 2>&1
+    R "$SAVE" quiet >/dev/null 2>&1
     sleep 1
 
     sandbox_after=$(ls -1 "$SANDBOX_RESURRECT" 2>/dev/null | wc -l | tr -d ' ')
@@ -1217,7 +1240,7 @@ t38() {
     check "T38 a live window exists" "$(lib "win_exists $W && echo y || echo n")" "y"
     check "T38 a dead window does not" "$(lib 'win_exists @9999 && echo y || echo n')" "n"
     check "T38 no script keeps a private existence check" \
-        "$(grep -l '^[[:space:]]*\(pane_exists\|win_exists\)[[:space:]]*()' "$HOME"/.config/tmux/scripts/*.sh 2>/dev/null | wc -l | tr -d ' ')" "0"
+        "$(grep -l '^[[:space:]]*\(pane_exists\|win_exists\)[[:space:]]*()' "$TREE"/scripts/*.sh 2>/dev/null | wc -l | tr -d ' ')" "0"
 
     T set-hook -g session-created 'set -ga @t38_created x'
     RS "$FLOAT" toggle %9999 >/dev/null 2>&1
