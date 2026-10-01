@@ -27,8 +27,10 @@ the user as commands to run — launchers start live sessions.
   launcher and a one-time `/login`.
 - **Dashboard misbehaving, or after a Claude Code update**: `headroom check`
   — a FAIL line names which reverse-engineered assumption broke. It covers
-  session sharing too: `topology[...]` per account, and `retention:`, which
-  fails when accounts disagree on `cleanupPeriodDays`.
+  session sharing too: `topology[...]` per account; `settings:`, which
+  fails unless every account reads one `settings.json`; and `retention:`,
+  which fails when accounts disagree on `cleanupPeriodDays` or leave it
+  unset.
 - **A launcher refuses with a topology error**: that account's `projects`
   is a real directory or wrong link, and the error names the required end
   state. The repair is manual, with no Claude session running: hand the

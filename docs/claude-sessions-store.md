@@ -58,9 +58,12 @@ asks the user first.
 `cleanupPeriodDays` is pinned to 365 in the shared `settings.json`. Every
 account's cleanup sweep prunes the shared store with its own settings, so the
 store keeps the shortest period any account names; linking one `settings.json`
-into every account makes retention one policy by construction, and
-`headroom check`'s `retention:` line prints the period and fails when accounts
-disagree. That setting is only the floor, and deliberately generous.
+into every account makes retention one policy by construction. `headroom
+check` guards both halves: its `settings:` line fails unless every account
+sharing the store, the primary included, reads one `settings.json`, and its
+`retention:` line prints the period and fails when accounts disagree or leave
+`cleanupPeriodDays` unset, since Claude Code's 30-day default would then prune
+the shared store. That setting is only the floor, and deliberately generous.
 
 The actual policy is **ccclean**'s, a Python CLI in `~/dev/ccclean` (installed
 by `uv tool install`). It is not in this repo and nothing here wraps it; its
@@ -90,11 +93,23 @@ runs), and every launch re-checks it. A launcher that refuses with a topology
 error, or a failing `topology[...]` line in `headroom check`, means that
 account's `projects` became a real directory again or a wrong link; the error
 names the end state required. The repair is manual, with no Claude session
-running: move each project folder under the account's `projects/` into
-`~/.claude/projects/` (same names merge; on a filename collision keep the
-newer file), then replace the emptied directory with the symlink
-(`rmdir <dir>/projects && ln -s ~/.claude/projects <dir>/projects`).
-headroom's `headroom-setup` skill holds the same runbook.
+running, and it never discards a transcript:
+
+1. Copy every file under `<dir>/projects/` into the same relative path under
+   `~/.claude/projects/` (same-named folders merge), skipping
+   `sessions-index.json`, which Claude Code regenerates.
+2. A path both trees hold is a collision. Byte-identical files (`cmp`) are
+   one file: keep the canonical copy. Different contents are two histories
+   of the same session, and neither modification time nor size shows that
+   one contains the other. Stop there and reconcile them by hand before
+   linking, keeping both originals until that is done.
+3. Once every collision is identical, keep the original tree as a backup and
+   link: `mv <dir>/projects <dir>/projects.pre-share.$(date +%Y%m%d-%H%M%S)
+   && ln -s ~/.claude/projects <dir>/projects`. Delete the backup only after
+   `headroom check` passes and the picker shows the folded-in sessions.
+
+headroom's `headroom-setup` skill and the refusal message carry the same
+collision rule.
 
 ## Where it is tested
 

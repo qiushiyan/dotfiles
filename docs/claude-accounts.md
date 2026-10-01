@@ -120,7 +120,9 @@ Everything derives from that tree:
 - **After a Claude Code update**, or when the board misbehaves:
   `x-check` (`headroom check`) — a FAIL line names which reverse-engineered
   assumption broke. It also covers the session-sharing machinery: a
-  `topology[...]` line per account and one `retention:` line.
+  `topology[...]` line per account, and one `settings:` and one
+  `retention:` line (`docs/claude-sessions-store.md` § Retention belongs to
+  ccclean).
 - **Launcher refuses with a topology error**: that account's `projects`
   became a real directory again, or a wrong link. The error names the end
   state; the manual repair is in `docs/claude-sessions-store.md` § Repairing
