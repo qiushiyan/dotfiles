@@ -21,8 +21,8 @@
 # settings, skills, hooks, rules stay shared; login and prompt history stay
 # per-account. Session transcripts are machine-global: every account's
 # projects/ symlinks to ~/.claude/projects (seeded by `headroom accounts
-# add`; migration of pre-share dirs in claude-sessions.zsh), so the resume
-# picker sees every session regardless of account.
+# add`, verified by `headroom check`), so the resume picker sees every
+# session regardless of account.
 #
 # Launch routing belongs to headroom (~/dev/headroom, installed to
 # ~/.local/bin/headroom): `headroom launch` validates the account, verifies

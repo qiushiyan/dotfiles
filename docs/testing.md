@@ -10,7 +10,7 @@ bash tmux/.config/tmux/scripts/tests/test-worktree-core.sh       [W15 W36 …]
 python3 tmux/.config/tmux/scripts/tests/test-gwt-popup.py        # requires gwt, tmux, fzf
 python3 tmux/.config/tmux/scripts/tests/test-popup-overlay.py --stock <known-broken-binary> --candidate <candidate-binary>
 python3 tmux/.config/tmux/scripts/tests/test-cout.py            # requires tmux, zsh, oh-my-posh, cout (or COUT_BIN)
-zsh  zsh/.config/zsh/tests/claude-sessions.test.zsh              # runs whole
+zsh  zsh/.config/zsh/tests/claude-launch.test.zsh                # runs whole
 zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/portability.test.zsh                 # requires fzf, zoxide, oh-my-posh
 zsh  zsh/.config/zsh/tests/theme-sync.test.zsh                   # runs whole
@@ -39,7 +39,7 @@ Each suite owns one boundary:
 | gwt popup | real creation uses caller HEAD, configured root, seeding, and window delivery, and copies the new path; the bare first paint shows before a held-back `gwt list` and keeps a query and a mark across the swap; ctrl-y copies the highlighted or marked paths; both copies go through a stub `toclip`; the merged tag and ctrl-g share one eligibility rule, leaving unmerged, locked, and unprobed (status-error) work and prefix-named windows; ctrl-x keeps a worktree it cannot snapshot; private tmux socket |
 | popup overlay | candidate preserves the popup during redraws; stock must reproduce the defect on private sockets ([package runbook](tmux-popup-patch.md)) |
 | cout | the installed `cout` binary end to end (or `$COUT_BIN`): command/output pairing across nested shells, indexed copies, recorder retention/cleanup, terminal rendering with the real transient prompt, and `prefix o` leaving no popup; private tmux sockets, a temporary home, and a fake clipboard isolate state, and every store path is checked to lie inside the sandbox before a delete. Parser, store, and replay unit tests are in `~/dev/cout` |
-| Claude sessions | what `claude.zsh`'s launchers add to headroom (refusal without it, named routing, workspace effort, x-select's cd), plus the migrate, reindex and canary verdicts, against a throwaway `$HOME`; topology and environment policy are tested in headroom |
+| Claude launch | what `claude.zsh`'s launchers add to headroom (refusal without it, named routing, workspace effort, x-select's cd) through a headroom built from `~/dev/headroom`, against a throwaway `$HOME`; topology, retention and environment policy are tested in headroom |
 | startup options | non-interactive `.zshenv` state in a clean `zsh -c` |
 | portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive shells keep `git.zsh`'s `git()` and one fpath whatever they inherit; interactive cases run on a pty |
 | theme sync | startup + precmd switching against a throwaway `$HOME`; every theme-set name applies without error |

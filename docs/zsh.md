@@ -50,7 +50,6 @@ zsh/.config/zsh/
   theme.zsh        # the $TERMINAL_THEME switch
   cwd-guard.zsh    # deleted-cwd defenses: _cwd_guard at startup, zshreload (tests/ has its harness)
   claude.zsh       # multi-account launchers (x, x-<name>) — see claude-accounts.md
-  claude-sessions.zsh  # shared session store: migration + drift check (tests/ has its harness)
   codex.zsh        # Codex accounts through headroom (cx, cx-<name>); plain `codex` stays the vendor default
   xcode.zsh
   tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep, pair-coding helpers

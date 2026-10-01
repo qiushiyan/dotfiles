@@ -118,13 +118,13 @@ Everything derives from that tree:
 - **Stale token** on a rarely-used account: the board says so — run that
   account's `x-<name>` once. Claude Code alone refreshes tokens.
 - **After a Claude Code update**, or when the board misbehaves:
-  `x-check` — a FAIL line names which reverse-engineered assumption
-  broke. Run `claude-sessions-check` alongside it for the session-sharing
-  machinery; its `--canary` proves cross-account resume end to end but
-  spends one request on two accounts.
+  `x-check` (`headroom check`) — a FAIL line names which reverse-engineered
+  assumption broke. It also covers the session-sharing machinery: a
+  `topology[...]` line per account and one `retention:` line.
 - **Launcher refuses with a topology error**: that account's `projects`
-  became a real directory again, or a wrong link — quit every Claude session
-  and run `claude-sessions-migrate` → `docs/claude-sessions-store.md`.
+  became a real directory again, or a wrong link. The error names the end
+  state; the manual repair is in `docs/claude-sessions-store.md` § Repairing
+  the topology.
 - **Logged into the wrong account in a dir**: the dashboard's red
   `(dir says …!)` warning catches it. Cleanest fix: `/login` again in that
   dir's session with the right account.
@@ -137,7 +137,7 @@ Everything derives from that tree:
   and its default-named Keychain item for no benefit.
 - `~/.claude/projects` is a real directory — never itself a link — and every
   account dir's `projects` is a symlink to it. Everything that rests on that
-  (retention, obelisk's index, the migrate runbook, the test harness):
+  (retention, obelisk's index, the repair runbook, where it is tested):
   `docs/claude-sessions-store.md`.
 - Launch routing belongs to headroom, verification included: wrappers
   delegate to `headroom launch` / `headroom sessions`, which validate the

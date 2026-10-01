@@ -20,7 +20,8 @@ file. Accounts stay auth/quota lanes; they are never history silos.
 
 `headroom launch` re-verifies the link **by inode** on every launch and refuses
 to start over a broken topology — a real directory there would fork history
-silently, and silently is the whole problem.
+silently, and silently is the whole problem. `headroom check` reports the same
+verification per account as its `topology[...]` lines.
 
 **What stays account-local:** per-session extras (`file-history/`, todos,
 `session-env/`). Resuming under a different account keeps the conversation but
@@ -54,10 +55,12 @@ asks the user first.
 
 ## Retention belongs to ccclean
 
-`cleanupPeriodDays` is pinned in the shared `settings.json` — never `0`, which
-disables persistence rather than cleanup — and every account's cleanup pass
-applies it to the shared store, so retention is one policy by construction. That
-setting is only the floor, and deliberately generous.
+`cleanupPeriodDays` is pinned to 365 in the shared `settings.json`. Every
+account's cleanup sweep prunes the shared store with its own settings, so the
+store keeps the shortest period any account names; linking one `settings.json`
+into every account makes retention one policy by construction, and
+`headroom check`'s `retention:` line prints the period and fails when accounts
+disagree. That setting is only the floor, and deliberately generous.
 
 The actual policy is **ccclean**'s, a Python CLI in `~/dev/ccclean` (installed
 by `uv tool install`). It is not in this repo and nothing here wraps it; its
@@ -82,24 +85,22 @@ implying a backup exists.
 
 ## Repairing the topology
 
-A launcher that refuses with a topology error means that account's `projects`
-became a real directory again, or a wrong link. Quit every Claude session and
-run `claude-sessions-migrate`. It is all-or-nothing: it refuses while any
-session runs, verifies a hash manifest of every source file before swapping, and
-keeps each merged tree as a `projects.pre-share.<timestamp>` backup.
+Seeding creates the link (`headroom accounts add`, which `claude-account-add`
+runs), and every launch re-checks it. A launcher that refuses with a topology
+error, or a failing `topology[...]` line in `headroom check`, means that
+account's `projects` became a real directory again or a wrong link; the error
+names the end state required. The repair is manual, with no Claude session
+running: move each project folder under the account's `projects/` into
+`~/.claude/projects/` (same names merge; on a filename collision keep the
+newer file), then replace the emptied directory with the symlink
+(`rmdir <dir>/projects && ln -s ~/.claude/projects <dir>/projects`).
+headroom's `headroom-setup` skill holds the same runbook.
 
-Seeding creates the link in the first place (`headroom accounts add`, which
-`claude-account-add` runs), and every launch re-checks it.
+## Where it is tested
 
-## The code and its tests
-
-The session toolkit is `zsh/.config/zsh/claude-sessions.zsh`; its sandbox
-harness is in `zsh/.config/zsh/tests/`. The harness also covers what
-`claude.zsh`'s launchers add to headroom (the refusal without it, named-launch
-routing, workspace effort, x-select's cd), building headroom from
-`~/dev/headroom` so routing crosses the real wrapper→engine seam — run it after
-touching any of the three. Topology, environment and `.current` policy are
-headroom's own tests.
-`claude-sessions-check` verifies the sharing machinery on the live system, and
-its `--canary` proves cross-account resume end to end at the cost of one request
-on two accounts.
+headroom owns and tests the topology, retention and launch environment
+(`~/dev/headroom`, `internal/accounts` and `internal/check`).
+`zsh/.config/zsh/tests/claude-launch.test.zsh` covers what `claude.zsh`'s
+launchers add on top (the refusal without headroom, named-launch routing,
+workspace effort, x-select's cd), building headroom from `~/dev/headroom` so
+routing crosses the real wrapper→engine seam.

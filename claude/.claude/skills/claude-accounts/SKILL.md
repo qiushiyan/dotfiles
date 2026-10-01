@@ -26,14 +26,14 @@ the user as commands to run — launchers start live sessions.
 - **New subscription**: `claude-account-add <email>`, then that account's
   launcher and a one-time `/login`.
 - **Dashboard misbehaving, or after a Claude Code update**: `headroom check`
-  — a FAIL line names which reverse-engineered assumption broke. For the
-  session-sharing machinery: `claude-sessions-check` (same
-  PASS/FAIL/INCONCLUSIVE contract); offer `--canary` rather than running
-  it — it spends a request on two accounts.
+  — a FAIL line names which reverse-engineered assumption broke. It covers
+  session sharing too: `topology[...]` per account, and `retention:`, which
+  fails when accounts disagree on `cleanupPeriodDays`.
 - **A launcher refuses with a topology error**: that account's `projects`
-  is a real directory or wrong link. Have the user quit every Claude
-  session, then run `claude-sessions-migrate` (all-or-nothing; keeps
-  `projects.pre-share.<ts>` backups).
+  is a real directory or wrong link, and the error names the required end
+  state. The repair is manual, with no Claude session running: hand the
+  user the steps in `~/dotfiles/docs/claude-sessions-store.md` § Repairing
+  the topology.
 
 Mechanism (config-dir isolation, the shared session store, launcher
 generation, display order): `~/dotfiles/docs/claude-accounts.md`. Engine
