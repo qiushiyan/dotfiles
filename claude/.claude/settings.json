@@ -72,7 +72,8 @@
     "make-interfaces-feel-better": "user-invocable-only",
     "vitest": "user-invocable-only",
     "vercel-react-best-practices": "user-invocable-only",
-    "typesafe-ai": "user-invocable-only"
+    "typesafe-ai": "user-invocable-only",
+    "test-audit": "user-invocable-only"
   },
   "disableBundledSkills": false,
   "hooks": {
