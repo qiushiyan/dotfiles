@@ -1271,11 +1271,34 @@ t39() {
         "$(T show-environment -g 2>/dev/null | grep -c '^RENAME_PANE' || true)" "0"
 }
 
+# ---------------------------------------------------------------------------
+# T40 — a refusal shows its reason. run-shell answers a non-zero exit by
+# replacing the status message with "'<command>' returned 1", so prefix z in a
+# one-pane window used to show that instead of the script's own explanation.
+# Pressed on a real client, since only run-shell produces the clobbering.
+# ---------------------------------------------------------------------------
+t40() {
+    fresh
+    O kill-server 2>/dev/null; sleep 0.2
+    O -f /dev/null new-session -d -s o -x 200 -y 50
+    O send-keys -t o "TMUX= tmux -L $SOCK -f '$CONF' attach -t t" Enter
+    sleep 2.5
+    C=$(T list-clients -F '#{client_name}' 2>/dev/null | head -1)
+    if [ -z "$C" ]; then no "T40 client attached" "no client"; return; fi
+    check "T40 (premise) the window has one pane" "$(tiled t | wc -w | tr -d ' ')" "1"
+    O send-keys -t o C-b; sleep 0.3; O send-keys -t o z; sleep 1.5
+    screen=$(O capture-pane -p -t o)
+    check "T40 prefix z in a one-pane window says why" \
+        "$(printf '%s' "$screen" | grep -c 'only one pane in this window' || true)" "1"
+    check "T40 ...and run-shell does not replace it" \
+        "$(printf '%s' "$screen" | grep -c 'returned 1' || true)" "0"
+}
+
 WANT="${*:-}"
 echo "tmux $(tmux -V) — pane control suite"
 for c in t12 t13 t5 t1 t2 t4 t3 t6 t7 t7b t9 t10 t11 t14 \
          t15 t16 t17 t18 t18b t18c t19 t20 t21 t22 t23 t24 t25 t26 t27 \
-         t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39; do
+         t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

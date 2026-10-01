@@ -120,6 +120,10 @@ tmux capture-pane -t $PANE -p -J | sed -n "/$QUESTION/,\$p" | sed '1d'
   `display-message -p -t <gone pane or window>` with exit status 0 and empty
   output, so an existence check tests the output, as `pane_exists`/`win_exists`
   in `scripts/lib/tmux-common.sh` do.
+- **A non-zero exit hides the script's own message.** When a `run-shell`
+  command exits non-zero, tmux replaces the status message with
+  `'<command>' returned N`, so a `msg` explaining a refusal never shows. A
+  key-bound script that has reported its refusal exits 0.
 - **`=name` is for session targets only.** `has-session`, `kill-session` and
   `attach-session` take the exact-match form. `show-option` takes a pane
   target, where `-t "=name"` resolves to nothing and the option reads back

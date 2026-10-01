@@ -701,10 +701,13 @@ prepare_save() {
 
 # --- entry --------------------------------------------------------------------
 
+# The keypress verbs exit 0 on a refusal: every failure path has already told
+# the user why through `msg`, and run-shell answers a non-zero exit by
+# replacing that status message with "'<command>' returned 1".
 case "${1:-}" in
-    toggle)  float_pane "${2:?pane required}" "${3:-}" ;;
+    toggle)  float_pane "${2:?pane required}" "${3:-}" || true ;;
     restore) restore_pane "${2:?pane required}" ;;
-    scratch) scratch_popup "${2:?pane required}" "${3:-}" ;;
+    scratch) scratch_popup "${2:?pane required}" "${3:-}" || true ;;
     sweep)   sweep ;;
     prepare-save) prepare_save ;;
     container)

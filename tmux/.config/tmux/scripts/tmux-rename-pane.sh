@@ -44,7 +44,8 @@ valid_pane() { case "${1:-}" in %[0-9]*) return 0 ;; esac; return 1; }
 # frame is the global popup-border-lines (rounded), like every transient dialog.
 open_popup() {
     local pane="$1" client args
-    valid_pane "$pane" && pane_exists "$pane" || { msg "rename: no such pane"; return 1; }
+    # Status 0 after msg: run-shell would replace the message with "returned 1".
+    valid_pane "$pane" && pane_exists "$pane" || { msg "rename: no such pane"; return 0; }
     args=(-E -w 60 -h 5 -T ' rename pane ')
     client=$(live_client "${2:-}")
     [ -n "$client" ] && args+=(-c "$client")
