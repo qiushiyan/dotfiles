@@ -115,6 +115,53 @@ fi
 # x-<email> identities, so there is no naming policy to keep in sync anymore.
 typeset -ga CLAUDE_X_RESERVED=(usage account account-add select accounts acc check)
 
+# The launch layer both vendors share; codex.zsh, sourced after this file,
+# uses it too.
+#
+# "headroom not found" is the one refusal a wrapper says itself (status 127);
+# every later refusal is headroom's own. No fallback to the bare vendor binary.
+_headroom_required() {  # <vendor>
+  command -v headroom >/dev/null 2>&1 && return 0
+  print -u2 "$1 accounts: headroom not found (is ~/.local/bin on PATH?) — $1 was not started"
+  return 127
+}
+
+# _account_launchers <prefix> <root> <primary> <launch-fn> [reserved...]
+# Defines <prefix>-<email> for every account dir under <root>, each running
+# `<launch-fn> <email> "$@"`; it always exists and is the guaranteed identity.
+# A short <prefix>-<local-part> alias is added only when the local part is
+# unique among accounts, isn't the primary's name and isn't reserved for a
+# utility, so a short name can never launch the wrong account; an alias a
+# newly added account made ambiguous is dropped. <prefix>-<primary> runs
+# `<launch-fn> <primary>`. Short aliases are the shell's convenience alone:
+# headroom advertises the full identity. Runs at every shell init: one glob,
+# no subprocess — startup-perf safe.
+_account_launchers() {
+  emulate -L zsh
+  local prefix=$1 root=$2 primary=$3 launch=$4 d email name
+  shift 4   # argv is now the reserved local parts
+  local -a emails
+  local -A count   # local part → number of accounts claiming it
+  for d in "$root"/*(/N); do
+    [[ "${d:t}" == *.lock ]] && continue  # stranded vendor lock dir, not an account
+    emails+=("${d:t}")
+    name="${${d:t}%%@*}"
+    count[$name]=$(( ${count[$name]:-0} + 1 ))
+  done
+  for email in "${emails[@]}"; do
+    name="${email%%@*}"
+    functions[$prefix-$email]="$launch ${(q)email} \"\$@\""
+    if [[ "$name" != "$email" && "$name" != "$primary" ]] && (( ! ${argv[(Ie)$name]} )); then
+      if (( count[$name] == 1 )); then
+        functions[$prefix-$name]="$launch ${(q)email} \"\$@\""
+      else
+        unfunction "$prefix-$name" 2>/dev/null || true
+      fi
+    fi
+  done
+  functions[$prefix-$primary]="$launch ${(q)primary} \"\$@\""
+}
+
 # Expand a personal shorthand to the canonical name headroom knows: the
 # primary's name and full emails pass through, a unique local part becomes
 # its email. Convenience only — headroom revalidates whatever this prints,
@@ -180,10 +227,7 @@ x-acc()         { x-accounts "$@" }
 # enter (x-acc) does that.
 x-select() {
   emulate -L zsh
-  if ! command -v headroom >/dev/null 2>&1; then
-    print -u2 "claude accounts: headroom not found (is ~/.local/bin on PATH?) — claude was not started"
-    return 127
-  fi
+  _headroom_required claude || return
   local tmp rc dir
   tmp=$(mktemp -d "${${TMPDIR:-/tmp}%/}/x-select.XXXXXX") || return
   headroom sessions --cd-file "$tmp/cwd" -- "${CLAUDE_X_BYPASS[@]}" "$@"
@@ -221,17 +265,14 @@ x-select() {
 # — because in a polluted shell, bare `claude` is exactly the misroute the
 # managed path exists to prevent.
 #
-# On the failure messages: "headroom not found" is this wrapper's to say;
-# every later refusal prints its own reason from headroom. Nothing is added
-# to a nonzero exit after that point — post-exec it is claude's own status
-# and must pass through untouched.
+# On the failure messages: "headroom not found" is this wrapper's to say
+# (_headroom_required); every later refusal prints its own reason from
+# headroom. Nothing is added to a nonzero exit after that point — post-exec
+# it is claude's own status and must pass through untouched.
 _claude_launch() {
   emulate -L zsh
   local sel="$1"; shift
-  if ! command -v headroom >/dev/null 2>&1; then
-    print -u2 "claude accounts: headroom not found (is ~/.local/bin on PATH?) — claude was not started"
-    return 127
-  fi
+  _headroom_required claude || return
   # Claude Code ignores TMPDIR: its temp base is CLAUDE_CODE_TMPDIR or a
   # hardcoded /tmp, with claude-<uid>/ appended (verified in the 2.1.215
   # binary). Uncomment to make Ctrl+G prompt files (and all other Claude
@@ -265,12 +306,17 @@ _claude_workspace_effort() {
   [[ -n "$REPLY" ]]
 }
 
+# _claude_x <name|""> [claude args...]: a launch with permissions bypassed,
+# what x and every generated x-<name> run.
+_claude_x() {
+  emulate -L zsh
+  local sel="$1"; shift
+  _claude_launch "$sel" "${CLAUDE_X_BYPASS[@]}" "$@"
+}
+
 # Bypassed permissions on the default account (.current; the board's enter
 # is what moves it).
-x() {
-  emulate -L zsh
-  _claude_launch "" "${CLAUDE_X_BYPASS[@]}" "$@"
-}
+x() { _claude_x "" "$@" }
 
 # Prompted (no bypass) session on any account; bare `x`'s target untouched.
 claude-account() {
@@ -313,41 +359,13 @@ claude-account-remove() {
   return 0
 }
 
-# Generate launchers for every account dir. Each starts one session on its
-# account and nothing more — deliberately no --remember: a named launch is
-# scoped ("this session, that account"), and a pin riding along as its side
+# One x-<name> per account dir (_account_launchers). Each starts one session
+# on its account and nothing more — deliberately no --remember: a named launch
+# is scoped ("this session, that account"), and a pin riding along as its side
 # effect let a two-minute hop to another account silently retarget every
 # later bare `x`. Only the board's enter moves `.current`; `headroom launch
-# --remember` remains the explicit spelling. x-<email> always exists and is
-# the guaranteed identity; a short x-<local-part> alias is added only when
-# the local part is unique among accounts and isn't the primary's name, so
-# a short name can never launch the wrong account with permissions
-# bypassed. Short aliases are this file's convenience alone — headroom
-# advertises the full identity.
-# Runs at every shell init: one glob, no subprocess — startup-perf safe.
+# --remember` remains the explicit spelling.
 _claude_gen_launchers() {
-  emulate -L zsh
-  local d email name
-  local -A count   # local part → number of accounts claiming it
-  for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
-    [[ "${d:t}" == *.lock ]] && continue  # stranded vendor lock dir, not an account
-    name="${${d:t}%%@*}"
-    count[$name]=$(( ${count[$name]:-0} + 1 ))
-  done
-  for d in "$CLAUDE_ACCOUNTS_ROOT"/*(/N); do
-    [[ "${d:t}" == *.lock ]] && continue
-    email="${d:t}" name="${email%%@*}"
-    functions[x-$email]="_claude_launch ${(q)email} \"\${CLAUDE_X_BYPASS[@]}\" \"\$@\""
-    if [[ "$name" != "$email" && "$name" != "$CLAUDE_PRIMARY_NAME" ]] && (( ! ${CLAUDE_X_RESERVED[(Ie)$name]} )); then
-      if (( count[$name] == 1 )); then
-        functions[x-$name]="x-${(q)email} \"\$@\""
-      else
-        # a newly added account made this local part ambiguous — drop the
-        # stale alias rather than let it point at either account
-        unfunction "x-$name" 2>/dev/null || true
-      fi
-    fi
-  done
-  functions[x-$CLAUDE_PRIMARY_NAME]="_claude_launch $CLAUDE_PRIMARY_NAME \"\${CLAUDE_X_BYPASS[@]}\" \"\$@\""
+  _account_launchers x "$CLAUDE_ACCOUNTS_ROOT" "$CLAUDE_PRIMARY_NAME" _claude_x "${CLAUDE_X_RESERVED[@]}"
 }
 _claude_gen_launchers
