@@ -65,6 +65,8 @@ fi
 
 cleanup() {
     T kill-server 2>/dev/null; O kill-server 2>/dev/null
+    # kill-server leaves the socket file; both names carry this run's pid.
+    rm -f "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/$SOCK" "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/$OUTER"
     [ -n "${SANDBOX:-}" ] && rm -rf "$SANDBOX"
 }
 trap cleanup EXIT

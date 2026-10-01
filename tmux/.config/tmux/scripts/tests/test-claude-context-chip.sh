@@ -76,6 +76,8 @@ REAL_LAST_AT_START=$(fingerprint "$REAL_RESURRECT/last")
 
 cleanup() {
     T kill-server 2>/dev/null
+    # kill-server leaves the socket file; the name carries this run's pid.
+    rm -f "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/$SOCK"
     [ -n "${SANDBOX:-}" ] && rm -rf "$SANDBOX"
 }
 trap cleanup EXIT
