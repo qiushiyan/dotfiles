@@ -404,51 +404,6 @@ c10() {
 }
 
 # ---------------------------------------------------------------------------
-# C11 — the chip sheds by priority as the pane narrows: model below 55
-# columns, account below 40, the percentage never. Pure display — the options
-# underneath must survive every threshold crossing untouched, so widening the
-# pane restores the full chip without a republish. This is the case that
-# fails if a width gate is dropped (labels crowd a narrow pane), inverted, or
-# written with tmux's STRING comparisons instead of arithmetic e|>=.
-# ---------------------------------------------------------------------------
-c11() {
-    fresh || return
-    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
-    check "C11 a wide pane affords all three" "$(border)" " yan opus-5[1m] ✳ 60% "
-    T resize-window -t t -x 48 2>/dev/null; sleep 0.2
-    check "C11 below 55 columns the model yields first" "$(border)" " yan ✳ 60% "
-    T resize-window -t t -x 35 2>/dev/null; sleep 0.2
-    check "C11 below 40 columns the account yields too" "$(border)" " ✳ 60% "
-    T resize-window -t t -x 200 2>/dev/null; sleep 0.2
-    check "C11 widening restores the full chip" "$(border)" " yan opus-5[1m] ✳ 60% "
-    check "C11 hiding never touched the options" "$(opt @claude_ctx_account)" "yan"
-}
-
-# ---------------------------------------------------------------------------
-# C12 — the live-upgrade state. This repo is stowed live configuration: a pane
-# whose chip was published by the PREVIOUS statusline (no account option yet)
-# is a normal state right after an upgrade, not a hypothetical. If its
-# percentage, owner and model then hold steady, the render must still backfill
-# the missing account — and having backfilled once, fall quiescent again: an
-# arm that keeps accepting identical renders is the 3×/sec write regression C3
-# exists to prevent, just wearing a new option.
-# ---------------------------------------------------------------------------
-c12() {
-    fresh || return
-    # What the pre-account publisher left behind: three options, no account.
-    T set -p -t "$PANE" @claude_ctx 60
-    T set -p -t "$PANE" @claude_ctx_sid sid-A
-    T set -p -t "$PANE" @claude_ctx_model 'opus-5[1m]'
-    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
-    check "C12 unchanged triple still backfills the account" \
-        "$(opt @claude_ctx_account)" "yan"
-    check "C12 the rest untouched" "$(opt @claude_ctx)" "60"
-    T set -w -t "$WIN" pane-border-status off
-    pub sid-A 'claude-opus-5[1m]' 600000 'yan@planlab.ai'
-    check "C12 backfilled once, quiescent after" "$(status)" "off"
-}
-
-# ---------------------------------------------------------------------------
 # C13 — two accounts sharing a local part. The house policy already lives in
 # claude.zsh: a short name is minted only while the local part is UNIQUE among
 # account dirs, because two lanes wearing the same label defeats the point of
@@ -871,7 +826,11 @@ c24() {
 # pane narrows. The scoped weekly yields first WHATEVER its value: an urgent
 # one is still the lowest-priority field, and its colour is the only alarm it
 # gets. The 5h/7d pair moves as one group — a gate on one number alone would
-# leave a lone figure standing where a reader expects the pair.
+# leave a lone figure standing where a reader expects the pair. Shedding is
+# pure display: the options survive every crossing, so widening restores the
+# chip without a republish. The exact boundaries are what catch a gate that
+# was dropped, inverted, or written with tmux's STRING comparison instead of
+# arithmetic e|>=.
 # ---------------------------------------------------------------------------
 c25() {
     fresh || return
@@ -899,6 +858,7 @@ c25() {
         done
         T resize-window -t t -x 39
         check "C25 a sliver keeps context" "$(border)" " ✳ 22% "
+        check "C25 hiding never touched the options" "$(opt @claude_ctx_account)" "${lane%%@*}"
         T resize-window -t t -x 140
         check "C25 widening restores every field without republishing" "$(border)" \
             " ${lane%%@*} fable-5-1:high 5h:12 7d:41 Fable:98 ✳ 22% "
@@ -1152,7 +1112,7 @@ c33() {
 
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32 c33; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32 c33; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done
