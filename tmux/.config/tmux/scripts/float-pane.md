@@ -23,8 +23,9 @@ this file keeps the decisions behind them.
 
 ### Why the pane is relocated
 
-tmux cannot display an existing pane inside a popup, and tmux 3.7's native
-floating panes **cannot convert between floating and tiled** (tracked in
+tmux cannot display an existing pane inside a popup, and tmux 3.7 **cannot
+turn a tiled pane into a floating one**: `move-pane` tiles a native float, but
+nothing goes the other way (tracked in
 [tmux#5135](https://github.com/tmux/tmux/issues/5135) for 3.8). So the pane is
 genuinely relocated: broken out into a detached **holder session**, which a
 **container** (a popup running a nested `attach`) displays. The pane keeps
@@ -117,15 +118,18 @@ keeps the last good save, and the user gets a message saying why.
 `#{window_panes}` and embedded in `#{window_layout}`, so every pane list, count,
 and comparison in both scripts filters on `#{pane_floating_flag}`; otherwise a
 stray float corrupts a snapshot or lets the float break out the last real tiled
-pane. Pane mode refuses to move them — tmux says `cannot swap floating panes`.
+pane. Pane mode refuses to move them. A push fails in tmux itself (`cannot
+swap floating panes`); refusing to hold or put one is policy, since 3.7 could
+tile it but nothing here could float it again.
 
 ## Traps
 
 - **A `-c <tty>` target can resolve to a ghost.** A client suspended and never
   resumed shares the live client's tty name, precedes it in the lookup, and is
   hidden from `list-clients`, so a popup aimed at it draws onto a stopped tty.
-  Every popup opened from a script passes its client through `live_client()`
-  (`lib/tmux-common.sh`, which explains the lookup). To diagnose,
+  Every popup opened from a script goes through the lib's `popup()`, which
+  passes its client through `live_client()` (`lib/tmux-common.sh`, which
+  explains the lookup). To diagnose,
   `tmux display -p -c <tty> '#{client_pid} #{client_flags}'` shows `suspended`
   while `list-clients` shows a different pid; to cure, `kill -9` the stopped
   `tmux attach` in the outer shell's job table.

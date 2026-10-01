@@ -29,6 +29,28 @@ pane_fmt() { tmux display-message -p -t "$1" "$2" 2>/dev/null; }
 pane_exists() { [ -n "$(pane_fmt "$1" '#{pane_id}')" ]; }
 win_exists()  { [ -n "$(pane_fmt "$1" '#{window_id}')" ]; }
 
+# Where a pane stands with respect to floating, in one round trip:
+#   gone    no such pane
+#   native  a tmux 3.7 native floating pane (`prefix *`)
+#   phased  mid-float under tmux-float-pane.sh (`prefix z`): it carries @fl_phase
+#   holder  in a `_float_*` holder session with no phase (state lost mid-clear,
+#           or joined in by hand) — still the floated pane, seen through its
+#           container
+#   (empty) an ordinary tiled pane
+# The float owns the @fl_* names; other scripts ask this instead of reading
+# them. A session user option resolves inside a pane format, which is what
+# lets one call see the holder mark. A gone pane still prints the literal
+# text, so the test is the `%` of a real pane id.
+pane_float_state() { # <pane>
+    case "$(pane_fmt "$1" '#{pane_id}:#{pane_floating_flag}#{?#{@fl_phase},P,}#{?#{@fl_holder_nonce},H,}')" in
+        %*:1*) printf native ;;
+        %*P*)  printf phased ;;
+        %*H)   printf holder ;;
+        %*)    ;;
+        *)     printf gone ;;
+    esac
+}
+
 # Tiled (non-floating) pane ids of a window, in index order. tmux 3.7's native
 # floating panes are counted by #{window_panes} and embedded in
 # #{window_layout}; the `-f` filter is server-side, so callers never see one.
@@ -78,6 +100,15 @@ live_client() { # <client name>
     [ -n "$pid" ] || return 0
     tmux list-clients -F '#{client_pid}' 2>/dev/null | grep -qx "$pid" && printf '%s' "$name"
     return 0
+}
+
+# display-popup on the live client, or tmux's own pick when the name is a
+# ghost (live_client above). The only way a script here opens a popup, so no
+# caller can forget the ghost check. display-popup BLOCKS until the popup
+# closes, which is why every binding that reaches one uses `run-shell -b`.
+popup() { # <client name> <display-popup args...>
+    local c; c=$(live_client "$1"); shift
+    if [ -n "$c" ]; then tmux display-popup -c "$c" "$@"; else tmux display-popup "$@"; fi
 }
 
 # A popup border value from a user option, validated: display-popup rejects an
