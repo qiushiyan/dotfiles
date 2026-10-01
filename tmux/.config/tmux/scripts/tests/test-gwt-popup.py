@@ -122,8 +122,8 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         # from caller-topic, which main does not contain) is clean here, so only
         # its unmerged verdict protects it; locked-me is merged but locked.
         # broken-me is merged but its status probe fails (unreadable .git), so
-        # its untracked work is unknown state: never tagged, never reaped, and
-        # ctrl-x treats it as dirt it must snapshot, keeping it when it cannot.
+        # gwt calls its untracked work dirty: never tagged, never reaped, and
+        # ctrl-x's --discard-dirty keeps it because it cannot be snapshotted.
         # reap-me-too is another window whose name starts with reap-me; reaping
         # reap-me must not kill it by name prefix.
         (tree/'untracked.txt').unlink()
@@ -158,14 +158,60 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         assert 'reap-me-too' in windows, 'reaping reap-me killed a window by name prefix: '+str(windows)
         run(tmux+['send-keys','-t',pane,'-l','broken-me']); time.sleep(.3)
         run(tmux+['send-keys','-t',pane,'C-x'])
-        wait_for('proceed? [y/N]'); run(tmux+['send-keys','-t',pane,'y','Enter'])
+        # fzf restores the main screen on exit, so the reap's prompts are still
+        # on it: wait for text only this run prints.
+        wait_for('broken-me  (dirty'); run(tmux+['send-keys','-t',pane,'y','Enter'])
         wait_for('also remove the 1 dirty one(s)?'); run(tmux+['send-keys','-t',pane,'y','Enter'])
-        wait_for('could not snapshot broken-me — keeping it')
+        wait_for('could not remove broken-me: could not snapshot')
         wait_for('enter switch/create')
         assert (broken/'precious.txt').read_text() == 'only copy', 'ctrl-x discarded the unprobed worktree'
         (broken/'.git').chmod(0o644)
         run(tmux+['send-keys','-t',pane,'Escape'])
         print('PASS: gwt tags the trunk-merged worktree; ctrl-g reaps its checkout and branch and leaves unmerged, locked, unprobed work and prefix-named windows; ctrl-x keeps an unprobed worktree it cannot snapshot')
+
+        # ctrl-x on dirty work: declining keeps it; accepting removes it with a
+        # printed recovery ref holding the untracked file. The window another
+        # session has open on it dies too (ids collected before the move). An
+        # unmerged branch goes only behind the force prompt, its tip kept.
+        def git_ok(*args):
+            return run(['git', *args], repo, check=False).returncode == 0
+        dirty = pathlib.Path(run(['gwt','create','-n','--no-copy','dirty-me','main'], repo).stdout.strip())
+        (dirty/'wip.txt').write_text('unsaved notes')
+        unmerged = pathlib.Path(run(['gwt','create','-n','--no-copy','unmerged-me','main'], repo).stdout.strip())
+        run(['git','-c','user.name=Test','-c','user.email=test@example.invalid','commit','--allow-empty','-qm','unmerged work'], unmerged)
+        unmerged_tip = run(['git','rev-parse','HEAD'], unmerged).stdout.strip()
+        run(tmux+['new-session','-d','-s','other','-c',str(dirty)])
+        run(tmux+['send-keys','-t',pane,'-l','clear; '+command]); run(tmux+['send-keys','-t',pane,'Enter'])
+        wait_for('* dirty-me')
+        run(tmux+['send-keys','-t',pane,'-l',"'dirty-me"]); time.sleep(.3)
+        run(tmux+['send-keys','-t',pane,'C-x'])
+        wait_for('dirty-me  (dirty'); run(tmux+['send-keys','-t',pane,'y','Enter'])
+        wait_for('also remove the 1 dirty one(s)?'); run(tmux+['send-keys','-t',pane,'n','Enter'])
+        wait_for('nothing left to remove')
+        wait_for('enter switch/create')
+        assert (dirty/'wip.txt').exists(), 'declining removed dirty work'
+        assert run(['git','for-each-ref','refs/wt-trash'], repo).stdout == '', 'declining kept a ref'
+        run(tmux+['send-keys','-t',pane,'-l',"'dirty-me | 'unmerged-me"]); time.sleep(.3)
+        run(tmux+['send-keys','-t',pane,'C-a']); time.sleep(.3)
+        run(tmux+['send-keys','-t',pane,'C-x'])
+        wait_for('remove 2 worktree(s):'); run(tmux+['send-keys','-t',pane,'y','Enter'])
+        wait_for('also remove the 1 dirty one(s)?'); run(tmux+['send-keys','-t',pane,'y','Enter'])
+        cap = wait_for('merged branch(es)? [Y/n]')
+        assert 'kept refs/wt-trash/' in cap, 'snapshot ref not printed: '+cap
+        run(tmux+['send-keys','-t',pane,'Enter'])
+        wait_for('NOT merged'); wait_for('force-delete them?'); run(tmux+['send-keys','-t',pane,'y','Enter'])
+        wait_for('enter switch/create')
+        assert not dirty.exists() and not unmerged.exists(), 'checkouts remain'
+        assert not git_ok('show-ref','--verify','--quiet','refs/heads/dirty-me'), 'merged branch remains'
+        assert not git_ok('show-ref','--verify','--quiet','refs/heads/unmerged-me'), 'forced branch remains'
+        refs = run(['git','for-each-ref','--format=%(refname) %(objectname)','refs/wt-trash'], repo).stdout.split('\n')
+        snap = [r.split()[0] for r in refs if r.split() and run(['git','show',r.split()[0]+':wip.txt'], repo, check=False).stdout == 'unsaved notes']
+        assert len(snap) == 1, 'no snapshot holds the untracked file: '+str(refs)
+        assert any(r.endswith(' '+unmerged_tip) for r in refs), 'forced tip not kept: '+str(refs)
+        panes = run(tmux+['list-panes','-a','-F','#{pane_current_path}']).stdout
+        assert str(dirty) not in panes and run(tmux+['has-session','-t','other'], check=False).returncode != 0, 'other session kept a window on the removed worktree'
+        run(tmux+['send-keys','-t',pane,'Escape'])
+        print('PASS: ctrl-x keeps declined dirty work; accepted, gwt snapshots it to a printed ref, another session loses its window, and a forced unmerged branch keeps its tip')
 
         # First paint: with gwt list held back, the bare rows are on screen at
         # once and take a query and a mark; the probed rows then replace them

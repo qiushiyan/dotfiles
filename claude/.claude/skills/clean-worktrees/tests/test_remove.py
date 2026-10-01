@@ -6,6 +6,7 @@ Run: python3 -m unittest discover -s tests -v
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -29,8 +30,15 @@ class RemoveTests(unittest.TestCase):
         self.home.mkdir()
         self.hooks = self.sandbox / "empty-hooks"
         self.hooks.mkdir()
+        # Removal is gwt's: run the installed binary from the sandbox's PATH.
+        self.bin = self.sandbox / "bin"
+        self.bin.mkdir()
+        installed = shutil.which("gwt")
+        if not installed:
+            self.fail("install gwt on PATH first: the runner removes through `gwt remove`")
+        shutil.copy2(installed, self.bin / "gwt")
         self.env = {
-            "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+            "PATH": str(self.bin) + ":/usr/bin:/bin:/usr/sbin:/sbin",
             "HOME": str(self.home),
             "XDG_CONFIG_HOME": str(self.home / ".config"),
             "TMPDIR": str(self.sandbox),
@@ -68,18 +76,13 @@ class RemoveTests(unittest.TestCase):
         return {"path": str(path), "head": head or self.initial_head,
                 "reason": "Synthetic fixture audited for this test"}
 
-    def invoke(self, candidates, *, apply=True, jobs=2, kept=None):
+    def invoke(self, candidates, *, jobs=2, kept=None):
         plan = self.sandbox / "plan.json"
         plan.write_text(json.dumps({"root": str(self.root), "candidates": candidates,
                                     "kept": kept or []}))
-        args = [sys.executable, str(HELPER), str(plan), "--jobs", str(jobs),
-                "--backup-root", str(self.backups)]
-        if apply:
-            args.append("--apply")
-        process = self.run_command(*args)
+        process = self.run_command(sys.executable, str(HELPER), str(plan), "--apply", "--jobs", str(jobs),
+                                   "--backup-root", str(self.backups))
         output = [json.loads(line) for line in process.stdout.splitlines()]
-        if not apply:
-            return output
         report = Path(output[-1]["report"])
         self.assertTrue(report.is_relative_to(self.backups))
         result = json.loads(report.read_text())
@@ -98,21 +101,22 @@ class RemoveTests(unittest.TestCase):
         self.assertEqual(result["status"], "removed", result)
         self.assertFalse(path.exists())
         self.assertNotIn(str(path), self.git("worktree", "list", "--porcelain"))
-        self.assertEqual(self.git("rev-parse", result["recovery_ref"]).strip(), result["head"])
+        if result["branch"]:
+            self.assertEqual(self.git("rev-parse", result["branch"]).strip(), result["head"])
         self.assertTrue(Path(result["archive"]).is_file())
         self.assertEqual(self.git("rev-parse", "main").strip(), self.initial_head)
         self.assertEqual((self.repo / "tracked.txt").read_text(), "baseline\n")
 
-    def test_sandbox_guard_and_preview_have_no_cleanup_side_effects(self):
+    def test_sandbox_guard_and_apply_is_required(self):
         self.assertEqual(self.git("config", "--global", "--list"), "")
         self.assertEqual(self.git("config", "core.hooksPath").strip(), str(self.hooks))
-        path = self.checkout("preview")
-        refs = self.git("show-ref")
-        result = self.invoke([self.candidate(path)], apply=False)
-        self.assertEqual(result[0]["status"], "ready", result)
+        path = self.checkout("unapplied")
+        plan = self.sandbox / "plan.json"
+        plan.write_text(json.dumps({"root": str(self.root), "candidates": [self.candidate(path)]}))
+        process = self.run_command(sys.executable, str(HELPER), str(plan), check=False)
+        self.assertEqual(process.returncode, 2, process.stderr)
         self.assertTrue(path.is_dir())
         self.assertFalse(self.backups.exists())
-        self.assertEqual(self.git("show-ref"), refs)
 
     def test_merged_checkout_removed_without_deleting_branches(self):
         path = self.checkout("merged")
@@ -136,10 +140,11 @@ class RemoveTests(unittest.TestCase):
                               kept=[{"path": str(self.repo), "reason": "main"}])
         by_path = {row["path"]: row for row in results}
         for path, detail in [(dirty, "uncommitted"), (untracked, "untracked"),
-                             (locked, "locked"), (changed, "HEAD changed")]:
+                             (locked, "locked"), (changed, "not the expected")]:
             self.assertTrue(path.is_dir())
             self.assertEqual(by_path[str(path)]["status"], "skipped")
             self.assertIn(detail, by_path[str(path)]["detail"])
+            self.assertNotIn("archive", by_path[str(path)])
         self.assertEqual((dirty / "tracked.txt").read_text(), "uncommitted work\n")
         self.assertEqual((untracked / "notes.txt").read_text(), "unsaved notes\n")
         self.assert_removed(clean, by_path[str(clean)])
@@ -163,8 +168,6 @@ class RemoveTests(unittest.TestCase):
                 (path / "tracked.txt").write_text("hidden uncommitted work\n")
                 # Git's usual dirty check misses this work; cleanup must not.
                 self.assertEqual(self.git("status", "--porcelain=v1", cwd=path), "")
-                preview, = self.invoke([self.candidate(path)], apply=False)
-                self.assertEqual(preview["status"], "skipped", preview)
                 result, = self.invoke([self.candidate(path)])
                 self.assertEqual(result["status"], "skipped", result)
                 self.assertEqual((path / "tracked.txt").read_text(), "hidden uncommitted work\n")
@@ -230,10 +233,24 @@ class RemoveTests(unittest.TestCase):
             with self.subTest(jobs=jobs):
                 paths = [self.checkout(f"parallel-{jobs}-{i}") for i in range(jobs)]
                 results = self.invoke([self.candidate(path) for path in paths], jobs=jobs)
-                self.assertEqual(len({row["recovery_ref"] for row in results}), jobs)
+                self.assertEqual(len(results), jobs)
                 for result in results:
                     self.assert_removed(Path(result["path"]), result)
-                    self.assertEqual(self.git("rev-parse", result["branch"]).strip(), self.initial_head)
+
+    def test_reports_older_than_gwt_recovery_keep_expire_with_legacy_refs(self):
+        old, fresh = self.backups / "20260801-120000-old", self.backups / "20260930-120000-new"
+        for directory in (old, fresh):
+            directory.mkdir(parents=True)
+            (directory / "slot.json").write_text(json.dumps({"repo": str(self.repo)}))
+            (directory / "slot.tar.gz").write_text("archive")
+            self.git("update-ref", "refs/clean-worktrees/" + directory.name + "/slot", self.initial_head)
+        month = 31 * 86400
+        os.utime(old, (os.stat(old).st_atime - month, os.stat(old).st_mtime - month))
+        self.invoke([])
+        self.assertFalse(old.exists())
+        self.assertTrue((fresh / "slot.tar.gz").exists())
+        refs = self.git("for-each-ref", "--format=%(refname)", "refs/clean-worktrees").split()
+        self.assertEqual(refs, ["refs/clean-worktrees/" + fresh.name + "/slot"])
 
     def test_active_process_working_directory_is_kept(self):
         path = self.checkout("active")

@@ -16,11 +16,12 @@
 #                rather than created; only a name that exists nowhere is new.
 #   tab/ctrl-a   mark one / toggle all entries (shift-tab unmarks)
 #   ctrl-x       remove the marked worktrees (or the highlighted one if none are
-#                marked) as ONE confirmed batch — trash-and-sweep, see below
-#   ctrl-g       reap: batch-remove every clean worktree whose branch is already
-#                merged into the trunk (end-of-week cleanup in 3 keys) — gwt's
-#                verdict counts squash and rebase merges, and the trunk is
-#                refreshed first, so a PR you merged in the browser counts too
+#                marked) as ONE confirmed batch — see batch_remove
+#   ctrl-g       reap: batch-remove every worktree gwt calls removable whose
+#                branch is already merged into the trunk (end-of-week cleanup
+#                in 3 keys) — gwt's verdict counts squash and rebase merges, and
+#                the trunk is refreshed first, so a PR you merged in the browser
+#                counts too
 #   ctrl-p       PR picker: list open GitHub PRs via gh; enter checks one out
 #                into a worktree, ctrl-o opens it in the browser, ctrl-r
 #                refetches the list (it's memoized for the popup's lifetime)
@@ -31,21 +32,16 @@
 # loop back to the refreshed list so you can keep going). A failed create also
 # loops back.
 #
-# REMOVAL IS TRASH-AND-SWEEP: each selected worktree is mv'd into
-# ~/dev/.worktrees/.trash/<batch> (a same-filesystem rename — instant no matter
-# how big node_modules is), `git worktree prune` drops the metadata, windows
-# are killed, branch deletion is offered in aggregate (merged → one [Y/n];
-# unmerged → explicit force), and the real rm -rf runs server-side
-# in the background via `tmux run-shell -b`, so it survives the popup closing.
-# Because mv bypasses `git worktree remove`'s dirty-refusal, THIS script owns
-# the dirty check: dirty worktrees are flagged in the confirm list and removed
-# only after a second explicit [y/N] (declining keeps them and removes just the
-# clean ones). NOTHING IRREVERSIBLE HAPPENS WITHOUT A WAY BACK: a dirty
-# worktree's uncommitted work (tracked AND untracked) and a force-deleted
-# branch's tip are parked at refs/wt-trash/<batch>/… first, and the ref is
-# printed with the command that restores it. Windows are killed by PATH, in
-# every session — a window pointing at a deleted directory is broken wherever
-# it lives.
+# REMOVAL IS gwt remove (~/dev/gwt README § Removal): it refuses what it must,
+# moves checkouts to a trash it sweeps in the background, and keeps a
+# refs/wt-trash/… recovery ref for anything it discards — dirty work, a
+# force-deleted tip. This script owns the prompts and the windows: dirty
+# worktrees are flagged in the confirm list and removed only after a second
+# explicit [y/N] (declining keeps them and removes just the clean ones),
+# branch deletion is offered in aggregate (merged → one [Y/n]; unmerged →
+# explicit force), every ref gwt keeps is printed with its restore command,
+# and windows are killed by PATH, in every session — a window pointing at a
+# deleted directory is broken wherever it lives.
 #
 # gwt config chooses base, root, and seeding. The default placement is
 # ~/dev/.worktrees/<repo>/<branch>. Create seeds the worktree, then opens its window:
@@ -75,9 +71,8 @@
 
 set -u
 
-# gwt owns creation, seeding, listing, and verdicts; worktree-core.sh owns
-# snapshots and recovery refs; this script owns the tmux/fzf UI and removal flow.
-source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
+# gwt owns creation, seeding, listing, verdicts, removal and recovery; this
+# script owns the tmux/fzf UI, the prompts, and the windows.
 . "${BASH_SOURCE[0]%/*}/lib/tmux-common.sh"   # fzf_colors_from_palette
 
 # --- list:  "<markers> <branch>\t<path>\t<branch>"  (display = field 1) --------
@@ -92,25 +87,22 @@ source "${BASH_SOURCE[0]%/*}/worktree-core.sh"
 # the trunk (squash and rebase merges included), memoized, one Git process per
 # CPU. They cost ~0.3-1s on 25 worktrees, so they are not the first paint.
 
-# One eligibility rule for the "· merged" tag and for ctrl-g, so the tag marks
-# exactly the reap set: merged into the trunk, and removable — not the main
-# worktree or the one you are in, clean, unlocked, and still on disk. A row
-# whose status probe failed (.error) is unknown state, so it is never reaped.
-WT_REAPABLE='def reapable: .merged == true and (.main or .current or .dirty or .locked or .prunable or .error | not);'
-
+# The "· merged" tag and ctrl-g select the same rows, `.removable and .merged`:
+# gwt's removable is the rule gwt remove itself applies, so the tag marks
+# exactly the reap set.
 probed_rows() {
   local json show=true
   case "$(tmux show-option -gqv @worktree_show_merged 2>/dev/null)" in
     off|0|false|no|disabled) show=false ;;
   esac
   json="$(gwt list --json 2>/dev/null)" || { bare_rows; return; }
-  printf '%s\n' "$json" | jq -r --argjson show "$show" "$WT_REAPABLE"'
+  printf '%s\n' "$json" | jq -r --argjson show "$show" '
     .worktrees[]
     | (.branch // "(detached)") as $b
     | (if .current then "\u001b[32m»\u001b[0m" else " " end)
       + (if .dirty then "\u001b[33m*\u001b[0m" else " " end)
       + " " + $b
-      + (if $show and reapable then "\u001b[32m · merged\u001b[0m" else "" end)
+      + (if $show and .removable and .merged == true then "\u001b[32m · merged\u001b[0m" else "" end)
       + "\t" + .path + "\t" + $b'
 }
 
@@ -153,40 +145,9 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 fi
 
 # Everything from here to the picker is on the first paint's path, so anything
-# the list does not need runs in the background: two gwt calls and the
-# housekeeping below were ~100ms of a ~150ms startup. Listing, switching and
-# copying therefore work even when gwt's configuration does not load; creation
-# and removal report gwt's own error.
-
-# --- trash (removal staging) --------------------------------------------------
-
-# Batch removal stages worktrees in <gwt root's parent>/.trash (same filesystem
-# as the root, so mv is a rename) and sweeps in the background.
-wt_shell_quote() {
-  local value="$1"
-  value=${value//\'/\'\\\'\'}
-  printf "'%s'" "$value"
-}
-trash_dir_for() { printf '%s/.trash' "${1%/*}"; }
-
-# Housekeeping, beside the first paint. Nothing waits on this job;
-# await_trunk waits on its own pid only.
-#   - Self-heal: sweep whatever a crashed/killed popup left in the trash — only
-#     entries older than 2 minutes, so this never races the sweep another live
-#     popup just scheduled.
-#   - The other thing removal leaves behind: the refs/wt-trash snapshots taken
-#     before discarding uncommitted work or force-deleting a branch. They pin
-#     objects, so they expire too — same age gate, different store.
-#     @worktree_backup_days 0 keeps them forever.
-#   - Drop the shell's retired merge memos; gwt keeps its own (gwt-merged-v1).
-{
-  root="$(gwt path)" &&
-    tmux run-shell -b "find $(wt_shell_quote "$(trash_dir_for "$root")") -mindepth 1 -maxdepth 1 -mmin +2 -exec rm -rf {} + 2>/dev/null; true"
-  days="$(tmux show-option -gqv @worktree_backup_days)"
-  wt_prune_backups "${days:-30}"
-  common="$(git rev-parse --path-format=absolute --git-common-dir)" &&
-    rm -f "$common"/wt-merged-cache "$common"/wt-merged-cache-v2 "$common"/wt-merged-cache-v3
-} >/dev/null 2>&1 &
+# the list does not need runs in the background. Listing, switching and copying
+# therefore work even when gwt's configuration does not load; creation and
+# removal report gwt's own error.
 
 # --- trunk freshness (background) -----------------------------------------------
 
@@ -226,11 +187,24 @@ fzf_colors="$(fzf_colors_from_palette)"
 
 win_name() { printf '%s' "$1" | tr '/' '-'; }
 
+# The dependency install for a Node project, chosen by its committed lockfile
+# (so an npm repo never gets a pnpm lockfile), pnpm when there is none. Prints
+# nothing for a non-Node project. gwt does not install.
+wt_install_cmd() {
+  local path="$1"
+  [ -f "$path/package.json" ] || return 0
+  if   [ -f "$path/pnpm-lock.yaml" ];    then echo "pnpm install"
+  elif [ -f "$path/yarn.lock" ];         then echo "yarn"
+  elif [ -f "$path/package-lock.json" ]; then echo "npm install"
+  elif [ -f "$path/bun.lockb" ] || [ -f "$path/bun.lock" ]; then echo "bun install"
+  else echo "pnpm install"; fi
+}
+
 # Post-creation work runs VISIBLY in the new window via send-keys — NOT inside
 # this script, which would freeze the modal popup. ONE chained command line:
 #   <install> && <post-create cmd>
-# The install half (Node projects only; package-manager SELECTION by lockfile
-# is wt_install_cmd in worktree-core.sh) is toggled by @worktree_auto_install.
+# The install half (Node projects only, wt_install_cmd) is toggled by
+# @worktree_auto_install.
 # The post-create half defaults to "x" (the claude alias — a fresh worktree
 # lands with the agent already starting) and is overridden or disabled via
 # @worktree_post_create_cmd. You land in the window, watch it run, and can
@@ -281,9 +255,8 @@ switch_worktree() {
   [ -n "$wid" ] || wid="$(tmux new-window -t "$session" -n "$win" -c "$path" -P -F '#{window_id}')"
   tmux select-window -t "$wid" 2>/dev/null || true
   # landing on a worktree window clears its agent-done dot (by window id, so a
-  # duplicate name can't send it to the wrong window) and refreshes the ◷ badge.
+  # duplicate name can't send it to the wrong window).
   tmux set-option -w -t "$wid" @agent_done 0 2>/dev/null || true
-  bash "${BASH_SOURCE[0]%/*}/tmux-agent-status.sh" recount 2>/dev/null || true
 }
 
 # returns 0 on success (worktree created, window opened → caller exits popup);
@@ -321,48 +294,44 @@ copy_paths() {
   fi
 }
 
-# --- removal: trash-and-sweep ---------------------------------------------------
+# --- removal ---------------------------------------------------------------------
 
-# Delete a branch gwt has ALREADY established is contained in the trunk.
-# `git branch -d` refuses a squash- or rebase-merged branch, because git's own
-# "fully merged" test is the graph-only one — so the safe -d silently left
-# exactly the branches this cleanup is most often about. We verified containment
-# by patch identity, so fall back to -D. A deletion that still fails (branch
-# checked out elsewhere, ref locked) is REPORTED, never swallowed: the old
-# `2>/dev/null` made a no-op look identical to success.
-delete_merged_branch() {
-  local b="$1" err
-  git branch -d "$b" >/dev/null 2>&1 && return 0
-  err="$(git branch -D "$b" 2>&1)" && return 0
-  printf '  could not delete %s: %s\n' "$b" "$err"
-  return 1
+# gwt_remove <gwt remove args> — run gwt remove, report each refusal and each
+# recovery ref it kept, and print "<path>\x1f<branch>" for every checkout it
+# removed. \x1f, not a tab: read collapses runs of tabs, which would shift an
+# empty field into the next.
+gwt_remove() {
+  local p b removed ref err
+  gwt remove --json "$@" 2>/dev/null \
+  | jq -r '[.path // "", .branch // "", (.worktree_removed | tostring), .recovery_ref // "", .error // ""] | join("\u001f")' \
+  | while IFS=$'\x1f' read -r p b removed ref err; do
+      [ -n "$err" ] && printf '  could not remove %s: %s\n' "${b:-$p}" "$err" >&2
+      [ -n "$ref" ] && printf '  kept %s — restore with \033[36mgit branch <name> %s\033[0m\n' "$ref" "$ref" >&2
+      [ "$removed" = true ] && printf '%s\x1f%s\n' "$p" "$b"
+    done
 }
 
-# batch_remove "<path>\t<branch> lines" — confirm once, stage every worktree
-# into a fresh trash dir (mv = same-fs rename, instant), prune the git
-# metadata, kill their windows, offer AGGREGATED branch deletion, then sweep
-# the trash in the background and tidy the empty parent dirs slashed branches
-# leave behind. Always returns to the refreshed list.
-#
-# Safety model: mv bypasses `git worktree remove`'s dirty-refusal, so we own
-# the dirty check here — dirty entries are flagged in the confirm list, and
-# their uncommitted changes are discarded only after a second explicit [y/N]
-# (declining drops the dirty ones from the batch and removes just the clean).
-# The main worktree and the worktree the popup runs in are never removed.
+# batch_remove "<path lines>" [listing] — confirm once, let gwt remove the
+# checkouts as one batch with their branches kept, kill their windows, then
+# offer branch deletion in aggregate. The listing (gwt list --json) says which
+# selections are dirty and which are the main worktree or the one you are in;
+# reap passes the one it already has. Always returns to the refreshed list.
 batch_remove() {
-  local main entries="" path branch dirty st n=0 ndirty=0 ans
-  main="$(wt_main_worktree)"
-  while IFS=$'\t' read -r path branch; do
+  local listing="${2:-}" entries="" path branch dirty n=0 ndirty=0 ans discard=""
+  [ -n "$listing" ] || listing="$(gwt list --json)" || { sleep 2; return; }
+  while IFS=$'\x1f' read -r path branch dirty; do
     [ -n "$path" ] || continue
-    if [ "$path" = "$main" ];    then echo "skipping the main worktree ($branch)"; continue; fi
-    if [ "$path" = "$cur_top" ]; then echo "skipping the worktree you're in ($branch)"; continue; fi
-    dirty=0
-    # A failed probe is unknown dirt, not clean: snapshot or keep, never discard.
-    if ! st="$(git -C "$path" status --porcelain 2>/dev/null)"; then [ -d "$path" ] && st=unknown; fi
-    [ -n "$st" ] && { dirty=1; ndirty=$((ndirty+1)); }
-    entries="$entries$path"$'\t'"$branch"$'\t'"$dirty"$'\n'
-    n=$((n+1))
-  done <<< "$1"
+    case "$dirty" in
+      main)    echo "skipping the main worktree ($branch)" ;;
+      current) echo "skipping the worktree you're in ($branch)" ;;
+      *) entries="$entries$path"$'\t'"$branch"$'\t'"$dirty"$'\n'
+         n=$((n+1)); [ "$dirty" = 1 ] && ndirty=$((ndirty+1)) ;;
+    esac
+  done <<< "$(printf '%s' "$listing" | jq -r --arg sel "$1" '
+    ($sel | split("\n")) as $s | .worktrees[] | select(.path | IN($s[]))
+    | [.path, .branch // "(detached)",
+       (if .main then "main" elif .current then "current" elif .dirty then "1" else "0" end)]
+    | join("\u001f")')"
   if [ "$n" -eq 0 ]; then sleep 1.2; return; fi
 
   echo "remove $n worktree(s):"
@@ -380,148 +349,97 @@ batch_remove() {
   if [ "$ndirty" -gt 0 ]; then
     printf 'also remove the %d dirty one(s)? their changes are snapshotted first [y/N] ' "$ndirty"; read -r ans
     case "$ans" in
-      y|Y) ;;
+      y|Y) discard=--discard-dirty ;;
       *) entries="$(printf '%s' "$entries" | awk -F'\t' '$3 == 0')"
          n=$((n - ndirty))
          if [ "$n" -le 0 ]; then echo "nothing left to remove"; sleep 1.2; return; fi ;;
     esac
   fi
 
-  local wt_root trash batch i=0 removed=0 gone="" saved="" snap ref wins w
-  wt_root="$(gwt path)" || { sleep 2; return; }
-  batch="$(date +%s).$$"
-  trash="$(trash_dir_for "$wt_root")/$batch"
-  if ! mkdir -p "$trash"; then echo "cannot create $trash"; sleep 2; return; fi
+  # Collect the windows BEFORE gwt moves the checkouts: a pane whose cwd is
+  # renamed out from under it reports the NEW path, so afterwards nothing
+  # matches any more.
+  local wins="" w gone removed=0 branches="" b
+  set --
   while IFS=$'\t' read -r path branch dirty; do
     [ -n "$path" ] || continue
-    i=$((i+1))
-    # Snapshot the dirt BEFORE anything destructive, and refuse to remove a
-    # worktree we couldn't snapshot: this batch's trash is swept immediately, so
-    # "yes" to the prompt above used to mean the changes were unrecoverable the
-    # moment it was answered.
-    if [ "$dirty" = 1 ]; then
-      snap="$(wt_snapshot_worktree "$path" "wt-trash: $branch")"
-      if [ -z "$snap" ]; then echo "could not snapshot $branch — keeping it"; continue; fi
-      ref="$(wt_backup_ref "$batch" "$(printf '%03d' "$i")" "$branch" "$snap")" \
-        && saved="$saved$ref"$'\n'
-    fi
-    # Collect the windows BEFORE the mv: a pane whose cwd is renamed out from
-    # under it reports the NEW path, so afterwards nothing matches any more.
-    wins="$(windows_for_path "$path" -a)"
-    if mv "$path" "$trash/$i" 2>/dev/null; then
-      wt_remove_empty_parents "$wt_root" "$path"
-      removed=$((removed+1))
-      gone="$gone$branch"$'\n'
-      # every session, not just this one — a window left pointing at a deleted
-      # directory is broken wherever it lives. Name match stays as the fallback
-      # for a window whose pane has cd'd elsewhere — exact on both parts (=),
-      # since a bare target also matches a name prefix: removing reap-me would
-      # kill reap-me-too's window.
-      while IFS= read -r w; do
-        [ -n "$w" ] && tmux kill-window -t "$w" 2>/dev/null
-      done <<< "$wins"
-      tmux kill-window -t "=$session:=$(win_name "$branch")" 2>/dev/null || true
-    else
-      echo "could not move $branch ($path) — skipped"
-    fi
+    set -- "$@" "$path"
+    for w in $(windows_for_path "$path" -a); do wins="$wins$path"$'\t'"$w"$'\n'; done
   done <<< "$entries"
-  git worktree prune 2>/dev/null || true
+  gone="$(gwt_remove --keep-branch $discard "$@")"
+  while IFS=$'\x1f' read -r path branch; do
+    [ -n "$path" ] || continue
+    removed=$((removed+1))
+    # Every session: a window left pointing at a deleted directory is broken
+    # wherever it lives. Name match stays as the fallback for a window whose
+    # pane has cd'd elsewhere — exact on both parts (=), since a bare target
+    # also matches a name prefix: removing reap-me would kill reap-me-too.
+    for w in $(printf '%s' "$wins" | awk -F'\t' -v p="$path" '$1 == p {print $2}'); do
+      tmux kill-window -t "$w" 2>/dev/null
+    done
+    if [ -n "$branch" ]; then
+      tmux kill-window -t "=$session:=$(win_name "$branch")" 2>/dev/null || true
+      branches="$branches$branch"$'\n'
+    fi
+  done <<< "$gone"
   echo "removed $removed worktree(s)"
-  if [ -n "$saved" ]; then
-    printf 'uncommitted changes saved — recover with \033[36mgit switch -c <name> <ref>\033[0m:\n'
-    printf '%s' "$saved" | sed 's/^/  /'
-  fi
 
   # Aggregated branch cleanup (one prompt per kind, not per branch): merged
   # branches default to YES; unmerged ones need an explicit force past a
-  # warning, so unmerged work is never silently dropped.
-  # `git branch -d/-D` also removes the branch's [branch …] config section.
+  # warning, and gwt keeps their tips as recovery refs.
   #
   # "Merged" is gwt's verdict against a trunk refreshed a moment ago — it counts
   # squash- and rebase-merges, which the plain ancestor test cannot see. That
   # matters here more than anywhere: a shipped branch landing in the "NOT merged"
   # list is a warning you learn to ignore, and the next time it's real you force
-  # past it out of habit. One gwt call judges every branch; a branch it cannot
-  # judge counts as unmerged, so it is only ever deleted behind the force prompt.
-  local trunk="the trunk" branches="" verdicts="" merged="" unmerged="" nm=0 nu=0 b
+  # past it out of habit. A branch gwt cannot judge counts as unmerged, so it is
+  # only ever deleted behind the force prompt.
+  local trunk="the trunk" verdicts="" merged="" unmerged="" nm=0 nu=0
+  [ -n "$branches" ] || { sleep 0.8; return; }
   await_trunk
-  while IFS= read -r b; do
-    [ -n "$b" ] && [ "$b" != "(detached)" ] || continue
-    git show-ref --verify --quiet "refs/heads/$b" && branches="$branches$b"$'\n'
-  done <<< "$gone"
-  if [ -n "$branches" ]; then
-    echo "checking branches against the trunk…"
-    # Unquoted on purpose: ref names cannot hold whitespace or glob characters.
-    verdicts="$(gwt merged --json $branches 2>/dev/null)"
-    trunk="$(printf '%s' "$verdicts" | jq -r '.trunk.name // "the trunk"' 2>/dev/null)" || trunk="the trunk"
-  fi
+  echo "checking branches against the trunk…"
+  # Unquoted on purpose: ref names cannot hold whitespace or glob characters.
+  verdicts="$(gwt merged --json $branches 2>/dev/null)"
+  trunk="$(printf '%s' "$verdicts" | jq -r '.trunk.name // "the trunk"' 2>/dev/null)" || trunk="the trunk"
   while IFS= read -r b; do
     [ -n "$b" ] || continue
     if [ "$(printf '%s' "$verdicts" | jq -r --arg b "$b" '.branches[] | select(.branch == $b) | .merged' 2>/dev/null)" = true ]; then
-      merged="$merged$b"$'\n'; nm=$((nm+1))
+      merged="$merged $b"; nm=$((nm+1))
     else
-      unmerged="$unmerged$b"$'\n'; nu=$((nu+1))
+      unmerged="$unmerged $b"; nu=$((nu+1))
     fi
   done <<< "$branches"
   if [ "$nm" -gt 0 ]; then
     printf 'delete %d merged branch(es)? [Y/n] ' "$nm"; read -r ans
-    case "$ans" in
-      n|N) ;;
-      *) while IFS= read -r b; do
-           [ -n "$b" ] && delete_merged_branch "$b"
-         done <<< "$merged" ;;
-    esac
+    case "$ans" in n|N) ;; *) gwt_remove $merged >/dev/null ;; esac
   fi
   if [ "$nu" -gt 0 ]; then
     printf '%d branch(es) NOT merged into %s:\n' "$nu" "$trunk"
-    printf '%s' "$unmerged" | sed 's/^/  /'
+    printf '  %s\n' $unmerged
     printf 'force-delete them? their tips are kept as refs first [y/N] '; read -r ans
-    case "$ans" in
-      y|Y) local k=0 tip
-           saved=""
-           while IFS= read -r b; do
-             [ -n "$b" ] || continue
-             k=$((k+1))
-             # `git branch -D` leaves the commits reachable only from the branch
-             # reflog, which the branch deletion takes with it — recovery then
-             # means `git fsck --lost-found`. A ref costs nothing and keeps the
-             # tip addressable until wt_prune_backups expires it.
-             tip="$(git rev-parse -q --verify "refs/heads/$b" 2>/dev/null)"
-             ref="$(wt_backup_ref "$batch" "b$(printf '%03d' "$k")" "$b" "$tip")" \
-               && saved="$saved$ref"$'\n'
-             git branch -D "$b" >/dev/null 2>&1 || printf '  could not delete %s\n' "$b"
-           done <<< "$unmerged"
-           if [ -n "$saved" ]; then
-             printf 'tips kept — restore with \033[36mgit branch <name> <ref>\033[0m:\n'
-             printf '%s' "$saved" | sed 's/^/  /'
-           fi ;;
-    esac
+    case "$ans" in y|Y) gwt_remove --force $unmerged >/dev/null ;; esac
   fi
-
-  # Sweep this batch's trash server-side (survives the popup closing).
-  tmux run-shell -b "rm -rf $(wt_shell_quote "$trash")" 2>/dev/null || true
   sleep 0.8
 }
 
-# ctrl-g: reap — batch-remove every worktree WT_REAPABLE admits (merged into
-# the trunk, squash and rebase merges included), from `gwt list` run after the
-# trunk refresh lands: reap's whole value is that it knows what has landed, and
-# it knew nothing newer than your last fetch. One confirm, then trash-and-sweep.
+# ctrl-g: reap — batch-remove every worktree gwt calls removable that is merged
+# into the trunk (squash and rebase merges included), from `gwt list` run after
+# the trunk refresh lands: reap's whole value is that it knows what has landed,
+# and it knew nothing newer than your last fetch. One confirm, then removal.
 reap_merged() {
   local listing cand trunk
   await_trunk
   echo "checking which worktrees are merged into the trunk…"
   listing="$(gwt list --json)" || { sleep 2; return; }
   trunk="$(printf '%s' "$listing" | jq -r .trunk.name)"
-  cand="$(printf '%s' "$listing" | jq -r "$WT_REAPABLE"'
-    .worktrees[] | select(reapable) | "\(.path)\t\(.branch)"')"
+  cand="$(printf '%s' "$listing" | jq -r '.worktrees[] | select(.removable and .merged == true) | .path')"
   if [ -z "$cand" ]; then
     echo "nothing to reap — no clean worktree is fully merged into $trunk"
     sleep 1.5
     return
   fi
   echo "reap: clean worktrees already merged into $trunk"
-  batch_remove "$cand"
+  batch_remove "$cand" "$listing"
 }
 
 # --- PR picker ------------------------------------------------------------------
@@ -637,7 +555,7 @@ while true; do
     # force-create from the typed name; on failure, loop back to the list.
     ctrl-n) create_worktree "$query" && exit 0 ;;
     # batch-remove the marked rows (or the highlighted one); always loops back.
-    ctrl-x) batch_remove "$(printf '%s\n' "$selections" | cut -f2,3)" ;;
+    ctrl-x) batch_remove "$(printf '%s\n' "$selections" | cut -f2)" ;;
     # reap merged+clean worktrees; always loops back.
     ctrl-g) reap_merged ;;
     # PR picker: exits the popup only when a worktree was actually created.

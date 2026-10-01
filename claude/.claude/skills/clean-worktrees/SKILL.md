@@ -7,74 +7,60 @@ disable-model-invocation: true
 
 # Clean worktrees
 
-Remove merged or inactive linked checkouts while preserving unfinished work.
-Use gwt's configured worktree root and a 14-day inactivity window. The audit script
-collects evidence and proposes candidates; you settle uncertainty and select
-the authorized scope. The removal runner checks execution safety, not merge
-or inactivity eligibility. An audit-only request stops at the selection.
+Remove the linked checkouts under gwt's worktree root whose work has landed
+or gone inactive, and keep everything else. Done is every candidate either
+removed or kept with a reason, and a report of counts, exceptions, recovery
+locations and the disk-space change. An audit-only request stops at the
+selection. Defaults: gwt's configured root and a 14-day inactivity window.
 
-## Establish the selection
+The audit collects evidence and proposes candidates; you settle what it
+leaves uncertain and choose the authorized scope; the runner removes. Each
+script's `--help` owns its options and the plan schema.
 
-Start with the bundled collector, which writes evidence and a draft plan:
+## Select
 
 ```bash
 python3 ~/.agents/skills/clean-worktrees/scripts/audit.py --output /tmp/worktree-audit.json
 ```
 
-Both scripts' `--help` own their options and the plan schema. Supply the user's
-root and inactivity window when different. Use `--repo` to include a repository
-whose checkouts beneath the root are all missing; discovery cannot infer its
-owner. `--no-fetch` gathers cached evidence and proposes no removals.
+Pass the user's root or window when they differ. `--repo` adds a repository
+whose checkouts under the root are all missing, since discovery cannot infer
+its owner; `--no-fetch` gathers cached evidence and proposes nothing.
 
-Review the report's errors, kept reasons, and integration refs before accepting
-candidates. Activity includes checkout history and local-file edits. Keep dirty,
-locked, running, or uncertain work. The inactive path requires
-the tip to remain reachable from a refreshed remote ref; the merged path
-requires proof that the current HEAD reached the intended integration branch.
-The audit takes that proof from `gwt merged`, the verdict gwt remove and the
-tmux popup also use: merge, squash, and rebase integration all count, and a
-patch match counts only when merging would leave the base unchanged.
+Review the report's errors, kept reasons and integration refs before
+accepting a candidate. Keep dirty, locked, running or uncertain work. A merged
+candidate needs proof that its current HEAD reached the integration branch,
+which the audit takes from `gwt merged`: merge, squash and rebase integration
+all count. An inactive candidate needs its tip reachable from a refreshed
+remote ref; activity includes checkout history and local-file edits.
 
 PR evidence settles what the audit leaves unresolved, such as work applied by
 hand with edits or merged into another branch. Batch GitHub PR metadata by
-repository, then query unresolved branches. A matching branch name is
-insufficient: the merged PR head must equal or contain the checkout's HEAD. The checkout can
-predate the final PR commit or include later unmerged work. Check the PR's target
-branch too. List limits are caps, not proof of absence; fetch a missing PR head
-only when its ancestry would settle the candidate.
+repository, then query the unresolved branches. A matching branch name proves
+nothing: the merged PR's head must equal or contain the checkout's HEAD, and
+its target must be the intended branch. List limits are caps, not proof of
+absence. Keep each accepted candidate's full audited HEAD and reason in the
+plan.
 
-Resolve the draft's candidates and kept records against that evidence, retaining
-the full audited HEAD and eligibility reason for each candidate. Audit-only
-results use the user's requested format. For cleanup, announce counts and
-exceptions, then proceed within the existing authorization.
-
-## Apply the selection
-
-Pass the reviewed plan to the runner:
+## Remove
 
 ```bash
 python3 ~/.agents/skills/clean-worktrees/scripts/remove.py /tmp/worktree-audit.json --apply
 ```
 
-It preserves ignored local files outside its disposable cache exclusions,
-pins commit tips, retains branch names, and records skips or failures. Its
-reported backup directory contains recovery information. Without `--apply`,
-it previews execution safety. Keep refusals; forcing removal changes the scope.
+The runner refuses a path outside the root and a checkout a process is
+working in, archives the ignored files outside its cache exclusions, then
+calls `gwt remove --keep-branch --expect-head <audited HEAD>`. gwt refuses
+main, locked, dirty or moved checkouts, keeps branches, and keeps a detached
+HEAD as a recovery ref. A refusal is a kept candidate; forcing it changes the
+scope. The report directory holds each result, archive and recovery ref. Report
+directories expire after gwt's `recovery.keep` (`gwt config show`), like gwt's
+own recovery refs.
 
-Wait for completion using aggregate progress. After interruption, reconcile
-recorded results with disk and Git, then refresh eligibility for unresolved
-candidates before retrying them. A previously inactive checkout may now be active
-even with the same HEAD. Archives and recovery refs remain until a separate
-backup cleanup is requested.
-
-Remove registrations whose checkout paths are missing only when individually
-verified inside the selected root. Tidy empty ancestors of removed paths without
-traversing retained trees. If branch cleanup is also requested, run
-`git branch -d` serially after removals and retain refusals; branch/config edits
-share repository state. Keep remote branches untouched.
-
-Finish by reconciling remaining paths and registrations with the plan. Report
-removed and kept counts, exceptions, recovery location, and measured available
-disk-space change, which is approximate while other processes run.
+After an interruption, reconcile the recorded results with disk and Git, and
+re-audit unresolved candidates before retrying: an inactive checkout may have
+become active at the same HEAD. If branch cleanup is also requested,
+`gwt remove <branch>` deletes a merged branch that has no checkout; keep its
+refusals and leave remote branches alone.
 
 When tuning concurrency or changing safeguards, consult [EVIDENCE.md](EVIDENCE.md).

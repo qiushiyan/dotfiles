@@ -5,7 +5,7 @@ core boundary; read the satellite for the branch being changed:
 
 ```text
 popup selection, creation, PR checkout → worktree-popup.md
-merged verdict, removal, recovery      → worktree-removal.md
+removal prompts, reap, windows         → worktree-removal.md
 ```
 
 The scripts own syntax. These docs own the constraints behind it.
@@ -13,8 +13,8 @@ The scripts own syntax. These docs own the constraints behind it.
 ## Shared placement, separate interfaces
 
 `gwt` on PATH (source: `~/dev/gwt`) owns branch resolution,
-worktree creation, ignored-file seeding, listing, the trunk, and every merged
-verdict. Its callers are the tmux popup,
+worktree creation, ignored-file seeding, listing, the trunk, every merged
+verdict, and removal with its recovery refs. Its callers are the tmux popup,
 `brief start`, the `enter-worktree` skill, and the zsh `gwt` function, which
 adds the parent-shell cd behind `--cd` and forwards everything else. That
 function and its completion share one subcommand list, `_gwt_commands` in
@@ -24,8 +24,8 @@ into a branch of that name, so `gwt.test.zsh` checks it against `gwt --help`.
 ```text
 resolution, creation, seeding       → gwt binary
 listing, trunk, merged verdicts      → gwt list / merged / trunk
-snapshots, recovery refs, trash      → worktree-core.sh
-tmux window, popup, send-keys        → tmux-worktree.sh
+removal, snapshots, recovery, trash  → gwt remove
+tmux window, popup, prompts          → tmux-worktree.sh
 parent-shell cd (gwt --cd, gwtcd)    → zsh gwt function
 brief lifecycle diagnosis/resume     → brief CLI
 ```
@@ -34,13 +34,10 @@ The binary prints only the new path on stdout; diagnostics use stderr. It never
 changes the caller's directory. `gwt create --non-interactive` accepts the
 configured base (HEAD by default) without prompting. `--json` returns the path
 and placement result as an object. The binary's `--help` owns its full contract;
-`~/dev/gwt/README.md` owns installation, placement, and verdict design. Its
-non-interactive `remove` deletes a clean checkout and branch once the branch is
-merged into the trunk; the popup's richer cleanup (batches, snapshots, trash,
-windows) stays here and asks gwt for the same verdicts.
-
-The shell core retains a forwarding CLI for already-running shells that still
-hold the old function. Run `zshreload` to pick up the binary and the `--cd` wrapper.
+`~/dev/gwt/README.md` owns installation, placement, verdict and removal
+design. The popup, `brief closeout` and the clean-worktrees skill all remove
+through `gwt remove`; the popup adds only its prompts and window cleanup.
+Run `zshreload` to pick up the `--cd` wrapper in an existing shell.
 
 ## Mental model
 
@@ -58,8 +55,8 @@ Creation uses the shared `gwt` config: global `~/.config/gwt/config.toml`, then
 `gwt.toml` in the shared Git directory. `gwt config show` explains the effective
 values. The popup obtains its root with `gwt path`; the path above is the default.
 Merge tags, reap, and branch cleanup measure against gwt's trunk (the remote
-default branch), never the creation base. Fetch freshness and deadlines come
-from `gwt` config.
+default branch), never the creation base. Fetch freshness, deadlines and
+recovery-ref expiry come from `gwt` config.
 
 ## Creation pipeline
 
@@ -75,7 +72,8 @@ Cheap prerequisites run synchronously before the new window starts work. Slow
 dependency installation runs visibly in the destination window so the popup
 never blocks and the user can interrupt it.
 
-Package-manager choice comes from the committed lockfile. The post-create
+Package-manager choice comes from the committed lockfile (`wt_install_cmd`;
+gwt does not install). The post-create
 command defaults to `x`; both behaviors are configurable through tmux options.
 Delivery is one `send-keys` line targeted by window id, never by the branch-derived
 window name.
@@ -122,9 +120,8 @@ The scripts remain bash-3.2-safe; under `set -u`, empty arrays are unsafe, so
 batch data uses TSV lines.
 
 ```text
-placement, verdicts: make -C ~/dev/gwt check
-snapshots, cleanup:  tmux/.config/tmux/scripts/tests/test-worktree-core.sh
-popup, reap, copy:   tmux/.config/tmux/scripts/tests/test-gwt-popup.py
+placement, verdicts, removal: make -C ~/dev/gwt check
+popup, reap, copy, prompts:   tmux/.config/tmux/scripts/tests/test-gwt-popup.py
 popup path:          detached scratch tmux pane + send-keys + capture-pane
 safe test:           set @worktree_post_create_cmd to harmless echo
 ```
