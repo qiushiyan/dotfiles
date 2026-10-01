@@ -3,8 +3,10 @@
 # non-empty CLAUDE.md into $HOME. `claude/.claude/CLAUDE.md` stows to
 # ~/.claude/CLAUDE.md, the global memory prepended to every request in every
 # project, and any <pkg>/CLAUDE.md stows to ~/CLAUDE.md with the same reach —
-# unless the package's .stow-local-ignore excludes it (tabtype/ does). Reads
-# the working tree only; nothing is stowed, sourced, or written.
+# unless the package's .stow-local-ignore excludes it (tabtype/ does). Also:
+# every package `make list` stows is tracked, so an untracked top-level dir
+# (node_modules/ from the root package.json) can't become one. Reads the
+# working tree only; nothing is stowed, sourced, or written.
 #
 #   zsh ~/.config/zsh/tests/stow-reach.test.zsh
 #
@@ -47,14 +49,12 @@ ignored() {
   return 1
 }
 
-# Stowed packages exactly as the Makefile computes them.
+# Stowed packages, asked of the Makefile itself so the two can't drift. An
+# empty answer fails rather than letting every case pass over nothing.
 packages() {
-  local d
-  for d in "$DOT"/*/; do
-    d="${d#$DOT/}"
-    [[ "$d" == "docs/" || "$d" == "vpn-private/" ]] && continue
-    print -r -- "${d%/}"
-  done
+  local -a pkgs=(${=$(make -s -C "$DOT" list)})
+  (( $#pkgs )) || { print "make -s list named no packages"; return 1 }
+  print -rl -- ${pkgs%/}
 }
 
 case_global_memory_empty() {
@@ -66,13 +66,30 @@ case_global_memory_empty() {
 
 case_no_package_claude_md_reaches_home() {
   local pkg rc=0
-  for pkg in $(packages); do
+  local -a pkgs
+  pkgs=($(packages)) || { print -l $pkgs; return 1 }
+  for pkg in $pkgs; do
     local f="$DOT/$pkg/CLAUDE.md"
     [[ -f "$f" ]] || continue
     if ! ignored "$pkg" "CLAUDE.md"; then
       print "$pkg/CLAUDE.md would stow to ~/CLAUDE.md; add it to $pkg/.stow-local-ignore or move it to docs/"
       rc=1
     fi
+  done
+  return $rc
+}
+
+# The package rule is a deny list over every top-level dir, so anything on
+# disk qualifies: node_modules/ stowed ~/.pnpm and ~/@pierre for two months
+# before anyone noticed. A real package has tracked files.
+case_every_package_is_tracked() {
+  local pkg rc=0
+  local -a pkgs
+  pkgs=($(packages)) || { print -l $pkgs; return 1 }
+  for pkg in $pkgs; do
+    [[ -n "$(git -C "$DOT" ls-files -- "$pkg" | head -1)" ]] && continue
+    print "$pkg/ has no tracked files but make would stow it; add it to the Makefile's filter-out"
+    rc=1
   done
   return $rc
 }
@@ -91,6 +108,7 @@ case_tabtype_docs_stay_repo_local() {
 t "claude/.claude/CLAUDE.md is empty"                      case_global_memory_empty
 t "no <pkg>/CLAUDE.md stows to ~/CLAUDE.md"                case_no_package_claude_md_reaches_home
 t "tabtype package docs stay out of HOME"                  case_tabtype_docs_stay_repo_local
+t "every package make stows is tracked"                    case_every_package_is_tracked
 
 print -r -- "stow-reach.test: $PASS passed, $FAIL failed"
 (( FAIL == 0 ))
