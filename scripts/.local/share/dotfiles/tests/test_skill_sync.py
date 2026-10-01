@@ -204,7 +204,9 @@ class SkillSyncTest(unittest.TestCase):
         self.run_sync()
         self.assertFalse(metadata.exists())
         self.assertEqual(config.read_bytes(), original)
-        self.run_script(self.script)
+        result = self.run_script(self.script)
+        self.assertIn("1 skills checked; 1 metadata files updated", result.stdout)
+        self.assertIn("1 documents checked; 1 copies updated", result.stdout)
         self.assertIn("allow_implicit_invocation: false", metadata.read_text())
         self.assertTrue((self.sentinel / "docs/standard.md").exists())
         self.run_script(self.script, "--check")
@@ -329,14 +331,6 @@ class SkillSyncTest(unittest.TestCase):
         self.run_sync(expected=2)
         self.assertFalse(missing.exists())
 
-    def test_skills_scope_never_reaches_documents(self):
-        self.skill("manual")
-        result = self.run_sync()
-        self.assertNotIn("documents checked", result.stdout)
-        self.assertIn("1 skills checked", result.stdout)
-        self.run_script(self.script, "--documents", str(self.repo / "scripts/.local/share/dotfiles/documents.yaml"))
-        self.assertTrue((self.sentinel / "docs/standard.md").exists())
-
     def test_documents_scope_copies_verbatim_and_reports_external(self):
         repo, script = self.repo, self.script
         target = self.checkout("project")
@@ -357,22 +351,6 @@ class SkillSyncTest(unittest.TestCase):
         self.run_script(script, "--documents", str(manifest), "--check", expected=1)
         self.run_script(script, "--documents", str(manifest))
         self.assertEqual(copy.read_text(), "# Standard\n\nOne rule.\n")
-
-    def test_default_scope_runs_both_jobs_from_the_repository(self):
-        repo, script = self.repo, self.script
-        for tree in ("claude/.claude/skills/manual", ".claude/skills"):
-            (repo / tree).mkdir(parents=True)
-        (repo / "claude/.claude/skills/manual/SKILL.md").write_text(
-            "---\nname: manual\ndisable-model-invocation: true\n---\n"
-        )
-        target = self.checkout("project")
-        self.manifest(repo, [(target, "docs/standard.md")])
-        result = self.run_script(script)
-        self.assertIn("1 skills checked; 1 metadata files updated", result.stdout)
-        self.assertIn("1 documents checked; 1 copies updated", result.stdout)
-        self.assertTrue((repo / "claude/.claude/skills/manual/agents/openai.yaml").exists())
-        self.assertTrue((target / "docs/standard.md").exists())
-        self.run_script(script, "--check")
 
     def test_absent_checkout_is_skipped_while_present_ones_sync(self):
         repo, script = self.repo, self.script

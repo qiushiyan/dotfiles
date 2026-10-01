@@ -89,18 +89,12 @@ CASE=K2; if want; then
     ok "K2 outside tmux and ssh: pbcopy" "plain" "$(pbcopied)"
 fi
 
-CASE=K3; if want; then
-    fresh
-    printf 'nobody' | T -q
-    ok "K3 no clients: pbcopy" "nobody" "$(pbcopied)"
-    ok "K3 no clients: buffer kept" "nobody" "$(newest_buffer)"
-fi
-
 CASE=K4; if want; then
     fresh; : > "$SANDBOX/ttys"
     attach local >/dev/null
     TOCLIP_REMOTE_PIDS="" T -q 'at-screen'
     ok "K4 local client only: pbcopy" "at-screen" "$(pbcopied)"
+    ok "K4 local client only: buffer kept" "at-screen" "$(newest_buffer)"
 fi
 
 CASE=K5; if want; then
