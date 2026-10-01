@@ -23,33 +23,46 @@ return {
       local lualine_require = require("lualine_require")
       lualine_require.require = require
       local icons = LazyVim.config.icons
-      -- Auto-select palette based on current colorscheme
-      local colors = require("config.palette").get_palette()
 
-      -- Bar bg: each palette can expose a `bar_bg` surface (Gruber uses
-      -- the Zed status/tab bar charcoal #202020).
-      -- Falls back to `mantle` for themes that don't define one.
-      local bar_bg = colors.bar_bg or colors.mantle
+      -- The band follows the active colorscheme's own groups: StatusLine's bg
+      -- (a colors/<x>.lua theme sets the band it wants there), Normal's fg for
+      -- text, Comment's fg for secondary text. Resolved on each read, so
+      -- lualine's own ColorScheme re-setup, which calls the theme function
+      -- below again, carries a live switch.
+      local function hl(name, attr)
+        local h = vim.api.nvim_get_hl(0, { name = name, link = false })
+        if h.reverse then h.fg, h.bg = h.bg, h.fg end
+        return h[attr] and string.format("#%06x", h[attr]) or nil
+      end
+      -- Plugin themes whose StatusLine bg is no band: night-owl's #010d18 is
+      -- indistinguishable from its #011627 editor, so it gets the plugin's
+      -- active-tab navy, one step up.
+      local band_override = { ["night-owl"] = "#0b2942" }
+      local function band_bg()
+        return band_override[vim.g.colors_name] or hl("StatusLine", "bg")
+      end
 
-      -- Uniform lualine theme: every section in every mode gets bar_bg so
-      -- both the top tabline (incl. its filler region right of the filename)
-      -- and the bottom statusline (incl. its empty middle) read as a single
-      -- quiet band. Mode + progress/branch use bold to anchor the eye since
-      -- we've dropped the per-mode accent color. Replaces theme = "auto".
-      local section = { bg = bar_bg, fg = colors.text }
-      local bold_section = vim.tbl_extend("force", section, { gui = "bold" })
-      local mode_def = {
-        a = bold_section, b = section, c = section,
-        x = section,      y = section, z = bold_section,
-      }
-      local lualine_theme = {
-        normal   = mode_def,
-        insert   = mode_def,
-        visual   = mode_def,
-        replace  = mode_def,
-        command  = mode_def,
-        inactive = mode_def,
-      }
+      -- Uniform lualine theme: every section in every mode gets the band bg
+      -- so both the top tabline (incl. its filler region right of the
+      -- filename) and the bottom statusline (incl. its empty middle) read as
+      -- a single quiet band. Mode + progress/branch use bold to anchor the eye
+      -- since we've dropped the per-mode accent color. Replaces theme = "auto".
+      local function lualine_theme()
+        local section = { bg = band_bg(), fg = hl("Normal", "fg") }
+        local bold_section = vim.tbl_extend("force", section, { gui = "bold" })
+        local mode_def = {
+          a = bold_section, b = section, c = section,
+          x = section,      y = section, z = bold_section,
+        }
+        return {
+          normal   = mode_def,
+          insert   = mode_def,
+          visual   = mode_def,
+          replace  = mode_def,
+          command  = mode_def,
+          inactive = mode_def,
+        }
+      end
 
       local opts = {
         options = {
@@ -94,11 +107,9 @@ return {
               cond = function()
                 return vim.bo.filetype == "python"
               end,
-              color = {
-                fg = colors.subtext1,
-                bg = bar_bg,
-                gui = "italic",
-              },
+              color = function()
+                return { fg = hl("Comment", "fg"), bg = band_bg(), gui = "italic" }
+              end,
             },
           },
         },

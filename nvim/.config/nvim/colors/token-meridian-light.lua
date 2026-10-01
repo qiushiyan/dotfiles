@@ -97,7 +97,7 @@ hi("PmenuSbar", { bg = c.bg_float })
 hi("PmenuThumb", { bg = c.fg_gutter })
 
 -- Statusline
-hi("StatusLine", { fg = c.fg_dim, bg = c.bg_float })
+hi("StatusLine", { fg = c.fg_dim, bg = c.bg_sidebar }) -- bg1 distinguishes the statusline from paper
 hi("StatusLineNC", { fg = c.fg_dark, bg = c.bg_sidebar })
 
 -- Tabline

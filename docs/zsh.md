@@ -52,7 +52,7 @@ zsh/.config/zsh/
   claude.zsh       # multi-account launchers (x, x-<name>) — see claude-accounts.md
   codex.zsh        # Codex accounts through headroom (cx, cx-<name>); plain `codex` stays the vendor default
   xcode.zsh
-  tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep, pair-coding helpers
+  tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep
   cout.zsh        # execution boundaries for the cout recorder (~/dev/cout)
   proxy.zsh
   hosts/<machine>.zsh  # one machine's identity (§ Machines); outside the glob

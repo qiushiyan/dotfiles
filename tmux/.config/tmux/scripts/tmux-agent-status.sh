@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # tmux-agent-status.sh — the one owner of per-pane agent status: the Claude
-# context chip, the Codex border markers, the dormant agent-done badge, and
-# pane-border-status teardown.
+# context chip, the Codex border markers, and pane-border-status teardown.
 #
 # lib/agent-vocab.sh defines WHICH options exist; this script owns every verb
 # that writes or clears them. Producers never spell the option names:
@@ -11,11 +10,10 @@
 #                       must stay one server-side if-shell with no process
 #                       spawned (context-chip.md) — a library call, not a verb.
 #   Claude hooks        activate claude (SessionStart), clear claude
-#                       (SessionEnd), done (Stop/Notification; dormant).
+#                       (SessionEnd).
 #   zsh codex wrapper   activate codex, clear codex.
 #   zsh precmd          sweep, only after a server-side presence test hit.
-#   tmux                reconcile (pane-exited hook, unname-pane, relocation),
-#                       recount (window navigation; dormant display).
+#   tmux                reconcile (pane-exited hook, unname-pane, relocation).
 #
 # VERBS. [pane] defaults to $TMUX_PANE; the hooks pass nothing, by design.
 #
@@ -60,13 +58,6 @@
 #       purpose: hook-time ids race pane teardown and can RE-RESOLVE to a
 #       surviving pane, a mis-target that wrongly strips borders; a sweep of
 #       settled state cannot. (tmux has no after-break/join-pane hooks.)
-#   done
-#       DORMANT agent-done setter (agent-notify.md). Exits before setting any
-#       state; the wiring stays so a redesign is cheap.
-#   recount
-#       Recompute each session's ◷ badge from its windows' @agent_done flags.
-#       Window-agnostic, so it runs correctly from any context. With `done`
-#       dormant nothing ever sets a flag and every count is 0.
 #
 # THE CLAUDE OPTIONS (names in lib/agent-vocab.sh):
 #
@@ -130,7 +121,7 @@
 # `allow-set-title off` ever lands, naming needs its own marker.
 #
 # No-ops outside tmux; always exits 0 — a failing Claude hook surfaces as an
-# error, and a failing Stop hook can keep the agent from stopping.
+# error.
 
 _AGENT_STATUS_DIR=${BASH_SOURCE[0]%/*}
 # shellcheck source=lib/agent-vocab.sh
@@ -268,42 +259,6 @@ reconcile_all() {
 
 hook_sid() { jq -r '.session_id // empty' 2>/dev/null || true; }
 
-agent_done() {
-    # DISABLED (2026-06) by documented decision — agent-notify.md. With the
-    # setter inert no window gets @agent_done, so the dot and the ◷ badge never
-    # render. Everything downstream stays wired: the display formats and the
-    # navigation clears in tmux.conf, `recount`, and the Claude Stop and
-    # Notification hooks. Reviving it is a redesign, not deleting this line.
-    return 0
-    # shellcheck disable=SC2317
-    local pane="${TMUX_PANE:-}" win visible
-    # shellcheck disable=SC2317
-    [ -n "$pane" ] || return 0
-    # shellcheck disable=SC2317
-    win=$(tmux display-message -p -t "$pane" '#{window_id}' 2>/dev/null)
-    # shellcheck disable=SC2317
-    [ -n "$win" ] || return 0
-    # Don't flag a window you are already looking at: the dot would stick.
-    # shellcheck disable=SC2317
-    visible=$(tmux display-message -p -t "$pane" '#{&&:#{window_active},#{session_attached}}' 2>/dev/null)
-    # shellcheck disable=SC2317
-    [ "$visible" = 1 ] && return 0
-    # shellcheck disable=SC2317
-    tmux set-option -w -t "$win" @agent_done 1 2>/dev/null
-    # shellcheck disable=SC2317
-    recount
-}
-
-recount() {
-    local s n
-    while IFS= read -r s; do
-        n=$(tmux list-windows -t "$s" -F '#{@agent_done}' 2>/dev/null | grep -c '^1$')
-        tmux set-option -t "$s" @agents_ready "$n" 2>/dev/null
-    done < <(tmux list-sessions -F '#{session_id}' 2>/dev/null)
-    tmux refresh-client -S 2>/dev/null
-    return 0
-}
-
 verb="${1:-}"; agent="${2:-}"
 case "$verb" in
     activate)
@@ -374,10 +329,8 @@ case "$verb" in
         [ -n "$target" ] && win=$(tmux display-message -p -t "$target" '#{window_id}' 2>/dev/null)
         if [ -n "$win" ]; then reconcile_window "$win"; else reconcile_all; fi
         ;;
-    done)    agent_done ;;
-    recount) recount ;;
     *)
-        printf 'usage: %s {activate|clear} {claude|codex} ... | sweep <pane> [agent...] | reconcile [target] | done | recount\n' "${0##*/}" >&2
+        printf 'usage: %s {activate|clear} {claude|codex} ... | sweep <pane> [agent...] | reconcile [target]\n' "${0##*/}" >&2
         ;;
 esac
 

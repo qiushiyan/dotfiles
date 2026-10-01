@@ -153,5 +153,10 @@ still supply the surrounding UI. See [Codex CLI customization](https://learn.cha
 - `lua/config/theme.lua` owns the name: it reads the file, maps the name to a
   colorscheme and background, and holds the file watcher (`M.watch`, started
   from `lua/config/autocmds.lua`; polls, not `fs_event` — the latter goes stale
-  on macOS atomic renames). `lua/config/palette.lua` feeds the custom
-  statusline.
+  on macOS atomic renames).
+- The lualine band takes its colours from the active colorscheme:
+  `StatusLine` bg, `Normal` fg, and `Comment` fg for secondary text. A
+  hand-rolled scheme sets its band on its `StatusLine` line; a plugin scheme
+  whose `StatusLine` reads as no band gets an entry in `lua/plugins/ui.lua`'s
+  `band_override`. Lualine re-reads the colours on `ColorScheme`, so the band
+  follows a live switch.
