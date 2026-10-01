@@ -72,10 +72,12 @@ machine, not only this repository — in seconds and without sudo; its header
 has usage and the restore commands. A snapshot shares the disk it protects, so
 it answers a delete, never a lost or dead Mac. Snapshots are taken:
 
-- **Before a destructive operation**, by hand or by an agent following the
-  global rule `claude/.claude/rules/snapshots.md` (mirrored into Codex's
-  `AGENTS.md`). A plain run replaces the previous plain run's snapshot, so
-  exactly one stands and a session can take one before every risky step.
+- **Before a destructive operation**, by hand, or by Codex following its
+  global `AGENTS.md`. A plain run replaces the previous plain run's snapshot,
+  so exactly one stands and a session can take one before every risky step.
+  Claude's copy of the rule, `claude/.claude/rules/snapshots.md`, is disabled
+  because it fired on routine worktree work; restore it with
+  `git checkout ebc580f -- claude/.claude/rules/snapshots.md`.
 - **Daily**, from the LaunchAgent `com.qiushi.snapshot` at 13:00, keeping
   7 days, while Time Machine has no destination; once it has one, the run does
   nothing, because Time Machine snapshots hourly itself. The window matters
