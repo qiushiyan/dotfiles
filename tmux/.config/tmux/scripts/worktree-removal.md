@@ -42,9 +42,9 @@ goes only behind the force prompt.
 
 ## Recovery expiry
 
-gwt's `recovery.keep` (default `30d`, `0` keeps refs) replaced the tmux option
-`@worktree_backup_days`, which nothing reads any more. Set it in
-`~/.config/gwt/config.toml` under `[recovery]`.
+Recovery refs expire after gwt's `recovery.keep` (default `30d`, `0` keeps
+them), set in `~/.config/gwt/config.toml` under `[recovery]`; no tmux option
+controls it.
 
 ## Verification
 

@@ -23,7 +23,7 @@ GHOSTTY_INCLUDE="$HOME/.config/ghostty/auto/theme.ghostty"   # gitignored runtim
 TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 
 # Canonical names. Keep in sync with the per-app maps (theme.zsh,
-# statusline-command.sh, zen.omp.json, nvim config/theme.lua, tmux.conf).
+# statusline-palette.sh, zen.omp.json, nvim config/theme.lua, tmux.conf).
 THEMES=(gruber_darker catppuccin_mocha tailwind_light tokyo_night_moon gruvbox_dark vitesse_light_soft night_owl orng_light forest_night waffle_cat vellum token_meridian_light token_ultra_dark raindrop)
 
 # --- per-theme ghostty field set ---------------------------------------------

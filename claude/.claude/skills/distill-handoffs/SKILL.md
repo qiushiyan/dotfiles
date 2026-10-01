@@ -69,7 +69,7 @@ A branch landed and its session is closing: its brief is spent, and the briefs t
    jq -r '.next[] | .command + (if .gated then "  (gated)" else "" end)' "$S/closeout.json"   # next first
    ```
 
-   A `gwt remove` line is a verdict the repo backs, so run it without asking: as the pass's last tool call, because it can delete the session's working directory, and from the checkout its note names when it names one (`cd <path> && gwt remove …`). gwt itself refuses a dirty, untracked or locked checkout. Whatever it refuses, any `hold`, and any line step 5 did not apply stay for the user.
+   A `gwt remove` line is a verdict the repo backs, so run it without asking: as the pass's last tool call, because it can delete the session's working directory, and from the checkout its note names when it names one (`cd <path> && gwt remove …`). gwt itself refuses a dirty, untracked or locked checkout, and one whose tip moved since closeout (`--expect-head`). Whatever it refuses, any `hold`, and any line step 5 did not apply stay for the user.
    Done when the `gwt remove` JSON is read, or the cleanup has no such line.
 
 7. **Report.** Short prose: what landed, in a line; the anchor's verdict and what was written for it; per admitted brief, what moved and the edit made; the note changes and the `brief sync` outcome; the count of briefs out of scope and unread; then, under their own heading, the items that wait, each with the one word that releases it. A pass with nothing waiting says so. End on what the user would otherwise come back to ask: what gwt removed or why it refused, the cleanup left to them, then the `next` commands.

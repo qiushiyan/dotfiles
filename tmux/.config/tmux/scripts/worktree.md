@@ -109,9 +109,9 @@ inside this repository's worktree root.
 
 ## Probes
 
-Dirty state and merge verdicts are one `gwt list --json` call, which runs one
-Git process per CPU, keeps Git's order, and probes with `--no-optional-locks`
-so it never contends with an agent in the same worktree. The popup never
+Dirty state and merge verdicts are one `gwt list --json` call, whose probes
+never contend with an agent in the same worktree
+(`~/dev/gwt/README.md` § Listing and merge verdicts). The popup never
 fans out Git itself; see `worktree-popup.md` § First paint before probes.
 
 ## Portability and verification
