@@ -13,7 +13,8 @@ unless `BYPASS_CD_READ_GUARD_ACTIVE=1`. The guard logic under it is pinned by
 `zsh/.config/zsh/tests/bypass-cd-read-guard.test.zsh`, which exports that
 variable; the hook's header and inline comments own how it decides. Hooks on
 one matcher run independently, so `block-dangerous-git.sh` still blocks
-`cd X; git push --force`.
+`cd X; git push --force` (pinned by
+`zsh/.config/zsh/tests/block-dangerous-git.test.zsh`).
 
 ## Re-arming it
 

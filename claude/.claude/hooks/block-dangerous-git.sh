@@ -3,9 +3,8 @@
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command')
 
-# Branches Claude may NEVER push (no bypass). Empty: Claude may push any
-# branch, trunk included. List branches to protect again, e.g. "main master".
-PROTECTED_BRANCHES=""
+# Claude may push any branch, trunk included. The protected-branch and opt-in
+# push gates were removed 2026-10; restore them from aa07e9a^ if wanted.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Match against the command's *executable* parts, not inert text.
@@ -38,46 +37,6 @@ strip_noise() {
 
 SCAN=$(strip_noise "$COMMAND")
 
-# Matches a real remote push — `git push`, plus global-option forms like
-# `git -C <path> push` / `git --work-tree=<path> push` that would otherwise
-# slip past a bare "git push" pattern. Does not match `git stash push`.
-PUSH_RE='(^|[^a-zA-Z0-9_])git([[:space:]]+(-C|--work-tree|--git-dir|-c)([[:space:]]+|=)[^[:space:]]+)*[[:space:]]+push([^a-zA-Z0-9_]|$)'
-
-# ─────────────────────────────────────────────────────────────────────────────
-# The branch check must look at the repo the push actually targets, not the
-# hook's own cwd: hooks run at the session root, so `cd /other/repo && git
-# push` used to be judged by the session repo's branch. Honor the command's
-# last `cd <path>` and any `git -C <path>`; fall back to the hook's cwd.
-# Accident prevention, not a sandbox: an unresolvable path just falls back.
-# ─────────────────────────────────────────────────────────────────────────────
-# A path lifted out of the command text is never shell-expanded, so a leading
-# `~` reaches the -d test literally, fails it, and the caller silently falls
-# back to the hook's own cwd — judging `cd ~/dev/other && git push` against
-# whatever repo the session root happens to be. Only the two forms a shell
-# would expand for the current user are expanded; `~other` keeps the fallback.
-expand_tilde() {
-  case "$1" in
-    "~")   printf '%s' "$HOME" ;;
-    "~/"*) printf '%s/%s' "$HOME" "${1#\~/}" ;;
-    *)     printf '%s' "$1" ;;
-  esac
-}
-
-effective_git_dir() {
-  local dir="$PWD" arg
-  arg=$(printf '%s\n' "$COMMAND" \
-    | grep -oE "(^|[;&|][[:space:]]*)cd[[:space:]]+(\"[^\"]+\"|'[^']+'|[^;&|[:space:]]+)" \
-    | tail -1 | sed -E "s/^.*cd[[:space:]]+//; s/^[\"']//; s/[\"']\$//")
-  arg=$(expand_tilde "$arg")
-  [ -n "$arg" ] && [ -d "$arg" ] && dir="$arg"
-  arg=$(printf '%s\n' "$COMMAND" \
-    | grep -oE "git[[:space:]]+-C[[:space:]]+(\"[^\"]+\"|'[^']+'|[^[:space:]]+)" \
-    | tail -1 | sed -E "s/^git[[:space:]]+-C[[:space:]]+//; s/^[\"']//; s/[\"']\$//")
-  arg=$(expand_tilde "$arg")
-  [ -n "$arg" ] && [ -d "$arg" ] && dir="$arg"
-  printf '%s' "$dir"
-}
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Tier 1: Always-blocked git push variants — no env-var bypass.
 # Force pushes, deletes, and mirror pushes can wipe history or destroy
@@ -104,72 +63,7 @@ EOF
 done
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Tier 2: Pushes from a protected branch (see PROTECTED_BRANCHES) — no bypass.
-# Even when pushes are otherwise allowed, pushing the trunk warrants a fresh
-# manual decision by the user.
-# ─────────────────────────────────────────────────────────────────────────────
-if echo "$SCAN" | grep -qE "$PUSH_RE"; then
-  PUSH_DIR=$(effective_git_dir)
-  CURRENT_BRANCH=$(git -C "$PUSH_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-  for b in $PROTECTED_BRANCHES; do
-    if [ "$CURRENT_BRANCH" = "$b" ]; then
-      cat >&2 <<EOF
-BLOCKED: the push targets '$PUSH_DIR', whose branch '$CURRENT_BRANCH' is protected.
-
-Pushes from protected branches ($PROTECTED_BRANCHES) cannot be bypassed by
-CLAUDE_ALLOW_PUSH. The user must run these manually.
-EOF
-      exit 2
-    fi
-  done
-fi
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Tier 3: Plain git push from a NON-protected branch.
-#
-# Default: ALLOWED. Claude may push freely — protected branches, if any, are
-# covered by Tier 2 and force/delete by Tier 1.
-#
-# Opt-in gate: set CLAUDE_GATE_PUSH=1 in the hook's environment (e.g. add it to
-# the "env" block in ~/.claude/settings.json) to restore the old default-block
-# behavior. When the gate is on, each push must be authorized per-command with
-# a CLAUDE_ALLOW_PUSH=1 prefix.
-# ─────────────────────────────────────────────────────────────────────────────
-if [ "$CLAUDE_GATE_PUSH" = "1" ] && echo "$SCAN" | grep -qE "(^|[^a-zA-Z0-9_])git push"; then
-  if echo "$SCAN" | grep -qE "(^|[[:space:]])CLAUDE_ALLOW_PUSH=1[[:space:]]"; then
-    exit 0  # user-authorized push
-  fi
-  cat >&2 <<'EOF'
-BLOCKED: git push is gated (CLAUDE_GATE_PUSH=1).
-
-The gate exists so the user can review your local commits before they reach
-the remote. This is the expected state while the gate is on — not an error you
-should work around on your own.
-
-How to bypass when authorized:
-
-  CLAUDE_ALLOW_PUSH=1 git push <args>
-
-When to use the bypass:
-- ONLY when the user has explicitly said something like "go ahead and push",
-  "you can push", or has authorized pushes for this task (e.g., during a
-  multi-round code-review loop).
-- Force pushes (--force, -f, --delete, --mirror) and pushes from a protected
-  branch are NEVER bypassable, even with the env var.
-
-When NOT to use the bypass:
-- On your own initiative because you decided the work looks ready.
-- After only an implicit signal — silence, "okay", or topic shift is not
-  authorization.
-
-If unsure: tell the user the commit is ready locally and the branch is
-unpushed, then let them push.
-EOF
-  exit 2
-fi
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Tier 4: Other dangerous patterns — no bypass (matches prior behavior).
+# Tier 2: Other dangerous patterns — no bypass (matches prior behavior).
 # ─────────────────────────────────────────────────────────────────────────────
 DANGEROUS_PATTERNS=(
   "git reset --hard"
@@ -188,14 +82,14 @@ for pattern in "${DANGEROUS_PATTERNS[@]}"; do
 done
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Tier 5: Force branch deletion — gated, with a per-command bypass.
+# Tier 3: Force branch deletion — gated, with a per-command bypass.
 #
 # `git branch -D` is how worktree cleanup ends, and it is the only ending that
 # works: a squash-merged branch never shares commits with the trunk, so `-d`
 # refuses it as unmerged however thoroughly the work shipped. Blocking it
 # outright dead-ends every cleanup, so this tier gates rather than forbids —
-# the same shape as Tier 3, and deliberately narrower than the patterns above,
-# which destroy uncommitted work and stay unbypassable.
+# deliberately narrower than the patterns above, which destroy uncommitted
+# work and stay unbypassable.
 # ─────────────────────────────────────────────────────────────────────────────
 if echo "$SCAN" | grep -qE "git branch -D"; then
   if echo "$SCAN" | grep -qE "(^|[[:space:]])CLAUDE_ALLOW_BRANCH_DELETE=1[[:space:]]"; then

@@ -150,6 +150,8 @@ still supply the surrounding UI. See [Codex CLI customization](https://learn.cha
 - The plugin themes are **un-gated** (all installed; the active one eager, the
   rest lazy) so the watcher can swap *any* direction — lazy.nvim's
   `ColorSchemePre` autoloads the matching plugin on `:colorscheme`.
-- The file watcher lives in `lua/config/autocmds.lua` (polls, not `fs_event` —
-  the latter goes stale on macOS atomic renames). The name→colorscheme map is in
-  `lua/config/theme.lua`; `lua/config/palette.lua` feeds the custom statusline.
+- `lua/config/theme.lua` owns the name: it reads the file, maps the name to a
+  colorscheme and background, and holds the file watcher (`M.watch`, started
+  from `lua/config/autocmds.lua`; polls, not `fs_event` — the latter goes stale
+  on macOS atomic renames). `lua/config/palette.lua` feeds the custom
+  statusline.
