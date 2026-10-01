@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The lualine band (lua/plugins/ui.lua) follows the active colorscheme's own
-# StatusLine bg and Normal fg, at startup and across a live :colorscheme switch.
+# StatusLine bg and Normal fg, at startup and across a live theme switch.
 # Runs whole: bash test-statusline-band.sh
 #
 # Isolation: a temp HOME holds ~/.config/terminal-theme (the startup theme and
@@ -65,8 +65,18 @@ start tokyo_night_moon
 read -r got want <<<"$(band)"
 [ "$got" = "$want" ] && [ "$want" != "-/-" ] && ok B1 || bad B1 "band $got, theme $want"
 
-# B2: a live switch re-derives the band from the new theme.
-R 'execute("colorscheme vellum")' >/dev/null
+# B2: a live switch re-derives the band from the new theme. The switch arrives
+# the way theme-set sends it, an atomic rewrite of the theme file, so the
+# file watcher (config/theme.lua, registered from config/autocmds.lua) is what
+# has to apply it; it polls once a second.
+printf 'vellum\n' >"$HOME/.config/terminal-theme.tmp"
+mv -f "$HOME/.config/terminal-theme.tmp" "$HOME/.config/terminal-theme"
+for _ in $(seq 50); do
+  [ "$(R 'g:colors_name')" = vellum ] && break
+  sleep 0.1
+done
+[ "$(R 'g:colors_name')" = vellum ] && ok "B2 the watcher applies the rewritten theme" \
+  || bad B2 "colorscheme still $(R 'g:colors_name') after the theme file changed"
 read -r got want <<<"$(band)"
 [ "$got" = "$want" ] && [ "$want" = "#f5ead8/#1f2022" ] && ok B2 || bad B2 "band $got, theme $want"
 stop

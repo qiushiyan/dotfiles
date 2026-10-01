@@ -94,6 +94,15 @@ print -r -- "$TERMINAL_THEME $LSCOLORS $DELTA_FEATURES"')
 night_owl Gxfxcxdxbxegedabagacad +dark-mode" "$out" "before/after a file change"
 }
 
+# A row's directory pair replaces its background's default: waffle_cat is
+# dark, but its ANSI blue is honey, so its directories are bold blue and stay
+# warm where every other dark theme gets bold bright cyan.
+test_row_directory_override() {
+  sandbox waffle_cat
+  eq "Exfxcxdxbxegedabagacad di=1;34 +dark-mode" \
+    "$(probe 'print -r -- "$LSCOLORS ${LS_COLORS%%:*} $DELTA_FEATURES"')" "waffle_cat directories"
+}
+
 # A hook registered after ours (as oh-my-posh's _omp_precmd is, from the end
 # of .zshrc) runs after ours, so it sees the refreshed value.
 test_sync_runs_before_later_hooks() {
@@ -126,6 +135,7 @@ t "the state file beats an inherited TERMINAL_THEME"        test_file_beats_inhe
 t "_theme_sync is registered in interactive shells only"    test_hook_registered_interactive_only
 t "a file change is re-applied at the next precmd"          test_sync_reapplies_on_change
 t "_theme_sync runs ahead of later-registered precmds"      test_sync_runs_before_later_hooks
+t "a row's directory pair overrides its background default" test_row_directory_override
 t "every theme-set name applies without error"             test_every_theme_set_name_applies
 
 rm -rf "${TMPDIR:-/tmp}"/ts-test.*(N)
