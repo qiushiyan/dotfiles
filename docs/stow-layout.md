@@ -12,9 +12,15 @@ links only `settings.json` into it. That per-item behavior — Stow calls it
 folding — is the whole safety property, and it holds only while the target
 directory already exists.
 
-`PACKAGES` in the Makefile is `*/` minus `docs/` and `vpn-private/`, so
-repo-only documentation is never stowed, and neither is a credentials folder
-restored into the checkout from the password manager (`docs/recovery.md`).
+`PACKAGES` in the Makefile is `*/` minus `docs/`, `references/`,
+`node_modules/` and `vpn-private/`. Repo-only documentation and reading are
+never stowed, nor is the root `package.json`'s gitignored install, nor a
+credentials folder restored into the checkout from the password manager
+(`docs/recovery.md`). The rule is a deny list over what is on disk, so a new
+top-level dir, tracked or not, becomes a package (the gitignored `ssh/` is one
+on purpose). Inside a package, `.stow-local-ignore` keeps repo-only files
+unlinked: `scripts/` lists `bootstrap.sh` and `list-secrets.sh`, which run as
+`./scripts/<name>` (`docs/MIGRATION.md`); TabType's entry is below.
 
 ## Directories that must stay real
 

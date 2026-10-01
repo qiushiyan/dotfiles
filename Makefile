@@ -3,7 +3,9 @@
 #   vpn-private/  credentials live in the password manager; a copy restored
 #                 here is never stowed (docs/recovery.md)
 #   docs/         repo documentation, lives here only
-PACKAGES := $(filter-out vpn-private/ docs/,$(sort $(dir $(wildcard */))))
+#   references/   repo-only reading, opened at ~/dotfiles/references
+#   node_modules/ the root package.json's install, gitignored
+PACKAGES := $(filter-out vpn-private/ docs/ references/ node_modules/,$(sort $(dir $(wildcard */))))
 
 # Dirs that must exist as REAL directories before stowing, so stow folds only
 # the tracked config inside them (per-item symlinks) instead of replacing the

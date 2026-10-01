@@ -1,0 +1,4 @@
+# Repo-only entry points, run as ./scripts/<name> (docs/MIGRATION.md);
+# without this they stow to ~/bootstrap.sh and ~/list-secrets.sh.
+bootstrap\.sh
+list-secrets\.sh
