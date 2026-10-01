@@ -311,9 +311,9 @@ gwt_remove() {
     done
 }
 
-# batch_remove "<path lines>" [listing] — confirm once, let gwt remove the
-# checkouts as one batch with their branches kept, kill their windows, then
-# offer branch deletion in aggregate. The listing (gwt list --json) says which
+# batch_remove "<path lines>" [listing] — confirm once, kill the windows on
+# the checkouts so nothing writes during removal, let gwt remove them as one
+# batch with their branches kept, then offer branch deletion in aggregate. The listing (gwt list --json) says which
 # selections are dirty and which are the main worktree or the one you are in;
 # reap passes the one it already has. Always returns to the refreshed list.
 batch_remove() {
