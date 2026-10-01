@@ -11,5 +11,7 @@ documents:
         path: apps/platform/docs/documentation-standards.md
       - repo: ~/dev/tabtype
         path: docs/documentation-standards.md
+      - repo: ~/dev/brief
+        path: docs/documentation-standards.md
       - repo: ~/dev/envoy
         path: docs/documentation-standards.md
