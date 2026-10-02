@@ -7,6 +7,11 @@ anything the model reads, and for anything Codex shares; a mod is for what the
 harness itself should do or show. Authoring is the bundled `plugin-authoring`
 skill's; this doc owns where mods live here and how they reach every account.
 
+What a mod writes into the session the model can read, so a tool that must
+tell the model nothing is not a mod. That is why "what has run in this
+session" is the tmux session board (`prefix S`,
+`tmux/.config/tmux/scripts/steps.md`), which reads transcripts from outside.
+
 ## Where a mod lives and how it loads
 
 ```text
@@ -67,7 +72,7 @@ in the engine's own sandbox with no filesystem, network or process.
 ```bash
 claude plugin validate ~/.claude/mods/<name>   # manifest, hooked events, $ calls
 claude plugin test ~/.claude/mods/<name>       # the mod's tests/*.test.ts
-claude -p '/did' < /dev/null                   # steps answers: the mod loaded here
+claude -p '/quota' < /dev/null                 # quota answers: the mod loaded here
 ```
 
 To check another account, run the last line with `CLAUDE_CONFIG_DIR` set to
@@ -80,32 +85,6 @@ which a `claude -p` session does not have. A `claude` started from inside a
 session inherits `TMUX` and `TMUX_PANE`: unset both first. A child that falls
 back to the `enter-worktree` skill runs `session-cd`, which types into the
 pane it was handed.
-
-## steps
-
-`claude/.claude/mods/steps` answers "did we run X this session?". It records
-which skills and TabType snippets ran, shows them in a band above the prompt,
-and keeps the record through compaction, where the model's own memory of the
-session is least reliable. The header of `hooks/register.tsx` owns the
-mechanism; `hooks/detect.ts` owns the signal rules and the judge's prompt.
-
-- **`/steps`:** the full record in a pane and as text. `/steps pin <name>` and
-  `/steps unpin <name>` change which steps the band shows even when they have
-  not run; `/steps clear` empties the record.
-- **`/did <question>`:** asks a fork of the session with the record attached.
-  With no question it prints the record and calls no model.
-- **A pinned step appears only where it exists,** as a skill or snippet of
-  that project, so `pl-loopy-verify` shows in PlanLab and nowhere else.
-- **A name in a prompt is not a run.** A skill expanded or a snippet pasted
-  counts at once; a bare name counts as named only. One Haiku call per turn
-  that had a candidate then reads the prompt, tool calls and final answer and
-  can overturn either reading. A step it marks started is re-read on later
-  turns until it finishes.
-- **Snippets are matched by their opening text** in
-  `~/.config/tabtype/config.toml`, so a snippet needs no marker; one too short
-  to be distinctive is never tracked. The office mini stows the `tabtype`
-  package for this file: TabType runs on the laptop, and its snippets reach
-  the mini as text pasted over ssh.
 
 ## quota
 
@@ -151,10 +130,7 @@ at once.
 
 `CLAUDE_CODE_PLUGIN_DIRS` is read when a process starts, so a session that
 was running before the line or a mod's folder arrived loads nothing until it
-restarts; resuming it (`x-select`, `x --resume`) keeps the conversation. On
-that first load `steps` reads the transcript and records what it shows ran:
-by signals alone, so those steps read `unjudged`, and from the newest rows the
-engine returns, so the start of a very long session can be missing.
+restarts; resuming it (`x-select`, `x --resume`) keeps the conversation.
 
 `~/.claude/mods` is one link to the package's `mods/` directory: `make restow`
 makes it on the laptop, and `mini-sync` restows the mini

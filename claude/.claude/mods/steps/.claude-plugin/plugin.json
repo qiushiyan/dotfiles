@@ -1,6 +1,0 @@
-{
-  "name": "steps",
-  "version": "0.1.0",
-  "description": "Tracks which skills and prompt snippets ran this session, in a band above the prompt and a /steps pane.",
-  "types": "./types/index.d.ts"
-}
