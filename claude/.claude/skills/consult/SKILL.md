@@ -12,18 +12,17 @@ You are the lead. Fresh sessions ("voices") give independent takes on a problem 
 
 ## Resolving the voice
 
-Name the model on every cold voice, so the job records what ran whatever the provider's config holds that day. Resolve it from the user's words:
+Name the model on every cold voice, and the effort on a codex one, so the job records what ran whatever the provider's config holds that day. Resolve it from the user's words:
 
 ```sh
---with codex:gpt-6-astra         # the default: no voice named, "codex", or "astra"
---with codex:gpt-6-sol           # "sol"
+--with codex:gpt-6.1-sol:xhigh   # the default: no voice named, "codex", or "sol"
+--with codex:gpt-6-astra:xhigh   # "astra"
 --with claude:claude-opus-5-5    # "claude", "opus"
 --with claude:claude-fable-5-1   # "fable"
---with codex:gpt-6-astra:high    # effort only when the user asks: "astra on high"
---with codex:gpt-6-sol:high      # "sol on high"
+--with codex:gpt-6.1-sol:high    # another effort only when the user asks: "sol on high"
 ```
 
-A model ID the user spells out goes through as written. A warm voice (`@<job>/<member>`) keeps the model it started on.
+A model ID the user spells out goes through as written, a codex one on `xhigh` unless they name an effort. A warm voice (`@<job>/<member>`) keeps the model it started on.
 
 ## Process
 
@@ -52,19 +51,19 @@ A model ID the user spells out goes through as written. A warm voice (`@<job>/<m
 3. **Dispatch** as one job, 30-minute cap — each voice on its brief, one background Bash task, the job named for the round (`consult-r1`, then `consult-r2`), that finishes once; return as soon as it is running, since the task completing is the signal and nothing the dispatch prints needs relaying. Where the user names no voice the round is one turn on the default:
 
    ```sh
-   envoy run consult-r1 --with codex:gpt-6-astra --prompt-file <brief> --timeout-min 30
+   envoy run consult-r1 --with codex:gpt-6.1-sol:xhigh --prompt-file <brief> --timeout-min 30
    ```
 
    Two voices buy what one cannot — independent disagreement is the product: where they diverge is the finding, and step 5 is built to judge that fork. Take the voices the user names, resolved per **Resolving the voice**. When a codex and a Claude voice are both named:
 
    ```sh
-   envoy run consult-r1 --with codex:gpt-6-astra --with claude:claude-opus-5-5 --prompt-file <brief> --timeout-min 30
+   envoy run consult-r1 --with codex:gpt-6.1-sol:xhigh --with claude:claude-opus-5-5 --prompt-file <brief> --timeout-min 30
    ```
 
    When the user gives the voices different jobs — one to judge the design, one to survey what exists — each voice takes its own brief, attached as `<voice>=<brief>`, and it is still one job with one collect:
 
    ```sh
-   envoy run consult-r1 --with claude:claude-fable-5-1=<critique-brief> --with codex:gpt-6-astra=<survey-brief> --timeout-min 30
+   envoy run consult-r1 --with claude:claude-fable-5-1=<critique-brief> --with codex:gpt-6.1-sol:xhigh=<survey-brief> --timeout-min 30
    ```
 
    A voice with its own job gets its own file: an assignment paragraph inside a shared brief is read past, and the voice does the other's work. `--prompt-file` stays the default for any voice without a file of its own.
@@ -96,6 +95,6 @@ A model ID the user spells out goes through as written. A warm voice (`@<job>/<m
 
 7. **Synthesize** for the user, who did not watch the round and decides from this message alone. Lead with what needs them: each unresolved judgment call as its own standalone question — why it matters now, what it means in plain product terms, the options with what each implies for the person using the product, and your recommendation — with none of the vocabulary the round built; a synthesis that ends on "your earlier questions stand as before" sends the user back to reconstruct them. Then where the voices converged with the host position, the deltas adopted and why, the findings rejected and why, and — when the round carried the tenets item — the tenets adopted and where they were written. A problem the voice replaced or found unsupported is a decision and leads with the others, with what settled it; a confirmed problem is one line among the convergences, including when the voice reached it independently.
 
-   Name the job in the synthesis — the latest round, and for a fan-out its members (`consult-r1/codex-gpt-6-astra`, `consult-r1/claude-claude-opus-5-5`; after a round 2, `consult-r2/codex-gpt-6-astra`): the sessions stay continuable, and when /review later covers the implementation of this design, its default seats one of those voices warm (`--with @consult-r2/codex-gpt-6-astra`) beside a cold one, so the synthesis also says which voice's position the design followed.
+   Name the job in the synthesis — the latest round, and for a fan-out its members (`consult-r1/codex-gpt-6.1-sol`, `consult-r1/claude-claude-opus-5-5`; after a round 2, `consult-r2/codex-gpt-6.1-sol`): the sessions stay continuable, and when /review later covers the implementation of this design, its default seats one of those voices warm (`--with @consult-r2/codex-gpt-6.1-sol`) beside a cold one, so the synthesis also says which voice's position the design followed.
 
    Done when the user can decide from this message alone: every open decision stands on its own, and a cause the round could not settle names the observation that would settle it.
