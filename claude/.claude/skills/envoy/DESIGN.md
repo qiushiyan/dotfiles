@@ -44,12 +44,12 @@ duet instead. Don't grow the engine.
   `claude:claude-opus-5-5`) — so every voice is dispatched with the model
   written out, and a job's record never depends on whatever the provider's
   config held that day. Effort follows the provider: a codex voice is
-  dispatched on `xhigh` unless the user names another, and a claude voice
-  passes one only when the user asks, otherwise the provider's configured
-  level governs. The engine stays
-  default-free: a bare provider still means the provider's config, and
-  envoy never substitutes a model. A model roll is one edit per skill block
-  (consult, review, delegate), made together.
+  dispatched on its block's effort (`xhigh` for sol, `high` for astra)
+  unless the user names another, and a claude voice passes one only when
+  the user asks, otherwise the provider's configured level governs. The
+  engine stays default-free: a bare provider still means the provider's
+  config, and envoy never substitutes a model. A model roll is one edit per
+  skill block (consult, review, delegate), made together.
 - **Independence picks the default provider.** The host is usually Claude
   Code, so a codex sidekick buys cross-family review for free; both bill a
   flat subscription, so cost isn't the tiebreaker. Default codex; claude is
