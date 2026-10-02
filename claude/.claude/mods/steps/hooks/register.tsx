@@ -245,9 +245,10 @@ export const register: Register = on => {
 
       return { text: 'Cleared the recorded steps of this session.' }
     }
-    await $.ui.open({ id: PANE, title: 'Steps this session', closeOnEscape: true })
+    const opened = await $.ui.open({ id: PANE, title: 'Steps this session', closeOnEscape: true })
+    const record = describe(await read($, log), await read($, turnNow))
 
-    return { text: describe(await read($, log), await read($, turnNow)) }
+    return { text: opened.isPlaced ? record : `${record}\nThe pane is not shown: ${opened.reason}` }
   })
 
   on('command.run', { command: 'did' }, async ($, e) => {

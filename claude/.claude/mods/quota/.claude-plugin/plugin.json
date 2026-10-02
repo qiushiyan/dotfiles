@@ -1,0 +1,6 @@
+{
+  "name": "quota",
+  "version": "0.1.0",
+  "description": "Toasts when a rate-limit window crosses a threshold, with the pace and the account with the most room; /quota prints the board.",
+  "types": "./types/index.d.ts"
+}

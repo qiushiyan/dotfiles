@@ -28,6 +28,10 @@ claims it is on everywhere.
 Interactive sessions watch the folder, so a saved edit reloads the mod in every
 running session on every account.
 
+The settings value replaces a `CLAUDE_CODE_PLUGIN_DIRS` set in the process
+environment, so a mod not yet listed is tried with the flag, which adds to the
+list: `claude --plugin-dir ~/.claude/mods/<name>`.
+
 ## Traps
 
 - **A failing hook is skipped, and the chain continues without it.** Outside a
@@ -47,6 +51,13 @@ running session on every account.
 - **The API is early access and moves between releases.** After a Claude Code
   update, run the checks below; the laid `.claude-plugin/types/` is the
   authority for the installed build.
+- **A command cannot run another command from inside its `command.run` hook.**
+  The engine refuses: it would wait on the turn the hook is holding. The hook
+  answers, and a `$.clock.after(0, …)` callback runs the second command.
+- **The dock shows one pane, and the engine's diff panel keeps it once a
+  session has edits.** A mod's pane is then not visible, while the engine
+  still reports it shown. A mod's always-on surface is the band, and a command
+  that opens a pane also prints its content.
 
 ## Checks
 
@@ -56,11 +67,19 @@ in the engine's own sandbox with no filesystem, network or process.
 ```bash
 claude plugin validate ~/.claude/mods/<name>   # manifest, hooked events, $ calls
 claude plugin test ~/.claude/mods/<name>       # the mod's tests/*.test.ts
-claude -p '/did'                               # steps answers: the mod loaded here
+claude -p '/did' < /dev/null                   # steps answers: the mod loaded here
 ```
 
 To check another account, run the last line with `CLAUDE_CONFIG_DIR` set to
 its dir; a refusal prints the reason on the first line.
+
+What a headless run cannot show is checked in an interactive session on its
+own tmux server, driven with `send-keys` and `capture-pane`
+(`tmux -L <name> -f /dev/null`): a band or pane as drawn, a toast, and `/cd`,
+which a `claude -p` session does not have. A `claude` started from inside a
+session inherits `TMUX` and `TMUX_PANE`: unset both first. A child that falls
+back to the `enter-worktree` skill runs `session-cd`, which types into the
+pane it was handed.
 
 ## steps
 
@@ -87,6 +106,46 @@ mechanism; `hooks/detect.ts` owns the signal rules and the judge's prompt.
   to be distinctive is never tracked. The office mini stows the `tabtype`
   package for this file: TabType runs on the laptop, and its snippets reach
   the mini as text pasted over ssh.
+
+## quota
+
+`claude/.claude/mods/quota` says what the tmux context chip cannot
+(`tmux/.config/tmux/scripts/context-chip.md`). The chip draws each window's
+fill and is stateless; the mod keeps a session's readings, which arrive pushed
+whenever a window moves a whole point.
+
+- **A window is announced once per threshold,** 75% and 90%, as a toast. The
+  90% one also stays as a transcript line and names the account with the most
+  room, read from `headroom limits`, which reads its cache from disk and
+  spends no request.
+- **A pace is given only when it matters:** when, at the rate of the last 45
+  minutes, the window fills before it resets.
+- **A session that starts on a nearly spent lane says so** at its first
+  reading. Usage only rises inside a window, so a lower reading starts the
+  window's history and alerts over.
+- **`/quota`:** this session's windows with reset and pace, then the board
+  (`headroom accounts --compact`, a live read). No model is called.
+
+## worktree
+
+`claude/.claude/mods/worktree` gives `/wt`, which puts the session in a new
+worktree without a turn of the main model. A fork of the session picks the
+branch from the conversation and the repository's recent branch names, `gwt`
+creates it, `/cd` moves the session, and the instruction typed with `/wt` is
+then submitted as the person's next prompt, so the work starts in the worktree
+at once.
+
+- **`/wt <instruction>`:** "create a worktree and go fix it". The fork also
+  says whether the instruction asks for anything beyond the worktree; only
+  then is it submitted.
+- **`/wt <branch> [base]`:** a branch typed out, recognised by its slash, is
+  taken as written and no model is asked.
+- **The `enter-worktree` skill stays.** It does the same through a full turn,
+  and its move lands only when that turn ends, so it cannot go on to the work
+  in the same turn. Codex has only the skill.
+- **A failure is reported and nothing is forced:** no usable branch from the
+  fork, a `gwt` refusal, or a refused move each print what happened and what
+  to type.
 
 ## Sessions already running
 

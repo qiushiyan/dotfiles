@@ -1,0 +1,5 @@
+{
+  "name": "worktree",
+  "version": "0.1.0",
+  "description": "/wt creates a worktree for the work under discussion and moves the session into it, without a turn of the main model."
+}

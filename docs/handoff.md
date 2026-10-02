@@ -30,7 +30,7 @@ The loop is split so that staleness cannot misroute a session:
 
 The shared worktree boundary is `gwt` on PATH (source: `~/dev/gwt`).
 It owns configured paths, branch resolution, and worktree creation for the tmux popup,
-`brief start`, and the `enter-worktree` skill, and it is the one removal engine
+`brief start`, the `enter-worktree` skill and the `/wt` mod (`docs/claude-mods.md`), and it is the one removal engine
 behind the popup, `brief closeout`'s cleanup commands and the clean-worktrees
 skill (`tmux/.config/tmux/scripts/worktree.md`). `make -C ~/dev/gwt install` installs it in `~/.local/bin`.
 

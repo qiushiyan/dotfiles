@@ -168,5 +168,19 @@ describe('steps', () => {
     const ui = await $.ui.mount({ plugin: 'steps', surface: 'terminal', component: 'AbovePrompt', props: BAND })
     expect((await ui.find({ type: 'Text', text: /consult/ }))?.text).toContain('◐ consult')
     await ui.unmount()
+
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const pane = await $.ui.mount({
+        plugin: 'steps',
+        surface,
+        component: 'Pane',
+        requestId: 'steps',
+        props: { title: 'Steps this session', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 20 }, view: {} },
+      })
+      expect((await pane.find({ type: 'Text', text: /started, result pending/ }))?.text).toContain('turn 3')
+      expect(await pane.find({ type: 'Text', text: /codex consult running in background/ })).toBeDefined()
+      expect(await pane.find({ key: 'close' })).toBeDefined()
+      await pane.unmount()
+    }
   })
 })
