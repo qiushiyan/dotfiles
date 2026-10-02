@@ -128,6 +128,18 @@ Everything derives from that tree:
   became a real directory again, or a wrong link. The error names the end
   state; the manual repair is in `docs/claude-sessions-store.md` § Repairing
   the topology.
+- **An MCP server asks for its login again on each account**: Claude Code
+  stores an MCP server's OAuth login in the account's Keychain item, beside
+  the Claude login, so it is per-account like the login itself. A server
+  every account should reach authenticates with a static key instead: the
+  project's `.mcp.json` declares it with `"Authorization": "Bearer ${NAME}"`,
+  and `~/.secrets` exports `NAME`. When a plugin ships a server at the same
+  URL, the declared one replaces it and the plugin's skills and hooks keep
+  working. Two traps: a set `Authorization` header disables OAuth for that
+  server, so an unset variable is a failed connection; and a `headersHelper`
+  cannot read the key from the environment, because Claude Code strips
+  credential-named variables from the helper's process. iTELL's PostHog
+  server (`POSTHOG_MCP_API_KEY`) is the instance.
 - **Logged into the wrong account in a dir**: the dashboard's red
   `(dir says …!)` warning catches it. Cleanest fix: `/login` again in that
   dir's session with the right account.
