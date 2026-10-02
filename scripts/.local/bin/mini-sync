@@ -5,8 +5,9 @@
 # Why a mirror and not `git pull`: skills and tools iterate uncommitted, and
 # the mirror carries the working tree as-is. See docs/qiushi-mini.md § Sync.
 #
-# Also: CLI token files (SECRETS), pnpm-global engines at the laptop's
-# version (ENGINES), and the laptop's theme, below.
+# Also: the links of the packages the mini stows (STOW), CLI token files
+# (SECRETS), pnpm-global engines at the laptop's version (ENGINES), and the
+# laptop's theme, below.
 #
 # Usage: mini-sync [-n|--dry-run] [-q|--quiet]
 #   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
@@ -25,6 +26,12 @@ BINS=(headroom envoy brief gwt gopen cout slack-digest slack)
 # (Claude Code, Codex, gh) rotate their refresh tokens, so two machines
 # sharing one log each other out; the mini logs in on its own.
 SECRETS=(.planlab/.env .bench/.env .config/slack .config/slack-digest)
+# Packages the mini stows: the config of what runs there, and what its agent
+# sessions read (lessons behind the skills, the snippets TabType pastes over
+# ssh). Left out: a package whose config the mini owns (git: its own identity;
+# codex: generated below), one that needs a tool the mini lacks (lazygit:
+# delta), the laptop's GUI apps, and scripts (next).
+STOW=(claude ghostty gwt lessons nvim ohmyposh tabtype tmux zsh)
 # Mirror scripts the mini runs by name. The scripts package is not stowed
 # there (it carries this laptop's mini-sync LaunchAgent), so each gets a
 # link in the mini's ~/.local/bin, pointing into the mirror.
@@ -37,7 +44,7 @@ ENGINES=(@obelisk-apps/cli)
 # picked on the mini (prefix t) lasts until the laptop switches.
 THEME_STATE=.local/state/mini-sync/theme
 
-dry=() quiet=0
+dry=() quiet=0 rc=0
 for arg in "$@"; do
   case $arg in
     -n|--dry-run) dry=(--dry-run --itemize-changes) ;;
@@ -72,6 +79,19 @@ echo '.DS_Store' >> "$excludes"
 say "==> dotfiles → $HOST:~/dotfiles"
 rsync -a --delete --copy-unsafe-links ${dry[@]+"${dry[@]}"} --exclude-from="$excludes" \
   "$REPO/" "$HOST:dotfiles/"
+
+# Stow links per item, so a file added to or removed from a package changes
+# which links the mini needs, and nobody runs `make restow` there. A restow
+# leaves an unchanged tree's links untouched. The mirror's Makefile runs it:
+# it makes the directories that must stay real first (docs/stow-layout.md).
+# A conflict aborts the whole restow and fails this run, after the rest.
+say "==> ${STOW[*]} → $HOST:~ (restow from the mirror)"
+if (( ${#dry[@]} )); then
+  say "    would restow"
+elif ! ssh "$HOST" "make -s -C ~/dotfiles restow PACKAGES='${STOW[*]}'"; then
+  echo "mini-sync: restow failed on $HOST; its links may be stale" >&2
+  rc=1
+fi
 
 # Codex's config.toml can't be a link like the claude package: Codex writes
 # its trust decisions into it. Derive the mini's copy from the laptop's
@@ -169,4 +189,5 @@ else
   fi
 fi
 
+if (( rc )); then exit "$rc"; fi
 say "==> done"

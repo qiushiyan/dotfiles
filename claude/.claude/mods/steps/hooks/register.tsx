@@ -29,9 +29,7 @@ import type { Evidence, Snippet, Verdict } from './detect'
 
 const PANE = 'steps'
 const JUDGE_MODEL = 'haiku'
-// Under HOME, first found wins: the stowed config where TabType runs, else the
-// dotfiles copy, for a machine that only receives snippets pasted over ssh.
-const SNIPPET_FILES = ['.config/tabtype/config.toml', 'dotfiles/tabtype/.config/tabtype/config.toml']
+const SNIPPETS_FILE = '.config/tabtype/config.toml'
 const DEFAULT_PINS = ['consult', 'review', 'update-docs', 'prompt-check', 'pl-loopy-verify', 'pl-loopy-handoff']
 /** A started step is looked at again for this many turns, then left as started. */
 const FOLLOW_TURNS = 15
@@ -57,13 +55,10 @@ let trail: string[] = []
 
 async function refresh($: EngineInterface) {
   const home = (await $.env.get('HOME')) ?? ''
-  snippets = []
-  for (const file of SNIPPET_FILES) {
-    const text = await $.fs.read(`${home}/${file}`).then(String, () => undefined)
-    if (text === undefined) continue
-    snippets = parseSnippets(text)
-    break
-  }
+  snippets = await $.fs
+    .read(`${home}/${SNIPPETS_FILE}`)
+    .then(text => parseSnippets(String(text)))
+    .catch(() => [])
   skills = await $.command
     .list()
     .then(all => [...new Set(all.filter(c => c.source !== 'builtin').map(c => bare(c.name)))])

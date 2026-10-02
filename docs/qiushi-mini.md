@@ -283,8 +283,11 @@ token files).
 
 **Claude Code:** the `claude` package is stowed from the mirror. `~/.claude`
 and `~/.agents` are real dirs, and `settings.json`, `CLAUDE.md`, hooks,
-rules, commands, agents and skills link into the mirror. Codex reads the same
-skills through `~/.agents/skills`.
+mods, rules, commands, agents and skills link into the mirror. Codex reads the same
+skills through `~/.agents/skills`. The `lessons` and `tabtype` packages are
+stowed for what those sessions read: the reference material skills cite under
+`~/.config/lessons`, and the snippet definitions the `steps` mod matches
+(`docs/claude-mods.md`).
 - Skills linked from other laptop projects dangle on the mini: `explain-diff`
   (absolute `/Users/qiushi` path), `greenflag-*` (resolve once `~/dev/greenflag`
   exists), `read-email`/`write-email` and `terminal-browser` (laptop-only).
@@ -366,13 +369,21 @@ timer: an older binary files a brief where the new one reads another slug.
 `mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way,
 and the laptop is the source of truth. **Never edit `~/dotfiles` on the
 mini.** The next sync overwrites it, so a fix found there is made on the
-laptop. The script's header and its `BINS`, `SECRETS`, `ENGINES` and `LINKS`
-lists say what it carries: the working tree as git sees it (uncommitted edits
-included, ignored paths never), the Codex config (§ Agent config), engine
+laptop. The script's header and its `STOW`, `BINS`, `SECRETS`, `ENGINES` and
+`LINKS` lists say what it carries: the working tree as git sees it (uncommitted
+edits included, ignored paths never), the links of the packages the mini
+stows, the Codex config (§ Agent config), engine
 versions, links into the mirror for the scripts the mini runs by name, and
 the laptop's theme, applied only when the laptop switches, so a `prefix t`
 pick on the mini lasts until then.
 
+- **Stowed packages are restowed every sync**, the ones named in `STOW`.
+  Stow links per item, so a file added to or removed from a package on the
+  laptop changes which links the mini needs; the restow makes and prunes them
+  and leaves the rest untouched. A package joins the mini by joining `STOW`,
+  whose comment says what belongs and what stays out. A conflict, a real file
+  where a link belongs, aborts the whole restow and fails the run after its
+  other steps: resolve it on the mini, then sync again.
 - **Compiled CLIs are copied**, the binaries named in `BINS`, so the mini
   needs no Go and no source clones. `planlab` and `bench` are not: they are
   shims into a checkout, and the mini generates its own (§ planlab checkout).

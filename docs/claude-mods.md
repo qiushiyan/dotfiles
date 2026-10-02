@@ -84,11 +84,11 @@ mechanism; `hooks/detect.ts` owns the signal rules and the judge's prompt.
   turns until it finishes.
 - **Snippets are matched by their opening text** in
   `~/.config/tabtype/config.toml`, so a snippet needs no marker; one too short
-  to be distinctive is never tracked. A machine where TabType is not stowed,
-  such as the office mini, receives snippets as text pasted over ssh, and the
-  mod reads `~/dotfiles/tabtype/.config/tabtype/config.toml` there.
+  to be distinctive is never tracked. The office mini stows the `tabtype`
+  package for this file: TabType runs on the laptop, and its snippets reach
+  the mini as text pasted over ssh.
 
-## A new machine, and sessions already running
+## Sessions already running
 
 `CLAUDE_CODE_PLUGIN_DIRS` is read when a process starts, so a session that
 was running before the line or a mod's folder arrived loads nothing until it
@@ -97,11 +97,6 @@ that first load `steps` reads the transcript and records what it shows ran:
 by signals alone, so those steps read `unjudged`, and from the newest rows the
 engine returns, so the start of a very long session can be missing.
 
-`~/.claude/mods` is one link to the package's `mods/` directory, created by
-`make restow` on the laptop. `mini-sync` carries the folder but stows
-nothing, so the mini needs the link once (`docs/qiushi-mini.md` § Sync);
-mods added later arrive through it:
-
-```bash
-ssh qiushi-mini 'cd ~/dotfiles && stow claude'
-```
+`~/.claude/mods` is one link to the package's `mods/` directory: `make restow`
+makes it on the laptop, and `mini-sync` restows the mini
+(`docs/qiushi-mini.md` § Sync).
