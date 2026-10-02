@@ -78,6 +78,11 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 
 Personal CLIs (headroom, envoy, brief, gwt, gopen, cout) come from the laptop through
 `mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
+Karabiner-Elements is installed from its pkg, which needs `sudo` and so the
+mini's own screen or a terminal there. The `karabiner` package is stowed from
+the mirror, so `~/.config/karabiner` is a folder link into it and a change
+made in Karabiner's UI on the mini is lost at the next sync: make it on the
+laptop.
 Not installed: rust, Docker, other GUI apps.
 
 ## Shell

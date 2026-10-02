@@ -28,10 +28,11 @@ BINS=(headroom envoy brief gwt gopen cout slack-digest slack claude-steps)
 SECRETS=(.planlab/.env .bench/.env .config/slack .config/slack-digest)
 # Packages the mini stows: the config of what runs there, and what its agent
 # sessions read (lessons behind the skills, the snippets TabType pastes over
-# ssh). Left out: a package whose config the mini owns (git: its own identity;
-# codex: generated below), one that needs a tool the mini lacks (lazygit:
-# delta), the laptop's GUI apps, and scripts (next).
-STOW=(claude claude-steps ghostty gwt lessons nvim ohmyposh tabtype tmux zsh)
+# ssh), and karabiner since the mini has a keyboard on it. Left out: a package
+# whose config the mini owns (git: its own identity; codex: generated below),
+# one that needs a tool the mini lacks (lazygit: delta), the laptop's other
+# GUI apps, and scripts (next).
+STOW=(claude claude-steps ghostty gwt karabiner lessons nvim ohmyposh tabtype tmux zsh)
 # Mirror scripts the mini runs by name. The scripts package is not stowed
 # there (it carries this laptop's mini-sync LaunchAgent), so each gets a
 # link in the mini's ~/.local/bin, pointing into the mirror.
