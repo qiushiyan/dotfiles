@@ -412,12 +412,16 @@ pick on the mini lasts until then.
   `~/.config/slack-digest` (config and workspace notes) and slackkit's
   token store `~/.config/slack` (read by `slack-digest` and the `slack`
   CLI, also carried); the LaunchAgent
-  `com.qiushi.slack-digest` runs it at 08:30 and is installed from the
-  laptop with `make -C ~/dev/slack-digest install-mini`. Its ledger and
-  digests live only here, in `~/.local/share/slack-digest/`; log
-  `~/Library/Logs/slack-digest.log`. The agent's PATH names nvm's node by
-  version, for planlab's CLI; after a node upgrade, edit
-  `launchd/com.qiushi.slack-digest.plist` and re-run `install-mini`, or
+  `com.qiushi.slack-digest` runs it at 08:30, and
+  `com.qiushi.slack-digest-listen` makes a pass every minute over what he
+  did in the digest DMs (an emoji on an item, a command, a reply the
+  briefing's judge answers). Both are installed from the laptop with
+  `make -C ~/dev/slack-digest install-mini`, after `mini-sync` has brought
+  the binary that knows `listen`. Its ledger and
+  digests live only here, in `~/.local/share/slack-digest/`; logs
+  `~/Library/Logs/slack-digest.log` and `slack-digest-listen.log`. Both
+  agents' PATH names nvm's node by version, for planlab's CLI; after a node
+  upgrade, edit both plists in `launchd/` and re-run `install-mini`, or
   planlab's briefing loses its deploy state. The ledger and the run records
   stay here too; from the laptop, every `slack-digest` subcommand (items,
   replies, replay, tracing) reaches them over ssh. The repo's `DESIGN.md`
