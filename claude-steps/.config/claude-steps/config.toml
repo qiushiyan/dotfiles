@@ -1,0 +1,35 @@
+# Labels for claude-steps: the columns of the session board (prefix S).
+# A label groups skills, TabType snippets and envoy jobs under one name. Its
+# cell shows when the latest of them happened in a session; it carries no
+# state. Anything no label lists still appears in the session's timeline.
+# Format and rules: ~/dev/claude-steps/README.md.
+
+[[label]]
+name = "consult"
+skills = ["consult"]
+snippets = ["consult-codex", "consult-verify"]
+jobs = ["consult-"]
+
+[[label]]
+name = "review"
+skills = ["review"]
+snippets = ["review-implementation", "review-implementation-again", "review-verify"]
+jobs = ["review-"]
+count_commits = true
+
+[[label]]
+name = "verify"
+skills = ["pl-loopy-verify"]
+count_commits = true
+
+# Handoffs sit here because writing one is a docs pass. The handoff-for-review
+# snippet is left out of every label: it asks a later session to review.
+[[label]]
+name = "docs"
+skills = ["update-docs", "pl-loopy-update-docs", "handoff", "pl-loopy-handoff", "pl-loopy-infra-handoff"]
+count_commits = true
+
+[[label]]
+name = "prompts"
+skills = ["prompt-engineering"]
+snippets = ["prompt-check"]

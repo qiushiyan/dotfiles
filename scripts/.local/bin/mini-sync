@@ -18,7 +18,7 @@ REPO="$HOME/dotfiles"
 # Compiled, self-contained CLIs from ~/.local/bin. Launcher shims that exec
 # into a local checkout (planlab, bench) do not belong here: they point at
 # laptop paths.
-BINS=(headroom envoy brief gwt gopen cout slack-digest slack)
+BINS=(headroom envoy brief gwt gopen cout slack-digest slack claude-steps)
 # Token files or directories (paths relative to $HOME), sent 600 in 700
 # dirs. Only CLI API tokens belong here, with the private config that travels
 # beside them (~/.config/slack: slackkit's tokens.env, read by slack and
@@ -31,7 +31,7 @@ SECRETS=(.planlab/.env .bench/.env .config/slack .config/slack-digest)
 # ssh). Left out: a package whose config the mini owns (git: its own identity;
 # codex: generated below), one that needs a tool the mini lacks (lazygit:
 # delta), the laptop's GUI apps, and scripts (next).
-STOW=(claude ghostty gwt lessons nvim ohmyposh tabtype tmux zsh)
+STOW=(claude claude-steps ghostty gwt lessons nvim ohmyposh tabtype tmux zsh)
 # Mirror scripts the mini runs by name. The scripts package is not stowed
 # there (it carries this laptop's mini-sync LaunchAgent), so each gets a
 # link in the mini's ~/.local/bin, pointing into the mirror.

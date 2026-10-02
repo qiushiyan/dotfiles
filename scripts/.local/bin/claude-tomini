@@ -5,7 +5,9 @@
 #   code        the worktree's branch, pushed straight to the mini's clone
 #               (no GitHub) and checked out at the same $HOME-relative path;
 #   transcript  the session's .jsonl and its sidecar dir, filed under the
-#               mini's project dir so `claude --resume <id>` finds it there.
+#               mini's project dir so `claude --resume <id>` finds it there;
+#   notes       the session's claude-steps notes (the prefix S board), merged
+#               into whatever notes the mini already holds for it.
 # See docs/qiushi-mini.md § Moving a Claude session.
 #
 # Usage: claude-tomini [-n] [--start] [--force] [--cmd CMD] [SESSION]
@@ -54,6 +56,7 @@ fi
 [[ -f $transcript ]] || die "not a file: $transcript"
 id=$(basename "$transcript" .jsonl)
 sidecar="${transcript%.jsonl}"   # subagents/, tool-results/
+notes="${XDG_STATE_HOME:-$HOME/.local/state}/claude-steps/notes/$id.jsonl"
 
 # The session must be closed here: two copies appending to one conversation
 # fork it. Every running claude registers <config>/sessions/<pid>.json.
@@ -90,6 +93,7 @@ say "code      $branch @ $head"
 say "          $top"
 say "       →  $HOST:$rtop"
 say "transcript → $HOST:$rproj/"
+[[ -s $notes ]] && say "notes     $(wc -l < "$notes" | tr -d ' ') → $HOST (merged)"
 
 # ---- remote side --------------------------------------------------------
 # check: read-only preflight. apply: move the branch into place from the
@@ -194,6 +198,22 @@ find "$work" -name '*.jsonl' -exec env OLD="$HOME" NEW="$rhome" \
 ssh "$HOST" "mkdir -p $(printf %q "$rproj")"
 rsync -a "$work/" "$HOST:$rproj/"
 say "transcript copied"
+
+# The notes are keyed by session id, so they follow the session. Merged, not
+# copied over: the mini may hold notes written there after an earlier move,
+# and a second move must not double the ones it already has. Each line opens
+# with its UTC time, so sort -u both drops repeats and keeps time order. The
+# script rides as an argument and the notes arrive on stdin.
+# shellcheck disable=SC2016  # expanded on the mini
+merge_notes='set -euo pipefail
+f="${XDG_STATE_HOME:-$HOME/.local/state}/claude-steps/notes/$1.jsonl"
+mkdir -p "${f%/*}"
+{ cat "$f" 2>/dev/null || true; echo; cat; } | sort -u | sed "/^\$/d" > "$f.tomini"
+mv "$f.tomini" "$f"'
+if [[ -s $notes ]]; then
+  ssh "$HOST" "bash -c $(printf %q "$merge_notes") merge-notes $(printf %q "$id")" < "$notes"
+  say "notes merged"
+fi
 
 # Told once, in the system prompt, rather than as a message in the thread.
 note="This session moved from the laptop to the office mini. Paths under $HOME/ in earlier turns now live under $rhome/; background tasks, monitors and scratch files from before the move did not come along."

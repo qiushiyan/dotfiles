@@ -55,6 +55,17 @@ number comes from headroom because Claude's payload lacks the model-scoped limit
 Mechanics, cache freshness, responsive thresholds, and cleanup ownership:
 `scripts/context-chip.md`.
 
+## What has run in each session (the board)
+
+Several agents are running and you can't remember whether this one was reviewed, or whether the docs pass came before or after the last commits. Don't ask the session: that costs it a turn.
+
+- **`prefix S`** opens the board: one row per pane running Claude, starting on the pane you pressed it in. Each step column (review, verify, docs, …) shows **when it last ran** and **`+N` commits since**; `read` in front means the skill's file was only read, `named` that a prompt only named it, `·` that nothing matches. The row ends with the session's PRs, compaction count and your latest note.
+- The **preview** is that session's timeline: skills, review and consult rounds and their collects, commits with their subject, PRs, compactions, notes.
+- **`enter`** switches to the pane. **`ctrl-n`** writes a **note** for that session (free text; it follows the session across resumes). `ctrl-d`/`ctrl-u` scroll the preview.
+- In a Claude pane's shell: `claude-steps show`, `claude-steps note <pane or session> <text>`.
+
+The board reads the sessions' transcript files and tells the sessions nothing. The columns are in `~/.config/claude-steps/config.toml`.
+
 ## Codex status surfaces
 
 Codex keeps **branch · PR** in its footer. In tmux, the top border shows
@@ -257,6 +268,8 @@ Each save first puts any floated pane (`prefix z`) back in its window; a save th
 | window | `prefix c` (end) · `prefix N` (after current) |
 | split | `prefix \|` side-by-side · `prefix -` stacked |
 | worktree | `prefix W` → type name → `ctrl-n` |
+
+**Sessions** — `prefix S` board of every Claude pane: when each step (review, verify, docs, …) last ran and the commits since, PRs, compactions, notes (`Enter` switch · `ctrl-n` note · `Esc` close)
 
 **Rename** — window `prefix m` · pane `prefix M` popup (`Enter` apply · empty = clear · `Esc` cancel) · session `prefix $`
 

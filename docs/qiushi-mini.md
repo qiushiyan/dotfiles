@@ -208,7 +208,9 @@ claude-tomini --start <id>  # move it and resume it in mini tmux session <worktr
 It moves the **code** (the worktree's branch, pushed straight into the mini's
 clone and checked out at the same `$HOME`-relative path) and the
 **transcript**; the mini resumes with `x --resume <id>`, keeping the session
-id and the whole history.
+id and the whole history. The session's **notes** from the `prefix S` board
+(`tmux/.config/tmux/scripts/steps.md`) go with it, merged into any notes the
+mini already holds for that id, so a repeated move doubles nothing.
 
 - **Preconditions it enforces:** the session is closed on the laptop, the
   worktree is clean, and the session's cwd is under `$HOME`. The home dirs
@@ -286,8 +288,10 @@ and `~/.agents` are real dirs, and `settings.json`, `CLAUDE.md`, hooks,
 mods, rules, commands, agents and skills link into the mirror. Codex reads the same
 skills through `~/.agents/skills`. The `lessons` and `tabtype` packages are
 stowed for what those sessions read: the reference material skills cite under
-`~/.config/lessons`, and the snippet definitions the `steps` mod matches
-(`docs/claude-mods.md`).
+`~/.config/lessons`, and the snippet definitions `claude-steps` matches
+prompts against for the session board (`prefix S`,
+`tmux/.config/tmux/scripts/steps.md`). The `claude-steps` package carries the
+board's labels.
 - Skills linked from other laptop projects dangle on the mini: `explain-diff`
   (absolute `/Users/qiushi` path), `greenflag-*` (resolve once `~/dev/greenflag`
   exists), `read-email`/`write-email` and `terminal-browser` (laptop-only).
