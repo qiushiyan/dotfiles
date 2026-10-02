@@ -50,9 +50,9 @@ Verification, Delivery. Each is the one home for one kind of statement:
 A section a written project rule requires (a status header, an As built
 record) joins at the kind it belongs to; nothing else about the shape comes
 from the project. A rule and its reason live in one home. The summary, a
-sketch or a test may restate the headline, pointing at the section that
-owns it; a rule stated in three places drifts until the build finds the
-contradiction.
+sketch or a test may restate the headline, in the home's terms and with
+its numbers, pointing at the section that owns it; a rule stated in three
+places drifts until the build finds the contradiction.
 
 ## Summary
 
@@ -74,7 +74,7 @@ Recovery: the resumed model is told what failed, and an identical command is ref
 
 Boundary: synchronous printing can still stall a worker, and the heap ceiling is unchanged.
 Risk: a lower bound may reject legitimate file writes; which constructs the bound charges is measured before the bound is chosen.
-Open: which repeated worker losses end the run early is the owner's call.
+Open: which repeated worker losses end the run early is Qiushi's call, as product owner.
 
 Where: § Behaviour describes the six situations; § Design carries the mechanism and its evidence; § Delivery holds the open call.
 </example>
@@ -245,18 +245,19 @@ wrong assumption moves a number and not the shape:
 
 <example>
 Decision: the output bound is 32 MiB. Proposed.
-Basis — assumed: no legitimate script in the 30-day fleet read piped more than 8 MiB.
-Outstanding verification: the p99 of piped output over that window, from the tool-call rollup.
-Fallback: raise the bound to the measured p99 plus margin, capped at the 256 MiB
-the shell already allows. The notice, the refusal and the recovery path are the
-same at any bound; only the number moves. A p99 above the cap means the bound
-cannot hold the fleet, and the premise becomes blocking.
+Basis — assumed: the p99 of piped output across fleet runs in the 30 days to 2026-09-17 is under 8 MiB.
+Outstanding verification: the measured p99 over that window, from the tool-call rollup.
+Fallback, if the measured p99 exceeds 16 MiB: raise the bound to twice that
+p99, capped at the 256 MiB the shell already allows. The notice, the refusal
+and the recovery path are the same at any bound; only the number moves. A p99
+above the cap means the bound cannot hold the fleet, and the premise becomes
+blocking.
 </example>
 
 A premise with no fallback that preserves the design is a gate: settled in
-this run, or reported as blocking with its owner. A spike that fails is
-recorded in the `/spike` skill's form, with the observation that decided
-it.
+this run, or reported as blocking with the person who can settle it. A
+spike that fails is recorded in the `/spike` skill's form, with the
+observation that decided it.
 
 ## Verification
 
@@ -295,9 +296,12 @@ State the PR boundary always, and phases only where order matters
 ([SKILL.md](SKILL.md) § Scope has the reasoning). A check whose failure
 would change the design belongs before the spec is ready, not in a first
 phase of the build. An open question names the choice, its consequence,
-the recommendation, who decides, and exactly which work waits on it. A
-settled exclusion is a non-goal; a technical unknown sits beside its
-premise with the check or fallback that resolves it.
+the recommendation, the decider by name or by a role the project's docs
+resolve, and exactly which work waits on it. Where the writer knows no
+name and the docs resolve no role, the spec gives the role as the writer
+knows it and the run's report ([SKILL.md](SKILL.md) step 5) says the name
+is missing. A settled exclusion is a non-goal; a technical unknown sits
+beside its premise with the check or fallback that resolves it.
 
 <example>
 Choice: after two worker losses on one step, stop only on proven heap exhaustion,
@@ -306,7 +310,7 @@ Consequence: stop some recoverable runs earlier, or leave some repeated failures
 retrying until the ordinary budget expires.
 Recommendation: count repeated unexpected losses after the model was warned, and
 exclude exits the system requested.
-Owner: the product owner; this changes the worker-liveness policy.
+Decides: Qiushi, as product owner; this changes the worker-liveness policy.
 Waits on it: the run-ending policy. The conversion repair and the truncation
 notice proceed independently.
 </example>
@@ -314,9 +318,18 @@ notice proceed independently.
 ## Writing rules
 
 - **One claim per sentence, one topic per paragraph.** A reader hunting a
-  rule finds it by the sentence that states it. Name the component, the
-  state or the operation rather than the shorthand the session coined; a
-  term stays when the project already uses it.
+  rule finds it by the sentence that states it.
+- **A name points at one thing.** Name the component, the state or the
+  operation rather than the shorthand the session coined. Where a phrase
+  could fit two things, say which: an existing thing by its identifier
+  and path, a proposed thing by the name the spec defines for it, a
+  person as § Delivery names a decider. A word the project's docs already
+  use keeps their meaning; where the spec needs a second meaning, qualify
+  both ("the delivery's hold", "the dock's hold"). When the code, the
+  screen and the docs call one thing by different names, give the mapping
+  once, use one name in prose, and keep the code and screen names exact
+  where they are quoted. Repeat the noun where "it", "the same" or "the
+  next one" would leave the reader to choose.
 
   <example type="avoid">
   Ask the artifact leg first, fall to the cache path on any uncertain answer.
@@ -329,11 +342,48 @@ notice proceed independently.
   uncertain, rebuild the corpus from source.
   </example>
 
+  <example type="avoid">
+  The firing calls the skills stager with the run id and the owner as the user.
+  </example>
+
+  <example>
+  An execution firing with a body calls the skills stager
+  (`createStageSkills`, `application/src/inngest/functions/loopy_stage_skills.ts`)
+  with its own run's id (`req.runId` in
+  `application/src/lib/loopy/master/dispatch_pipe_execution.ts`), not the
+  conversation's last run: the stager clears the directory that id names
+  before it writes. The user it passes is the automation's owner
+  (`req.ownerUserId`).
+  </example>
+
 - **Present and proposed stay distinct.** A sentence about what the code
   does now is an observation and carries the path it was read at; a
   sentence about what it will do is a design, labelled unbuilt.
-- **Numbers keep their scope**: date, window, population and limits, in
-  the premise they support.
+- **A limit, a count or a set says what it covers.** A measurement keeps
+  its date, window, population and limits, in the premise it supports.
+  Where a count, a window, a set or a limit binds the build: a count
+  gives the unit counted, the scope it is counted over and when it
+  resets; a window gives the timestamp it reads and both endpoints; a set
+  gives its members; a limit says which side the edge case falls on. Each
+  states its value or the rule that determines it. A value still open
+  follows § Design — Premises: proposed with its basis, and a fallback
+  where the basis is assumed; or a gate. A product choice goes to
+  § Delivery with its decider. A number with no basis settles neither.
+
+  <example type="avoid">
+  A failure is reported once per distinct failure, at most three times in
+  the last rolling hour.
+  </example>
+
+  <example>
+  A failure is reported when its key differs from the key of the last
+  report for this automation version, so failures A, B, A produce three
+  reports. A report is dropped, not queued, when three of the workspace's
+  batches already settled in the sixty minutes before this batch settled,
+  counting a batch that settled exactly sixty minutes earlier as outside
+  the window.
+  </example>
+
 - **References resolve.** Every cited path and `§ Heading` exists at the
   revision the spec names; a proposed placement is labelled a sketch and
   is not a citation. Introduce a proposed name once, where it is defined,
@@ -348,7 +398,7 @@ notice proceed independently.
   technical claim, a design problem the spec gestures at, or an
   interdependency that reads simpler than it is. Solve each where it
   lives, cut it into non-goals with its reason, or open it in Delivery
-  with its owner. A named hazard is not closed by naming it, and a
+  with its decider. A named hazard is not closed by naming it, and a
   proposed guard is not closed until its mechanism is shown to hold.
 - **Leave the build what is the build's:** code bodies, per-case test
   enumeration, edit plans, rename inventories, doc update plans, commit

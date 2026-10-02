@@ -42,6 +42,15 @@ wants the shape of the skill's history before the receipts.
   a missing state or an unheld invariant is made visible by an empty cell
   or an empty line rather than forbidden by a rule.
 
+- **2026-10-02 — a name points at one thing; a bound says what it covers.**
+  Asked whether to adopt ASD-STE100. Taken from it: one meaning per word,
+  one name per thing, no pronoun that leaves a choice. Added beyond it:
+  counts, windows, sets and limits state what they cover, and an unset
+  value is a gate. Left out: its sentence caps, dictionary and grammar
+  limits. Unvalidated until runs support it. Principle: what a cold reader
+  cannot pin is as often a decision the spec never made as a loose word,
+  so the rule asks for the binding and sends an open one to its decider.
+
 Held constant through every pass: the premises section, the summary
 block, the situations and the ordered delivery, which carried every
 unattended build; and the evidence standard, that a change ships with the
@@ -840,3 +849,140 @@ replaced with plain words; reasons added for the time box, the own
 commit and the reader's model. Left as is: the consult is not re-run
 after a revision (the cold read is), and the forty-word cue keeps its
 number.
+
+## 2026-10-02 — the ASD-STE100 question: names, bounds and deciders
+
+Asked: whether to adopt ASD-STE100 (Simplified Technical English), a
+controlled language people were recommending for agent writing, and how to
+fit it to specs, folded into the existing rules with no section of its own.
+
+Corpus: obelisk index, user messages carrying
+`<command-name>/write-spec</command-name>`, not sidechain, 2026-09-21T14:00Z
+to 2026-10-01: 15 messages, 14 sessions (09-21 → 09-29), all Claude, all
+worktrees of one repository (planlab). Cold reads: sidechain agents whose
+first message opens "You are the cold comprehension reader", last assistant
+text read whole through `raw()`: 33 reads, 19 of them re-reads. Queries,
+outputs and the per-term table: session scratchpad `e74b8435…/consult/`
+(`q-*.mjs`, `cold-reads.json`, `first-read-terms.txt`, `term-classes.tsv`),
+ledger `write-spec-frictions.md`. No earlier session discussed STE.
+
+Findings. The 14 first reads list 96 unresolved terms in item 2, 3 to 11
+per run, median 6.5, beside 20 to 50 terms each resolved from the docs
+tree. One rater's primary class per term, terms / sessions of 14:
+
+| class | terms | sessions |
+|---|---|---|
+| a definite phrase two existing things fit ("the run id") | 26 | 12 |
+| one word, two meanings, in the spec or against the docs ("owner", "hold") | 13 | 9 |
+| one thing or rule in several wordings ("exceed" / "reach" the ceiling) | 6 | 5 |
+| a count, window, set or limit with no value, unit, scope or edge | 18 | 9 |
+| a pronoun or ellipsis with no referent given ("the next one") | 8 | 5 |
+| a decision the spec never made, reported as a term | 21 | 12 |
+| a coined label with no findable referent | 4 | 3 |
+
+The line between a loose word and a missing decision is soft. The voice
+moved four rows to "missing decision" on its own reading, and a check of
+those four against the merged specs found three passages now stating a
+value, a set or a rule the first reader found absent, and one ("the
+largest relations … a page byte target … a total ceiling") merged
+unchanged, so the build chose. The merged files carry As built sections,
+so the check shows the final wording and not when each binding arrived.
+
+Prose since 09-21, from each run's logged `spec-stats.py` results: last
+measurement 14.6 to 23.8 words per sentence, 0% to 14% over forty; 13 of
+the 13 runs measured twice grew. Split at the median of first-measurement
+sentence length, the seven shorter runs averaged 7.1 first-read terms and
+the seven longer 6.6: no association, on fourteen runs, between mean
+sentence length and unresolved terms.
+
+STE100 against these: its one-meaning-per-word, one-term-per-thing and
+unambiguous-pronoun rules match three classes; it has nothing for counts
+and bounds or for missing decisions. Read from a third party's summary of
+Issue 9, not the standard. The agent skills that popularised it report
+compliance with their own linter, and one says in its README that this
+measures rule obedience, not what a reader sees.
+
+Consult (codex gpt-6.1-sol, one warm voice, `dotfiles-4f711dad/consult-r1+6`
+→ `consult-r2+3`): no foundational objection. Its blind read reached the
+same shape. Adopted from it: the problem is unresolved referents,
+predicates, scopes and decisions, not wording alone; a bound rule that
+accepts "a premise will set it" hides an open choice; a flat checklist of
+attributes would make writers invent resets and anchors; aliases across
+code, screen and docs are mapped, not flattened; a renamed label does not
+make a decider findable; the first draft's window example left open the
+edge its rule demands; the stager example overstated what the code does.
+Not taken: a paired-draft experiment before shipping (the voice agreed in
+round 2 that it is not a prerequisite).
+
+Changes, SPEC-BAR only:
+- § Writing rules: the naming half of "One claim per sentence" became "A
+  name points at one thing" (say which of two existing things; a project
+  word keeps the docs' meaning; aliases mapped once; the noun repeated
+  where a pronoun leaves a choice), with a second example pair.
+- § Writing rules: "Numbers keep their scope" became "A limit, a count or
+  a set says what it covers", each attribute tied to the kind it applies
+  to, a value or its determining rule, an open choice a gate; one example
+  pair.
+- § Shape: a restated headline uses the home's terms and numbers.
+- The person who settles an open question is the decider, by name or by a
+  role the docs resolve; where the writer has neither, the spec gives the
+  role and the report says the name is missing (§ Delivery and its
+  example, § Before you finish, the summary example). A gate is reported
+  with "the person who can settle it". "Owner" stays for the module that
+  owns a responsibility.
+- § Design's fallback example states its trigger and its rule ("if the
+  measured p99 exceeds 16 MiB: raise the bound to twice that p99") where
+  it said "plus margin", and its assumption is a p99 over a dated window,
+  the quantity its check measures.
+
+SPEC-BAR grew from 3,111 to 3,546 words, the two rules and their example
+pairs.
+
+Rejected: STE's 20- and 25-word caps and six-sentence paragraphs (the
+forty-word cue stays, as on 09-21); its dictionary, part-of-speech, tense
+and punctuation limits (no first-read finding traces to one); a named STE
+section or a linter (the owner's call, and the measurable rules are the
+ones with no finding behind them).
+
+Validation: two Opus cold readers on the changed bar, each given draft
+sentences from the corpus and asked what the bar makes the writer do. The
+first (seven scenarios, 2.3 min) answered five as intended and found eight
+defects, six fixed: an open value had three routes (the new rule, the gate
+definition, Delivery's technical-unknown line) and now follows § Premises;
+no move existed for a decider nobody can name; "two things that exist"
+excluded a proposed thing; "qualify it" had the ambiguous pronoun the rule
+warns of; the rewritten fallback had no trigger; the name-or-role clause
+had two homes. The second (four scenarios, 1.7 min) confirmed those routes
+and found seven more, five fixed: a fallback demanded of every proposed
+value against § Premises asking it of an assumed one; the fallback
+example's assumption was a maximum checked by a p99; "can name neither …
+gives the role"; a bare basename in the example that asks for a path; "a
+report is held" in the rule that uses "hold" as its two-meaning word. The
+last revision was reread by the writer, not by a third reader. Not tested:
+a live `/write-spec` run on this text.
+
+Deliberate keeps: the avoid cases under both new rules, since the default
+being displaced is a sentence that reads complete to its writer; the
+decider named in the Delivery and summary examples, so the form shows a
+findable person (the second reader flagged that a writer could copy the
+name; the examples' "a form, not the project at hand" line is the guard);
+the good bounds example settling "distinct" one way, since it shows the
+settled form and the rule above it routes the open case; the restatement
+sentence in § Shape beyond the added clause (both readers questioned
+"the headline" and the pointer, wording older than this pass).
+
+Status: unvalidated. Measure over the next ten runs, one outside planlab
+as exploratory: item-2 and item-3 findings at the first cold read,
+deduplicated by the implementation choice left open, against a baseline
+adjudicated the same way (the 96 raw findings are not that baseline); each
+finding's state in the final spec (closed, blocked, unresolved) and the
+build-side choices the survivors caused; values or sets the spec commits
+to with no basis and no fallback; draft growth. Revise or remove a clause
+that repeatedly induces unsupported values, false gates or extra content;
+remove the added rules if comparable runs show no repeated benefit.
+
+Owed to the next pass: unseeded whole-document cold reads of several
+final specs, to test the voice's doubt that a re-read inheriting resolved
+terms can miss a gap a changed section opens. Outside this skill: "explain
+in plain terms" in 19 of 62 write-spec sessions since 09-01 (4 of 27
+messages after 09-21), aimed at chat reports, not spec text.
