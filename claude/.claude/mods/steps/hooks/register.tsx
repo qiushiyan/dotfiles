@@ -11,7 +11,9 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { Step, StepCandidate, StepKind, StepSignal } from '../types'
 import {
   assume,
+  backfill,
   bandItems,
+  bare,
   describe,
   detail,
   forkPrompt,
@@ -27,7 +29,9 @@ import type { Evidence, Snippet, Verdict } from './detect'
 
 const PANE = 'steps'
 const JUDGE_MODEL = 'haiku'
-const SNIPPETS_FILE = '.config/tabtype/config.toml'
+// Under HOME, first found wins: the stowed config where TabType runs, else the
+// dotfiles copy, for a machine that only receives snippets pasted over ssh.
+const SNIPPET_FILES = ['.config/tabtype/config.toml', 'dotfiles/tabtype/.config/tabtype/config.toml']
 const DEFAULT_PINS = ['consult', 'review', 'update-docs', 'prompt-check', 'pl-loopy-verify', 'pl-loopy-handoff']
 /** A started step is looked at again for this many turns, then left as started. */
 const FOLLOW_TURNS = 15
@@ -42,7 +46,6 @@ const turnNow = atom({ plugin: 'steps', key: 'turn' } as const, 0)
 
 const GLYPH = { done: '✓', started: '◐', mentioned: '·', none: '·' } as const
 
-const bare = (name: string): string => name.split(':').at(-1) ?? name
 const tail = (path: string): string => path.split('/').slice(-3).join('/')
 
 // What a hot reload may lose: all of it is rebuilt or only shortens one turn's evidence.
@@ -54,10 +57,13 @@ let trail: string[] = []
 
 async function refresh($: EngineInterface) {
   const home = (await $.env.get('HOME')) ?? ''
-  snippets = await $.fs
-    .read(`${home}/${SNIPPETS_FILE}`)
-    .then(text => parseSnippets(String(text)))
-    .catch(() => [])
+  snippets = []
+  for (const file of SNIPPET_FILES) {
+    const text = await $.fs.read(`${home}/${file}`).then(String, () => undefined)
+    if (text === undefined) continue
+    snippets = parseSnippets(text)
+    break
+  }
   skills = await $.command
     .list()
     .then(all => [...new Set(all.filter(c => c.source !== 'builtin').map(c => bare(c.name)))])
@@ -138,14 +144,30 @@ export const register: Register = on => {
     })
     const storedPins = await $.store.get('pins')
     if (Array.isArray(storedPins)) await update($, pins, () => storedPins.map(String))
-    // A resumed session starts with no state: take back what it had recorded.
-    if (Object.keys(await read($, log)).length === 0) {
-      const saved = await $.store.get(`log:${await $.session.id()}`)
-      if (saved !== null && typeof saved === 'object') await update($, log, () => saved as Record<string, Step>)
-    }
     const turn = await $.session.turns()
     await update($, turnNow, () => turn)
     await refresh($)
+    if (Object.keys(await read($, log)).length === 0) {
+      // A resumed session starts with no state: take back what it had recorded.
+      const saved = await $.store.get(`log:${await $.session.id()}`)
+      if (saved !== null && typeof saved === 'object' && Object.keys(saved).length > 0) {
+        await update($, log, () => saved as Record<string, Step>)
+      } else if (turn > 0) {
+        // A session under way before the mod loaded: read what its transcript shows.
+        const past = await $.session.messages().catch(() => [])
+        const found = backfill(past, snippets, skills)
+        // The transcript read may be a newest-rows window: its turns end at this one.
+        const shift = Math.max(0, turn - found.turns)
+        const shifted = Object.fromEntries(
+          Object.entries(found.log).map(([name, s]) => [
+            name,
+            { ...s, firstTurn: s.firstTurn + shift, lastTurn: s.lastTurn + shift },
+          ]),
+        )
+        await update($, log, () => shifted)
+        await persist($)
+      }
+    }
 
     return next(e)
   })

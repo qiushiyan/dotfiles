@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 
 import {
   assume,
+  backfill,
   bandItems,
   matchSnippets,
   mentions,
@@ -104,6 +105,36 @@ describe('verdicts', () => {
   })
 })
 
+describe('backfill', () => {
+  const user = (text: string) => ({ role: 'user' as const, text, toolUses: [] })
+  const uses = (tool: string, input: Record<string, unknown>) => ({ role: 'assistant' as const, text: '', toolUses: [{ tool, input }] })
+
+  test('a transcript yields the steps that ran, by turn, and leaves out names only mentioned', () => {
+    const snippets = parseSnippets(TOML)
+    const { log, turns } = backfill(
+      [
+        user('available skills: update-docs, pl-loopy-verify, consult'),
+        user('<command-message>update-docs</command-message> <command-name>/update-docs</command-name>'),
+        user('Base directory for this skill: /Users/me/.claude/skills/update-docs\n\n# Update docs'),
+        uses('Edit', { file_path: 'docs/zsh.md' }),
+        user('now run a consult round with codex'),
+        uses('Skill', { skill: 'claude:consult' }),
+        user(''),
+        user('Review and revise the model-facing surfaces this session touched — prompts, skill bodies, CLAUDE.md — against the rulebook.'),
+        user('did we run pl-loopy-verify yet?'),
+      ],
+      snippets,
+      ['update-docs', 'pl-loopy-verify', 'consult'],
+    )
+
+    expect(turns).toBe(5)
+    expect(Object.keys(log).sort()).toEqual(['consult', 'prompt-check', 'update-docs'])
+    expect(log['update-docs']).toMatchObject({ status: 'done', runs: 1, lastTurn: 2, isJudged: false })
+    expect(log['consult']).toMatchObject({ status: 'done', lastTurn: 3 })
+    expect(log['prompt-check']).toMatchObject({ kind: 'snippet', lastTurn: 4 })
+  })
+})
+
 describe('steps', () => {
   test('a skill expanded in a turn shows in the band, and the judge decides how', async ($, on) => {
     mock.store(on)
@@ -113,6 +144,7 @@ describe('steps', () => {
     on('command.list', () => ({ value: [] }))
     on('session.turns', () => ({ value: 3 }))
     on('session.id', () => ({ value: 's1' }))
+    on('session.messages', () => ({ value: [] }))
     on('command.register', ($, e) => ({ value: { command: e.name } }))
     on('session.start', ($, e) => ({ cwd: e.cwd }))
     on('skill.prompt', ($, e) => ({ text: e.text }))

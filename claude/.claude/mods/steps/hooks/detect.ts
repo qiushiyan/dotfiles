@@ -22,6 +22,9 @@ export type BandItem = { name: string; label: string; status: StepStatus | 'none
 const MIN_SNIPPET = 40
 const HEAD = 80
 
+/** `plugin:skill` and `dir:skill` name the same skill as `skill`. */
+export const bare = (name: string): string => name.split(':').at(-1) ?? name
+
 export const squash = (text: string): string => text.toLowerCase().replace(/\s+/g, ' ').trim()
 
 /** The `[[snippets]]` of a TabType config: each key with the start of its text. */
@@ -236,4 +239,63 @@ ${ledger}
 <question>
 ${question}
 </question>`
+}
+
+/** A transcript row as `$.session.messages()` returns it, as far as this reads it. */
+export type PastMessage = {
+  role: 'user' | 'assistant'
+  text: string
+  toolUses: readonly { tool: string; input: Readonly<Record<string, unknown>> }[]
+}
+
+const EXPANDED = /Base directory for this skill: \S*\/skills\/([^/\s]+)/g
+const COMMAND = /<command-name>\/([\w:-]+)<\/command-name>/g
+
+/**
+ * The steps a transcript shows, for a session that was under way before the
+ * mod loaded. Signals alone decide, so every step is unjudged, and a name that
+ * was only mentioned is left out: the rows the engine injects name every skill.
+ */
+export function backfill(
+  messages: readonly PastMessage[],
+  snippets: readonly Snippet[],
+  skills: readonly string[],
+): { log: Record<string, Step>; turns: number } {
+  const log: Record<string, Step> = {}
+  let turns = 0
+  let fresh: Record<string, StepCandidate> = {}
+  const add = (name: string, kind: StepKind, signal: StepSignal) => {
+    const signals = fresh[name]?.signals ?? []
+    if (!signals.includes(signal)) fresh[name] = { kind, signals: [...signals, signal] }
+  }
+  const close = () => {
+    for (const [name, candidate] of Object.entries(fresh)) {
+      const verdict = assume(name, candidate, false)
+      const step = verdict.status === 'mentioned' ? undefined : merge(log[name], verdict, turns)
+      if (step !== undefined) log[name] = step
+    }
+    fresh = {}
+  }
+  for (const message of messages) {
+    if (message.role === 'assistant') {
+      for (const use of message.toolUses) {
+        const { skill, file_path: path } = use.input
+        if (use.tool === 'Skill' && typeof skill === 'string') add(bare(skill), 'skill', 'skill')
+        const read = use.tool === 'Read' && typeof path === 'string' ? skillFromPath(path) : undefined
+        if (read !== undefined) add(read, 'skill', 'read')
+      }
+      continue
+    }
+    // A skill's expanded body rides a user row of the turn that loaded it.
+    const expanded = [...message.text.matchAll(EXPANDED)].flatMap(found => found[1] ?? [])
+    for (const name of expanded) add(name, 'skill', 'skill')
+    if (expanded.length > 0 || message.text.trim() === '') continue
+    close()
+    turns += 1
+    for (const found of message.text.matchAll(COMMAND)) add(bare(found[1] ?? ''), 'skill', 'skill')
+    for (const name of matchSnippets(message.text, snippets)) add(name, 'snippet', 'snippet')
+    for (const name of mentions(message.text, skills)) add(name, 'skill', 'mention')
+  }
+  close()
+  return { log, turns }
 }
