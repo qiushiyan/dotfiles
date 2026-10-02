@@ -2,7 +2,8 @@
   "cleanupPeriodDays": 365,
   "env": {
     "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
-    "CLAUDE_AFK_TIMEOUT_MS": "2147483647"
+    "CLAUDE_AFK_TIMEOUT_MS": "2147483647",
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/steps"
   },
   "permissions": {
     "deny": [

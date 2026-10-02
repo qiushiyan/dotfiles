@@ -4,7 +4,7 @@
 
 # === Claude Code (claude/.claude/) ===
 # ~/.claude is a real directory; only config is symlinked in from this
-# package (settings.json, hooks/, agents/, commands/, rules/, skills/,
+# package (settings.json, hooks/, mods/, agents/, commands/, rules/, skills/,
 # CLAUDE.md), so Claude's runtime state (history, sessions, projects,
 # telemetry, plugins, caches, …) lives in the real ~/.claude and never
 # reaches this repo. This allow-list is defense-in-depth for a PUBLIC repo:
@@ -16,6 +16,7 @@ claude/.claude/*
 !claude/.claude/agents/
 !claude/.claude/commands/
 !claude/.claude/hooks/
+!claude/.claude/mods/
 !claude/.claude/rules/
 !claude/.claude/skills/
 # ...but never the packaged skill exports (zip artifacts).

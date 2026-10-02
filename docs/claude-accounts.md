@@ -58,7 +58,8 @@ Everything derives from that tree:
   observed: the filesystem is the registry.
 - **Sharing.** Account dirs are seeded with symlinks into the repo's
   `claude/.claude`, so all accounts run identical settings/skills/hooks and a
-  config edit lands everywhere. Only login state (`.claude.json`, the Keychain
+  config edit lands everywhere. Mods ride the same link: the shared
+  `settings.json` names their folders (`docs/claude-mods.md`). Only login state (`.claude.json`, the Keychain
   item) and prompt history are per-account.
 - **Sessions** belong to the machine, not the account:
   `docs/claude-sessions-store.md` § One store, many accounts.
