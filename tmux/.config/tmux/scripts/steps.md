@@ -16,9 +16,9 @@ which pane runs which session               → @claude_ctx_sid, set by the cont
 ```
 
 `claude-steps` reads tmux and the transcript files and writes only the notes
-under `~/.local/state/claude-steps/notes/`. Its rules, limits and the design
-behind them are in `~/dev/claude-steps/README.md` and
-`~/dev/claude-steps/docs/specs/session-view.md`. `tmux-steps.sh` shows only
+under `~/.local/state/claude-steps/notes/`. What a line means is in
+`~/dev/claude-steps/README.md`; the design, and the contracts this script
+relies on, are in `~/dev/claude-steps/docs/design.md`. `tmux-steps.sh` shows only
 what the binary prints: a new fact belongs in the binary, not in the script.
 
 ## Constraints
