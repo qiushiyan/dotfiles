@@ -31,18 +31,18 @@ Closeout takes the branch that landed: the argument, else the one the user's wor
 
 A branch landed and its session is closing: its brief is spent, and the briefs that named it may have moved.
 
-1. **Establish the branch and prove it landed.** `brief` (the listing) first: every row reading `#N merged` is a second anchor for this pass. Then `brief closeout <branch> --json` returns the anchor (the brief named `<branch>` or `review-<branch>`, live or retired, or `null` when none was written), the landed state from gh, the changed files, and every live brief that might belong, each with its reasons: `relation` (a lineage field on either side names the other), `path` (its `paths:` overlap the changed files), `prose` (it names the anchor outside a lineage field), and — only beside one of those — `domain` (the same domain folder) and `run`. On a busy folder the JSON runs past the 10 k the harness shows you, so read it from a file:
+1. **Establish the branch and prove it landed.** `brief` (the listing) first: every row reading `#N merged` is a second anchor for this pass. Then `brief closeout <branch> --json` returns the anchor (the brief named `<branch>` or `review-<branch>`, live or retired, or `null` when none was written), the landed state from gh, how many files the branch changed (`changed` — `complete: false` with a note when some went unread, and `list` the command that prints them all), and every live brief that might belong, each with its reasons: `relation` (a lineage field on either side names the other), `path` (its `paths:` overlap the changed files, naming those under each declared directory), `prose` (it names the anchor outside a lineage field), and — only beside one of those — `domain` (the same domain folder) and `run`. Read it from a file through this digest:
 
    ```bash
    S=<your scratchpad directory>
    brief closeout <branch> --json > "$S/closeout.json"
-   jq -c '{anchor: .anchor.slug, merged: .landed.merged, pr: .landed.pr.number, files: (.files|length)}' "$S/closeout.json"
+   jq -c '{anchor: .anchor.slug, merged: .landed.merged, pr: .landed.pr.number, files: .changed.files, complete: .changed.complete}' "$S/closeout.json"
    jq -r '.candidates[] | [.slug, ([.reasons[].kind]|unique|join("+")), ([.reasons[]|select(.kind=="relation")|.detail]|join("; "))] | @tsv' "$S/closeout.json"
    ```
 
    ```
    # the shape — not today's folder
-   {"anchor":"feat/client-data-corpus-by-default","merged":true,"pr":5941,"files":26}
+   {"anchor":"feat/client-data-corpus-by-default","merged":true,"pr":5941,"files":26,"complete":true}
    feat/client-data-corpus-reuse-on-publish   domain+path+prose+relation+run   its rests-on: names the anchor (line 21)
    infra/loopy-master-disk-throughput         domain+path+relation             anchor's collides-with names it; its rests-on: names the anchor (line 27)
    fix/ux-cut-turn-honesty                    path
