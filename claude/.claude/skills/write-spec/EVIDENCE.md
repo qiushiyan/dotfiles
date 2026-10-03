@@ -986,3 +986,64 @@ final specs, to test the voice's doubt that a re-read inheriting resolved
 terms can miss a gap a changed section opens. Outside this skill: "explain
 in plain terms" in 19 of 62 write-spec sessions since 09-01 (4 of 27
 messages after 09-21), aimed at chat reports, not spec text.
+
+## 2026-10-04 — first run on the 10-02 text, against the last run before it
+
+Pair, both planlab on the office mini, both 2026-10-02, read from the
+mini's obelisk index and the branches' commits:
+
+- New text: `2c408cef`, `perf/end-of-run-summary-off-terminal`, spec
+  `docs/loopy/specs/2026-10-02-conversation-summary-owned-by-the-thread.md`,
+  `48737f64fe` → `ce9a36ecc7`, unbuilt. The session `cat` the bar at 15:39Z
+  and its output carries "A name points at one thing" and "A number with
+  no basis settles neither".
+- Old text: `d4cdf757`, `infra-runtime/worker-liveness-exit-on-fatal`,
+  spec `docs/loopy/infra/specs/2026-10-02-pool-processes-exit-on-fatal-error.md`,
+  `a4bc712c2f` → `6fe2931ae5`, then built. Its read of the bar carries
+  "Numbers keep their scope".
+
+| | new text | old text |
+|---|---|---|
+| words, first → last spec commit | 6,290 → 8,978 (+43%) | 4,431 → 6,460 (+46%) |
+| words per sentence, first → last; over forty | 14.3 → 14.7; 1, then 2 | 16.6 → 17.9; 1, then 0 |
+| item-2 terms, first cold read | 8 | 4 |
+| item-3 gaps, first cold read | 12, plus 6 small | 7 |
+| last cold read that returned (pass) | 3 terms, 7 gaps (3rd) | 5 terms, 7 gaps (3rd) |
+| validation consult rounds in the phase | 3 (`consult-r2`, `-r2b`, `-r2c`) | 1 (`consult-r2`) |
+| phase, invocation → last spec commit | 15:38 → 22:47Z; 18:43 → 22:47 a reader stalled twice | 12:40 → 13:29Z |
+
+The first read's eight terms, by the 10-02 classes: two phrases two
+existing things fit (today's eight-message trigger; "a legacy thread" as
+pre-change or legacy-host), two one-rule-in-two-places, two counts or sets
+without scope ("the last three exchanges", "purged text"), one word with
+the codebase's other meaning ("continuation"), one missing decision. The
+old run's four: two phrases two things fit, one rule in two places, one
+"its own" with no referent. Per thousand words, 1.3 against 0.9. One pair
+on changes of different difficulty (two hosts, a migration and purge
+semantics against two process shells) shows no reduction at the first
+read; it cannot show an effect either way.
+
+Visible in the new text:
+- The decider rule landed. "Qiushi decides, as product owner. Nothing in
+  the build waits on it", and the replay's failure choices are "Qiushi's";
+  the old spec has "Open: none" and module owners only.
+- The count rule's shape appears in revision. "The last three" became the
+  three newest send rows before the current input, with the current send,
+  a wake, an access continuation and an auto-retry each placed. The spend
+  category's observation start, which the second reader called "no
+  defensible literal value", became a determining rule (the planned deploy
+  day, moved by whoever runs the release if it slips) with the cost of
+  either error stated, rather than a date. Whether the bar or the cold read
+  produced either cannot be separated here; neither was in the first draft.
+
+Cost: no added cost traceable to the new rules. The long phase is the
+validation consult continued twice and a final reader that returned no
+text twice (an agent stall); the writer retried once, reread the changed
+sections itself and reported the read as not completed, unprompted, so no
+instruction is added for it. Every re-read that returned found a real
+contradiction in the changed sections (adoption onto a purge's epoch-only
+row; adoption of an errored run's summary), which bears on the deferred
+question about scoped re-reads: here they caught what the revision broke.
+
+No change made. Run 1 of the ten the 10-02 entry asks for; the pair is not
+the adjudicated, deduplicated baseline that entry names.
