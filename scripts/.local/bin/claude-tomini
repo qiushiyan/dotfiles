@@ -199,20 +199,16 @@ ssh "$HOST" "mkdir -p $(printf %q "$rproj")"
 rsync -a "$work/" "$HOST:$rproj/"
 say "transcript copied"
 
-# The notes are keyed by session id, so they follow the session. Merged, not
-# copied over: the mini may hold notes written there after an earlier move,
-# and a second move must not double the ones it already has. Each line opens
-# with its UTC time, so sort -u both drops repeats and keeps time order. The
-# script rides as an argument and the notes arrive on stdin.
-# shellcheck disable=SC2016  # expanded on the mini
-merge_notes='set -euo pipefail
-f="${XDG_STATE_HOME:-$HOME/.local/state}/claude-steps/notes/$1.jsonl"
-mkdir -p "${f%/*}"
-{ cat "$f" 2>/dev/null || true; echo; cat; } | sort -u | sed "/^\$/d" > "$f.tomini"
-mv "$f.tomini" "$f"'
+# The notes are keyed by session id, so they follow the session. The mini's
+# claude-steps merges them: it appends the notes the mini lacks and never
+# rewrites the file, so a note written there meanwhile is kept and a second
+# move doubles nothing.
 if [[ -s $notes ]]; then
-  ssh "$HOST" "bash -c $(printf %q "$merge_notes") merge-notes $(printf %q "$id")" < "$notes"
-  say "notes merged"
+  if ssh "$HOST" "\$HOME/.local/bin/claude-steps import-notes $(printf %q "$id")" < "$notes"; then
+    say "notes merged"
+  else
+    echo "claude-tomini: the notes did not reach the mini (mini-sync installs claude-steps there); they are still in $notes" >&2
+  fi
 fi
 
 # Told once, in the system prompt, rather than as a message in the thread.
