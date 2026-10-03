@@ -13,8 +13,10 @@ What it holds:
   S3  the list reloads with the note and keeps its cursor
   S4  Enter switches the client to the row's pane
   S5  nothing reached the real notes directory
+  S6  prefix S, bound as tmux.conf binds it, opens the board in a popup on
+      the client that pressed it
 """
-import json, os, pathlib, pty, shlex, shutil, subprocess, sys, tempfile, threading, time
+import json, os, pathlib, pty, re, shlex, shutil, subprocess, sys, tempfile, threading, time
 
 D = pathlib.Path(__file__).resolve().parents[5]
 STEPS = shutil.which('claude-steps')
@@ -77,10 +79,14 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         master, slave = pty.openpty()
         client = subprocess.Popen(tmux+['attach-session', '-t', 'one'], stdin=slave, stdout=slave, stderr=slave, env=env, close_fds=True)
         os.close(slave)
+        # What the client's terminal received, which is the only place a popup
+        # can be seen: it is no pane, so capture-pane does not reach it.
+        stream, stream_lock = bytearray(), threading.Lock()
         def drain():
             try:
-                while os.read(master, 65536):
-                    pass
+                while chunk := os.read(master, 65536):
+                    with stream_lock:
+                        stream.extend(chunk)
             except OSError:
                 pass
         threading.Thread(target=drain, daemon=True).start()
@@ -154,6 +160,32 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         for p in notes.iterdir():
             assert str(p.resolve()).startswith(td+'/'), p
         print('PASS S5: nothing reached the real notes directory')
+
+        # The binding line itself, sourced into this server. Its command finds
+        # the script under ~/.config, which is this HOME.
+        line = next(l for l in (D/'tmux/.config/tmux/tmux.conf').read_text().splitlines() if l.startswith('bind-key S '))
+        (home/'.config/tmux').mkdir(parents=True, exist_ok=True)
+        (home/'.config/tmux/scripts').symlink_to(script.parent)
+        (home/'bind.conf').write_text(line+'\n')
+        run(tmux+['source-file', str(home/'bind.conf')])
+        def terminal():
+            with stream_lock:
+                raw = bytes(stream)
+            return re.sub(rb'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[()][0-9A-Za-z]|\x1b[=>78]|[\x00-\x08\x0e-\x1f]', b'', raw).decode('utf-8', 'replace')
+        def wait_terminal(what, ready, seconds=8):
+            deadline = time.monotonic()+seconds
+            while time.monotonic() < deadline:
+                if ready(terminal()):
+                    return
+                time.sleep(.1)
+            raise AssertionError(what+':\n'+terminal()[-2000:])
+        with stream_lock:
+            stream.clear()
+        os.write(master, b'\x02S')  # the default prefix, C-b, then S
+        # The client shows session two, whose pane now runs the gamma session.
+        wait_terminal('prefix S opened no board on the client', lambda t: 'ctrl-n note' in t and 'Gamma session   cccccccc' in t)
+        os.write(master, b'\x1b')
+        print('PASS S6: prefix S as tmux.conf binds it opens the board on the client that pressed it')
     finally:
         subprocess.run(tmux+['kill-server'], env=env, capture_output=True)
         if client is not None:
