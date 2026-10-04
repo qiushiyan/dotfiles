@@ -44,8 +44,8 @@ Planlab's `.tabtype.local.toml` is gitignored, so earlier wordings of the
 | `loopy-closeout` | last 09-23; "/pl-loopy-handoff-distill merged (and deployed)" typed in 18 + 8 sessions since | shrunk to the typed form |
 | "implement end to end" with no spec | 90 sessions in 60 days, 23 + 5 since `implement-spec` came into use on 09-21 | `implement-now` added; "defer doc updates" (64 sessions) left to `rules/docs.md` |
 | `consult-codex` | 0 uses since it was added 09-21, against 19 + 8 sessions phrasing the same ask by hand; the user had not known it existed | reshaped: slash-led, cursor at the end |
-| standalone spikes | "run some spikes" in 30 sessions / 36 turns over 21 days; 30 turns ask to prove an approach, 6 a diagnosis, 6 name a consult | open: `spike-check` proposed, `consult-verify` (2 uses, 09-01) kept until decided |
-| consult, then build unless a decision is the user's | 8 laptop + 2 mini sessions, 09-27 → 10-04, voices codex and opus | open: `consult-build` proposed |
+| standalone spikes | "run some spikes" in 30 sessions / 36 turns over 21 days; 30 turns ask to prove an approach, 6 a diagnosis, 6 name a consult | `spike-check` added; `consult-verify` (2 uses, 09-01) removed |
+| consult, then build unless a decision is the user's | 8 laptop + 2 mini sessions, 09-27 → 10-04, voices codex and opus | `consult-then-build` added beside `consult-codex`: the two differ in where they stop |
 | "plain terms" | 58 sessions in 60 days, 6 since 09-21 | no snippet; watch |
 
 **Not done.** `WORKFLOW.md`, `DESIGN.md`, `tabtype/CLAUDE.md` and
@@ -54,10 +54,10 @@ mini's copy of planlab's `.tabtype.local.toml` is unchanged.
 
 **Next pass compares**, from `history.json`, four weeks of counts per key:
 
-- `implement-now`, `loopy-handle-review`, `loopy-closeout`, `consult-codex`
-  each expanded in at least three sessions, and the hand-typed counts for
-  "end to end", "no poll", "merged and deployed" and "consult round with
-  codex" lower than above. A key still at zero while its phrase is still typed
+- `implement-now`, `loopy-handle-review`, `loopy-closeout`, `consult-codex`,
+  `consult-then-build`, `spike-check` each expanded in at least three sessions, and the hand-typed counts for
+  "end to end", "no poll", "merged and deployed", "consult round with
+  codex" and "run some spikes" lower than above. A key still at zero while its phrase is still typed
   is the wrong wording or the wrong home; revise or remove it.
 - Any removed key retyped from memory or pasted from Git history is a removal
   to reverse.

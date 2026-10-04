@@ -11,7 +11,7 @@
 [[label]]
 name = "consult"
 skills = ["consult"]
-snippets = ["consult-codex", "consult-verify"]
+snippets = ["consult-codex", "consult-then-build"]
 jobs = ["consult-"]
 color = "blue"
 
