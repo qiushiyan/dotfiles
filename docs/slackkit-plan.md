@@ -4,7 +4,8 @@
 slackkit exists with its library, CLI, skill and manifest, slack-digest
 imports it, and this repo links the skill and carries the token store to the
 mini. Delete this file when the PlanLab PR merges; its surviving decisions
-live in `~/dev/slackkit/DESIGN.md` and slack-digest's `DESIGN.md`. Settled 2026-09-29 from a
+live in `~/dev/slackkit/docs/`, which holds slack-digest too, as
+`cmd/slack-digest`, since 2026-10-04. Settled 2026-09-29 from a
 session-history analysis and a consult round (`consult-r1/codex-gpt-6-astra`,
 job `~/.local/state/envoy/jobs/dotfiles-4f711dad/consult-r1+4`); the design
 follows that voice's position where the two differed.
