@@ -54,6 +54,49 @@ into it, because accepting a share needs the admin console.
 | power | `pmset -a sleep 0 autorestart 1 womp 1`: never sleeps, restarts after power loss, wake-on-LAN |
 | FileVault | **on**, and not mine to turn off. After an unplanned restart the mini waits at the FileVault unlock screen, and `tailscaled` is down until someone unlocks it in person. For planned reboots, use `sudo fdesetup authrestart`. |
 
+## At the desk
+
+The mini drives the office monitor (LG 32UN880K-B, 32" 4K over USB-C) at
+"looks like 3008 × 1692", the text size of the laptop's 27" at 2560 × 1440.
+The NuPhy keyboard is wired by USB; the MX Anywhere 3S is paired over
+Bluetooth on its own Easy-Switch channel. When the laptop is on the desk,
+Universal Control shares them with it.
+
+- **Keyboard and mouse stay on the same Mac.** Universal Control treats the
+  Mac whose devices last produced input as the source. With the keyboard on
+  one Mac and the mouse on the other, every keystroke and every mouse move
+  swaps the source, and keys land on the wrong machine.
+- **The keyboard follows a click, never an app coming to the front.** An app
+  launched by hotkey on the other Mac gets no keys until it is clicked once.
+  Settings: Displays → Advanced → "Link to Mac or iPad", all options on; the
+  laptop arranged to the left under Displays → Arrange, or both of the mini's
+  side edges lead to it.
+- **The link needs both displays on.** A closed lid, a sleeping display or a
+  resolution change marks that Mac unavailable, and the Displays pane shows
+  no second machine. Wake both, then push the pointer through the edge or pick
+  the laptop under Displays → "+" → Link Keyboard and Mouse. The agent
+  (`UniversalControl`, launchd label `com.apple.ensemble`) cannot be
+  restarted from a shell: SIP refuses `launchctl kickstart`. To diagnose,
+  read its log (`/usr/bin/log`, because zsh has a `log` builtin): category
+  `EVNT` records `Current Source Device` and key-focus moves, `SYNC` and
+  `DISC` record `Device Unavailable`.
+
+  ```bash
+  /usr/bin/log show --last 15m --info --debug --style compact \
+    --predicate 'subsystem == "com.apple.universalcontrol"'
+  ```
+- **The Apple Account on the mini puts iCloud within reach of the
+  permission-bypassed agents that run here → iCloud Keychain and iCloud Drive
+  stay off.** Universal Control needs only the account and Handoff.
+- **Screen Sharing is on**, so `open vnc://qiushi-mini.local` (or the tailnet
+  name) from the laptop gives the desktop without the desk.
+- **Hyper + letter launches are Raycast hotkeys, held in Raycast's own
+  database; Karabiner only turns Caps Lock into the hyper modifier.** On a
+  machine where the launches do nothing, import Raycast's settings: Export
+  Settings & Data on the laptop, Import Settings & Data here. Over USB the
+  NuPhy enumerates as separate keyboard and pointer devices, so Karabiner
+  grabs it with no device entry.
+
 ## Toolchain
 
 A deliberately small subset of the laptop: no `bootstrap.sh`, no Brewfile.
@@ -82,8 +125,10 @@ Karabiner-Elements is installed from its pkg, which needs `sudo` and so the
 mini's own screen or a terminal there. The `karabiner` package is stowed from
 the mirror, so `~/.config/karabiner` is a folder link into it and a change
 made in Karabiner's UI on the mini is lost at the next sync: make it on the
-laptop.
-Not installed: rust, Docker, other GUI apps.
+laptop. The other desk apps (Raycast, 1Password, Arc, Slack, OrbStack) are
+installed by hand, as Homebrew casks or vendor downloads, and carry no
+config from this repo.
+Not installed: rust.
 
 ## Shell
 
