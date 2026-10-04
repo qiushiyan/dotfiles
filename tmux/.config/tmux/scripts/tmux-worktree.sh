@@ -516,6 +516,11 @@ export WT_POPUP_SELF="${BASH_SOURCE[0]}"
 # switch / create / PR-checkout / copy break the loop with `exit`; remove, reap,
 # a cancelled PR pick, and a failed create or copy fall through and re-run fzf.
 # esc / ctrl-c (fzf exit 130) closes the whole popup.
+#
+# The preview's status takes no optional lock: fzf SIGKILLs a preview when the
+# cursor moves or the picker closes, and a killed `git status` leaves the
+# index.lock it holds for the whole untracked scan, which then fails every
+# pull, checkout, and commit in that checkout until someone deletes it.
 while true; do
   out="$(bare_rows | fzf \
     --ansi --multi --cycle --layout=reverse \
@@ -529,7 +534,7 @@ while true; do
     --bind 'load:unbind(load)+reload-sync:bash "$WT_POPUP_SELF" --rows' \
     --bind 'ctrl-a:toggle-all,ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up' \
     --color="$fzf_colors" \
-    --preview='git -C {2} -c color.status=always status -sb 2>/dev/null; echo; git -C {2} log --color=always --oneline -8 2>/dev/null' \
+    --preview='git -C {2} --no-optional-locks -c color.status=always status -sb 2>/dev/null; echo; git -C {2} log --color=always --oneline -8 2>/dev/null' \
     --preview-label=' status · log ' \
     --preview-window='right,55%,wrap')"
   code=$?
