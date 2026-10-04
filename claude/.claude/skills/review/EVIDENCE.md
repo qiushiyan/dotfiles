@@ -203,3 +203,12 @@ Recorded in `../consult/EVIDENCE.md`, the 2026-09-22 entry: both brief
 templates gain a `## The data behind this change` section and a method item
 first in the output when the range rests on a measurement this session
 produced; step 2 carries the trigger; `consult/DATA-BLOCK.md` is the one home.
+
+## 2026-10-04 — the goal brief's expectation, asked for as output
+
+Recorded in `../consult/EVIDENCE.md`, the 2026-10-04 entry: Claude voices
+were refused by the provider (`reasoning_extraction`) on briefs that asked
+for a note written first and reported verbatim. No review round was blocked
+in the window (goal reviews 3 of 3 passed), but `GOAL-BRIEF.md` carried the
+same construct, so it now asks for the expectation as the opening of the
+answer, and step 2's description of goal mode follows.

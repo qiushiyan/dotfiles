@@ -11,6 +11,11 @@ or our position, then judges ours. Where the two readings differ is the
 round's product; a voice that starts from our position critiques inside its
 frame. Same-file order is a nudge, not blinding — SKILL.md step 6 says when
 our position is withheld for a second turn instead.
+
+The read is asked for as the opening section of the answer. Keep it that way
+when you adapt the section: a note to write down first and repeat word for
+word reads as a request to transcribe the voice's reasoning, and a Claude
+voice's provider refuses the turn for it (EVIDENCE.md, 2026-10-04).
 -->
 
 # Consult: «the question in one line — the outcome to reach or the symptom as seen, never the answer»
@@ -52,7 +57,8 @@ section only when the position rests on reasoning alone (SKILL.md step 2).»
 
 ## Your read, before reading on
 
-Write this down now, before you open any file or read past this heading:
+Open your answer with this section, written before you open any file or read
+past this heading:
 
 1. **The problem**, in two or three sentences — what is actually wrong or
    needed. Where something is going wrong, the two or three causes you would
@@ -62,9 +68,9 @@ Write this down now, before you open any file or read past this heading:
    alternative you would discard and why, and the place you are least sure of.
 
 This is a quick commitment, not the analysis — the code-grounded comparison
-comes in your output. Report it verbatim. Where it differs from what follows
-is the most valuable thing this round produces, and it is unrecoverable once
-you have read on.
+comes later in your answer. Leave the section as first written: where it
+differs from what follows is the most valuable thing this round produces, and
+the later sections say where the code moved you.
 
 ## Posture — first principles, grounded
 
@@ -138,7 +144,7 @@ the voice name what is wrong in it.»
    counts or claims it cannot support as stated. Doubt a count: re-run or vary
    it if the brief says you can, else say what you would run and what a
    different result would change. "Sound, with these limits" is a real answer.
-1. **Your read** — verbatim, as written before you read on.
+1. **Your read** — the opening section, as first written.
 2. **The problem** — ours confirmed, sharpened, replaced by a different one
    you back, or not carried by the evidence, with the evidence for your
    verdict. Confirmed takes one line. Where a cause is claimed, take its chain

@@ -342,7 +342,7 @@ $0'''
 [[snippets]]
 key = "implement-spec"
 expand = '''
-Reread the settled spec to rebuild your mental model on the goals and implementation tenets, then implement end to end, commit at major milestones along the way. Defer doc updates — I'll say when.'''
+Reread the settled spec to rebuild your mental model on the goals and implementation tenets, then implement end to end, commit at major milestones along the way.'''
 
 # ── Direct build (skip spec/plan) ─────────────────────
 

@@ -242,3 +242,71 @@ opens. Baseline: 49/195. Pull a skipped round's result and check whether its
 critique used the skipped file's vocabulary — a round that skipped
 `deep-modules.md` and still judges depth and seams read it in some other
 form; one that does not is the case for a brief change.
+
+## 2026-10-04 — the pre-read wording and the provider's refusals
+
+**Question**, the user's: Claude voices on consult and review keep failing
+on a safety filter although the briefs are plain engineering; find when and
+why, and which layer to change. This pass covers review too.
+
+**Corpus.** The envoy job store, 502 `meta.json`, 2026-09-14 → 10-04; a
+block is a record whose error says "safeguards flagged". Cohort: provider
+claude, not a continuation, `prompt.md` over 3,000 bytes (61 turns). Wording
+predicate on `prompt.md`: `write (this|it|them) down|write down` and
+`verbatim`, case-insensitive. Obelisk for the wider window: assistant rows
+`text LIKE 'API Error:%safeguards flagged%'`, this session excluded.
+
+**Finding.** Every block is one category, `reasoning_extraction` (16/16 in
+the store; 35/35 indexed rows in 24 sessions, 08-20 → 09-28). The stream
+shows the provider stopping the voice's response, Claude Code retrying once,
+and the turn ending as a refusal. Among cold Claude voices, briefs carrying
+"Write this down now … Report it verbatim" were blocked 15 of 39; briefs
+with neither phrase 0 of 16, with "verbatim" alone 0 of 5. Fable 5.1 took 9
+of the blocks, Opus 5.5 6. Ten blocked briefs were re-sent by their hosts
+with only that section rewritten: 9 passed, and the tenth — which still
+asked for "a working note of your own" to "include unchanged" — passed once
+the section was removed. The same bytes re-sent passed once and were blocked
+once. The vendor guide already names the cause
+(`references/fable-prompting-guide.md`: instructions to echo or transcribe
+reasoning as response text trigger this category). All 20 blocked voice
+sessions since September are consult briefs; goal reviews carrying the same
+construct passed 3 of 3, and no full review was blocked.
+
+**Limits.** The reasoning text and the withheld output are not in the logs,
+so what the classifier matched is inferred from the association and the
+pairs. A base rate exists apart from our wording: on 08-20, 13 blocks in 4
+sessions, 3 of them interactive sessions with no brief at all. Four blocked
+voice sessions are indexed but gone from the store. The mini's store was not
+read.
+
+**Changed.** `BRIEF.md` and `../review/GOAL-BRIEF.md` ask for the read as
+the opening section of the answer, "as first written"; "write this down
+now", "verbatim" and "unrecoverable once you have read on" are gone, and
+each template's comment tells the host to keep it that way when adapting the
+section. envoy 0.12.0 records a refusal as its own cause with the category
+(envoy `EVIDENCE.md`, 2026-10-04).
+
+**Replay, and what it could not show.** The brief blocked on Opus 5.5 under
+both the original and a softened wording (`main` `consult-r1+8`), 8 turns
+per wording on Opus 5.5, Claude Code 2.1.289, six-minute cap (every recorded
+block had landed within 226 s): 0 of 8 blocked on the original wording and 0
+of 8 on the new one (`replay-ctl-1..8`, `replay-new-1..8` in the `main`
+store). With the three organic turns since 09-28 the original wording is 0
+of 11 where September's rate was 15 of 39, so something on the provider or
+Claude Code side moved, and the replay says nothing about whether the
+rewording lowers the rate. What it did show: under the new wording 8 of 8
+voices opened with the read before any tool call, and 0 of 8 prefaced it
+with a caveat that the whole brief was already in view, against 6 of 8 on
+the original — the 09-25 entry's "self-declared non-blind reads" measure. A
+missing caveat is not a blind read; the brief is still one file.
+
+**Next pass measures:**
+- `provider_refusal` records among cold Claude voices on the new wording.
+  Two or more in the next 15: remove the section for Claude voices and use
+  step 6's two-turn withhold where independence matters.
+- Self-declared non-blind reads on real rounds; replay baseline 0/8 new,
+  6/8 old. If the opening read stops appearing, or arrives after the first
+  tool call, the wording lost the instrument: revise it.
+- `../write-spec/COLD-READ.md` asks its reader to "write down" a
+  reconstruction and return it. No block is on record for it and it was left
+  as is; look there first if a cold reader is refused.

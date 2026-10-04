@@ -12,6 +12,12 @@ from first principles. And it tells the reviewer honestly what has already
 looked at this range, including "nothing": that is what stops it either
 re-finding fixed defects or assuming defects were already caught.
 
+The reviewer's expectation is asked for as the opening of its answer. Keep it
+that way when you adapt the posture: a note to write down first and repeat
+word for word reads as a request to transcribe the reviewer's reasoning, and a
+Claude voice's provider refuses the turn for it (consult's EVIDENCE.md,
+2026-10-04).
+
 The structural block under Evaluate is a switch: keep it when the range
 decides structure — a new module, a reshaped interface, a real refactor — and
 delete it when the range is structurally inert, however large the diff.
@@ -39,10 +45,10 @@ maintainer will get, and what you have to work out for yourself is what the
 implementer can no longer see. Stand outside the whole thing and ask whether
 it achieved what it was for; that is the reading this round buys.
 
-**Before you open the implementation**, write down two or three sentences: what
-this work should let someone do, and how you would know it succeeded. Keep
-them — the gap between those and what shipped is what this round exists to
-find, and it is unrecoverable once you have read the code.
+**Open your answer with what you expect**, before you open the implementation:
+two or three sentences on what this work should let someone do, and how you
+would know it succeeded. Leave them as first written — the gap between those
+and what shipped is what this round exists to find.
 
 Because you have no design document to check against:
 
@@ -157,7 +163,7 @@ Nothing to name? Delete the section.»
 
 ## Output
 
-1. **What I expected** — the sentences you wrote before reading, verbatim.
+1. **What I expected** — the opening sentences, as first written.
 2. **The method** «only when the data section is kept» — before the verdict:
    is the right data pulled for the question, is data missing that would
    change the answer, is the approach sound, and which measured claims it
