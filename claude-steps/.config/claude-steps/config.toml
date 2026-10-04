@@ -3,12 +3,23 @@
 # cell shows when the latest of them happened in a session; it carries no
 # state. Anything no label lists still appears in the session's timeline.
 # Format and rules: ~/dev/claude-steps/README.md.
+#
+# The labels stand in the order a pull request goes through them, so a row of
+# the board reads left to right. Each names its hue: taken by place, the hues
+# would move whenever a label is added.
 
 [[label]]
 name = "consult"
 skills = ["consult"]
 snippets = ["consult-codex", "consult-verify"]
 jobs = ["consult-"]
+color = "blue"
+
+[[label]]
+name = "spec"
+skills = ["write-spec"]
+snippets = ["implement-spec"]
+color = "green"
 
 [[label]]
 name = "review"
@@ -16,20 +27,33 @@ skills = ["review"]
 snippets = ["review-implementation", "review-implementation-again", "review-verify"]
 jobs = ["review-"]
 count_commits = true
+color = "magenta"
 
 [[label]]
 name = "verify"
 skills = ["pl-loopy-verify"]
 count_commits = true
+color = "cyan"
 
-# Handoffs sit here because writing one is a docs pass. The handoff-for-review
-# snippet is left out of every label: it asks a later session to review.
+# Handoffs sit here because writing one is a docs pass, and distilling them
+# after the merge is another. The handoff-for-review snippet is left out of
+# every label: it asks a later session to review.
 [[label]]
 name = "docs"
-skills = ["update-docs", "pl-loopy-update-docs", "handoff", "pl-loopy-handoff", "pl-loopy-infra-handoff"]
+skills = ["update-docs", "pl-loopy-update-docs", "handoff", "pl-loopy-handoff", "pl-loopy-infra-handoff", "pl-loopy-handoff-distill"]
 count_commits = true
+color = "green"
+
+# The reviewers on the pull request itself, bots and people. `review` is the
+# cold round this session dispatches.
+[[label]]
+name = "pr-review"
+skills = ["pl-handle-code-review"]
+count_commits = true
+color = "cyan"
 
 [[label]]
 name = "prompts"
 skills = ["prompt-engineering"]
 snippets = ["prompt-check"]
+color = "blue"
