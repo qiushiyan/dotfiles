@@ -6,8 +6,8 @@
 # the mirror carries the working tree as-is. See docs/qiushi-mini.md § Sync.
 #
 # Also: the links of the packages the mini stows (STOW), CLI token files
-# (SECRETS), pnpm-global engines at the laptop's version (ENGINES), and the
-# laptop's theme, below.
+# (SECRETS), pnpm-global engines at the laptop's version (ENGINES), a reload
+# of the mini's tmux config when it changed, and the laptop's theme, below.
 #
 # Usage: mini-sync [-n|--dry-run] [-q|--quiet]
 #   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
@@ -44,6 +44,8 @@ ENGINES=(@obelisk-apps/cli)
 # The mini records the last theme this script applied there, so a theme
 # picked on the mini (prefix t) lasts until the laptop switches.
 THEME_STATE=.local/state/mini-sync/theme
+# And the hash of the last tmux.conf this script loaded into its tmux server.
+TMUX_STATE=.local/state/mini-sync/tmux-conf
 
 dry=() quiet=0 rc=0
 for arg in "$@"; do
@@ -140,6 +142,25 @@ if (( ${#dry[@]} )); then
   say "    would ensure the links"
 else
   ssh "$HOST" "mkdir -p ~/.local/bin && for n in ${LINKS[*]}; do ln -sfn ../../dotfiles/scripts/.local/bin/\$n ~/.local/bin/\$n; done"
+fi
+
+# A running tmux server keeps the config it read at start, so a binding added
+# on the laptop reaches the mirror and not the mini's keys. Re-source the
+# config when tmux.conf differs from the last one loaded there. With no server
+# running there is nothing to reload: the next one reads the file. A config
+# that fails to load is not recorded, so the next sync tries again.
+say "==> tmux config → $HOST (reload when changed)"
+conf=$(shasum -a 256 < "$REPO/tmux/.config/tmux/tmux.conf" | cut -d' ' -f1)
+loaded=$(ssh "$HOST" "cat ~/$TMUX_STATE 2>/dev/null" || true)
+if [[ $loaded == "$conf" ]]; then
+  say "    unchanged"
+elif (( ${#dry[@]} )); then
+  say "    would reload"
+elif ssh "$HOST" "if tmux info >/dev/null 2>&1; then tmux source-file ~/.config/tmux/tmux.conf || exit 1; fi; mkdir -p ~/${TMUX_STATE%/*} && echo $conf > ~/$TMUX_STATE"; then
+  say "    reloaded"
+else
+  echo "mini-sync: tmux config reload failed on $HOST" >&2
+  rc=1
 fi
 
 # The laptop's theme goes through the mini's own theme-set, which writes the

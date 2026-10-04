@@ -431,6 +431,13 @@ versions, links into the mirror for the scripts the mini runs by name, and
 the laptop's theme, applied only when the laptop switches, so a `prefix t`
 pick on the mini lasts until then.
 
+- **The mini's tmux re-reads `tmux.conf` when it changed.** A running server
+  keeps the config it read at start, so without this a binding added on the
+  laptop reaches the mirror and not the mini's keys. Each sync compares
+  `tmux.conf` with the last one it loaded there and runs `tmux source-file`
+  when they differ. An option set by hand in the mini's server is reset then,
+  where the config sets it. A config that fails to load fails the run and is
+  tried again at the next sync.
 - **Stowed packages are restowed every sync**, the ones named in `STOW`.
   Stow links per item, so a file added to or removed from a package on the
   laptop changes which links the mini needs; the restow makes and prunes them
