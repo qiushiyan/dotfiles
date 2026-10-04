@@ -310,3 +310,19 @@ missing caveat is not a blind read; the brief is still one file.
 - `../write-spec/COLD-READ.md` asks its reader to "write down" a
   reconstruction and return it. No block is on record for it and it was left
   as is; look there first if a cold reader is refused.
+
+**Revision pass, same day** (prompt-engineering rulebook, over the brief
+sections, both template comments and envoy's refusal wording). Fixed: the
+comments claimed the provider "refuses" where it can refuse, called
+Anthropic "a Claude voice's provider" against the skills' own use of
+provider, and pointed at this log instead of the rule's home, the
+rulebook's Right altitude rule; `BRIEF.md` said "the later sections say
+where the code moved you", which no output item asks for. Keeps, so the next
+pass leaves them: "or read past this heading" and the "before reading on"
+heading ask for what a one-message brief cannot give, but they are the text
+the replay ran (8 of 8 opened with the read, 0 of 8 with the caveat), and a
+phrase is a no-op only when a run says so; the two comments are echoes of
+the rulebook rule on purpose, since a host adapting a template reads the
+template; `../write-spec/COLD-READ.md` untouched as above. The final text of
+`BRIEF.md` differs from the replayed text by the one cut clause;
+`GOAL-BRIEF.md`'s wording has not been run.

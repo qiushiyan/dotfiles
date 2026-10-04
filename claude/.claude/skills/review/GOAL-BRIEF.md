@@ -12,11 +12,11 @@ from first principles. And it tells the reviewer honestly what has already
 looked at this range, including "nothing": that is what stops it either
 re-finding fixed defects or assuming defects were already caught.
 
-The reviewer's expectation is asked for as the opening of its answer. Keep it
-that way when you adapt the posture: a note to write down first and repeat
-word for word reads as a request to transcribe the reviewer's reasoning, and a
-Claude voice's provider refuses the turn for it (consult's EVIDENCE.md,
-2026-10-04).
+The reviewer's expectation is asked for as output: the opening of its answer.
+Keep that shape when you adapt the posture. A note to write down first and
+repeat word for word asks the reviewer to transcribe its reasoning, which
+Anthropic's classifier can refuse on a Claude voice (the rulebook's Right
+altitude rule, `../prompt-engineering/SKILL.md`).
 
 The structural block under Evaluate is a switch: keep it when the range
 decides structure — a new module, a reshaped interface, a real refactor — and

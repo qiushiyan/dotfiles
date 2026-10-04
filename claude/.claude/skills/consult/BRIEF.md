@@ -12,10 +12,11 @@ round's product; a voice that starts from our position critiques inside its
 frame. Same-file order is a nudge, not blinding — SKILL.md step 6 says when
 our position is withheld for a second turn instead.
 
-The read is asked for as the opening section of the answer. Keep it that way
-when you adapt the section: a note to write down first and repeat word for
-word reads as a request to transcribe the voice's reasoning, and a Claude
-voice's provider refuses the turn for it (EVIDENCE.md, 2026-10-04).
+The read is asked for as output: the opening section of the answer. Keep that
+shape when you adapt the section. A note to write down first and repeat word
+for word asks the voice to transcribe its reasoning, which Anthropic's
+classifier can refuse on a Claude voice (the rulebook's Right altitude rule,
+`../prompt-engineering/SKILL.md`).
 -->
 
 # Consult: «the question in one line — the outcome to reach or the symptom as seen, never the answer»
@@ -69,8 +70,7 @@ past this heading:
 
 This is a quick commitment, not the analysis — the code-grounded comparison
 comes later in your answer. Leave the section as first written: where it
-differs from what follows is the most valuable thing this round produces, and
-the later sections say where the code moved you.
+differs from what follows is the most valuable thing this round produces.
 
 ## Posture — first principles, grounded
 
