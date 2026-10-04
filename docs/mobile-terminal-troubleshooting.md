@@ -1,6 +1,7 @@
 # Mobile terminal troubleshooting
 
-Satellite of `docs/mobile-terminal-access.md`. Read this when Moshi cannot reach
+**Status: dormant**, with its spine. Satellite of
+`docs/mobile-terminal-access.md`. Read this when Moshi cannot reach
 the laptop, the `agents` session loses its sleep guard, or the access path is
 being changed.
 

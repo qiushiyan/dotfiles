@@ -107,10 +107,10 @@ stub.
 
 **Never delete through a path read from state.** A store directory, a pane
 option or a manifest field is empty exactly when the thing under test failed,
-and `Path("")` is `.`, the process's working directory. On 2026-09-28 a
-negative control, the cout suite run against a binary that does nothing,
-reached `shutil.rmtree(Path(""))` from the checkout and emptied `~/dotfiles`,
-`.git` included. Before a delete, check that the path is non-empty, absolute
+and `Path("")` is `.`, the process's working directory: a negative control
+run from the checkout, a suite against a binary that does nothing, reaches
+`shutil.rmtree(Path(""))` and empties the repository, `.git` included.
+Before a delete, check that the path is non-empty, absolute
 and inside the sandbox (`test-cout.py`'s `store()` is the pattern), and run
 suites from a scratch directory so a relative path can only land there. A
 negative control is the run where this state is guaranteed to be empty, so it

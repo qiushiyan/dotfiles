@@ -68,7 +68,7 @@ is the load-bearing mental model:
 | Ghostty | include is rewritten, but **macOS has no external config reload** (the `SIGUSR2` reload is Linux-only) | ⚠️ press **⌘⇧,** |
 | zsh prompt / `ls` colors | `_theme_sync` precmd re-reads the file before each prompt and re-applies on change | ✅ (next prompt; a shell held by a foreground command catches up when it returns) |
 
-Four consequences worth internalizing:
+Consequences worth internalizing:
 
 - **The statusline reads the file, not the env, on purpose.** A running Claude
   session inherited a now-stale `$TERMINAL_THEME` from its launching shell;
@@ -79,10 +79,10 @@ Four consequences worth internalizing:
   pin every pane to the theme active at server start. `theme.zsh` reads
   `~/.config/terminal-theme` **unconditionally**, and `theme-set` runs
   `tmux set-environment -g TERMINAL_THEME` so the server's env tracks the
-  switch too; new or renamed themes need no extra work. ⚠️ Don't reintroduce a
-  `-z "$TERMINAL_THEME"` guard around the read in `theme.zsh`: that one line
-  *is* the bug, and it only surfaces inside tmux, so it's easy to "optimize"
-  back in without noticing.
+  switch too; new or renamed themes need no extra work. A
+  `-z "$TERMINAL_THEME"` guard around that read is the bug, and
+  `zsh/.config/zsh/tests/theme-sync.test.zsh` pins the file beating an
+  inherited value.
 - **Ghostty can't be driven on macOS.** `theme-set` makes the *content* correct
   immediately; the *reload* is a manual keystroke. This is accepted, not a bug.
 - **A running shell catches up on its own, but only at a prompt.**

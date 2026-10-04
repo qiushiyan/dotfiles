@@ -42,10 +42,8 @@ reads them from the environment.
 - For theme additions or ports, follow `.claude/skills/add-theme/SKILL.md`
   (`/add-theme`, or `$add-theme` in Codex). `docs/theming.md` owns the system
   model across tools.
-- For shell startup, files sourced by `.zshrc`, or shell slowness, read
-  `docs/zsh.md` first. Keep `zsh/.config/zsh/git.zsh` usable without zle or
-  rc dependencies: `.zshenv` sources it in every zsh, non-interactive ones
-  included.
+- For shell startup, the modules under `zsh/.config/zsh/`, or shell slowness,
+  read `docs/zsh.md` first.
 
 For implementation requests, finish the authorized work and report the outcome
 and verification, including anything unverified. For design discussions, deliver
@@ -65,13 +63,7 @@ alias, shared with Codex) and repo-local skills in `.claude/skills/`; edit
 externally linked skills in their owning projects. Keep custom skills and
 forks out of `claude/.agents/.skill-lock.json`, because updates replace managed
 files; `docs/skill-customizations.md` says what an upgrade of an adapted skill
-must preserve. Install or update upstream skills globally, both agents
-selected, after checking for uncommitted skill edits:
-
-```bash
-npx skills@latest add <owner/repo> --skill <skill-name> -g -a claude-code codex -y
-npx skills@latest update -g -y
-```
+must preserve.
 
 After any skill edit, install, update, or removal, and after editing
 `docs/documentation-standards.md`, run `skill-sync`, then `skill-sync --check`,
@@ -83,25 +75,17 @@ Read the owning docs before changing a feature that spans packages:
 
 - **Claude context chip** (`claude/`, `tmux/`, `zsh/`):
   `tmux/.config/tmux/scripts/context-chip.md`. `tmux-agent-status.sh` alone
-  turns pane borders off; weekly quota comes from headroom.
-- **tmux pane control:** floating and relocation use
-  `tmux/.config/tmux/scripts/float-pane.md`; pane-mode bindings and undo use
-  `tmux/.config/tmux/scripts/pane-mode.md`.
+  turns pane borders off.
 - **Worktrees** (`tmux/`, `~/dev/gwt`, the clean-worktrees skill):
   `tmux/.config/tmux/scripts/worktree.md`. gwt owns placement, listing,
   every merged verdict and removal; the `prefix W` popup owns windows and
   prompts.
 - **Session board** (`tmux/`, `claude-steps/`, `~/dev/claude-steps`):
-  `tmux/.config/tmux/scripts/steps.md`. The `claude-steps` binary owns
-  reading transcripts, the events, the notes and every line the board shows,
-  painted and fitted; the `prefix S` popup owns keys and pane switching;
-  neither sends anything to a session.
+  `tmux/.config/tmux/scripts/steps.md`. Neither the `claude-steps` binary nor
+  the `prefix S` popup sends anything to a session.
 - **Claude accounts:** `docs/claude-accounts.md`. The `x*` launchers in
   `zsh/.config/zsh/claude.zsh` delegate routing and validation to headroom
   (`~/dev/headroom`); engine fixes belong in that project.
-- **Neovim-aware path copy** (`nvim/`, `tmux/`):
-  `tmux/.config/tmux/workflow.md`. Neovim publishes the pane options;
-  tmux reads them for `prefix y`/`Y`.
 
 ## Documentation
 
@@ -127,8 +111,5 @@ Additional routes beyond the feature docs above:
   tailnet and kept in sync by `mini-sync`: `docs/qiushi-mini.md`.
 - Unbuilt tmux features: `tmux/.config/tmux/roadmap.md`.
 - The personal Slack toolkit: the `slack` skill is `~/dev/slackkit`'s,
-  linked here; its design is that repo's `DESIGN.md`, and the plan that
-  built it, kept until PlanLab's `pl-slack` removal merges, is
-  `docs/slackkit-plan.md`.
-- TabType prompt snippets: `tabtype/CLAUDE.md`.
+  linked here; its design is that repo's `docs/`.
 

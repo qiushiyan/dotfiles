@@ -12,10 +12,10 @@ Work through it after §5a, before §5e.
 
 Manual downloads, by intent:
 
-- **Ghostty** — <https://ghostty.org/>. Cask was removed because the
-  source machine's install wasn't brew-managed.
+- **Ghostty** — <https://ghostty.org/>, installed from its own download
+  rather than a cask.
 - **Logitech G Hub** — <https://www.logitech.com/en-us/software/g-hub.html>.
-- **Karabiner-Elements** — currently commented out in `Brewfile`
+- **Karabiner-Elements** — commented out in `Brewfile`
   (`# cask "karabiner-elements"`). Install the cask manually if you
   use it — the brew install + driver kext approval flow is finicky
   enough that a manual download from <https://karabiner-elements.pqrs.org/>
@@ -47,14 +47,13 @@ checkbox. Just be aware of the categories:
   - Same panel, **Mission Control** → review the workspace shortcuts
     if you've remapped them via Karabiner.
 
-### 5d. Sync app state from the old Mac (lessons learned)
+### 5d. Sync app state from the old Mac
 
-> **Trap**: just because a config dir lives under `~/.config/<app>/`
-> doesn't mean it's part of this dotfiles repo. On the old Mac, several
-> dirs (e.g. `~/.config/zed`) were **real directories**, not symlinks
-> to the dotfiles repo — meaning the committed copy was stale relative
-> to the live config. Always `ls -la ~/.config/` on the old Mac and
-> diff the live file against the dotfiles version before assuming
+> **Trap**: a config dir under `~/.config/<app>/` is not necessarily part
+> of this dotfiles repo. One that is a **real directory** rather than a
+> symlink into the repo (`~/.config/zed`, for one) leaves the committed
+> copy stale relative to the live config. `ls -la ~/.config/` on the old
+> Mac and diff the live file against the dotfiles version before assuming
 > stow gave you the right state.
 
 #### Pattern for app-state rsync
@@ -88,7 +87,7 @@ mostly bloat).
 |---|---|---|
 | `db/` | yes | Recent projects + window state (sqlite) |
 | `threads/` | yes | Zed AI conversation history |
-| `extensions/` | yes (~574MB) | 47 extensions; faster than re-installing |
+| `extensions/` | yes (~574MB) | Faster than re-installing |
 | `external_agents/` | optional | State for in-Zed Claude Code/Codex — only if you used them |
 | `node/`, `languages/`, `debug_adapters/`, `prettier/`, `copilot/`, `hang_traces/` | no | Re-downloaded automatically; copilot just re-auth |
 

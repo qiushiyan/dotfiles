@@ -38,7 +38,6 @@ and placement result as an object. The binary's `--help` owns its full contract;
 `~/dev/gwt/README.md` owns installation, placement, verdict and removal
 design. The popup, `brief closeout` and the clean-worktrees skill all remove
 through `gwt remove`; the popup adds only its prompts and window cleanup.
-Run `zshreload` to pick up the `--cd` wrapper in an existing shell.
 
 ## Mental model
 

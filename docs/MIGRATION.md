@@ -94,8 +94,7 @@ prompting for sudo. What each installs or sets is in `scripts/bootstrap.sh`.
 |---|---|---|
 | GUI install dialog (Xcode CLT) | First-time only | Click through, then re-run `bootstrap.sh` |
 | **sudo password** during `brew bundle` | `xquartz`, `font-sf-mono`, `font-sf-pro` install system-wide | Stay near the keyboard; if you fat-finger it 3×, the formula errors and `brew bundle` aborts. Re-run after. |
-| `mongodb-community` failure | Mongo's brew formula breaks on each new macOS major | Currently commented out in `Brewfile`. If you actually need a local Mongo server, run it via Docker. |
-| The `homebrew/cask` / `homebrew/core` "tap failed" lines | Deprecated taps; brew prints scary text but it's noise | Ignore (they're already removed from `Brewfile`). |
+| `mongodb-community` failure | Mongo's brew formula breaks on each new macOS major | Commented out in `Brewfile`. If you actually need a local Mongo server, run it via Docker. |
 | `qiushiyan/local` tap fails / `tmux-popupfix` not found | That tap is local-only (no remote) — it carries the patched tmux formula | `brew tap-new qiushiyan/local`, copy `docs/tmux-popupfix.rb` to the tap's `Formula/`, re-run → `docs/tmux-popup-patch.md` |
 | `font-sarasa-gothic` takes a while and lands **793 MB** | One bundle of every Sarasa face | Let it → `docs/ghostty-fonts.md` § Choosing a CJK fallback |
 

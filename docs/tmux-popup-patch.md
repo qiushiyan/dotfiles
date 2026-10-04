@@ -7,21 +7,6 @@ fixes popups under `status-position top`. Upstream's 3.8 change log names broad
 redraw fixes around status lines, popups, and floating panes, but not this exact coordinate
 case; the reproduction harness remains the retirement gate.
 
-## Why jemalloc is required
-
-On macOS Tahoe / Apple Silicon, entering copy mode can abort in
-`window_copy_clone_screen → screen_reinit → grid_clear_lines → grid_free_line`
-with an invalid-memory free. Upstream suspects macOS `calloc` returning stale
-data and uses jemalloc to avoid it in 3.7c
-([issue #5385](https://github.com/tmux/tmux/issues/5385),
-[release fix](https://github.com/tmux/tmux/commit/e476c1230b958df0cb12977517d24b3dc931375b)).
-The formula explicitly depends on jemalloc and enables it at configure time.
-Keep both when updating; changing terminal settings does not supply this fix.
-
-The popup patch remains necessary: upstream `screen-redraw.c` is identical
-in 3.7b and 3.7c. Stock 3.7c reproduces the overwritten popup border; the
-patched build preserves it and the pane divider below it.
-
 ## The bug it fixes
 
 With the status bar at the **top** (this setup: `status 2` +
@@ -37,7 +22,9 @@ a top status bar the protected region lands `statuslines` rows too low; the
 patched functions are listed in the header of `docs/tmux-popupfix.rb`. With the
 default bottom status the two coordinate systems coincide, which is why
 upstream's regression test for the related fix (tmux PR #4920, commit
-`d71d38a`, already in 3.7b) passes despite this.
+`d71d38a`, already in 3.7b) passes despite this. Upstream `screen-redraw.c`
+is identical in 3.7b and 3.7c: stock 3.7c reproduces the overwritten popup
+border, and the patched build preserves it and the pane divider below it.
 
 Two related config changes live in `tmux/.config/tmux/tmux.conf` and are
 independent of the patch: the `sync` terminal feature for Ghostty (atomic
@@ -53,6 +40,10 @@ app bundle) and an explicit `popup-style`/`popup-border-style` background
   (`brew tap-new qiushiyan/local`, copy the file into its `Formula/`,
   `brew install qiushiyan/local/tmux-popupfix`); on a new machine `make brew`
   needs this first, since the tap has no remote.
+- **jemalloc stays in the formula**, as a dependency and at configure time,
+  matching stock Homebrew `tmux`: without it, entering copy mode on macOS
+  Tahoe / Apple Silicon can abort with an invalid-memory free
+  ([issue #5385](https://github.com/tmux/tmux/issues/5385)).
 - Stock Homebrew `tmux` is **unlinked**. Switching to it with
   `brew unlink tmux-popupfix && brew link tmux` drops the popup correction;
   retain it as a comparison build until the patch can be retired.

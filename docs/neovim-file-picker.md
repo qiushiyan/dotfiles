@@ -26,7 +26,7 @@ relative to `nvim/.config/nvim/lua/`.
 ## The plugins, and why
 
 - **fff.nvim** — the file/grep picker. Picked over snacks.picker for speed (Rust core, resident index, frecency ranking) and typo-resistant fuzzy matching. See `plugins/fff.lua`.
-- **snacks.picker** — folke's picker, still installed because it has well-built buffer / git-log / keymap pickers and we have no reason to replace those. See `plugins/snacks.lua`.
+- **snacks.picker** — folke's picker, installed for its well-built buffer / git-log / keymap pickers. See `plugins/snacks.lua`.
 - **mini.files** — the file explorer. Separate concern from the picker; fff doesn't do tree-style navigation. See `plugins/file-explorer.lua`.
 - **harpoon2** — bookmarks for a handful of important files, persistent across restarts and **shared across git worktrees**: the list is keyed by the repo's common `.git` dir and paths are stored worktree-relative, so a bookmark made in one checkout opens the corresponding file in whichever checkout is current (the custom `select` resolves against the current worktree root, cwd-independent). See `plugins/harpoon.lua`.
 
@@ -34,9 +34,9 @@ snacks.picker is the only general-purpose picker installed. Besides the keys abo
 
 ## How keys resolve when plugins overlap
 
-snacks.picker also ships a default `<leader><space>` binding. Lazy.nvim resolves duplicate `keys = { ... }` entries by spec order — files load alphabetically, so `snacks.lua` would normally win over `fff.lua`. Instead of relying on load order, the snacks keymap for `<leader><space>` and `<leader>/` was explicitly removed from `plugins/snacks.lua`. The other snacks keys stay.
+snacks.picker also ships a default `<leader><space>` binding. Lazy.nvim resolves duplicate `keys = { ... }` entries by spec order — files load alphabetically, so `snacks.lua` would normally win over `fff.lua`. Instead of relying on load order, `plugins/snacks.lua` leaves `<leader><space>` and `<leader>/` unbound, at a comment naming fff as their owner. The other snacks keys stay.
 
-If fff breaks and you need the old picker back fast: in `plugins/fff.lua`, set `enabled = false`, then re-add the two removed entries to `plugins/snacks.lua` (see the comment marker in that file pointing here).
+If fff breaks and you need the snacks picker on those keys fast: in `plugins/fff.lua`, set `enabled = false`, then bind them in `plugins/snacks.lua` at that comment.
 
 ## The `.env` problem and the `.ignore` workaround
 

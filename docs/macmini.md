@@ -1,7 +1,7 @@
 # Mac mini (`ssh macmini-shared`)
 
-> The steward host runs on `qiushi-mini` (`docs/qiushi-mini.md` § Steward
-> host); none of its files remain on this box.
+> The steward host is `qiushi-mini` (`docs/qiushi-mini.md` § Steward host),
+> not this box.
 
 A colleague's Mac mini on the company tailnet that I have a user account on,
 for development over SSH. It is a **shared, production-ish box**: the owner's

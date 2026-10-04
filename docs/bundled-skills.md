@@ -104,13 +104,6 @@ The saving is each hidden skill's name, description, and path
 ([progressive disclosure](https://learn.chatgpt.com/docs/build-skills)); a
 running conversation keeps what it already has, so measure in a fresh session.
 
-**Open: the desktop app.** Its bundled CLI 0.153.4 cannot render this
-configuration (it rejects the existing `tui.keymap.chat.prompt_stack_back`
-field). A running desktop session's refreshed catalog still listed the
-excluded system and cloud skills while omitting the manual-only entries; a
-fresh desktop process and manual invocation remain unchecked, and the cause is
-not established.
-
 ### Catalog measurement
 
 Capture the same prompt, model, working directory, and CLI version before and
@@ -124,8 +117,5 @@ Count the `### Available skills` portion of the `<skills_instructions>` text,
 ending before `</skills_instructions>`, as text rather than JSON escaping.
 `tiktoken` with `o200k_base` gives a reproducible estimate, not the serving
 model's exact usage. Catalog budgeting can change description lengths, so
-compare emitted text rather than subtracting file sizes.
-
-On the standalone CLI 0.154.0 the policy cut the default catalog from 70 to
-31 entries, about 55% of the catalog's estimated tokens — a share of skill
-context, not of the model window.
+compare emitted text rather than subtracting file sizes. The result is a
+share of skill context, not of the model window.

@@ -103,10 +103,10 @@ shared skill, so CLI instructions and query guidance update with its body.
 Keep its default invocation enabled; a manual-only override would prevent
 Claude from following the automatic documentation route.
 
-`rules/scoping.md` is inline rather than a pointer, because it has to act
-from the first turn, on every proposal. Codex's global `AGENTS.md`
+`rules/scoping.md` and `rules/docs.md` are inline rather than pointers,
+because they have to act from the first turn. Codex's global `AGENTS.md`
 (`codex/.codex/AGENTS.md`) carries the same text after the find-docs pointer;
-edit the pair together. The snapshot rule is off for Claude (see
+edit each rule and its copy together. The snapshot rule is off for Claude (see
 `docs/recovery.md` § Local snapshots) but still in Codex's `AGENTS.md`.
 
 `grill-with-docs` composes `grilling` with `domain-modeling`; the upstream
@@ -128,8 +128,8 @@ Which control to use depends on **who owns the file**:
   that `skills update` silently reverts; an override sits outside the file.
 
 ```jsonc
-// this repo's own .claude/settings.local.json — the live example
-"skillOverrides": { "emil-design-engineering": "user-invocable-only" }
+// claude/.claude/settings.json
+"skillOverrides": { "dataviz": "user-invocable-only" }
 ```
 
 The override states and what each hides are in
@@ -161,26 +161,21 @@ skill-sync --check
 ```
 
 `scripts/.local/share/dotfiles/skill-policy.yaml` owns Codex-only policy and
-names the Claude settings to read. The Codex controls derive from it:
+names the Claude settings to read. What Codex ends up with:
 
-- **Manual-only** is the union of `disable-model-invocation: true`, Claude's
-  global `user-invocable-only` override, and the manifest's `manual` paths; an
-  `on` override does not bypass a manual-only header. It becomes
-  `policy.allow_implicit_invocation: false` in the skill's `agents/openai.yaml`,
-  which [Codex](https://learn.chatgpt.com/docs/build-skills#optional-metadata)
-  keeps invocable but out of the default catalog. The manifest lists
-  runtime-owned or imported skills because their owners refresh that metadata;
-  removing one from `manual` stops managing it, so restore or remove its
-  generated field when retiring that override.
-- **Disabled** comes from a global `off` override, the manifest's `disabled`
-  paths, and every `SKILL.md` under `exclude_roots` (the Claude cloud cache).
-  Each becomes an exact-path entry in the marked final block of
-  `codex/.codex/config.toml`, which preserves same-named personal and plugin
-  skills. Put hand-edited settings before the generated block, which must
-  remain last.
-- **Project-local settings stay local:** translating them into shared metadata
-  would change other projects. `name-only` has no Codex equivalent and leaves
-  the header's policy.
+- **Manual-only:** a skill with `disable-model-invocation: true`, a global
+  `user-invocable-only` override, or a `manual` entry in the manifest stays
+  invocable but leaves Codex's default catalog, through
+  `policy.allow_implicit_invocation: false` in its `agents/openai.yaml`; an
+  `on` override does not lift it. Removing a path from `manual` stops
+  managing it, so restore or remove its generated field when retiring that
+  override.
+- **Disabled:** a global `off` override, a `disabled` entry, or a skill under
+  `exclude_roots` (the Claude cloud cache) becomes an exact-path entry in the
+  marked final block of `codex/.codex/config.toml`. Hand-edited settings go
+  before that block, which must remain last.
+- **Project-local settings stay local**, and `name-only` has no Codex
+  equivalent.
 
 The same command broadcasts shared documents:
 `scripts/.local/share/dotfiles/documents.yaml` lists each source and the
@@ -236,11 +231,10 @@ two forms.
 `prompt-engineering/SKILL.md` is ours and the **one home** for general writing
 rules; `writing-for-agents/` (from `mattpocock/skills`) is reached only for
 `SKILL-MECHANICS.md`. Rules flow one way: the sibling's body is never edited,
-so an update can only carry rules the rulebook has not judged yet. The first
-**fold baseline** is upstream folder hash
-`ad2925850efb8973a72d2e666f7a975f9a2d4a9b`; each sync records its new hash and
-verdicts as the newest entry in `prompt-engineering/EVIDENCE.md`, and whatever
-upstream adds after that entry is unreviewed.
+so an update can only carry rules the rulebook has not judged yet. Each sync
+records the upstream folder hash and its verdicts as the newest entry in
+`prompt-engineering/EVIDENCE.md`; whatever upstream adds after that entry is
+unreviewed.
 
 **The sync, monthly or when a pass on the rulebook runs:**
 

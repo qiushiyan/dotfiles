@@ -33,12 +33,39 @@ plugin setup and `.zlogin` does for login shells, including non-interactive
 
 `toolchain.zsh` owns CLI install directories for every shell mode. Add new
 tool paths there, not to a static `PATH` in Codex's `shell_environment_policy`:
-Codex inherits its environment and `.zshenv` supplies the paths even when the
-app starts from the GUI (`docs/codex-zsh-path-command-not-found.md`).
+Codex inherits its environment (`inherit = "all"`) and `.zshenv` supplies the
+paths even when the app starts from the GUI.
+
+```text
+symptom → an agent shell reports `command not found` for a CLI the terminal runs
+owner   → toolchain.zsh, sourced by .zshenv and reapplied by .zshrc and .zlogin
+causes  → the tool's directory is added only by .zshrc, which a non-interactive
+          shell skips; or a static PATH in Codex's shell_environment_policy.set
+          omits it
+```
+
+To see which startup mode loses the tool, probe each one from a bare `PATH`:
+
+```zsh
+for mode in -c -lc -ic -lic; do
+  print -r -- "mode=$mode"
+  /usr/bin/env PATH=/usr/bin:/bin:/usr/sbin:/sbin /bin/zsh "$mode" \
+    'whence -p <cli> node pnpm'
+done
+```
+
+Only the interactive modes finding it means path setup misplaced in `.zshrc`.
+A login mode selecting Homebrew's Node means the `.zlogin` reapplication is
+missing. Every mode finding it while the agent still fails means the agent's
+own environment override or a stale shell snapshot, which restarting the app
+refreshes. The setup shares installed-tool paths only: exports, credentials
+and a virtualenv activated in another terminal do not travel.
 
 ## Modules
 
 Sourced by `.zshenv`; `toolchain.zsh` first, then the rest in glob order.
+Every module therefore runs in every zsh, non-interactive ones included, so it
+depends on neither zle nor anything `.zshrc` sets up.
 
 ```
 zsh/.config/zsh/
@@ -78,7 +105,7 @@ that working:
   machine, such as its prompt badge or its SSH client quirks, goes in
   `hosts/<name>.zsh`. `.zshenv` sources it last, in every shell, when the
   untracked one-word `~/.config/machine` names it, so it can override a
-  module. A machine without a marker, currently the laptop, loads no host
+  module. A machine without a marker, as the laptop is, loads no host
   file. A marker naming a missing file warns in interactive shells only,
   since stderr in a non-interactive shell lands in tool output.
   `$HOST` is not the key because the mini reports a DHCP name (`Mac.lan`).
@@ -195,13 +222,9 @@ Read before editing.
   A widget created later gets no suggestion handling until
   `_zsh_autosuggest_bind_widgets` runs.
 - **`EQUALS` expansion is off, machine-wide** (`unsetopt EQUALS` in
-  `.zshenv`, whose comment has the mechanism). With it on, an agent's
-  bash-flavoured `cat a; echo ====; cat b` **aborts the rest of the eval'd
-  line** — `cat b` never runs, and the only clue is one error line. It lives in
-  `.zshenv` because the shells that hit it are non-interactive, and `.zshenv`
-  also reaches sessions running against a stale Claude shell snapshot. A
-  script that wants the default back uses `emulate zsh` or `zsh -f`; `=(...)`
-  process substitution is unaffected. Pinned by
+  `.zshenv`, whose comment has the mechanism): with it on, an agent's
+  bash-flavoured `echo ====` aborts the rest of the eval'd line. A script
+  that wants the default back uses `emulate zsh` or `zsh -f`. Pinned by
   `zsh/.config/zsh/tests/startup-options.test.zsh`.
 - **Measure, don't guess.** Profile with `zmodload zsh/zprof`; verify a perf
   change with an _interleaved_ A/B benchmark (`git stash` the change, time both

@@ -1,5 +1,12 @@
 # Mobile Terminal Access
 
+**Status: dormant.** Phone access goes through Claude Code Remote Control;
+this Mosh/Moshi path is not in use and is kept as the starting point for
+reviving it. It describes the setup as last run, and the machine has moved
+since: `mosh` is not installed, the tailnet hostnames differ, and a launchd
+caffeinate job runs where this doc keeps the laptop awake in-session. Re-check
+each fact before relying on it.
+
 A persistent setup for running terminal-based AI coding agents (Claude Code,
 Codex CLI, plain shell) on the home MacBook and reaching them from an iPhone
 without exposing the laptop to the public internet. This is the architecture and

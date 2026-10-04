@@ -101,8 +101,8 @@ is one coherent rulebook for model-facing text, shaped by our measured usage.
 Judge upstream writing improvements against that purpose; do not create a
 second authoritative writing guide. Skill mechanics remain a direct reference
 to upstream. The [sync procedure in agent-skills.md](agent-skills.md#the-rulebook-and-its-upstream-sibling--how-they-stay-in-sync)
-owns the fold baseline and review method; the rulebook's
-[evidence log](../claude/.claude/skills/prompt-engineering/EVIDENCE.md) records decisions.
+owns the review method; the rulebook's
+[evidence log](../claude/.claude/skills/prompt-engineering/EVIDENCE.md) records the fold baseline and each sync's decisions.
 
 ## Adding another customization
 

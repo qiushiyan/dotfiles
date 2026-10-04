@@ -22,15 +22,13 @@
 
   - Small scroll `ctrl + u` and `ctrl + d` (this is remapped to `ctrl + u/d zz`)
 
-- close all buffers `gb`, close current buffer `<leader>bd`
+- close current buffer `<leader>bd`
 
 - further scroll `ctrl + f` and `ctrl + b`
 
 - by a single line without cursor moving `ctrl + e` and `ctrl + y`
 
 - hover `gh` or `shift + k`
-
-- preview definition `gD`, go to preview window `<leader>l`
 
 - move to start `0` and end of line `$`
 
@@ -86,12 +84,6 @@
 
 Toggle current terminal `ctrl + /`
 
-- floating window `ctrl + backtick`
-
-- on the bottom `<leader>th`
-
-- on the right `<leader>Tv`
-
 ## File Operations
 
 ### File Explorer
@@ -118,15 +110,13 @@ means swapping the `editor.mini-files` extra in `lazyvim.json`.
 
 - close all other windows `ctrl + w + o`
 
-- close all other buffers `ctrl + b + o`
-
 ## Quickfix
 
 - search `/` and find next occur `n` and previous `N`
 
 - search and replace `<leader>sr`
 
-- grep search `<leader>/` and add to quickfix list `ctrl + g`, use `[q`, `]q` or
+- grep search `<leader>/` and add to quickfix list `ctrl + q`, use `[q`, `]q` or
   `cnext` and `cprevious` to navigate between them
 
 ## Marks
@@ -167,10 +157,6 @@ means swapping the `editor.mini-files` extra in `lazyvim.json`.
 - `zj` fold all level 1 headings, `zk` level 2 headings, `zl` level 3 headings
 
 - `zR` unfold all
-
-## AI
-
-- Accept suggestion `option + enter`
 
 ## Misc
 

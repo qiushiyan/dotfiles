@@ -5,7 +5,8 @@
 briefs (the closeout pass, the common post-merge case), the whole folder, or
 a question about what moves next. Satellite of
 `docs/doc-loop.md` — that doc places both in the session loop; this one says
-where the machinery lives, which is what you need before editing any of it.
+what a brief hands over and where the machinery lives, which is what you need
+before editing any of it.
 
 ## Three homes, and the split between them
 
@@ -17,7 +18,9 @@ The loop is split so that staleness cannot misroute a session:
   any surface this repo consumes** — it carries the contracts and the
   consumer rule, and routes to its `docs/` for each domain.
 - **`claude/.claude/skills/{handoff,distill-handoffs}/`** (here) — the judgment
-  half: what a brief says, when one is earned, what a sweep verdict is. Prose
+  half: what a brief says, when one is earned, what a sweep verdict is. A
+  gate in `/handoff` decides up front whether a stop is a full handoff, a
+  brief-only stop, or a doc pass with no brief at all. Prose
   only; the mechanism is the CLI (`brief closeout` is the sweep's input,
   `brief delete` its default retirement), and `handoff/SLUG-NAMING.md` is the
   slug contract.
@@ -41,6 +44,15 @@ pointer: invocation and goal, brief path, literal drift command, and pickup
 gate last. The agent reads the brief itself. Its paths are repo-relative so
 they survive the worktree switch; its prose calls itself "this brief" because
 it outlives its filename.
+
+The pointer's last line names the **pickup gate** — `build` or `design`,
+`claude/.claude/skills/handoff/pickup/` — which fixes the receiving session's
+first turn: no edits; a re-grounding written for the user, who picks a brief
+up days after writing it; the brief's premises checked against the code;
+and the next move named, usually `/consult`. `design` puts the problem and
+the approach on trial (a fix brief's claimed cause included) and names the
+end state the recommended step faces; `build` takes the direction as
+settled and tries the premises and the scope.
 
 `drift`, `show` and `check` accept the pointer's brief path from a checkout of
 its project. What each scans, and how little a clean result covers, is the

@@ -70,34 +70,17 @@ and the platform experiment's traps and verification limits.
 ## The handoff (`/handoff`, `~/dev/.handoffs`)
 
 The brief **is** the next session's first prompt, not a document about the work:
-`brief start <slug>` places the worktree and hands the session its pointer —
-the invocation and goal, the file's path, a literal drift command, and the
-pickup gate last. It lands at
-`~/dev/.handoffs/<project>/<slug>.md` (Planlab: `<route>/<slug>.md`), outside
-every worktree, carrying state, lessons and dead-ends with their _why_, and
-first moves. Planlab's folder is a clone of `planlab-ai/handoffs`, shared
-across machines and teammates.
+it carries state, lessons and dead-ends with their _why_, and first moves, and
+`brief start <slug>` places the worktree and hands the receiving session a
+pointer to it.
 
 A brief is earned by the gap it crosses. Work that continues in the session that
 investigated it crosses none: `/enter-worktree` names the branch, `gwt` places
 it, and the session follows it in still holding what a brief would have had to
 reconstruct.
 
-Two rules are worth knowing even from outside: a gate decides up front whether
-this is a full handoff, a brief-only stop, or a doc pass with no brief at all;
-and the slug names the **next** session's branch, so one token serves as brief,
-branch, worktree and PR lookup key.
-
-The pointer's last line names the **pickup gate** — `build` or `design`,
-`claude/.claude/skills/handoff/pickup/` — which fixes the receiving session's
-first turn: no edits; a re-grounding written for the user, who picks a brief
-up days after writing it; the brief's premises checked against the code;
-and the next move named, usually `/consult`. `design` puts the problem and
-the approach on trial (a fix brief's claimed cause included) and names the
-end state the recommended step faces; `build` takes the direction as
-settled and tries the premises and the scope.
-
-Where the machinery lives and which repo owns which half: `docs/handoff.md`.
+What the pointer carries, the pickup gate, the slug rule, where briefs live and
+which repo owns which half: `docs/handoff.md`.
 
 ## The doc shape that keeps onboarding cheap
 
@@ -114,6 +97,10 @@ For this repository the bindings are:
 - **Hot path:** the root `CLAUDE.md` alone. There is no mandatory onboarding
   set, so its cost is reported apart from package-local and landing-page costs,
   under the shared first-read budget.
+- **Index:** `docs/` itself. A doc's filename is its index entry, built from
+  the words its subject is searched by, and the root `CLAUDE.md` tells a
+  session to inspect the directory. `CLAUDE.md` routes a doc only when its
+  name would not lead a session to it or when it guards a cross-package edit.
 - **Small tools document themselves.** A script, config or CLI here owns how
   it works in its header, comments or `--help`; its doc owns what the user
   does with it and when, the patterns across tools, and the traps and
@@ -163,7 +150,7 @@ A complaint about a tool the loop runs — `brief`, a skill, obelisk, a
 snippet — is `/improve-tool <tool> [engine] [the complaint]`: a mining pass
 over the sessions that used it, with supported changes made in the owning
 tool and remeasured in later uses. Shared lessons belong in
-`lessons/agent-tooling/usage-lessons.md`.
+`lessons/.config/lessons/agent-tooling/usage-lessons.md`.
 
 ## Principles
 

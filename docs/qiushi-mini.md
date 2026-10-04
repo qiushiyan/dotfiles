@@ -116,10 +116,10 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
 | poppler | 26.09.0 | `brew install poppler` (`pdftotext` for planlab `debug:run` document reads) | `brew upgrade` |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
-| obelisk | the laptop's (0.2.6-rc.0 on 2026-10-01) | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` covers the mini's own sessions | `mini-sync` keeps it at the laptop's version (§ Sync) |
+| obelisk | the laptop's | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` covers the mini's own sessions | `mini-sync` keeps it at the laptop's version (§ Sync) |
 | portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
 
-Personal CLIs (headroom, envoy, brief, gwt, gopen, cout) come from the laptop through
+Personal CLIs (the `BINS` list in `mini-sync`) come from the laptop through
 `mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
 Karabiner-Elements is installed from its pkg, which needs `sudo` and so the
 mini's own screen or a terminal there. The `karabiner` package is stowed from
@@ -315,9 +315,9 @@ The mini's `theme-set` writes the theme include (`auto/theme.ghostty`) and
 (§ Sync). Ghostty reloads config only with ⌘⇧, or a restart.
 
 **Fonts** are the laptop's casks, `font-jetbrains-mono-nerd-font` and
-`font-sarasa-gothic`, installed into `~/Library/Fonts`. The files landed but
-were not registered: CoreText listed neither family, and Ghostty fell back to
-PingFang SC for CJK, until the files were registered once with
+`font-sarasa-gothic`, installed into `~/Library/Fonts`. A cask's files can
+land without being registered: CoreText then lists neither family and Ghostty
+falls back to PingFang SC for CJK, until the files are registered once with
 `CTFontManagerRegisterFontURLs(…, .user, …)` (what Font Book's Install does).
 After a font cask, verify with `ghostty +show-face --cp=0x4E2D`; it must name
 `Sarasa Term SC`.
@@ -342,9 +342,6 @@ stowed for what those sessions read: the reference material skills cite under
 prompts against for the session board (`prefix S`,
 `tmux/.config/tmux/scripts/steps.md`). The `claude-steps` package carries the
 board's labels.
-- Skills linked from other laptop projects dangle on the mini: `explain-diff`
-  (absolute `/Users/qiushi` path), `greenflag-*` (resolve once `~/dev/greenflag`
-  exists), `read-email`/`write-email` and `terminal-browser` (laptop-only).
 - The hooks and the statusline call `~/.config/tmux/scripts/*`, which the
   stowed `tmux` package provides (§ Shell). Those scripts no-op outside tmux.
 - A setting changed on the mini (`/config`, the `/model` default) writes
@@ -353,7 +350,7 @@ board's labels.
 **Context7:** `find-docs` runs `npx ctx7@latest` (node is in § Toolchain),
 and Codex's context7 MCP server reads the same key. The mini's `~/.secrets`
 (600, sourced by `.zshrc` as on the laptop) holds only the laptop's
-`CONTEXT7_API_KEY` line, copied by hand on 2026-09-27. mini-sync doesn't
+`CONTEXT7_API_KEY` line. mini-sync doesn't
 carry it, so after rotating the key, copy the line again.
 
 **Codex:** `~/.codex/config.toml` is **generated** from the laptop's by
@@ -371,10 +368,6 @@ into the mirror.
   which lacks the file credential store. Run
   `headroom accounts add --vendor codex --share-config <email>`. A bare
   `--share-config` links the mini primary's generated config.
-- headroom 81c3045 reads `.credentials.json` only for non-primary accounts.
-  So the Claude primary's board row says "credential unreadable", and
-  `headroom check` FAILs `keychain[primary]`/`blob[primary]`. Launch routing
-  and the Codex page are unaffected.
 
 ## planlab checkout
 

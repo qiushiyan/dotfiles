@@ -1,6 +1,7 @@
 # Reaching a dev server from the phone
 
-Satellite of `docs/mobile-terminal-access.md`. That doc gets you a **terminal**
+**Status: dormant**, with its spine. Satellite of
+`docs/mobile-terminal-access.md`. That doc gets you a **terminal**
 on the laptop; this one gets your phone's **browser** to a dev server running
 there. The two are independent channels over the same tailnet — Moshi is not
 involved in this path at all.
