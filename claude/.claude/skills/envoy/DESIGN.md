@@ -5,7 +5,7 @@ and rejected alternatives a future redesign needs but can't see in the skills
 themselves. Deliberately unlinked from any SKILL.md: runtime agents never
 need it. It describes current state only; the history behind it lives in the
 engine's evidence log (`~/dev/envoy/EVIDENCE.md`) and the skills' own
-(`../review/EVIDENCE.md`, shared by review and consult).
+(`../review/EVIDENCE.md`, `../consult/EVIDENCE.md`).
 
 ## The governing lesson
 
@@ -91,7 +91,11 @@ duet instead. Don't grow the engine.
   starts from the host's design critiques inside its frame and opens with
   "matches your framing". Same-file ordering is a sequencing nudge, not
   blinding, so where a wrong answer would cost an implementation cycle the
-  position is withheld until round 2 in the same session.
+  position is withheld until round 2 in the same session. The reading is
+  asked for as output, the opening section of the answer: a note to write
+  first and repeat word for word asks the voice to transcribe its reasoning,
+  which Anthropic's classifier can refuse on a Claude voice
+  (`../consult/EVIDENCE.md`, 2026-10-04).
 - **Probes falsify or they go.** A brief carries the areas the host doubts
   and the few observations that could change the decision — a lost dispatch
   traced at ten minutes, an hour and three hours once overturned a proposed
