@@ -15,6 +15,11 @@ What it holds:
   S5  nothing reached the real notes directory
   S6  prefix S, bound as tmux.conf binds it, opens the board in a popup on
       the client that pressed it
+  S7  the preview opens at its top, on the session's labels and newest steps,
+      however long the session is
+  S8  Tab flips the preview to the whole history and back
+  S9  the binary's colours reach the popup, and no row is wider than fzf
+      shows
 """
 import json, os, pathlib, pty, re, shlex, shutil, subprocess, sys, tempfile, threading, time
 
@@ -44,18 +49,21 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
     def run(args, check=True):
         return subprocess.run(args, env=env, check=check, text=True, capture_output=True, timeout=20)
 
-    def transcript(sid, title, prompt):
-        rows = [
-            {'type': 'ai-title', 'aiTitle': title, 'sessionId': sid},
-            {'type': 'user', 'uuid': 'u1', 'timestamp': '2026-10-01T09:00:00.000Z', 'isSidechain': False, 'cwd': td, 'promptId': 'p1',
-             'origin': {'kind': 'human'}, 'promptSource': 'typed', 'message': {'role': 'user', 'content': prompt}},
-        ]
+    def transcript(sid, title, *prompts):
+        rows = [{'type': 'ai-title', 'aiTitle': title, 'sessionId': sid}]
+        for n, prompt in enumerate(prompts):
+            rows.append({'type': 'user', 'uuid': f'u{n}', 'timestamp': f'2026-10-01T09:{n:02d}:00.000Z', 'isSidechain': False, 'cwd': td, 'promptId': f'p{n}',
+                         'origin': {'kind': 'human'}, 'promptSource': 'typed', 'message': {'role': 'user', 'content': prompt}})
         path = home/'.claude/projects/-work'/(sid+'.jsonl')
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(''.join(json.dumps(r)+'\n' for r in rows))
 
+    # One label, and a beta session with more steps under it than the preview
+    # has rows: a prompt that names the label's skill is a step.
+    (home/'.config/claude-steps').mkdir(parents=True)
+    (home/'.config/claude-steps/config.toml').write_text('[[label]]\nname = "verify"\nskills = ["pl-loopy-verify"]\n')
     transcript(ALPHA, 'Alpha session', 'start the alpha work')
-    transcript(BETA, 'Beta session', 'start the beta work')
+    transcript(BETA, 'Beta session', 'start the beta work', *(f'check {n:02d}: run pl-loopy-verify again' for n in range(1, 41)))
     transcript(GAMMA, 'Gamma session', 'a later session in the same pane')
     notes = home/'.local/state/claude-steps/notes'
 
@@ -91,8 +99,8 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
                 pass
         threading.Thread(target=drain, daemon=True).start()
 
-        def screen():
-            return run(tmux+['capture-pane', '-pt', board]).stdout
+        def screen(colour=False):
+            return run(tmux+['capture-pane', '-p']+(['-e'] if colour else [])+['-t', board]).stdout
         def wait(what, ready, seconds=8):
             deadline = time.monotonic()+seconds
             while time.monotonic() < deadline:
@@ -117,6 +125,24 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         assert 'Alpha session   aaaaaaaa' not in cap, 'the preview is the origin pane\'s session, not the first row\'s:\n'+cap
         print('PASS S1: the board lists every Claude pane and starts on the pane the key was pressed in')
 
+        # The first screen of the preview is the top of the session: its label
+        # with the latest event, and the newest steps. The oldest are below.
+        assert re.search(r'verify +\d+ \w+ ago +you: "check 40', cap) and 'no collect seen' in cap, 'the label row is not on the first screen:\n'+cap
+        assert 'check 39' in cap and 'check 01' not in cap, 'the preview did not open at its top:\n'+cap
+        print('PASS S7: the preview opens on the session\'s labels and newest steps')
+
+        keys('Tab')
+        cap = wait('Tab did not show the history', lambda c: '─ history ─' in c and re.search(r'^ *history *$', c, re.M))
+        assert re.search(r'verify +\d+ \w+ ago +you: "check 40', cap), 'the history lost the labels above it:\n'+cap
+        keys('Tab')
+        wait('Tab did not go back to the steps', lambda c: '─ steps ─' in c and re.search(r'^ *steps *$', c, re.M))
+        print('PASS S8: Tab flips the preview to the whole history and back')
+
+        # The label's name is in its hue in the list's header and in the
+        # preview: the binary writes through a pipe here and paints anyway.
+        painted = screen(colour=True)
+        assert painted.count('\x1b[34mverify') >= 2, 'the label is not painted in the list and the preview:\n'+repr(painted)
+
         # The beta pane moves to another session while the board is open. The
         # note still belongs to the session the row showed.
         run(tmux+['set-option', '-p', '-t', pane_b, '@claude_ctx_sid', GAMMA])
@@ -136,9 +162,18 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         keys('Up')
         wait('the cursor did not move to the alpha row', lambda c: 'Alpha session   aaaaaaaa' in c)
         keys('C-n'); wait('note field', lambda c: 'note >' in c and 'for session aaaaaaaa' in c)
-        keys('-l', 'alpha is waiting on the migration'); keys('Enter')
+        keys('-l', 'alpha is waiting on the migration, which the platform team runs on Thursday afternoon'); keys('Enter')
         cap = wait('the list did not reload with the note', lambda c: 'ctrl-n note' in c and c.count('alpha is waiting on the migration') >= 2)
         assert 'Alpha session   aaaaaaaa' in cap and 'Gamma session   cccccccc' not in cap, 'the cursor left its row after the reload:\n'+cap
+
+        # The row with the note is wider than the pane, so the binary cut it
+        # to the width fzf gives a row. A row fzf cuts itself ends in "··" and
+        # loses the note.
+        width = int(run(tmux+['display-message', '-p', '-t', board, '#{pane_width}']).stdout)
+        row = next(l for l in cap.splitlines() if 'Alpha session' in l and 'one:0.0' in l)
+        assert width < 100, f'the pane is {width} columns: too wide for the note to need cutting'
+        assert '··' not in cap and row.rstrip().endswith('…') and len(row.rstrip()) == width-1, f'the row was not fitted to {width} columns:\n'+cap
+        print('PASS S9: the binary\'s colours reach the popup, and a row is cut to the width fzf shows')
         keys('Down')
         wait('the cursor did not move back', lambda c: 'Gamma session   cccccccc' in c)
         print('PASS S3: the list reloads with the note and keeps its cursor')

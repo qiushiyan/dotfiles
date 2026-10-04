@@ -59,12 +59,13 @@ Mechanics, cache freshness, responsive thresholds, and cleanup ownership:
 
 Several agents are running and you can't remember whether this one was reviewed, or whether the docs pass came before or after the last commits. Don't ask the session: that costs it a turn.
 
-- **`prefix S`** opens the board: one row per pane running Claude, starting on the pane you pressed it in. Each step column (review, verify, docs, …) shows **when it last ran** and **`+N` commits since**; `read` in front means the skill's file was only read, `named` that a prompt only named it, `·` that nothing matches. The row ends with the session's PRs, compaction count and your latest note.
-- The **preview** is that session's timeline: skills, review and consult rounds and their collects, commits with their subject, PRs, compactions, notes.
+- **`prefix S`** opens the board: one row per pane running Claude, starting on the pane you pressed it in. Each step column (review, verify, docs, …) shows **when it last ran** (`11m`, `2d`) and **`+N` commits since**, bold when there are any; `read` in front means the skill's file was only read, `named` that a prompt only named it, `·` that nothing matches. **`no collect`** dates the newest round dispatched with no collect seen. The row ends with the session's PRs and your latest note; `!` before a title means its transcript was read with something missing.
+- The **preview** is that session, newest first: each step's latest run and the commits since, the rounds with no collect seen, your notes, then its **steps**, which are what ran under a step column and your notes, with the commits between as a count.
+- **`tab`** flips the preview to the session's whole history: every skill, round, commit with its subject, PR and compaction.
 - **`enter`** switches to the pane. **`ctrl-n`** writes a **note** for that session (free text; it follows the session across resumes). `ctrl-d`/`ctrl-u` scroll the preview.
-- In a Claude pane's shell: `claude-steps show`, `claude-steps note <pane or session> <text>`.
+- In a Claude pane's shell: `claude-steps show` (`--all` for the history), `claude-steps note <pane or session> <text>`.
 
-The board reads the sessions' transcript files and tells the sessions nothing. The columns are in `~/.config/claude-steps/config.toml`.
+The board reads the sessions' transcript files and tells the sessions nothing. The columns and their colours are in `~/.config/claude-steps/config.toml`.
 
 ## Codex status surfaces
 
@@ -269,7 +270,7 @@ Each save first puts any floated pane (`prefix z`) back in its window; a save th
 | split | `prefix \|` side-by-side · `prefix -` stacked |
 | worktree | `prefix W` → type name → `ctrl-n` |
 
-**Sessions** — `prefix S` board of every Claude pane: when each step (review, verify, docs, …) last ran and the commits since, PRs, compactions, notes (`Enter` switch · `ctrl-n` note · `Esc` close)
+**Sessions** — `prefix S` board of every Claude pane: when each step (review, verify, docs, …) last ran and the commits since, rounds with no collect, PRs, notes (`Enter` switch · `Tab` history · `ctrl-n` note · `Esc` close)
 
 **Rename** — window `prefix m` · pane `prefix M` popup (`Enter` apply · empty = clear · `Esc` cancel) · session `prefix $`
 

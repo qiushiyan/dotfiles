@@ -93,8 +93,9 @@ Read the owning docs before changing a feature that spans packages:
   prompts.
 - **Session board** (`tmux/`, `claude-steps/`, `~/dev/claude-steps`):
   `tmux/.config/tmux/scripts/steps.md`. The `claude-steps` binary owns
-  reading transcripts, the events and the notes; the `prefix S` popup owns
-  keys and pane switching; neither sends anything to a session.
+  reading transcripts, the events, the notes and every line the board shows,
+  painted and fitted; the `prefix S` popup owns keys and pane switching;
+  neither sends anything to a session.
 - **Claude accounts:** `docs/claude-accounts.md`. The `x*` launchers in
   `zsh/.config/zsh/claude.zsh` delegate routing and validation to headroom
   (`~/dev/headroom`); engine fixes belong in that project.
