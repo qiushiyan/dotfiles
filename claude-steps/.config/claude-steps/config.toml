@@ -24,7 +24,7 @@ color = "green"
 [[label]]
 name = "review"
 skills = ["review"]
-snippets = ["review-implementation", "review-implementation-again", "review-verify"]
+snippets = ["review-verify"]
 jobs = ["review-"]
 count_commits = true
 color = "magenta"
@@ -36,8 +36,7 @@ count_commits = true
 color = "cyan"
 
 # Handoffs sit here because writing one is a docs pass, and distilling them
-# after the merge is another. The handoff-for-review snippet is left out of
-# every label: it asks a later session to review.
+# after the merge is another.
 [[label]]
 name = "docs"
 skills = ["update-docs", "pl-loopy-update-docs", "handoff", "pl-loopy-handoff", "pl-loopy-infra-handoff", "pl-loopy-handoff-distill"]
