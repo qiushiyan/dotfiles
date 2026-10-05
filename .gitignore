@@ -23,6 +23,10 @@ claude/.claude/*
 claude/.claude/skills/**/*.skill
 # Account-scoped cloud downloads are runtime cache, not personal skill sources.
 claude/.claude/skills/synced/
+# terminal-browser's skill is a link its own installer writes, as an absolute
+# path into that machine's home (`terminal-browser setup` and `upgrade`
+# rewrite it), so each machine keeps its own and none holds a broken one.
+claude/.claude/skills/terminal-browser
 # Purchased upstream material stays local; only its pin/procedure is public.
 claude/.claude/skills/tailwind-best-practices/.upstream/*
 !claude/.claude/skills/tailwind-best-practices/.upstream/PINNED.txt

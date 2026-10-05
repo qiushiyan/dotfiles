@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.snapshot</string>
+
+  <!-- A daily APFS snapshot of the Data volume, kept 7 days, while Time
+       Machine has no destination; once it has one, the run is a no-op.
+       docs/recovery.md. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushiyan/.local/bin/snapshot</string>
+    <string>--daily</string>
+  </array>
+
+  <!-- Midday. The mini is always on; launchd runs a missed
+       calendar slot on wake, but not one missed while powered off. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>13</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/snapshot.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/snapshot.log</string>
+</dict>
+</plist>

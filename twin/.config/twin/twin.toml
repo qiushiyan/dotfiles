@@ -1,0 +1,211 @@
+# What twin manages across the two workstations. The one declaration: nothing
+# about targets is compiled into twin except the paths it never carries.
+# docs/qiushi-mini.md describes the machines.
+
+# The machine that runs the reconciler. The other hands it every `files`
+# command, so carried files move only while this one is awake.
+reconciles = "mac"
+
+# ssh is the alias the other machine reaches this one by. packages is the
+# machine's stow list; without one it takes the Makefile's default set.
+[machines.mac]
+ssh = "mac"
+
+[machines.mini]
+ssh = "mini"
+packages = [
+  "claude", "claude-steps", "codex", "ghostty", "git", "gwt", "karabiner",
+  "launchd-mini", "lessons", "nvim", "ohmyposh", "scripts", "tabtype", "tmux",
+  "twin", "zsh",
+]
+
+[dotfiles]
+repo = "dotfiles"
+# Tables Codex writes as it runs. A render keeps them from the local file,
+# and an edit inside them is never drift.
+codex_runtime_tables = ["projects", "hooks.state", "tui.model_availability_nux"]
+
+# ---- Files outside any repository ----
+# Literal paths under $HOME, never a wildcard. ~/.secrets.shared holds the
+# keys both machines use; ~/.secrets stays on its machine and is protected.
+[home]
+carry = [
+  ".aws/config",
+  ".bench/.env",
+  ".config/planlab/dev.json",
+  ".config/slack",
+  ".config/slack-digest",
+  ".gitconfig.personal",
+  ".planlab/.env",
+  ".secrets.shared",
+]
+
+# ---- Repositories ----
+# carry lists gitignored paths in the main checkout, files or directories.
+# branch, when set, is the only branch `repos pull` will fast-forward.
+
+[repos.dotfiles]
+path = "~/dotfiles"
+url = "https://github.com/qiushiyan/dotfiles.git"
+
+[repos.wiki]
+path = "~/wiki"
+url = "https://github.com/qiushiyan/wiki.git"
+
+[repos.twin]
+path = "~/dev/twin"
+url = "https://github.com/qiushiyan/twin.git"
+
+[repos.planlab]
+path = "~/dev/planlab/main"
+url = "https://github.com/planlab-ai/main.git"
+carry = [
+  "application/.env.development.local",
+  "application/tests/e2e/loopy-stress/.env.smoke.local",
+]
+
+[repos.planlab-handoffs]
+path = "~/dev/.handoffs/planlab-main"
+url = "https://github.com/planlab-ai/handoffs.git"
+branch = "main"
+
+[repos.itell]
+path = "~/dev/itell"
+url = "https://github.com/learlab/itell.git"
+carry = [
+  "apps/platform/.env",
+  "apps/platform/.env.local",
+  "apps/platform/.env.production",
+  "apps/platform/examples.local/dashboard/.env.local",
+  "legacy/demo/.env",
+  "legacy/demo/.env.production",
+  "legacy/preview/.env",
+]
+
+[repos.itell-cms]
+path = "~/dev/itell-cms"
+url = "https://github.com/learlab/itell-cms.git"
+carry = [".env", ".env.production"]
+
+[repos.brief]
+path = "~/dev/brief"
+url = "https://github.com/qiushiyan/brief.git"
+
+[repos.ccclean]
+path = "~/dev/ccclean"
+url = "https://github.com/qiushiyan/ccclean.git"
+
+[repos.claude-steps]
+path = "~/dev/claude-steps"
+url = "https://github.com/qiushiyan/claude-steps.git"
+
+[repos.cout]
+path = "~/dev/cout"
+url = "https://github.com/qiushiyan/cout.git"
+
+[repos.degit]
+path = "~/dev/degit"
+url = "https://github.com/qiushiyan/degit.git"
+
+[repos.envoy]
+path = "~/dev/envoy"
+url = "https://github.com/qiushiyan/envoy.git"
+
+[repos.explain-diff]
+path = "~/dev/explain-diff"
+url = "https://github.com/qiushiyan/explain-diff.git"
+carry = ["resources"]
+
+[repos.gopen]
+path = "~/dev/gopen"
+url = "https://github.com/qiushiyan/gopen.git"
+
+# .greenflag holds working documents its own .gitignore ignores, beside two
+# files git tracks; the tracked ones stay git's.
+[repos.greenflag]
+path = "~/dev/greenflag"
+url = "https://github.com/qiushiyan/greenflag.git"
+carry = [".greenflag"]
+
+[repos.gwt]
+path = "~/dev/gwt"
+url = "https://github.com/qiushiyan/gwt.git"
+
+[repos.headroom]
+path = "~/dev/headroom"
+url = "https://github.com/qiushiyan/headroom.git"
+
+[repos.jev-openrouter-gallery]
+path = "~/dev/jev-openrouter-gallery"
+url = "https://github.com/qiushiyan/jev-openrouter-gallery.git"
+carry = [".env"]
+
+[repos.mailkit]
+path = "~/dev/mailkit"
+url = "https://github.com/qiushiyan/mailkit.git"
+
+[repos.raycast-tab-utils]
+path = "~/dev/raycast-tab-utils"
+url = "https://github.com/qiushiyan/raycast-tab-utils.git"
+
+[repos.slackkit]
+path = "~/dev/slackkit"
+url = "https://github.com/qiushiyan/slackkit.git"
+
+# HANDOFF.md is ignored by each clone's .git/info/exclude, not by the tree.
+[repos.tabtype]
+path = "~/dev/tabtype"
+url = "https://github.com/qiushiyan/TabType.git"
+carry = ["HANDOFF.md", "espanso-docs", "screenshots.local"]
+
+# ---- Tools: what each machine installs for itself ----
+# A method, never a command line: the build lives in the tool's repository.
+
+[tools.brief]
+method = "make-install"
+repo = "brief"
+
+[tools.claude-steps]
+method = "make-install"
+repo = "claude-steps"
+
+[tools.cout]
+method = "make-install"
+repo = "cout"
+
+[tools.envoy]
+method = "make-install"
+repo = "envoy"
+
+[tools.gopen]
+method = "make-install"
+repo = "gopen"
+
+[tools.gwt]
+method = "make-install"
+repo = "gwt"
+
+[tools.headroom]
+method = "make-install"
+repo = "headroom"
+
+[tools.slackkit]
+method = "make-install"
+repo = "slackkit"
+
+[tools.twin]
+method = "make-install"
+repo = "twin"
+
+# The engine behind the obelisk skill. The skill is written against one
+# version, so this pin is the one both machines install.
+[tools.obelisk]
+method = "pnpm-global"
+package = "@obelisk-apps/cli"
+version = "0.2.6-rc.0"
+
+[tools.tabtype]
+method = "release-installer"
+repo = "tabtype"
+script = "scripts/install-release.sh"
+app = "TabType"

@@ -5,7 +5,11 @@
 #   docs/         repo documentation, lives here only
 #   references/   repo-only reading, opened at ~/dotfiles/references
 #   node_modules/ the root package.json's install, gitignored
-PACKAGES := $(filter-out vpn-private/ docs/ references/ node_modules/,$(sort $(dir $(wildcard */))))
+#   launchd-*/    one package of launchd agents per machine: only the one
+#                 ~/.config/machine names is stowed, and none without a marker
+MACHINE := $(shell cat $(HOME)/.config/machine 2>/dev/null | tr -d '[:space:]')
+OTHER_LAUNCHD := $(filter-out launchd-$(MACHINE)/,$(wildcard launchd-*/))
+PACKAGES := $(filter-out vpn-private/ docs/ references/ node_modules/ $(OTHER_LAUNCHD),$(sort $(dir $(wildcard */))))
 
 # Dirs that must exist as REAL directories before stowing, so stow folds only
 # the tracked config inside them (per-item symlinks) instead of replacing the

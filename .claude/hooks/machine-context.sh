@@ -20,6 +20,16 @@ name=""
 
 if [[ -n $name && -r $dir/$name.md ]]; then
   cat "$dir/$name.md"
+  # What this checkout has unsent or behind, on both machines, from twin's
+  # recorded observations: --recorded asks neither the network nor the other
+  # machine. A twin that is absent, or slower than the limit, adds nothing.
+  if command -v twin >/dev/null 2>&1; then
+    state=$(perl -e 'alarm shift; exec @ARGV' "${TWIN_HOOK_LIMIT:-4}" twin status dotfiles --recorded 2>/dev/null)
+    rc=$?
+    if (( rc <= 2 )) && [[ -n $state ]]; then
+      printf '\n`twin status dotfiles --recorded`, as this session started:\n\n%s\n' "$state"
+    fi
+  fi
   exit 0
 fi
 

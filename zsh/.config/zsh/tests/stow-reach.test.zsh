@@ -106,6 +106,25 @@ case_list_skips_non_packages() {
   return $rc
 }
 
+# launchd agents live in one package per machine, and the list names only the
+# one ~/.config/machine names: a plist carries its machine's home path, and an
+# agent loaded on the wrong machine runs there. With no marker it names
+# neither. Asked of the real Makefile in a scratch tree and a scratch HOME.
+case_list_names_this_machines_launchd_only() {
+  local tmp out rc=0 name want
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/sr-launchd.XXXXXX") || return 1
+  mkdir -p "$tmp"/tree/{launchd-mac,launchd-mini,zsh} "$tmp/home/.config"
+  for name want in mac "launchd-mac/ zsh/" mini "launchd-mini/ zsh/" "" "zsh/"; do
+    if [[ -n "$name" ]]; then print -r -- "  $name  " > "$tmp/home/.config/machine"
+    else rm -f "$tmp/home/.config/machine"
+    fi
+    out=$(HOME="$tmp/home" make -s -f "$DOT/Makefile" -C "$tmp/tree" list 2>&1)
+    [[ "$out" == "$want" ]] || { print "marker ${(qqq)name}: make -s list said ${(qqq)out}, want ${(qqq)want}"; rc=1 }
+  done
+  [[ -n "$tmp" && -d "$tmp" ]] && rm -rf -- "$tmp"
+  return $rc
+}
+
 # scripts/ holds repo-only entry points run as ./scripts/<name>; its
 # .stow-local-ignore keeps them out of HOME. Asked of stow itself, as a dry run
 # into a scratch target, so a regex that stopped matching fails here too.
@@ -127,6 +146,7 @@ t "claude/.claude/CLAUDE.md is empty"                      case_global_memory_em
 t "no <pkg>/CLAUDE.md stows to ~/CLAUDE.md"                case_no_package_claude_md_reaches_home
 t "tabtype package docs stay out of HOME"                  case_tabtype_docs_stay_repo_local
 t "make list names no non-package directory"              case_list_skips_non_packages
+t "make list names this machine's launchd package only"   case_list_names_this_machines_launchd_only
 t "scripts entry points stay out of HOME"                  case_scripts_entry_points_stay_repo_local
 
 print -r -- "stow-reach.test: $PASS passed, $FAIL failed"
