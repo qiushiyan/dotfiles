@@ -22,8 +22,9 @@ OAuth logins, ~/.secrets,  nothing: per machine by design
   node_modules, build output
 ```
 
-`twin` never commits, pushes or merges. It changes tracked files only inside
-`twin repos pull` and `twin repos clone`.
+`twin` never commits, pushes or merges. It changes tracked files only when a
+person runs `twin sync`, `twin repos pull` or `twin repos clone`; the hourly
+tick never does.
 
 The manifest is `twin/.config/twin/twin.toml`, stowed to
 `~/.config/twin/twin.toml`: the repositories both machines hold, each one's
@@ -79,6 +80,31 @@ this repository gets `twin status dotfiles --recorded` at session start
 (`.claude/hooks/machine-context.sh`).
 
 ## Common cases
+
+### After a push: one command
+
+```bash
+twin sync                  # both machines: pull what is behind, install what moved, apply dotfiles
+                           # if it moved, sync carried files; ends with the status of both
+twin sync headroom gwt     # only these targets
+twin sync --here           # only this machine
+```
+
+```text
+mac headroom: updated 3f2a1c9 to 8b7d0e4
+mini headroom: updated 3f2a1c9 to 8b7d0e4
+installed headroom on mac
+installed headroom on mini
+attention: none
+```
+
+It does only what is behind: a repository that is current is not pulled, and
+a tool whose checkout did not move is not rebuilt. It never forces. A main
+checkout with uncommitted work or a diverged branch is left alone and listed
+as `pull refused`, and a tool is not built from a checkout holding
+uncommitted changes. It pulls main checkouts, not linked worktrees, and it
+cannot move what was never pushed: that shows in the final block as
+`unpublished`. The sections below are the same steps one at a time.
 
 ### A commit made here is needed there
 
