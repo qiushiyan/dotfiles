@@ -170,6 +170,15 @@ test_marker_loads_its_host() {
     "PROMPT_MACHINE and the mini's aws wrapper"
 }
 
+# The laptop's marker loads its host file silently and sets no badge: a
+# badge always means another machine.
+test_mac_marker_sets_no_badge() {
+  sandbox
+  print mac >"$H/.config/machine"
+  eq "unset 0" "$(probe -c 'print -r -- ${PROMPT_MACHINE:-unset} $+functions[aws]' 2>&1)" \
+    "PROMPT_MACHINE and the mini's aws wrapper, with stderr"
+}
+
 # A marker naming no host file: silent where stderr is tool output, loud
 # where a person reads it.
 test_unknown_marker_warns_only_interactively() {
@@ -193,6 +202,7 @@ t "interactive git() is git.zsh's, not shadowed"           test_interactive_git_
 t "fpath ignores what the shell inherited"                 test_fpath_ignores_inheritance
 t "no ~/.config/machine loads no host file"                test_no_marker_loads_no_host
 t "~/.config/machine loads its tracked host file"          test_marker_loads_its_host
+t "the mac's host file is silent and sets no badge"         test_mac_marker_sets_no_badge
 t "an unknown machine warns only interactively"            test_unknown_marker_warns_only_interactively
 
 rm -rf "${TMPDIR:-/tmp}"/port-test.*(N)

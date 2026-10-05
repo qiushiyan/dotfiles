@@ -104,6 +104,7 @@ prompting for sudo. What each installs or sets is in `scripts/bootstrap.sh`.
 
 ```
 mkdir -p ~/dev          # project checkouts live here; ~/dev/.worktrees beside them
+echo mac > ~/.config/machine   # which machine this is (docs/zsh.md § Machines)
 
 # Python — route user-level CPython through uv to dodge the multi-Python mess.
 # Brew installs python@3.14 transitively (apache-arrow, awscli, gdal, …);

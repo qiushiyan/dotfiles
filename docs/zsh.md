@@ -105,9 +105,11 @@ that working:
   machine, such as its prompt badge or its SSH client quirks, goes in
   `hosts/<name>.zsh`. `.zshenv` sources it last, in every shell, when the
   untracked one-word `~/.config/machine` names it, so it can override a
-  module. A machine without a marker, as the laptop is, loads no host
-  file. A marker naming a missing file warns in interactive shells only,
-  since stderr in a non-interactive shell lands in tool output.
+  module. The laptop's marker is `mac` and the mini's is `mini`; a machine
+  without a marker loads no host file. A marker naming a missing file warns
+  in interactive shells only, since stderr in a non-interactive shell lands
+  in tool output. The same marker tells a Claude Code session in this
+  repository which machine it is on (`.claude/hooks/machine-context.sh`).
   `$HOST` is not the key because the mini reports a DHCP name (`Mac.lan`).
 
 Per-machine state stays out of both: `~/.secrets`, `~/.zprofile`, logins,

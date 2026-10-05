@@ -483,7 +483,8 @@ before picking the work up on the other.
 `mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way,
 and the laptop is the source of truth. **Never edit `~/dotfiles` on the
 mini.** The next sync overwrites it, so a fix found there is made on the
-laptop. The script's header and its `STOW`, `BINS`, `SECRETS`, `ENGINES` and
+laptop; a Claude Code session started in the mirror is told so
+(`.claude/machines/mini.md`). The script's header and its `STOW`, `BINS`, `SECRETS`, `ENGINES` and
 `LINKS` lists say what it carries: the working tree as git sees it (uncommitted
 edits included, ignored paths never), the links of the packages the mini
 stows, the Codex config (§ Agent config), engine

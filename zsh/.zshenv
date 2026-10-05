@@ -31,8 +31,8 @@ done
 # Everything above is shared: it checks for the tools it needs rather than for
 # the machine it runs on. Only a machine's identity (its prompt badge, its SSH
 # client quirks) lives in hosts/<name>.zsh, chosen by the untracked one-word
-# ~/.config/machine. hosts/ sits outside the module glob; with no marker (the
-# laptop), no host file loads. Last, so a host file can override a module.
+# ~/.config/machine (`mac`, `mini`). hosts/ sits outside the module glob; with
+# no marker, no host file loads. Last, so a host file can override a module.
 if [[ -r "$HOME/.config/machine" ]]; then
   DOTFILES_MACHINE=${"$(<$HOME/.config/machine)"//[[:space:]]/}
   if [[ -r "$HOME/.config/zsh/hosts/$DOTFILES_MACHINE.zsh" ]]; then

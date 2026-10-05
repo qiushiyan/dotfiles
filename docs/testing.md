@@ -25,6 +25,7 @@ python3 scripts/.local/share/dotfiles/tests/test_skill_sync.py # requires uv
 bash scripts/.local/share/dotfiles/tests/test-toclip.sh         [K1 K5 …]
 bash scripts/.local/share/dotfiles/tests/test-aws-login.sh    [A1 A4 …]
 bash scripts/.local/share/dotfiles/tests/test-snapshot.sh     [S1 S4 …]
+bash .claude/hooks/test-machine-context.sh                     # runs whole
 bash nvim/.config/nvim/tests/test-claude-prompt-reference.sh    # runs whole
 bash nvim/.config/nvim/tests/test-statusline-band.sh           # runs whole
 ```
@@ -54,6 +55,7 @@ Each suite owns one boundary:
 | toclip | which clipboard a copy reaches: pbcopy at the screen, the ssh client (not tmux's activity pick) inside tmux, the buffer kept for oversize payloads; private tmux socket, real clients on ptys, a stub pbcopy, and K8 asserts the real clipboard is untouched |
 | aws-login | sign out, sign in, verify, then stamp; the device-code flow only on the mini marker; `--status` from the stamp; a stub `aws` on PATH records the calls, a temporary `HOME` holds the stamp, and A8 asserts the real state directory is untouched |
 | snapshot | a plain run deletes the previous plain run's snapshot only after the new one exists; `--daily` prunes by age and stands down once Time Machine has a destination; a stub `tmutil` on PATH keeps the snapshot dates in a sandbox file, a temporary `HOME` holds the state, and S7 asserts the real state directory is untouched |
+| machine context | the session-start hook prints the text of the machine `~/.config/machine` names, and reports a machine it cannot name instead of guessing |
 | Claude reply reference | Ctrl+G buffers open the right reply, history and whole-turn views, `:wq` exits with the draft byte-exact, closing either window never strands the editor, the layout follows pane width, lookalike files are ignored; the working tree's full Neovim config against a fixture `CLAUDE_CONFIG_DIR` naming the suite as the claude process, temp XDG state, tmux unset |
 | statusline band | the lualine band takes the active colorscheme's `StatusLine` bg and `Normal` fg at startup and after a theme-file rewrite that the live watcher applies; the working tree's full Neovim config, a temporary `HOME` holding the theme file, temp XDG state, tmux unset |
 

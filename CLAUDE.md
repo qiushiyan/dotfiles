@@ -30,10 +30,11 @@ reads them from the environment.
 
 ## Working here
 
-- **On the office mini (`$USER` is `qiushiyan`), this checkout is a
-  read-only mirror.** The laptop's `mini-sync` overwrites it every
-  hour, so an edit here is lost. Make the change on the laptop, or report
-  it for the user to make. `docs/qiushi-mini.md` § Sync.
+- **Know which machine this is before editing: on the mini this checkout
+  is a read-only mirror, and an edit there is lost.** `~/.config/machine`
+  holds `mac` or `mini`, and `.claude/machines/<name>.md` says what differs
+  there. Claude Code gets that file at session start
+  (`.claude/hooks/machine-context.sh`); any other agent reads it first.
 - Edits are live; no build. Use `make restow` after file additions or removals
   that require new links. `dotadd <path>` brings an unmanaged file under Stow.
 - Commit directly on the current branch without asking; leave pushes to the user.
