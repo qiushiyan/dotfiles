@@ -84,6 +84,36 @@ Review and revise the model-facing surfaces this session touched — prompts, sk
 
 Prefer short, clear instructions that invite reasoning, with an informative code example as the pattern, over long prose repeating what the code already says. A structural rewrite is sometimes more effective than patching. Report each finding as a named defect with its fix, and each deliberate keep with its reason; say plainly if nothing needs changing. Do not add literal tests for these surfaces.'''
 
+# ── Closeout ───────────────────────────────────────────
+# Both carry the same numbered closeout: an edit to one is an edit to the other.
+# ~/dev/tabtype/.tabtype.local.toml replaces both keys there, with a release as
+# the install.
+[[snippets]]
+key = "closeout"
+expand = '''
+/update-docs for the work this branch finished, then close the branch out: main pushed, the new build installed on both machines, the feature branch gone. This is one of my own tools, so it merges locally with no PR.
+
+1. **Docs.** Your plan's gated items are approved in advance where the project's doc bindings allow them, except settling a doc/code disagreement by changing the described design: leave that one alone and name it in the report. Commit the docs.
+2. **Merge.** In the main checkout, bring main level with origin, merge the branch, and run the project's checks on the result before pushing, because the push is what both machines build from. Resolve a conflict with the resolving-merge-conflicts skill and say what it traded off; stop with the merge unpushed if a check fails. Then push main.
+3. **Install.** Run `twin sync` naming this repo as its target (a bare `twin sync` syncs every repo) and report its closing status block. A line there about this branch being local-only is cleared by step 4.
+4. **Remove the branch.** Run `gwt remove` on the feature branch from the main checkout, since it refuses the worktree it is run from; it takes the worktree with it. Any other refusal means keep the branch and say why.
+
+Work already on main skips the merge in step 2 and all of step 4, and its docs pass covers this session's commits. $0'''
+
+[[snippets]]
+key = "review-then-closeout"
+expand = '''
+/review codex full review, then close the branch out if the round leaves nothing for me to decide: docs updated, main pushed, the new build installed on both machines, the feature branch gone. This is one of my own tools, so it merges locally with no PR.
+
+Fix what you confirm as the skill says, minors included, and run its second round first when the fixes were substantive. The closeout runs only if the skill's report would open by saying nothing needs me: a finding you judge foundational stops you at that report, and so does an objection to the design that you rebutted, which I should hear before a merge settles it. With nothing for me, continue:
+
+1. **Docs.** Run the update-docs skill for the work this branch finished, the review's fixes included. Its plan's gated items are approved in advance where the project's doc bindings allow them, except settling a doc/code disagreement by changing the described design: leave that one alone and name it in the report. Commit the docs.
+2. **Merge.** In the main checkout, bring main level with origin, merge the branch, and run the project's checks on the result before pushing, because the push is what both machines build from. Resolve a conflict with the resolving-merge-conflicts skill and say what it traded off; stop with the merge unpushed if a check fails. Then push main.
+3. **Install.** Run `twin sync` naming this repo as its target (a bare `twin sync` syncs every repo) and report its closing status block. A line there about this branch being local-only is cleared by step 4.
+4. **Remove the branch.** Run `gwt remove` on the feature branch from the main checkout, since it refuses the worktree it is run from; it takes the worktree with it. Any other refusal means keep the branch and say why.
+
+Work already on main skips the merge in step 2 and all of step 4, and its docs pass covers this session's commits. $0'''
+
 [settings]
 scan_depth = 5
 material = "glass"

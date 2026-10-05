@@ -106,3 +106,74 @@ families.
   wording or the wrong home; revise or remove it.
 - Any removed key retyped from memory or pasted from Git history is a removal
   to reverse.
+
+## 2026-10-05 — closing a tool's branch out is typed onto `/update-docs`
+
+Session `dec38617`; the queries are the `obq-dec38617-*.mjs` heredocs in its
+transcript.
+
+**Corpus.** Laptop obelisk index, Claude user turns 2026-08-05 → 10-05
+outside planlab and itell (`project NOT LIKE '%planlab%'`, `'%itell%'`,
+`'%worktrees-main-%'`), not meta, not sidechain, not a continuation summary.
+The mini's index was not read.
+
+**Predicates.** An `/update-docs` session holds a turn with
+`<command-name>/update-docs`. A closeout tail is that turn also matching
+`merge`, `install` or `push`, case-insensitively: an upper bound, since "I
+will merge afterwards" matches too. A typed merge is a turn under 400
+characters with no command, matching `merge%main` or `merge back`. A typed
+cleanup is a turn under 400 characters matching `clean%branch`,
+`clean%worktree` or `delete%branch`.
+
+| finding | evidence | verdict |
+|---|---|---|
+| the closeout rides on the docs pass | 13 of 60 `/update-docs` sessions carry a closeout tail, all 09-21 → 10-05, across claude-steps, headroom, envoy, tabtype, twin, slackkit, cout, brief and dotfiles: "update docs and merge back into main", "sync and merge into main and install" | `closeout` added, led by `/update-docs` |
+| the merge is also typed bare | 7 sessions | covered by `closeout` |
+| branch and worktree removal is a second, later ask | 6 sessions / 7 turns, e.g. "cleanup merged branchs and worktrees for this repo" | folded into `closeout` as its last step |
+| review, then the closeout, as one ask | 0 sessions typed it; one (headroom, 10-01) asked for the merge and install first and the review after | `review-then-closeout` added on the user's word |
+| `twin sync` in a closeout | 0 typed; the command is days old | named in both snippets, where it replaces "install" |
+
+**Wording.** Both snippets carry the order and the stops as four numbered
+steps, and leave the docs pass, the review round, a conflict, the install and
+the removal to `update-docs`, `review`, `resolving-merge-conflicts`,
+`twin sync` and `gwt remove`. One cold reader played five scenarios (a linked
+worktree, work on main, a conflicting merge, a review with and without a
+design objection); what it changed:
+
+- The removal runs from the main checkout: `gwt remove` refuses the worktree
+  it is run from, and the first wording's "a refusal means keep it" would
+  have kept every branch a session stood in. It stays last because the
+  session's own directory goes with it, so the sync's status block carries a
+  local-only line for the branch, which the step names.
+- A conflict is resolved, not a stop: `resolving-merge-conflicts` says
+  "always resolve", and the first wording contradicted it. A failing check
+  stops with the merge unpushed.
+- The review variant keys its stop to the review skill's report opening on
+  "nothing needs you". A design objection the session rebutted also stops
+  it, which the skill alone would not; minors are fixed and round 2 runs
+  first when the skill calls for it.
+- The docs plan's gated items are approved in advance, on the user's word,
+  where the project's bindings allow them (claude-steps keeps shipped specs
+  as build records), except a doc/code disagreement settled by changing the
+  described design.
+- `twin sync` is told its target: bare, it syncs every repository.
+- Work committed on main gives `update-docs` an empty diff, so the snippet
+  names the range: this session's commits.
+
+Keeps. "One of my own tools … no PR" changed nothing for the cold reader in a
+tool's repository; it is there for a paste in planlab, which was not played.
+The end state in each opening sentence is what the reader reported against
+when the mini was unreachable.
+
+TabType's checkout holds both keys again in `~/dev/tabtype/.tabtype.local.toml`,
+replacing the global ones there: step 3 is the per-release procedure in its
+`docs/releasing.md`, since `twin sync` does not cut a release. The file is
+gitignored and exists on the laptop only.
+
+Not tested: a paste in a live session, and whether a session survives the
+removal of the worktree it was started in.
+
+**Next pass compares**, from `history.json`, four weeks of counts: `closeout`
+expanded in at least three sessions and the closeout tails on `/update-docs`
+lower than 13; `review-then-closeout` expanded at all. A key still at zero
+while its phrase is typed has the wrong wording or the wrong home.

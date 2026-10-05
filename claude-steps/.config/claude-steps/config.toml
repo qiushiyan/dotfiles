@@ -13,7 +13,11 @@
 # makes a paste from it a `pasted <key>` line, which is a step only under a
 # label that lists the key, so list a project's keys below when adding its
 # file. A list needs the binary that reads one: an older one refuses it.
-snippets = ["~/.config/tabtype/config.toml", "~/dev/planlab/main/.tabtype.local.toml"]
+snippets = [
+  "~/.config/tabtype/config.toml",
+  "~/dev/planlab/main/.tabtype.local.toml",
+  "~/dev/tabtype/.tabtype.local.toml",
+]
 
 [[label]]
 name = "consult"
@@ -29,11 +33,11 @@ snippets = ["implement-spec"]
 color = "green"
 
 # loopy-review-verify asks for the review and the verification in one paste,
-# so it stands under both.
+# so it stands under both; review-then-closeout likewise, under closeout.
 [[label]]
 name = "review"
 skills = ["review"]
-snippets = ["review-verify", "loopy-review-verify"]
+snippets = ["review-verify", "loopy-review-verify", "review-then-closeout"]
 jobs = ["review-"]
 count_commits = true
 color = "magenta"
@@ -66,3 +70,10 @@ name = "prompts"
 skills = ["prompt-engineering"]
 snippets = ["prompt-check", "loopy-prompt-check"]
 color = "blue"
+
+# The merge, the install on both machines and the branch's removal, for a
+# tool that merges locally. The closeout snippet's docs pass shows under docs.
+[[label]]
+name = "closeout"
+snippets = ["closeout", "review-then-closeout"]
+color = "magenta"
