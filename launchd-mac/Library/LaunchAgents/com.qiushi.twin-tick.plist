@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.twin-tick</string>
+
+  <!-- Every hour: reconcile the carried files with the mini, fetch every registered
+       repository, and record this machine's observation and the mini's. It never pulls, installs or
+       applies, so it changes no tracked file. twin finds Homebrew and
+       ~/.local/bin for itself. The log's last block is `twin status` as of
+       the last run. twin/.config/twin/twin.toml. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushi/.local/bin/twin</string>
+    <string>tick</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>3600</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushi/Library/Logs/twin-tick.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushi/Library/Logs/twin-tick.log</string>
+</dict>
+</plist>
