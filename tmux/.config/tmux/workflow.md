@@ -174,9 +174,10 @@ hold/put/pick: `scripts/pane-mode.md`.
 Run `cout` as a standalone command. Copies, empty prompts, and cancelled input
 do not count toward the index, so repeated copies return the same result. A
 successful copy prints **`Copied "<command preview>"`**, truncated to 40 characters;
-the shortcut shows that notice in the status line. Pasted text starts with
-`$ <command>`, followed by terminal output with colors removed and wraps joined.
-Zsh's visible `%` marker is retained when output lacks a final newline.
+the shortcut shows that notice in the status line. Pasted text is a Markdown
+code block: `# run from <directory>`, the directory the command was started
+in, then `$ <command>`, then terminal output with colors removed and wraps
+joined. Zsh's visible `%` marker is retained when output lacks a final newline.
 
 Indexes belong to the current shell. A nested Zsh gets a separate index;
 exiting restores the parent's. The parent's `zsh` or `ssh` entry contains the

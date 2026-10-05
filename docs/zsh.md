@@ -161,11 +161,11 @@ recorder, the marker protocol, completed records and indexes, retention and
 its limits, and replay.
 
 `zsh/.config/zsh/cout.zsh` owns execution boundaries and shell identity:
-`preexec` saves the exact command text and marks the start, `precmd`/`zshexit`
-mark the end, and `zsh/.zshrc` registers these hooks after Oh My Posh consumes
-the exit status. Standalone copies and empty or cancelled prompts create no
-record. The `precmd` also carries the prompt's tmux round trip
-(`tmux/.config/tmux/scripts/context-chip.md` § Ownership).
+`preexec` saves the exact command text and the working directory, then marks
+the start, `precmd`/`zshexit` mark the end, and `zsh/.zshrc` registers these
+hooks after Oh My Posh consumes the exit status. Standalone copies and empty
+or cancelled prompts create no record. The `precmd` also carries the prompt's
+tmux round trip (`tmux/.config/tmux/scripts/context-chip.md` § Ownership).
 
 Every active execution receives output, so a parent `zsh` or `ssh` record
 contains the nested interaction; a local child shell has its own index, and
