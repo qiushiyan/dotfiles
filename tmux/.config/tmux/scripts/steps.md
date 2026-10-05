@@ -12,7 +12,7 @@ changed since" without asking the session, which would cost it a turn.
 ```text
 reading transcripts, events, labels, notes        → claude-steps binary (~/dev/claude-steps)
 every line shown, its colour, its fit to a width  → claude-steps binary
-the label set (board columns) and each one's hue  → claude-steps/.config/claude-steps/config.toml
+the label set, each one's hue, the snippet files  → claude-steps/.config/claude-steps/config.toml
 popup, keys, pane switching, note field           → tmux-steps.sh
 which pane runs which session                     → @claude_ctx_sid, set by the context chip (context-chip.md)
 ```
@@ -31,8 +31,8 @@ not in the script.
   A reminder that should change what a session's model does belongs in a
   skill, not here.
 - **The view states dated facts.** A cell is a time (`11m`, `2d`), with `+N`
-  commits since, or `read` / `named` in front when the latest event was only
-  a file read or only a prompt. Nothing says a step is finished or still
+  commits since, or `read` / `pasted` / `named` in front when the latest
+  event was only a file read, a pasted snippet or a prompt. Nothing says a step is finished or still
   valid, and no colour does either: a hue names a label, red marks what could
   not be read.
 - **The script asks for colour and gives the width.** fzf reads the binary

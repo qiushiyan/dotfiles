@@ -38,7 +38,7 @@ reads them from the environment.
   other agent reads it first.
 - Edits are live; no build. Use `make restow` after file additions or removals
   that require new links. `dotadd <path>` brings an unmanaged file under Stow.
-- Commit directly on the current branch without asking; leave pushes to the user.
+- Commit directly on the current branch without asking; push after milestone implementation has finished.
 - For shortcut or usage questions, read the tool's config and
   `tmux/.config/tmux/workflow.md`; treat the request as read-only.
 - For theme additions or ports, follow `.claude/skills/add-theme/SKILL.md`

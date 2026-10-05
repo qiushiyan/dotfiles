@@ -64,9 +64,20 @@ default: stopping on those is the failure the snippet exists to prevent.
 
 ## The session board reads the opening
 
-`claude-steps` recognises a pasted snippet by the opening of its text in the
-global config, and groups keys under the labels in
-`claude-steps/.config/claude-steps/config.toml`. Rewording an opening drops
-the match for sessions that pasted the earlier text; a removed or renamed key
-leaves its old name in a label, where it matches nothing. A slash-led snippet
-is also seen as its skill, whatever its opening.
+`claude-steps` recognises a pasted snippet by the opening of its text, its
+first 80 characters, in the files its `snippets` key names: the global
+config and planlab's `.tabtype.local.toml`. It groups keys under the labels
+in `claude-steps/.config/claude-steps/config.toml`, where both are set.
+
+- **A reworded opening** drops the match for sessions that pasted the earlier
+  text; an edit past the opening drops none.
+- **A removed or renamed key** leaves its old name in a label, where it
+  matches nothing.
+- **A project's file** is read only once it is named there, and a paste is a
+  step only under a label that lists its key: add a project's file and its
+  keys together.
+- **A slash-led snippet** arrives one of two ways, and the snippet does not
+  choose which. As its command, it is seen as the skill's run as well as the
+  paste. Wrapped by Claude Code as pasted text, the command does not run and
+  the model calls the skill itself. The board shows the paste either way.
+- **Each machine's board** reads that machine's copy of a project's file.

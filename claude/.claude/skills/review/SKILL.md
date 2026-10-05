@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Code-review the branch's committed work through a cold AI session — goal (did we build the right thing: the cheap independent read, before or after any other round) or full (is it built right: the deep read with the implementation report) — then judge and apply the findings."
+description: "Run a review round on the committed work through a cold AI session — goal (did we build the right thing: the cheap independent read, before or after any other round) or full (is it built right: the deep read with the implementation report) — then judge and apply the findings."
 requires:
   - lessons:collaboration/review-lens.md
   - lessons:codebase-design/deep-modules.md

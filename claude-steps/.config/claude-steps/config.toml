@@ -8,6 +8,13 @@
 # the board reads left to right. Each names its hue: taken by place, the hues
 # would move whenever a label is added.
 
+# The files a pasted snippet is recognised from: the global one, and each
+# project's own beside it. A file a machine lacks holds none. Naming a file
+# makes a paste from it a `pasted <key>` line, which is a step only under a
+# label that lists the key, so list a project's keys below when adding its
+# file. A list needs the binary that reads one: an older one refuses it.
+snippets = ["~/.config/tabtype/config.toml", "~/dev/planlab/main/.tabtype.local.toml"]
+
 [[label]]
 name = "consult"
 skills = ["consult"]
@@ -21,10 +28,12 @@ skills = ["write-spec"]
 snippets = ["implement-spec"]
 color = "green"
 
+# loopy-review-verify asks for the review and the verification in one paste,
+# so it stands under both.
 [[label]]
 name = "review"
 skills = ["review"]
-snippets = ["review-verify"]
+snippets = ["review-verify", "loopy-review-verify"]
 jobs = ["review-"]
 count_commits = true
 color = "magenta"
@@ -32,6 +41,7 @@ color = "magenta"
 [[label]]
 name = "verify"
 skills = ["pl-loopy-verify"]
+snippets = ["loopy-review-verify"]
 count_commits = true
 color = "cyan"
 
@@ -54,5 +64,5 @@ color = "cyan"
 [[label]]
 name = "prompts"
 skills = ["prompt-engineering"]
-snippets = ["prompt-check"]
+snippets = ["prompt-check", "loopy-prompt-check"]
 color = "blue"
