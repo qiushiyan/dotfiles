@@ -9,8 +9,9 @@ Codex, and other coding agents through the `;;` trigger.
 ## Model
 
 ```text
-frame the problem → settle the direction → build → review
-                    (a consult may run straight into the build)
+frame the problem → settle the direction → build → review → close out
+                    (a consult may run straight into the build,
+                     and a review into the closeout)
 ```
 
 The skills own the procedure at each stage (`docs/doc-loop.md`); a snippet is
@@ -54,7 +55,9 @@ Names describe direction:
 ```text
 consult-X / implement-X → what the agent does next; X says from what, or where it stops
 X-check / X-verify      → a pass that proves or revises before moving on
+X-then-Y                → X, then Y unless X leaves a decision that is the user's
 <project>-X             → a key in that project's .tabtype.local.toml
+a global key, reused    → that project's replacement for the global entry
 ```
 
 ## Editing
