@@ -74,7 +74,12 @@ engine update and why.
 - **Externally linked skills** (a symlinked folder in `ls -l
   claude/.claude/skills`): the link's owner updates skill and engine together
   — `terminal-browser upgrade` for the app's skill, the owning `~/dev`
-  project's release or install for the rest. Preserve the link.
+  project's release or install for the rest. Preserve the link. A tracked
+  link into a `~/dev` project is relative to the skills directory, so it
+  resolves under either machine's home; the owning project's `make skills`
+  writes it that way. terminal-browser's link is untracked and gitignored
+  instead: its own setup rewrites it as an absolute path at every upgrade,
+  so each machine that has the app keeps its own.
 - **Engines inside the skill:** Archify (probe: `node bin/archify.mjs doctor`
   from its directory), `skill-creator` and `keep-codex-fast` ship their
   helpers in the skill directory, and `find-docs` runs `npx ctx7@latest`, so
@@ -172,8 +177,10 @@ names the Claude settings to read. What Codex ends up with:
   override.
 - **Disabled:** a global `off` override, a `disabled` entry, or a skill under
   `exclude_roots` (the Claude cloud cache) becomes an exact-path entry in the
-  marked final block of `codex/.codex/config.toml`. Hand-edited settings go
-  before that block, which must remain last.
+  marked final block of `twin/.config/twin/codex/shared.toml`, the source each
+  machine's `~/.codex/config.toml` is rendered from; the block reaches Codex
+  at the next `twin dotfiles apply` (`docs/twin.md` § Codex config).
+  Hand-edited settings go before that block, which must remain last.
 - **Project-local settings stay local**, and `name-only` has no Codex
   equivalent.
 

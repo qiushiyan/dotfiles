@@ -63,8 +63,8 @@ which `--status` reads back; the script's header has the details.
   prompt must call `aws-login` rather than `aws sso login`, or the run
   refreshes the token on the old session whenever it fires while the portal
   is still signed in.
-- **Mini:** `mini-sync` links the script into `~/.local/bin` (`LINKS` in the
-  script; `docs/qiushi-mini.md` § Sync). Over SSH the device-code URL goes to
+- **Mini:** the `scripts` package is stowed there, so the script is on PATH
+  as on the laptop. Over SSH the device-code URL goes to
   the laptop clipboard through `BROWSER=browser-clip`; paste it in any
   browser and approve. The mini keeps its own token cache and stamp, since
   refresh tokens rotate and two machines cannot share one.

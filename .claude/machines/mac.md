@@ -12,3 +12,4 @@ which the docs call the laptop.
 - **The mini is the office Mac mini** (`ssh mini`). This machine runs the
   reconciler: gitignored files the manifest lists move between the two only
   while it is awake, on its hourly `twin tick` or a `twin files sync`.
+- **What to run when, across the laptop and the mini:** `docs/twin.md`.

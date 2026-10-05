@@ -6,8 +6,9 @@ here affect the live system immediately.** `docs/` is excluded from Stow;
 `make list` and the tree show the packages.
 
 Keep configuration reproducible without bringing private state into Git.
-Secrets belong in untracked `~/.secrets`, sourced by `.zshrc`; tracked config
-reads them from the environment.
+Secrets belong in untracked `~/.secrets.shared` (keys both machines use) or
+`~/.secrets` (this machine's own), sourced by `.zshrc`; tracked config reads
+them from the environment.
 
 ## Red lines
 
@@ -107,10 +108,14 @@ Additional routes beyond the feature docs above:
 - What protects uncommitted and gitignored state, local snapshots, recovery
   after a loss, and reading or editing the VPN credentials in 1Password:
   `docs/recovery.md`.
-- The office Mac mini (`ssh qiushi-mini`), "the mini" everywhere in this
-  repository, reached over the company tailnet; both machines are worked on,
-  and `twin` keeps them in step (`twin/.config/twin/twin.toml` is what it
-  manages): `docs/qiushi-mini.md`.
+- Working across the laptop and the office mini: what moves by git, what
+  `twin` carries, what each machine builds for itself, and what to run when a
+  change made on one is needed on the other: `docs/twin.md`. Read it before
+  adding a repository, a carried file, a tool or a launchd agent, and when
+  `twin status` shows something to clear.
+- The office Mac mini as a machine (`ssh qiushi-mini`), "the mini" everywhere
+  in this repository: reaching it over the company tailnet, its desk, its
+  toolchain and the jobs it hosts: `docs/qiushi-mini.md`.
 - Unbuilt tmux features: `tmux/.config/tmux/roadmap.md`.
 - The personal Slack toolkit: the `slack` skill is `~/dev/slackkit`'s,
   linked here; its design is that repo's `docs/`.

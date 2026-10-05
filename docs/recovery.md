@@ -9,12 +9,12 @@ cost, and after a loss to know where each piece comes back from.
 ## What protects what
 
 - **Committed files:** git and the GitHub remote; a lost checkout is a
-  re-clone. Unpushed commits exist only on the laptop, and in the mini's
-  mirror up to its last sync.
-- **Uncommitted edits and gitignored files:** a local snapshot, and a Time
-  Machine backup once the laptop has a backup destination. Nothing else holds
-  a copy: GitHub never sees them, and the mini's mirror excludes every ignored
-  path.
+  re-clone. An unpushed commit exists only on the machine that made it;
+  `twin status` lists those on both machines.
+- **Uncommitted edits and gitignored files:** a local snapshot on the machine
+  that holds them, and a Time Machine backup once that machine has a backup
+  destination. GitHub never sees them. The gitignored files `twin` carries
+  also exist on the other machine (§ A carried copy is not a backup).
 - **Credentials:** the password manager, never this tree (§ Credentials in
   1Password). `vpn-private/` stays in `.gitignore` and out of `PACKAGES` so
   that a copy restored into the checkout can be neither committed to this
@@ -53,17 +53,27 @@ once the upload is done. The escaped dot matters — unescaped, `op` splits the
 name into a section and a field, and the upload lands as a stray file named
 `md` beside the original.
 
-## The mini's mirror is not a backup
+## A carried copy is not a backup
 
-`mini-sync` runs `rsync --delete` one way, so a deletion on the laptop reaches
-the mini on the next hourly run, and ignored paths never travel. After a loss,
-pause the job before restoring anything, and re-enable it once the laptop tree
-is whole (`docs/qiushi-mini.md` § Sync owns the job):
+`twin` reconciles the gitignored files its manifest lists between the laptop
+and the mini (`docs/twin.md` § Carried files), so each exists on both. That
+covers losing a machine. It does not cover a bad change: an edit, a
+truncation included, reaches the other machine at the laptop's next hourly
+run. Only a deletion stays put; the other machine keeps its copy and the path
+waits for a resolution, which is where a deleted carried file comes back from
+(`twin files resolve <target> <path> --keep <the machine that has it>`).
+
+After damage to a carried file, stop the reconciler on the laptop before
+restoring, so the damaged copy is not carried over the good one, and resume
+it once one machine holds the file whole:
 
 ```bash
-launchctl bootout gui/$(id -u)/com.qiushi.mini-sync
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.qiushi.mini-sync.plist
+launchctl bootout gui/$(id -u)/com.qiushi.twin-tick                                        # stop
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.qiushi.twin-tick.plist         # resume
 ```
+
+A copy that `twin files resolve` replaced or removed is kept under
+`~/.local/state/twin/replaced/` on the machine that held it.
 
 ## Local snapshots
 
@@ -78,8 +88,8 @@ it answers a delete, never a lost or dead Mac. Snapshots are taken:
   Claude's copy of the rule, `claude/.claude/rules/snapshots.md`, is disabled
   because it fired on routine worktree work; restore it with
   `git checkout ebc580f -- claude/.claude/rules/snapshots.md`.
-- **Daily**, from the LaunchAgent `com.qiushi.snapshot` at 13:00, keeping
-  7 days, while Time Machine has no destination; once it has one, the run does
+- **Daily**, on each machine, from the LaunchAgent `com.qiushi.snapshot` at
+  13:00, keeping 7 days, while Time Machine has no destination; once it has one, the run does
   nothing, because Time Machine snapshots hourly itself. The window matters
   more than the frequency: the files only a snapshot protects change rarely,
   and their loss is noticed late, so a week of dailies beats a day of hourlies.
@@ -96,7 +106,8 @@ for d in $(snapshot --list); do tmutil deletelocalsnapshots "$d"; done          
 
 ## After a loss
 
-1. Stop the writers: pause `mini-sync`, and run nothing that writes into the
+1. Stop the writers: pause the reconciler when a carried file is involved
+   (§ A carried copy is not a backup), and run nothing that writes into the
    damaged tree.
 2. Committed files: `git restore` in place if `.git` survived, otherwise
    re-clone.
@@ -104,4 +115,4 @@ for d in $(snapshot --list); do tmutil deletelocalsnapshots "$d"; done          
    loss (`snapshot --list`), mount it read-only and copy out.
 4. What no snapshot holds: rebuild with the tools above, pull credentials from
    the password manager, and search agent history for files a session wrote.
-5. Re-enable `mini-sync` once the laptop tree is whole.
+5. Resume the reconciler once the carried files are whole on one machine.

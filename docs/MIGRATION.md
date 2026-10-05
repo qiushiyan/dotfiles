@@ -21,7 +21,7 @@ The manual playbook that complements `scripts/bootstrap.sh` and
 - [ ] Choose a transfer mechanism:
       - **rsync over LAN (recommended):** both Macs on same network.
       - **USB:** tar the listed paths, copy via external drive.
-      - **AirDrop:** OK for `~/.secrets`, less ideal for `~/.ssh`
+      - **AirDrop:** OK for `~/.secrets` and `~/.secrets.shared`, less ideal for `~/.ssh`
         directory permissions.
 - [ ] Optional: kick off a Time Machine backup as a safety net.
 - [ ] Do **not** sign out of iCloud on the old Mac until the new one is
@@ -53,7 +53,7 @@ The bootstrap script clones the dotfiles repo via SSH, which needs
    chmod 600 ~/.ssh/id_* ~/.ssh/config* 2>/dev/null
    chmod 644 ~/.ssh/id_*.pub 2>/dev/null
    chmod 700 ~/.gnupg
-   chmod 600 ~/.netrc ~/.npmrc ~/.secrets 2>/dev/null
+   chmod 600 ~/.netrc ~/.npmrc ~/.secrets ~/.secrets.shared 2>/dev/null
    ```
 3. Verify:
    ```
@@ -181,7 +181,7 @@ enumerates the secret ones.
 
 | Path | Sensitive | Mechanism |
 |---|---|---|
-| `~/.secrets` | yes | rsync / scp |
+| `~/.secrets`, `~/.secrets.shared` | yes | rsync / scp; between the laptop and the mini, `twin` carries the shared file (`docs/twin.md`) |
 | `~/.ssh/` (keys + `config.local`) | yes | rsync / scp |
 | `~/.gnupg/` | yes | rsync / scp; verify with `gpg --list-secret-keys` |
 | `~/.aws/credentials`, `~/.aws/config` | yes | rsync / scp |

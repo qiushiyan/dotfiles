@@ -46,10 +46,8 @@ It validates the name, writes `~/.config/terminal-theme`, regenerates the
 Ghostty include, and re-sources tmux. It is UI-agnostic on purpose: the tmux
 `prefix t` menu, the CLI, and anything added later all call the same script.
 
-The office mini runs its own copy of `theme-set` from the mirrored repo, so
-`prefix t` there switches the mini alone. `mini-sync` applies the laptop's
-theme on the mini only when the laptop's theme changes, so a pick made on the
-mini lasts until then (`docs/qiushi-mini.md` § Sync).
+A theme is each machine's own choice: `prefix t` on the office mini switches
+the mini alone, and nothing carries the laptop's pick across.
 
 The picker is a native tmux `display-menu` bound to `prefix t` (overrides
 clock-mode) — defined in `tmux.conf`. It opens with the current theme selected;
@@ -137,8 +135,10 @@ accents; keep the selected tab distinct in brightness as well as hue.
 Codex's `tui.theme` independently selects a `.tmTheme` under `~/.codex/themes`.
 The Moon port matches the terminal palette. `theme-set` does not change this
 selection: use `/theme`
-in a running Codex CLI to preview and select it, or restart after editing
-`codex/.codex/config.toml`. It colors code blocks and diffs; terminal colors
+in a running Codex CLI to preview and select it, or edit
+`twin/.config/twin/codex/shared.toml`, run `twin dotfiles apply` and restart
+(`docs/twin.md` § Codex config; a `/theme` pick made in the CLI is local drift
+until it is moved there). It colors code blocks and diffs; terminal colors
 still supply the surrounding UI. See [Codex CLI customization](https://learn.chatgpt.com/docs/cli-customization).
 
 ## Neovim specifics

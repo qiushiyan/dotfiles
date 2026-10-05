@@ -125,7 +125,10 @@ that did not load, or a host file that did not load from its marker.
   (Homebrew's), never an alias, so an active virtualenv still wins.
 - **Package manager** — pnpm preferred over npm.
 - **Editing** — `set -o vi`; vim keybindings everywhere.
-- **Secrets** — `~/.secrets`, untracked, mode `600`, sourced by `.zshrc`.
+- **Secrets** — untracked, mode `600`, sourced by `.zshrc` from two files:
+  `~/.secrets.shared`, the keys both machines use, which `twin` carries
+  between them, then `~/.secrets`, this machine's own, which never leaves it.
+  A key's reach is decided by the file it is written in.
 
 ## Completion dump
 
@@ -155,8 +158,8 @@ installed (over SSH to the mini, the laptop's; `docs/qiushi-mini.md`
 to stdout for agents. Usage belongs to `tmux/.config/tmux/workflow.md`
 § Reading back & copying output (copy mode).
 
-The engine is the `cout` CLI (`~/dev/cout`, installed in `~/.local/bin` and
-copied to the mini by `mini-sync`). Its README owns the pane's `pipe-pane`
+The engine is the `cout` CLI (`~/dev/cout`, built into `~/.local/bin` on each
+machine). Its README owns the pane's `pipe-pane`
 recorder, the marker protocol, completed records and indexes, retention and
 its limits, and replay.
 

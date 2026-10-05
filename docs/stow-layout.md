@@ -13,10 +13,15 @@ folding — is the whole safety property, and it holds only while the target
 directory already exists.
 
 `PACKAGES` in the Makefile is `*/` minus `docs/`, `references/`,
-`node_modules/` and `vpn-private/`. Repo-only documentation and reading are
-never stowed, nor is the root `package.json`'s gitignored install, nor a
-credentials folder restored into the checkout from the password manager
-(`docs/recovery.md`). The rule is a deny list over what is on disk, so a new
+`node_modules/`, `vpn-private/` and the other machine's launchd package.
+Repo-only documentation and reading are never stowed, nor is the root
+`package.json`'s gitignored install, nor a credentials folder restored into
+the checkout from the password manager (`docs/recovery.md`). launchd agents
+live in one package per machine, `launchd-mac/` and `launchd-mini/`, because a
+plist carries its machine's home path and an agent stowed on the wrong machine
+is loaded there at login; the Makefile keeps only the one `~/.config/machine`
+names, and neither without a marker. The mini stows a named subset of the
+rest, listed in `twin`'s manifest (`docs/twin.md`). The rule is a deny list over what is on disk, so a new
 top-level dir, tracked or not, becomes a package (the gitignored `ssh/` is one
 on purpose). Inside a package, `.stow-local-ignore` keeps repo-only files
 unlinked: `scripts/` lists `bootstrap.sh` and `list-secrets.sh`, which run as
@@ -39,6 +44,10 @@ at runtime would start landing inside this repo:
 
 The repo is public, so `~/.codex/auth.json` alone makes this a credential leak.
 Nothing errors at the time; the files simply appear as untracked additions.
+
+`~/.codex/config.toml` is the one config file that is not a link: Codex
+writes into it as it runs, so each machine renders its own
+(`docs/twin.md` § Codex config).
 
 **Defense in depth:** the `.gitignore` blocks for both packages ignore
 `<pkg>/.<app>/*` wholesale and then allow-list only the config that belongs in

@@ -90,13 +90,14 @@ cx-accounts() { headroom accounts --compact --vendor codex "$@" }
 cx-acc()      { cx-accounts "$@" }
 
 # Onboard a subscription: headroom seeds the home (the sessions/ link, the
-# topology check launch applies) and shares the config this repo stows into
-# ~/.codex — config.toml, AGENTS.md, themes — so approvals, models and
-# instructions are one edit for every account. Then regenerate the launchers
-# so cx-<email> exists in this shell without a restart.
+# topology check launch applies) and shares the primary home's config:
+# ~/.codex/config.toml, which `twin dotfiles apply` renders on each machine,
+# and the AGENTS.md and themes this repo stows beside it. Approvals, models
+# and instructions are then one edit for every account. Then regenerate the
+# launchers so cx-<email> exists in this shell without a restart.
 cx-account-add() {
   emulate -L zsh
-  headroom accounts add --vendor codex --share-config="$HOME/dotfiles/codex/.codex" "$@" || return $?
+  headroom accounts add --vendor codex --share-config "$@" || return $?
   _codex_gen_launchers
 }
 

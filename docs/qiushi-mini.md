@@ -132,7 +132,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 |---|---|---|---|
 | Go | 1.27.1 | `brew install go` | `brew upgrade go` |
 | 1Password CLI | 2.40.0 | `brew install --cask 1password-cli` (`op`) | `brew upgrade --cask` |
-| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync git-lfs coreutils bat difftastic` (the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
+| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync unison git-lfs git-delta coreutils bat difftastic` (`unison` is `twin`'s reconciler; `git-delta` is the stowed git config's pager; the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
 | tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading and activating |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
 | node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'`; then move the versioned node path in Portless's service and slack-digest's agent (§ Personal jobs) |
@@ -140,31 +140,32 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | Claude Code | 2.1.280 | native `claude.ai/install.sh` → `~/.local/bin/claude` | auto-updates |
 | Codex CLI | 0.155.1 | `chatgpt.com/codex/install.sh` → `~/.local/bin/codex` | `codex update` |
 | Python | 3.14.7 | `uv python install 3.14` (versioned `python3.14` only) | `uv python upgrade` |
-| AWS CLI | 2.37.3 | `brew install awscli`; `~/.aws/config` copied from the laptop (SSO profiles only; no `credentials`) | `brew upgrade awscli`; re-copy `config` after a profile change |
+| AWS CLI | 2.37.3 | `brew install awscli`; `~/.aws/config` is carried by `twin` (SSO profiles only; no `credentials`) | `brew upgrade awscli` |
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
 | poppler | 26.09.0 | `brew install poppler` (`pdftotext` for planlab `debug:run` document reads) | `brew upgrade` |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
-| obelisk | the laptop's | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` covers the mini's own sessions | `mini-sync` keeps it at the laptop's version (§ Sync) |
+| obelisk | the manifest's pin | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` covers the mini's own sessions | change the pin, then `twin tools install obelisk` (`docs/twin.md`) |
 | portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
 
-Personal CLIs (the `BINS` list in `mini-sync`) come from the laptop through
-`mini-sync` (§ Sync); Ghostty and its fonts are in § Ghostty on the mini.
-Karabiner-Elements is installed from its pkg, which needs `sudo` and so the
-mini's own screen or a terminal there. The `karabiner` package is stowed from
-the mirror, so `~/.config/karabiner` is a folder link into it and a change
-made in Karabiner's UI on the mini is lost at the next sync: make it on the
-laptop. TabType comes from the laptop through `mini-sync` (§ Sync). The
-other desk apps, such as Raycast, 1Password, Arc, Slack and OrbStack, are
-installed by hand, as Homebrew casks or vendor downloads, and carry no config
-from this repo.
+Personal CLIs are built here, from the clones in `~/dev`, by
+`twin tools install` (`docs/twin.md`); Ghostty and its fonts are in § Ghostty
+on the mini. Karabiner-Elements is installed from its pkg, which needs `sudo`
+and so the mini's own screen or a terminal there. The `karabiner` package is
+stowed, so `~/.config/karabiner` is a folder link into this repository's
+clone, and a change made in Karabiner's UI on the mini is an uncommitted edit
+there, to commit and push like any other. TabType is the release
+`twin tools install tabtype` installs; its first launch needs the mini's
+screen for the Accessibility prompt, which macOS ties to the release's
+signature. The other desk apps, such as Raycast, 1Password, Arc, Slack and
+OrbStack, are installed by hand, as Homebrew casks or vendor downloads, and
+carry no config from this repo.
 Not installed: rust.
 
 ## Shell
 
 The `zsh`, `tmux` and `ohmyposh` packages are stowed as on the laptop
 (`docs/zsh.md` § Machines). What is about being the mini lives in the tracked
-`zsh/.config/zsh/hosts/mini.zsh`: edit it on the laptop, and `mini-sync`
-carries it. The traps particular to the mini:
+`zsh/.config/zsh/hosts/mini.zsh`. The traps particular to the mini:
 
 - **`aws sso login`:** `hosts/mini.zsh` adds `--use-device-code`, because the
   default flow redirects to a localhost listener on the mini that a laptop
@@ -177,12 +178,12 @@ carries it. The traps particular to the mini:
   (status-bar separators, icons) as `_` until it detaches and attaches again.
 - **Plugins are clones:** oh-my-zsh, zsh-autosuggestions and
   zsh-syntax-highlighting are shallow clones at the laptop's paths, and the
-  tmux plugins are gitignored clones in the mirror's
-  `tmux/.config/tmux/plugins/`, which `mini-sync` leaves alone. After a plugin
-  update on the laptop, run `prefix I`/`prefix U` on the mini too.
+  tmux plugins are gitignored clones in `tmux/.config/tmux/plugins/`, each
+  machine's own. After a plugin update on one machine, run `prefix I`/`prefix U`
+  on the other too.
 - **tmux bindings:** `prefix T` (sesh) and `prefix b` (terminal-browser) call
-  laptop-only tools and fail here. `prefix t` switches themes through the
-  mini's own `theme-set` (§ Sync); `prefix y`/`Y` and `cout` copy through
+  laptop-only tools and fail here. `prefix t` switches this machine's theme
+  alone (`docs/theming.md`); `prefix y`/`Y` and `cout` copy through
   `toclip`, so over SSH they reach the laptop clipboard (§ Clipboard and
   attach).
 
@@ -192,14 +193,13 @@ the laptop leaves it unset and stays unmarked. The tmux server takes the
 variable from the shell that started it, so a server started any other way has
 no badge until the variable is set in it.
 
-**Git:** the global identity is the personal Gmail. GitHub auth goes through
-`gh auth setup-git` (HTTPS), so no private SSH key lives on the mini. The
-`git` package is not stowed, so neither the laptop's per-folder identities
-(`includeIf`) nor its global ignore file exist here: a repo that needs another
-identity sets it in its own config, and names the laptop ignores everywhere,
-such as `.ignore`, show as untracked.
+**Git:** the `git` package is stowed, so the identity, the global ignore
+file and the per-folder `includeIf` blocks are the laptop's;
+`~/.gitconfig.personal`, which they read, is carried by `twin`. GitHub auth
+goes through gh's credential helper over HTTPS, so no GitHub SSH key lives on
+the mini.
 
-**Neovim:** the `nvim` package is stowed from the mirror. Plugins install
+**Neovim:** the `nvim` package is stowed. Plugins install
 from `lazy-lock.json`, and Mason installs LSPs on first open.
 
 ## Terminal over SSH
@@ -322,13 +322,14 @@ mini already holds for that id, so a repeated move doubles nothing.
 
 From the mini, the laptop is `ssh qiushi-mac` (or `ssh mac`): tailnet node
 `qiushis-macbook-pro`, user `qiushi`, with Remote Login on. The alias lives in
-the mini's own `~/.ssh/config`, which is not part of the mirror. `mac` is the
+the mini's own `~/.ssh/config`, which is untracked. `mac` is the
 mirror image of `mini`: it attaches the laptop's most recently active tmux
 session. It is the same script, which picks the host by the name it runs as.
 Copies go over the same alias: `scp mac:~/path .`, `rsync -a mac:~/dir/ dir/`.
 
-**Git on the laptop, driven from here, needs gh's token in a file.** `pp` and
-anything else that runs `git` on the laptop through `ssh mac` authenticates
+**Git on the laptop, driven from here, needs gh's token in a file.** `twin`
+runs the laptop's pulls and fetches over `ssh mac` (`pp`,
+`twin repos pull --both`), and that git authenticates
 over HTTPS with gh's credential helper, and an ssh session cannot open the
 laptop's login Keychain. So the laptop keeps the token in
 `~/.config/gh/hosts.yml`, as the mini does (§ Agent config): after a
@@ -354,11 +355,11 @@ side is unchanged. To revoke the key, delete its line from the laptop's
 
 ## Ghostty on the mini
 
-The app is installed by hand. The `ghostty` package is stowed from the
-mirror, so `~/.config/ghostty` is a folder link into it, as on the laptop.
-The mini's `theme-set` writes the theme include (`auto/theme.ghostty`) and
-`~/.config/terminal-theme`, run either from `prefix t` or by `mini-sync`
-(§ Sync). Ghostty reloads config only with ⌘⇧, or a restart.
+The app is installed by hand. The `ghostty` package is stowed, so
+`~/.config/ghostty` is a folder link into this repository's clone, as on the
+laptop. `theme-set`, run from `prefix t`, writes the theme include
+(`auto/theme.ghostty`) and `~/.config/terminal-theme`. Ghostty reloads config
+only with ⌘⇧, or a restart.
 
 **Fonts** are the laptop's casks, `font-jetbrains-mono-nerd-font` and
 `font-sarasa-gothic`, installed into `~/Library/Fonts`. A cask's files can
@@ -376,12 +377,13 @@ in a file:
 - Codex is pinned to `cli_auth_credentials_store = "file"`.
 - gh falls back to plaintext `hosts.yml`.
 
-Each is logged in on the mini itself, never copied from the laptop (§ Sync,
-token files).
+Each is logged in on the mini itself, never copied from the laptop: OAuth
+logins rotate their refresh tokens, so machines sharing one log each other
+out.
 
-**Claude Code:** the `claude` package is stowed from the mirror. `~/.claude`
-and `~/.agents` are real dirs, and `settings.json`, `CLAUDE.md`, hooks,
-mods, rules, commands, agents and skills link into the mirror. Codex reads the same
+**Claude Code:** the `claude` package is stowed. `~/.claude` and `~/.agents`
+are real dirs, and `settings.json`, `CLAUDE.md`, hooks, mods, rules, commands,
+agents and skills link into this repository's clone. Codex reads the same
 skills through `~/.agents/skills`. The `lessons` and `tabtype` packages are
 stowed for what those sessions read: the reference material skills cite under
 `~/.config/lessons`, and the snippet definitions `claude-steps` matches
@@ -391,37 +393,30 @@ board's labels.
 - The hooks and the statusline call `~/.config/tmux/scripts/*`, which the
   stowed `tmux` package provides (§ Shell). Those scripts no-op outside tmux.
 - A setting changed on the mini (`/config`, the `/model` default) writes
-  through the link into the mirror and is lost at the next sync.
+  through the link into the clone, where it is an uncommitted edit to
+  `claude/.claude/settings.json`: commit and push it, or discard it.
 
 **Context7:** `find-docs` runs `npx ctx7@latest` (node is in § Toolchain),
-and Codex's context7 MCP server reads the same key. The mini's `~/.secrets`
-(600, sourced by `.zshrc` as on the laptop) holds only the laptop's
-`CONTEXT7_API_KEY` line. mini-sync doesn't
-carry it, so after rotating the key, copy the line again.
+and Codex's context7 MCP server reads the same key: `CONTEXT7_API_KEY` in
+`~/.secrets.shared`, which `twin` carries and `.zshrc` sources.
 
-**Codex:** `~/.codex/config.toml` is **generated** from the laptop's by
-`mini-sync` (what travels: `scripts/.local/share/dotfiles/mini-codex-config.py`),
-not linked, because Codex writes project and hook trust into it at runtime.
-Each sync rewrites it whenever it differs from what the laptop's config
-derives, so a setting changed on the mini outside the runtime-owned tables, a
-`/model` choice included, is reverted within the hour. `AGENTS.md` and `themes/` are plain links
-into the mirror.
+**Codex:** `~/.codex/config.toml` is rendered here by `twin dotfiles apply`
+from the shared source and `twin/.config/twin/codex/mini.toml`, which pins
+the file credential store (`docs/twin.md` § Codex config). `AGENTS.md` and
+`themes/` are links into the clone.
 
 **Accounts:**
 - Add Claude accounts with `x-account-add <email>` as on the laptop, then
   `/login` on the first `x-<name>`.
-- For Codex, don't use `cx-account-add`: it shares the laptop's raw config,
-  which lacks the file credential store. Run
-  `headroom accounts add --vendor codex --share-config <email>`. A bare
-  `--share-config` links the mini primary's generated config.
+- Add Codex accounts with `cx-account-add <email>`, which shares the primary
+  home's rendered config, then `cx-<name> login`.
 
 ## planlab checkout
 
-`~/dev/planlab/main` is a real clone (`gh repo clone planlab-ai/main`), not
-part of the mirror. You work in it and pull it like any repo; `p` jumps to it,
-and `pp` (`zsh/.config/zsh/nav.zsh`) pulls it and the handoff briefs clone
-(below) here and on the laptop, all four in parallel; `pp --cd` then enters
-the checkout.
+`~/dev/planlab/main` is a clone (`gh repo clone planlab-ai/main`), registered
+in `twin`'s manifest as `planlab`. `p` jumps to it, and `pp`
+(`zsh/.config/zsh/nav.zsh`) fast-forwards it and the handoff briefs clone
+(below) here and on the laptop; `pp --cd` then enters the checkout.
 Commits use a repo-local identity (`qiushi@planlab.ai` /
 `qiushiyan`), as on the laptop. The `planlab` and `bench` launchers come
 from each package's own install (`pnpm planlab:install`,
@@ -430,11 +425,11 @@ in. Re-run the installs after moving the checkout.
 
 It is set up for `pl-loopy-verify`: the tools are in § Toolchain, and
 `application/setup/bootstrap.sh` built the `planlab` home database. The
-ignored env files (`application/.env.development.local`,
-`loopy-stress/.env.smoke.local`) and the lane identity
-(`~/.config/planlab/dev.json`, `lane me`'s file) are copies of the laptop's,
-all mode 0600. Re-copy them after a credential rotation. Bootstrap's own env
-file is kept as `.env.development.local.bootstrap`.
+ignored env files (`application/.env.development.local`, the loopy-stress
+smoke file) and the lane identity (`~/.config/planlab/dev.json`, `lane me`'s
+file) are carried by `twin` (`docs/twin.md` § Carried files), all mode 0600,
+so a rotation on either machine reaches the other. Bootstrap's own env file
+is kept as `.env.development.local.bootstrap`.
 
 `lane up` needs the Portless HTTPS proxy on 443. As on the laptop, it runs as
 the boot service `/Library/LaunchDaemons/sh.portless.proxy.plist`, which
@@ -450,130 +445,37 @@ Planlab's handoff briefs are their own clone, at the path `brief` derives from
 this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
 `brief start` pulls it before a pickup; `git -C ~/dev/.handoffs/planlab-main
 pull --ff-only` refreshes it for a session that reads the files directly.
-`pp` pulls main into both machines' clones along with the checkout, from
-either machine; a briefs clone on another branch fails its pull. No pull may
-prompt, so one that needs a password fails. Where a brief lands and what `brief sync`
-publishes are the binary's rules, so after a `brief` change on the laptop run
-`mini-sync` before the mini writes to the clone rather than waiting for the
-timer: an older binary files a brief where the new one reads another slug.
-
-## Personal checkouts
-
-`~/dev` follows the laptop's layout, and the personal repos in it are real
-clones, like the planlab checkout. `mini-sync` does not touch them: git is the
-only thing that moves work between the laptop and the mini, so push on one
-before picking the work up on the other.
-
-- **Clone with `gh repo clone`,** which gives an HTTPS origin the mini can
-  authenticate to (§ Shell, Git).
-- **A repo whose gitignored files matter comes over by rsync, not by clone:**
-  env files holding secrets, working notes, local branches and stashes. From
-  the laptop:
-
-  ```bash
-  rsync -a --exclude node_modules --exclude .next --exclude .turbo \
-    ~/dev/<repo>/ qiushi-mini:dev/<repo>/
-  ```
-
-  Then, on the mini: `git worktree prune`, because the laptop's worktree
-  paths do not exist here and a stale entry makes `git worktree add` refuse
-  the branch; an `https://` origin where the laptop's is `git@`; and the
-  package install the excludes left out. `itell` and `itell-cms` are here
-  this way.
-- **The CLIs on PATH are the laptop's builds, whatever these checkouts hold.**
-  `mini-sync` copies `BINS` over `~/.local/bin` every hour (§ Sync), so a
-  binary built and installed from a checkout here lasts until the next sync.
-  Run a local build from its own path, or push the change and install on the
-  laptop.
-- **The skills a session loads here are the laptop's copies too.** A skill
-  that links out of the dotfiles tree into a project (`read-email` into
-  mailkit, `slack` into slackkit) reaches the mirror as a real directory
-  copied from the laptop's checkout. An edit to that skill in the mini's
-  checkout takes effect only after it is pushed, pulled on the laptop and
-  synced.
-
-## Sync
-
-`mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way,
-and the laptop is the source of truth. **Never edit `~/dotfiles` on the
-mini.** The next sync overwrites it, so a fix found there is made on the
-laptop; a Claude Code session started in the mirror is told so
-(`.claude/machines/mini.md`). The script's header and its `STOW`, `BINS`, `SECRETS`, `APPS`, `ENGINES` and
-`LINKS` lists say what it carries: the working tree as git sees it (uncommitted
-edits included, ignored paths never), the links of the packages the mini
-stows, the Codex config (§ Agent config), app and engine
-versions, links into the mirror for the scripts the mini runs by name, and
-the laptop's theme, applied only when the laptop switches, so a `prefix t`
-pick on the mini lasts until then.
-
-- **The mini's tmux re-reads `tmux.conf` when it changed.** A running server
-  keeps the config it read at start, so without this a binding added on the
-  laptop reaches the mirror and not the mini's keys. Each sync compares
-  `tmux.conf` with the last one it loaded there and runs `tmux source-file`
-  when they differ. An option set by hand in the mini's server is reset then,
-  where the config sets it. A config that fails to load fails the run and is
-  tried again at the next sync.
-- **Stowed packages are restowed every sync**, the ones named in `STOW`.
-  Stow links per item, so a file added to or removed from a package on the
-  laptop changes which links the mini needs; the restow makes and prunes them
-  and leaves the rest untouched. A package joins the mini by joining `STOW`,
-  whose comment says what belongs and what stays out. A conflict, a real file
-  where a link belongs, aborts the whole restow and fails the run after its
-  other steps: resolve it on the mini, then sync again.
-- **Compiled CLIs are copied**, the binaries named in `BINS`, so what runs
-  on the mini is the laptop's build and never depends on a checkout or a
-  toolchain here (§ Personal checkouts). `planlab` and `bench` are not: they
-  are shims into a checkout, and the mini generates its own (§ planlab
-  checkout).
-- **Apps follow the laptop's installed release**, the ones named in `APPS`:
-  TabType, whose snippets the mirror carries. A sync copies
-  `/Applications/<app>.app` when the laptop's build is newer than the mini's
-  or the mini has none, and leaves alone a mini that updated itself first.
-  Only a notarized Developer ID build travels, because macOS ties the
-  Accessibility grant to the signature: while the laptop runs a build from
-  the working tree, the mini keeps its release. An app that was running is
-  restarted; one that was not is left closed, and a first launch needs the
-  mini's screen for the Accessibility prompt.
-- **Engines are version-matched**, the pnpm globals named in `ENGINES`
-  (`@obelisk-apps/cli`): a skill in the mirror is written against the
-  laptop's engine, so when the mini's version differs, the mini runs
-  `pnpm add -g` for the laptop's exact version. They are node packages, so
-  they are installed, not copied like `BINS`. A new entry installs on the
-  next sync; an engine absent on the laptop is skipped.
-- **Token files**: only plain CLI API tokens belong on `SECRETS`, as a file
-  or a directory with the private config that travels beside them. OAuth
-  logins (Claude Code, Codex, gh) rotate their refresh tokens, so two
-  machines sharing one log each other out. A file deleted on the laptop stays
-  on the mini. Parents are created 700 when missing and otherwise left alone,
-  so `~/.config` keeps its mode.
-- **Schedule**: `com.qiushi.mini-sync` (a LaunchAgent stowed from
-  `scripts/Library/`) runs `mini-sync --quiet` at load and every hour.
-  An unreachable mini is a silent no-op, and real failures go to
-  `~/Library/Logs/mini-sync.log`. Run `mini-sync` by hand for a change you
-  want there now; `-n` previews it.
+`pp` fast-forwards both machines' clones along with the checkout, from either
+machine; the manifest allows the briefs clone only `main`, so one on another
+branch is refused. Where a brief lands and what `brief sync` publishes are
+the binary's rules, so after a `brief` change, install it on both machines
+(`twin tools install brief` on each) before the other writes to the clone:
+an older binary files a brief where the new one reads another slug.
 
 ## Personal jobs
 
 - **slack-digest** — the daily Slack briefing (`cmd/slack-digest` in
-  `~/dev/slackkit`; the job runs the laptop's build, not the clone here).
-  `mini-sync` carries the binary and
-  `~/.config/slack-digest` (config and workspace notes) and slackkit's
-  token store `~/.config/slack` (read by `slack-digest` and the `slack`
-  CLI, also carried); the LaunchAgent
-  `com.qiushi.slack-digest` runs it at 08:30, and
+  `~/dev/slackkit`, built from the clone here by
+  `twin tools install slackkit`). `twin` carries `~/.config/slack-digest`
+  (config and workspace notes) and slackkit's token store `~/.config/slack`
+  (read by `slack-digest` and the `slack` CLI) between the machines. The
+  LaunchAgent `com.qiushi.slack-digest` runs it at 08:30, and
   `com.qiushi.slack-digest-listen` makes a pass every minute over what he
   did in the digest DMs (an emoji on an item, a command, a reply the
-  briefing's judge answers). Both are installed from the laptop with
-  `make -C ~/dev/slackkit install-mini`, after `mini-sync` has brought
-  the binary that knows `listen`. Its ledger and
-  digests live only here, in `~/.local/share/slack-digest/`; logs
-  `~/Library/Logs/slack-digest.log` and `slack-digest-listen.log`. Both
-  agents' PATH names nvm's node by version, for planlab's CLI; after a node
-  upgrade, edit both plists in `cmd/slack-digest/launchd/` and re-run `install-mini`, or
-  planlab's briefing loses its deploy state. The ledger and the run records
-  stay here too; from the laptop, every `slack-digest` subcommand (items,
-  replies, replay, tracing) reaches them over ssh.
+  briefing's judge answers). Both are installed and reloaded here with
+  `make -C ~/dev/slackkit agents`, which is also how a newly installed
+  binary is picked up. Its ledger and digests live only here, in
+  `~/.local/share/slack-digest/`; logs `~/Library/Logs/slack-digest.log` and
+  `slack-digest-listen.log`. Both agents' PATH names nvm's node by version,
+  for planlab's CLI; after a node upgrade, edit both plists in
+  `cmd/slack-digest/launchd/` and re-run `make agents`, or planlab's
+  briefing loses its deploy state. From the laptop, every `slack-digest`
+  subcommand (items, replies, replay, tracing) reaches the ledger and the
+  run records over ssh.
   `~/dev/slackkit/docs/digest/operations.md` § Where it runs has the rest.
+- **The hourly `twin tick` and the daily snapshot** — this repository's
+  `launchd-mini/` package (`docs/twin.md` § The hourly tick;
+  `docs/recovery.md` § Local snapshots).
 
 ## Steward host
 
@@ -591,10 +493,10 @@ home** apart from mine:
 | `~/.steward-home/` | steward | the `HOME` every steward process runs under: its own `.claude` (settings, skills link, login), `.codex` (config, login), pinned `dotfiles` clone, `.gitconfig`, `Library/pnpm` (obelisk), `.local/bin/{claude,envoy,steward,planlab}` |
 | `/Library/LaunchDaemons/ai.planlab.steward.{tick,digest,sweep}.plist` | root | the three daemons, `UserName` qiushiyan |
 
-- **mini-sync doesn't touch any of it.** Its targets (`~/dotfiles`,
-  `~/.codex/config.toml`, the `BINS` and `LINKS` in `~/.local/bin`, the token
-  files, theme) are mine. The steward's dotfiles are a real clone at the pin in
-  `services/steward/host/versions.json`, never this mirror. A skill edit
+- **`twin` doesn't touch any of it.** What `twin` manages is mine: the
+  clones under `~/dev` and `~/dotfiles`, `~/.codex/config.toml`, the CLIs in
+  `~/.local/bin`, the carried files. The steward's dotfiles are a separate
+  clone at the pin in `services/steward/host/versions.json`. A skill edit
   reaches the steward only by a pin bump and a deploy.
 - **Its logins live in files** in the session home, because the Keychain is
   locked outside the GUI. To log in again:

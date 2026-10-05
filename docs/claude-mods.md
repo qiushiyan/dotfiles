@@ -132,6 +132,5 @@ at once.
 was running before the line or a mod's folder arrived loads nothing until it
 restarts; resuming it (`x-select`, `x --resume`) keeps the conversation.
 
-`~/.claude/mods` is one link to the package's `mods/` directory: `make restow`
-makes it on the laptop, and `mini-sync` restows the mini
-(`docs/qiushi-mini.md` § Sync).
+`~/.claude/mods` is one link to the package's `mods/` directory, made on each
+machine by its restow (`make restow`, or `twin dotfiles apply`).

@@ -14,6 +14,7 @@ MANIFEST="secrets-manifest.txt"
 # Paths to copy verbatim. Manifest entries are paths relative to $HOME.
 COPY_PATHS=(
     ".secrets"
+    ".secrets.shared"
     ".ssh"
     ".gnupg"
     ".aws"
