@@ -58,9 +58,9 @@ into it, because accepting a share needs the admin console.
 
 The mini drives the office monitor (LG 32UN880K-B, 32" 4K over USB-C) at
 "looks like 3008 × 1692", the text size of the laptop's 27" at 2560 × 1440.
-The NuPhy keyboard is wired by USB; the MX Anywhere 3S is paired over
-Bluetooth on its own Easy-Switch channel. When the laptop is on the desk,
-Universal Control shares them with it.
+The NuPhy keyboard and the MX Anywhere 3S are both paired to it over
+Bluetooth, the mouse on its own Easy-Switch channel. When the laptop is on the
+desk, Universal Control shares them with it.
 
 - **Keyboard and mouse stay on the same Mac.** Universal Control treats the
   Mac whose devices last produced input as the source. With the keyboard on
@@ -85,6 +85,31 @@ Universal Control shares them with it.
   /usr/bin/log show --last 15m --info --debug --style compact \
     --predicate 'subsystem == "com.apple.universalcontrol"'
   ```
+- **A link that stays down with both Macs awake on the desk: restart the
+  mini's `rapportd` and `sharingd`.** Seen when the laptop came back after
+  days away. From the laptop:
+
+  ```bash
+  ssh mini 'killall rapportd sharingd'
+  ```
+
+  launchd starts both again and the link is up within seconds; watch for
+  `Connection Ready` in the log above. What had gone wrong: the mini's
+  `rapportd` no longer held the laptop as a Bluetooth device, so it never
+  asked the laptop to come up on AWDL. Its own connect then timed out after
+  15 s, and it held the laptop's incoming connect until that timeout, so both
+  Macs logged `RPErrorDomain -6722` although the firewall, the LAN and both
+  `awdl0` interfaces were fine. The line that tells this case from others is
+  in the mini's `rapportd` log:
+  `Could not find device to target authTag advertisement to`.
+
+  ```bash
+  ssh mini '/usr/bin/log show --last 5m --info --debug --style compact \
+    --predicate "process == \"rapportd\" AND category == \"CLinkD\"" \
+    | grep -E "authTag|timed out"'
+  ```
+
+  `killall UniversalControl` leaves the agent running and changes nothing.
 - **The Apple Account on the mini puts iCloud within reach of the
   permission-bypassed agents that run here → iCloud Keychain and iCloud Drive
   stay off.** Universal Control needs only the account and Handoff.
@@ -93,9 +118,11 @@ Universal Control shares them with it.
 - **Hyper + letter launches are Raycast hotkeys, held in Raycast's own
   database; Karabiner only turns Caps Lock into the hyper modifier.** On a
   machine where the launches do nothing, import Raycast's settings: Export
-  Settings & Data on the laptop, Import Settings & Data here. Over USB the
-  NuPhy enumerates as separate keyboard and pointer devices, so Karabiner
-  grabs it with no device entry.
+  Settings & Data on the laptop, Import Settings & Data here. Over
+  Bluetooth the NuPhy is one combined keyboard-and-pointer device, which
+  Karabiner modifies only through its device entry in `karabiner.json`
+  (vendor 2007, `ignore: false`); over USB it enumerates as separate keyboard
+  and pointer devices and needs no entry.
 
 ## Toolchain
 
