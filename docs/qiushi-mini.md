@@ -322,6 +322,14 @@ mirror image of `mini`: it attaches the laptop's most recently active tmux
 session. It is the same script, which picks the host by the name it runs as.
 Copies go over the same alias: `scp mac:~/path .`, `rsync -a mac:~/dir/ dir/`.
 
+**Git on the laptop, driven from here, needs gh's token in a file.** `pp` and
+anything else that runs `git` on the laptop through `ssh mac` authenticates
+over HTTPS with gh's credential helper, and an ssh session cannot open the
+laptop's login Keychain. So the laptop keeps the token in
+`~/.config/gh/hosts.yml`, as the mini does (§ Agent config): after a
+`gh auth login` there, log in with `--insecure-storage`, or the laptop leg
+fails with `could not read Username for 'https://github.com'`.
+
 **The key is the mini's own, and the laptop fences it.** The key is
 `~/.ssh/id_ed25519_mac`. Its line in the laptop's `~/.ssh/authorized_keys`
 carries `from="100.68.130.84"`, the mini's tailnet address, so the key is
