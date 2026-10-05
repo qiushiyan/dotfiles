@@ -1,6 +1,12 @@
 #!/bin/sh
-# BROWSER for ssh sessions on the office mini (its .zshenv sets it): a URL
-# "opened" there — Claude Code Ctrl-click, gh --web — goes to the laptop's
-# clipboard through toclip instead of opening the mini's Safari.
+# BROWSER on the office mini (its hosts/mini.zsh sets it in every shell): a URL
+# "opened" there (Claude Code Ctrl-click, gh --web, gopen) reaches the screen
+# you are at. Over ssh from the laptop it goes to the laptop's clipboard
+# through toclip instead of opening the mini's Safari; at the mini's own
+# display, or over Screen Sharing, it opens in the mini's browser. toclip
+# --remote decides per URL, because a tmux pane keeps the environment it was
+# created with, whichever client views it now.
 [ -n "$1" ] || exit 1
-exec "$(dirname "$0")/toclip" -q "$1"
+bin=$(dirname "$0")
+"$bin/toclip" --remote && exec "$bin/toclip" -q "$1"
+exec open "$1"

@@ -41,7 +41,9 @@ yes=
 [[ "$mode" == push ]] && yes=-y
 
 err_file=$(mktemp "${TMPDIR:-/tmp}/tmux-gopen.XXXXXX") || exit 0
-url=$(gopen $yes </dev/null 2>"$err_file")
+# run-shell sets no TMUX_PANE. The mini's $BROWSER (browser-clip) picks the
+# laptop or the mini's own screen from the clients on this pane's session.
+url=$(TMUX_PANE=$pane_id gopen $yes </dev/null 2>"$err_file")
 rc=$?
 # gopen's own verdict is its last stderr line; git push output comes before it.
 err=$(tail -n 1 "$err_file"); rm -f "$err_file"

@@ -2,6 +2,8 @@
 # toclip — put text on the clipboard of the machine you are sitting at.
 #
 #   <cmd> | toclip       toclip <text>...       (-q: no report on stderr)
+#   toclip --remote      exit 0 if a copy from here would go to an ssh client's
+#                        terminal, 1 if it would stay on this machine
 #
 # At a machine's own screen (the laptop, or the mini over Screen Sharing) it
 # is pbcopy. In an ssh session to the mini it asks the laptop's terminal to
@@ -16,21 +18,15 @@ set -euo pipefail
 # 1 MiB of encoded sequence, and the terminal side's ceiling is untested.
 OSC52_MAX=${TOCLIP_OSC52_MAX:-524288}
 
-quiet=0
-[[ ${1:-} == -q ]] && { quiet=1; shift; }
-case ${1:-} in -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+quiet=0 query=0
+case ${1:-} in
+  -q) quiet=1; shift ;;
+  --remote) query=1; shift ;;
+esac
+case ${1:-} in -h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
 
 say() { (( quiet )) || printf 'toclip: %s\n' "$*" >&2; }
 die() { printf 'toclip: %s\n' "$*" >&2; exit 1; }
-
-work=$(mktemp -d "${TMPDIR:-/tmp}/toclip.XXXXXX")
-trap 'rm -rf "$work"' EXIT
-payload=$work/payload
-if (( $# )); then printf '%s' "$*" > "$payload"; else cat > "$payload"; fi
-[[ -s $payload ]] || die "nothing to copy"
-size=$(wc -c < "$payload" | tr -d ' ')
-
-local_copy() { LANG=en_US.UTF-8 pbcopy < "$payload"; }
 
 # A client is remote when an sshd sits among its process's ancestors: the
 # laptop's `ssh mini` attaches through sshd, the Screen Sharing Ghostty does
@@ -63,12 +59,29 @@ caller_tty() {
   return 1
 }
 
+# Where a copy goes, decided now rather than from the environment: a tmux pane
+# keeps the environment it was created with, whichever client views it later.
+remote=0 target=
 if [[ -n ${TMUX:-} ]]; then
   session=$(tmux display-message -p -t "${TMUX_PANE:-}" '#{session_id}')
-  target=
   while read -r _ pid name; do
-    if is_remote "$pid"; then target=$name; break; fi
+    if is_remote "$pid"; then target=$name; remote=1; break; fi
   done < <(tmux list-clients -t "$session" -F '#{client_activity} #{client_pid} #{client_name}' | sort -rn)
+elif [[ -n ${SSH_CONNECTION:-} ]]; then
+  remote=1
+fi
+(( query )) && exit $(( remote ? 0 : 1 ))
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/toclip.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+payload=$work/payload
+if (( $# )); then printf '%s' "$*" > "$payload"; else cat > "$payload"; fi
+[[ -s $payload ]] || die "nothing to copy"
+size=$(wc -c < "$payload" | tr -d ' ')
+
+local_copy() { LANG=en_US.UTF-8 pbcopy < "$payload"; }
+
+if [[ -n ${TMUX:-} ]]; then
   if [[ -z $target ]]; then
     tmux load-buffer - < "$payload"
     local_copy
@@ -81,7 +94,7 @@ if [[ -n ${TMUX:-} ]]; then
     tmux load-buffer -w -t "$target" - < "$payload"
     say "sent $size bytes to the laptop terminal ($target); also kept as the newest tmux buffer"
   fi
-elif [[ -n ${SSH_CONNECTION:-} ]]; then
+elif (( remote )); then
   (( size <= OSC52_MAX )) || die "$size bytes is too large to send through the terminal"
   tty=$(caller_tty) || die "no terminal to send to"
   printf '\033]52;c;%s\a' "$(base64 < "$payload" | tr -d '\n')" > "$tty"

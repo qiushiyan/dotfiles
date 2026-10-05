@@ -10,9 +10,11 @@ export PROMPT_MACHINE=mini
 # OSC 8 support and prints URLs as plain text (no Ctrl-click). The laptop
 # client (Ghostty -> tmux with the hyperlinks feature) passes OSC 8 through.
 [[ -n $SSH_CONNECTION ]] && export FORCE_HYPERLINK=1
-# A URL "opened" here (Claude Code Ctrl-click, gh --web, ...) goes to the
-# laptop clipboard via OSC 52, not the mini's Safari.
-[[ -n $SSH_CONNECTION ]] && export BROWSER="$HOME/.local/bin/browser-clip"
+# A URL "opened" here (Claude Code Ctrl-click, gh --web, gopen, ...) goes to
+# the laptop clipboard via OSC 52 when you are on ssh, else to the mini's
+# browser. Every shell gets the shim, not only ssh ones: it decides per URL,
+# since a tmux pane outlives the client it was created under.
+export BROWSER="$HOME/.local/bin/browser-clip"
 
 # aws sso login defaults to a browser flow that redirects to a localhost
 # listener on this machine, which a laptop browser (ssh, BROWSER=browser-clip)
