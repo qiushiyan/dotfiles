@@ -5,178 +5,327 @@ neither is a copy of the other. Every repository, this one included, is an
 ordinary clone on each. `twin` (`~/dev/twin`, on PATH on both) covers what
 git does not: it says what is unsent on both machines, moves the gitignored
 files a manifest lists, and has each machine build and activate for itself.
-`twin help` lists the commands; this page is when to reach for which.
 
 `docs/qiushi-mini.md` is the mini as a machine: reaching it, its desk, its
 toolchain, the jobs it hosts.
 
 ## What moves, and how
 
-- **Tracked content moves by git and nothing else.** Commit, push, and pull
-  on the other machine. `twin` never commits, pushes or merges, and it
-  changes tracked files only inside `twin repos pull` and `twin repos clone`.
-- **Gitignored files move only when the manifest names them.** These are the
-  carried paths: env files, token files, working notes, `~/.secrets.shared`.
-  The laptop reconciles them with the mini through Unison, every hour and on
-  `twin files sync`.
-- **Built things never move.** CLIs, the TabType app, stow links, the Codex
-  config and launchd agents are made on each machine from its own clone
-  (`twin tools install`, `twin dotfiles apply`).
-- **Nothing else travels.** Uncommitted work, a branch with no upstream,
-  OAuth logins (Claude Code, Codex and gh are logged in on each machine; a
-  shared refresh token logs the other out), `~/.secrets`, `node_modules` and
-  other build output.
+```text
+tracked content            git: commit, push, pull on the other machine
+carried paths              twin: gitignored files the manifest lists, reconciled by the laptop
+CLIs, apps, stow links,    never move: each machine builds from its own clone
+  Codex config, agents
+uncommitted work,          nothing: commit and push, or it stays where it is
+  branches with no upstream
+OAuth logins, ~/.secrets,  nothing: per machine by design
+  node_modules, build output
+```
+
+`twin` never commits, pushes or merges. It changes tracked files only inside
+`twin repos pull` and `twin repos clone`.
 
 The manifest is `twin/.config/twin/twin.toml`, stowed to
-`~/.config/twin/twin.toml`. It is the whole declaration: the repositories
-both machines hold, each one's carried paths, the tools each machine builds,
-and the packages the mini stows. `~/.config/machine` tells `twin` which
-machine it is on, and it refuses to run without it.
+`~/.config/twin/twin.toml`: the repositories both machines hold, each one's
+carried paths, the tools each machine builds, the packages the mini stows.
+`~/.config/machine` (`mac` or `mini`) tells `twin` where it is; without it
+`twin` refuses to run.
 
-## `twin status`
+## Status
 
-Run it before leaving a desk and on sitting down at the other. It inspects
-this machine, asks the other for the same, and ends with the attention
-block: one line per thing a person must act on, with the command that clears
-it. Exit status 0 means nothing needs attention on either machine, 1 means
-something does, 2 means the command itself failed.
+```bash
+twin status                 # both machines; run before leaving a desk and on sitting down
+twin status dotfiles        # one target, every item listed
+twin status --recorded      # do not ask the other machine; show its last recorded state
+twin status --json          # the same items, for a program
+twin repos status           # only repositories; also lists unregistered checkouts under ~/dev
+twin files status           # only carry sets
+twin tools status           # only tools
+```
 
-- **uncommitted, unpublished:** work that exists on that machine only. Commit
-  and push it there.
+```text
+attention: 3
+  mac dotfiles: unpublished — main is 2 ahead of origin/main. Clear: git push
+  mini planlab: behind — develop is 10 behind origin/develop as of the fetch at 2026-10-05 14:02. Clear: twin repos pull planlab
+  mini (recorded 2026-10-05 09:12) itell: uncommitted — 3 paths in ~/dev/itell. Clear: commit or discard
+```
+
+The attention block is the last thing every command prints. Each line is
+machine, target, condition, and the command that clears it; run that command
+on the machine the line names.
+
+```text
+exit 0   nothing needs attention on either machine
+exit 1   something does
+exit 2   the command itself failed
+```
+
+- **uncommitted, unpublished:** work that exists on that machine only.
 - **local-only, in use:** a branch with no upstream, checked out in a
-  worktree. Push it if the work continues on the other machine; it is
-  expected for a worktree whose work stays put.
-- **behind:** the upstream moved, as of that machine's last fetch.
-  `twin repos pull <target>` there.
-- **absent:** the manifest registers a repository that machine has no clone
-  of. `twin repos clone <target>` there.
+  worktree. Push it if the work continues on the other machine; expected for
+  work that stays put.
+- **behind:** as of that machine's last fetch. Status never fetches; the
+  hourly tick does.
+- **absent:** registered in the manifest, no clone on that machine.
 - **tool behind, activation behind, codex config behind:** the checkout moved
-  and what is installed or stowed did not. `twin tools install <tool>` or
-  `twin dotfiles apply`, on that machine.
-- **needs resolving, blocked, not enrolled:** a carry set; see § Carried files.
-- **not reachable:** the other machine did not answer. Its lines then carry
-  the time they were recorded. An unreachable machine is never shown as clean.
+  and what is installed or stowed did not.
+- **needs resolving, blocked, not enrolled:** a carry set (§ Carried files).
+- **not reachable:** the other machine did not answer, and its lines carry
+  the time they were recorded. An unreachable machine is never shown clean.
 
-A status command with no target folds a repository's many items under one
-condition into a counting line; `twin status <target>` lists each, and
-`--json` always carries them all. Nothing in status fetches: "behind" is as
-of the last fetch, which the hourly tick does on each machine.
-`twin status --recorded` skips the call to the other machine.
-
-A Claude Code session started in this repository gets its machine's text and
-`twin status dotfiles --recorded` at session start
+With no target, a repository's many items under one condition fold into one
+counting line; name the target to see each. A Claude Code session started in
+this repository gets `twin status dotfiles --recorded` at session start
 (`.claude/hooks/machine-context.sh`).
 
 ## Common cases
 
-- **A commit made here is needed there.** Push here. There:
-  `twin repos pull <target>`, which fast-forwards only, and refuses a dirty
-  or diverged worktree with its reason. `pp` is this for the planlab checkout
-  and its briefs on both machines at once (`--both`).
-- **The pulled repository is dotfiles.** Then `twin dotfiles apply` there. A
-  pull does not restow, render the Codex config or re-read `tmux.conf`; apply
-  does. It loads launchd agents only with `--load-agents`.
-- **The pulled repository is a tool.** Then `twin tools install <tool>`
-  there. This includes `twin` itself: each machine calls the other's over
-  ssh, so install it on both after a change.
-- **Work on a branch continues on the other machine.** Push the branch with
-  an upstream before leaving; there, fetch and switch to it. A linked
-  worktree is pulled from inside it (`twin repos pull` with no target).
-- **A carried file changed.** Nothing to do: it reaches the other machine at
-  the laptop's next hourly run. For now, `twin files sync <target>` from
-  either machine.
-- **A key both machines need.** Write it in `~/.secrets.shared`. A key for
-  one machine goes in that machine's `~/.secrets`, which is never carried.
-  `.zshrc` sources both.
-- **A new repository should live on both.** Add `[repos.<name>]` to the
-  manifest with its gitignored working files under `carry`; commit, push,
-  pull and apply on the other machine. There: `twin repos clone <name>`. On
-  the laptop: `twin files enroll <name>`, read the listing, then again with
-  `--copy-missing` to send the files the new clone lacks.
-- **A repository gains a carried path.** Add it to `carry`, bring both
-  machines to that dotfiles commit, then `twin files enroll <target>` again:
-  a path the enrollment does not cover blocks the target until then.
-- **A new personal CLI.** Give its repository a `make install` target and add
-  `[tools.<name>]` with `method = "make-install"`. A pinned pnpm global is
-  `pnpm-global`; upgrading one is changing its pin, then installing on each.
-- **A TabType release.** The laptop installs it by its release runbook; on
-  the mini, `twin tools install tabtype` downloads and installs the same
-  release. Status names the machine on the older release.
-- **A package should be stowed on the mini.** Add it to `packages` under
-  `[machines.mini]`. The laptop stows the `Makefile`'s default set.
-- **A launchd agent.** Put its plist in the package of the machine that runs
-  it, `launchd-mac/` or `launchd-mini/`: a plist carries its machine's home
-  path, and the `Makefile` stows only the package `~/.config/machine` names.
-  Then `twin dotfiles apply --load-agents` there.
-- **A Codex setting.** Edit `twin/.config/twin/codex/shared.toml`, or
-  `mac.toml` / `mini.toml` for one machine, then `twin dotfiles apply` on
-  each. `~/.codex/config.toml` is a rendered file, never a link.
-- **The laptop is asleep and you are on the mini.** Git, pulls, installs and
-  status all work, and the laptop's lines are its last recorded ones. Carried
-  files do not move, and a `twin files` command fails naming the laptop.
+### A commit made here is needed there
+
+```bash
+git push                              # here
+twin repos pull <target>              # there: fetch, then fast-forward only
+twin repos pull                       # there, inside a linked worktree: pulls that worktree
+twin repos pull planlab --both        # from either machine: pull on both, each reports for itself
+pp                                    # = twin repos pull planlab planlab-handoffs --both
+```
+
+A pull refuses a dirty or diverged worktree and says why; nothing is changed.
+
+### The pulled repository is dotfiles
+
+```bash
+twin repos pull dotfiles
+twin dotfiles apply                   # restow, render ~/.codex/config.toml, re-read tmux.conf
+twin dotfiles apply --load-agents     # also load this machine's launchd agents not yet loaded
+```
+
+A pull alone restows nothing. Apply is per machine and never runs for the
+other one.
+
+### The pulled repository is a tool
+
+```bash
+twin repos pull headroom
+twin tools install headroom           # make install, from this machine's clone
+twin tools install --all              # every tool in the manifest
+twin repos pull twin && twin tools install twin   # twin itself: do it on both machines
+```
+
+Each machine calls the other's `twin` over ssh, so a `twin` change is
+installed on both.
+
+### A branch continues on the other machine
+
+```bash
+git push -u origin my-branch          # here, before leaving: a branch with no upstream does not travel
+git fetch && git switch my-branch     # there
+```
+
+### A secret or env file changed
+
+```bash
+twin files sync planlab               # from either machine; the laptop does the reconciling
+twin files sync --all
+# or wait: the laptop's hourly tick syncs every enrolled target
+```
+
+```bash
+# ~/.secrets.shared   keys both machines use; carried
+# ~/.secrets          this machine's own; never carried
+echo 'export NEW_API_KEY=…' >> ~/.secrets.shared     # then: twin files sync home
+```
+
+### A new repository on both machines
+
+```toml
+# twin/.config/twin/twin.toml
+[repos.newproj]
+path  = "~/dev/newproj"                           # must start with ~/
+url   = "https://github.com/qiushiyan/newproj.git"
+carry = [".env", "notes.local"]                   # gitignored paths, literal, files or directories
+# branch = "main"                                 # optional: pull refuses any other branch
+```
+
+```bash
+git commit -am "twin: register newproj" && git push    # in ~/dotfiles, on the machine that has it
+twin repos pull dotfiles && twin dotfiles apply         # on the other machine
+twin repos clone newproj                                # on the other machine
+twin files enroll newproj                               # on either: lists equal / differs / one-sided
+twin files enroll newproj --copy-missing                # then send the files the new clone lacks
+```
+
+### A repository gains a carried path
+
+```toml
+[repos.itell]
+carry = ["apps/platform/.env", "apps/platform/.env.new"]   # added
+```
+
+```bash
+# commit, push, pull and apply dotfiles on both machines first, then:
+twin files enroll itell --copy-missing    # a path the enrollment does not cover blocks the target
+```
+
+### A new tool, or a new version of one
+
+```toml
+[tools.mytool]                 # built on each machine by `make install` in its clone
+method = "make-install"
+repo = "mytool"
+
+[tools.obelisk]                # a pnpm global at one version on both machines
+method = "pnpm-global"
+package = "@obelisk-apps/cli"
+version = "0.2.6-rc.0"         # upgrading is changing this pin
+```
+
+```bash
+twin tools install mytool      # on each machine
+twin tools install tabtype     # on the mini, after a TabType release: installs the same release
+```
+
+### A package or a launchd agent on one machine
+
+```toml
+[machines.mini]
+packages = ["claude", "zsh", "newpkg"]    # the mini stows this list; the laptop the Makefile's default set
+```
+
+```bash
+# a plist goes in the package of the machine that runs it; it carries that machine's home path
+launchd-mac/Library/LaunchAgents/com.qiushi.thing.plist
+launchd-mini/Library/LaunchAgents/com.qiushi.thing.plist
+twin dotfiles apply --load-agents         # on that machine
+```
+
+### A Codex setting
+
+```bash
+$EDITOR twin/.config/twin/codex/shared.toml    # both machines
+$EDITOR twin/.config/twin/codex/mini.toml      # one machine (mac.toml for the laptop)
+twin dotfiles apply                            # on each: renders ~/.codex/config.toml
+twin dotfiles apply --replace-codex-config     # discard a local edit that blocks the render
+```
+
+`~/.codex/config.toml` is a rendered file, never a link (§ Codex config).
+
+### The laptop is asleep and you are on the mini
+
+```bash
+twin status                    # works; the laptop's lines are its last recorded ones
+twin repos pull planlab        # works
+twin tools install gwt         # works
+twin files sync home           # exit 2: the laptop runs the reconciler and did not answer
+```
 
 ## Carried files
 
 A carry set is reconciled, not copied in a direction: a file changed on one
-machine reaches the other, whichever it was. The cases where that cannot be
-decided stop and wait.
+machine reaches the other, whichever it was. What cannot be decided stops
+and waits.
 
-- **Changed on both machines, or deleted on one: nothing is overwritten.**
-  The path is listed as needing resolution in every run until
-  `twin files resolve <target> <path> --keep mac|mini` (that machine's copy
-  wins) or `--delete` (every copy goes). The copy a resolution replaces or
-  removes is first kept under `~/.local/state/twin/replaced/` on the machine
-  that held it; remove those by hand.
-- **Enrollment is explicit.** `twin files enroll <target>` is the first
-  reconciliation of a target: it lists what is equal, what differs and what
-  exists on one machine only. A one-sided path is copied only with
-  `--copy-missing`; otherwise it is held until resolved. An ordinary sync
-  never initialises a target.
-- **Blocked is cleared by fixing the cause, or by enrolling again** when the
-  item says so: a lost record, a receipt on one machine only, a path the
-  enrollment does not cover.
-- **Both machines must declare the target alike.** When their dotfiles
-  commits differ in a target's carry set, nothing is reconciled and the item
-  names both commits. Pull and apply on the machine that is behind.
-- **Copies equal in content and different in mode wait at enrollment.** The
-  listing says so. `chmod` one to match, then sync.
-- **What may be carried.** A literal path, no wildcard, that git ignores. A
-  carried directory may hold files git tracks beside its ignored ones; those
-  stay git's. Refused: a tracked file; a directory holding a file git neither
-  tracks nor ignores; anything under `node_modules` or other build output;
-  `~/.ssh`, `~/.gnupg`, `~/.secrets`, gh's config, `~/.claude`, `~/.codex`.
-  Finder's `.DS_Store` is never carried.
+```bash
+twin files enroll <target>                    # first reconciliation: list, then reconcile
+twin files enroll <target> --copy-missing     # also copy paths that exist on one machine only
+twin files sync <target>                      # every later run
+```
+
+```text
+itell: equal on both: apps/platform/.env
+itell: differs: apps/platform/.env.local               -> needs resolving
+itell: on mac only, held: legacy/demo/.env             -> held until resolved or --copy-missing
+itell: same content, modes differ: … (mac 644, mini 600)  -> chmod one to match, then sync
+```
+
+### Changed on both machines, or deleted on one
+
+Nothing is overwritten. The path is listed in every run until resolved:
+
+```bash
+twin files resolve home .planlab/.env --keep mac     # the laptop's copy wins
+twin files resolve home .planlab/.env --keep mini    # the mini's copy wins
+twin files resolve home .planlab/.env --delete       # remove every copy
+ls ~/.local/state/twin/replaced/                     # what a resolution replaced or removed, kept here
+```
+
+`--keep` naming the machine where the file is gone is refused: use `--delete`,
+or `--keep` the machine that still has it to bring it back.
+
+### Blocked
+
+```text
+blocked — the enrollment is incomplete: a receipt or a reconciler record is missing   -> twin files enroll <target>
+blocked — the manifest lists X, which the enrollment does not cover                   -> twin files enroll <target>
+blocked — the two machines declare itell differently: dotfiles is at a1b2c3d on mac
+          and 9f8e7d6 on mini; mini is behind                                          -> pull and apply dotfiles there
+blocked — on mini, notes: holds a file git neither tracks nor ignores, notes/x.md     -> ignore or commit it
+```
+
+### What may be carried
+
+```toml
+# each line is its own example
+carry = [".env"]               # ok: a literal path that git ignores
+carry = [".greenflag"]         # ok: a directory; files git tracks inside it stay git's
+carry = ["*.env"]              # refused: no wildcard
+carry = ["README.md"]          # refused: a tracked file
+carry = ["node_modules"]       # refused: build output, at any depth
+[home]
+carry = [".config/slack"]      # ok: paths under $HOME, outside any repository
+carry = [".ssh/config"]        # refused: ~/.ssh, ~/.gnupg, ~/.secrets, gh's config, ~/.claude, ~/.codex
+```
+
 - **A pull is refused when the incoming commits add a file where a carried
   one sits.** Git treats an ignored file as expendable and would replace it.
   Move the carried file aside or drop it from the manifest, then pull.
 - **A carried copy is a replica, not a backup.** An edit, a truncation
-  included, reaches the other machine. `docs/recovery.md` owns backups.
+  included, reaches the other machine; only a deletion does not.
+  `docs/recovery.md` owns backups.
 - **The mini is not a trust boundary** (`docs/qiushi-mini.md` § Reaching the
-  laptop). Whatever is carried is readable by every agent session there,
-  which is why a key's reach is decided by the file it is written in.
+  laptop): whatever is carried is readable by every agent session there.
+- Finder's `.DS_Store` is never carried.
 
 ## The hourly tick
 
-`com.qiushi.twin-tick`, in each machine's launchd package, runs `twin tick`
-at load and every hour. On the laptop it reconciles every enrolled carry
-set, fetches every registered repository and exchanges observations with the
-mini; on the mini it fetches and records. It never pulls, installs or
-applies, so it changes no tracked file and nothing a running session has
-open. Its log, `~/Library/Logs/twin-tick.log`, ends with that machine's
-attention block as of the last run.
+```bash
+launchctl print gui/$(id -u)/com.qiushi.twin-tick | grep -E 'state|runs|last exit'
+tail -20 ~/Library/Logs/twin-tick.log        # ends with this machine's attention block
+launchctl kickstart gui/$(id -u)/com.qiushi.twin-tick    # run it now
+```
+
+```text
+laptop   files sync --all, repos fetch --all, exchange observations with the mini
+mini     repos fetch --all, record its observation
+```
+
+It never pulls, installs or applies, so it changes no tracked file and
+nothing a running session has open.
 
 ## Codex config
 
-Codex writes trust decisions into `~/.codex/config.toml` as it runs, and its
-desktop app writes its plugins and MCP servers there, so the file cannot be
-a link into this repository. `twin dotfiles apply` renders it from the
-shared source, this machine's fragment, and the tables those programs own,
-kept from the local file (`codex_runtime_tables` in the manifest). A setting
-changed in the local file outside those tables, a `/model` default included,
-is reported as drift and stops the next render: move it into the source, or
-discard it with `--replace-codex-config`. `skill-sync` writes its generated
-block into the shared source, so its changes also reach Codex at the next
-apply.
+```text
+twin/.config/twin/codex/shared.toml     both machines
+twin/.config/twin/codex/<machine>.toml  merged over it on that machine
+~/.codex/config.toml                    kept from the local file: the keys in codex_runtime_tables
+                                        (trust decisions, the desktop app's plugins and MCP servers)
+```
+
+Codex and its desktop app write into `~/.codex/config.toml` as they run, so
+it cannot be a link into this repository. A setting changed in the local
+file outside the runtime keys, a `/model` default included, is drift:
+
+```text
+mac dotfiles: codex drift — ~/.codex/config.toml was edited locally: model
+```
+
+```bash
+$EDITOR twin/.config/twin/codex/shared.toml && twin dotfiles apply   # keep it: move it into the source
+twin dotfiles apply --replace-codex-config                           # or discard it
+```
+
+`skill-sync` writes its generated block into the shared source, so its
+changes reach Codex at the next apply.
 
 ## Why it is shaped this way
 
@@ -195,8 +344,8 @@ apply.
 - **Uncommitted work and unpushed branches do not travel.** Carrying them
   needs a second transport beside git, for work that is either a forgotten
   push or throwaway. Status is the reminder.
-- **Only the laptop reconciles.** One machine holds the reconciler's lock and
-  record of each target, so a carry set is never reconciled by two runs.
+- **Only the laptop reconciles.** One machine holds each target's lock and
+  record, so a carry set is never reconciled by concurrent runs.
 
 `twin`'s own rules and tests are in `~/dev/twin` (`CLAUDE.md`,
 `internal/files/files.go`'s header). Its state is `~/.local/state/twin` on
