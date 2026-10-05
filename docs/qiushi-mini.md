@@ -153,9 +153,10 @@ Karabiner-Elements is installed from its pkg, which needs `sudo` and so the
 mini's own screen or a terminal there. The `karabiner` package is stowed from
 the mirror, so `~/.config/karabiner` is a folder link into it and a change
 made in Karabiner's UI on the mini is lost at the next sync: make it on the
-laptop. The other desk apps, such as Raycast, 1Password, Arc, Slack and
-OrbStack, are installed by hand, as Homebrew casks or vendor downloads, and
-carry no config from this repo.
+laptop. TabType comes from the laptop through `mini-sync` (§ Sync). The
+other desk apps, such as Raycast, 1Password, Arc, Slack and OrbStack, are
+installed by hand, as Homebrew casks or vendor downloads, and carry no config
+from this repo.
 Not installed: rust.
 
 ## Shell
@@ -484,10 +485,10 @@ before picking the work up on the other.
 and the laptop is the source of truth. **Never edit `~/dotfiles` on the
 mini.** The next sync overwrites it, so a fix found there is made on the
 laptop; a Claude Code session started in the mirror is told so
-(`.claude/machines/mini.md`). The script's header and its `STOW`, `BINS`, `SECRETS`, `ENGINES` and
+(`.claude/machines/mini.md`). The script's header and its `STOW`, `BINS`, `SECRETS`, `APPS`, `ENGINES` and
 `LINKS` lists say what it carries: the working tree as git sees it (uncommitted
 edits included, ignored paths never), the links of the packages the mini
-stows, the Codex config (§ Agent config), engine
+stows, the Codex config (§ Agent config), app and engine
 versions, links into the mirror for the scripts the mini runs by name, and
 the laptop's theme, applied only when the laptop switches, so a `prefix t`
 pick on the mini lasts until then.
@@ -511,6 +512,15 @@ pick on the mini lasts until then.
   toolchain here (§ Personal checkouts). `planlab` and `bench` are not: they
   are shims into a checkout, and the mini generates its own (§ planlab
   checkout).
+- **Apps follow the laptop's installed release**, the ones named in `APPS`:
+  TabType, whose snippets the mirror carries. A sync copies
+  `/Applications/<app>.app` when the laptop's build is newer than the mini's
+  or the mini has none, and leaves alone a mini that updated itself first.
+  Only a notarized Developer ID build travels, because macOS ties the
+  Accessibility grant to the signature: while the laptop runs a build from
+  the working tree, the mini keeps its release. An app that was running is
+  restarted; one that was not is left closed, and a first launch needs the
+  mini's screen for the Accessibility prompt.
 - **Engines are version-matched**, the pnpm globals named in `ENGINES`
   (`@obelisk-apps/cli`): a skill in the mirror is written against the
   laptop's engine, so when the mini's version differs, the mini runs

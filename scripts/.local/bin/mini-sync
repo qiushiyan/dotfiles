@@ -6,8 +6,9 @@
 # the mirror carries the working tree as-is. See docs/qiushi-mini.md § Sync.
 #
 # Also: the links of the packages the mini stows (STOW), CLI token files
-# (SECRETS), pnpm-global engines at the laptop's version (ENGINES), a reload
-# of the mini's tmux config when it changed, and the laptop's theme, below.
+# (SECRETS), apps and pnpm-global engines at the laptop's version (APPS,
+# ENGINES), a reload of the mini's tmux config when it changed, and the
+# laptop's theme, below.
 #
 # Usage: mini-sync [-n|--dry-run] [-q|--quiet]
 #   --quiet  for the launchd timer: exit 0 silently when the mini is unreachable
@@ -41,6 +42,11 @@ LINKS=(theme-set toclip browser-clip mac aws-login snapshot)
 # against the laptop's engine, so the mini installs the laptop's exact version
 # whenever its own differs. Not copied like BINS: they are node packages.
 ENGINES=(@obelisk-apps/cli)
+# Apps the mini runs at the version installed in this laptop's /Applications.
+# An app belongs here when the mirror carries its config, which is written
+# against the laptop's build: TabType's snippets (tabtype in STOW). The
+# mini's other desk apps are installed there by hand and update themselves.
+APPS=(TabType)
 # The mini records the last theme this script applied there, so a theme
 # picked on the mini (prefix t) lasts until the laptop switches.
 THEME_STATE=.local/state/mini-sync/theme
@@ -52,7 +58,7 @@ for arg in "$@"; do
   case $arg in
     -n|--dry-run) dry=(--dry-run --itemize-changes) ;;
     -q|--quiet) quiet=1 ;;
-    -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "mini-sync: unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -183,6 +189,68 @@ else
     say "    applied $theme"
   fi
 fi
+
+# An app is copied when the build installed here is newer than the mini's
+# (CFBundleVersion, an integer that grows with each release), or the mini has
+# none. A mini that updated itself first is left alone, never downgraded.
+# Only a notarized Developer ID build travels: macOS ties an app's
+# Accessibility grant to its signature, so a build from a working tree would
+# cost the mini the grant. The copy is staged on the mini and verified there
+# before it replaces the installed app; an app that was running is restarted.
+say "==> ${APPS[*]} → $HOST:/Applications (the releases installed here)"
+app_version() {  # "<version> (<build>)" of an app bundle; empty when absent
+  local v b
+  v=$(defaults read "$1/Contents/Info" CFBundleShortVersionString 2>/dev/null) || return 0
+  b=$(defaults read "$1/Contents/Info" CFBundleVersion 2>/dev/null) || return 0
+  printf '%s (%s)' "$v" "$b"
+}
+app_build() { local b=${1##*\(}; printf '%s' "${b%\)}"; }  # the build in that string
+for app in "${APPS[@]}"; do
+  src="/Applications/$app.app"
+  want=$(app_version "$src")
+  if [[ -z $want ]]; then
+    echo "mini-sync: skipping $app (not installed here)" >&2
+    continue
+  fi
+  have=$(ssh "$HOST" "$(declare -f app_version); app_version '$src'" || true)
+  if [[ $have == "$want" ]]; then
+    say "    $app $want unchanged"
+  elif [[ -n $have && $(app_build "$have") =~ ^[0-9]+$ && $(app_build "$want") =~ ^[0-9]+$ ]] \
+       && (( $(app_build "$have") > $(app_build "$want") )); then
+    say "    $app: the mini has the newer $have; left alone (here: $want)"
+  elif ! spctl --assess --type execute "$src" 2>/dev/null; then
+    say "    $app $want here is not a notarized release; the mini keeps ${have:-none}"
+  elif (( ${#dry[@]} )); then
+    say "    would install $app $want (the mini has ${have:-none})"
+  elif ssh "$HOST" 'mkdir -p ~/Library/Caches/mini-sync' \
+       && rsync -a --delete "$src/" "$HOST:Library/Caches/mini-sync/$app.app/" \
+       && ssh "$HOST" bash -s -- "$app" <<'REMOTE'
+set -eu
+app=$1
+stage="$HOME/Library/Caches/mini-sync/$app.app"
+old="$stage.previous"
+dest="/Applications/$app.app"
+codesign --verify --deep --strict "$stage"
+spctl --assess --type execute "$stage"
+running=0
+if pgrep -x "$app" >/dev/null; then running=1; killall "$app" || true; sleep 1; fi
+rm -rf "$old"
+if [ -d "$dest" ]; then mv "$dest" "$old"; fi
+mv "$stage" "$dest"
+rm -rf "$old"
+if [ "$running" = 1 ]; then
+  open "$dest"
+else
+  echo "    $app was not running: open it at the mini's screen (a first launch asks for Accessibility)"
+fi
+REMOTE
+  then
+    say "    $app ${have:-none} → $want"
+  else
+    echo "mini-sync: installing $app $want on $HOST failed" >&2
+    rc=1
+  fi
+done
 
 # Last, so a failed install cannot hold back the steps above. The version
 # check is one pnpm call per side; pnpm itself runs only when they differ.
