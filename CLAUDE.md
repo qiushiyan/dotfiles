@@ -105,10 +105,9 @@ Additional routes beyond the feature docs above:
 - What protects uncommitted and gitignored state, local snapshots, recovery
   after a loss, and reading or editing the VPN credentials in 1Password:
   `docs/recovery.md`.
-- The colleague's Mac mini (`ssh macmini-shared`), including access etiquette:
-  `docs/macmini.md`.
-- My own office Mac mini (`ssh qiushi-mini`), reached over the company
-  tailnet and kept in sync by `mini-sync`: `docs/qiushi-mini.md`.
+- The office Mac mini (`ssh qiushi-mini`), "the mini" everywhere in this
+  repository, reached over the company tailnet and kept in sync by
+  `mini-sync`: `docs/qiushi-mini.md`.
 - Unbuilt tmux features: `tmux/.config/tmux/roadmap.md`.
 - The personal Slack toolkit: the `slack` skill is `~/dev/slackkit`'s,
   linked here; its design is that repo's `docs/`.

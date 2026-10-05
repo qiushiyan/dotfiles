@@ -2,8 +2,8 @@
 
 My own Mac mini, kept in the office. At the desk it is the office desktop
 (§ At the desk); from the laptop it is reached over the company tailnet, in or
-out of the office. Unlike the shared `macmini` (`docs/macmini.md`), this box
-is mine to configure. Facts below were collected 2026-09-22.
+out of the office. It is mine to configure. Facts below were collected
+2026-09-22.
 
 ## Connection
 
