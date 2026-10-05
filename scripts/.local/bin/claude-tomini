@@ -207,7 +207,7 @@ if [[ -s $notes ]]; then
   if ssh "$HOST" "\$HOME/.local/bin/claude-steps import-notes $(printf %q "$id")" < "$notes"; then
     say "notes merged"
   else
-    echo "claude-tomini: the notes did not reach the mini (mini-sync installs claude-steps there); they are still in $notes" >&2
+    echo "claude-tomini: the notes did not reach the mini (it builds its own claude-steps: twin tools install claude-steps there); they are still in $notes" >&2
   fi
 fi
 

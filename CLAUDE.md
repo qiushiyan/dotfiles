@@ -108,8 +108,9 @@ Additional routes beyond the feature docs above:
   after a loss, and reading or editing the VPN credentials in 1Password:
   `docs/recovery.md`.
 - The office Mac mini (`ssh qiushi-mini`), "the mini" everywhere in this
-  repository, reached over the company tailnet and kept in sync by
-  `mini-sync`: `docs/qiushi-mini.md`.
+  repository, reached over the company tailnet; both machines are worked on,
+  and `twin` keeps them in step (`twin/.config/twin/twin.toml` is what it
+  manages): `docs/qiushi-mini.md`.
 - Unbuilt tmux features: `tmux/.config/tmux/roadmap.md`.
 - The personal Slack toolkit: the `slack` skill is `~/dev/slackkit`'s,
   linked here; its design is that repo's `docs/`.
