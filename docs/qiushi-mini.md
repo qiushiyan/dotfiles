@@ -122,6 +122,24 @@ desk, Universal Control shares them with it.
   Karabiner modifies only through its device entry in `karabiner.json`
   (vendor 2007, `ignore: false`); over USB it enumerates as separate keyboard
   and pointer devices and needs no entry.
+- **Through Universal Control a modifier arrives once per keyboard of the
+  source Mac → ctrl+space reaches macOS as F18.** Karabiner's virtual
+  keyboard stands beside the NuPhy, Universal Control mirrors both, and the
+  other Mac gets every modifier press and release on each mirror. "Select the
+  previous input source" commits when the modifier is released, so bound to
+  ctrl+space it switches there and back within 20 ms and the input source
+  looks stuck. The rule in `karabiner.json` sends F18 for ctrl+space, which
+  has no modifier to release; each Mac binds the shortcut to F18 and keeps
+  ctrl+space on "select next source" for a keyboard Karabiner does not modify
+  (`docs/migration-app-state.md` §5c has the commands). Any other shortcut
+  that acts on a modifier's release is exposed the same way. The rule can go
+  when one modifier press on the mini's keyboard logs one event on the laptop
+  instead of a pair a millisecond apart:
+
+  ```bash
+  /usr/bin/log show --last 1m --info --debug --style compact \
+    --predicate 'process == "WindowServer" AND eventMessage CONTAINS "kCGSEventFlagsChanged"'
+  ```
 
 ## Toolchain
 
@@ -153,7 +171,11 @@ on the mini. Karabiner-Elements is installed from its pkg, which needs `sudo`
 and so the mini's own screen or a terminal there. The `karabiner` package is
 stowed, so `~/.config/karabiner` is a folder link into this repository's
 clone, and a change made in Karabiner's UI on the mini is an uncommitted edit
-there, to commit and push like any other. TabType is the release
+there, to commit and push like any other. Karabiner logs
+`Load …/karabiner.json` in `/var/log/karabiner/core_service.log` when it
+takes an edit to the file; the laptop's can miss one, and
+`launchctl kickstart -k gui/$(id -u)/org.pqrs.service.agent.karabiner_console_user_server`
+there makes it reread. TabType is the release
 `twin tools install tabtype` installs; its first launch needs the mini's
 screen for the Accessibility prompt, which macOS ties to the release's
 signature. The other desk apps, such as Raycast, 1Password, Arc, Slack and

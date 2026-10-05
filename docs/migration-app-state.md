@@ -46,6 +46,20 @@ checkbox. Just be aware of the categories:
     (`⌃⌥⇧⌘C`) and **Convert Text to Traditional Chinese** (`⌃⌥⇧⌘T`).
   - Same panel, **Mission Control** → review the workspace shortcuts
     if you've remapped them via Karabiner.
+- **Input source shortcut**: Karabiner sends F18 for ctrl+space
+  (`docs/qiushi-mini.md` § At the desk says why), and the binding that
+  receives it is system state, set on each machine: "Select the previous
+  input source" on F18, and "Select next source in Input menu" on ctrl+space
+  for a keyboard Karabiner does not modify. The same panel's
+  **Input Sources** shows both; from a shell:
+  ```bash
+  hk() { defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add "$1" \
+    "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>$2</integer><integer>$3</integer><integer>$4</integer></array><key>type</key><string>standard</string></dict></dict>"; }
+  hk 60 65535 79 8388608   # previous input source: F18
+  hk 61 32 49 262144       # next source: ctrl+space
+  /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+  ```
+  ctrl+space then switches the input source once per press.
 
 ### 5d. Sync app state from the old Mac
 
