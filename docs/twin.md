@@ -70,6 +70,9 @@ exit 2   the command itself failed
 - **absent:** registered in the manifest, no clone on that machine.
 - **tool behind, activation behind, codex config behind:** the checkout moved
   and what is installed or stowed did not.
+- **tool differs:** each machine built the tool from a different commit,
+  usually because their checkouts are on different branches. Each is current
+  against its own checkout, so nothing else would say it.
 - **needs resolving, blocked, not enrolled:** a carry set (§ Carried files).
 - **not reachable:** the other machine did not answer, and its lines carry
   the time they were recorded. An unreachable machine is never shown clean.
@@ -98,13 +101,24 @@ installed headroom on mini
 attention: none
 ```
 
-It does only what is behind: a repository that is current is not pulled, and
-a tool whose checkout did not move is not rebuilt. It never forces. A main
-checkout with uncommitted work or a diverged branch is left alone and listed
-as `pull refused`, and a tool is not built from a checkout holding
-uncommitted changes. It pulls main checkouts, not linked worktrees, and it
-cannot move what was never pushed: that shows in the final block as
-`unpublished`. The sections below are the same steps one at a time.
+It does the same on whichever machine it is run from, and only what is
+behind: a repository that is current is not pulled, and a tool whose checkout
+did not move is not rebuilt. It never forces and never switches a branch. A
+main checkout that is behind and has uncommitted work, or has diverged, is
+left alone and listed as `pull refused`, and a tool is not built from a
+checkout holding uncommitted changes. It pulls main checkouts, not linked
+worktrees, and it cannot move what was never pushed: that shows in the final
+block as `unpublished`. The run ends with `twin status`, so an empty
+attention block is the whole answer.
+
+```text
+exit 2, "mini: not reachable … only mac was brought up to date"
+        -> this machine is done; run it again when the other is awake
+both tool differs — gwt: mac built 8b7d0e4 (main), mini built 3f2a1c9 (release)
+        -> the checkouts are on different branches; put them on the same one, then sync
+```
+
+The sections below are the same steps one at a time.
 
 ### A commit made here is needed there
 
