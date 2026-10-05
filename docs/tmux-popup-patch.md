@@ -1,13 +1,16 @@
 # tmux-popupfix: why tmux comes from a local tap
 
 **Status: temporary carry.** Homebrew's `tmux` is replaced by
-`qiushiyan/local/tmux-popupfix` — stock tmux 3.7c with jemalloc plus one
-popup overlay fix. Retire it (see below) once an upstream release after 3.7c
-fixes popups under `status-position top`. Upstream's 3.8 change log names broad
-redraw fixes around status lines, popups, and floating panes, but not this exact coordinate
-case; the reproduction harness remains the retirement gate.
+`qiushiyan/local/tmux-popupfix` — stock tmux 3.7c with jemalloc plus a patch
+to `screen-redraw.c` for the defects below. Retire it (see below) once an
+upstream release after 3.7c passes the reproduction harness. Upstream's 3.8
+change log names broad redraw fixes around status lines, popups, and floating
+panes, and its branch rewrites pane status drawing, but neither names these
+exact cases; the harness remains the retirement gate.
 
-## The bug it fixes
+## What it fixes
+
+### Popups overwritten under a top status bar
 
 With the status bar at the **top** (this setup: `status 2` +
 `status-position top`), any `display-popup` over a busy pane — Claude Code
@@ -32,6 +35,27 @@ redraws — tmux can't autodetect it because Ghostty ships terminfo inside its
 app bundle) and an explicit `popup-style`/`popup-border-style` background
 (default-bg cells are translucent under Ghostty's `background-opacity`).
 
+### Redraw stall when a narrower client draws pane status
+
+With `pane-border-status` on, as `tmux-agent-status.sh` sets it on every
+window holding an agent pane, a client narrower than the window it shows makes
+stock 3.7c burn 5–10 s of CPU per redraw. The server answers nothing
+meanwhile, so every key press on every client waits. The case arises whenever
+clients of different sizes share a session: the mini's desk terminal and an
+ssh client from the laptop are enough.
+
+Root cause, in `screen_redraw_draw_pane_status`: for a status line cut off at
+the client's right edge, the visible width is taken from the status line's
+length instead of the client's width. It underflows when the line starts
+further right in the view than it is long, and `tty_draw_line` walks ~2^32
+cells. Upstream tracks it as
+[issue #5664](https://github.com/tmux/tmux/issues/5664), reported against 3.7c
+on macOS and Linux.
+
+A server on an unpatched binary escapes it by config alone:
+`window-size smallest` (no client sees a cut-off window), a single attached
+client (`tmux attach -d`), or `pane-border-status off`.
+
 ## Where things live
 
 - **Formula + embedded patch**: `/opt/homebrew/Library/Taps/qiushiyan/homebrew-local/Formula/tmux-popupfix.rb`
@@ -45,13 +69,15 @@ app bundle) and an explicit `popup-style`/`popup-border-style` background
   Tahoe / Apple Silicon can abort with an invalid-memory free
   ([issue #5385](https://github.com/tmux/tmux/issues/5385)).
 - Stock Homebrew `tmux` is **unlinked**. Switching to it with
-  `brew unlink tmux-popupfix && brew link tmux` drops the popup correction;
+  `brew unlink tmux-popupfix && brew link tmux` drops the patch;
   retain it as a comparison build until the patch can be retired.
 
 ## Upgrading and activating
 
 Update the tracked formula, then copy it to the local tap's `Formula/` and run
-`brew upgrade qiushiyan/local/tmux-popupfix`. Keep the previous keg until the
+`brew upgrade qiushiyan/local/tmux-popupfix`. A patch change at the same tmux
+version needs the formula's `revision` raised, or brew sees nothing to upgrade
+and builds no new keg. Keep the previous keg until the
 old server has exited (`HOMEBREW_NO_INSTALL_CLEANUP=1` during the upgrade).
 Commit the tracked copy and local tap change in their respective repositories.
 
@@ -61,13 +87,16 @@ Check the installed binary and its allocator:
 tmux -V
 otool -L "$(brew --prefix tmux-popupfix)/bin/tmux"
 tmux display-message -p 'server=#{version} pid=#{pid}'
+lsof -p "$(tmux display-message -p '#{pid}')" | grep bin/tmux
 ```
 
 The binary must report 3.7c or newer and list `libjemalloc`. The server can
 still report an older version: installing or relinking does not replace a
 running server. Finish running jobs before ending the old server and starting
 a new one. A resurrect snapshot preserves layout and selected commands, not
-live process state. After restarting, repeat the server-version check.
+live process state. After restarting, repeat the server checks: the version
+reads the same across a `revision` bump, so the `lsof` line's keg path is what
+shows which build the server runs.
 
 ## Verifying / reproducing
 
@@ -83,7 +112,10 @@ python3 tmux/.config/tmux/scripts/tests/test-popup-overlay.py \
 It uses private sockets, a temporary home and minimal config, and `/bin/sh`
 panes. It requires stock to reproduce the broken top border, checks the
 candidate's border and lower divider across redraws, and enters/exits copy
-mode. This verifies popup behavior, not the rare allocator crash's absence.
+mode. It then attaches a client narrower than a window with pane status on:
+stock must stall, and the candidate must answer within a second with both
+status lines drawn. This verifies redraw behavior, not the rare allocator
+crash's absence.
 For patch retirement, pass the future stock release as `--candidate` and keep
 a known-broken binary as `--stock`.
 
@@ -101,12 +133,12 @@ intact, dividers present below it.
 The office mini carries the same tap and build (`docs/qiushi-mini.md`
 § Toolchain); retire it there in the same pass.
 
-When a tmux release after 3.7c lands (check its CHANGES for a popup/overlay
-coordinate fix; if unclear, install and rerun the harness above):
+When a tmux release after 3.7c lands, install it and rerun the harness above;
+its CHANGES may not name either case. Once it passes:
 
 1. `brew uninstall tmux-popupfix && brew install tmux`
 2. Brewfile: restore `brew "tmux"`, drop the `qiushiyan/local` tap line
 3. Delete this file and `docs/tmux-popupfix.rb`; `brew untap qiushiyan/local`
 
-If reporting the exact case, use the repro above against master with
+If reporting the popup case, use the repro above against master with
 `status-position top` and reference PR #4920, whose fix this extends.

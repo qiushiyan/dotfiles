@@ -76,9 +76,9 @@ brew "rsync"
 brew "sesh"
 brew "stow"
 brew "tldr"
-# stock tmux replaced by qiushiyan/local/tmux-popupfix (3.7c + popup overlay
-# fix, see docs/tmux-popup-patch.md); revert to `brew "tmux"` once an upstream
-# release after 3.7c fixes popups under status-position top
+# stock tmux replaced by qiushiyan/local/tmux-popupfix (3.7c + redraw fixes,
+# see docs/tmux-popup-patch.md); revert to `brew "tmux"` once an upstream
+# release after 3.7c passes that doc's harness
 brew "qiushiyan/local/tmux-popupfix"
 brew "trash"
 brew "tree"
