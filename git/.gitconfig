@@ -7,6 +7,13 @@
 useConfigOnly = true
 	email = qiushi.yann@gmail.com
 
+# GitHub goes over HTTPS on every machine, authenticated by gh's credential
+# helper (`gh auth setup-git`); no machine holds a GitHub SSH key. An SSH URL,
+# pasted or already in a clone's config, is rewritten on the way out.
+[url "https://github.com/"]
+  insteadOf = git@github.com:
+  insteadOf = ssh://git@github.com/
+
 [include]
   path = ~/.gitconfig.personal
 
