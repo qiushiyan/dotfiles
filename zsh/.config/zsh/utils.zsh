@@ -82,32 +82,6 @@ rm() {
 cpwd() { local p="${PWD/#$HOME/~}"; print -rn -- "$p" | toclip -q; print -r -- "$p" }
 
 # --------------------------------------------------------------------
-# ccproxy - Toggle AI proxy settings for Claude Code / Codex etc.
-# Usage: ccproxy on | off | (no args to check status)
-# --------------------------------------------------------------------
-ccproxy() {
-  case "$1" in
-    on)
-      export ANTHROPIC_BASE_URL="$CCPROXY_BASE_URL"
-      export ANTHROPIC_API_KEY="$CCPROXY_API_KEY"
-      echo "AI proxy ON"
-      ;;
-    off)
-      unset ANTHROPIC_BASE_URL
-      unset ANTHROPIC_API_KEY
-      echo "AI proxy OFF"
-      ;;
-    *)
-      if [[ -n "$ANTHROPIC_BASE_URL" ]]; then
-        echo "AI proxy is ON"
-      else
-        echo "AI proxy is OFF"
-      fi
-      ;;
-  esac
-}
-
-# --------------------------------------------------------------------
 # loc - Count lines of code per file with visual bar chart
 # Respects .gitignore. Uses git ls-files in repos, falls back to find.
 # Usage: loc [dir] [-s size|name|ext] [-e ext1,ext2] [-n limit]
