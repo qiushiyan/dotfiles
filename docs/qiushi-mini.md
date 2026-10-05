@@ -1,9 +1,9 @@
 # Office Mac mini (`ssh qiushi-mini`)
 
-My own Mac mini, kept in the office and reached over the company tailnet from
-the laptop, in or out of the office. Unlike the shared `macmini`
-(`docs/macmini.md`), this box is mine to configure. Facts below were
-collected 2026-09-22.
+My own Mac mini, kept in the office. At the desk it is the office desktop
+(§ At the desk); from the laptop it is reached over the company tailnet, in or
+out of the office. Unlike the shared `macmini` (`docs/macmini.md`), this box
+is mine to configure. Facts below were collected 2026-09-22.
 
 ## Connection
 
@@ -86,21 +86,20 @@ desk, Universal Control shares them with it.
     --predicate 'subsystem == "com.apple.universalcontrol"'
   ```
 - **A link that stays down with both Macs awake on the desk: restart the
-  mini's `rapportd` and `sharingd`.** Seen when the laptop came back after
-  days away. From the laptop:
+  mini's `rapportd` and `sharingd`.** From the laptop:
 
   ```bash
   ssh mini 'killall rapportd sharingd'
   ```
 
-  launchd starts both again and the link is up within seconds; watch for
-  `Connection Ready` in the log above. What had gone wrong: the mini's
-  `rapportd` no longer held the laptop as a Bluetooth device, so it never
-  asked the laptop to come up on AWDL. Its own connect then timed out after
-  15 s, and it held the laptop's incoming connect until that timeout, so both
-  Macs logged `RPErrorDomain -6722` although the firewall, the LAN and both
-  `awdl0` interfaces were fine. The line that tells this case from others is
-  in the mini's `rapportd` log:
+  launchd starts both again and the link is up within seconds; `Connection
+  Ready` in the log above confirms it. The hazard: the mini's `rapportd` can
+  lose the laptop as a Bluetooth device without finding it again, and then
+  never asks it to come up on AWDL. The mini's own connect times out after
+  15 s, and the laptop's incoming connect waits behind it, so both Macs log
+  `RPErrorDomain -6722` while the firewall, the LAN and both `awdl0`
+  interfaces are fine. The line that tells this case from others is in the
+  mini's `rapportd` log:
   `Could not find device to target authTag advertisement to`.
 
   ```bash
@@ -131,6 +130,8 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 
 | tool | version | how | update |
 |---|---|---|---|
+| Go | 1.27.1 | `brew install go` | `brew upgrade go` |
+| 1Password CLI | 2.40.0 | `brew install --cask 1password-cli` (`op`) | `brew upgrade --cask` |
 | CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync git-lfs coreutils bat difftastic` (the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
 | tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading and activating |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
@@ -152,9 +153,9 @@ Karabiner-Elements is installed from its pkg, which needs `sudo` and so the
 mini's own screen or a terminal there. The `karabiner` package is stowed from
 the mirror, so `~/.config/karabiner` is a folder link into it and a change
 made in Karabiner's UI on the mini is lost at the next sync: make it on the
-laptop. The other desk apps (Raycast, 1Password, Arc, Slack, OrbStack) are
-installed by hand, as Homebrew casks or vendor downloads, and carry no
-config from this repo.
+laptop. The other desk apps, such as Raycast, 1Password, Arc, Slack and
+OrbStack, are installed by hand, as Homebrew casks or vendor downloads, and
+carry no config from this repo.
 Not installed: rust.
 
 ## Shell
@@ -191,7 +192,11 @@ variable from the shell that started it, so a server started any other way has
 no badge until the variable is set in it.
 
 **Git:** the global identity is the personal Gmail. GitHub auth goes through
-`gh auth setup-git` (HTTPS), so no private SSH key lives on the mini.
+`gh auth setup-git` (HTTPS), so no private SSH key lives on the mini. The
+`git` package is not stowed, so neither the laptop's per-folder identities
+(`includeIf`) nor its global ignore file exist here: a repo that needs another
+identity sets it in its own config, and names the laptop ignores everywhere,
+such as `.ignore`, show as untracked.
 
 **Neovim:** the `nvim` package is stowed from the mirror. Plugins install
 from `lazy-lock.json`, and Mason installs LSPs on first open.
@@ -438,6 +443,41 @@ publishes are the binary's rules, so after a `brief` change on the laptop run
 `mini-sync` before the mini writes to the clone rather than waiting for the
 timer: an older binary files a brief where the new one reads another slug.
 
+## Personal checkouts
+
+`~/dev` follows the laptop's layout, and the personal repos in it are real
+clones, like the planlab checkout. `mini-sync` does not touch them: git is the
+only thing that moves work between the laptop and the mini, so push on one
+before picking the work up on the other.
+
+- **Clone with `gh repo clone`,** which gives an HTTPS origin the mini can
+  authenticate to (§ Shell, Git).
+- **A repo whose gitignored files matter comes over by rsync, not by clone:**
+  env files holding secrets, working notes, local branches and stashes. From
+  the laptop:
+
+  ```bash
+  rsync -a --exclude node_modules --exclude .next --exclude .turbo \
+    ~/dev/<repo>/ qiushi-mini:dev/<repo>/
+  ```
+
+  Then, on the mini: `git worktree prune`, because the laptop's worktree
+  paths do not exist here and a stale entry makes `git worktree add` refuse
+  the branch; an `https://` origin where the laptop's is `git@`; and the
+  package install the excludes left out. `itell` and `itell-cms` are here
+  this way.
+- **The CLIs on PATH are the laptop's builds, whatever these checkouts hold.**
+  `mini-sync` copies `BINS` over `~/.local/bin` every hour (§ Sync), so a
+  binary built and installed from a checkout here lasts until the next sync.
+  Run a local build from its own path, or push the change and install on the
+  laptop.
+- **The skills a session loads here are the laptop's copies too.** A skill
+  that links out of the dotfiles tree into a project (`read-email` into
+  mailkit, `slack` into slackkit) reaches the mirror as a real directory
+  copied from the laptop's checkout. An edit to that skill in the mini's
+  checkout takes effect only after it is pushed, pulled on the laptop and
+  synced.
+
 ## Sync
 
 `mini-sync` (`scripts/.local/bin/`) runs on the **laptop**. It is one-way,
@@ -465,9 +505,11 @@ pick on the mini lasts until then.
   whose comment says what belongs and what stays out. A conflict, a real file
   where a link belongs, aborts the whole restow and fails the run after its
   other steps: resolve it on the mini, then sync again.
-- **Compiled CLIs are copied**, the binaries named in `BINS`, so the mini
-  needs no Go and no source clones. `planlab` and `bench` are not: they are
-  shims into a checkout, and the mini generates its own (§ planlab checkout).
+- **Compiled CLIs are copied**, the binaries named in `BINS`, so what runs
+  on the mini is the laptop's build and never depends on a checkout or a
+  toolchain here (§ Personal checkouts). `planlab` and `bench` are not: they
+  are shims into a checkout, and the mini generates its own (§ planlab
+  checkout).
 - **Engines are version-matched**, the pnpm globals named in `ENGINES`
   (`@obelisk-apps/cli`): a skill in the mirror is written against the
   laptop's engine, so when the mini's version differs, the mini runs
@@ -489,7 +531,8 @@ pick on the mini lasts until then.
 ## Personal jobs
 
 - **slack-digest** — the daily Slack briefing (`cmd/slack-digest` in
-  `~/dev/slackkit` on the laptop, not cloned here). `mini-sync` carries the binary and
+  `~/dev/slackkit`; the job runs the laptop's build, not the clone here).
+  `mini-sync` carries the binary and
   `~/.config/slack-digest` (config and workspace notes) and slackkit's
   token store `~/.config/slack` (read by `slack-digest` and the `slack`
   CLI, also carried); the LaunchAgent

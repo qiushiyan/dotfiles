@@ -76,9 +76,10 @@ git -C "$REPO" ls-files -o -i --exclude-standard --directory | sed 's|^|/|' > "$
 echo '.DS_Store' >> "$excludes"
 
 # Skills owned by other projects are links out of the tree (read-email →
-# ~/dev/mailkit, slack → ~/dev/slackkit); the mini has no such checkouts, so
-# --copy-unsafe-links carries those as real directories. Links inside the
-# tree stay links.
+# ~/dev/mailkit, slack → ~/dev/slackkit), by paths that resolve only on this
+# laptop, so --copy-unsafe-links carries those as real directories: the mini
+# reads the laptop's copy, not its own checkout. Links inside the tree stay
+# links.
 say "==> dotfiles → $HOST:~/dotfiles"
 rsync -a --delete --copy-unsafe-links ${dry[@]+"${dry[@]}"} --exclude-from="$excludes" \
   "$REPO/" "$HOST:dotfiles/"
