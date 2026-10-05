@@ -43,8 +43,7 @@ independent judgment inside one. An artifact's author is never its only judge.
 
 The host verifies outside findings against source; a peer is evidence, not
 authority. Implementation is ordinarily the host's, with `/delegate` as the
-explicit alternative. The `;;write-spec` snippet remains the paste-in escape
-hatch.
+explicit alternative.
 
 Compact at artifact boundaries. Once a spec or committed range carries the
 state, the exploration that produced it is disposable.

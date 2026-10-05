@@ -94,9 +94,9 @@ saw that snippet. `loopy-closeout` and `consult-codex` are the user's own
 words to a skill that owns the rest. The numbered steps in `think-holistic`
 stay because the reading genuinely comes first.
 
-**Not done.** `WORKFLOW.md`, `DESIGN.md`, `tabtype/CLAUDE.md` and
-`docs/doc-loop.md` § write-spec still describe the removed snippets. The
-mini's copy of planlab's `.tabtype.local.toml` is unchanged.
+**Not done.** The mini's copy of planlab's `.tabtype.local.toml` is
+unchanged, and `tabtype/CLAUDE.md` § Invariants still governs the removed
+families.
 
 **Next pass compares**, from `history.json`, four weeks of counts per key:
 

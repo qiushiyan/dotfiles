@@ -9,12 +9,14 @@ Codex, and other coding agents through the `;;` trigger.
 ## Model
 
 ```text
-reason about the problem → settle a design → plan tactics → implement → review
-         optional peer input ↗                         ↘ handoff or cleanup
+frame the problem → settle the direction → build → review
+                    (a consult may run straight into the build)
 ```
 
-`WORKFLOW.md` owns the order and invocation of snippets. `DESIGN.md` owns the
-prompt patterns and altitude rules. Read only the branch being edited.
+The skills own the procedure at each stage (`docs/doc-loop.md`); a snippet is
+the user's entry into one. `WORKFLOW.md` owns which snippet fits which moment.
+`DESIGN.md` owns the prompt patterns. `EVIDENCE.md` holds the usage counts a
+removal or an addition is argued from. Read only the branch being edited.
 
 ## Invariants
 
@@ -50,11 +52,9 @@ and $0 cursor'''
 Names describe direction:
 
 ```text
-write-X / start-X / implement-X → author creates
-review-X                        → reviewer judges
-update-X / respond-X            → author integrates feedback
-*-again                         → convergence pass
-*-status / *-handoff            → context for another agent
+consult-X / implement-X → what the agent does next; X says from what, or where it stops
+X-check / X-verify      → a pass that proves or revises before moving on
+<project>-X             → a key in that project's .tabtype.local.toml
 ```
 
 ## Editing

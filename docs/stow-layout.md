@@ -65,10 +65,10 @@ Two rules follow:
   which is that same global memory. Document Claude configuration in an ordinary
   `docs/` file instead, named by the words its subject is searched by
   (`docs/doc-loop.md` § The doc shape that keeps onboarding cheap).
-- **Package-local guidance needs a `.stow-local-ignore` entry.** TabType lists
-  `CLAUDE.md`, `WORKFLOW.md`, and `DESIGN.md`, so its repo-local docs stay out of
-  `$HOME`. Any package adding a root-level instruction or satellite must add the
-  corresponding ignore before restowing.
+- **Package-local guidance needs a `.stow-local-ignore` entry.** TabType's
+  lists every Markdown file at its package root, so its repo-local docs stay
+  out of `$HOME`. Any package adding a root-level instruction or satellite must
+  add the corresponding ignore before restowing.
 
 ## Adding a file
 

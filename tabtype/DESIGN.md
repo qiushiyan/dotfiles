@@ -1,34 +1,39 @@
 # Prompt design patterns
 
-Satellite of `tabtype/CLAUDE.md`. Read the section for the snippet family being
-changed; `WORKFLOW.md` owns their order.
+Satellite of `tabtype/CLAUDE.md`. `tabtype/WORKFLOW.md` owns which snippet
+fits which moment; this page owns why they are shaped as they are.
 
-## Artifact altitude
+## What a snippet carries
 
-| Artifact | Must decide | Deliberately leaves open |
-|---|---|---|
-| Analysis | real problem, goals, design bets, risk | committed interface and build tactics |
-| Spec | behavior, module boundaries, seams, target shape, test strategy | code bodies, individual cases, fixtures, commit order |
-| Plan | vertical slices, cases, fixtures, helper shape, line anchors | full code bodies |
-| Review | correctness, integration, structure, test quality | approved product decisions unless code disproves them |
-
-The spec is half technical. It chooses the public shape before the plan deepens
-it. `design-it-twice` therefore belongs in `write-spec`; running it from
-`tdd-plan` would challenge an interface after the artifact that owns it has
-settled.
+Where a skill owns the procedure, the snippet is the sentence that starts it,
+and it carries what is costly to say exactly each time:
 
 ```text
-product section  → goals and user-visible rules
-technical section → boundaries + target shape + test seams
-plan              → cases + fixtures + line-level tactics
+the entry   → the slash command, the voice or the mode
+the pointer → the path of the skill or rulebook to read
+the stop    → where the turn ends and whose decision comes next
 ```
+
+A snippet that restates a skill's discipline is a second home that drifts, so
+it names the skill's own term and leaves the rest there: `spike-check` and
+`review-verify` name the spike skill's design and verification moments. Where
+a snippet departs from the skill it says so in words, as `spike-check` does
+when it asks for every assumption the approach fails without, against the
+skill's default of the costliest one.
+
+`think-holistic` has no skill behind it, so it carries its whole method.
+
+`tabtype/EVIDENCE.md` holds the usage counts a removal or an addition is
+argued from: which snippets sessions expand, which phrases are typed by hand
+instead, and what the next pass compares.
 
 ## Analysis and questions
 
-`think-holistic` fights a cold start: read the code, reframe the problem, compare
-genuinely different structural bets, then account for hot-path and user-surface
-risk. `step-back` is the midstream form: treat the current answer as a hypothesis
-and try to break it.
+`think-holistic` fights a cold start: read the code, reframe the problem,
+compare approaches that differ in kind, then account for hot-path and
+user-surface risk. Its reply is one write-up that leads with the problem and
+the recommended direction; questions travel in it with recommendations, and
+the analysis proceeds on those.
 
 Questions route by ownership:
 
@@ -39,68 +44,29 @@ technical unknown that preserves shape → park for consultation, with working a
 ```
 
 `elaborate-questions` rewrites a weak question so the user can decide without
-reading the code. `risk-check` isolates the risk accounting when the direction
-already exists.
+reading the code. The parked list is what `consult-then-build` puts on trial.
 
-## Reviews and responses
+## Stop conditions
 
-Review starts outside the implementation's framing:
-
-```text
-goal → settled constraints → actual code path → structure → local defects
-```
-
-`implementation-handoff` mirrors the axes the reviewer will inspect: outcome,
-change map, decisions, deviations, tests, and risky areas. It is a map, not a
-self-review.
-
-`respond-review` uses an analysis gate because code changes are expensive:
+The consult and build entries are told apart by where the turn ends:
 
 ```text
-finding → verify → accept or rebut → test implication → proposed fix → wait
+consult-codex      → at the synthesis; the user decides what follows
+consult-then-build → at the finished build, unless the round leaves what a default cannot settle
+implement-spec     → at the finished build
+implement-now      → at the finished build, or at a settled decision the code proves wrong
 ```
 
-A confirmed bug asks why the suite stayed green: missing coverage or a weak
-test. The answer may add, strengthen, or delete a test. The `*-again` pair drops
-the broad analysis gate and converges on remaining valid findings.
+`consult-then-build` stops for an unresolved disagreement with the voice, a
+problem the voice replaced or found unsupported, or a new fork that is
+expensive to undo. A question the user left unanswered takes the agent's
+default: stopping on those is the failure the snippet exists to prevent.
 
-## Midpoint checkpoints
+## The session board reads the opening
 
-A large implementation paused at a committed milestone is reviewed through
-`/review` in full mode, whose brief carries a rest-of-the-build switch:
-unreached phases are intentionally absent, a structural problem the remaining
-phases would inherit outranks a local defect, and the reviewer returns the
-tenets the rest holds to (`~/.config/lessons/collaboration/tenets.md`), which
-the host writes into the spec. `midpoint-status` remains the status snapshot
-for a reviewer picking the work up cold.
-
-## Context resets
-
-All context-reset prompts preserve conclusions and anchors, then discard the
-journey. Their consumer decides the cut:
-
-| Prompt | Preserve for |
-|---|---|
-| `compact-for-impl` | settled design, branch state, architectural why |
-| `compact-for-review` | implementation state, critical files, decisions, friction |
-| `compact-for-cleanup` | finished behavior and remaining small tasks |
-| `compact-inflight` | exact live state of the same unfinished task |
-| `generate-compact` | a session-specific compaction instruction |
-| `brief-for-rewind` | the only state crossing a user-selected history rewind |
-
-`generate-compact` writes the instruction for a later compaction pass;
-`brief-for-rewind` writes the handoff itself. `resume-from-brief` supplies a
-fixed posture: orient against the real diff, run only named checks, then resume.
-
-## Tests across the workflow
-
-```text
-spec   → behaviors + interface under test + fake boundary
-plan   → cases + fixtures
-build  → red / green / refactor
-review → signal quality, refactor survival, deletable tests
-repair → why the old suite missed the defect
-```
-
-Testing detail arrives only when its phase can act on it. A mock of an owned
-module is a design signal at spec time; an assertion or fixture belongs later.
+`claude-steps` recognises a pasted snippet by the opening of its text in the
+global config, and groups keys under the labels in
+`claude-steps/.config/claude-steps/config.toml`. Rewording an opening drops
+the match for sessions that pasted the earlier text; a removed or renamed key
+leaves its old name in a label, where it matches nothing. A slash-led snippet
+is also seen as its skill, whatever its opening.
