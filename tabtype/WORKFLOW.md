@@ -38,10 +38,30 @@ implement-now  → from decisions settled in the conversation
 `review-verify` starts `/review` and spends the wait re-proving the intended
 behavior. `prompt-check` follows a session that touched model-facing text.
 
+## 5. Close out
+
+For a tool that merges locally, with no pull request:
+
+```text
+closeout             → /update-docs, then merge, push, install on both machines, remove the branch
+review-then-closeout → /review first; the closeout follows unless the round leaves a decision
+```
+
+`closeout` assumes the review is done. The install is `twin sync` for the
+repository (`docs/twin.md` § After a push: one command), so a tool installed
+another way needs its own entry.
+
 ## Project-local entries
 
-A project's `.tabtype.local.toml` binds the same moments to its own skills:
-planlab's `loopy-review-verify` shadows `review-verify` with the
-`pl-loopy-verify` rig. The file is gitignored in its project, so each
-machine's checkout carries its own copy and an edit on one does not reach the
-other.
+A project's `.tabtype.local.toml` binds the same moments to its own skills,
+under a new key or under the global one:
+
+```text
+a new key      → stands beside the global entry: planlab's loopy-review-verify,
+                 review-verify bound to the pl-loopy-verify rig
+the global key → replaces the global entry in that project: TabType's closeout and
+                 review-then-closeout, whose install is a release
+```
+
+The file is gitignored in its project, so each machine's checkout carries its
+own copy and an edit on one does not reach the other.
