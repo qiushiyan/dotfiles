@@ -4,13 +4,14 @@ import argparse
 import os
 import pathlib
 import shlex
+import signal
 import subprocess
 import tempfile
 import time
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--stock', required=True, help='Known-broken stock 3.7b or 3.7c binary')
-parser.add_argument('--candidate', required=True, help='Binary expected to preserve the popup')
+parser.add_argument('--candidate', required=True, help='Binary expected to preserve the popup and to redraw a panned client promptly')
 args = parser.parse_args()
 stock = str(pathlib.Path(args.stock).resolve(strict=True))
 patched = str(pathlib.Path(args.candidate).resolve(strict=True))
@@ -26,9 +27,9 @@ with tempfile.TemporaryDirectory(prefix='tmux-popup-') as root:
     conf.write_text('set -g default-shell /bin/sh\nset -g status off\nset -g exit-empty off\n')
     for name, binary in [('stock', stock), ('patched', patched)]:
         inner, outer = str(root / (name + '-in')), str(root / (name + '-out'))
-        def run(socket, *args, check=True):
+        def run(socket, *args, check=True, timeout=10):
             return subprocess.run([binary, '-S', socket, '-f', str(conf), *args], env=env, text=True,
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10, check=check).stdout
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout, check=check).stdout
         popup = None
         try:
             run(inner, 'new-session', '-d', '-s', 'test', '-x', '100', '-y', '30', 'sleep 120')
@@ -79,3 +80,42 @@ with tempfile.TemporaryDirectory(prefix='tmux-popup-') as root:
             run(inner, 'kill-server', check=False)
             if popup is not None:
                 popup.communicate(timeout=10)
+
+        # A client narrower than its window draws pane-border-status. The right
+        # pane's status line starts further right in that view than it is long,
+        # where 3.7c underflows the width and walks ~2^32 cells per redraw
+        # (tmux/tmux#5664). The server answers nothing while it does.
+        inner, outer = str(root / (name + '-wide')), str(root / (name + '-narrow'))
+        server = None
+        try:
+            run(inner, 'new-session', '-d', '-s', 'test', '-x', '140', '-y', '37', 'sleep 120')
+            server = int(run(inner, 'display', '-p', '#{pid}'))
+            for option in (('status', '2'), ('status-position', 'top'), ('window-size', 'manual'),
+                           ('pane-border-status', 'top'), ('pane-border-format', ' PANE#{pane_index} ')):
+                run(inner, 'set', '-g', *option)
+            run(inner, 'resize-window', '-t', 'test:0', '-x', '140', '-y', '37')
+            run(inner, 'split-window', '-h', '-t', 'test:0', 'sleep 120')
+            command = shlex.join([binary, '-S', inner, 'attach-session', '-t', 'test'])
+            run(outer, 'new-session', '-d', '-s', 'view', '-x', '110', '-y', '32', command)
+            time.sleep(.5)
+            # Round trips queue behind the attach redraw and the one refresh-client asks for.
+            started = time.monotonic()
+            client = run(inner, 'list-clients', '-F', '#{client_name}', timeout=120).strip()
+            assert client, 'nested client did not attach'
+            run(inner, 'refresh-client', '-t', client, timeout=120)
+            size = run(inner, 'display', '-p', '-t', 'test:0', '#{window_width} #{client_width}', timeout=120).split()
+            elapsed = time.monotonic() - started
+            assert int(size[0]) > int(size[1]), 'client is not narrower than the window'
+            print(f'{name}: panned pane-status redraw answered in {elapsed:.2f}s', flush=True)
+            if name == 'stock':
+                assert elapsed > 2, 'negative control did not reproduce the redraw stall'
+            else:
+                assert elapsed < 1, 'patched server stalled redrawing pane status for a panned client'
+                time.sleep(.3)
+                view = run(outer, 'capture-pane', '-p', '-t', 'view:0.0')
+                assert 'PANE0' in view and 'PANE1' in view, 'pane status lines not drawn for the panned client'
+        finally:
+            run(outer, 'kill-server', check=False)
+            # A stalled server may not answer kill-server in time.
+            if server is not None and server > 1:
+                os.kill(server, signal.SIGKILL)

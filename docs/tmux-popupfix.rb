@@ -3,9 +3,16 @@
 # coordinates while drawing used tty coordinates, so the popup's protected
 # region landed `status lines` rows too low). Fixes screen_redraw_draw_pane,
 # screen_redraw_draw_pane_status, screen_redraw_draw_borders_cell and the
-# scrollbar drawer. Drop this formula and return to stock `tmux` once an
-# upstream release includes the fix (check the tmux CHANGES for popup overlay
-# fixes after 3.7c).
+# scrollbar drawer.
+#
+# Also fixes the server spinning for seconds per redraw when a client smaller
+# than the window draws pane-border-status: the "right not visible" branch of
+# screen_redraw_draw_pane_status underflowed the width to ~2^32 cells
+# (tmux/tmux#5664).
+#
+# Drop this formula and return to stock `tmux` once an upstream release
+# includes both fixes (check the tmux CHANGES for popup overlay fixes after
+# 3.7c; 3.8 rewrites the pane status drawing).
 #
 # Managed from the dotfiles repo: see docs/tmux-popup-patch.md there.
 class TmuxPopupfix < Formula
@@ -15,6 +22,7 @@ class TmuxPopupfix < Formula
   sha256 "7c60cae9a0e25288e2e24750aafc9e8800fc7fd4555e447e1b29ee4201cfb3bf"
   license "ISC"
   version "3.7c"
+  revision 1
 
   depends_on "pkgconf" => :build
   depends_on "libevent"
@@ -53,8 +61,12 @@ __END__
 
  	log_debug("%s: %s @%u", __func__, c->name, w->id);
 
-@@ -716,10 +716,17 @@
- 			width = size - x;
+@@ -713,13 +713,20 @@
+ 			/* Right not visible. */
+ 			l = 0;
+ 			x = xoff - ctx->ox;
+-			width = size - x;
++			width = ctx->sx - x;
  		}
 
 -		r = tty_check_overlay_range(tty, x, yoff, width);
