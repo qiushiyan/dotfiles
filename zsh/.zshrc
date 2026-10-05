@@ -100,9 +100,6 @@ export EDITOR="nvim"
 # GCP — only where gcloud is installed
 if (( $+commands[gcloud] )); then
   export CLOUDSDK_PYTHON="/opt/homebrew/bin/python3.14"
-  export GOOGLE_GENAI_USE_VERTEXAI=true
-  export GOOGLE_CLOUD_PROJECT="marswave"
-  export GOOGLE_CLOUD_LOCATION="us-west1"
   export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 fi
 

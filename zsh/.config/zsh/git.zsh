@@ -558,15 +558,13 @@ _gopen() {
 }
 
 # --------------------------------------------------------------------
-# gitswitch - Switch between git profiles (personal, marswave, cola)
+# gitswitch - Switch between git profiles (personal)
 # --------------------------------------------------------------------
 gitswitch() {
   local profile="$1"
 
   case "$profile" in
     personal)  local config="$HOME/.gitconfig.personal" ;;
-    marswave)  local config="$HOME/.gitconfig.marswave" ;;
-    cola)      local config="$HOME/.gitconfig.cola" ;;
     -h|--help) _gitswitch_help; return 0 ;;
     "")
       # Show current profile
@@ -609,21 +607,18 @@ Switch git identity for the current repository.
 
 Profiles:
   personal    qiushiyan <qiushi.yann@gmail.com>
-  marswave    yanqiushi-mw <y@marswave.ai>
-  cola        cola <cola@marswave.ai>
 
 Options:
   -h, --help  Show this help message
 
 Examples:
   gitswitch              Show current git identity
-  gitswitch cola         Switch current repo to cola profile
   gitswitch personal     Switch current repo to personal profile
 EOF
 }
 
 _gitswitch() {
-  _arguments '1:profile:(personal marswave cola)'
+  _arguments '1:profile:(personal)'
 }
 
 # gwt is the compiled CLI in ~/.local/bin. This function adds only the

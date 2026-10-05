@@ -58,19 +58,17 @@ The bootstrap script clones the dotfiles repo via SSH, which needs
 3. Verify:
    ```
    ssh -T git@github.com               # "Hi qiushiyan!"
-   ssh -T git@github.com-marswave      # "Hi yanqiushi-mw!"  (per-account alias)
    gpg --list-secret-keys              # lists your key(s)
    aws sts get-caller-identity         # prints your account/user
-   ls ~/.gitconfig.{personal,marswave,cola}   # all three present
+   ls ~/.gitconfig.personal            # present
    ```
 
-   The `.gitconfig.{personal,marswave,cola}` files are the per-identity
-   includes referenced by `git/.gitconfig`'s `[includeIf "gitdir:~/dev/..."]`
-   blocks. They live in `$HOME` (not the dotfiles repo, because it's
-   public) and are pulled by the rsync above via `secrets-manifest.txt`.
-   If a repo under `~/dev/marswave/` ever shows the wrong git identity
-   (`git config user.email` returns the personal email), one of those
-   files is missing or the `gitdir:` path doesn't match — see §5e.
+   `~/.gitconfig.personal` is the per-identity include referenced by
+   `git/.gitconfig`'s `[includeIf "gitdir:~/dev/..."]` block. It lives in
+   `$HOME` (not the dotfiles repo, because it's public) and is pulled by
+   the rsync above via `secrets-manifest.txt`. If a repo ever shows the
+   wrong git identity, the file is missing or the `gitdir:` path doesn't
+   match — see §5e.
 
 ## 4. Run bootstrap
 
@@ -135,14 +133,12 @@ directory:
 
 ```
 [includeIf "gitdir:~/dev/"]          path = ~/.gitconfig.personal
-[includeIf "gitdir:~/dev/marswave/"] path = ~/.gitconfig.marswave
 ```
 
-Inside `~/dev/marswave/...` the marswave block wins (it loads later).
-The included files (`~/.gitconfig.personal`, `~/.gitconfig.marswave`,
-`~/.gitconfig.cola`) are **not** in the dotfiles repo because the repo
-is public and we don't want service-account names indexed. They live
-in `$HOME` and migrate via the `secrets-manifest.txt` rsync (§3).
+A block for a narrower directory, placed later, wins inside it. The
+included files are **not** in the dotfiles repo because the repo is
+public and we don't want account names indexed. They live in `$HOME`
+and migrate via the `secrets-manifest.txt` rsync (§3).
 
 When adding a new identity:
 1. Drop a new `~/.gitconfig.<name>` file with `[user]` + URL-rewrite block.
@@ -193,7 +189,7 @@ enumerates the secret ones.
 | `~/.npmrc` | yes | rsync / scp |
 | `~/.kube/config` | medium | rsync / scp |
 | `~/.docker/config.json` | medium | rsync / scp |
-| `~/.gitconfig.{personal,marswave,cola}` | low (public keys + emails) | rsync / scp; see §5e |
+| `~/.gitconfig.personal` | low (public keys + emails) | rsync / scp; see §5e |
 | `~/.config/gh/` | medium | re-auth via `gh auth login` |
 | `~/.config/gcloud/` | medium | re-auth via `gcloud auth login` |
 | iCloud Keychain | high | "Set up with iPhone" + iCloud sign-in |

@@ -13,9 +13,6 @@ useConfigOnly = true
 [includeIf "gitdir:~/dev/"]
   path = ~/.gitconfig.personal
 
-[includeIf "gitdir:~/dev/marswave/"]
-  path = ~/.gitconfig.marswave
-
 # planlab's push flags (repo.pushArgs), read by the zsh git() wrapper and
 # gopen. Two patterns: the clone's own .git, and its linked worktrees' gitdirs.
 [includeIf "gitdir:~/dev/planlab/main/.git"]

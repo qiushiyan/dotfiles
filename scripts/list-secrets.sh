@@ -26,8 +26,6 @@ COPY_PATHS=(
     # cryptographically secret) but are kept out of the public dotfiles
     # repo to avoid leaking the service-account names.
     ".gitconfig.personal"
-    ".gitconfig.marswave"
-    ".gitconfig.cola"
 )
 
 # Paths intentionally skipped (re-auth on new machine instead).
