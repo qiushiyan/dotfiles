@@ -55,9 +55,14 @@ carry = [
 path = "~/dotfiles"
 url = "https://github.com/qiushiyan/dotfiles.git"
 
+# sources/ holds the originals the wiki keeps off its remote (identity,
+# immigration, tax, contracts) beside the extracts git tracks; the tracked
+# ones stay git's. The mini is a second copy of them, not a backup: a change
+# on either machine reaches the other.
 [repos.wiki]
 path = "~/wiki"
 url = "https://github.com/qiushiyan/wiki.git"
+carry = [".consult", "sources"]
 
 [repos.twin]
 path = "~/dev/twin"
