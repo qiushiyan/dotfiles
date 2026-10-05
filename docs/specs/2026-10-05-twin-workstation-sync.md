@@ -10,35 +10,41 @@ Failure: project repositories under `~/dev` have no mechanism at all; the mini's
 
 Goal: Qiushi works on either machine and picks up on the other; nothing is silently lost, and nothing unsent is silently missing.
 Change: both machines hold ordinary git clones of everything, `~/dotfiles` included; git over HTTPS is the only transport for tracked content.
-Change: a Go CLI, `twin`, in its own repository `~/dev/twin`, reports what is unsent on both machines, reconciles the gitignored files a manifest lists, and installs what a machine derives locally.
-Change: `mini-sync`, its LaunchAgent, its Codex-config generator and the two-machine plumbing behind `pp` are deleted in the last phase.
+Change: a Go CLI, `twin`, in its own repository `~/dev/twin`, reports what is unsent on both machines, reconciles the gitignored files a manifest lists through Unison, installs what a machine builds for itself, and activates dotfiles on that machine.
+Change: an hourly `twin tick` on each machine fetches and records state; the laptop's also reconciles carried files.
+Change: `mini-sync`, its LaunchAgent, its Codex-config generator and the two-machine plumbing behind `pp` are removed.
 
 Boundary: uncommitted work and unpushed branches do not travel; `twin` reports them.
-Boundary: `twin` never commits, pushes or merges. It fetches, and fast-forwards only when asked.
-Boundary: the laptop sleeps at home; from the mini, the laptop's state is its last recorded observation, never "clean".
-Risk: the first reconciliation of each carried file set meets two copies that differ; those are conflicts Qiushi resolves by hand during the cutover.
+Boundary: `twin` never commits, pushes or merges, and changes a checkout only on an explicit `repos pull` or `repos clone`.
+Boundary: only the laptop runs the reconciler, so carried files move only while the laptop is awake; from the mini, the laptop's state is its last recorded observation, never "clean".
+Boundary: a deletion or a two-sided change of a carried file never propagates; it waits for an explicit resolution.
+Boundary: the theme no longer follows the laptop; each machine keeps its own.
+Depends: Unison 2.54 from Homebrew on both machines, installed 2026-10-05.
+Risk: the first reconciliation of each carry set meets two copies that may differ; those are conflicts Qiushi resolves by hand during the cutover.
 Open: whether `~/.secrets` is split into a shared and a machine-local file, and which keys are shared, is Qiushi's call.
 
-Where: § Behaviour describes the situations; § Design carries the modules, the commands and the evidence; § Delivery holds the phases and the open call.
+Where: § Behaviour describes the situations; § Design carries the manifest, the modules, the commands and the evidence; § Delivery holds the phases and the open call.
 
 ## Intent
 
 Vocabulary used below:
 
 - **machine**: `mac` (the MacBook Pro, "the laptop" in the docs) or `mini` (the office Mac mini), as named by the untracked one-word `~/.config/machine` (`docs/zsh.md` § Machines). The **peer** is the other machine.
-- **manifest**: one TOML file tracked in dotfiles and stowed to `~/.config/twin/twin.toml`, the only place that says what `twin` manages.
+- **manifest**: one TOML file tracked in dotfiles and stowed to `~/.config/twin/twin.toml`, the only place that says what `twin` manages (§ Design — Manifest).
 - **target**: a named manifest entry: a repository, or `home` for files outside any repository.
-- **carried path**: a file or directory, gitignored or outside any repository, that the manifest lists under a target. A target's **carry set** is its carried paths.
-- **reconciler**: Unison, the program that compares a carry set on the two machines against its record of their last agreement.
-- **observation**: a timestamped record of one machine's repository state.
+- **carried path**: a file or directory, gitignored or outside any repository, that the manifest lists under a target, as a literal path with no wildcard. A target's **carry set** is its carried paths.
+- **reconciler**: Unison, the program that compares a carry set on the two machines against its **record** of their last agreement.
+- **enrollment**: the first reconciliation of a target, started by an explicit command, after which `twin` holds an **enrollment receipt** for the target on both machines.
+- **observation**: a timestamped record of one machine's state: its repositories, its tools and its dotfiles activation. Each machine keeps its own latest observation and the latest it has received from the peer.
 - **tool**: something a machine installs for itself from the manifest: a CLI built from its checkout, a pnpm-global package at a pinned version, a released app.
+- **attention item**: one thing a person must act on, as § Design — API defines; **informational** lines are shown but are not attention items.
 
 Goals:
 
 - Either machine is a place to edit, commit and push any repository, `~/dotfiles` included.
 - A carried path changed on one machine reaches the other without a direction being chosen, and a carried path changed on both is never overwritten.
-- Before leaving a machine, and on sitting down at the other, one command says what is uncommitted, unpushed or out of step, on both machines, in a form an AI agent reads.
-- Changing one project touches one target. Everything at once is an explicit `--all`.
+- Before leaving a machine, and on sitting down at the other, one command says what is uncommitted, unpublished or out of step, on both machines, in a form an AI agent reads.
+- Changing one project touches one target. A command that changes state acts on every target only with an explicit `--all`.
 - Each machine builds its own binaries and renders its own derived config; nothing compiled or generated is copied between them.
 
 Non-goals, each with its reason:
@@ -46,21 +52,22 @@ Non-goals, each with its reason:
 - **Transport for uncommitted changes.** Decided: commit before switching; the report is the reminder.
 - **Transport for unpushed branches** (peer-to-peer git remotes). Decided: such a branch is a forgotten push or throwaway work.
 - **Automatic `git pull` or `git push`** on a timer. Decided: integration stays a deliberate act.
-- **Moving a Claude Code session between machines** (`scripts/.local/bin/claude-tomini`), the clipboard tools, and `scripts/.local/bin/skill-sync`. They are not machine-to-machine state sync; `skill-sync` in particular writes into other repositories and must not run as part of activating a workstation.
+- **Moving a Claude Code session between machines** (`scripts/.local/bin/claude-tomini`), the clipboard tools, and `scripts/.local/bin/skill-sync`. They are not machine-to-machine state sync; `skill-sync` writes into other repositories and must not run as part of activating a workstation.
 - **New-machine migration.** `secrets-manifest.txt` and `scripts/list-secrets.sh` stay: they list everything a replacement machine needs, including `.ssh` and `.gnupg`, which is a different set from what two live machines share.
 - **The steward's session home on the mini** (`docs/qiushi-mini.md` § Steward host). It has its own pinned checkout and binaries.
-- **Version history for carried paths, and a backup destination for the mini.** Recovery from a wrong overwrite is the APFS snapshot (`docs/recovery.md`); Unison's own backup option did not write backups in two attempts and is not relied on.
+- **Theme following.** `mini-sync` applies the laptop's theme to the mini when the laptop switches. With two primary machines a theme is each machine's own preference, set with `prefix t`; nothing replaces the step.
+- **Version history for carried paths.** An ordinary propagation overwrites only a copy the reconciler recorded as equal to the other machine's at their last agreement, so the content replaced is the version the edit superseded. The nets are the daily APFS snapshot (`docs/recovery.md` § Local snapshots), which this work also schedules on the mini, and a snapshot taken before every explicit resolution (§ Design — Wiring, files). Unison's own backup option wrote no backups in two attempts and is not used.
 - **The wiki's gitignored `sources/` originals.** Their size and their own backup ledger need a separate decision.
 
 `twin` stands apart from `mini-sync` rather than extending it: `mini-sync` has one writer and one direction built into every step, and no step survives unchanged.
 
 ## Tenets
 
-1. **No machine is a copy.** A design that needs one side to be authoritative for a class of state is wrong for that class, over the convenience of "the laptop wins". Held by: every transport is git or the reconciler, neither of which takes a direction (§ Design — Structure), and obligation 15.
-2. **Nothing private moves unless the manifest names it.** An allowlist, over "everything ignored except artifacts": the second form copied `node_modules` the first time someone forgot an exclusion. Held by: the files module builds the reconciler's path list from the carry set and from nothing else (§ Design — Wiring), and obligations 5 and 7.
-3. **A conflict or a deletion stops and reports; it never resolves itself.** A destroyed secret costs more than a manual step. Held by: the reconciler runs with deletion propagation off and without a preferred side (§ Design — Premises, Unison semantics), and obligations 2 and 3.
-4. **Unknown is not clean.** A sleeping peer, a failed fetch or a branch with no upstream is reported as what it is, over a tidy row. Held by: the observation's states (§ Design — API) and obligations 8 and 9.
-5. **`twin` moves state; it does not publish it.** It never commits, pushes or merges, so running it cannot put anything on GitHub or rewrite a working tree behind a session. Held by: the repos module's command set (§ Design — API) and obligation 11.
+1. **No machine is a copy.** A design that needs one side to be authoritative for a class of state is wrong for that class, over the convenience of "the laptop wins". Held by: every transport is git or the reconciler, neither of which takes a direction (§ Design — Structure), and obligation 17.
+2. **Nothing private moves unless the manifest names it.** An allowlist, over "everything ignored except artifacts": the second form copies `node_modules` the first time an exclusion is forgotten. Held by: the files module builds the reconciler's path list from the carry set and from nothing else (§ Design — Wiring, files), and obligations 5 and 7.
+3. **A conflict or a deletion stops and reports; it never resolves itself.** A destroyed secret costs more than a manual step. Held by: the reconciler runs with deletion propagation off and without a preferred side (§ Design — Premises), and obligations 2 and 3.
+4. **Unknown is not clean.** A sleeping peer, a failed fetch or a missing record is reported as what it is, over a tidy row. Held by: the conditions and states in § Design — API, and obligations 8 and 9.
+5. **No checkout changes unless asked.** `twin` never commits, pushes or merges, and updates a working tree only inside `repos pull` and `repos clone`, so a timer or a status call cannot rewrite files behind a running session or put anything on GitHub. Held by: the command set (§ Design — API) and obligation 11.
 
 ## Behaviour
 
@@ -74,17 +81,17 @@ Mechanism: the mirror step is gone (§ Design — Wiring, dotfiles). If it recur
 
 ### Leaving one machine for the other
 
-Today: nothing says what was left behind. The 2026-10-05 audit of the laptop found repositories with no remote, `main` ahead of its remote in six, and uncommitted edits in three.
+Today: nothing says what was left behind. A scan of the laptop on 2026-10-05 found repositories with no remote, `main` ahead of its remote in six, and uncommitted edits in three.
 
-After: `twin status` lists, for both machines, each repository with uncommitted changes, unpublished commits, or commits not yet pulled, and each carry set that is out of step, and exits non-zero when the list is not empty. Run on the mini while the laptop sleeps, the laptop's rows carry the time they were observed.
+After: `twin status` lists the attention items of both machines and exits 1 when there are any. Run on the mini while the laptop sleeps, the laptop's items carry the time they were observed, and "laptop not reachable" is itself an item.
 
-Mechanism: observations (§ Design — API). If it recurs: the same list, every run; nothing ages out of it.
+Mechanism: observations (§ Design — API). If it recurs: the same list, every run; no attention item ages out.
 
 ### A secret file changes on one machine
 
 Today: a token file edited on the laptop reaches the mini at the next hourly sync; one edited on the mini is overwritten.
 
-After: the laptop's hourly run, or `twin files sync <target>` on either machine, copies the changed file to the machine where it did not change. From the mini the command asks the laptop to run the reconciliation and fails plainly when the laptop does not answer.
+After: the laptop's hourly run, or `twin files sync <target>` on either machine, copies the changed file to the machine where it did not change. From the mini the command asks the laptop to run the reconciliation, and exits 2 naming the laptop when it does not answer.
 
 Mechanism: the files module (§ Design — Wiring, files). If it recurs: each change propagates once.
 
@@ -92,137 +99,217 @@ Mechanism: the files module (§ Design — Wiring, files). If it recurs: each ch
 
 Today: the laptop's copy wins silently.
 
-After: neither copy changes. The run reports the path as a conflict and exits non-zero; every later run repeats the report. `twin files resolve <target> <path> --keep mac|mini` copies the chosen side over the other.
+After: neither copy changes. The run lists the path as needing resolution and exits 1; every later run lists it again. `twin files resolve <target> <path> --keep mac` (or `mini`) replaces the other machine's copy with the named machine's.
 
-Mechanism: tenet 3. If it recurs: the same report until resolved.
+Mechanism: tenet 3. If it recurs: the same item until resolved.
 
 ### A carried file is deleted on one machine
 
 Today: the deletion reaches the mini when it happens on the laptop, and is undone when it happens on the mini.
 
-After: the other machine's copy stays, and the run reports the path as a pending deletion. `twin files resolve <target> <path> --delete` removes it from both; `--keep <machine>` restores it.
+After: the other machine's copy stays, and the run lists the path as needing resolution. `twin files resolve <target> <path> --delete` removes it from both machines. `--keep <machine>`, naming the machine that still has the file, copies it back; naming the machine where it is gone is refused with a pointer to `--delete`.
 
-Mechanism: tenet 3. If it recurs: the same report until resolved.
+Mechanism: tenet 3. If it recurs: the same item until resolved.
 
 ### An agent runs a sync
 
 Today: `mini-sync` prints progress lines; nothing in them says a repository on the mini holds unpushed work.
 
-After: every `twin` command that inspects or changes state ends with an attention block: one line per item naming the machine, the target and what needs doing. The block is also printed when the command fails part-way. `--json` carries the same items. A Claude Code session started in `~/dotfiles` sees the block for the dotfiles target after its machine text.
+After: every `twin` command ends with the attention block (§ Design — API), including when it fails part-way. `--json` carries the same items. A Claude Code session started in `~/dotfiles` sees the dotfiles target's items after its machine text.
 
 Mechanism: the report contract (§ Design — API) and the hook (§ Design — Wiring, session start). If it recurs: the block is the last thing printed, every time.
 
-### A tool's source moves
+### A tool's source or the dotfiles checkout moves
 
-Today: the mini runs whatever binary the laptop last copied.
+Today: the mini runs whatever binary the laptop last copied, and the laptop's sync restows the mini's links.
 
-After: `twin repos pull <target>` that moves a tool's checkout adds "installed build is behind its checkout" to the attention block. `twin tools install <tool>` builds it on this machine.
+After: a `twin repos pull` that moves a tool's checkout, or the dotfiles checkout, adds an attention item: the installed build is behind its checkout, or dotfiles activation is behind its checkout. `twin tools install <tool>` and `twin dotfiles apply` clear them. Neither runs implicitly.
 
-Mechanism: the tools module records the revision of each successful install (§ Design — Structure). If it recurs: the item stays until the install succeeds.
+Mechanism: receipts (§ Design — Structure, local installation and dotfiles activation). If it recurs: the item stays until the command succeeds.
+
+### A repository exists on one machine only
+
+Today: it is cloned by hand, and its gitignored files copied by hand.
+
+After: `twin repos status` lists it as absent on the other machine. There, `twin repos clone <target>` clones it from the manifest's URL, and `twin files enroll <target> --copy-missing` brings its carried files.
+
+Mechanism: § Design — API. If it recurs: the item stays until the clone exists.
 
 ## Design
 
-`mini-sync` is a structure that blocks this design, not a base: its steps are written as "laptop does X to the mini". The build replaces it; the cutover in § Delivery is the opening reshape.
+`mini-sync` is a structure that blocks this design, not a base: its steps are written as "the laptop does X to the mini". `twin` replaces it at the cutover (§ Delivery, phase 3).
+
+### Manifest
+
+The manifest is the whole declaration; nothing about what `twin` manages is compiled in except the protected paths below. Its schema, as a sketch the build may rename:
+
+```toml
+[machines.mac]   ssh = "mac"     # the alias the peer uses to reach this machine
+[machines.mini]  ssh = "mini"
+reconciles = "mac"               # the one machine that runs the reconciler
+
+[repos.itell]
+path   = "~/dev/itell"
+url    = "https://github.com/learlab/itell.git"
+carry  = ["apps/platform/.env", "apps/platform/.env.local"]   # literal paths, files or directories
+branch = "main"                  # optional: pull refuses any other branch
+
+[home]
+carry = [".gitconfig.personal", ".config/slack"]
+
+[tools.headroom]      method = "make-install";      repo = "headroom"
+[tools.obelisk]       method = "pnpm-global";       package = "@obelisk-apps/cli"; version = "0.2.6-rc.0"
+[tools.tabtype]       method = "release-installer"; repo = "tabtype"; script = "scripts/install-release.sh"; app = "TabType"
+
+[dotfiles.mac]   packages = [...]   # stow packages for this machine
+[dotfiles.mini]  packages = [...]
+[dotfiles.codex] runtime_tables = ["projects", "hooks.state", "tui.model_availability_nux"]
+```
+
+Initial contents, which the build confirms against both disks before the cutover:
+
+- **Repositories:** `dotfiles`, `wiki`, `twin`, `planlab` (`~/dev/planlab/main`), `planlab-handoffs` (`~/dev/.handoffs/planlab-main`, `branch = "main"`), `itell`, `itell-cms`, and the personal tools cloned to the mini on 2026-10-05: `brief`, `ccclean`, `claude-steps`, `cout`, `degit`, `envoy`, `explain-diff`, `gopen`, `greenflag`, `gwt`, `headroom`, `jev-openrouter-gallery`, `mailkit`, `raycast-tab-utils`, `slackkit`, `tabtype`.
+- **Carry sets:** `itell` and `itell-cms`, their `.env` files; `planlab`, its two local env files, `~/dev/planlab/main/application/.env.development.local` and `~/dev/planlab/main/loopy-stress/.env.smoke.local`; `jev-openrouter-gallery`, `.env`; `greenflag`, `.greenflag`; `explain-diff`, `resources`; `tabtype`, `HANDOFF.md`, `screenshots.local`, `espanso-docs`. `home`: `mini-sync`'s `SECRETS` paths (`~/.planlab/.env`, `~/.bench/.env`, `~/.config/slack`, `~/.config/slack-digest`), `~/.gitconfig.personal`, `~/.config/planlab/dev.json`, `~/.aws/config`, and the secrets file § Delivery leaves open.
+- **Tools:** `make-install` for `headroom`, `envoy`, `brief`, `gwt`, `gopen`, `cout`, `claude-steps`, `slackkit` and `twin`; `pnpm-global` for `@obelisk-apps/cli` at the laptop's version on 2026-10-05, `0.2.6-rc.0`; `release-installer` for TabType.
+- **Stow packages:** the laptop, every package the `Makefile` finds except the mini's machine package. The mini, `mini-sync`'s `STOW` array (`claude claude-steps ghostty gwt karabiner lessons nvim ohmyposh tabtype tmux zsh`) plus `git`, `scripts`, `codex`, the new `twin` package and its machine package.
+
+Protected paths, compiled into `twin` and never carriable whatever the manifest says: `.ssh`, `.gnupg`, `.config/gh`, `.config/machine`, `.claude`, `.codex`, `Library/Keychains`, and `twin`'s own state directory.
 
 ### Structure
 
-- **Manifest and machine identity.** Owner: `twin`'s config module. Protects: every command on both machines reads one declaration, and a target name means the same thing to every command. Held by: commands receive targets from this module only (obligation 6 covers the case where the two machines hold different revisions of the manifest). Sketch: `internal/manifest`.
-- **Repository observation and integration.** Owner: the repos module. Protects: tenets 4 and 5. Inspects every worktree `git worktree list` reports for a registered repository, and reports git checkouts under `~/dev` that the manifest does not register. Sketch: `internal/repos`.
-- **Carried-path reconciliation.** Owner: the files module, the only caller of the reconciler. Protects: tenets 2 and 3, and that a carry set is never reconciled by two runs at once. Held by: a per-target lock taken before the reconciler starts, validation before every run, and obligations 1 to 7. Sketch: `internal/files`.
-- **Local installation.** Owner: the tools module. Protects: a tool is reported current only when its last install succeeded at the checkout's present revision. Held by: the revision is written after the install command exits zero (obligation 12). Build knowledge stays in each repository's `Makefile`; the manifest names a method, not a command line. Sketch: `internal/tools`.
-- **Dotfiles activation.** Owner: the dotfiles module. Protects: the directories `docs/stow-layout.md` § Directories that must stay real lists are never folded, and a machine's Codex config is never silently replaced. Held by: restowing goes through the repository `Makefile`'s `restow`, which makes those directories first, and obligation 13. Sketch: `internal/dotfiles`.
-- **Where commands run.** Owner: a host seam with two adapters, local execution and `ssh <alias>`. Every module reaches the peer through it. Protects: tests exercise the real modules with two local homes. Sketch: `internal/host`.
+- **Manifest and machine identity.** Owner: `twin`'s manifest module. Protects: every command on both machines reads one declaration, and a target name means the same thing to every command. Held by: commands receive targets from this module only; obligation 6 covers two machines holding different revisions. Sketch: `internal/manifest`.
+- **Repository observation and integration.** Owner: the repos module. Protects: tenets 4 and 5, and that a pull never replaces a carried path. Held by: the collision check in § Wiring, repositories, and obligations 8 and 11. Sketch: `internal/repos`.
+- **Carried-path reconciliation.** Owner: the files module, the only caller of the reconciler. Protects: tenets 2 and 3; a carry set is never reconciled by two runs at once; a target is never initialised by an ordinary sync. Held by: a per-target lock taken before the reconciler starts, validation before every run, the enrollment receipt, and obligations 1 to 7. Sketch: `internal/files`.
+- **Local installation.** Owner: the tools module. Protects: a tool is reported current only when what is installed matches what the manifest and the checkout call for. Held by: a receipt per method, written after the install command exits zero (§ API, receipts; obligation 12). Build knowledge stays in each repository's `Makefile` or installer; the manifest names a method, never a command line. Sketch: `internal/tools`.
+- **Dotfiles activation.** Owner: the dotfiles module. Protects: the directories `docs/stow-layout.md` § Directories that must stay real lists are never folded; a machine never stows another machine's package; a machine's Codex config is never silently replaced. Held by: restowing goes through the repository `Makefile`, the drift check in § Wiring, Codex config, and obligation 13. Sketch: `internal/dotfiles`.
+- **Where commands run.** Owner: a host seam with two adapters, local execution and `ssh <alias>`. It gives a module two things for a machine: a way to run a command there, and the reconciler root for a path there (a local path, or `ssh://<alias>/<path>` with the remote command that sets the reconciler's state directory and host name). Protects: tests exercise the real modules with two local homes. Remote commands run non-interactively with a time limit (`BatchMode`, `GIT_TERMINAL_PROMPT=0`). Sketch: `internal/host`.
 
 ### API
 
 ```text
-twin status [target…] [--json]            # the attention block for both machines
+twin status [target…] [--recorded] [--json]
 twin repos status|fetch [target…|--all]
-twin repos pull [target…|--all] [--both]  # fast-forward only; --both also on the peer
-twin files status|sync [target…|--all]
+twin repos pull  [target…|--all] [--both]
+twin repos clone <target>
+twin files status [target…|--all]
+twin files enroll <target> [--copy-missing]
+twin files sync  [target…|--all]
 twin files resolve <target> <path> --keep mac|mini | --delete
-twin files resolve <target> --rebaseline
 twin tools status|install [tool…|--all]
-twin dotfiles apply
-twin tick                                 # what the hourly LaunchAgent runs
+twin dotfiles apply [--load-agents] [--replace-codex-config]
+twin tick
 ```
 
 Binding distinctions:
 
-- With no target, a `repos` or `files` command acts on the repository containing the working directory, and fails when there is none. Every registered target needs `--all`.
-- `repos pull` refuses a worktree that has uncommitted changes or has diverged from its upstream; it never touches a carried path.
-- `files sync` never runs `git`. A target with an empty carry set does not start the reconciler.
-- Exit status: 0 when nothing needs attention; 1 when the command completed and the attention block is not empty; 2 when it failed or could not determine an answer.
-- The attention block states, per item: the machine, the target, the condition, and the command or manual act that clears it. It does not say a state is fine by omission when the state is unknown: unknown items are listed.
+- **Target selection.** A named repository target means the checkout at the manifest's `path`. With no target, a `repos` or `files` command acts on the registered repository whose checkout or linked worktree contains the working directory, and fails when there is none. `--all` is every registered target. `twin status` is the exception: with no target it covers everything, because it changes nothing and its purpose is the whole picture.
+- **`twin status`** contacts the peer for a live observation and falls back to the recorded one. `--recorded` makes no network call: this machine's rows are computed from local git without fetching, and the peer's come from the last observation received.
+- **`repos pull`** fetches, then re-reads the worktree; it refuses a worktree with uncommitted changes, one that has diverged from its upstream, one on a branch other than the manifest's `branch` when that is set, and one where the incoming tree collides with a carried path (§ Wiring, repositories). Otherwise it fast-forwards. With `--both` it also runs on the peer and reports each machine's result separately; one machine's refusal does not undo the other's update.
+- **`repos clone`** clones a registered repository that is absent on this machine, and does nothing else.
+- **`files sync`** reconciles enrolled targets only and never changes git state. A target with an empty carry set starts no reconciler.
+- **`files enroll`** lists the carried paths that are equal on both machines, differing, and present on one only, then reconciles. A path present on one machine only is copied to the other only with `--copy-missing`; without it the path is left alone and needs resolving. Enrolling a target that is already enrolled is how a blocked target with a missing record is recovered.
+- **`files resolve`** takes an APFS snapshot (`snapshot`) on each machine it is about to change, and refuses when that fails.
+- **`dotfiles apply`** restows and renders. It loads launchd agents only with `--load-agents`; without it, a stowed agent that is not loaded is an attention item. `--replace-codex-config` discards local differences in the Codex config instead of stopping.
+- **`twin tick`** on the laptop: `files sync --all`, `repos fetch --all`, record and publish the observation. On the mini: `repos fetch --all`, record the observation. It never pulls, installs or applies.
+- **Exit status:** 0 when the command completed and there are no attention items; 1 when it completed and there are; 2 when it could not do what was asked (a bad manifest, a failed local git command, a peer that a state-changing command needed and could not reach). An unreachable peer during `twin status` is an attention item, exit 1.
+- **The attention block** is the last thing printed. Per item it states the machine, the target, the condition, and the command or manual act that clears it. It lists unknown conditions as items. Informational lines appear before it and do not affect the exit status.
 
-An observation of one repository on one machine, per worktree:
+Repository conditions. They are independent; a repository can have several at once.
 
-| state | entered when | left when | written by |
-| --- | --- | --- | --- |
-| uncommitted | the worktree has modified, staged or untracked-unignored files | they are committed or discarded | the repos module on that machine |
-| unpublished | a branch is ahead of its upstream; or has no upstream and is checked out in a worktree or has a commit in the last 14 days | pushed, or the branch is deleted | the same |
-| behind | the upstream ref from the last successful fetch is ahead of the branch | pulled | the same |
-| fetch-unknown | no fetch has succeeded, or the last one failed | a fetch succeeds | the same |
-| in step | none of the above | any of the above | the same |
+| condition | scope | holds when | cleared by | attention |
+| --- | --- | --- | --- | --- |
+| absent | the repository on one machine | the manifest registers it and there is no checkout at its path | `repos clone` | yes |
+| uncommitted | each worktree | modified, staged or untracked-unignored files | commit or discard | yes |
+| unpublished | each branch with an upstream | the branch is ahead of its upstream | push | yes |
+| local-only, in use | each branch with no upstream | it is checked out in a worktree | push, or remove the worktree | yes |
+| local-only | each other branch with no upstream | always | nothing; informational | no |
+| behind | each checked-out branch with an upstream | the upstream ref from the last successful fetch is ahead | `repos pull` | yes |
+| fetch unknown | the repository | no fetch has succeeded, or the last one failed | a successful fetch | yes |
+| unregistered | a git checkout under `~/dev` | the manifest does not register it | nothing; informational, shown by `repos status --all` | no |
 
-A peer's observation as seen from this machine is `live` (the peer answered now), `recorded at <time>` (read from the store on the mini), or `none`. Only `live` and `recorded` rows are shown as states; `none` is an attention item.
+An observation carries two times per repository: when it was inspected, and when its last successful fetch finished. A peer's observation, as seen from this machine, is `live`, `recorded at <time>`, or missing; a missing one is an attention item.
 
-A carry set, per target:
+Carry-set states, each the outcome of the last run for the target. They are recorded on the laptop and travel in its observation.
 
-| state | entered when | left when | written by |
-| --- | --- | --- | --- |
-| not enrolled | the target has never been reconciled | the first reconciliation completes | the files module on the laptop |
-| in step | a reconciliation completed with nothing skipped | a carried path changes | the same |
-| needs resolving | a path changed on both machines, or was deleted on one | `files resolve` for each such path | the same |
-| blocked | validation failed, the two machines' declarations of the target differ, or the reconciler's record is missing for an enrolled target | the cause is fixed; a missing record needs `files resolve --rebaseline` | the same |
-| unknown | the peer did not answer | a run reaches the peer | the same |
+| state | entered when | left when |
+| --- | --- | --- |
+| not enrolled | no enrollment receipt and no reconciler record exist | `files enroll` completes |
+| in step, as of the last run | a run completed with nothing skipped | a later run finds otherwise |
+| needs resolving | a run skipped a path: changed on both machines, deleted on one, or present on one only after an enrollment without `--copy-missing` | `files resolve` for each such path, then a run |
+| failed | the reconciler reported a transfer failure, or exited without completing | a run completes |
+| blocked | validation failed; the two machines' declarations of the target differ; a receipt exists and the reconciler's record is missing on either machine; or a reconciler lock is left from a dead run | the cause is fixed; a missing record needs `files enroll` |
+| unknown | no run has reached the peer since the laptop last recorded the target | a run reaches the peer |
 
-Walking the real inputs: `itell`'s `.env` files exist on both machines with equal content, so enrollment records agreement and the set is in step. `~/.secrets` differs between the machines today, so its enrollment is `needs resolving` (see § Delivery). The planlab checkout's env files are copies; equal, in step.
+A carried path edited after the last run is not a state `twin` observes; the next run reconciles it. A reconciler record that exists without a receipt, the trace of a run that died before writing it, is adopted as enrolled.
+
+Walking the real inputs: `itell`'s `.env` files are equal on both machines, so enrollment records agreement and the set is in step. `~/.secrets` differs between the machines, so its enrollment leaves it needing resolution (§ Delivery). `greenflag`'s `.greenflag` is a directory: files added on either side merge, and one changed on both needs resolving.
+
+Receipts, per method:
+
+- **make-install:** the checkout's revision, read before the build, and whether the worktree had uncommitted changes. The tool is behind when the checkout's revision differs from the receipt's or the receipt is marked uncommitted.
+- **pnpm-global:** the version `pnpm` reports as installed. Behind when it differs from the manifest's pin.
+- **release-installer:** the installed app's bundle version. An attention item when the two machines' versions differ.
+- **dotfiles activation:** the dotfiles revision at the last successful `dotfiles apply`. Behind when the checkout has moved.
 
 ### Wiring
 
 Dotfiles.
 
 - Today: `mini-sync` rsyncs the laptop's tree, `.git` included, over the mini's with `--delete` (`scripts/.local/bin/mini-sync`, the `rsync -a --delete --copy-unsafe-links` line), then runs `make -s -C ~/dotfiles restow PACKAGES=…` there for a subset of packages.
-- Today: skills owned by other projects are symlinks out of the tree; five are absolute paths under `/Users/qiushi` (`claude/.claude/skills/{read-email,write-email,slack,explain-diff,terminal-browser}`), which do not resolve under the mini's home `/Users/qiushiyan`. The mirror hides this by copying their targets as directories; in the mini's checkout they show as deletions of the tracked links.
-- Today: `~/.gitconfig` on the mini is its own file; the `git` package is not stowed there.
-- After: both machines clone `https://github.com/qiushiyan/dotfiles.git`. The manifest lists each machine's stow packages. `twin dotfiles apply` restows them through the `Makefile`, renders the Codex config, loads that machine's launchd agents, and re-sources the tmux config in a running server when `tmux.conf` changed since the last apply.
-- After: the out-of-tree skill links are relative, as `greenflag-concierge` already is, and the Makefile targets that create them in `~/dev/slackkit` and `~/dev/mailkit` write relative links. `terminal-browser` links into an app directory the mini does not have; see Premises.
-- After: launchd agents move out of the `scripts` package into per-machine packages, so that stowing `scripts` on the mini does not place the laptop's agents (`scripts/Library/LaunchAgents/`) where launchd loads them at login. Sketch: `launchd-mac/`, `launchd-mini/`, and a shared one for the `twin tick` agent.
+- Today: the `Makefile`'s `PACKAGES` is every top-level directory minus a short deny list, so a new top-level directory is stowed on any machine that runs `make restow`.
+- Today: skills owned by other projects are symlinks out of the tree; five are absolute paths under `/Users/qiushi` (`claude/.claude/skills/{read-email,write-email,slack,explain-diff,terminal-browser}`), which do not resolve under the mini's home `/Users/qiushiyan`. The mirror hides this by copying their targets as directories; in the mini's checkout they show as deletions of the tracked links. `skill-sync` raises on a broken link (`scripts/.local/bin/skill-sync`, "broken symlink").
+- Today: `~/.gitconfig` on the mini is its own file; the `git` package is not stowed there. launchd agents live in the `scripts` package (`scripts/Library/LaunchAgents/`), which is why `scripts` is not stowed on the mini.
+- After: both machines clone `https://github.com/qiushiyan/dotfiles.git`. `twin dotfiles apply` restows the manifest's packages for this machine through the `Makefile`, renders the Codex config, and re-sources the tmux config in a running server when `tmux.conf` changed since the last apply.
+- After: launchd agents move into one package per machine, and the `Makefile`'s default package set includes this machine's package and never the other's, keyed on `~/.config/machine`. Sketch: `launchd-mac/`, `launchd-mini/`. The mini's gains the daily `com.qiushi.snapshot` agent and, at the cutover, both gain the `twin tick` agent.
+- After: the out-of-tree skill links are relative, as `greenflag-concierge` already is, and the targets that create them (`skills` in `~/dev/slackkit/Makefile` and `~/dev/mailkit/Makefile`) write relative links. For `terminal-browser`, see Premises.
 - After: the `git` package is stowed on both machines; `~/.gitconfig.personal` is a carried path of `home`.
 
 Codex config.
 
-- Today: on the laptop `~/.codex/config.toml` is a symlink to the tracked `codex/.codex/config.toml`, so Codex's runtime writes (project trust) keep that file modified. On the mini the file is generated from the laptop's by `scripts/.local/share/dotfiles/mini-codex-config.py`, which keeps three runtime-owned tables from the mini's copy and reverts every other local change.
-- After: the tracked file holds shared settings only and is not stowed. Each machine's `~/.codex/config.toml` is a real file rendered by `twin dotfiles apply` from the tracked file, minus the tables the manifest marks as belonging to the other machine, plus the runtime-owned tables kept from the local file. When the local file differs from the last render outside the runtime-owned tables, the render stops and reports the differing keys; the change is either moved into the tracked file or discarded with an explicit flag. A permanently modified tracked file would otherwise make the dotfiles target report "uncommitted" forever.
+- Today: on the laptop `~/.codex/config.toml` is a symlink to the tracked `codex/.codex/config.toml`, so Codex's runtime writes keep that file modified, and `skill-sync` writes its generated block into the same file (`scripts/.local/share/dotfiles/skill-policy.yaml`, `codex_config`). On the mini the file is generated by `scripts/.local/share/dotfiles/mini-codex-config.py`, which drops the laptop-only tables and the top-level `notify`, forces `cli_auth_credentials_store = "file"`, keeps three runtime-owned tables from the mini's copy, and reverts every other local change.
+- After: the tracked source is three files that are not stowed: shared settings, and one fragment per machine holding the tables and top-level keys only that machine has. Sketch: under the `twin` package, read from `~/.config/twin/codex/`. `skill-sync` writes its block into the shared file.
+- After: each machine's `~/.codex/config.toml` is a real file. `twin dotfiles apply` renders it from the shared file, this machine's fragment, and the runtime-owned tables kept from the local file. Before writing, it compares the local file with what it is about to render, as parsed TOML and ignoring the runtime-owned tables; on a difference it stops and lists the differing keys. The change is then moved into the tracked source, or discarded with `--replace-codex-config`. The first render follows the same rule, so migration is the first comparison.
+- Why both machines render: a tracked file that Codex modifies at runtime would keep the dotfiles target "uncommitted" on the laptop forever, and the attention block would never be empty.
 
 Files.
 
 - Today: `mini-sync` copies the paths in its `SECRETS` array to the mini with `rsync -aR` on every run, laptop to mini only.
-- After: the laptop runs the reconciler, one run per target: roots are the target's directory on each machine (`$HOME` for `home`), restricted to the carry set, with deletion propagation off on both roots, no preferred side, and the reconciler's record kept in a `twin`-owned state directory on each machine, outside every carried path. The mini's `twin files sync` executes the same command on the laptop through the host seam. Failure of the peer or the reconciler goes to exit status 2 and the attention block; nothing is retried in the run.
-- After, before every run: each carried path is checked on both machines. A path that git tracks in that checkout, that resolves outside its root, that is on the manifest's never list, or that contains a directory named as a build artifact (`node_modules`, `.next`, `.turbo`, `dist`, `build`, `target`, `.venv`, `__pycache__`) blocks the target. Carried paths belong to a repository's main checkout; linked worktrees are seeded by `gwt`, as now.
-- After, before every run: the laptop compares a digest of its declaration of the target with the mini's. A difference blocks the target and names the machine whose dotfiles are behind.
+- After: the laptop runs the reconciler, one run per target: roots are the target's directory on each machine (`$HOME` for `home`), restricted to the carry set, with deletion propagation off on both roots and no preferred side. The reconciler's record and `twin`'s receipts live in a `twin`-owned state directory on each machine, outside every carried path. The mini's `files` commands execute on the laptop through the host seam.
+- After, before every run, each carried path is validated on both machines. The target is blocked when a path:
+  - is tracked in the main checkout's current `HEAD`, or is not ignored there;
+  - resolves outside its root, or is protected;
+  - is declared under `home` but lies inside a registered repository;
+  - equals or lies inside another carried path;
+  - contains a directory named as a build artifact: `node_modules`, `.next`, `.turbo`, `dist`, `build`, `target`, `.venv`, `__pycache__`.
+- Carried paths belong to a repository's main checkout; linked worktrees are seeded by `gwt`, as now, and what another worktree's branch tracks does not matter.
+- After, before every run, the laptop compares a digest of its declaration of the target with the mini's. On a difference the target is blocked and the item gives each machine's dotfiles revision; it names a machine as behind only when its revision is an ancestor of the other's.
+- After, the paths a run skipped are read from the reconciler's batch output (`skipped: <path> (<reason>)`), which is where the "needs resolving" items come from.
 
 Repositories.
 
-- Today: `pp` (`zsh/.config/zsh/nav.zsh`) pulls the planlab checkout and its briefs clone on both machines through `_pull_both`, an ssh fan-out of its own.
-- After: `pp` is `twin repos pull` for those two targets with `--both`, keeping its `--cd`. The fan-out helper is deleted.
-- After: `twin tick` on each machine fetches every registered repository and records that machine's observation; the laptop also publishes its observation to the store on the mini and reconciles every enrolled carry set.
+- Today: `pp` (`zsh/.config/zsh/nav.zsh`) pulls the planlab checkout and its briefs clone on both machines through `_pull_both`, an ssh fan-out of its own; the briefs leg refuses any branch but `main`.
+- After: `pp` is `twin repos pull planlab planlab-handoffs --both`, keeping its `--cd`. The briefs rule is the manifest's `branch = "main"`. `_pull_both` is deleted.
+- After, in `repos pull`, between the fetch and the fast-forward: every path the incoming tree adds or changes is compared with the target's carry set. A carried path that equals such a path, lies inside one, or contains one, makes the pull refuse. Git treats an ignored file as expendable: a fast-forward that starts tracking it replaces its contents.
+- After: `twin tick` fetches every registered repository on its machine, with the non-interactive settings of the host seam.
+
+Observations.
+
+- After: each machine writes its own observation whenever a command inspects, and at every tick. The laptop's tick copies its observation to the mini and reads the mini's; a live `twin status` from either side exchanges both. Each machine therefore holds two files, its own and the last it received.
 
 Session start.
 
 - Today: `.claude/hooks/machine-context.sh` prints `.claude/machines/<name>.md`.
-- After: the hook also prints `twin status dotfiles` from recorded observations only, with no network call and a short timeout, and prints the machine text alone when `twin` is absent.
+- After: the hook also prints `twin status dotfiles --recorded`, with a short time limit, and prints the machine text alone when `twin` is absent or slow.
 
 Tools.
 
 - Today: `mini-sync` copies the binaries in `BINS` from the laptop's `~/.local/bin`, copies `/Applications/TabType.app`, and matches the pnpm-global packages in `ENGINES` to the laptop's versions.
-- After: `twin tools install` runs the method the manifest names: `make install` in the checkout; a pnpm-global package at the version the manifest pins; or the checkout's own release installer (TabType's `~/dev/tabtype/scripts/install-release.sh`, which verifies the signature before replacing the app). The slack-digest agents on the mini are installed there by a local target in `~/dev/slackkit`, replacing its laptop-driven `install-mini`.
+- After: `twin tools install` runs the manifest's method: `make install` in the checkout; `pnpm add -g` at the pinned version; or the checkout's own installer. TabType's `~/dev/tabtype/scripts/install-release.sh` verifies the release's signature first; it removes the installed app before copying the new one, and is changed in its own repository to stage and swap so a failed copy leaves the old app. The slack-digest agents on the mini are installed there by a local target in `~/dev/slackkit`, replacing its laptop-driven `install-mini`.
 
 ### Design it twice
 
 - **Winner: resource modules behind a small command set, with the reconciler borrowed.** Constraint optimised: each kind of state has one owner whose failure modes it alone handles.
-- **Rejected: three generic verbs (`status`, `sync`, `apply`) over a recipe manifest with a hand-written three-way file sync.** Optimised for few entry points. Lost because a target name meant a different thing to each verb, `sync` joined two jobs that fail differently, and the hand-written record of "last agreement" left enrollment, deletion and loss of the record undefined. The manifest must not carry command lines for the same reason.
+- **Rejected: three generic verbs (`status`, `sync`, `apply`) over a recipe manifest with a hand-written three-way file sync.** Optimised for few entry points. Lost because a target name meant a different thing to each verb, `sync` joined two jobs that fail differently, and a hand-written record of "last agreement" left enrollment, deletion and loss of the record undefined. The manifest carries no command lines for the same reason.
 - **Rejected: every copy names its source.** Optimised for explicit authority. Lost because every ordinary one-sided edit would need a direction chosen by hand; it contradicts tenet 1.
 - **Rejected: one "ready to leave" operation that reconciles, installs and reports.** Optimised for a single habit. Lost because it hides local installation inside a handoff step; its reporting half survives as `twin status`.
 
@@ -237,73 +324,86 @@ Result:
 - a one-sided change propagates and keeps mode 600;
 - a two-sided change is skipped with both copies intact, exit 1, and is skipped again on rerun;
 - a deletion with the other side unchanged is skipped ("would delete a file with nodeletion"), exit 1, while other paths in the same run still propagate; a deletion against an edit is skipped;
+- in a carried directory, files added on each side are copied across, and a file changed on both is skipped as `skipped: d/same (contents changed on both sides)`;
 - a second concurrent run fails on the lock, exit 3; with one side's record deleted the run refuses, exit 3;
 - a run killed during a 600 MB transfer left the destination at its old content, and the rerun converged;
 - a no-op run over ssh took 0.56 s; the laptop's build is OCaml 5.4.1 and the mini's 5.5.0, and they interoperate.
 
-Establishes: tenet 3's mechanism, the conflict and deletion states, and that the record can live in a `twin`-owned directory on both machines.
-Does not establish: behaviour with a carried directory that gains files on both sides at once; the kill was timed by hand, once.
+Establishes: tenet 3's mechanism; the needs-resolving, failed and blocked states; path-exact skip reporting; that the record can live in a `twin`-owned directory on both machines.
+Does not establish: any inspection that does not copy, which is why carry-set states are outcomes of the last run; the kill was timed by hand, once.
 
-Decision: an enrolled target whose reconciler record is missing is blocked until `files resolve --rebaseline`. Settled.
-Basis: measured, same session: with both records deleted, Unison treats the next run as a first run, so a file deleted on one machine before the loss was copied back. `twin` therefore records enrollment itself and refuses the run when its record says enrolled and the reconciler's record is absent.
+Decision: an ordinary sync never initialises a target; enrollment is its own command. Settled.
+Basis: measured, same session: with both records deleted, Unison treats the next run as a first run and copied back a file that had been deleted on one machine. A receipt on both machines lets `twin` tell a lost record from a new target. When receipts and records are lost on both machines at once, the target is indistinguishable from a new one; the enrollment listing and `--copy-missing` are the remaining guard.
 
 Decision: `UNISONLOCALHOSTNAME` is set to the machine name for both ends. Settled.
 Basis: established from source and observed: the mini reports the DHCP name `Mac.lan` (`docs/zsh.md` § Machines), and Unison names its record after the host name.
 
+Decision: `repos pull` checks the incoming tree against the carry set. Settled.
+Basis: measured, 2026-10-05, in scratch repositories: a clean checkout holding an ignored file was fast-forwarded to a commit that tracks the same path, and the file's contents were replaced without a refusal.
+
 Decision: personal CLIs are built on each machine. Settled.
-Basis: measured, 2026-10-05, on the mini: `go build ./...` succeeded in the clones of `headroom`, `envoy`, `brief`, `gwt`, `gopen`, `cout`, `slackkit` (two binaries), `claude-steps` and `degit`; all but `degit` have a `make install` target. Does not establish that each `make install` runs clean there, which the cutover exercises.
+Basis: measured, 2026-10-05, on the mini: `go build ./...` succeeded in the clones of `headroom`, `envoy`, `brief`, `gwt`, `gopen`, `cout`, `slackkit` (two binaries), `claude-steps` and `degit`; each has a `make install` target except `degit`, which is not a tool here.
+Does not establish: that each `make install` runs clean on the mini.
+Fallback: a tool whose install fails there keeps the binary `mini-sync` last copied, and stays an attention item until its repository is fixed; the design does not change.
 
 Decision: git runs over HTTPS on both machines, including when driven over ssh. Settled.
-Basis: measured, 2026-10-05: with the laptop's `gh` token in its keyring, `git` on the laptop failed from an ssh session (`could not read Username for 'https://github.com'`); with the token in `~/.config/gh/hosts.yml`, as on the mini, `pp` run on the mini completed on both machines (`docs/qiushi-mini.md` § Reaching the laptop).
+Basis: measured, 2026-10-05: with the laptop's `gh` token in its keyring, `git` on the laptop failed from an ssh session (`could not read Username for 'https://github.com'`); with the token in `~/.config/gh/hosts.yml`, as on the mini, `pp` run on the mini completed on both machines (`docs/qiushi-mini.md` § Reaching the laptop). Every clone on both machines had an HTTPS origin after a scan the same day, and the stowed `git/.gitconfig` rewrites SSH GitHub URLs.
+Does not establish: the same under launchd; obligation 18 observes it.
 
-Decision: a branch with no upstream counts as unpublished when it is checked out in a worktree or has a commit in the last 14 days. Proposed.
-Basis: assumed, from the 2026-10-05 audit, where most upstream-less branches in team repositories were merged work whose remote branch had been deleted.
-Fallback: the window is one manifest value; a noisy or silent report changes the number, not the states.
-
-Decision: the `terminal-browser` skill link may dangle on the mini. Proposed.
-Basis: assumed: Claude Code skips a skill whose link does not resolve.
-Outstanding verification: start a session on the mini after the cutover and read its skill list.
-Fallback: install terminal-browser on the mini, or drop the link from the mini's packages by moving it to a laptop-only package.
+Decision: terminal-browser is installed on the mini, so its skill link resolves on both machines. Proposed.
+Basis: assumed: its installer works on the mini as on the laptop (`docs/agent-skills.md` § Installing and updating).
+Outstanding verification: install it during phase 2 and run `skill-sync --check` on the mini.
+Fallback: the link leaves the tracked tree, is gitignored like `claude/.claude/skills/synced/`, and is created on the laptop by terminal-browser's own installer. Either way no machine holds a broken link.
 
 ## Verification
 
 The build reports each obligation below by number: pinned, a test that goes red when the behaviour is removed; nominal, a test that exists but would stay green; or skipped, with the reason.
 
-Unless stated otherwise: observed through `twin`'s commands, in Go tests, with two temporary homes behind the local host adapter, real `git` and the real Unison binary. Both are installed on both machines. The ssh adapter is exercised only in obligations 15 and 16.
+Unless stated otherwise: observed through `twin`'s commands, in Go tests in `~/dev/twin`, with two temporary homes behind the local host adapter, real `git`, and the real Unison binary run against two local roots with one state directory. Both programs are installed on both machines. The ssh adapter is exercised only in obligations 17 to 19.
 
 1. A carried path changed in one home is equal in both after `files sync`, with its mode kept.
-2. A carried path changed in both homes is unchanged in both after `files sync`; the attention block names it; exit status is 1; a second run reports it again.
-3. A carried path deleted in one home is still present in the other after `files sync` and is reported; `files resolve --delete` removes both; `--keep` restores it.
-4. With the reconciler's record removed from an enrolled target, `files sync` changes no file and reports the target blocked; `files resolve --rebaseline` lists the paths present on one side only before doing anything.
-5. A carry set naming a git-tracked path, a path that escapes its root through a symlink, a never-listed path, or a directory containing `node_modules` is refused before the reconciler starts. Fixture: a repository where the path is ignored on `main` and tracked on another worktree's branch.
-6. With the two homes holding different declarations of one target, `files sync` changes no file and names the machine that is behind.
+2. A carried path changed in both homes is unchanged in both after `files sync`; the attention block names the path; exit status is 1; a second run names it again.
+3. A carried path deleted in one home is still present in the other after `files sync` and is listed; `files resolve --delete` removes both; `--keep` naming the machine that has it restores it; `--keep` naming the other is refused. `files resolve` with a failing snapshot command changes nothing.
+4. `files sync` on a target with no receipt and no record changes no file and reports it not enrolled. With a receipt present and the record removed, it changes no file and reports the target blocked. `files enroll` without `--copy-missing` leaves a one-sided path on one side only and lists it; with the flag it copies it.
+5. A carry set is refused before the reconciler starts when a path: is tracked in the main checkout's `HEAD`; is untracked but not ignored; escapes its root through a symlink; is protected; lies inside another carried path; is declared under `home` but lies inside a registered repository; or contains `node_modules`. A path ignored on the main checkout's branch and tracked only on a linked worktree's branch is accepted.
+6. With the two homes holding different declarations of one target, `files sync` changes no file and gives both dotfiles revisions.
 7. A target with an empty carry set starts no reconciler process.
-8. `repos status` reports uncommitted, unpublished and behind for the main checkout and for a linked worktree; a repository that has never fetched, or whose remote is unreachable, is `fetch-unknown`, not in step.
-9. With the peer adapter failing, the peer's rows show the recorded observation and its time, or an attention item when there is none.
-10. A command made to fail after its first target still prints the attention block and the same items under `--json`.
-11. `repos pull` fast-forwards a clean worktree; refuses a dirty or diverged one; changes no carried path. No `twin` command creates a commit or a push: asserted over the fixture remotes' reflogs across the suite.
-12. A failing install leaves the tool reported as behind; a succeeding one records the checkout's revision.
-13. `dotfiles apply` in a temporary home leaves `~/.claude` and `~/.codex` real directories; the rendered Codex config keeps the runtime-owned tables and omits the other machine's tables; a local edit outside those tables stops the render. The existing guard `zsh/.config/zsh/tests/stow-reach.test.zsh` stays green.
-14. The session-start hook prints the machine text and the dotfiles items from recorded observations with the network unavailable, and the machine text alone with no `twin` on `PATH`. Extends `.claude/hooks/test-machine-context.sh`.
-15. Live, after the cutover: a commit made in the mini's `~/dotfiles` is still at its `HEAD` after the laptop's next `twin tick`. Manual, once; it is the observation that `mini-sync` is gone.
-16. Live, after the cutover: `twin files sync home` from the mini, with the laptop awake and then asleep. Manual; the second run must exit 2 and name the laptop as unreachable.
+8. `repos status` reports each condition in § Design — API for the main checkout and for a linked worktree; a repository that has never fetched, or whose remote is unreachable, has "fetch unknown"; a branch with no upstream that is not checked out is informational and does not change the exit status.
+9. With the peer adapter failing, `twin status` shows the peer's recorded observation with its time and exits 1, or lists the missing observation as an item; `--recorded` makes no call through the peer adapter.
+10. A command made to fail after its first target still prints the attention block, and the same items under `--json`.
+11. `repos pull` fast-forwards a clean worktree; refuses a dirty one, a diverged one, one on the wrong `branch`, and one where the incoming tree starts tracking a carried path, leaving that path's contents intact; with `--both` and one side refusing, the other side's result is reported as completed. No `twin` command creates a commit or a push: asserted over the fixture remotes across the suite.
+12. A failing install leaves the tool behind; a succeeding one writes its receipt; an install from a checkout with uncommitted changes is reported as such, not as current.
+13. In dotfiles: `dotfiles apply` in a temporary home that starts from today's layout, with `~/.codex/config.toml` a symlink to the tracked file, leaves `~/.claude` and `~/.codex` real directories and stows this machine's launchd package only. The rendered Codex config keeps the runtime-owned tables, includes this machine's fragment and not the other's; a local edit outside the runtime-owned tables stops the render and is listed. `zsh/.config/zsh/tests/stow-reach.test.zsh` stays green.
+14. In dotfiles: the session-start hook prints the machine text and the dotfiles items with the network unavailable, and the machine text alone with no `twin` on `PATH`. Extends `.claude/hooks/test-machine-context.sh`.
+15. `repos clone` creates an absent registered checkout from the manifest's URL and refuses a path that already exists.
+16. In `~/dev/tabtype`: the installer, made to fail at the copy, leaves the previously installed app in place.
+17. Live, after the cutover: a commit made in the mini's `~/dotfiles` is still at its `HEAD` after the laptop's next `twin tick`, and `launchctl print` shows no `com.qiushi.mini-sync` on the laptop after a logout and login. Manual, once.
+18. Live, after the cutover: the `twin tick` run by launchd on each machine records a fetch time newer than the previous one. Manual, once per machine; it shows the credential is readable in that context.
+19. Live, after the cutover: `twin files sync home` from the mini with the laptop awake, then asleep. Manual; the second run must exit 2 and name the laptop.
 
 Limit: the fixtures cannot show the reconciler's behaviour between two OCaml builds or over a dropped tailnet link; the first was measured once (§ Design — Premises).
 
 ## Delivery
 
-Boundary: two repositories. `twin` is new and lives in `~/dev/twin` (`github.com/qiushiyan/twin`, private), because it is a tool with its own tests and release, like `headroom` and `gwt`. The dotfiles changes land on `main` as the phases below, in order, because phase 3 is an operational step on two live machines and the old writer must be stopped before it.
+Boundary: two repositories carry the design. `twin` is new, in `~/dev/twin` (`github.com/qiushiyan/twin`, private), because it is a tool with its own tests, like `headroom` and `gwt`. The dotfiles changes land on `main` in the phases below, because phase 3 is an operational step on two live machines and the old writer must be gone before it. Three other repositories take one small change each, all before phase 3: `~/dev/slackkit` (relative skill links; a local agent-install target), `~/dev/mailkit` (relative skill links), `~/dev/tabtype` (the installer stages and swaps).
 
-1. **Build `twin`** against fixtures: obligations 1 to 14.
-2. **Prepare dotfiles**, with `mini-sync` still running and behaviour unchanged: the manifest; relative skill links; per-machine launchd packages; the tracked Codex file reduced to shared settings with the laptop rendering its own; the machine texts drafted. Each change is correct under the mirror, since the mirror copies it.
+1. **Build `twin`** against fixtures: obligations 1 to 12 and 15.
+2. **Prepare**, with `mini-sync` still running and the mini's behaviour unchanged:
+   - in dotfiles: the `twin` package with the manifest; relative skill links; the per-machine launchd packages and the `Makefile` rule that selects one; the hook change. Obligations 13 and 14. Each change is correct under the mirror, since the mirror copies it.
+   - the three owning-repository changes above; obligation 16.
+   - terminal-browser on the mini, or its fallback.
 3. **Cut over**, with both machines awake:
-   1. Unload the `com.qiushi.mini-sync` LaunchAgent on the laptop. Nothing else proceeds until it is gone.
-   2. Take an APFS snapshot on both (`snapshot`).
-   3. On the mini: bring `~/dotfiles` to a clean checkout of `origin/main` (the copied skill directories give way to the tracked links), move the hand-written `~/.gitconfig` aside, and run `twin dotfiles apply`.
-   4. On both: `twin tools install --all`.
-   5. Enroll each carry set; resolve the conflicts that enrollment reports.
-   6. Load the `twin tick` agent on both. Obligations 15 and 16.
-4. **Clean up the old sync family in dotfiles**: delete `scripts/.local/bin/mini-sync`, `scripts/Library/LaunchAgents/com.qiushi.mini-sync.plist`, `scripts/.local/share/dotfiles/mini-codex-config.py` and `_pull_both`; rewrite `pp`; replace the mirror rules in `.claude/machines/`, `CLAUDE.md` and `docs/qiushi-mini.md` § Sync and § Personal checkouts; change step 8 of `~/dev/tabtype/docs/releasing.md` to the tools command. `claude-tomini`, `tomini`, `frommini`, `skill-sync`, `secrets-manifest.txt` and `scripts/list-secrets.sh` stay (§ Intent, non-goals).
+   1. On the laptop: `launchctl bootout` and `launchctl disable` the `com.qiushi.mini-sync` label, remove its plist from the laptop's launchd package and from `~/Library/LaunchAgents`, and confirm no `mini-sync` process is running. Nothing else proceeds until this holds.
+   2. Take an APFS snapshot on both machines (`snapshot`).
+   3. Codex config, on each machine: copy the live `~/.codex/config.toml` to a real file in place, then commit the tracked source's reduction to the shared file and the two fragments. The live files are detached before their source shrinks.
+   4. On the mini: fetch; confirm that the only differences from `origin/main` are the copied skill directories; replace those with the tracked links; move the hand-written `~/.gitconfig` aside. Ignored files, the tmux plugin clones and `claude/.claude/skills/synced/` among them, are left alone: no `git clean -x`.
+   5. On the mini: clone `~/dev/twin`, `make install`, and stow the `twin` package once by hand so the manifest is readable.
+   6. On both: `twin dotfiles apply`, without `--load-agents`. The first Codex render stops on any difference; each is adopted into the tracked source or discarded.
+   7. On both: `twin tools install --all`.
+   8. On the laptop: `twin files enroll` for each target with a carry set; resolve what each lists.
+   9. Add the `twin tick` agent to both launchd packages; on both, `twin dotfiles apply --load-agents`. Obligations 17 to 19.
+   10. Commit the machine texts and `CLAUDE.md`'s rule in their new wording.
+4. **Clean up the old sync family in dotfiles**: delete `scripts/.local/bin/mini-sync`, `scripts/.local/share/dotfiles/mini-codex-config.py` and `_pull_both`; rewrite `pp`; bring every live doc that describes the mirror in line, under `docs/documentation-standards.md`; change step 8 of `~/dev/tabtype/docs/releasing.md` to the tools command; delete this spec. `claude-tomini`, `tomini`, `frommini`, `theme-set`, `skill-sync`, `secrets-manifest.txt` and `scripts/list-secrets.sh` stay (§ Intent, non-goals).
 
 Phases 1 and 2 fit one session; 3 and 4 a second, with a handoff between.
 
