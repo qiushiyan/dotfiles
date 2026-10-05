@@ -36,7 +36,7 @@ carried paths, the tools each machine builds, the packages the mini stows.
 
 ```bash
 twin status                 # both machines; run before leaving a desk and on sitting down
-twin status dotfiles        # one target, every item listed
+twin status dotfiles        # one target, every item listed; only it is inspected
 twin status --recorded      # do not ask the other machine; show its last recorded state
 twin status --json          # the same items, for a program
 twin repos status           # only repositories; also lists unregistered checkouts under ~/dev
@@ -61,46 +61,62 @@ exit 1   something does
 exit 2   the command itself failed
 ```
 
-- **uncommitted, unpublished:** work that exists on that machine only.
-- **local-only, in use:** a branch with no upstream, checked out in a
-  worktree. Push it if the work continues on the other machine; expected for
-  work that stays put.
-- **behind:** as of that machine's last fetch. Status never fetches; the
+- **uncommitted, unpublished, local-only in use, behind:** work in a main
+  checkout, or on a branch both machines have checked out. A main checkout
+  is what both machines pull, so work left there is work the other lacks;
+  `local-only, in use` is a branch with no upstream checked out there.
+  `behind` is as of that machine's last fetch: status never fetches; the
   hourly tick does.
+- **own work** (informational): the same conditions in a linked worktree,
+  or on a branch ahead of its upstream that neither machine has checked out.
+  It becomes attention once the other machine checks out the same branch.
 - **absent:** registered in the manifest, no clone on that machine.
+- **not registered:** the other machine's manifest does not list the
+  repository; pull and apply dotfiles there.
 - **tool behind, activation behind, codex config behind:** the checkout moved
   and what is installed or stowed did not.
 - **tool differs:** each machine built the tool from a different commit,
   usually because their checkouts are on different branches. Each is current
   against its own checkout, so nothing else would say it.
 - **needs resolving, blocked, not enrolled:** a carry set (§ Carried files).
-- **not reachable:** the other machine did not answer, and its lines carry
-  the time they were recorded. An unreachable machine is never shown clean.
+- **not reachable:** the other machine did not answer, and its lines come
+  from the record of it, each carrying when its target was seen. An
+  unreachable machine is never shown clean.
 
 With no target, a repository's many items under one condition fold into one
-counting line; name the target to see each. A Claude Code session started in
-this repository gets `twin status dotfiles --recorded` at session start
-(`.claude/hooks/machine-context.sh`).
+counting line, and informational lines of one condition fold into one line
+naming the repositories; name the target to see each. A Claude Code session
+started in this repository gets `twin status dotfiles --recorded` at session
+start (`.claude/hooks/machine-context.sh`).
 
 ## Common cases
 
 ### After a push: one command
 
 ```bash
-twin sync                  # both machines: pull what is behind, install what moved, apply dotfiles
-                           # if it moved, sync carried files; ends with the status of both
+twin sync                  # in a repository's checkout or worktree: that repository; anywhere else:
+                           # everything. On both machines: pull what is behind, install what moved,
+                           # apply dotfiles if it moved, sync carried files; ends with the status of both
+twin sync --all            # everything, from anywhere
 twin sync headroom gwt     # only these targets
 twin sync tools            # only the tools that belong to no repository (the pnpm pins)
 twin sync --here           # only this machine
 ```
 
 ```text
-mac headroom: updated 3f2a1c9 to 8b7d0e4
-mini headroom: updated 3f2a1c9 to 8b7d0e4
-installed headroom on mac
-installed headroom on mini
+✔ mac   headroom  pulled     3f2a1c9 → 8b7d0e4
+✔ mac   headroom  installed  8b7d0e4
+✔ mini  headroom  pulled     3f2a1c9 → 8b7d0e4
+✔ mini  headroom  installed  8b7d0e4
+· current on mac and mini: gwt
 attention: none
 ```
+
+`✔` is what the run changed; `✘` is what it would have done and did not,
+with the reason (a pull refused, a tool not built); a dim `·` line names
+what it checked and found current. Colour appears on a terminal only. Both
+machines do their half at the same time, then the carried files are
+reconciled.
 
 It does the same on whichever machine it is run from, and only what is
 behind: a repository that is current is not pulled, and a tool whose checkout
@@ -111,8 +127,9 @@ checkout holding uncommitted changes. Dotfiles is applied when its checkout
 moved; a Codex source edit that was never committed waits for
 `twin dotfiles apply`. It pulls main checkouts, not linked
 worktrees, and it cannot move what was never pushed: that shows in the final
-block as `unpublished`. The run ends with `twin status`, so an empty
-attention block is the whole answer.
+block as `unpublished`. The run ends with the status of what it covered, so
+an empty attention block is the whole answer; `twin status <target>` lists
+each item the closing block folds.
 
 ```text
 exit 2, "mini: not reachable … only mac was brought up to date"
@@ -275,10 +292,10 @@ twin files sync <target>                      # every later run
 ```
 
 ```text
-itell: equal on both: apps/platform/.env
-itell: differs: apps/platform/.env.local               -> needs resolving
-itell: on mac only, held: legacy/demo/.env             -> held until resolved or --copy-missing
-itell: same content, modes differ: … (mac 644, mini 600)  -> chmod one to match, then sync
+· both itell: equal on both: apps/platform/.env
+· both itell: differs: apps/platform/.env.local              -> needs resolving
+· both itell: on mac only, held: legacy/demo/.env            -> held until resolved or --copy-missing
+· both itell: same content, modes differ: … (mac 644, mini 600)  -> chmod one to match, then sync
 ```
 
 ### Changed on both machines, or deleted on one
@@ -386,7 +403,16 @@ changes reach Codex at the next apply.
   under a running session; pushing on one would publish unreviewed work.
 - **Uncommitted work and unpushed branches do not travel.** Carrying them
   needs a second transport beside git, for work that is either a forgotten
-  push or throwaway. Status is the reminder.
+  push or throwaway. Status is the reminder where the work is shared: a main
+  checkout, or a branch both machines have checked out.
+- **A linked worktree belongs to its machine.** The two machines never work
+  in the same worktree, so a worktree's uncommitted or unpushed work is that
+  machine's business; reporting it as attention buries what is shared under
+  what is expected.
+- **A run costs what it names.** A named status or sync inspects only those
+  targets, on both machines at once, so the after-push command and the
+  session-start status stay quick for one project. The record each machine
+  keeps of the other stays whole, each target stamped with when it was seen.
 - **Only the laptop reconciles.** One machine holds each target's lock and
   record, so a carry set is never reconciled by concurrent runs.
 
