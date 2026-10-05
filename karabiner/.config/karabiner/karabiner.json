@@ -63,6 +63,28 @@
                                 ]
                             }
                         ]
+                    },
+                    {
+                        "description": "ctrl+space sends f18, the input source shortcut: over Universal Control every modifier release arrives twice, and a shortcut that commits on release then switches twice",
+                        "manipulators": [
+                            {
+                                "type": "basic",
+                                "from": {
+                                    "key_code": "spacebar",
+                                    "modifiers": {
+                                        "mandatory": [
+                                            "control"
+                                        ]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "f18",
+                                        "repeat": false
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 ]
             },
