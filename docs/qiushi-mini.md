@@ -221,10 +221,15 @@ why the laptop tmux stays out of it) needs these on top of a default mini:
   `TERM_PROGRAM`, so `hosts/mini.zsh` sets `FORCE_HYPERLINK=1` for SSH sessions;
   without it Claude Code prints plain-text URLs.
 - **Ctrl-click in Claude Code** is its own click handler, which runs
-  `$BROWSER` (else `open`) on the host, the mini. `hosts/mini.zsh` sets
-  `BROWSER=~/.local/bin/browser-clip` for SSH sessions. That shim hands the
-  URL to `toclip`, which sends it to the laptop clipboard instead of opening
-  the mini's Safari (§ Clipboard and attach).
+  `$BROWSER` (else `open`) on the host, the mini, as `gh --web` and `gopen`
+  do. `hosts/mini.zsh` sets `BROWSER=~/.local/bin/browser-clip` in every
+  shell, and the shim asks `toclip` per URL: with an ssh client on the pane's
+  session the URL goes to the laptop clipboard instead of the mini's Safari,
+  otherwise it opens on the mini (§ Clipboard and attach). A check at shell
+  start goes stale: a pane keeps the environment it was created with, and
+  tmux gives new panes the environment of the shell that started the server,
+  so after a server started over ssh every pane would send URLs away even at
+  the desk.
 
 ## Clipboard and attach
 

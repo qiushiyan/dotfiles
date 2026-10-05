@@ -4,8 +4,8 @@
 # A thin bridge to the `gopen` CLI on PATH (~/dev/gopen; its README owns every
 # resolution rule: PR thread > branch tree > commit tree, the per-branch PR
 # cache, the SSH-shorthand rewrite, the browser opener). This script adds no
-# policy of its own — it supplies the cwd only tmux knows, and turns gopen's
-# one interactive moment, the push prompt, into a tmux confirm-before.
+# policy of its own — it supplies the cwd and pane only tmux knows, and turns
+# gopen's one interactive moment, the push prompt, into a tmux confirm-before.
 #
 # The contract with gopen is its stdout and exit code, never its stderr
 # wording: on success stdout is the URL it opened; exit 3 means the branch is
