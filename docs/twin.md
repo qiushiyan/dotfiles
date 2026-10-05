@@ -90,6 +90,7 @@ this repository gets `twin status dotfiles --recorded` at session start
 twin sync                  # both machines: pull what is behind, install what moved, apply dotfiles
                            # if it moved, sync carried files; ends with the status of both
 twin sync headroom gwt     # only these targets
+twin sync tools            # only the tools that belong to no repository (the pnpm pins)
 twin sync --here           # only this machine
 ```
 
@@ -106,7 +107,9 @@ behind: a repository that is current is not pulled, and a tool whose checkout
 did not move is not rebuilt. It never forces and never switches a branch. A
 main checkout that is behind and has uncommitted work, or has diverged, is
 left alone and listed as `pull refused`, and a tool is not built from a
-checkout holding uncommitted changes. It pulls main checkouts, not linked
+checkout holding uncommitted changes. Dotfiles is applied when its checkout
+moved; a Codex source edit that was never committed waits for
+`twin dotfiles apply`. It pulls main checkouts, not linked
 worktrees, and it cannot move what was never pushed: that shows in the final
 block as `unpublished`. The run ends with `twin status`, so an empty
 attention block is the whole answer.
