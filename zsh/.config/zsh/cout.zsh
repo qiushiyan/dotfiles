@@ -31,7 +31,10 @@ _cout_preexec() {
   fi
   (( ++_cout_sequence ))
   _cout_last="$_cout_session-$_cout_sequence"
-  if ! (umask 077; print -rn -- "$1" > "$_cout_store/$_cout_last.command") 2>/dev/null; then
+  # The command text and the directory it runs from, both in place before the
+  # start marker.
+  if ! (umask 077; print -rn -- "$1" > "$_cout_store/$_cout_last.command" &&
+      print -rn -- "$PWD" > "$_cout_store/$_cout_last.cwd") 2>/dev/null; then
     print -u2 'cout: recording stopped; run zshreload to restart it.'
     _cout_pending=0
     _cout_broken=1

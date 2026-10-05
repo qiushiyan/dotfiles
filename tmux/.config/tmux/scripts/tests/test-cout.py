@@ -24,11 +24,6 @@ MODULE = ROOT / "zsh/.config/zsh/cout.zsh"
 PROMPT = ROOT / "ohmyposh/.config/ohmyposh/zen.omp.json"
 
 
-def fenced(transcript):
-    """The text cout delivers: the transcript as a Markdown code block."""
-    return "\n```\n" + transcript + "```\n"
-
-
 @unittest.skipUnless(COUT and Path(COUT).is_file(), "cout binary not found; set COUT_BIN or install it")
 class CoutTest(unittest.TestCase):
     def setUp(self):
@@ -118,6 +113,11 @@ class CoutTest(unittest.TestCase):
         # precmd finishes immediately before Zsh actually paints PS1.
         time.sleep(.1)
 
+    def fenced(self, transcript, cwd=None):
+        """The text cout delivers: a Markdown code block that opens on the
+        directory the command ran from, the pane's starting one by default."""
+        return f"\n```\n# run from {cwd or self.home}\n{transcript}```\n"
+
     def capture(self, success=True, index=1):
         result = subprocess.run([COUT, "--pane", self.pane, "--print", str(index)],
                                 env=self.env, text=True, capture_output=True)
@@ -127,7 +127,7 @@ class CoutTest(unittest.TestCase):
     def test_streams_exact_command_and_repeated_copy(self):
         cmd = "printf '\\033[31mhello\\033[0m\\n'; printf 'error\\n' >&2; false"
         self.execute(cmd)
-        expected = fenced("$ " + cmd + "\nhello\nerror\n")
+        expected = self.fenced("$ " + cmd + "\nhello\nerror\n")
         self.assertEqual(self.capture(), expected)
         for _ in range(2):
             self.execute("cout")
@@ -147,10 +147,10 @@ class CoutTest(unittest.TestCase):
         self.execute("cout 2")
         self.assertEqual((self.home / "clipboard").read_text(), first_text)
         self.assertEqual(self.capture(index=2), first_text)
-        self.assertEqual(self.capture(), fenced("$ true\n"))
+        self.assertEqual(self.capture(), self.fenced("$ true\n"))
         self.execute("print third")
-        third_text = fenced("$ print third\nthird\n")
-        for invocation, expected in [("cout 3", first_text), ("cout 2", fenced("$ true\n")),
+        third_text = self.fenced("$ print third\nthird\n")
+        for invocation, expected in [("cout 3", first_text), ("cout 2", self.fenced("$ true\n")),
                                      ("cout", third_text), ("cout 1", third_text)]:
             self.execute(invocation)
             self.assertEqual((self.home / "clipboard").read_text(), expected)
@@ -183,30 +183,45 @@ class CoutTest(unittest.TestCase):
 
     def test_silent_and_multiline_wrapped_output(self):
         self.execute("true")
-        self.assertEqual(self.capture(), fenced("$ true\n"))
+        self.assertEqual(self.capture(), self.fenced("$ true\n"))
         cmd = "printf '%s\\n' \\\n  '" + "long 界 " * 30 + "'"
         self.execute(cmd)
-        self.assertEqual(self.capture(), fenced("$ " + cmd + "\n" + "long 界 " * 30 + "\n"))
+        self.assertEqual(self.capture(), self.fenced("$ " + cmd + "\n" + "long 界 " * 30 + "\n"))
+
+    def test_block_names_the_directory_each_command_ran_from(self):
+        elsewhere = self.home / "sub dir"
+        elsewhere.mkdir()
+        self.execute("print before")
+        self.execute("cd 'sub dir'")
+        self.execute("print after")
+        self.assertEqual(self.capture(), self.fenced("$ print after\nafter\n", cwd=elsewhere))
+        # cd ran from the directory it left, and leaves earlier records alone.
+        self.assertEqual(self.capture(index=2), self.fenced("$ cd 'sub dir'\n"))
+        self.assertEqual(self.capture(index=3), self.fenced("$ print before\nbefore\n"))
+        # A shell running older hooks writes no directory; the line is left out.
+        identity = self.option("@cout-state").split()[1]
+        (self.store() / f"{identity}.cwd").unlink()
+        self.assertEqual(self.capture(), "\n```\n$ print after\nafter\n```\n")
 
     def test_nested_shell_preserves_parent_and_child_records(self):
         self.execute("print parent_a")
         self.execute("print parent_b")
         self.execute("zsh")
         self.execute("print child")
-        self.assertEqual(self.capture(), fenced("$ print child\nchild\n"))
+        self.assertEqual(self.capture(), self.fenced("$ print child\nchild\n"))
         self.execute("exit")
         store = self.store()
         exited = next(p for p in store.glob("*.command") if p.read_text() == "exit")
         self.wait(lambda: exited.with_suffix(".json").exists())
-        self.assertEqual(self.capture(index=2), fenced("$ print parent_b\nparent_b\n"))
-        self.assertEqual(self.capture(index=3), fenced("$ print parent_a\nparent_a\n"))
-        self.assertTrue(self.capture().startswith("\n```\n$ zsh\n"))
+        self.assertEqual(self.capture(index=2), self.fenced("$ print parent_b\nparent_b\n"))
+        self.assertEqual(self.capture(index=3), self.fenced("$ print parent_a\nparent_a\n"))
+        self.assertTrue(self.capture().startswith(f"\n```\n# run from {self.home}\n$ zsh\n"))
         self.assertIn("child", self.capture())
 
     def test_completed_record_survives_resize_and_clear_history(self):
         command = "printf '%s\\n' '" + "wide 界 " * 40 + "'"
         self.execute(command)
-        expected = fenced("$ " + command + "\n" + "wide 界 " * 40 + "\n")
+        expected = self.fenced("$ " + command + "\n" + "wide 界 " * 40 + "\n")
         self.tmux("resize-window", "-t", self.pane, "-x", "30", "-y", "16")
         self.tmux("clear-history", "-t", self.pane)
         self.assertEqual(self.capture(), expected)
@@ -214,9 +229,9 @@ class CoutTest(unittest.TestCase):
     def test_foreign_prompt_markers_progress_and_blank_lines(self):
         command = "printf '\\033]133;A\\aREMOTE> \\033]133;B\\a\\r\\033[2Kprogress 1\\rprogress 2\\n\\n   \\n'"
         self.execute(command)
-        self.assertEqual(self.capture(), fenced("$ " + command + "\nprogress 2\n\n   \n"))
+        self.assertEqual(self.capture(), self.fenced("$ " + command + "\nprogress 2\n\n   \n"))
         self.execute("print next")
-        self.assertEqual(self.capture(index=2), fenced("$ " + command + "\nprogress 2\n\n   \n"))
+        self.assertEqual(self.capture(index=2), self.fenced("$ " + command + "\nprogress 2\n\n   \n"))
 
     def test_exec_reload_and_foreign_pipe_are_isolated(self):
         self.execute("print old")
@@ -226,7 +241,7 @@ class CoutTest(unittest.TestCase):
         self.assertEqual(self.option("@cout-store"), old_store)
         self.assertIn("no completed command", self.capture(success=False))
         self.execute("print new")
-        self.assertEqual(self.capture(), fenced("$ print new\nnew\n"))
+        self.assertEqual(self.capture(), self.fenced("$ print new\nnew\n"))
         replaced = next(p for p in set(Path(old_store).glob("*.command")) - before
                         if p.read_text() == "exec zsh")
         metadata = json.loads(replaced.with_suffix(".json").read_text())
@@ -257,7 +272,7 @@ class CoutTest(unittest.TestCase):
         self.assertEqual(screen.count("cout: recording stopped; run zshreload to restart it."), 1)
         self.execute("exec zsh")
         self.execute("print recovered")
-        self.assertEqual(self.capture(), fenced("$ print recovered\nrecovered\n"))
+        self.assertEqual(self.capture(), self.fenced("$ print recovered\nrecovered\n"))
 
     def test_killed_recorder_reports_promptly_and_reload_reaps_cache(self):
         self.execute("print retained")
@@ -273,7 +288,7 @@ class CoutTest(unittest.TestCase):
         self.assertNotIn("_cout_preexec:", self.tmux("capture-pane", "-p", "-J", "-t", self.pane))
         self.execute("exec zsh")
         self.execute("print recovered")
-        self.assertEqual(self.capture(), fenced("$ print recovered\nrecovered\n"))
+        self.assertEqual(self.capture(), self.fenced("$ print recovered\nrecovered\n"))
         self.assertFalse(store.exists())
 
     def test_recorder_fault_keeps_completed_records_until_recovery(self):
@@ -287,7 +302,7 @@ class CoutTest(unittest.TestCase):
         self.assertIn("recorder stopped; run zshreload", self.capture(success=False))
         self.execute("exec zsh")
         self.execute("print recovered")
-        self.assertEqual(self.capture(), fenced("$ print recovered\nrecovered\n"))
+        self.assertEqual(self.capture(), self.fenced("$ print recovered\nrecovered\n"))
         self.assertFalse(store.exists())
 
     def test_selected_copy_survives_starting_another_command(self):
@@ -313,7 +328,7 @@ class CoutTest(unittest.TestCase):
             (self.home / "render-release").touch()
             stdout, stderr = process.communicate(timeout=10)
         self.assertEqual(process.returncode, 0, stderr)
-        self.assertEqual((self.home / "clipboard").read_text(), fenced("$ print selected\nselected\n"))
+        self.assertEqual((self.home / "clipboard").read_text(), self.fenced("$ print selected\nselected\n"))
         self.assertIn('Copied "print selected"', stdout)
 
     def test_recording_limits_prune_and_refuse_truncated_output(self):
@@ -335,6 +350,7 @@ class CoutTest(unittest.TestCase):
         self.assertIn("unavailable", self.capture(success=False, index=4))
         store = self.store()
         self.assertEqual(len(list(store.glob("*.command"))), 3)
+        self.assertEqual(len(list(store.glob("*.cwd"))), 3)
         self.assertLessEqual(sum(p.stat().st_size for p in store.glob("*.raw")), 2048)
         self.assertEqual(store.stat().st_mode & 0o777, 0o700)
         self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in store.iterdir()))
@@ -368,7 +384,7 @@ class CoutTest(unittest.TestCase):
         expected = self.capture()
         # Zsh pads its visible missing-newline marker to the right margin.
         self.assertEqual([line.rstrip() for line in expected.splitlines()],
-                         ["", "```", "$ printf no-newline", "no-newline%", "```"])
+                         ["", "```", f"# run from {self.home}", "$ printf no-newline", "no-newline%", "```"])
         generation = self.option("@test-generation")
         self.tmux("send-keys", "-t", self.pane, "-l", "not executed")
         self.tmux("send-keys", "-t", self.pane, "C-c")
@@ -428,7 +444,7 @@ class CoutTest(unittest.TestCase):
     def test_scrollback_and_pane_target(self):
         cmd = "for i in {1..80}; do print row-$i; done"
         self.execute(cmd)
-        expected = fenced("$ " + cmd + "\n" + "".join(f"row-{i}\n" for i in range(1, 81)))
+        expected = self.fenced("$ " + cmd + "\n" + "".join(f"row-{i}\n" for i in range(1, 81)))
         self.assertEqual(self.capture(), expected)
         # A different active pane must never change the source of the copy.
         self.tmux("split-window", "-h", "-t", self.pane, "/bin/sleep 30")
