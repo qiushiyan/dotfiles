@@ -1,0 +1,4 @@
+# Codex settings only the mini has. Merged over shared.toml there.
+
+# Keychain is locked in SSH sessions; keep auth in ~/.codex/auth.json.
+cli_auth_credentials_store = "file"

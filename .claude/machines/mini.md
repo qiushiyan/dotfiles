@@ -1,12 +1,17 @@
 You are on the mini: the office Mac mini (`qiushi-mini`, user `qiushiyan`,
 home `/Users/qiushiyan`).
 
-- **This checkout is a read-only mirror: do not edit it.** The mac's
-  `mini-sync` replaces it with the mac's working tree, deletions included,
-  the next time the mac is awake, which can be days later, so an edit made
-  here looks kept and is then lost. Make the change on the mac (`ssh mac`,
-  when it is awake), or report it for the user to make.
-  `docs/qiushi-mini.md` § Sync.
-- **The mac is the MacBook Pro**, which the docs call the laptop. The CLIs on
-  PATH and the skills a session loads here are its builds and copies
-  (`docs/qiushi-mini.md` § Personal checkouts).
+- **This checkout is a clone, and so is the mac's.** Neither machine is a
+  copy of the other: edit, commit and push here like anywhere. A commit made
+  here is on the mac only once it is pushed and pulled there, and the same
+  the other way; pull first when the `twin` lines below show this checkout
+  behind (`twin repos pull dotfiles`).
+- **Activation is each machine's own.** A pull does not restow, render the
+  Codex config or load a launchd agent: `twin dotfiles apply` does, here.
+  This machine stows the packages `twin/.config/twin/twin.toml` lists for
+  it, which is not every package in the tree, and builds its own CLIs
+  (`twin tools install`).
+- **The mac is the MacBook Pro**, which the docs call the laptop
+  (`ssh mac`, when it is awake). It runs the reconciler: gitignored files
+  the manifest lists move between the two only while it is awake, and a
+  `twin files` command given here is handed to it.

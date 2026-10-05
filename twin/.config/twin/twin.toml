@@ -21,9 +21,16 @@ packages = [
 
 [dotfiles]
 repo = "dotfiles"
-# Tables Codex writes as it runs. A render keeps them from the local file,
-# and an edit inside them is never drift.
-codex_runtime_tables = ["projects", "hooks.state", "tui.model_availability_nux"]
+# What Codex and its desktop app write into ~/.codex/config.toml for
+# themselves: trust decisions, the model-nux counter, and on a machine with
+# the desktop app its plugins, its two MCP servers and their notify hook. A
+# render keeps these from the local file, and a change inside them is never
+# drift. Everything else is rendered from codex/ beside this file.
+codex_runtime_tables = [
+  "projects", "hooks.state", "tui.model_availability_nux",
+  "plugins", "marketplaces", "desktop",
+  "mcp_servers.node_repl", "mcp_servers.computer-use", "notify",
+]
 
 # ---- Files outside any repository ----
 # Literal paths under $HOME, never a wildcard. ~/.secrets.shared holds the

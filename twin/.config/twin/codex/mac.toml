@@ -1,0 +1,5 @@
+# Codex settings only the laptop has. Merged over shared.toml there.
+
+[shell_environment_policy.set]
+# Tool paths come from zsh/.config/zsh/toolchain.zsh via .zshenv.
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"

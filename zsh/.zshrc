@@ -117,7 +117,10 @@ export DISABLE_AUTO_TITLE=true
 export CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=1
 export ENABLE_LSP_TOOLS=1
 
-# Secrets
+# Secrets, in two files. ~/.secrets.shared holds the keys both machines use
+# and is carried between them by twin; ~/.secrets holds this machine's own
+# and never leaves it. A key's reach is decided by the file it is written in.
+[ -f ~/.secrets.shared ] && source ~/.secrets.shared
 [ -f ~/.secrets ] && source ~/.secrets
 
 # --------------------------------------------------------------------

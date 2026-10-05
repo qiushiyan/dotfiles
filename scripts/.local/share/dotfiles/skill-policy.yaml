@@ -1,7 +1,7 @@
 # Paths are relative to this repository; ~ resolves on the machine running sync.
 # Claude's global user-invocable-only overrides also become Codex manual policies.
 claude_settings: claude/.claude/settings.json
-codex_config: codex/.codex/config.toml
+codex_config: twin/.config/twin/codex/shared.toml
 exclude_roots:
   - claude/.claude/skills/synced
 disabled:

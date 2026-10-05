@@ -30,11 +30,12 @@ reads them from the environment.
 
 ## Working here
 
-- **Know which machine this is before editing: on the mini this checkout
-  is a read-only mirror, and an edit there is lost.** `~/.config/machine`
-  holds `mac` or `mini`, and `.claude/machines/<name>.md` says what differs
-  there. Claude Code gets that file at session start
-  (`.claude/hooks/machine-context.sh`); any other agent reads it first.
+- **Know which machine this is: both hold a clone of this repository, and a
+  commit reaches the other only once it is pushed and pulled.**
+  `~/.config/machine` holds `mac` or `mini`, and `.claude/machines/<name>.md`
+  says what differs there. Claude Code gets that file at session start, with
+  `twin`'s state of this checkout (`.claude/hooks/machine-context.sh`); any
+  other agent reads it first.
 - Edits are live; no build. Use `make restow` after file additions or removals
   that require new links. `dotadd <path>` brings an unmanaged file under Stow.
 - Commit directly on the current branch without asking; leave pushes to the user.

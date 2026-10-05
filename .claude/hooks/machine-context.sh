@@ -5,9 +5,10 @@
 # The untracked one-word ~/.config/machine names the machine, the key
 # .zshenv uses for hosts/<name>.zsh (docs/zsh.md § Machines). The text is
 # .claude/machines/<name>.md. Every machine's file is tracked, so the tree is
-# the same everywhere and mini-sync has nothing per machine to overwrite; the
-# marker lives outside the tree. An unidentified machine is said aloud rather
-# than guessed, because the wrong guess on the mini loses edits.
+# the same in both clones; the marker lives outside the tree. An unidentified
+# machine is said aloud rather than guessed: the marker also picks the launchd
+# package and the Codex fragment, and a wrong guess activates the other
+# machine's.
 #
 # No matcher in settings.json: a resumed session may have moved machines
 # (claude-tomini), and a compacted one has lost the text.
@@ -38,7 +39,8 @@ else why="~/.config/machine names '$name', which has no .claude/machines/$name.m
 fi
 cat <<MSG
 This machine is not identified: $why.
-On the mini this checkout is a mirror that the mac overwrites, so an edit
-made there is lost. Ask the user which machine this is before editing
-anything in this repository; the marker holds one word, \`mac\` or \`mini\`.
+The marker picks this machine's launchd agents and Codex settings, and twin
+refuses to run without it, so nothing machine-specific is stowed or rendered
+until it exists. Ask the user which machine this is before running
+\`make restow\` or \`twin\` here; the marker holds one word, \`mac\` or \`mini\`.
 MSG
