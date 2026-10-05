@@ -95,7 +95,7 @@ expand = '''
 
 1. **Docs.** Your plan's gated items are approved in advance where the project's doc bindings allow them, except settling a doc/code disagreement by changing the described design: leave that one alone and name it in the report. Commit the docs.
 2. **Merge.** In the main checkout, bring main level with origin, merge the branch, and run the project's checks on the result before pushing, because the push is what both machines build from. Resolve a conflict with the resolving-merge-conflicts skill and say what it traded off; stop with the merge unpushed if a check fails. Then push main.
-3. **Install.** Run `twin sync` naming this repo as its target (a bare `twin sync` syncs every repo) and report its closing status block. A line there about this branch being local-only is cleared by step 4.
+3. **Install.** Run `twin sync` naming this repo as its target (bare, it syncs the repository the shell stands in, or every repository from outside one) and report its closing status block. An info line there about this branch is cleared by step 4.
 4. **Remove the branch.** Run `gwt remove` on the feature branch from the main checkout, since it refuses the worktree it is run from; it takes the worktree with it. Any other refusal means keep the branch and say why.
 
 Work already on main skips the merge in step 2 and all of step 4, and its docs pass covers this session's commits. $0'''
@@ -109,7 +109,7 @@ Fix what you confirm as the skill says, minors included, and run its second roun
 
 1. **Docs.** Run the update-docs skill for the work this branch finished, the review's fixes included. Its plan's gated items are approved in advance where the project's doc bindings allow them, except settling a doc/code disagreement by changing the described design: leave that one alone and name it in the report. Commit the docs.
 2. **Merge.** In the main checkout, bring main level with origin, merge the branch, and run the project's checks on the result before pushing, because the push is what both machines build from. Resolve a conflict with the resolving-merge-conflicts skill and say what it traded off; stop with the merge unpushed if a check fails. Then push main.
-3. **Install.** Run `twin sync` naming this repo as its target (a bare `twin sync` syncs every repo) and report its closing status block. A line there about this branch being local-only is cleared by step 4.
+3. **Install.** Run `twin sync` naming this repo as its target (bare, it syncs the repository the shell stands in, or every repository from outside one) and report its closing status block. An info line there about this branch is cleared by step 4.
 4. **Remove the branch.** Run `gwt remove` on the feature branch from the main checkout, since it refuses the worktree it is run from; it takes the worktree with it. Any other refusal means keep the branch and say why.
 
 Work already on main skips the merge in step 2 and all of step 4, and its docs pass covers this session's commits. $0'''
