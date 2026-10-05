@@ -12,7 +12,7 @@ model_reasoning_summary = "concise"
 model_verbosity = "low"
 sandbox_mode = "danger-full-access"
 approval_policy = "never"
-service_tier = "default"
+service_tier = "fast"
 
 [shell_environment_policy]
 inherit = "all"
