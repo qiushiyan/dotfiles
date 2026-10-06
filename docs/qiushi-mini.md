@@ -150,7 +150,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 |---|---|---|---|
 | Go | 1.27.1 | `brew install go` | `brew upgrade go` |
 | 1Password CLI | 2.40.0 | `brew install --cask 1password-cli` (`op`) | `brew upgrade --cask` |
-| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync unison git-lfs git-delta coreutils bat difftastic` (`unison` is `twin`'s reconciler; `git-delta` is the stowed git config's pager; the last three because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`) | `brew upgrade` |
+| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync unison git-lfs git-delta coreutils bat difftastic pngpaste` (`unison` is `twin`'s reconciler; `git-delta` is the stowed git config's pager; `coreutils`, `bat` and `difftastic` because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`; `pngpaste` because nvim's image-aware Ctrl+V reads the pasteboard only through it) | `brew upgrade` |
 | tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading and activating |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
 | node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'`; then move the versioned node path in Portless's service and slack-digest's agent (§ Personal jobs) |
