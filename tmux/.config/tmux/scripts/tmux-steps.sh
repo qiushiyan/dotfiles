@@ -22,8 +22,8 @@
 # branch, compactions and pull requests, then each label's latest event and
 # the notes) above the list of sessions, which is for the occasional switch.
 # A popup narrower than WIDE or shorter than TALL stacks instead: the main
-# panel on top is the steps with the status under them, and the list is
-# under it.
+# panel on top is the whole session view, the status first and whole, with
+# the steps under it, and the list is under the panel.
 #
 # The binary paints and fits what it prints when it is told to. fzf reads it
 # through a pipe, so every call asks for colour (CLICOLOR_FORCE) and gives the
@@ -110,19 +110,22 @@ status() {
 }
 
 # One session for the main panel: its steps, or with the panel labelled
-# "history" its whole timeline. The label is the toggle's state. The status
-# follows the steps in the same panel when the side column has no room for
-# it: always when stacked, and in the side layout when `status` had to cut
-# it. The steps stay on top.
+# "history" its whole timeline. The label is the toggle's state. Stacked,
+# the panel is the whole session view, the status on top: it is what the
+# popup is opened to read, and `pick` sizes the panel to hold it whole. In
+# the side layout the steps are on top, and the status follows them when
+# `status` had to cut it.
 preview() {
     local all='' most n
     case "${FZF_PREVIEW_LABEL:-}" in *history*) all=--all ;; esac
-    CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show --no-head ${all:+"$all"} "$1" 2>&1
-    if [ "${STEPS_LAYOUT:-}" = side ]; then
-        most=$(status_room)
-        n=$(( $(COLUMNS=${STEPS_SIDE:-0} "$STEPS" show --head "$1" 2>&1 | wc -l) ))
-        [ "$most" -gt 1 ] && [ "$n" -gt "$most" ] || return 0
+    if [ "${STEPS_LAYOUT:-}" = stacked ]; then
+        CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show ${all:+"$all"} "$1" 2>&1
+        return
     fi
+    CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show --no-head ${all:+"$all"} "$1" 2>&1
+    most=$(status_room)
+    n=$(( $(COLUMNS=${STEPS_SIDE:-0} "$STEPS" show --head "$1" 2>&1 | wc -l) ))
+    [ "$most" -gt 1 ] && [ "$n" -gt "$most" ] || return 0
     echo
     CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show --head "$1" 2>&1
 }
@@ -144,15 +147,20 @@ loaded() {
     fi
 }
 
+# The panel's label names what it shows, and stacked it shows the status
+# above the steps.
 toggle() {
+    local lead=''
+    [ "${STEPS_LAYOUT:-}" = stacked ] && lead='status · '
     case "${FZF_PREVIEW_LABEL:-}" in
-        *history*) printf 'change-preview-label( steps )+refresh-preview' ;;
-        *) printf 'change-preview-label( history )+refresh-preview' ;;
+        *history*) printf 'change-preview-label( %ssteps )+refresh-preview' "$lead" ;;
+        *) printf 'change-preview-label( %shistory )+refresh-preview' "$lead" ;;
     esac
 }
 
 pick() {
-    local origin="$1" client="${2:-}" rows err tall pos out st pane session c size lines cols side window
+    local origin="$1" client="${2:-}" rows err tall pos out st pane session c size lines cols side window label
+    local count head list room
     local -a layout
     command -v "$STEPS" >/dev/null 2>&1 || die "claude-steps is not installed"
 
@@ -163,6 +171,7 @@ pick() {
     size=$(stty size </dev/tty 2>/dev/null)
     lines=${size%% *} cols=${size##* }
     lines=${lines:-0} cols=${cols:-0}
+    label=' steps '
     if [ "$cols" -ge "$WIDE" ] && [ "$lines" -ge "$TALL" ]; then
         side=$(( cols * 36 / 100 ))
         side=$(( side < 50 ? 50 : side > 72 ? 72 : side ))
@@ -174,7 +183,7 @@ pick() {
                 --footer=$'enter switch · tab history · ctrl-n note\nctrl-d/u scroll · esc close')
     else
         export STEPS_LAYOUT=stacked STEPS_SIDE=$(( cols > 6 ? cols - 6 : 0 ))
-        window='up,60%,wrap,border-rounded'
+        label=' status · steps '
         layout=(--footer='enter switch · tab history · ctrl-n note · ctrl-d/u scroll · esc close')
     fi
 
@@ -189,6 +198,21 @@ pick() {
     # Start on the pane the key was pressed in.
     pos=$(printf '%s\n' "$rows" | awk -F'\t' -v p="$origin" '$1 == p { print NR; exit }')
 
+    # Stacked, the panel takes the rows the list does not need: its frame,
+    # the prompt and the footer (6), and up to six sessions. It takes more
+    # when the status of the session it opens on would not fit whole, while
+    # the list keeps three rows. fzf draws the panel's frame outside the
+    # size it is given.
+    if [ "$STEPS_LAYOUT" = stacked ]; then
+        count=$(printf '%s\n' "$rows" | wc -l)
+        list=$(( (count < 6 ? count : 6) + 6 ))
+        session=$(printf '%s\n' "$rows" | awk -F'\t' -v p="$origin" '$1 == p { print $2; exit }')
+        head=$(( $(COLUMNS=$(( cols > 4 ? cols - 4 : 0 )) "$STEPS" show --head "${session:-$origin}" 2>/dev/null | wc -l) ))
+        room=$(( lines - list - 2 ))
+        [ "$room" -ge "$head" ] || room=$(( head < lines - 11 ? head : lines - 11 ))
+        window="up,$(( room > 3 ? room : 3 )),wrap,border-rounded"
+    fi
+
     # The main panel opens at its top, where the newest steps are: it does not
     # follow its output down.
     out=$(printf '%s\n' "$rows" | fzf \
@@ -197,7 +221,7 @@ pick() {
             --prompt='session > ' \
             --list-border=rounded --list-label=' sessions ' \
             --preview="bash '$SELF' preview {2}" \
-            --preview-window="$window" --preview-label=' steps ' \
+            --preview-window="$window" --preview-label="$label" \
             --bind='ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up' \
             --bind="tab:transform(bash '$SELF' toggle)" \
             --bind="load:transform(bash '$SELF' loaded ${pos:-1})" \

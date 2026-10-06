@@ -20,8 +20,8 @@ What it holds:
   S8  Tab flips the main panel to the whole history and back
   S9  the binary's colours reach the popup, and a row is cut to the side
       column's width by the binary, not by fzf
-  S10 a popup too small for the side column stacks, and its first line is
-      still the newest step
+  S10 a popup too small for the side column stacks, and its panel opens on
+      the status, every label row on screen, with the steps under it
   S11 the status box keeps its height as the cursor moves, so the list stays
       put, and never takes the rows the list needs: a status taller than
       that is cut, says so, and is whole under the steps
@@ -39,6 +39,8 @@ script = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else D/'tmux/.config/tmu
 ALPHA = 'aaaaaaaa-1111-4111-8111-111111111111'
 BETA = 'bbbbbbbb-2222-4222-8222-222222222222'
 GAMMA = 'cccccccc-3333-4333-8333-333333333333'
+# The glyph the painted status draws before a session's pane.
+PANE = '\uf120 '
 
 real_notes = pathlib.Path.home()/'.local/state/claude-steps/notes'
 def fingerprint(d):
@@ -145,7 +147,7 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         cap = wait('the board never drew', lambda c: 'ctrl-n note' in c and 'Beta session   bbbbbbbb' in c)
         assert 'Alpha session' in cap and 'one:0.0' in cap and 'two:0.0' in cap, 'both Claude panes are listed:\n'+cap
         assert 'Gamma session' not in cap, 'a session in no pane is not on the list:\n'+cap
-        assert 'aaaaaaaa   one:0.0' not in cap, 'the status is the origin pane\'s session, not the first row\'s:\n'+cap
+        assert 'aaaaaaaa   '+PANE+'one:0.0' not in cap, 'the status is the origin pane\'s session, not the first row\'s:\n'+cap
         print('PASS S1: the list holds every Claude pane and starts on the pane the key was pressed in')
 
         # The main panel's first line is the newest step: the steps are the
@@ -154,7 +156,7 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         label = r'verify +\d+\w+ +you: "check 80'
         cap = wait('the main panel did not open on the newest steps', lambda c: 'check 80' in c.splitlines()[1])
         assert 'check 79' in cap and 'check 01' not in cap, 'the main panel did not open at its top:\n'+cap
-        assert re.search(label, cap) and 'no collect seen' in cap, 'the status does not hold the label row:\n'+cap
+        assert re.search(label, cap) and 'closeout' in cap, 'the status does not hold the label rows:\n'+cap
         print('PASS S7: the main panel opens on the newest steps, and the status beside it holds the labels')
 
         # The compaction is the newest row of the history and no step.
@@ -195,18 +197,18 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         listed = lambda c: next(i for i, l in enumerate(c.splitlines()) if '─ sessions ─' in l)
         before = listed(cap)
         keys('Up')
-        cap = wait('the cursor did not move to the alpha row', lambda c: 'aaaaaaaa   one:0.0' in c)
+        cap = wait('the cursor did not move to the alpha row', lambda c: 'aaaaaaaa   '+PANE+'one:0.0' in c)
         # The alpha status is a line taller (its title takes two), and the box
         # grows to it once; back on the gamma row the box keeps that height.
         keys('Down'); cap = wait('the cursor did not move back to gamma', lambda c: 'Gamma session   cccccccc' in c)
         assert listed(cap) == before+1, f'the list moved: its box starts on line {listed(cap)}, not {before+1}:\n'+cap
-        keys('Up'); cap = wait('the cursor did not move to the alpha row', lambda c: 'aaaaaaaa   one:0.0' in c)
+        keys('Up'); cap = wait('the cursor did not move to the alpha row', lambda c: 'aaaaaaaa   '+PANE+'one:0.0' in c)
         assert listed(cap) == before+1, 'the list moved with the alpha status:\n'+cap
         keys('C-n'); wait('note field', lambda c: 'note >' in c and 'for session aaaaaaaa' in c)
         keys('-l', 'alpha is waiting on the migration, which the platform team runs on Thursday afternoon'); keys('Enter')
         cap = wait('the status and the steps did not come back with the note', lambda c: 'ctrl-n note' in c and c.count('alpha is waiting on the migration') >= 2)
         assert 'Thursday afternoon' in cap, 'the status cut the note instead of folding it:\n'+cap
-        assert 'aaaaaaaa   one:0.0' in cap and 'Gamma session   cccccccc' not in cap, 'the cursor left its row after the reload:\n'+cap
+        assert 'aaaaaaaa   '+PANE+'one:0.0' in cap and 'Gamma session   cccccccc' not in cap, 'the cursor left its row after the reload:\n'+cap
 
         # The alpha title is wider than the side column, so the binary cut its
         # row to the width the column shows. A row fzf cuts itself ends in "··".
@@ -266,22 +268,25 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         print('PASS S6: prefix S as tmux.conf binds it opens the board on the client that pressed it')
 
         # A popup the size of a plain terminal is too small for the side
-        # column. The main panel opens on the newest step, eight labels or
-        # not, the status follows the steps in it, and the list is under it.
+        # column. The panel on top opens on the status, whole: the title and
+        # every one of the eight label rows are on screen before any scroll,
+        # the steps are under them, and the list is under the panel.
         run(tmux+['resize-window', '-t', 'one:board', '-x', '80', '-y', '24'])
         run(tmux+['select-window', '-t', 'one:board'])
         keys('-l', 'clear; /bin/bash '+shlex.quote(str(script))+' pick '+shlex.quote(pane_a))
         keys('Enter')
-        cap = wait('the stacked view does not open on the newest step', lambda c: 'ctrl-n note' in c and 'alpha is waiting' in c.splitlines()[1])
+        cap = wait('the stacked view does not open on the status', lambda c: 'ctrl-n note' in c and 'Alpha session' in c.splitlines()[1])
         lines = cap.splitlines()
         at = lambda text: next(i for i, l in enumerate(lines) if text in l)
-        assert '─ steps ─' in lines[0], 'the stacked view has no steps panel on top:\n'+cap
-        assert '─ status ─' not in cap and at('alpha is waiting') < at('─ sessions ─') < at('▌ one:0.0'), 'the view is not stacked over the list:\n'+cap
+        assert '─ status · steps ─' in lines[0], 'the stacked view has no status panel on top:\n'+cap
+        assert '─ status ─' not in cap and at('Alpha session') < at('verify ') < at('closeout') < at('─ sessions ─') < at('▌ one:0.0'), 'the status is not whole above the list:\n'+cap
         keys('C-d')
-        wait('the status does not follow the steps', lambda c: 'aaaaaaaa   one:0.0' in c and 'closeout' in c)
+        wait('the steps do not follow the status', lambda c: c.count('alpha is waiting') >= 2 or ('steps' in c and 'alpha is waiting' in c and 'closeout' not in c))
+        keys('Tab')
+        wait('Tab did not show the history under the status', lambda c: '─ status · history ─' in c)
         keys('Escape')
         wait('the stacked view did not close', lambda c: 'ctrl-n note' not in c)
-        print('PASS S10: a popup too small for the side column stacks, and opens on the newest step')
+        print('PASS S10: a popup too small for the side column stacks, and opens on the whole status above the steps')
 
         # A popup just tall enough for the side column, and an alpha session
         # whose pull requests make its status taller than the room left once
