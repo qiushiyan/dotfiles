@@ -152,7 +152,8 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         # top of the view, and the oldest are below. The status beside it is
         # the session's label with its latest event.
         label = r'verify +\d+\w+ +you: "check 80'
-        assert 'check 80' in cap.splitlines()[1] and 'check 79' in cap and 'check 01' not in cap, 'the main panel did not open on the newest steps:\n'+cap
+        cap = wait('the main panel did not open on the newest steps', lambda c: 'check 80' in c.splitlines()[1])
+        assert 'check 79' in cap and 'check 01' not in cap, 'the main panel did not open at its top:\n'+cap
         assert re.search(label, cap) and 'no collect seen' in cap, 'the status does not hold the label row:\n'+cap
         print('PASS S7: the main panel opens on the newest steps, and the status beside it holds the labels')
 
@@ -271,10 +272,10 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         run(tmux+['select-window', '-t', 'one:board'])
         keys('-l', 'clear; /bin/bash '+shlex.quote(str(script))+' pick '+shlex.quote(pane_a))
         keys('Enter')
-        cap = wait('the stacked view never drew', lambda c: 'ctrl-n note' in c and 'one:0.0' in c)
+        cap = wait('the stacked view does not open on the newest step', lambda c: 'ctrl-n note' in c and 'alpha is waiting' in c.splitlines()[1])
         lines = cap.splitlines()
         at = lambda text: next(i for i, l in enumerate(lines) if text in l)
-        assert '─ steps ─' in lines[0] and 'alpha is waiting' in lines[1], 'the stacked view does not open on the newest step:\n'+cap
+        assert '─ steps ─' in lines[0], 'the stacked view has no steps panel on top:\n'+cap
         assert '─ status ─' not in cap and at('alpha is waiting') < at('─ sessions ─') < at('▌ one:0.0'), 'the view is not stacked over the list:\n'+cap
         keys('C-d')
         wait('the status does not follow the steps', lambda c: 'aaaaaaaa   one:0.0' in c and 'closeout' in c)
@@ -292,7 +293,7 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         keys('-l', 'clear; /bin/bash '+shlex.quote(str(script))+' pick '+shlex.quote(pane_a))
         keys('Enter')
         both = lambda c: all(any(pane in l for l in c.splitlines()[listed(c):] if '▌' in l) for pane in ('one:0.0', 'two:0.0'))
-        cap = wait('the side layout never drew', lambda c: '─ status ─' in c and 'PR #12 linked' in c)
+        cap = wait('the side layout never drew the status under the steps', lambda c: '─ status ─' in c and 'more lines under the steps' in c and 'closeout' in c)
         side = lambda c: '\n'.join(l[:l.index('╮')+1 if '╮' in l else 72] for l in c.splitlines())
         assert both(cap), 'the alpha status took the list\'s rows:\n'+cap
         assert 'more lines under the steps' in cap and 'closeout' not in side(cap) and 'closeout' in cap, 'the cut status is not whole under the steps:\n'+cap
