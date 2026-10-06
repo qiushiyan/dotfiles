@@ -23,7 +23,8 @@ What it holds:
   S10 a popup too small for the side column stacks, and its panel opens on
       the status, every label row on screen, with the steps under it; with
       more sessions than the list needs rows for, the panel grows to hold a
-      status its glyphs fold onto one more line
+      status its glyphs fold onto one more line, and the status of the row
+      the cursor starts on when the pane runs no Claude session
   S11 the status box keeps its height as the cursor moves, so the list stays
       put, and never takes the rows the list needs: a status taller than
       that is cut, says so, and is whole under the steps
@@ -315,6 +316,16 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         cap = wait('the stacked view did not open on the delta status', lambda c: 'ctrl-n note' in c and 'Delta session' in c.splitlines()[1])
         above = '\n'.join(cap.splitlines()[:next(i for i, l in enumerate(cap.splitlines()) if '─ sessions ─' in l)])
         assert 'notes   none' in above, 'the delta status is cut above the list:\n'+cap
+        keys('Escape')
+        wait('the stacked view did not close', lambda c: 'ctrl-n note' not in c)
+        # Pressed in a pane that runs no Claude session, the cursor starts on
+        # the first row, and the panel is sized for that row's status: the
+        # alpha status, a line taller than the list's six leave it.
+        keys('-l', 'clear; /bin/bash '+shlex.quote(str(script))+' pick '+shlex.quote(board))
+        keys('Enter')
+        cap = wait('the stacked view did not open on the first row', lambda c: 'ctrl-n note' in c and 'Alpha session' in c.splitlines()[1])
+        above = '\n'.join(cap.splitlines()[:next(i for i, l in enumerate(cap.splitlines()) if '─ sessions ─' in l)])
+        assert 'alpha is waiting' in above, 'the first row\'s status is cut above the list:\n'+cap
         keys('Escape')
         wait('the stacked view did not close', lambda c: 'ctrl-n note' not in c)
         run(tmux+['kill-session', '-t', 'three'])
