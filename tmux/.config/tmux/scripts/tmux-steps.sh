@@ -147,14 +147,14 @@ loaded() {
     fi
 }
 
-# The panel's label names what it shows, and stacked it shows the status
-# above the steps.
+# The panel's label names what it shows and its order, and stacked it shows
+# the status above the steps.
 toggle() {
     local lead=''
     [ "${STEPS_LAYOUT:-}" = stacked ] && lead='status · '
     case "${FZF_PREVIEW_LABEL:-}" in
-        *history*) printf 'change-preview-label( %ssteps )+refresh-preview' "$lead" ;;
-        *) printf 'change-preview-label( %shistory )+refresh-preview' "$lead" ;;
+        *history*) printf 'change-preview-label( %ssteps · newest first )+refresh-preview' "$lead" ;;
+        *) printf 'change-preview-label( %shistory · newest first )+refresh-preview' "$lead" ;;
     esac
 }
 
@@ -171,7 +171,7 @@ pick() {
     size=$(stty size </dev/tty 2>/dev/null)
     lines=${size%% *} cols=${size##* }
     lines=${lines:-0} cols=${cols:-0}
-    label=' steps '
+    label=' steps · newest first '
     if [ "$cols" -ge "$WIDE" ] && [ "$lines" -ge "$TALL" ]; then
         side=$(( cols * 36 / 100 ))
         side=$(( side < 50 ? 50 : side > 72 ? 72 : side ))
@@ -183,7 +183,7 @@ pick() {
                 --footer=$'enter switch · tab history · ctrl-n note\nctrl-d/u scroll · esc close')
     else
         export STEPS_LAYOUT=stacked STEPS_SIDE=$(( cols > 6 ? cols - 6 : 0 ))
-        label=' status · steps '
+        label=' status · steps · newest first '
         layout=(--footer='enter switch · tab history · ctrl-n note · ctrl-d/u scroll · esc close')
     fi
 

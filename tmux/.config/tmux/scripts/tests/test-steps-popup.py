@@ -165,10 +165,10 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         # The compaction is the newest row of the history and no step.
         assert 'compaction (manual)' not in cap, 'a compaction is among the steps:\n'+cap
         keys('Tab')
-        cap = wait('Tab did not show the history', lambda c: '─ history ─' in c and 'compaction (manual)' in c.splitlines()[1])
+        cap = wait('Tab did not show the history', lambda c: '─ history · newest first ─' in c and 'compaction (manual)' in c.splitlines()[1])
         assert re.search(label, cap), 'the status went with the steps:\n'+cap
         keys('Tab')
-        wait('Tab did not go back to the steps', lambda c: '─ steps ─' in c and 'compaction (manual)' not in c)
+        wait('Tab did not go back to the steps', lambda c: '─ steps · newest first ─' in c and 'compaction (manual)' not in c)
         print('PASS S8: Tab flips the main panel to the whole history and back')
 
         # The label's name is in its hue in the status and in the steps: the
@@ -281,14 +281,14 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         cap = wait('the stacked view does not open on the status', lambda c: 'ctrl-n note' in c and 'Alpha session' in c.splitlines()[1])
         lines = cap.splitlines()
         at = lambda text: next(i for i, l in enumerate(lines) if text in l)
-        assert '─ status · steps ─' in lines[0], 'the stacked view has no status panel on top:\n'+cap
+        assert '─ status · steps · newest first ─' in lines[0], 'the stacked view has no status panel on top:\n'+cap
         assert '─ status ─' not in cap and at('Alpha session') < at('verify ') < at('closeout') < at('─ sessions ─') < at('▌ one:0.0'), 'the status is not whole above the list:\n'+cap
         keys('C-d')
         wait('the steps do not follow the status', lambda c: c.count('alpha is waiting') >= 2 or ('steps' in c and 'alpha is waiting' in c and 'closeout' not in c))
         keys('Tab')
-        wait('Tab did not flip the panel to the history', lambda c: '─ status · history ─' in c)
+        wait('Tab did not flip the panel to the history', lambda c: '─ status · history · newest first ─' in c)
         keys('C-d')
-        wait('the history does not follow the status', lambda c: any(l.strip('│ ') == 'history' for l in c.splitlines()))
+        wait('the history does not follow the status', lambda c: any(l.strip('│ ') == 'history · newest first' for l in c.splitlines()))
         keys('Escape')
         wait('the stacked view did not close', lambda c: 'ctrl-n note' not in c)
 

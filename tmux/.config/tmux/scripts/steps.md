@@ -67,10 +67,11 @@ steps.
   whole, while the list keeps three. That status is measured as the panel
   draws it, painted, since a glyph can fold a line, for the first row when
   the pane runs no Claude session. S10 pins it.
-- **The main panel's label is the toggle's state.** `Tab` flips it between
-  `steps` and `history` (`status · steps` and `status · history` stacked),
-  and the panel reads it to choose what to show, so the choice holds while
-  the cursor moves. S8 and S10 pin it.
+- **The main panel's label is the toggle's state, and says the order.**
+  `Tab` flips it between `steps · newest first` and `history · newest first`
+  (with `status · ` in front stacked), and the panel reads it to choose what
+  to show, so the choice holds while the cursor moves. A list read from the
+  top otherwise reads as the order things ran in. S8 and S10 pin it.
 - **A row acts on its session id, not its pane.** `board --ids --brief`
   prints the pane id and the session id on every row. The status, the steps
   and the note use the session id, because a pane can move to another
