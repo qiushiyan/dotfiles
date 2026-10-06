@@ -12,6 +12,7 @@ x-<name>          → one launch on a named account; default unchanged
 x-accounts / x-acc → choose the default account (compact board); no launch
 x-select          → resume in the session's project and owning account
 x-check           → verify routing after a Claude Code update
+headroom login    → renew the logins that end within a week, one click each
 ```
 
 Every launcher delegates routing and validation to `headroom launch`; wrappers
@@ -118,6 +119,16 @@ Everything derives from that tree:
   plain `rm -rf` with no claude running) deletes it.
 - **Stale token** on a rarely-used account: the board says so — run that
   account's `x-<name>` once. Claude Code alone refreshes tokens.
+- **Logins ending**: a login lasts about a month from the day it was made,
+  however much the account is used, and each machine holds its own login
+  per account. `headroom login` renews every one that ends within a week,
+  `headroom login --all` every account so they end together, and
+  `headroom login <name>` one the vendor refused early (`Login expired ·
+  Please run /login` while the board still showed it healthy). Each
+  approval page opens in the Chrome profile named after the account's local
+  part, so the click is Authorize and nothing else; a `✗ … logged in as`
+  line means the wrong profile approved. The mechanism:
+  `~/dev/headroom/DESIGN.md` § Renewing logins.
 - **After a Claude Code update**, or when the board misbehaves:
   `x-check` (`headroom check`) — a FAIL line names which reverse-engineered
   assumption broke. It also covers the session-sharing machinery: a
@@ -141,7 +152,8 @@ Everything derives from that tree:
   credential-named variables from the helper's process. iTELL's PostHog
   server (`POSTHOG_MCP_API_KEY`) is the instance.
 - **Logged into the wrong account in a dir**: the dashboard's red
-  `(dir says …!)` warning catches it. Cleanest fix: `/login` again in that
+  `(dir says …!)` warning catches it. Cleanest fix: `headroom login <name>`,
+  or `/login` again in that
   dir's session with the right account.
 
 ## Invariants
