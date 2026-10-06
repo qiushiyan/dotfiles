@@ -323,6 +323,22 @@ path = "~/dotfiles/claude/.claude/skills/synced/8505ea7c-255c-4b58-8fa1-15d1b771
 enabled = false
 
 [[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/built-in-browser/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/chrome-browser/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/computer-use/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/deep-research/SKILL.md"
+enabled = false
+
+[[skills.config]]
 path = "~/dotfiles/claude/.claude/skills/synced/dd181708-e993-49de-ba19-924bb7fa27fa_483ce1f3-be31-4522-b3e7-a85d08a8d269/docs/SKILL.md"
 enabled = false
 

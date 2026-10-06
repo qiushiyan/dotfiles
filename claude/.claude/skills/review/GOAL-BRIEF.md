@@ -159,7 +159,31 @@ Nothing to name? Delete the section.»
 - Seam hygiene, test mechanics, style, naming, docs — unless the structural
   block above is present, and then only structural findings.
 - Theoretical risks behind unlikely preconditions; work the goal doesn't ask
-  for; the absence of anything the goal above doesn't ask for.
+  for; the absence of anything the goal above doesn't ask for. The section
+  below is where an addition the goal doesn't ask for belongs.
+
+## Where this can be better
+
+«Keep by default. Delete this section and its output item when the user's
+ask says no ideas, or the range is mechanical — a version bump, a syntax
+migration. Fill who uses it — a person and a moment in the goal paragraph's
+terms, never the mechanism — and keep the kind of better that fits what a
+failure costs, or both joined by "or".»
+
+The review above judges whether this landed; this asks for something else.
+Once it is done, name **up to two** small, additive changes that would make
+this better for «who uses it, and when — "its author, from the terminal,
+several times a day"»: «smoother to use — a step removed, clearer output, a
+better default, an error that says what to run next» «harder to break, or
+louder when it does — a check at a boundary, a guard a later change would
+trip, a failure that names its cause». Small means it adds no concept to the
+count you made above.
+
+The lens's additive-bias and over-building bars govern findings, not this
+section: here you are invited to add. An idea earns its place by naming
+the moment it improves — who, doing what — the change, and roughly what it
+costs. A case the goal implies and nothing handles is an obvious mistake,
+not an idea. Ideas never change the verdict.
 
 ## Output
 
@@ -185,6 +209,8 @@ Nothing to name? Delete the section.»
    reshape it names.
 8. **Design objections** — where you would have built this differently and what
    keeping it costs, or "none".
+9. **Where this can be better** «only when the ideas section was kept» — each
+   idea as the moment, the change, the cost, or "none worth it".
 
 Be specific and terse; no praise padding, and no severity ladder — this round's
 findings are either worth handling before merge or are decisions for the user.

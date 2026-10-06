@@ -212,3 +212,80 @@ for a note written first and reported verbatim. No review round was blocked
 in the window (goal reviews 3 of 3 passed), but `GOAL-BRIEF.md` carried the
 same construct, so it now asks for the expectation as the opening of the
 answer, and step 2's description of goal mode follows.
+
+## 2026-10-06 — where this can be better
+
+**Request.** The user (session `d6c4a6b4`) wants each review to also return
+one or two small, additive ideas — smoother use for a personal tool, fewer
+ways to fail for an internal system — beside the defect review, and asked
+whether that belongs in review, consult, both, or a snippet.
+
+**Corpus and predicates.** Obelisk on both machines; envoy job store on the
+mini (98 review / 60 consult results). Asks: `/review` or `/consult`
+`<command-args>` since 08-01 matching
+`ux|smoother|better|improve|improvement|idea|polish|nicer|friendlier|safeguard|quality of life|nice to have`.
+Collects: Bash calls containing `envoy collect ` since 08-15, results
+matched against `nice-to-have|quality-of-life|ergonomic|would be nicer|could
+also add|consider adding|optional improvement|suggestion`. Minor tiers:
+regex over each review `result.md` for the section between the minor
+heading and the next unpinned/foundational/tenets heading. Ledger and raw
+outputs: `review-ideas-frictions.md` in that session's scratchpad (not
+durable; the predicates rebuild it).
+
+**Observed.**
+- Reviewers do not volunteer ideas. Mini store: 92 review results with a
+  minor tier, 51 "none"; 12 of the 41 non-empty ones read, all defects (doc
+  drift, unpinned behaviour, small bugs), no ideas. Collected results on both
+  machines: the vocabulary matched 24 of ~490 review and 5 of ~325 consult
+  collects, nearly all the "Minor — nice-to-have" heading itself.
+- The user types the ask by hand: 16 of 536 review/consult invocations
+  (15 sessions) carry the words; the clear ones are `f225f9f9` 08-05 ("perf,
+  ux, bugs"), `ef59f46e` 09-02 ("best UX"), `845cfeee` 09-15 ("inspire for
+  even better design"), `028e047a` 09-25 ("how to make this better"). On
+  10-05 (`c056ca04`) the user wrote twin's UX ideas themselves.
+- Asked-for ideas get used: `028e047a` consult-r1 (astra) proposed browsing
+  earlier replies; the user answered "yes in v1" five minutes later.
+
+**Cause.** Instruction layer. Neither brief asked for ideas, and the review
+lens names additive bias as the drift to resist, so the only candidate slot
+(the minor tier) filled with small defects.
+
+**Decided with the user.** Review only, on by default in both modes, cap two
+per voice, off on "no ideas" or a mechanical range. Not consult: before the
+build an idea becomes spec scope, and consult already answers a UX ask
+typed into it. Not a snippet: the stock asks would leave it off.
+
+**Changed.** `BRIEF-TEMPLATE.md` and `GOAL-BRIEF.md`: a `## Where this can be
+better` section after Do not flag (who uses it and when; smoother to use
+and/or harder to break; the lens's additive-bias bar scoped to findings) and
+its output item last. `SKILL.md`: step 3 keeps and fills it, step 5 judges
+an idea by its premise and promotes a disguised defect, step 6 never builds
+one unasked, step 8 closes the report with them and never counts them as
+needing the user. `tabtype` `review-then-closeout` (and the gitignored
+`~/dev/tabtype/.tabtype.local.toml` twin carries): ideas wait and do not stop
+the closeout. The review lens is unchanged; the brief carries the run's
+contract.
+
+**Next comparison.** Review rounds after this commit: the ideas section
+returned (≤2 per voice, each with moment, change, cost); ideas the user
+adopts in the next turns; ideas the host built unasked (target 0); ideas
+that were defects in disguise; findings per round against the window before
+(attention displacement); review asks still typing "ux / make it better".
+Revise if ideas crowd out findings, if the user adopts none across ten or
+more rounds (then default off), or if hosts build them unasked.
+
+**Validation.** Three cold readers, read-only, before commit: a host on
+`review-then-closeout` for a personal CLI (full mode, one moderate, one
+minor, two ideas of which one was a new mode); a host on `codex goal review`
+for an internal webhook-retry service, plus a "no ideas" variant; and a
+reviewer receiving a filled full brief for a Neovim plugin. All three placed
+the section and its output correctly, built no idea, and let the closeout
+run. Fixed from them: the carve-out exempted only the additive-bias bar
+while the over-building bar is the one ideas collide with (all three); the
+full brief had no size test, so a `--watch` mode passed as small; the goal
+slot's "who and when" could name the mechanism the goal brief withholds;
+"severity it earns" had no meaning in goal mode; round 2 and step 5's done
+line ignored ideas; step 8's last sentence read as dropping them; the kind
+of better is now chosen by what a failure costs rather than by who owns the
+tool; "verdict" in the full brief; the two adjacent slots. No round has yet
+run on the revised briefs; the measures above are pending.

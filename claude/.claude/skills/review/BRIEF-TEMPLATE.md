@@ -90,6 +90,28 @@ their content.»
 - Theoretical risks behind unlikely preconditions; defense-in-depth where the primary defense is adequate.
 - Style that follows this repo's own conventions, even where you'd choose differently.
 
+## Where this can be better
+
+«Keep by default. Delete this section, its output sentence and the closing
+line's slot when the user's ask says no ideas, or the range is mechanical —
+a version bump, a syntax migration. Fill who uses it, and keep the kind of
+better that fits what a failure costs, or both joined by "or".»
+
+The findings judge what was built; this asks for something else. Once your
+review is done, name **up to two** small, additive changes that would make
+this better for «who uses it, and when — "its author, from the terminal,
+several times a day"»: «smoother to use — a step removed, clearer output, a
+better default, an error that says what to run next» «harder to break, or
+louder when it does — a check at a boundary, a guard a later change would
+trip, a failure that names its cause». Small means it adds no mode, flag or
+option someone has to learn.
+
+The lens's additive-bias and over-building bars govern findings, not this
+section: here you are invited to add. An idea earns its place by naming
+the moment it improves — who, doing what — the change, and roughly what it
+costs. A reshape, or missing handling for a state that can actually happen,
+is a finding above. Ideas never raise a finding's severity or block merge.
+
 ## Output
 
 «When the data section is kept:» open with **the method** — before any
@@ -108,7 +130,9 @@ for doesn't get reported), and a concrete fix. Then **Unpinned behaviour**:
 every behaviour the revert test found no test for, and every range-touched
 test that pins nothing, or "none". «When the range is a milestone: then
 **Tenets for what remains**, in the lesson's form, struck tenets included.»
-End with a **Foundational objections** section. Say "none" explicitly for any
+Then a **Foundational objections** section. «When the ideas section is kept:»
+End with **Where this can be better**: each idea as the moment, the change,
+the cost, or "none worth it". Say "none" explicitly for any
 empty severity tier and for any section that is empty. Be specific and terse; no praise padding.
 
 ## Implementation report
@@ -125,4 +149,5 @@ isn't independent.
 
 ---
 
-Findings in the format above, severity-ordered, foundational objections last.
+Findings in the format above, severity-ordered, foundational objections
+after them«, then where this can be better».
