@@ -1228,6 +1228,9 @@ t38() {
     check "T38 ...taken from the live palette" \
         "$(printf '%s' "$cols" | cut -d, -f1,4,7)" \
         "hl:$(T show -gv @thm_red),bg+:$(T show -gv @thm_surface_0),pointer:$(T show -gv @thm_mauve)"
+    check "T38 ...the footer muted as the header is" \
+        "$(printf '%s' "$cols" | tr ',' '\n' | grep -E '^(header|footer):' | tr '\n' ' ')" \
+        "header:$(T show -gv @thm_overlay_2) footer:$(T show -gv @thm_overlay_2) "
     T set -gu @thm_mauve
     check "T38 with no palette fzf keeps its defaults" "$(lib fzf_colors_from_palette)" "fg+:-1"
 }

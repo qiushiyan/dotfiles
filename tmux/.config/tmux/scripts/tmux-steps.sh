@@ -21,8 +21,9 @@
 # pressed in. The side column holds that session's status (its directory,
 # branch, compactions and pull requests, then each label's latest event and
 # the notes) above the list of sessions, which is for the occasional switch.
-# A popup narrower than WIDE stacks instead: the whole session view on top,
-# the list under it.
+# A popup narrower than WIDE or shorter than TALL stacks instead: the main
+# panel on top is the steps with the status under them, and the list is
+# under it.
 #
 # The binary paints and fits what it prints when it is told to. fzf reads it
 # through a pipe, so every call asks for colour (CLICOLOR_FORCE) and gives the
@@ -50,7 +51,8 @@ set -uo pipefail
 
 SELF="${BASH_SOURCE[0]}"
 STEPS=${CLAUDE_STEPS_BIN:-claude-steps}
-WIDE=120 # the popup's columns below which the side column stacks under the view
+WIDE=120 # the popup's columns below which the layout stacks
+TALL=34  # the popup's rows below which it stacks: the side column holds the status and the list
 
 die() { printf '\n  %s\n' "$*" >&2; sleep 1.8; exit 1; }
 
@@ -74,15 +76,21 @@ board() {
 # One session's status for the side column: what it is and where, each
 # label's latest event, the rounds with no collect seen, and the notes. The
 # box keeps the height of the tallest status it has shown (STEPS_TALL holds
-# it), so the list under it stays put as the cursor moves. fzf drops a
-# header's trailing empty lines, so the padding is lines of one space.
+# it), so the list under it stays put as the cursor moves, but never more
+# than leaves the list room for six sessions: past that, only the status
+# that needs it squeezes the list, while it is the one shown. The column
+# spends 8 rows on frames, the prompt and the footer. fzf drops a header's
+# trailing empty lines, so the padding is lines of one space.
 status() {
-    local out n tall=0
+    local out n tall=0 count=${FZF_TOTAL_COUNT:-0} most
     out=$(CLICOLOR_FORCE=1 COLUMNS=${STEPS_SIDE:-0} "$STEPS" show --head "$1" 2>&1)
     n=$(( $(printf '%s\n' "$out" | wc -l) ))
+    most=$(( ${FZF_LINES:-0} - 8 - (count < 6 ? count : 6) ))
     if [ -n "${STEPS_TALL:-}" ]; then
         tall=$(( $(cat "$STEPS_TALL" 2>/dev/null || echo 0) ))
-        [ "$n" -le "$tall" ] || printf '%s\n' "$n" >"$STEPS_TALL"
+        tall=$(( n > tall ? n : tall ))
+        tall=$(( tall > most ? most : tall ))
+        printf '%s\n' "$tall" >"$STEPS_TALL"
     fi
     printf '%s\n' "$out"
     for (( ; n < tall; n++ )); do printf ' \n'; done
@@ -90,12 +98,14 @@ status() {
 
 # One session for the main panel: its steps, or with the panel labelled
 # "history" its whole timeline. The label is the toggle's state. Stacked,
-# the panel is the whole session view, status and all.
+# the status follows the steps in the same panel: the steps stay on top.
 preview() {
-    local all='' part=--no-head
+    local all=''
     case "${FZF_PREVIEW_LABEL:-}" in *history*) all=--all ;; esac
-    [ "${STEPS_LAYOUT:-}" = side ] || part=''
-    CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show ${part:+"$part"} ${all:+"$all"} "$1" 2>&1
+    CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show --no-head ${all:+"$all"} "$1" 2>&1
+    [ "${STEPS_LAYOUT:-}" = side ] && return
+    echo
+    CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show --head "$1" 2>&1
 }
 
 # What a finished load does. The first places the cursor on the pane the key
@@ -123,7 +133,7 @@ toggle() {
 }
 
 pick() {
-    local origin="$1" client="${2:-}" rows err tall pos out st pane session c cols side window
+    local origin="$1" client="${2:-}" rows err tall pos out st pane session c size lines cols side window
     local -a layout
     command -v "$STEPS" >/dev/null 2>&1 || die "claude-steps is not installed"
 
@@ -131,9 +141,10 @@ pick() {
     # main panel the rest. Given the preview's size, fzf draws the column four
     # columns narrower than what is left (the preview's borders), and a row or
     # a status line six narrower than the column (its borders and gutter).
-    cols=$(stty size </dev/tty 2>/dev/null | cut -d' ' -f2)
-    cols=${cols:-0}
-    if [ "$cols" -ge "$WIDE" ]; then
+    size=$(stty size </dev/tty 2>/dev/null)
+    lines=${size%% *} cols=${size##* }
+    lines=${lines:-0} cols=${cols:-0}
+    if [ "$cols" -ge "$WIDE" ] && [ "$lines" -ge "$TALL" ]; then
         side=$(( cols * 36 / 100 ))
         side=$(( side < 50 ? 50 : side > 72 ? 72 : side ))
         export STEPS_LAYOUT=side STEPS_SIDE=$(( side - 6 ))
