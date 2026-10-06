@@ -4,9 +4,10 @@
 the other sessions, laid out as lazygit is. The main panel, on the right, is
 the steps of the session the key was pressed in, newest first, and with `Tab`
 its whole history. The side column holds that session's status (what it is
-and where, each label's latest event and the commits since, the rounds with
-no collect seen, my latest notes) above the list of Claude panes, which is for
-the occasional switch. It answers "did we run the review here, and what
+and where, each label's latest step and the commits since, my latest notes)
+above the list of Claude panes, which is for the occasional switch. A popup
+too small for the column opens on the status instead, with the steps under
+it. It answers "did we run the review here, and what
 changed since" without asking the session, which would cost it a turn.
 
 ## Who owns what
@@ -24,10 +25,11 @@ under `~/.local/state/claude-steps/notes/`. What a line means is in
 `~/dev/claude-steps/README.md`; the design, and the contracts this script
 relies on, are in `~/dev/claude-steps/docs/design.md`. Each panel is one call:
 the main panel is `show --no-head`, the status `show --head`, the list
-`board --ids --brief`. Every fact on screen comes from the binary, so a new
-fact, column or colour belongs there, not in the script; the script's own
-words are its chrome: the key hints, and the line that says a cut status goes
-on under the steps.
+`board --ids --brief`, and a stacked panel `show`. Every fact on screen comes
+from the binary, so a new fact, column, colour or glyph belongs there, not in
+the script; the script's own words are its chrome: the key hints, the
+panels' labels, and the line that says a cut status goes on under the
+steps.
 
 ## Constraints
 
@@ -39,7 +41,8 @@ on under the steps.
   commits since, or `read` / `pasted` / `named` in front on the board when
   the latest event was only a file read, a pasted snippet or a prompt.
   Nothing says a step is finished or still valid, and no colour does either:
-  a hue names a label, red marks what could not be read.
+  a hue names a label or the kind of an item in the status, red marks what
+  could not be read.
 - **The script asks for colour and gives the width.** fzf reads the binary
   through a pipe, where it paints nothing and fits nothing unless told. The
   side column's width is fixed when the popup opens: `pick` gives the preview
@@ -56,12 +59,18 @@ on under the steps.
   sessions. A status taller than that is cut, its last line says how many
   lines go on under the steps, and for that session the main panel adds the
   whole status under the steps. S3 and S11 pin it.
-- **A popup too small for the side column stacks.** Below 120 columns or 34
-  rows the main panel is on top, holding the steps and then the status, and
-  the list is under it. S10 pins it.
+- **A popup too small for the side column stacks, status first.** Below 120
+  columns or 34 rows the panel on top is the whole session view: the status,
+  which is what the popup is opened to read, then the steps, and the list is
+  under it. The panel takes the rows the list does not need for up to six
+  sessions, and more when the status the cursor starts on would not fit
+  whole, while the list keeps three. That status is measured as the panel
+  draws it, painted, since a glyph can fold a line, for the first row when
+  the pane runs no Claude session. S10 pins it.
 - **The main panel's label is the toggle's state.** `Tab` flips it between
-  `steps` and `history`, and the panel reads it to choose what to show, so
-  the choice holds while the cursor moves. S8 pins it.
+  `steps` and `history` (`status · steps` and `status · history` stacked),
+  and the panel reads it to choose what to show, so the choice holds while
+  the cursor moves. S8 and S10 pin it.
 - **A row acts on its session id, not its pane.** `board --ids --brief`
   prints the pane id and the session id on every row. The status, the steps
   and the note use the session id, because a pane can move to another
