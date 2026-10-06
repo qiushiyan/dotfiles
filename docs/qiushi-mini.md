@@ -50,6 +50,7 @@ into it, because accepting a share needs the admin console.
 | model | Mac mini `Mac18,5`, Apple M6, 12 cores, arm64 |
 | memory | 32 GB |
 | disk | 926 GB internal |
+| backup | Time Machine, hourly, to an encrypted Samsung T7 2 TB on a USB-C port (`docs/recovery.md` § Time Machine on the mini) |
 | OS | macOS 27.0 (26A425) |
 | power | `pmset -a sleep 0 autorestart 1 womp 1`: never sleeps, restarts after power loss, wake-on-LAN |
 | FileVault | **on**, and not mine to turn off. After an unplanned restart the mini waits at the FileVault unlock screen, and `tailscaled` is down until someone unlocks it in person. For planned reboots, use `sudo fdesetup authrestart`. |
@@ -497,7 +498,8 @@ an older binary files a brief where the new one reads another slug.
   `~/dev/slackkit/docs/digest/operations.md` § Where it runs has the rest.
 - **The hourly `twin tick` and the daily snapshot** — this repository's
   `launchd-mini/` package (`docs/twin.md` § The hourly tick;
-  `docs/recovery.md` § Local snapshots).
+  `docs/recovery.md` § Local snapshots). The snapshot run does nothing here,
+  because Time Machine has a destination.
 
 ## Steward host
 

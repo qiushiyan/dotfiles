@@ -11,10 +11,13 @@ cost, and after a loss to know where each piece comes back from.
 - **Committed files:** git and the GitHub remote; a lost checkout is a
   re-clone. An unpushed commit exists only on the machine that made it;
   `twin status` lists those on both machines.
-- **Uncommitted edits and gitignored files:** a local snapshot on the machine
-  that holds them, and a Time Machine backup once that machine has a backup
-  destination. GitHub never sees them. The gitignored files `twin` carries
-  also exist on the other machine (§ A carried copy is not a backup).
+- **Uncommitted edits and gitignored files:** on the mini, Time Machine:
+  hourly to an encrypted Samsung T7 left plugged into it, with Time Machine's
+  own local snapshots in between (§ Time Machine on the mini). On the laptop,
+  which has no backup destination, only the daily local snapshot, so the
+  laptop should hold no work that exists nowhere else. GitHub never sees
+  them. The gitignored files `twin` carries also exist on the other machine
+  (§ A carried copy is not a backup).
 - **Credentials:** the password manager, never this tree (§ Credentials in
   1Password). `vpn-private/` stays in `.gitignore` and out of `PACKAGES` so
   that a copy restored into the checkout can be neither committed to this
@@ -73,7 +76,32 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.qiushi.twin-tick.pli
 ```
 
 A copy that `twin files resolve` replaced or removed is kept under
-`~/.local/state/twin/replaced/` on the machine that held it.
+`~/.local/state/twin/replaced/` on the machine that held it. A bad change
+older than that comes back from the mini's Time Machine history.
+
+## Time Machine on the mini
+
+The mini backs up to a Samsung T7 2 TB on one of its own USB-C ports: an
+encrypted APFS volume named `T7 Backup`, the whole drive given to Time
+Machine, password in 1Password. `~/Library/Caches` and `~/.cache` are
+excluded. Time Machine thins on its own (hourly for a day, daily for a
+month, weekly until the drive fills, then the oldest weekly goes), so the
+drive never needs pruning.
+
+The drive sits in the office beside the mini: it answers a bad change or a
+dead mini, not a loss of the office. Work on the mini survives that
+only once it is pushed.
+
+The laptop is not backed up to it. Network Time Machine from home to the
+mini over the tailnet would be slow to seed and fragile; the laptop stays
+free of unique work instead.
+
+```bash
+tmutil destinationinfo                       # the destination, on the mini
+tmutil status                                # a backup in progress
+tmutil listbackups                           # backups on the drive (needs Full Disk Access)
+tmutil isexcluded <path>                     # whether a path is backed up
+```
 
 ## Local snapshots
 
@@ -111,8 +139,11 @@ for d in $(snapshot --list); do tmutil deletelocalsnapshots "$d"; done          
    damaged tree.
 2. Committed files: `git restore` in place if `.git` survived, otherwise
    re-clone.
-3. Uncommitted and ignored files: pick the newest snapshot taken before the
-   loss (`snapshot --list`), mount it read-only and copy out.
+3. Uncommitted and ignored files: on the mini, open Time Machine from the
+   menu bar (or Finder in the affected folder) and restore from the newest
+   backup before the loss; a dead mini is rebuilt from the T7 with Migration
+   Assistant. On the laptop, pick the newest snapshot taken before the loss
+   (`snapshot --list`), mount it read-only and copy out.
 4. What no snapshot holds: rebuild with the tools above, pull credentials from
    the password manager, and search agent history for files a session wrote.
 5. Resume the reconciler once the carried files are whole on one machine.
