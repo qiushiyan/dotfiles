@@ -7,27 +7,56 @@
 # No name: the most recently active session, attached elsewhere or not; a new
 # session when none exist. A name: that session, created when missing.
 #
-# Refuses inside tmux: both machines' tmux use the same prefixes, so the
-# outer tmux would take every prefix key. See docs/qiushi-mini.md § Clipboard and attach.
+# Run on the machine it names (~/.config/machine), it skips ssh and uses the
+# local tmux, switching sessions when already inside it.
+#
+# Refuses inside tmux over ssh: both machines' tmux use the same prefixes, so
+# the outer tmux would take every prefix key. See docs/qiushi-mini.md § Clipboard and attach.
 set -euo pipefail
 
-case $(basename "$0") in
-  mac) HOST=${REMOTE_HOST:-qiushi-mac} ;;
-  *)   HOST=${REMOTE_HOST:-${MINI_HOST:-qiushi-mini}} ;;
-esac
 me=$(basename "$0")
+case $me in
+  mac) target=mac  HOST=${REMOTE_HOST:-qiushi-mac} ;;
+  *)   target=mini HOST=${REMOTE_HOST:-${MINI_HOST:-qiushi-mini}} ;;
+esac
 
-case ${1:-} in -h|--help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+case ${1:-} in -h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+
+# An explicit REMOTE_HOST always goes over ssh.
+local=0
+if [[ -z ${REMOTE_HOST:-} && -r $HOME/.config/machine ]] \
+   && [[ $(tr -d '[:space:]' < "$HOME/.config/machine") == "$target" ]]; then
+  local=1
+fi
+
+if [[ -n ${1:-} ]]; then
+  [[ $1 =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "$me: session names are letters, digits, . _ -" >&2; exit 2; }
+fi
+
+if (( local )) && [[ -n ${TMUX:-} ]]; then
+  if [[ -n ${1:-} ]]; then
+    tmux has-session -t "=$1" 2>/dev/null || tmux new-session -d -s "$1"
+    exec tmux switch-client -t "=$1"
+  fi
+  # The current session is the most recently active one; skip it.
+  cur=$(tmux display-message -p '#{session_name}')
+  s=$(tmux list-sessions -F '#{session_activity} #{session_name}' | sort -rn | cut -d ' ' -f 2- \
+      | grep -vxF -- "$cur" | head -n 1 || true)
+  [[ -n $s ]] || { echo "$me: no other session" >&2; exit 0; }
+  exec tmux switch-client -t "=$s"
+fi
+
 if [[ -n ${TMUX:-} ]]; then
   echo "$me: run this from a Ghostty window outside tmux (the local tmux would take the prefix keys)" >&2
   exit 1
 fi
 
+run() { if (( local )); then exec sh -c "$1"; else exec ssh -t "$HOST" "$1"; fi; }
+
 if [[ -n ${1:-} ]]; then
-  [[ $1 =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "$me: session names are letters, digits, . _ -" >&2; exit 2; }
-  exec ssh -t "$HOST" "tmux new-session -A -s '$1'"
+  run "tmux new-session -A -s '$1'"
 fi
 # `tmux attach` alone prefers an unattached session, which is rarely the one
 # being worked in. `=` makes the target an exact name.
-exec ssh -t "$HOST" 's=$(tmux list-sessions -F "#{session_activity} #{session_name}" 2>/dev/null | sort -rn | head -n 1 | cut -d " " -f 2-)
+run 's=$(tmux list-sessions -F "#{session_activity} #{session_name}" 2>/dev/null | sort -rn | head -n 1 | cut -d " " -f 2-)
   if [ -n "$s" ]; then exec tmux attach-session -t "=$s"; else exec tmux new-session; fi'
