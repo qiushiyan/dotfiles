@@ -73,37 +73,56 @@ board() {
     CLICOLOR_FORCE=1 COLUMNS=${STEPS_SIDE:-0} "$STEPS" board --ids --brief
 }
 
+# The rows the status may take: the column less the 8 rows it spends on
+# frames, the prompt and the footer, and room for up to six sessions. 0
+# outside fzf, where there is no column.
+status_room() {
+    local count=${FZF_TOTAL_COUNT:-0}
+    if [ -z "${FZF_LINES:-}" ]; then echo 0; return; fi
+    echo $(( FZF_LINES - 8 - (count < 6 ? count : 6) ))
+}
+
 # One session's status for the side column: what it is and where, each
-# label's latest event, the rounds with no collect seen, and the notes. The
+# label's latest event, the rounds with no collect seen, and the notes. A
+# status taller than its room is cut and says so, and the main panel holds it
+# whole under the steps (`preview`), so it never takes the list's rows. The
 # box keeps the height of the tallest status it has shown (STEPS_TALL holds
-# it), so the list under it stays put as the cursor moves, but never more
-# than leaves the list room for six sessions: past that, only the status
-# that needs it squeezes the list, while it is the one shown. The column
-# spends 8 rows on frames, the prompt and the footer. fzf drops a header's
-# trailing empty lines, so the padding is lines of one space.
+# it), so the list under it stays put as the cursor moves. fzf drops a
+# header's trailing empty lines, so the padding is lines of one space.
 status() {
-    local out n tall=0 count=${FZF_TOTAL_COUNT:-0} most
+    local out n tall=0 most
     out=$(CLICOLOR_FORCE=1 COLUMNS=${STEPS_SIDE:-0} "$STEPS" show --head "$1" 2>&1)
     n=$(( $(printf '%s\n' "$out" | wc -l) ))
-    most=$(( ${FZF_LINES:-0} - 8 - (count < 6 ? count : 6) ))
-    if [ -n "${STEPS_TALL:-}" ]; then
-        tall=$(( $(cat "$STEPS_TALL" 2>/dev/null || echo 0) ))
-        tall=$(( n > tall ? n : tall ))
-        tall=$(( tall > most ? most : tall ))
-        printf '%s\n' "$tall" >"$STEPS_TALL"
+    most=$(status_room)
+    if [ "$most" -gt 1 ] && [ "$n" -gt "$most" ]; then
+        printf '%s\n' "$out" | head -n $(( most - 1 ))
+        printf '… %s more lines under the steps\n' $(( n - most + 1 ))
+        n=$most
+    else
+        printf '%s\n' "$out"
     fi
-    printf '%s\n' "$out"
+    [ -n "${STEPS_TALL:-}" ] || return 0
+    tall=$(( $(cat "$STEPS_TALL" 2>/dev/null || echo 0) ))
+    tall=$(( n > tall ? n : tall ))
+    [ "$most" -le 1 ] || tall=$(( tall > most ? most : tall ))
+    printf '%s\n' "$tall" >"$STEPS_TALL"
     for (( ; n < tall; n++ )); do printf ' \n'; done
 }
 
 # One session for the main panel: its steps, or with the panel labelled
-# "history" its whole timeline. The label is the toggle's state. Stacked,
-# the status follows the steps in the same panel: the steps stay on top.
+# "history" its whole timeline. The label is the toggle's state. The status
+# follows the steps in the same panel when the side column has no room for
+# it: always when stacked, and in the side layout when `status` had to cut
+# it. The steps stay on top.
 preview() {
-    local all=''
+    local all='' most n
     case "${FZF_PREVIEW_LABEL:-}" in *history*) all=--all ;; esac
     CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show --no-head ${all:+"$all"} "$1" 2>&1
-    [ "${STEPS_LAYOUT:-}" = side ] && return
+    if [ "${STEPS_LAYOUT:-}" = side ]; then
+        most=$(status_room)
+        n=$(( $(COLUMNS=${STEPS_SIDE:-0} "$STEPS" show --head "$1" 2>&1 | wc -l) ))
+        [ "$most" -gt 1 ] && [ "$n" -gt "$most" ] || return 0
+    fi
     echo
     CLICOLOR_FORCE=1 COLUMNS=${FZF_PREVIEW_COLUMNS:-0} "$STEPS" show --head "$1" 2>&1
 }

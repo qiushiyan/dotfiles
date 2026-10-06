@@ -24,7 +24,7 @@ What it holds:
       still the newest step
   S11 the status box keeps its height as the cursor moves, so the list stays
       put, and never takes the rows the list needs: a status taller than
-      that squeezes the list only while it is shown
+      that is cut, says so, and is whole under the steps
   S12 the status is drawn in the terminal's own colour, not fzf's muted
       header colour, and the key hints in the muted one
 """
@@ -284,17 +284,21 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
 
         # A popup just tall enough for the side column, and an alpha session
         # whose pull requests make its status taller than the room left once
-        # the list has its rows. Shown, it squeezes the list; the gamma status
-        # after it does not inherit that height.
+        # the list has its rows. The status is cut and says so, the list keeps
+        # its rows, and the main panel holds the whole status under the steps;
+        # the gamma status after it does not inherit that height.
         transcript(ALPHA, 'Alpha session, whose title runs well past the side column of the popup', 'start the alpha work', prs=12)
         run(tmux+['resize-window', '-t', 'one:board', '-x', '200', '-y', '34'])
         keys('-l', 'clear; /bin/bash '+shlex.quote(str(script))+' pick '+shlex.quote(pane_a))
         keys('Enter')
-        wait('the side layout never drew', lambda c: '─ status ─' in c and 'PR #12 linked' in c)
+        both = lambda c: all(any(pane in l for l in c.splitlines()[listed(c):] if '▌' in l) for pane in ('one:0.0', 'two:0.0'))
+        cap = wait('the side layout never drew', lambda c: '─ status ─' in c and 'PR #12 linked' in c)
+        side = lambda c: '\n'.join(l[:l.index('╮')+1 if '╮' in l else 72] for l in c.splitlines())
+        assert both(cap), 'the alpha status took the list\'s rows:\n'+cap
+        assert 'more lines under the steps' in cap and 'closeout' not in side(cap) and 'closeout' in cap, 'the cut status is not whole under the steps:\n'+cap
         keys('Down')
         cap = wait('the cursor did not move to gamma', lambda c: 'Gamma session   cccccccc' in c)
-        rows = [l for l in cap.splitlines()[listed(cap):] if '▌' in l]
-        assert any('one:0.0' in l for l in rows) and any('two:0.0' in l for l in rows), 'the gamma status kept the alpha status\'s height and squeezed the list:\n'+cap
+        assert both(cap), 'the gamma status kept the alpha status\'s height and squeezed the list:\n'+cap
         keys('Escape')
         print('PASS S11: the status keeps its height as the cursor moves and leaves the list its rows')
     finally:
