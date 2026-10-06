@@ -146,7 +146,7 @@ EOF
         printf '%s\n' 'fg+:-1'
         return 0
     fi
-    printf '%s\n' "hl:$red,hl+:$red,fg+:-1,bg+:$surface,gutter:-1,query:-1,pointer:$accent,prompt:$accent,spinner:$accent,marker:$green,info:$muted,header:$muted,label:$muted,border:$dim,preview-border:$dim"
+    printf '%s\n' "hl:$red,hl+:$red,fg+:-1,bg+:$surface,gutter:-1,query:-1,pointer:$accent,prompt:$accent,spinner:$accent,marker:$green,info:$muted,header:$muted,footer:$muted,label:$muted,border:$dim,preview-border:$dim"
 }
 
 # Recompute pane-border-status for EVERY window. Border state is window-scoped
