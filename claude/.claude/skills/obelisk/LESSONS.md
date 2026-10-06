@@ -248,3 +248,81 @@ section's "features ahead of the installed CLI" boundary already covers the
 refreshed references. Refreshed `.upstream/` and `references/` to the new
 pristine copy and advanced the pin. No engine change, so the 2026-09-15 schema
 and helper probes still stand; none were rerun.
+
+## 2026-10-06 — both machines through one wrapper (session `38499815`, dotfiles)
+
+The laptop and the mini each index their own sessions, and the skill asked
+only the machine it ran on. `scripts/obq` now runs one script on both and
+returns one object keyed by machine. Pin and engine are unchanged (3e045af,
+0.2.6-rc.0 on both machines).
+
+Corpus at measurement: mac 2,775 sessions (1,722 Claude, 1,048 Codex, 4 Pi)
+and 21 memories; mini 201 sessions since 2026-09-22 and no memories; 3 session
+ids on both.
+
+**Why ask both at query time, not mirror transcripts.** The engine takes one
+root per provider and keys everything off `$HOME`, so a second corpus means a
+second index under a second HOME plus a transport for about 6 GB that `twin`
+refuses to carry (`~/.claude`, `~/.codex`), stale between syncs and at rest on
+the mini. Asking live needs the other machine awake; the owner's ruling
+(2026-10-06) is that an unreachable machine is a warning and the answer is
+built from what was reached.
+
+Spikes before the build, each claim with the output that decided it:
+
+| # | Claim | Actual | Verdict |
+|---|---|---|---|
+| 1 | A script piped over ssh runs under plain `obelisk --query` on the other machine, both directions | mac→mini `sessions: 201`; wrapper run on the mini asking the mac returned `mini 201, mac 2775`, rc 0 | verified |
+| 2 | A project fragment selects the same project on both; the cwd-derived scope gives a false empty on the other machine | mini, searching `twin`: `'%dotfiles%'` 2 hits; cwd scope resolved `-Users-qiushiyan` (the ssh shell's home) and returned 0 | verified |
+| 3 | Through the wrapper the local engine still marks the invoking session | 5 of 5 runs returned the session id in 0.06–0.24 s; the mini returned `null` each time | verified |
+| 4 | The other machine's 4 s is the engine's identity wait | mini `--query` 4.11–4.16 s; mini `--search` with no nonce 0.03–0.04 s; a local query at a path absent from the transcript: `null`, 4.57 s | verified |
+| 5 | Simultaneous queries on one index all succeed | 20 of 20 on each machine, and 3 wrappers at once | verified; only the mini's run indexed new messages mid-test |
+| 6 | Unreachable, engine error and hang are distinguishable and bounded | unresolvable name rc 255 in 0.02 s; dropped packets rc 255 in 4.01 s; throwing script rc 1 with `{error}`; `timeout` cut a hung remote command, which kept running there | verified with stand-ins for a sleeping machine |
+| 7 | An id on both machines is one moved conversation | all 3 share `started_at`; the mini's copies are longer (2111→2497, 156→1622, 575→2721 messages); one sits under a different project on each machine | verified |
+| 8 | `remember()` accepts a session id the local index lacks | isolated HOME: written with `project` passed and recalled by fragment; without `project` the row has `project: null` and scoped recall misses it | verified |
+| 9 | One hot schema on both | the same columns in all six tables; `messages` and `tool_calls` order them differently (the laptop's index was migrated, the mini's built fresh) | verified as sets |
+
+What the runs put in the skill and the wrapper:
+
+| # | Finding | Evidence | Where it landed |
+|---|---|---|---|
+| 15 | A cwd-derived project is wrong on the other machine | spike 2 | Round 1 scopes by a fragment; the `project` rule says how to form it |
+| 16 | The fragment's breadth is a choice | mac: `'%-dotfiles'` 318 sessions in 1 project, `'%dotfiles%'` 379 in 17 (scratchpad sessions); planlab checkout 267 sessions, `'%worktrees-main-%'` 1,183 in 610 projects | the `project` rule names the checkout form and the worktree form |
+| 17 | A nonce the other machine cannot find costs 4 s there, error or not | spike 4; a script that threw on the mini still took 4.36 s | `obq` sends `--nonce` only to this machine, so `--search` there is 0.03 s; scripts stay at ~4.4 s and the body says to batch |
+| 18 | Exit 0 with empty stdout: a script awaiting a promise that never settles | `rc=0 stdout_bytes=0` | `obq` treats exit 0 without one JSON document as an error |
+| 19 | `fileHistory()` is an exact match on a path that starts with one machine's home | `query.js:419`; the mac path returned 2 rows on mac, 0 on mini | Query rule: SQL `LIKE` on the path below home |
+| 20 | `context()`, `raw()`, `thread()` return `null` or `[]` for a row the machine does not hold | probes with a mac uuid and session on the mini | Round 2 keeps one script for ids from both machines |
+| 21 | `forget()` of an id this index lacks fails with `memory not found` | isolated HOME | Memory layer: `--attune` writes this machine's memories only |
+
+Corrected: the body said the installed runtime does not implement the
+script-content identity fallback. It does. `obelisk.js` in 0.2.6-rc.0 passes
+the script text as a second, strict nonce candidate, and a query at a path
+made at run time resolved this session through it, in 6.94 s against 0.1 s
+for a typed path. The 2026-09-15 entry read `executeQuery`, which still
+receives one `invocationNonce` value; that value is now a list. The typed
+path stays the rule because it is faster and because the fallback needs 40
+characters of script.
+
+The engine's own comment says the identity poll runs only when a recovery
+build loses the writer lease; the code polls for the full 4 s whenever the
+nonce does not resolve. Nothing here works around it. A flag to skip
+identity, or the comment's condition, would remove the cost upstream.
+
+Every earlier lesson was rechecked against this change. #1's hot schema holds
+on both machines as column sets. #3's budget now bounds the whole object, so
+the per-machine `LIMIT` is 10. #4 batching gains a reason (#17). #8's fragment
+rule is extended, not replaced (#15, #16). #10–12's self-exclusion and typed
+per-session path are unchanged, and the id filter also covers a moved
+session's copy. #7's persist step stays local. #13–14 are unaffected.
+
+Not settled: a laptop that is really asleep, seen from the mini (the cap in
+`obq` bounds it either way); a session running on the mini (the wrapper was
+run there over ssh); Codex's sandbox with the network denied. The local
+identity marker is not guaranteed on the first query after a gap: one
+`--on mac` round took 5.18 s where the next four took 0.07–0.34 s.
+
+`tests/test-obq.sh` pins the wrapper's contract against stub `obelisk` and
+`ssh` and the tree's twin manifest; a do-nothing wrapper fails 35 of its
+checks. `improve-tool/MINE.md` still calls `obelisk --query` and so tallies
+one machine's index: its counts join rows in JS, which two indexes cannot do
+in one script.

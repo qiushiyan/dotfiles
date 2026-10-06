@@ -1,0 +1,160 @@
+#!/bin/bash
+# obq: run one obelisk query on every machine that holds sessions and print
+# one JSON object keyed by machine name.
+#
+#   obq [--on <machine>] <script.mjs>
+#   obq [--on <machine>] --search <text>... [--nonce <token>]
+#
+# Each machine indexes its own sessions. This machine's name is the word in
+# ~/.config/machine; the others are the [machines.*] tables of twin's manifest
+# (~/.config/twin/twin.toml), reached by their ssh alias. Without either file
+# the query runs here only, under the name in the marker or "local".
+#
+# A machine's value is what the engine printed there. A machine that could not
+# be reached is {"not_reached": "<why>"}, with a warning on stderr, and the
+# run still exits 0 on what the others returned. A machine where the engine
+# failed is {"error": "<message>"} and the run exits 1, as it does when no
+# machine answered. Exit 2 is a usage error.
+#
+# Here the script path reaches obelisk as typed, because the engine finds the
+# invoking session by that text in the transcript. Another machine gets the
+# script on stdin and no --nonce: the session is not in its index, and a
+# nonce it cannot find costs a search there four seconds.
+#
+# OBQ_CONNECT_TIMEOUT (4) bounds the ssh connect, OBQ_TIMEOUT (45) the whole
+# call to another machine: the engine stops a script at 30 seconds.
+set -uo pipefail
+
+usage='usage: obq [--on <machine>] <script.mjs>
+       obq [--on <machine>] --search <text>... [--nonce <token>]'
+die() { printf 'obq: %s\n' "$*" >&2; exit 2; }
+
+case ${1:-} in -h|--help) printf '%s\n' "$usage"; exit 0 ;; esac
+on=""
+if [[ ${1:-} == --on ]]; then
+  [[ $# -ge 2 ]] || die "--on needs a machine name"
+  on=$2; shift 2
+fi
+script="" here_args=() peer_args=()
+if [[ ${1:-} == --search ]]; then
+  mode=search; shift
+  here_args=("$@")
+  while [[ $# -gt 0 ]]; do
+    if [[ $1 == --nonce && $# -ge 2 ]]; then shift 2; else peer_args+=("$1"); shift; fi
+  done
+  [[ ${#peer_args[@]} -gt 0 ]] || die "--search needs text"$'\n'"$usage"
+else
+  mode=query
+  [[ $# -eq 1 ]] || die "$usage"
+  script=$1
+  [[ -f $script ]] || die "no such script: $script"
+fi
+command -v jq >/dev/null || die "jq not found on PATH=$PATH"
+
+self=$(tr -d '[:space:]' <"$HOME/.config/machine" 2>/dev/null)
+names=() aliases=()
+if [[ -n $self ]]; then
+  manifest=$HOME/.config/twin/twin.toml
+  if [[ -r $manifest ]]; then
+    while read -r n a; do
+      [[ $n == "$self" || ! $n =~ ^[A-Za-z0-9_-]+$ || ! $a =~ ^[A-Za-z0-9_.@][A-Za-z0-9_.@-]*$ ]] && continue
+      names+=("$n"); aliases+=("$a")
+    done < <(awk '
+      /^\[/ { n = "" }
+      /^\[machines\./ { n = $0; sub(/^\[machines\./, "", n); sub(/\].*/, "", n) }
+      n != "" && /^[ \t]*ssh[ \t]*=/ { a = $0; sub(/^[^"]*"/, "", a); sub(/".*/, "", a); print n, a }
+    ' "$manifest")
+  fi
+else
+  self=local
+fi
+
+ask_here=1
+if [[ -n $on && $on != "$self" ]]; then
+  ask_here=0 keep_n=() keep_a=()
+  for i in "${!names[@]}"; do
+    [[ ${names[$i]} == "$on" ]] && { keep_n=("$on"); keep_a=("${aliases[$i]}"); }
+  done
+  [[ ${#keep_n[@]} -eq 1 ]] || die "no machine named '$on' (known: $self ${names[*]-})"
+  names=("${keep_n[@]}"); aliases=("${keep_a[@]}")
+elif [[ -n $on ]]; then
+  names=() aliases=()
+fi
+
+t=$(mktemp -d "${TMPDIR:-/tmp}/obq.XXXXXX") || die "cannot create a temporary directory"
+trap '[[ -n $t && -d $t ]] && rm -rf "$t"' EXIT
+connect=${OBQ_CONNECT_TIMEOUT:-4} cap=${OBQ_TIMEOUT:-45}
+
+run_here() {
+  if [[ $mode == query ]]; then obelisk --query "$script"
+  else obelisk --search "${here_args[@]}"
+  fi </dev/null >"$t/$self.out" 2>"$t/$self.err"
+  echo $? >"$t/$self.rc"
+}
+
+# The remote command holds no text from the caller in query mode: the script
+# travels on stdin into a file the other machine names itself and removes.
+run_peer() {
+  local n=$1 a=$2 remote stdin=/dev/null pid watch
+  if [[ $mode == query ]]; then
+    remote='f=$(mktemp "${TMPDIR:-/tmp}/obq.XXXXXX") && cat >"$f" && obelisk --query "$f"; rc=$?; rm -f "$f"; exit $rc'
+    stdin=$script
+  else
+    remote="obelisk --search$(printf ' %q' "${peer_args[@]}")"
+  fi
+  ssh -o BatchMode=yes -o ConnectTimeout="$connect" -o ServerAliveInterval=5 -o ServerAliveCountMax=2 \
+    "$a" -- "$remote" <"$stdin" >"$t/$n.out" 2>"$t/$n.err" &
+  pid=$!
+  (
+    trap 'kill "$nap" 2>/dev/null' TERM
+    sleep "$cap" & nap=$!
+    wait "$nap" && { : >"$t/$n.cut"; kill "$pid" 2>/dev/null; }
+  ) </dev/null >/dev/null 2>&1 &
+  watch=$!
+  wait "$pid" 2>/dev/null; echo $? >"$t/$n.rc"   # 2>: bash reports a killed job on stderr
+  kill "$watch" 2>/dev/null; wait "$watch" 2>/dev/null
+}
+
+asked=()
+if [[ $ask_here == 1 ]]; then asked+=("$self"); run_here & fi
+for i in "${!names[@]}"; do
+  asked+=("${names[$i]}"); run_peer "${names[$i]}" "${aliases[$i]}" &
+done
+wait
+
+status=0 answered=() unreached=() vals=()
+for n in "${asked[@]}"; do
+  rc=$(cat "$t/$n.rc" 2>/dev/null); rc=${rc:-1}
+  first_err=$(head -n 1 "$t/$n.err" 2>/dev/null | tr -d '\r')
+  if [[ $rc == 0 ]] && jq -e -s 'length == 1' "$t/$n.out" >/dev/null 2>&1; then
+    jq -c --arg n "$n" '{($n): .}' "$t/$n.out" >"$t/$n.val"
+    [[ -s $t/$n.err ]] && sed "s/^/obq: $n: /" "$t/$n.err" >&2
+    answered+=("$n")
+  elif [[ $n != "$self" && ( -e $t/$n.cut || $rc == 255 ) ]]; then
+    why=$first_err; [[ -e $t/$n.cut ]] && why="no answer within ${cap}s"
+    jq -c -n --arg n "$n" --arg why "${why:-ssh exited 255}" '{($n): {not_reached: $why}}' >"$t/$n.val"
+    unreached+=("$n")
+  else
+    why=$(jq -r 'if type == "object" and (.error | type) == "string" then .error else empty end' "$t/$n.out" 2>/dev/null | head -n 1)
+    if [[ -z $why ]]; then
+      if [[ $rc == 0 ]]; then why="exit 0 with no JSON on stdout"; else why="exit $rc${first_err:+: $first_err}"; fi
+    fi
+    jq -c -n --arg n "$n" --arg why "$why" '{($n): {error: $why}}' >"$t/$n.val"
+    status=1
+  fi
+  vals+=("$t/$n.val")
+done
+
+jq -c -s 'add' "${vals[@]}"
+for n in ${unreached[@]+"${unreached[@]}"}; do
+  why=$(jq -r '.[].not_reached' "$t/$n.val")
+  if [[ ${#answered[@]} -gt 0 ]]; then
+    printf 'obq: warning: %s not reached (%s); answered by: %s\n' "$n" "$why" "${answered[*]}" >&2
+  else
+    printf 'obq: warning: %s not reached (%s)\n' "$n" "$why" >&2
+  fi
+done
+if [[ ${#answered[@]} -eq 0 && $status -eq 0 ]]; then
+  echo "obq: no machine answered" >&2; status=1
+fi
+exit $status
