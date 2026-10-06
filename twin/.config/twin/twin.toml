@@ -68,10 +68,13 @@ carry = [".consult", "sources"]
 path = "~/dev/twin"
 url = "https://github.com/qiushiyan/twin.git"
 
+# .githooks/reference-transaction is a personal hook that keeps the main
+# checkout on develop, ignored by each clone's .git/info/exclude.
 [repos.planlab]
 path = "~/dev/planlab/main"
 url = "https://github.com/planlab-ai/main.git"
 carry = [
+  ".githooks/reference-transaction",
   "application/.env.development.local",
   "application/tests/e2e/loopy-stress/.env.smoke.local",
 ]
