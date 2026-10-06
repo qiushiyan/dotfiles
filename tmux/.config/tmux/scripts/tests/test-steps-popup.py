@@ -21,14 +21,16 @@ What it holds:
   S9  the binary's colours reach the popup, and a row is cut to the side
       column's width by the binary, not by fzf
   S10 a popup too small for the side column stacks, and its panel opens on
-      the status, every label row on screen, with the steps under it
+      the status, every label row on screen, with the steps under it; with
+      more sessions than the list needs rows for, the panel grows to hold a
+      status its glyphs fold onto one more line
   S11 the status box keeps its height as the cursor moves, so the list stays
       put, and never takes the rows the list needs: a status taller than
       that is cut, says so, and is whole under the steps
   S12 the status is drawn in the terminal's own colour, not fzf's muted
       header colour, and the key hints in the muted one
 """
-import fcntl, json, os, pathlib, pty, re, shlex, shutil, struct, subprocess, sys, tempfile, termios, threading, time
+import datetime, fcntl, json, os, pathlib, pty, re, shlex, shutil, struct, subprocess, sys, tempfile, termios, threading, time
 
 D = pathlib.Path(__file__).resolve().parents[5]
 STEPS = shutil.which('claude-steps')
@@ -283,9 +285,39 @@ with tempfile.TemporaryDirectory(prefix='steps-board-') as td:
         keys('C-d')
         wait('the steps do not follow the status', lambda c: c.count('alpha is waiting') >= 2 or ('steps' in c and 'alpha is waiting' in c and 'closeout' not in c))
         keys('Tab')
-        wait('Tab did not show the history under the status', lambda c: '─ status · history ─' in c)
+        wait('Tab did not flip the panel to the history', lambda c: '─ status · history ─' in c)
+        keys('C-d')
+        wait('the history does not follow the status', lambda c: any(l.strip('│ ') == 'history' for l in c.splitlines()))
         keys('Escape')
         wait('the stacked view did not close', lambda c: 'ctrl-n note' not in c)
+
+        # Five sessions, and a delta status whose path and last message share
+        # a line at the panel's 76 columns plain and take two painted, where
+        # each carries a glyph: 14 lines painted, 13 plain. At 26 rows the
+        # list's six would leave the panel 13; it takes the 14th from the list.
+        DELTA = 'dddddddd-4444-4444-8444-444444444444'
+        hour_ago = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        rows = [{'type': 'ai-title', 'aiTitle': 'Delta session', 'sessionId': DELTA},
+                {'type': 'user', 'uuid': 'd0', 'timestamp': hour_ago, 'isSidechain': False, 'cwd': td+'/'+'w'*48, 'promptId': 'd0',
+                 'origin': {'kind': 'human'}, 'promptSource': 'typed', 'message': {'role': 'user', 'content': 'start the delta work'}}]
+        (home/'.claude/projects/-work'/(DELTA+'.jsonl')).write_text(''.join(json.dumps(r)+'\n' for r in rows))
+        run(tmux+['new-session', '-d', '-s', 'three', '-x', '200', '-y', '50', '-c', td])
+        extra = []
+        for sid in (DELTA, 'eeeeeeee-5555-4555-8555-555555555555', 'ffffffff-6666-4666-8666-666666666666'):
+            if sid != DELTA:
+                transcript(sid, 'Session '+sid[0], 'start')
+            pane = run(tmux+['new-window', '-d', '-P', '-F', '#{pane_id}', '-t', 'three:']).stdout.strip()
+            run(tmux+['set-option', '-p', '-t', pane, '@claude_ctx_sid', sid])
+            extra.append(pane)
+        run(tmux+['resize-window', '-t', 'one:board', '-x', '80', '-y', '26'])
+        keys('-l', 'clear; /bin/bash '+shlex.quote(str(script))+' pick '+shlex.quote(extra[0]))
+        keys('Enter')
+        cap = wait('the stacked view did not open on the delta status', lambda c: 'ctrl-n note' in c and 'Delta session' in c.splitlines()[1])
+        above = '\n'.join(cap.splitlines()[:next(i for i, l in enumerate(cap.splitlines()) if '─ sessions ─' in l)])
+        assert 'notes   none' in above, 'the delta status is cut above the list:\n'+cap
+        keys('Escape')
+        wait('the stacked view did not close', lambda c: 'ctrl-n note' not in c)
+        run(tmux+['kill-session', '-t', 'three'])
         print('PASS S10: a popup too small for the side column stacks, and opens on the whole status above the steps')
 
         # A popup just tall enough for the side column, and an alpha session

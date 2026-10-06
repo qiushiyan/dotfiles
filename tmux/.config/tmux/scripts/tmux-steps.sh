@@ -160,7 +160,7 @@ toggle() {
 
 pick() {
     local origin="$1" client="${2:-}" rows err tall pos out st pane session c size lines cols side window label
-    local count head list room
+    local count head list room most
     local -a layout
     command -v "$STEPS" >/dev/null 2>&1 || die "claude-steps is not installed"
 
@@ -200,16 +200,19 @@ pick() {
 
     # Stacked, the panel takes the rows the list does not need: its frame,
     # the prompt and the footer (6), and up to six sessions. It takes more
-    # when the status of the session it opens on would not fit whole, while
-    # the list keeps three rows. fzf draws the panel's frame outside the
-    # size it is given.
+    # when the status it opens on would not fit whole, while the list keeps
+    # three rows. That status is the row the cursor starts on, the first when
+    # the origin pane runs no Claude session, measured as the panel draws it:
+    # painted, since a glyph can fold a line, and four columns narrower than
+    # the popup. fzf draws the panel's frame outside the size it is given.
     if [ "$STEPS_LAYOUT" = stacked ]; then
         count=$(printf '%s\n' "$rows" | wc -l)
         list=$(( (count < 6 ? count : 6) + 6 ))
-        session=$(printf '%s\n' "$rows" | awk -F'\t' -v p="$origin" '$1 == p { print $2; exit }')
-        head=$(( $(COLUMNS=$(( cols > 4 ? cols - 4 : 0 )) "$STEPS" show --head "${session:-$origin}" 2>/dev/null | wc -l) ))
+        session=$(printf '%s\n' "$rows" | awk -F'\t' -v n="${pos:-1}" 'NR == n { print $2; exit }')
+        head=$(( $(CLICOLOR_FORCE=1 COLUMNS=$(( cols > 4 ? cols - 4 : 0 )) "$STEPS" show --head "$session" 2>/dev/null | wc -l) ))
         room=$(( lines - list - 2 ))
-        [ "$room" -ge "$head" ] || room=$(( head < lines - 11 ? head : lines - 11 ))
+        most=$(( lines - (count < 3 ? count : 3) - 8 ))
+        [ "$room" -ge "$head" ] || room=$(( head < most ? head : most ))
         window="up,$(( room > 3 ? room : 3 )),wrap,border-rounded"
     fi
 
