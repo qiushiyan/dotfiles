@@ -86,6 +86,18 @@ message at 10,000 characters (`TEXT_LIMIT` in its `parsing.js`) and keeps
 than deletes anything worth keeping, and says so in the prune preview instead of
 implying a backup exists.
 
+**Each machine indexes its own store, and the skill asks both.** The laptop's
+index holds the laptop's sessions and the mini's holds the mini's. The obelisk
+skill's `scripts/obq` runs one query on both over ssh and returns one result
+keyed by machine; a machine it cannot reach is a warning, and the answer
+covers the one that answered. Transcripts and index rows stay where they were
+written. Mirroring them would need a transport for what `twin` refuses to
+carry (`~/.claude`, `~/.codex`), would be stale between runs, and would leave
+the laptop's whole history at rest on the mini, which is not a trust boundary
+(`docs/qiushi-mini.md` § Reaching the laptop). A session moved with
+`claude-tomini` is in both indexes under one id, and the skill reads the two
+copies as one conversation.
+
 ## Repairing the topology
 
 Seeding creates the link (`headroom accounts add`, which `claude-account-add`

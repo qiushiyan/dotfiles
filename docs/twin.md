@@ -20,6 +20,8 @@ uncommitted work,          nothing: commit and push, or it stays where it is
   branches with no upstream
 OAuth logins, ~/.secrets,  nothing: per machine by design
   node_modules, build output
+session transcripts,       nothing: per machine; the obelisk skill asks both
+  obelisk's index            (docs/claude-sessions-store.md)
 ```
 
 `twin` never commits, pushes or merges. It changes tracked files only when a

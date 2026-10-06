@@ -210,3 +210,29 @@ Relative links and unchanged frontmatter were checked; runtime improvement
 remains for the comparable-use measurement above. The prompting guide itself
 needed no new rule: the structural problem was in this skill's application
 of its existing principles.
+
+## 2026-10-06 — mining reads both machines (a procedure change, not a mining pass)
+
+The obelisk skill gained `scripts/obq` (its `LESSONS.md`, same date): one
+script runs against the laptop's sessions and the mini's and returns one
+result per machine. `MINE.md` ran plain `obelisk --query`, so a pass counted
+only the machine it ran on.
+
+- **Run block:** goes through `obq`; the slices carry the machine as their
+  first column. Verified by running the CLI variant with only its constants
+  changed (`cli = 'twin '`, since 2026-09-22) on both machines: every facet
+  came back from each (10 sessions sampled on the laptop, 6 on the mini), and
+  no session id appeared on both.
+- **Writer/reader pairs:** the writer lookup sees one machine. Handoff briefs
+  touched since 2026-09-22: 28 read and 41 written on the laptop, 34 and 49 on
+  the mini; 5 were read on one machine and written only on the other (2 read
+  on the mini, 3 on the laptop). `MINE.md` now sends a writerless pair to the
+  other machine before it is counted.
+- **Removed:** the comment that a `delete` or `update` literal inside a SQL
+  `LIKE` trips the read-only guard. On engine 0.2.6-rc.0 both ran (1 and 3
+  rows on the laptop).
+
+Not verified: no cross-machine pair was built end to end, and no mining pass
+has run through the new block. The next pass compares whether its report
+states the corpus per machine, and whether a writerless pair was checked on
+the other machine before being counted.

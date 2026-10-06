@@ -53,8 +53,8 @@ working schema, bounded output, batched investigation, and safeguards against
 mistaking the current session for independent historical evidence. It also
 covers both machines: `scripts/obq` runs one query on the laptop's index and
 the mini's and returns one object keyed by machine, and the body's scoping,
-citation and memory rules are written for two indexes. Upstream's skill knows
-one. Keep those outcomes when changing the implementation or reorganizing the
+citation and memory rules are written for an index on each machine.
+Upstream's skill knows a single index. Keep those outcomes when changing the implementation or reorganizing the
 instructions.
 The lessons carry the measurements behind them; do not replace the skill with
 the broader upstream tutorial merely because that tutorial is newer.
@@ -72,12 +72,12 @@ runtime, retiring workarounds whose failures are fixed. For an identity-resoluti
 change, check the runtime and self-exclusion behavior before relaxing a guard. A synthetic resolver test
 does not establish when Claude has persisted a live tool record. Preserve
 the query examples unless evidence shows a better way to achieve their goals.
-`obq` leans on four engine behaviors, so an engine upgrade rechecks them and
-runs `tests/test-obq.sh` from a scratch directory: one JSON document on
-stdout, exit 1 with `{error}` on a rejected script, identity found by the
-typed path, and a four-second wait wherever that identity cannot be found.
-If the wait goes away, the body's advice about `--on` and batching for the
-other machine's sake goes with it.
+`obq` leans on engine behaviors an upgrade can change, so an upgrade rechecks
+each and runs `tests/test-obq.sh` from a scratch directory: one JSON document
+on stdout, exit 1 with `{error}` on a rejected script, identity found by the
+typed path, and a wait of about four seconds wherever that identity cannot be
+found. If the wait goes away, the body's advice about `--on` and batching for
+the other machine's sake goes with it.
 
 Sources and receipts: [pin](../claude/.claude/skills/obelisk/.upstream/PINNED.txt),
 [lessons](../claude/.claude/skills/obelisk/LESSONS.md).

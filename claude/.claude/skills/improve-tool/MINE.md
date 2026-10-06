@@ -25,9 +25,19 @@ the local ledger so another pass can reproduce the denominator.
 
 ```bash
 S=<your scratchpad directory>; Q=/tmp/obq-<session-id>.mjs
-obelisk --query $Q > $S/mine.json && jq -c 'to_entries[] | {(.key): (.value|length)}' $S/mine.json
-jq -r '.subcommands[] | [.k,.calls,.sessions] | @tsv' $S/mine.json | head -40   # one facet per command; a slice over the cap is re-sliced, not re-run
+~/.agents/skills/obelisk/scripts/obq $Q > $S/mine.json
+jq -c 'to_entries[] | {(.key): (.value | if has("not_reached") or has("error") then . else with_entries(.value |= length) end)}' $S/mine.json
+jq -r 'to_entries[] | .key as $m | .value.subcommands[]? | [$m,.k,.calls,.sessions] | @tsv' $S/mine.json | head -40   # one facet per command; a slice over the cap is re-sliced, not re-run
 ```
+
+The script runs on each machine against that machine's own sessions, and
+`mine.json` holds one result per machine (`{"mac": {…}, "mini": {…}}`), so
+every tally is one machine's. Calls add across machines. Distinct sessions
+add too, except a session moved between machines, which both count:
+`jq '[.[] | .sessions[]?.id] | group_by(.) | map(select(length > 1))'` lists
+those. Report the corpus per machine, and a machine `obq` could not reach as
+a coverage gap beside the denominator. Keep the constants as fragments below
+the home directory, as they are here, because the two homes differ.
 
 ```js
 const self  = '<your session id — the UUID directory in your scratchpad path>';
@@ -65,7 +75,6 @@ const tally = (rows, keyOf) => {
 const shellNoise = t => /^(2>|&&|\|{1,2}|>|;|"|\$|`)/.test(t);
 out.subcommands = tally(calls, r => { const i = cmdOf(r).indexOf(cli); if (i < 0) return '';
   return cmdOf(r).slice(i + cli.length).split(/\s+/).filter(t => t && !shellNoise(t)).slice(0, 2).join(' '); });
-// tallied in JS on purpose: a subcommand named `delete` or `update` inside a SQL LIKE trips the read-only guard — bind it as :x
 out.flags       = tally(calls.flatMap(r => (cmdOf(r).match(/--[a-z-]+/g) || []).map(f => ({ sid: r.sid, f }))), r => r.f);
 
 // C. candidates — errors, repeated commands, index-capped reads; inspect context before classifying failures
@@ -137,7 +146,8 @@ proof of unique corrections or standing preferences.
 
 Follow-up rounds expand vertically: `context(uuid)` on a user-voice hit, the
 bounded `thread(sid)` projection of the seed session, `raw(uuid, { offset, limit })` when a
-truncated tool result hides the error text. The skill body's own claims are
+truncated tool result hides the error text; `obq --on <machine>` asks only
+the machine that returned the hit. The skill body's own claims are
 also queries — "agents call `describe` before guessing a column" is a count,
 and the count tells you whether the rule is working.
 
@@ -297,6 +307,12 @@ out.pairs = readers.map(r => {
            followup_observed: !!next, falsification_candidates: mentions };
 });
 ```
+
+The writer is looked up among the reader's machine's sessions, so a brief
+written on one machine and picked up on the other comes back with no
+`writer`. Before counting a pair as writerless, run the writer query for its
+slug with `obq --on <the other machine>`, then intersect the two read sets
+after stripping each machine's home prefix from the paths.
 
 Report confirmed pairs with reader tokens, overlap by stage, verified
 falsifications (changed source / wrong at anchor), and unresolved claims.

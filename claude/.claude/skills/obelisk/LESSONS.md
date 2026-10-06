@@ -323,6 +323,6 @@ identity marker is not guaranteed on the first query after a gap: one
 
 `tests/test-obq.sh` pins the wrapper's contract against stub `obelisk` and
 `ssh` and the tree's twin manifest; a do-nothing wrapper fails 35 of its
-checks. `improve-tool/MINE.md` still calls `obelisk --query` and so tallies
-one machine's index: its counts join rows in JS, which two indexes cannot do
-in one script.
+checks. `improve-tool/MINE.md` runs its mining script through `obq` and reads
+each tally per machine: its counts join rows in JS, which holds one machine's
+rows at a time.
