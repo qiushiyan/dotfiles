@@ -28,6 +28,13 @@ t() {
 }
 
 # --------------------------------------------------------------------
+# Twin
+# --------------------------------------------------------------------
+# tsa: bring both machines up to date for every target, from any directory.
+# Bare `twin sync` inside a repository covers that repository alone.
+alias tsa='twin sync --all'
+
+# --------------------------------------------------------------------
 # Git
 # --------------------------------------------------------------------
 alias g='git'          # was the oh-my-zsh git plugin's only alias we used (plugin now removed)
