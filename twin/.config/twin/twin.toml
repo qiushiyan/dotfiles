@@ -168,7 +168,7 @@ url = "https://github.com/qiushiyan/slackkit.git"
 [repos.tabtype]
 path = "~/dev/tabtype"
 url = "https://github.com/qiushiyan/TabType.git"
-carry = ["HANDOFF.md", "espanso-docs", "screenshots.local"]
+carry = ["HANDOFF.md", "espanso-docs", "screenshots.local", ".tabtype.local.toml"]
 
 # ---- Tools: what each machine installs for itself ----
 # A method, never a command line: the build lives in the tool's repository.

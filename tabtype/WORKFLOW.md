@@ -63,5 +63,7 @@ the global key → replaces the global entry in that project: TabType's closeout
                  review-then-closeout, whose install is a release
 ```
 
-The file is gitignored in its project, so each machine's checkout carries its
-own copy and an edit on one does not reach the other.
+The file is gitignored in its project, so git does not move it between the
+machines. TabType's is in twin's carry set (`twin/.config/twin/twin.toml`), and
+an edit on either machine reaches the other; planlab's is not, and each
+machine's checkout keeps its own copy.
