@@ -98,6 +98,7 @@ twin sync                  # in a repository's checkout or worktree: that reposi
                            # everything. On both machines: pull what is behind, install what moved,
                            # apply dotfiles if it moved, sync carried files; ends with the status of both
 twin sync --all            # everything, from anywhere
+tall                       # = twin sync --all (zsh/.config/zsh/aliases.zsh)
 twin sync headroom gwt     # only these targets
 twin sync tools            # only the tools that belong to no repository (the pnpm pins)
 twin sync --here           # only this machine

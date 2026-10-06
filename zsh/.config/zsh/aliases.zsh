@@ -30,9 +30,9 @@ t() {
 # --------------------------------------------------------------------
 # Twin
 # --------------------------------------------------------------------
-# tsa: bring both machines up to date for every target, from any directory.
+# tall: bring both machines up to date for every target, from any directory.
 # Bare `twin sync` inside a repository covers that repository alone.
-alias tsa='twin sync --all'
+alias tall='twin sync --all'
 
 # --------------------------------------------------------------------
 # Git
