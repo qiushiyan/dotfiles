@@ -127,8 +127,11 @@ Everything derives from that tree:
   Please run /login` while the board still showed it healthy). Each
   approval page opens in the Chrome profile named after the account's local
   part, so the click is Authorize and nothing else; a `✗ … logged in as`
-  line means the wrong profile approved. The mechanism:
-  `~/dev/headroom/DESIGN.md` § Renewing logins.
+  line means the wrong profile approved. Over ssh from the other machine,
+  run `security unlock-keychain` in that session first, or the accounts
+  whose login lives in the Keychain are left alone; each URL then opens on
+  the machine you are at, and you paste back the code it shows. The
+  mechanism: `~/dev/headroom/DESIGN.md` § Renewing logins.
 - **After a Claude Code update**, or when the board misbehaves:
   `x-check` (`headroom check`) — a FAIL line names which reverse-engineered
   assumption broke. It also covers the session-sharing machinery: a
