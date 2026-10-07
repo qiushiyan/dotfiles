@@ -42,12 +42,12 @@ until then.
 3. **Review.** A PR too large to read whole in one pass splits into two to
    four broad areas, each read completely by a subagent. Hand each one the
    intent, the area's files and diff base, the lenses below, the standards'
-   paths, and anything you already suspect there. They are read-only, may run focused tests and
-   throwaway probes in your scratchpad, and say for each finding whether a
-   probe confirmed it or it was read from the source. Keep for yourself the
-   read no single area shows: how the change joins the existing code,
-   whether it duplicates a mechanism that already exists, and which reshape
-   would delete a concept.
+   paths, and anything you already suspect there. They are read-only, may
+   run focused tests and throwaway probes in your scratchpad, and say for
+   each finding whether a probe confirmed it or it was read from the source.
+   Keep for yourself the read no single area shows: how the change joins the
+   existing code, whether it duplicates a mechanism that already exists, and
+   which reshape would delete a concept.
 4. **Verify before you report.** Re-read the cited code for every finding
    the report will carry, because reviewers state wrong findings with the
    same confidence as real ones. Drop what does not hold, and say which
