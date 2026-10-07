@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.tmux-exit-watch</string>
+
+  <!-- Records how each tmux server of this user exits, and the process table
+       when one dies uncleanly, in ~/.local/state/tmux-exit/. It never starts
+       or changes a server. docs/recovery.md § A dead tmux server. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>-I</string>
+    <string>/Users/qiushiyan/.local/bin/tmux-exit-watch</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/tmux-exit-watch.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/tmux-exit-watch.log</string>
+</dict>
+</plist>

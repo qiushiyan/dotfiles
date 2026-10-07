@@ -1,0 +1,210 @@
+#!/usr/bin/python3 -I
+"""tmux-exit-watch — record how each of this user's tmux servers exits.
+
+A tmux server that dies leaves its client one line, "[server exited
+unexpectedly]", which covers SIGKILL, tmux's own fatal exit, a crash and a
+broken connection alike, and tmux keeps no log unless it was started with -v.
+This watcher asks the kernel instead: it registers every live server's pid
+with kqueue (EVFILT_PROC, NOTE_EXIT with the exit status and macOS's exit
+detail) and, when one exits, appends a JSON line to exits.jsonl in the state
+directory. An exit other than a clean 0 also saves the process table as it
+stood at that moment, since whatever ran beside the server is gone a second
+later.
+
+It never starts or changes a server. It finds servers by scanning the socket
+directory and asking each socket it has not seen for the server's pid with
+`tmux -S <socket> display-message -p`. A socket that refuses connections is
+stale, and is remembered by inode and asked again only once a new server has
+replaced it; a live server that does not answer yet is asked on the next scan.
+
+Run by launchd (com.qiushi.tmux-exit-watch); docs/recovery.md § A dead tmux
+server reads its records.
+
+Usage: tmux-exit-watch [--socket-dir DIR] [--state-dir DIR] [--interval SECONDS]
+
+TMUX_EXIT_WATCH_TMUX names the tmux binary (default: tmux on PATH, then
+/opt/homebrew/bin/tmux).
+"""
+
+import argparse
+import datetime
+import json
+import os
+import select
+import shutil
+import signal
+import socket
+import stat
+import subprocess
+import sys
+import time
+
+NOTE_EXIT = 0x80000000
+NOTE_EXITSTATUS = 0x04000000
+NOTE_EXIT_DETAIL = 0x02000000
+EXIT_DETAILS = {0x00010000: "decrypt-fail", 0x00020000: "memory", 0x00040000: "code-signing"}
+
+
+def now_iso(t=None):
+    t = time.time() if t is None else t
+    return datetime.datetime.fromtimestamp(t).astimezone().isoformat(timespec="milliseconds")
+
+
+def log(msg):
+    print(f"{now_iso()} {msg}", flush=True)
+
+
+def tmux_bin():
+    explicit = os.environ.get("TMUX_EXIT_WATCH_TMUX")
+    if explicit:
+        return explicit
+    return shutil.which("tmux") or "/opt/homebrew/bin/tmux"
+
+
+def ask_server(tmux, sock):
+    """(pid, version, start_time) of the server on sock, or None."""
+    env = {k: v for k, v in os.environ.items() if k != "TMUX"}
+    try:
+        out = subprocess.run(
+            [tmux, "-S", sock, "display-message", "-p", "#{pid}\t#{version}\t#{start_time}"],
+            capture_output=True, text=True, timeout=3, env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    parts = out.stdout.strip().split("\t")
+    if out.returncode != 0 or len(parts) != 3 or not parts[0].isdigit():
+        return None
+    start = int(parts[2]) if parts[2].isdigit() else None
+    return int(parts[0]), parts[1], start
+
+
+def refuses(sock):
+    """True when nothing listens on sock: a server's leftover socket."""
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(2)
+    try:
+        s.connect(sock)
+        return False
+    except (ConnectionRefusedError, FileNotFoundError):
+        return True
+    except OSError:
+        return False
+    finally:
+        s.close()
+
+
+def describe(status, fflags):
+    rec = {"status_raw": status, "exit_code": None, "signal": None, "detail": []}
+    if os.WIFSIGNALED(status):
+        sig = os.WTERMSIG(status)
+        try:
+            name = signal.Signals(sig).name
+        except ValueError:
+            name = f"SIG{sig}"
+        rec.update(signal=name, kind="signaled")
+    elif os.WIFEXITED(status):
+        code = os.WEXITSTATUS(status)
+        rec.update(exit_code=code, kind="clean" if code == 0 else "error-exit")
+    else:
+        rec["kind"] = "unknown"
+    rec["detail"] = [name for bit, name in EXIT_DETAILS.items() if fflags & bit]
+    return rec
+
+
+def snapshot_processes(state, pid, t):
+    path = os.path.join(state, f"{time.strftime('%Y%m%dT%H%M%S', time.localtime(t))}-{pid}-ps.txt")
+    try:
+        out = subprocess.run(
+            ["/bin/ps", "-axww", "-o", "pid,ppid,pgid,lstart,etime,stat,command"],
+            capture_output=True, text=True, timeout=10,
+        ).stdout
+        with open(path, "w") as f:
+            f.write(out)
+        return path
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--socket-dir", default=os.path.join(
+        os.environ.get("TMUX_TMPDIR") or "/private/tmp", f"tmux-{os.getuid()}"))
+    ap.add_argument("--state-dir", default=os.path.expanduser("~/.local/state/tmux-exit"))
+    ap.add_argument("--interval", type=float, default=5.0)
+    args = ap.parse_args()
+
+    state = os.path.abspath(args.state_dir)
+    os.makedirs(state, exist_ok=True)
+    tmux = tmux_bin()
+    kq = select.kqueue()
+    watched = {}   # pid -> {"socket", "version", "started"}
+    by_socket = {}  # socket path -> pid
+    silent = {}    # socket path -> inode of a stale socket
+    log(f"watching {args.socket_dir} with {tmux}, records in {state}")
+
+    while True:
+        try:
+            names = os.listdir(args.socket_dir)
+        except OSError:
+            names = []
+        for name in sorted(names):
+            sock = os.path.join(args.socket_dir, name)
+            try:
+                st = os.stat(sock)
+            except OSError:
+                continue
+            if not stat.S_ISSOCK(st.st_mode) or by_socket.get(sock) in watched:
+                continue
+            if silent.get(sock) == st.st_ino:
+                continue
+            if refuses(sock):
+                silent[sock] = st.st_ino
+                continue
+            found = ask_server(tmux, sock)
+            if not found:
+                continue
+            pid, version, started = found
+            silent.pop(sock, None)
+            if pid in watched:
+                by_socket[sock] = pid
+                continue
+            try:
+                kq.control([select.kevent(pid, filter=select.KQ_FILTER_PROC, flags=select.KQ_EV_ADD,
+                                          fflags=NOTE_EXIT | NOTE_EXITSTATUS | NOTE_EXIT_DETAIL)], 0)
+            except OSError as e:
+                log(f"cannot watch pid {pid} on {sock}: {e}")
+                continue
+            watched[pid] = {"socket": sock, "version": version, "started": started}
+            by_socket[sock] = pid
+            log(f"watching pid {pid} on {sock} (tmux {version})")
+
+        for ev in kq.control(None, 16, args.interval):
+            if not ev.fflags & NOTE_EXIT:
+                continue
+            t = time.time()
+            info = watched.pop(ev.ident, {})
+            rec = {"at": now_iso(t), "pid": ev.ident, "socket": info.get("socket"),
+                   "version": info.get("version"),
+                   "started": now_iso(info["started"]) if info.get("started") else None,
+                   "uptime_s": round(t - info["started"]) if info.get("started") else None}
+            rec.update(describe(ev.data, ev.fflags))
+            if rec["kind"] != "clean":
+                rec["processes"] = snapshot_processes(state, ev.ident, t)
+            with open(os.path.join(state, "exits.jsonl"), "a") as f:
+                f.write(json.dumps(rec) + "\n")
+            sock = info.get("socket")
+            if sock:
+                by_socket.pop(sock, None)
+                try:
+                    silent[sock] = os.stat(sock).st_ino
+                except OSError:
+                    pass
+            log(f"pid {ev.ident} on {sock} exited: {rec['kind']} "
+                f"{rec['signal'] or rec['exit_code']} {','.join(rec['detail'])}".rstrip())
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)
