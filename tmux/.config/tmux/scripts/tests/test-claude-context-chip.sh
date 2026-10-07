@@ -220,10 +220,11 @@ has()    { case "$2" in *"$3"*) ok "$1" ;; *) no "$1" "no [$3] in [$2]" ;; esac;
 # The statusline's own text, colours stripped: render <dir> [VAR=value ...].
 # Outside tmux (nothing publishes) and never refreshing; HOME is the sandbox's
 # physical path because git reports physical paths. The extra assignments
-# override the defaults (env applies them in order).
+# override the defaults (env applies them in order). RENDER_EXTRA, when set, is
+# spliced into the payload as further top-level members (",\"key\":value").
 render() {
     local dir="$1"; shift
-    printf '{"session_id":"sid-R","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}' "$dir" \
+    printf '{"session_id":"sid-R","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' "$dir" "${RENDER_EXTRA:-}" \
         | env -u TMUX -u TMUX_PANE -u CLAUDE_CONFIG_DIR -u COLUMNS -u ANTHROPIC_BASE_URL \
             HOME="$(cd "$SANDBOX_HOME" && pwd -P)" TERMINAL_THEME=gruber_darker CLAUDE_CTX_REFRESH_CMD= \
             GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 "$@" bash "$STATUSLINE" 2>/dev/null \
@@ -1162,6 +1163,27 @@ c33() {
 }
 
 # ---------------------------------------------------------------------------
+# C35 — the prompt cache countdown. prompt_cache.expires_at is drawn as whole
+# minutes left, rounded up, beside the context percentage; a cache that is not
+# warm or whose expiry has passed is "cold", and a payload without an expiry
+# (no request yet, or no cache tokens reported) draws no segment at all.
+# ---------------------------------------------------------------------------
+c35() {
+    local now; now=$(date +%s)
+    cache() { RENDER_EXTRA=",\"prompt_cache\":$1" render /; }
+    check "C35 minutes left, rounded up" \
+        "$(cache "{\"warm\":true,\"expires_at\":$((now + 1500))}")" "/ | 0% | cache 25m"
+    check "C35 the last minute still counts as one" \
+        "$(cache "{\"warm\":true,\"expires_at\":$((now + 30))}")" "/ | 0% | cache 1m"
+    check "C35 a passed expiry is cold" \
+        "$(cache "{\"warm\":true,\"expires_at\":$((now - 5))}")" "/ | 0% | cache cold"
+    check "C35 a cache that is not warm is cold" \
+        "$(cache "{\"warm\":false,\"expires_at\":$((now + 1500))}")" "/ | 0% | cache cold"
+    check "C35 no expiry draws nothing" \
+        "$(cache '{"warm":false,"expires_at":null}')" "/ | 0%"
+}
+
+# ---------------------------------------------------------------------------
 # C34 — the test server's own isolation guard (see docs/testing.md). The
 # server loads the production plugins, and they act on whatever HOME it was
 # started with: continuum's boot handler deletes
@@ -1194,7 +1216,7 @@ c34() {
 
 WANT="${*:-}"
 echo "tmux $(tmux -V) — Claude context chip suite"
-for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32 c33 c34; do
+for c in c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c13 c14 c15 c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 c32 c33 c34 c35; do
     n=$(echo "$c" | tr 'a-z' 'A-Z')
     want "$n" && { echo "[$n]"; $c; }
 done

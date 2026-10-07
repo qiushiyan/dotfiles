@@ -48,7 +48,14 @@ IFS= read -r -d '' input
 # used_percentage is documented as a float and observed as an integer, so it is
 # rounded; a value that survives that and still is not a plain integer is
 # treated as absent below rather than pushed at a tmux format.
-read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID EFFORT FIVE_HOUR SEVEN_DAY CURRENT_DIR <<< "$(echo "$input" | jq -r '
+#
+# prompt_cache.expires_at is when the main conversation's cached prefix leaves
+# its TTL (1h here), in epoch seconds; every request that reads the cache moves
+# it. jq's `now` turns it into seconds left, so bash 3.2 (no $EPOCHSECONDS)
+# needs no `date` fork. A cache that is not warm, or whose expiry has passed
+# before Claude Code re-rendered, is 0: cold. No expiry at all (no request yet,
+# or a provider that reports no cache tokens) is "-", and draws nothing.
+read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID EFFORT FIVE_HOUR SEVEN_DAY CACHE_LEFT CURRENT_DIR <<< "$(echo "$input" | jq -r '
   def pct: if . == null then "-" else (round | tostring) end;
   def token: if . == "" then "-" else . end;
   .context_window as $ctx |
@@ -62,7 +69,11 @@ read -r CONTEXT_SIZE CURRENT_TOKENS SESSION_ID MODEL_ID EFFORT FIVE_HOUR SEVEN_D
   ((.effort.level? // "") | tostring | gsub("[^a-zA-Z0-9._-]"; "")) as $effort |
   ((.rate_limits.five_hour.used_percentage // null) | pct) as $five |
   ((.rate_limits.seven_day.used_percentage // null) | pct) as $seven |
-  "\($ctx.context_window_size) \($tokens) \(.session_id // "-") \($model | token) \($effort | token) \($five) \($seven) \(.workspace.current_dir)"
+  ((.prompt_cache // {}) as $pc |
+    if ($pc.expires_at | type) != "number" then "-"
+    elif $pc.warm == false then "0"
+    else [($pc.expires_at - now) | floor, 0] | max | tostring end) as $cache |
+  "\($ctx.context_window_size) \($tokens) \(.session_id // "-") \($model | token) \($effort | token) \($five) \($seven) \($cache) \(.workspace.current_dir)"
 ')"
 [ "$MODEL_ID" = "-" ] && MODEL_ID=""
 MODEL_ID="${MODEL_ID#claude-}"
@@ -138,6 +149,25 @@ else
     CTX_DISPLAY="${RED}⚠ ctx:${PERCENT_USED}%${RESET}"; CTX_PLAIN="⚠ ctx:${PERCENT_USED}%"
 fi
 
+# Prompt cache countdown: whole minutes left, rounded up, so "1m" is the last
+# minute and the next render after expiry says cold. Claude Code re-renders at
+# expires_at on its own; settings.json's refreshInterval moves the minutes in
+# between while the session sits idle.
+CACHE_DISPLAY=""; CACHE_PLAIN=""
+case "$CACHE_LEFT" in
+    ''|*[!0-9]*) ;;
+    0) CACHE_PLAIN="cache cold"; CACHE_DISPLAY="${RED}${CACHE_PLAIN}${RESET}" ;;
+    *)
+        CACHE_MIN=$(( (CACHE_LEFT + 59) / 60 ))
+        CACHE_PLAIN="cache ${CACHE_MIN}m"
+        if [ "$CACHE_MIN" -gt 10 ]; then
+            CACHE_DISPLAY="${CYAN}${CACHE_PLAIN}${RESET}"
+        else
+            CACHE_DISPLAY="${YELLOW}${CACHE_PLAIN}${RESET}"
+        fi
+        ;;
+esac
+
 # API billing indicator
 API_DISPLAY=""; API_PLAIN=""
 if [ -n "$ANTHROPIC_BASE_URL" ]; then
@@ -180,6 +210,7 @@ add_seg() { [ -n "$2" ] && { SEG_COLORED+=("$1"); SEG_PLAIN+=("$2"); }; }
 add_seg "${LAVENDER}${DISPLAY_DIR}${RESET}" "$DISPLAY_DIR"
 add_seg "${PINK}${BRANCH}${RESET}" "$BRANCH"
 add_seg "$CTX_DISPLAY" "$CTX_PLAIN"
+add_seg "$CACHE_DISPLAY" "$CACHE_PLAIN"
 add_seg "$GIT_STATUS" "$GIT_PLAIN"
 add_seg "$API_DISPLAY" "$API_PLAIN"
 
