@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 # gazette-notify — on the laptop: when gazette.qiushiyan.dev has published
 # a new edition since the last one shown, raise a macOS notification that
-# opens it (gazette spec decision 10: the laptop raises the notification,
+# opens it (the laptop raises the notification,
 # on wake). launchd runs it every 15 minutes and at load; a wake runs the
 # missed interval. ~/dev/gazette (on the mini) publishes the editions.
 #

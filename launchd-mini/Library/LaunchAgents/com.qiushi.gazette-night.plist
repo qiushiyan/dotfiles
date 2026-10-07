@@ -8,7 +8,7 @@
   <!-- 02:00, after the 01:30 mirror refresh: gazette's nightly run (feeds,
        the editor, up to three evaluations, the edition, research PRs) and
        the morning edition at gazette.qiushiyan.dev. Run records:
-       ~/.local/share/gazette/runs. ~/dev/gazette/docs/technical-plan.md. -->
+       ~/.local/share/gazette/runs. ~/dev/gazette/docs/operations.md. -->
   <key>ProgramArguments</key>
   <array>
     <string>/Users/qiushiyan/dev/gazette/bin/gazette</string>
