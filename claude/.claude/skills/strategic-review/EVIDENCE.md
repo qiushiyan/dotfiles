@@ -167,3 +167,14 @@ Kept:
   rehearsed text, and the full standard is still read first.
 - No headless-subagent guidance. The skill runs interactively, and that
   constraint belongs to the rehearsal harness.
+
+**At the user's request, after the pass.**
+- **PlanLab map.** Intent first now names PlanLab's map: read
+  `pl-loopy-onboarding`'s `SKILL.md` and the `routes/` files the PR touches,
+  as both manual sessions did, rather than invoking the skill. Onboarding
+  ends its turn on a first reply.
+- **Prompt-engineering is conditional.** The rulebook, the project
+  prompting guide and the model's-view lens are read only when the PR
+  description or the touched files show a model-facing change, a changed
+  tool behaviour included. Both rehearsed PRs had such a change, so neither
+  rehearsal tests the skip.

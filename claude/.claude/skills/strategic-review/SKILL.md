@@ -27,18 +27,29 @@ until then.
 ## How to work
 
 1. **Intent first.** Read the PR description, the spec or issue it links,
-   and its commits. Where the project has an onboarding route (its
-   `CLAUDE.md` names it), load the parts this PR touches. Write down, in
-   two or three sentences, what the change is for and what a user gets
-   from it. Every finding is judged against that statement.
+   and its commits, then the project's map of the area the PR touches.
+   In PlanLab (`planlab-ai/main`), a PR touching Loopy or the steward has
+   its map in `.agents/skills/pl-loopy-onboarding/`: read its `SKILL.md`,
+   then the files under `routes/` that the PR's files and goal touch, and
+   the docs those routes point to. Read it as a map rather than invoking
+   it, because onboarding ends its turn on a first reply and this review
+   has to carry on. Elsewhere, use the onboarding route the project's
+   `CLAUDE.md` names, if any. Then write down, in two or three sentences,
+   what the change is for and what a user gets from it. Every finding is
+   judged against that statement.
 2. **Read the standards in full** before reviewing:
    - `~/dotfiles/claude/.claude/skills/thermo-nuclear-code-quality-review/SKILL.md`,
      for code quality and the "code judo" reshape;
    - `~/dotfiles/claude/.claude/skills/codebase-design/SKILL.md` with
      `~/.config/lessons/codebase-design/composition.md`, for design;
-   - `~/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md`, with the
-     project's own prompting guide when its `CLAUDE.md` names one, for what
-     the model is told.
+   - `~/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md`, when the
+     PR description or the touched files show a model-facing change: a
+     prompt section, tool description, tool result, command help, refusal or
+     error a model reads, a skill an agent loads, or what one of the agent's
+     tools does. Read it with the project's prompting guide (PlanLab:
+     `docs/loopy/prompting-guide.md` and the onboarding's
+     `routes/prompting.md`). A PR with no such change skips it, and the
+     "What the model is told" lens with it.
 3. **Review.** A PR too large to read whole in one pass splits into two to
    four broad areas, each read completely by a subagent. Hand each one the
    intent, the area's files and diff base, the lenses below, the standards'
@@ -65,16 +76,18 @@ until then.
 - **Tests.** Each behaviour that matters has a test that goes red when it is
   reverted. No test passes for the wrong reason, and the tests the PR relies
   on actually run in CI.
-- **What the model is told.** For every tool, command, result, refusal or
-  prompt section whose behaviour changed, read everything a model is told
-  about it, whether or not the PR touched that text: prompt sections, tool
-  descriptions, command help, refusals and errors, bundled skills, and which
-  runtimes assemble each one. Find where a model reading only that text
-  would be misled, invent an answer, loop, or meet a contradiction.
-- **Code quality and design**, by the two standards above: files pushed
-  past a thousand lines, ad-hoc branches in unrelated flows, copied
-  helpers, leaking types, a second mechanism beside an existing owner, and
-  the reshape that would make the code smaller and the problem disappear.
+- **What the model is told**, when step 2 found a model-facing change. For
+  every tool, command, result, refusal or prompt section whose behaviour
+  changed, read everything a model is told about it, whether or not the PR
+  touched that text: prompt sections, tool descriptions, command help,
+  refusals and errors, bundled skills, and which runtimes assemble each one.
+  Find where a model reading only that text would be misled, invent an
+  answer, loop, or meet a contradiction.
+- **Code quality and design**, by the thermo-nuclear and codebase-design
+  standards: files pushed past a thousand lines, ad-hoc branches in
+  unrelated flows, copied helpers, leaking types, a second mechanism beside
+  an existing owner, and the reshape that would make the code smaller and
+  the problem disappear.
 - **Product scope.** Name any behaviour the PR changes outside what it
   describes, and who it reaches: another upload flow, another consumer of a
   shared type.
