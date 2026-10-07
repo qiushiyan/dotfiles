@@ -72,6 +72,9 @@
 # Every bypass launcher passes CLAUDE_X_BYPASS, one array, so a flag lands
 # on all of them or none. permissions.deny rules survive bypass.
 #
+# Every launcher above that starts a session also takes `--fast`: that one
+# session runs in fast mode, and nothing is saved (_claude_fast_args).
+#
 typeset -g CLAUDE_ACCOUNTS_ROOT="$HOME/.claude-accounts"
 typeset -ga CLAUDE_X_BYPASS=(--dangerously-skip-permissions)
 # Per-workspace effort for every launch that starts in $PWD (x, x-<name>,
@@ -226,6 +229,8 @@ x-acc()         { x-accounts "$@" }
 x-select() {
   emulate -L zsh
   _headroom_required claude || return
+  _claude_fast_args "$@" || return
+  set -- "${reply[@]}"
   local tmp rc dir
   tmp=$(mktemp -d "${${TMPDIR:-/tmp}%/}/x-select.XXXXXX") || return
   headroom sessions --cd-file "$tmp/cwd" -- "${CLAUDE_X_BYPASS[@]}" "$@"
@@ -277,6 +282,8 @@ _claude_launch() {
   # temp files — child-process caches included) land in ./.tmp instead;
   # cleanup becomes manual, so it stays off by default.
   # CLAUDE_CODE_TMPDIR="$PWD/.tmp" \
+  _claude_fast_args "$@" || return
+  set -- "${reply[@]}"
   local -a effort=()
   if (( ! ${argv[(I)(--effort|--effort=*)]} )) && _claude_workspace_effort; then
     effort=(--effort "$REPLY")
@@ -286,6 +293,33 @@ _claude_launch() {
   else
     headroom launch -- "${effort[@]}" "$@"
   fi
+}
+
+# `--fast` starts one session in fast mode: the wrapper swaps it for
+# `--settings '{"fastMode":true}'`, which Claude Code applies to that session
+# and never saves; settings.json's fastModePerSessionOptIn keeps a mid-session
+# /fast from carrying over to the next one. Claude Code has no --fast of its
+# own. Only words before a `--` are flags. One --settings per launch: --fast
+# beside an explicit --settings is refused rather than letting one silently
+# replace the other. The rewritten argv lands in $reply.
+_claude_fast_args() {
+  emulate -L zsh
+  local a fast=0 ended=0
+  reply=()
+  for a in "$@"; do
+    if (( ! ended )) && [[ "$a" == --fast ]]; then
+      fast=1
+      continue
+    fi
+    [[ "$a" == -- ]] && ended=1
+    reply+=("$a")
+  done
+  (( fast )) || return 0
+  if (( ${reply[(I)(--settings|--settings=*)]} )); then
+    print -u2 'claude: --fast is --settings {"fastMode":true}; put "fastMode": true in your own --settings instead — claude was not started'
+    return 2
+  fi
+  reply=(--settings '{"fastMode":true}' "${reply[@]}")
 }
 
 # The level CLAUDE_X_EFFORT gives $PWD, in $REPLY; status 1 when no listed

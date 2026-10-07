@@ -1,6 +1,7 @@
 #!/usr/bin/env zsh
 # What claude.zsh's launchers add on top of headroom: the refusal without
-# it, named-launch routing, the per-workspace effort flag, and x-select's cd.
+# it, named-launch routing, the per-workspace effort flag, --fast, and
+# x-select's cd.
 # Topology, environment and `.current` policy are headroom's and tested there
 # (~/dev/headroom internal/app, internal/accounts). Everything runs against a
 # throwaway $HOME with a recording claude stub — no real account dir or
@@ -150,7 +151,66 @@ test_effort_specific_dir_and_explicit_flag_win() (
     || { print "explicit flag did not replace the table's: $got[2]"; return 1 }
 )
 
+# --fast becomes the one-session fastMode setting, on every launcher that
+# reaches _claude_launch: claude never sees a --fast of its own, a launch
+# without it gets no --settings, and a --fast after `--` is an argument.
+test_fast_becomes_session_setting() (
+  sandbox
+  mkdir -p "$H/.claude-accounts/a@x.com"
+  ln -s "$H/.claude/projects" "$H/.claude-accounts/a@x.com/projects"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  cd "$H"
+  x --fast || { print "x --fast failed"; return 1 }
+  x || { print "x failed"; return 1 }
+  x-a@x.com --resume --fast || { print "x-a@x.com --fast failed"; return 1 }
+  claude-account a@x.com -- --fast || { print "claude-account -- --fast failed"; return 1 }
+  local -a got=("${(@f)$(<"$SB/claude.log")}")
+  local want='--settings {"fastMode":true} '
+  [[ "$got[1]" == *"$want"* && "$got[1]" != *" --fast"* ]] || { print "x --fast: $got[1]"; return 1 }
+  [[ "$got[2]" != *--settings* ]] || { print "plain x got a setting: $got[2]"; return 1 }
+  [[ "$got[3]" == *"$want"*"--resume"* && "$got[3]" != *" --fast"* ]] || { print "x-<email> --fast: $got[3]"; return 1 }
+  [[ "$got[4]" != *--settings* && "$got[4]" == *"-- --fast" ]] || { print "--fast after -- was taken as a flag: $got[4]"; return 1 }
+)
+
+# --fast beside an explicit --settings refuses before anything launches,
+# instead of one settings value silently replacing the other.
+test_fast_refuses_beside_settings() (
+  sandbox
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  cd "$H"
+  local rc=0 a
+  for a in "--settings=x.json" "--settings"; do
+    rc=0
+    x --fast "$a" '{}' 2>/dev/null || rc=$?
+    [[ $rc -eq 2 ]] || { print "x --fast $a returned rc=$rc, expected 2"; return 1 }
+  done
+  [[ ! -f "$SB/claude.log" ]] || { print "claude ran:"; cat "$SB/claude.log"; return 1 }
+)
+
 # --- x-select: the wrapper's whole job is the cd afterwards -------------------
+
+# x-select takes --fast too: headroom receives the setting for the claude it
+# execs, never the bare flag.
+test_x_select_passes_fast() (
+  sandbox
+  rm -f "$SB/bin/headroom"
+  cat >"$SB/bin/headroom" <<EOS
+#!/bin/sh
+echo "\$@" >> "$SB/headroom.log"
+: > "\$3"
+exit 0
+EOS
+  chmod +x "$SB/bin/headroom"
+  export HOME="$H" PATH="$SB/bin:$PATH"
+  source "$CLAUDE_ZSH"
+  cd "$H"
+  x-select --fast || { print "x-select --fast failed"; return 1 }
+  local got="$(<"$SB/headroom.log")"
+  [[ "$got" == *'-- --dangerously-skip-permissions --settings {"fastMode":true}'* && "$got" != *" --fast"* ]] \
+    || { print "headroom got: $got"; return 1 }
+)
 
 # The advisory cd-file contract, wrapper side: non-empty and absolute means
 # headroom entered that dir, and the cd sticks regardless of how the session
@@ -204,6 +264,9 @@ t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_wit
 t "generated launcher routes without repinning bare x"   test_generated_launcher_routes_without_repinning
 t "workspace effort applies inside listed dirs only"     test_effort_follows_workspace
 t "specific dir and explicit --effort win"               test_effort_specific_dir_and_explicit_flag_win
+t "--fast becomes the one-session fastMode setting"      test_fast_becomes_session_setting
+t "--fast beside --settings refuses before launch"       test_fast_refuses_beside_settings
+t "x-select passes --fast as the setting"                test_x_select_passes_fast
 t "x-select cds from non-empty advice, status through"   test_x_select_cds_from_advice
 t "x-select stays put on empty advice"                   test_x_select_stays_put_on_empty_advice
 

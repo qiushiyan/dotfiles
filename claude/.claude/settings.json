@@ -156,6 +156,7 @@
     }
   },
   "alwaysThinkingEnabled": true,
+  "fastModePerSessionOptIn": true,
   "effortLevel": "high",
   "modelSettings": {
     "claude-fable-5": {
