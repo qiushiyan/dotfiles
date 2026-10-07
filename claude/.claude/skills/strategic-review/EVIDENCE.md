@@ -151,3 +151,19 @@ tags:
 Revise if real uses drop below the manual prompt's yield (about 33–37 real
 findings on PRs of this size), if the design reshapes stop appearing, or if
 the class tags go unused by a later pass.
+
+**Revision pass** (the prompt-engineering rulebook's revision pass, same
+session).
+
+Fixed:
+- **Unearned certainty.** Step 3 justified splitting by speed ("goes
+  faster"), but v2 took longer than the manual reviews. The split buys a
+  complete read of each area, and the text now says so.
+- **Duplicated pointer.** The project prompting guide was named in step 1
+  and again in step 2. Step 2 now owns it.
+
+Kept:
+- The lens bullet's short echo of thermo-nuclear's triggers. It is the
+  rehearsed text, and the full standard is still read first.
+- No headless-subagent guidance. The skill runs interactively, and that
+  constraint belongs to the rehearsal harness.

@@ -27,22 +27,22 @@ until then.
 ## How to work
 
 1. **Intent first.** Read the PR description, the spec or issue it links,
-   and its commits. Where the project has an onboarding route or a house
-   prompting guide (its `CLAUDE.md` names them), load the parts this PR
-   touches. Write down, in two or three sentences, what the change is for
-   and what a user gets from it. Every finding is judged against that
-   statement.
+   and its commits. Where the project has an onboarding route (its
+   `CLAUDE.md` names it), load the parts this PR touches. Write down, in
+   two or three sentences, what the change is for and what a user gets
+   from it. Every finding is judged against that statement.
 2. **Read the standards in full** before reviewing:
    - `~/dotfiles/claude/.claude/skills/thermo-nuclear-code-quality-review/SKILL.md`,
      for code quality and the "code judo" reshape;
    - `~/dotfiles/claude/.claude/skills/codebase-design/SKILL.md` with
      `~/.config/lessons/codebase-design/composition.md`, for design;
    - `~/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md`, with the
-     project's own prompting guide, for what the model is told.
-3. **Review.** A large PR goes faster split into two to four broad areas,
-   each reviewed by a subagent. Hand each one the intent, the area's files and
-   diff base, the lenses below, the standards' paths, and anything you
-   already suspect there. They are read-only, may run focused tests and
+     project's own prompting guide when its `CLAUDE.md` names one, for what
+     the model is told.
+3. **Review.** A PR too large to read whole in one pass splits into two to
+   four broad areas, each read completely by a subagent. Hand each one the
+   intent, the area's files and diff base, the lenses below, the standards'
+   paths, and anything you already suspect there. They are read-only, may run focused tests and
    throwaway probes in your scratchpad, and say for each finding whether a
    probe confirmed it or it was read from the source. Keep for yourself the
    read no single area shows: how the change joins the existing code,
