@@ -289,3 +289,105 @@ line ignored ideas; step 8's last sentence read as dropping them; the kind
 of better is now chosen by what a failure costs rather than by who owns the
 tool; "verdict" in the full brief; the two adjacent slots. No round has yet
 run on the revised briefs; the measures above are pending.
+
+## 2026-10-07 — what fresh strategic reviews kept finding after full rounds
+
+**Request.** The user had started running a separate fresh-session review on
+big PlanLab PRs, and asked how the in-session round could do better on the
+first attempt. Pass `mini:8ae01ce4`. The full record is in
+`../strategic-review/EVIDENCE.md`, the skill this pass created for those
+fresh-session reviews.
+
+**Observed.**
+- **The late reviews found real defects after full rounds had converged.**
+  Two fresh-session reviews (PRs 8616 and 8620, 2026-10-06) ran after full
+  rounds plus round 2. Pooled and verified, they found 33 and 37 real
+  problems, none wrong, and the author acted on most of them.
+- **What was found, by class.** One subagent classified the envoy store's 33
+  PlanLab full rounds (2026-09-24 → 10-06, 354 findings).
+  - Model-facing findings were 10 of 354.
+  - The late reviews found 7–14 model-facing problems on each PR.
+  - In both PR briefs the host-written "docs outside the spec" line fenced
+    bundled skills out of scope.
+  - 8616's side effect on task uploads sat behind a settled foundation item.
+- **Same-model voices overlap.** Two codex voices on 8620 r1 shared 7 of 11
+  and 9 findings. The consult voice found an Opus+astra pair on a
+  byte-identical brief (`recorded-judgments-closeout-f092ccc9/review-r1`)
+  that shared about 5 of 17 and 11.
+- **The replay.** PR 8616 frozen at `3386ba65e6`, the original brief on
+  each model, scored blind against the late review's 32 findings.
+  - Codex scored 3 hits and 1 partial; Opus scored 4 hits and 5 partials.
+  - Only Opus found the duplicated read queue, the self-defeating unzip
+    refusal and the `.com` withhold.
+  - Codex found more real defects outside that key (8 vs 4).
+- **Tests the reviewer could not run.** Every codex result read said vitest
+  could not start in a read-only sandbox. The cause is configuration, not
+  envoy. All 105 codex launches on the mini went through headroom to one
+  account, whose `config.toml` is a standalone file without the main
+  config's `sandbox_mode`, so `codex exec` falls back to read-only.
+- **CI.** The 8616 tests that depend on a Git LFS fixture never ran in CI,
+  and no round caught it.
+
+**Changed.**
+- **`BRIEF-TEMPLATE.md`**:
+  - a **What the model is told** switch, which reads every surface a model
+    sees about changed behaviour, touched or not, and treats it as product
+    rather than docs, judged against the project's prompting guide by path;
+  - **blast radius** reaches consumers outside the feature and reports
+    them as `scope`, fixed by narrowing reach rather than reversing a
+    settled decision;
+  - **a test that never runs where the PR is gated** pins nothing;
+  - numbered findings with class tags, and unpinned items routed to their
+    section with tag and severity;
+  - the do-not-flag slot names the agent surfaces a docs line excludes.
+- **`SKILL.md`**:
+  - the switch in step 3, and a schema or data migration is not mechanical;
+  - step 4 seats the cold voice from the other family than the warm one,
+    with precedence over the stock words "codex" and "sol" and none over a
+    typed model;
+  - a round collapses to one voice only on an explicit ask;
+  - step 6 lands a confirmed `model-facing` finding as a product fix, and
+    fix commits carry the class tag;
+  - `requires` names the lesson.
+- **`GOAL-BRIEF.md`**: its docs exclusion no longer covers agent surfaces.
+- **New lesson**: `lessons/collaboration/finding-classes.md`.
+
+**Deliberate keeps.**
+- The review-lens stance stays: "fewer findings, each heavier" is right for
+  a round that runs on every build. The strategic skill's rehearsal v1 showed
+  what it costs in a sweep, which is why that skill drops it, not this one.
+- No slicing in full rounds. The strategic review owns depth on the PRs the
+  user picks.
+
+**Pending.** The headroom account config, whose fix is the user's call.
+
+**Next comparison.** Full rounds after this commit on PlanLab agent ranges:
+- the model-facing share of confirmed findings (today 10 of 354);
+- `scope` findings;
+- findings by the cold Opus voice that the warm codex member missed;
+- what a later strategic review on the same branch still finds, by class
+  tag.
+
+Revise if the cold Opus voice adds nothing over the warm codex member across
+about ten fan-outs, or if the model-facing lens fills rounds with wording
+nits that the host rebuts.
+
+**Validation.** Two cold readers, read-only, on host, reviewer and
+Claude-consult scenarios.
+- The first found the voice rule undecidable against the stock "codex" ask,
+  a docs carve-out that parsed two ways, no step-6 guard against deferring
+  model-facing fixes, unpinned routing, ids never requested, the goal
+  brief's docs line, the migration wording, the overlap between
+  `unsupported-claim` and `model-facing`, and drift between the two trigger
+  phrasings. All were fixed.
+- Kept: the cold Opus voice may share the build session's model family. The
+  warm codex member is the other family, and the replay favoured Opus on the
+  strategic items.
+- A second cold reader resolved all six dispatch and format cases. It found
+  five smaller gaps, all fixed:
+  - the say-back line now names the voices, since the other-family default
+    can seat Opus under a stock "codex" ask;
+  - unpinned items are numbered on from the findings;
+  - a test that never runs in CI is `unpinned`;
+  - the prompting-guide clause is deleted when a project has none;
+  - commits name the reviewer by its member name.

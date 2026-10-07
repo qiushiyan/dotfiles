@@ -3,6 +3,7 @@ name: review
 description: "Run a review round on the committed work through a cold AI session — goal (did we build the right thing: the cheap independent read, before or after any other round) or full (is it built right: the deep read with the implementation report) — then judge and apply the findings."
 requires:
   - lessons:collaboration/review-lens.md
+  - lessons:collaboration/finding-classes.md
   - lessons:codebase-design/deep-modules.md
   - lessons:codebase-design/deepening.md
   - lessons:codebase-design/composition.md
@@ -25,7 +26,7 @@ Name the model on every cold voice, and the effort on a codex one, so the job re
 --with codex:gpt-6.1-sol:high    # another effort only when the user asks: "sol on high"
 ```
 
-A model ID the user spells out goes through as written, a codex one on `xhigh` unless they name an effort. A warm voice (`@<job>/<member>`) keeps the model it started on.
+A model ID the user spells out goes through as written, a codex one on `xhigh` unless they name an effort. A warm voice (`@<job>/<member>`) keeps the model it started on. Beside a warm voice, the default cold voice is the other family's (step 4).
 
 ## Process
 
@@ -38,7 +39,7 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
    | "goal", "high level", "step back", "from first principles", "one last look", "I'm confident in the internals, catch the obvious mistakes" | did we build the right thing? | **goal** |
    | "full", "deep", or nothing about altitude — the ordinary case | is it built right? | **full** |
 
-   A good ask carries three things, and a one-word ask leaves the host to supply them from the session: the goal in the user's own terms, what is settled by something outside this session, and what the user does not want this round spent on. Say the pick back in one line before anything is written — "this round buys *did it land*, goal mode" — since that line is the user's one chance to redirect a round before it costs anything. Stop to ask only where the pick is genuinely balanced.
+   A good ask carries three things, and a one-word ask leaves the host to supply them from the session: the goal in the user's own terms, what is settled by something outside this session, and what the user does not want this round spent on. Say the pick back in one line before anything is written, voices included — "this round buys *is it built right*, full mode, @consult-r1 warm beside a cold opus" — since that line is the user's one chance to redirect a round before it costs anything. Stop to ask only where the pick is genuinely balanced.
 
    **goal** ([GOAL-BRIEF.md](GOAL-BRIEF.md)) — the cheap independent read, at altitude, valid before any other round or as the closing read after them. It withholds the design: the reviewer gets the goal in the user's terms, the facts outside the diff, the standards, and what has already judged this range — and states what it expects before it opens the code, because first-principles judgment is impossible while holding the implementation's narrative. One cold voice. Its **structural lens** is a switch: keep the composition block in the brief when the range decides structure — a new module, a reshaped interface, a real refactor — and delete it when the range is structurally inert, however large the diff.
 
@@ -58,13 +59,14 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
 
    Done when the mode's material passes its own test — a facts block whose every line is a fact about the world outside the diff, an already-judged section sourced from the session's record rather than from memory, or a report that maps the range for a cold reviewer pointing at risk and grading nothing.
 
-3. **Write the brief** — one self-contained file in the session scratchpad, named for the round (`review-r1.md`), from the template step 2 chose. Full fills orientation, where the authority on WHAT lives (spec/plan paths, or an inline goal statement when no spec exists), the settled decisions it must not relitigate (or the line that nothing is settled), the commit range, the reading order, the deliberately-deferred work it must not flag, the standards and data sections step 2 assembled, and the report last. Goal fills much less — the goal paragraph, the range, the facts block, already judged, the do-not-flag list, who the ideas are for. Two slots leak, in opposite directions: the **goal paragraph** is what the feature is *for* in the user's own terms, carrying none of the vocabulary this change invented — the rule the ideas slot's person and moment follow too; and an **already judged** line that explains *why* a decision was made hands back the design the round exists to judge, so each line says what was looked at and what came of it, never the reasoning behind it.
+3. **Write the brief** — one self-contained file in the session scratchpad, named for the round (`review-r1.md`), from the template step 2 chose. Full fills orientation, where the authority on WHAT lives (spec/plan paths, or an inline goal statement when no spec exists), the settled decisions it must not relitigate (or the line that nothing is settled), the commit range, the reading order, the deliberately-deferred work it must not flag, the standards step 2 assembled (in the reading list) and its data section, and the report last. Goal fills much less — the goal paragraph, the range, the facts block, already judged, the do-not-flag list, who the ideas are for. Two slots leak, in opposite directions: the **goal paragraph** is what the feature is *for* in the user's own terms, carrying none of the vocabulary this change invented — the rule the ideas slot's person and moment follow too; and an **already judged** line that explains *why* a decision was made hands back the design the round exists to judge, so each line says what was looked at and what came of it, never the reasoning behind it.
 
    The lesson pointers go out with it, copied from the template as written — they are for the reviewer. The posture section rides every dispatch: under `full` its whole stance governs; `goal` names the subset that governs it — the dispatching prompt carries the run's contract. The template's design-bar lines are scoped by what the range decided:
 
-   - **full** → keep **Structural quality** whenever the range decides structure: new modules, reshaped interfaces, any real refactor. Trim it when the work is structurally inert — a version bump, a mechanical syntax migration — however large the diff. **Composition** survives that trim on a **small contained fix**: a patch bolted onto an existing call path is exactly the shape it exists to catch, and exactly the range a reviewer waves through. Drop it only where the range adds no hop and rewires nothing.
+   - **full** → keep **Structural quality** whenever the range decides structure: new modules, reshaped interfaces, any real refactor. Trim it when the work is structurally inert — a version bump, a mechanical syntax migration — however large the diff; a schema or data migration decides structure and keeps it. **Composition** survives that trim on a **small contained fix**: a patch bolted onto an existing call path is exactly the shape it exists to catch, and exactly the range a reviewer waves through. Drop it only where the range adds no hop and rewires nothing.
    - **goal** → the structural block follows the same rule; the concept-count question its brief always carries is the altitude composition reaches without it.
    - **full on a milestone** — "phase 1 is done", "the rest continues here", a spec whose phases are partly unbuilt → keep **The rest of the build**: it stops the reviewer flagging the unbuilt phases, and it returns the tenets those phases hold to, in the form `~/.config/lessons/collaboration/tenets.md` defines. Delete it when the range is the whole change.
+   - **full on an agent** — the range changes an agent's prompts, tools or skills, or alters what one of its tools does → keep **What the model is told**: a fresh read of these surfaces has found misleading text on ranges that passed full rounds without it. Write any do-not-flag line about docs so it excludes these surfaces: the agent's prompts, tool descriptions, command help, refusals and bundled skills are product, not docs.
 
    Both modes keep **Where this can be better**, the reviewer's up-to-two small additive ideas, which the user reads as offers beside the review: fill in who uses the work and when, and pick the kind of better by what a failure costs — harder to break wherever a failure loses work or misleads someone, smoother to use otherwise, both where both apply. Delete it when the ask says no ideas, or the range is mechanical.
 
@@ -87,22 +89,24 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
    A consult exists — both voices as one fan-out, the consult session continued beside a cold one:
 
    ```sh
-   envoy run review-r1 --with @consult-r1/codex-gpt-6.1-sol --with codex:gpt-6.1-sol:xhigh --prompt-file <brief> --baseline <base-sha> --timeout-min 60
+   envoy run review-r1 --with @consult-r1/codex-gpt-6.1-sol --with claude:claude-opus-5-5 --prompt-file <brief> --baseline <base-sha> --timeout-min 60
    ```
 
    `@consult-r1/codex-gpt-6.1-sol` names the *member* whose position the implementation followed, as the consult's synthesis recorded it. A consult that ran as one voice is `@consult-r1` alone. A consult that ran as a fan-out holds one session per member, named `<provider>` or `<provider>-<model>` as its collect block prints them — the voice `codex:gpt-6.1-sol:xhigh` is member `codex-gpt-6.1-sol`, the voice `claude:claude-opus-5-5` is member `claude-claude-opus-5-5` — and there `@consult-r1` alone would continue every member and seat no cold voice. Name the consult's latest round: after a round 2, `@consult-r2/codex-gpt-6.1-sol`. Seating every member warm is the user's call, one `--with @<member>` each.
 
    Warm judges follow-through — did the implementation integrate what was agreed, did it dodge the traps its rounds discussed — and, having committed to the design in its own context, is a poor judge of the design itself; cold buys the unanchored, strategic read this skill exists for. Both get the complete brief; the warm voice re-reads cheaply what it already holds.
 
+   The cold voice comes from the other model family than the warm one: two voices of one model read the same areas and mostly find the same things, while a second family samples the range differently. A codex consult, whether one voice or a member, takes `claude:claude-opus-5-5` cold, as above; a Claude one takes `codex:gpt-6.1-sol:xhigh`. This settles the default, which the stock words "codex" and "sol" name too; a voice the user picks beyond them ("opus", "astra", a model ID) is the cold voice as typed.
+
    A warm voice takes only a full brief — it already holds the design, so there is nothing left to withhold from it. When the user wants the design re-judged as well as its execution checked, the goal read joins the same fan-out as a cold voice on its own brief, each brief attached to its voice:
 
    ```sh
-   envoy run review-r1 --with @consult-r1/codex-gpt-6.1-sol=<full-brief> --with codex:gpt-6.1-sol:xhigh=<goal-brief> --baseline <base-sha> --timeout-min 60
+   envoy run review-r1 --with @consult-r1/codex-gpt-6.1-sol=<full-brief> --with claude:claude-opus-5-5=<goal-brief> --baseline <base-sha> --timeout-min 60
    ```
 
    Two briefs, one job: the warm voice checks follow-through against the spec, the cold one derives what the feature should do with the design withheld, and one collect returns both. The withholding is what the separate file buys — a goal section inside the full brief would hand the cold voice the design on the next page.
 
-   Collapse to the single cold turn when the user names one voice, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex:gpt-6.1-sol:xhigh --with claude:claude-opus-5-5`), each resolved per **Resolving the voice**.
+   Collapse to the single cold turn when the user asks for one voice only, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex:gpt-6.1-sol:xhigh --with claude:claude-opus-5-5`), each resolved per **Resolving the voice**.
 
    If the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
 
@@ -127,7 +131,8 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
 6. **Fix, and account for the tests.** Apply the confirmed criticals and moderates yourself — in this skill the host is the implementer; minors go by user preference. Ideas wait for the user, whatever the ask says about minors: building one is the user's call, made from the report. A `goal` round has no severity ladder: its output is a verdict plus decisions, so it reports first (step 8), builds what the user authorizes, and reports again; applying a design objection unasked is the failure mode there. Unpinned-behaviour findings are fixed by writing the test, which lands in this step like any other.
 
    - **Design the fix from the finding, not from the red test**: the cheapest change that greens it is usually the local patch the reviewer stepped past. A confirmed structural or compositional finding gets the actual reshape — not a shrunken local version, not a deferral to "future work": a deferred composition finding ships the second mechanism, and the migration is never cheaper than while the branch is open.
-   - **Write the fix for the next reader**, who will never see this review: comments and test titles carry the behavior and its reason in the present tense. The round's coordinates (`(review r2)`, the finding id, the reviewer) and the changelog voice (`previously`, `no longer`) go in the commit message, where a later `goal` round compiles its **already judged** from them.
+   - **Write the fix for the next reader**, who will never see this review: comments and test titles carry the behavior and its reason in the present tense. The round's coordinates (`(review r2)`, the finding id and, in a full round, its class tag, the reviewer's member name) and the changelog voice (`previously`, `no longer`) go in the commit message, where a later `goal` round compiles its **already judged** from them.
+   - **A confirmed `model-facing` finding is a product fix** and lands in this step, whatever rule defers documentation to a later pass.
    - **Every confirmed bug indicts the suite** — it was green over the bug. Decide whether the step-5 test filled a coverage gap or must replace a weak test (wrong altitude, over-mocked, asserting internals), and add, strengthen, or delete accordingly. A test whose subject the fix removed is a **tombstone**: deleted rather than inverted, since the subject earns the keep, not the polarity.
 
    - **Tenets go into the spec.** On a milestone round, the surviving tenets are written into the spec as `## Tenets`, beside its phases — the first milestone creates the section, a later one revises it, with each struck tenet and its reason kept — and they land in the fix commit, or in their own when there is nothing to fix. The build rereads the spec after every compaction; a tenet left in this conversation is dropped at the next one.

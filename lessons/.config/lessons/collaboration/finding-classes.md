@@ -8,7 +8,7 @@ results. Tag by the defect, not by the fix. Use `other` when nothing fits,
 and name the shape in a few words so the list can grow from real cases.
 
 - `unpinned` — a behaviour or wiring that no test pins: revert it and the
-  suite stays green.
+  suite stays green, or its test never runs where the PR is gated.
 - `wrong-reason-test` — a test that passes for the wrong reason: the fixture
   supplies the value under test, it asserts on a mock or on a call count, or
   it was edited to match the new output.
@@ -31,7 +31,7 @@ and name the shape in a few words so the list can grow from real cases.
 - `scope` — a behaviour the change alters outside what its spec or PR
   describes, for any user or surface.
 - `unsupported-claim` — a PR body, spec, comment or doc that claims what the
-  code does not do.
+  code does not do. Text a model reads is `model-facing` instead.
 - `production-read` — a promised production check or metric that cannot
   answer its question from the fields that exist.
 - `structure` — a reshape: a module doing several jobs, a leaking interface,

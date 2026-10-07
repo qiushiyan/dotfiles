@@ -156,7 +156,8 @@ Nothing to name? Delete the section.»
 - «deliberately deferred work, known out-of-scope items, staleness on record»
 - Anything under **already judged** as it stands there — confirmed, rebutted,
   or settled — unless you hold a counterexample those rounds did not.
-- Seam hygiene, test mechanics, style, naming, docs — unless the structural
+- Seam hygiene, test mechanics, style, naming, docs (an agent's prompts, tool
+  text and bundled skills are product, not docs) — unless the structural
   block above is present, and then only structural findings.
 - Theoretical risks behind unlikely preconditions; work the goal doesn't ask
   for; the absence of anything the goal above doesn't ask for. The section
