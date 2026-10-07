@@ -359,7 +359,7 @@ fresh-session reviews.
 - No slicing in full rounds. The strategic review owns depth on the PRs the
   user picks.
 
-**Pending.** The headroom account config, whose fix is the user's call.
+**Fixed after the commit, with the user's approval.** The mini's account `config.toml` now links to `~/.codex/config.toml`, with `AGENTS.md` and `themes` linked beside it and the old file kept as `config.toml.pre-share-2026-10-07`. A codex voice dispatched through envoy then wrote a file and ran `go test`. The laptop's account was already linked, so the drift was the mini's alone.
 
 **Next comparison.** Full rounds after this commit on PlanLab agent ranges:
 - the model-facing share of confirmed findings (today 10 of 354);
