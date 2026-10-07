@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.gazette-mirrors</string>
+
+  <!-- Refresh the read-only mirrors in /Users/Shared/gazette/mirrors that the
+       gazette user evaluates against; it holds no read tokens, so this
+       account's gh login fetches. ~/dev/gazette/docs/setup.md. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushiyan/dev/gazette/mirrors/refresh.sh</string>
+  </array>
+
+  <!-- Before gazette's 02:00 run. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>1</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-mirrors.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-mirrors.log</string>
+</dict>
+</plist>
