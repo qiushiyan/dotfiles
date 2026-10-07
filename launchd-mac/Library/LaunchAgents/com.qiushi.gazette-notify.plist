@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.gazette-notify</string>
+
+  <!-- A new gazette edition → a notification that opens it. Every 15
+       minutes and at load; after a sleep, launchd runs the missed interval
+       on wake. scripts/.local/bin/gazette-notify. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushi/.local/bin/gazette-notify</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushi/Library/Logs/gazette-notify.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushi/Library/Logs/gazette-notify.log</string>
+</dict>
+</plist>

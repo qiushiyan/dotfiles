@@ -73,6 +73,7 @@ brew "neovim"
 brew "openssh"
 brew "ripgrep"
 brew "rsync"
+brew "terminal-notifier"  # gazette-notify: a notification that opens the edition
 brew "sesh"
 brew "stow"
 brew "tldr"

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.gazette-listen</string>
+
+  <!-- Every minute: apply his actions from gazette.qiushiyan.dev (intake,
+       dig deeper, dismiss, export, brief) to the ledger, then perform owed
+       effects such as the research PR an export asks for. launchd never
+       starts a second copy while one runs. ~/dev/gazette/docs/technical-plan.md. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushiyan/dev/gazette/bin/gazette</string>
+    <string>listen</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>60</integer>
+
+  <key>WorkingDirectory</key>
+  <string>/tmp</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-listen.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-listen.log</string>
+</dict>
+</plist>

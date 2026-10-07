@@ -1,0 +1,33 @@
+#!/usr/bin/env zsh
+# gazette-notify — on the laptop: when gazette.qiushiyan.dev has published
+# a new edition since the last one shown, raise a macOS notification that
+# opens it (gazette spec decision 10: the laptop raises the notification,
+# on wake). launchd runs it every 15 minutes and at load; a wake runs the
+# missed interval. ~/dev/gazette (on the mini) publishes the editions.
+#
+# Usage: gazette-notify          check once
+#        gazette-notify --test   notify about the latest edition even if seen
+#
+# Needs GAZETTE_READER_KEY from ~/.secrets.shared (twin carries it).
+# Exit codes: 0 checked (or offline); 1 no reader key.
+emulate -L zsh
+set -u
+[[ -r ~/.secrets.shared ]] && source ~/.secrets.shared
+[[ -n ${GAZETTE_READER_KEY:-} ]] || { print -u2 "gazette-notify: GAZETTE_READER_KEY is not set"; exit 1 }
+export PATH=/opt/homebrew/bin:/usr/bin:/bin
+
+state=$HOME/.local/state/gazette-notify
+mkdir -p $state
+latest=$(curl -fsS -m 20 -H "Authorization: Bearer $GAZETTE_READER_KEY" \
+  "https://gazette.qiushiyan.dev/api/latest?producer=gazette" 2>/dev/null) || exit 0
+id=$(jq -r .id <<<$latest); title=$(jq -r .title <<<$latest); url=$(jq -r .url <<<$latest)
+[[ -n $id && $id != null ]] || exit 0
+if [[ ${1:-} != --test && -r $state/last && $(<$state/last) == $id ]]; then exit 0; fi
+
+if command -v terminal-notifier >/dev/null; then
+  terminal-notifier -title "Gazette" -message "$title" -open "$url" -group gazette -sound default >/dev/null
+else
+  osascript -e "display notification \"${title//\"/\\\"}\" with title \"Gazette\" sound name \"default\""
+fi
+print -r -- $id > $state/last
+print "$(date '+%F %T') notified $id"
