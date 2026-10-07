@@ -24,10 +24,12 @@ id=$(jq -r .id <<<$latest); title=$(jq -r .title <<<$latest); url=$(jq -r .url <
 [[ -n $id && $id != null ]] || exit 0
 if [[ ${1:-} != --test && -r $state/last && $(<$state/last) == $id ]]; then exit 0; fi
 
-if command -v terminal-notifier >/dev/null; then
-  terminal-notifier -title "Gazette" -message "$title" -open "$url" -group gazette -sound default >/dev/null
-else
-  osascript -e "display notification \"${title//\"/\\\"}\" with title \"Gazette\" sound name \"default\""
+# terminal-notifier opens the edition on click, once macOS allows its
+# notifications (System Settings › Notifications › terminal-notifier);
+# until then, a plain notification that names the address.
+if ! { command -v terminal-notifier >/dev/null &&
+       terminal-notifier -title "Gazette" -message "$title" -open "$url" -group gazette -sound default >/dev/null 2>&1 }; then
+  osascript -e "display notification \"${title//\"/\\\"} — gazette.qiushiyan.dev\" with title \"Gazette\" sound name \"default\"" || exit 0
 fi
 print -r -- $id > $state/last
 print "$(date '+%F %T') notified $id"
