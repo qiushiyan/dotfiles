@@ -228,11 +228,22 @@ since.
 
 ### Finding when and why
 
-- **When:** every transcript that was live at the time stops at the same
-  second (file modification time); an `envoy` job's `meta.json` records its
-  `terminationRequestedAt` to the millisecond; the snapshot's time bounds it
-  from below. zsh writes a history entry when a command starts, so
-  `~/.zsh_history` shows what was typed in that second.
+- **The watcher's record comes first.** The `com.qiushi.tmux-exit-watch`
+  agent, on both machines, holds every tmux server's pid with the kernel and
+  appends one line per exit to `~/.local/state/tmux-exit/exits.jsonl`: the
+  time to the millisecond, the socket, and `kind` — `clean` (exit 0: the last
+  session closed, `kill-server`, SIGTERM), `error-exit` (a non-zero code;
+  tmux's own `fatal` exits 1) or `signaled` (with the signal) — plus
+  `detail` `memory` when macOS killed it for memory. Any exit but a clean one
+  names a process table saved beside it at that moment, which shows what ran
+  beside the server, and for how long. It does not name a signal's sender.
+  `~/Library/Logs/tmux-exit-watch.log` shows which servers it is watching;
+  it picks up a restarted server by itself (`scripts/.local/bin/tmux-exit-watch`).
+- **When, from everything else:** every transcript that was live at the time
+  stops at the same second (file modification time); an `envoy` job's
+  `meta.json` records its `terminationRequestedAt` to the millisecond; the
+  snapshot's time bounds it from below. zsh writes a history entry when a
+  command starts, so `~/.zsh_history` shows what was typed in that second.
 - **The client's last line names the kind of exit.** `[server exited]` is a
   graceful shutdown: `kill-server`, or SIGTERM. `[server exited unexpectedly]`
   means the connection broke before that: SIGKILL, tmux's own `fatal` (an
@@ -244,7 +255,9 @@ since.
   No report narrows the cause without excluding a crash.
 - **tmux keeps no log** unless the server was started with `-v`, which writes
   `tmux-server-<pid>.log` into its working directory at megabytes every few
-  seconds, too much for a server left running all day.
+  seconds, too much for a server left running all day. It is the next step
+  only once the watcher reports an `error-exit`, since `fatal`'s reason
+  reaches nothing else.
 - **A suspected trigger is tested on its own server**, `tmux -L <name>` from a
   scratch directory with a config that does not load tpm: continuum on a
   second server autosaves over the real snapshots. Attach a client and
