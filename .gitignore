@@ -48,6 +48,7 @@ claude/.agents/*
 # machine renders its own from twin/.config/twin/codex/ (twin dotfiles apply).
 codex/.codex/*
 !codex/.codex/AGENTS.md
+!codex/.codex/keybindings.json
 !codex/.codex/prompts/
 !codex/.codex/skills/
 !codex/.codex/themes/
