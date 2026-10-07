@@ -76,6 +76,15 @@ Everything derives from that tree:
   a launch inside it adds `--effort <level>` for that session only, over
   `settings.json`'s default. Precedence and the `x-select` gap are in the
   comment above the table.
+- **Fast mode for one session**: `x --fast` (any launcher that starts a
+  session, `x-select` included) runs that session in fast mode, billed to
+  usage credits, and saves nothing. Every session starts with fast mode off
+  because the shared `settings.json` sets `fastModePerSessionOptIn`; without
+  it, `/fast` saves `fastMode` into that tracked file, which turns fast mode
+  on for every later session on every account and leaves a diff in this
+  repo. With it, a mid-session `/fast` stays in its session. How the flag
+  reaches Claude Code, and why it refuses beside `--settings`: the comment
+  above `_claude_fast_args` in `claude.zsh`.
 - **Which lane is a running session on, and how much is left in it?** Its
   tmux context chip leads with the account, then the model and the lane's
   5-hour and 7-day usage (`yan opus-5[1m]:high 5h:23 7d:41 ✳ 37%`); `x-acc`
