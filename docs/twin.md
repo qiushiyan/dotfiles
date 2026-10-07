@@ -107,20 +107,22 @@ twin sync --here           # only this machine
 ```
 
 ```text
-✔ mac   headroom  pulled     3f2a1c9 → 8b7d0e4
-✔ mac   headroom  installed  8b7d0e4
-✔ mini  headroom  pulled     3f2a1c9 → 8b7d0e4
-✔ mini  headroom  installed  8b7d0e4
+✔ mac   headroom  installed
+✔ mini  headroom  pulled     3 commits, +42 -7
+✔ mini  headroom  installed
 · current on mac and mini: gwt
+· current on mac: headroom
 attention: none
 ```
 
 `✔` is what the run changed; `✘` is what it would have done and did not,
 with the reason (a pull refused, a tool not built); a dim `·` line names
-what it checked and found current. Colour appears on a terminal only, and so
-do the steps drawn while the run goes: each one under way on either machine,
-with how long it has run, erased before the report prints. Both machines do
-their half at the same time, then the carried files are reconciled.
+what it checked and found current. A pull counts the commits that arrived,
+the number `twin status` gave as `behind`, and the lines they add and
+remove. Colour appears on a terminal only, and so do the steps drawn while
+the run goes: each one under way on either machine, with how long it has
+run, erased before the report prints. Both machines do their half at the
+same time, then the carried files are reconciled.
 
 It does the same on whichever machine it is run from, and only what is
 behind: a repository that is current is not pulled, and a tool whose checkout
@@ -142,6 +144,8 @@ both tool differs — gwt: mac built 8b7d0e4 (main), mini built 3f2a1c9 (release
         -> the checkouts are on different branches; put them on the same one, then sync
 ⠼ mini  sync  4m02s, and never a step of the mini's own beneath it
         -> the mini's twin is an older build, which does not report its steps; twin tools install twin there
+✔ mini  headroom  pulled  3f2a1c9 → 8b7d0e4
+        -> revisions where a count belongs: the mini's twin is an older build; twin tools install twin there
 ```
 
 The sections below are the same steps one at a time.
