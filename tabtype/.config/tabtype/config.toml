@@ -53,7 +53,7 @@ Now run consult with codex — I agree with the general direction; settle the hi
 [[snippets]]
 key = "consult-then-build"
 expand = '''
-/consult codex, one round — settle the design, then build without waiting for me. Put the technical unknowns and the questions I left unanswered on trial in the round, each with the default you would take. Stop only for what a sensible default cannot settle: a disagreement with the voice you could not resolve, a problem it replaced or found unsupported, or a new fork that would be expensive to undo. Otherwise take the converged position, implement end to end, committing at major milestones, and say in the final report which defaults you took. $0'''
+Agreeing with the general direction, now run a consult with opus, one round — settle the design, then build without waiting for me. Put the technical unknowns and the questions I left unanswered on trial in the round, each with the default you would take. Stop only for what a sensible default cannot settle: a disagreement with the voice you could not resolve, a problem it replaced or found unsupported, or a new fork that would be expensive to undo. Otherwise take the converged position, implement end to end, committing at major milestones, and say in the final report which defaults you took. $0'''
 
 [[snippets]]
 key = "spike-check"
