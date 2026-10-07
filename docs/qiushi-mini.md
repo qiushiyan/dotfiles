@@ -263,17 +263,8 @@ the most recently active session, including one the Screen Sharing Ghostty
 is also showing; `mini <name>` attaches or creates `<name>`. Bare
 `tmux attach` is not the same: it prefers an unattached session.
 
-When the mini's tmux server dies, continuum's last snapshot (saved every 15
-minutes) brings the sessions back:
-
-1. `tmux new-session -d -s tmp` starts a server; continuum restores the
-   snapshot about a second later.
-2. Wait until `tmux ls` lists the restored sessions, then
-   `tmux kill-session -t tmp`. Killed sooner, `tmp` is the last session and
-   the server exits before the restore runs.
-3. Panes return as shells in their folders; agents do not restart. Run
-   `claude --continue` (with your usual flags) in each pane to reopen that
-   folder's latest conversation, or `--resume` to pick one.
+When the mini's tmux server dies, `docs/recovery.md` § A dead tmux server
+brings the sessions and their Claude conversations back.
 
 Nothing is forwarded automatically. Copies travel only when you copy on
 purpose:

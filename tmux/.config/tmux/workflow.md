@@ -245,6 +245,8 @@ A vendored, flash.nvim-style tool in `scripts/easyjump/` (see its `DESIGN.md`) �
 
 Sessions, windows, panes, and layout auto-save every ~15 min and auto-restore when the tmux server starts — so a reboot doesn't lose your workspace. Manual control: **`prefix C-s`** to save now, **`prefix C-r`** to restore.
 
+When the server dies outright, `docs/recovery.md` § A dead tmux server restores it and resumes each pane's Claude session.
+
 Workspace save/restore is independent of scrollback and `cout` recordings.
 Clearing pane output leaves saved workspace layouts intact.
 

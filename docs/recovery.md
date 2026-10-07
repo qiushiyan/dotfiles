@@ -28,6 +28,10 @@ cost, and after a loss to know where each piece comes back from.
 - **Files an agent session wrote or edited:** as a last resort, agent session
   history. The tool calls carry the written content, and obelisk's index keeps
   it after the transcript file is gone; the obelisk skill queries it.
+- **The tmux workspace:** continuum's snapshot, saved every 15 minutes, holds
+  the windows, layout, each pane's folder and title; Claude's transcripts hold
+  the conversations. Nothing holds the running processes (§ A dead tmux
+  server).
 
 ## Credentials in 1Password
 
@@ -147,3 +151,104 @@ for d in $(snapshot --list); do tmutil deletelocalsnapshots "$d"; done          
 4. What no snapshot holds: rebuild with the tools above, pull credentials from
    the password manager, and search agent history for files a session wrote.
 5. Resume the reconciler once the carried files are whole on one machine.
+
+## A dead tmux server
+
+The terminal shows the last frame tmux drew, `[server exited unexpectedly]`
+spliced into a pane, and a bare shell prompt below it; `tmux ls` finds no
+server. Every program in every pane died with it: shells, Claude sessions, and
+what those sessions ran in the background, such as `envoy` jobs, which record
+`interrupted` with SIGTERM.
+
+The snapshot brings back windows, layout, folders and pane titles, and the
+transcripts bring back the conversations, but nothing restarts the agents.
+Their link is the pane title: Claude sets it to its session's title, resurrect
+saves it, and the transcript records the same title (an `ai-title` or
+`custom-title` line), so each pane maps to its own session. `claude --continue`
+does not: it opens a folder's newest conversation, which is the wrong one
+wherever panes share a folder or a background `claude -p` run wrote there
+since.
+
+1. **Copy the snapshots aside** before starting a server:
+   `cp -p ~/.local/share/tmux/resurrect/tmux_resurrect_*.txt <a scratch dir>`.
+   A server that restores wrong autosaves the wrong state over `last` within
+   15 minutes.
+2. **Map Claude panes to sessions** from the snapshot, before resumed sessions
+   start writing transcripts again. The block prints
+   `session:window.pane  session-id  how  title`; `how` is `title`, or
+   `newest-in-folder` for an untitled session, which is the guess to check.
+   A pane whose transcript stopped before the server died (compare its
+   modification time with the others) had already exited and stays a shell.
+
+   ```bash
+   python3 -I - "$HOME/.local/share/tmux/resurrect/last" <<'PY'
+   import glob, json, os, re, sys
+   save = sys.argv[1]
+   since = os.path.getmtime(save) - 86400
+   projects = os.path.expanduser("~/.claude/projects")
+   for row in open(save):
+       f = row.rstrip("\n").split("\t")
+       if f[0] != "pane" or not f[10].startswith(":claude"):
+           continue
+       title, cwd = f[6].split(" ", 1)[-1], f[7].lstrip(":")
+       found = []
+       for t in glob.glob(f"{projects}/*/*.jsonl"):
+           if os.path.getmtime(t) < since:
+               continue
+           for line in open(t, errors="replace"):
+               if '-title"' in line:
+                   d = json.loads(line)
+                   if title in (d.get("aiTitle"), d.get("customTitle")) and d.get("cwd", cwd) == cwd:
+                       found.append((os.path.getmtime(t), d["sessionId"], "title"))
+                       break
+       if not found:
+           for t in glob.glob(f"{projects}/{re.sub(r'[^A-Za-z0-9]', '-', cwd)}/*.jsonl"):
+               found.append((os.path.getmtime(t), os.path.basename(t)[:-6], "newest-in-folder"))
+       m, sid, how = max(found) if found else (0, "?", "none")
+       print(f"{f[1]}:{f[2]}.{f[5]}", sid, how, title, sep="\t")
+   PY
+   ```
+
+3. **Start a server.** At the terminal, `tmux` starts one attached, and
+   continuum restores the snapshot about a second later. Detached,
+   `tmux new-session -d` does the same; wait until `tmux ls` lists the
+   restored sessions. The restore removes the unnamed starter session `0`
+   itself; a starter given a name stays, and killing it before the restore
+   lands leaves no session, so the server exits first. An agent starting the
+   server passes only the terminal's environment (`env -i` with `HOME`,
+   `USER`, `SHELL`, `TERM`, `TERMINFO`, `LANG`, `SSH_AUTH_SOCK`, `TMPDIR` and
+   the `GHOSTTY_*` variables): every pane inherits the environment of the
+   process that started the server, and its own `CLAUDE_*` variables would
+   reach every Claude launched there.
+4. **Resume each session in its pane**, through `x` so the folder's effort
+   and the permission flags come back with it:
+   `tmux send-keys -t work:4.2 "x --resume <session-id>" Enter`.
+5. **Re-dispatch background work** the sessions owned: `envoy pending` lists
+   the interrupted jobs.
+
+### Finding when and why
+
+- **When:** every transcript that was live at the time stops at the same
+  second (file modification time); an `envoy` job's `meta.json` records its
+  `terminationRequestedAt` to the millisecond; the snapshot's time bounds it
+  from below. zsh writes a history entry when a command starts, so
+  `~/.zsh_history` shows what was typed in that second.
+- **The client's last line names the kind of exit.** `[server exited]` is a
+  graceful shutdown: `kill-server`, or SIGTERM. `[server exited unexpectedly]`
+  means the connection broke before that: SIGKILL, tmux's own `fatal` (an
+  `exit(1)` whose reason goes only to a `-v` log), a crash, or an IPC failure.
+  SIGHUP does not stop the server.
+- **A crash or a memory kill** usually leaves a report: a `tmux-*.ips` in
+  `~/Library/Logs/DiagnosticReports`, or a `JetsamEvent-*.ips` in
+  `/Library/Logs/DiagnosticReports` whose killed process carries a `reason`.
+  No report narrows the cause without excluding a crash.
+- **tmux keeps no log** unless the server was started with `-v`, which writes
+  `tmux-server-<pid>.log` into its working directory at megabytes every few
+  seconds, too much for a server left running all day.
+- **A suspected trigger is tested on its own server**, `tmux -L <name>` from a
+  scratch directory with a config that does not load tpm: continuum on a
+  second server autosaves over the real snapshots. Attach a client and
+  confirm it with `tmux -L <name> list-clients`, since a detached server never
+  draws to a terminal, and type the command into an interactive shell there:
+  every command start runs zsh's `preexec` hooks, and cout's calls
+  `tmux set-option` before the command itself runs (`zsh/.config/zsh/cout.zsh`).

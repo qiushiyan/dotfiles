@@ -106,8 +106,8 @@ Additional routes beyond the feature docs above:
   one settings line loads them on every account: `docs/claude-mods.md`.
 - AWS SSO sessions and the `aws-login` wrapper: `docs/aws-sso.md`.
 - What protects uncommitted and gitignored state, local snapshots, recovery
-  after a loss, and reading or editing the VPN credentials in 1Password:
-  `docs/recovery.md`.
+  after a loss, bringing back a dead tmux server and its Claude sessions, and
+  reading or editing the VPN credentials in 1Password: `docs/recovery.md`.
 - Working across the laptop and the office mini: what moves by git, what
   `twin` carries, what each machine builds for itself, and what to run when a
   change made on one is needed on the other: `docs/twin.md`. Read it before
