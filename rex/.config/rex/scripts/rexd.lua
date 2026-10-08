@@ -36,8 +36,7 @@ local function name_for(session_id, w)
   if name ~= "" and not name:match(DEFAULT) then return name end
   local block = w.focused_block_id
   for _, b in ipairs(block and kit.terminals(session_id) or {}) do
-    if b.block_id == block and b.label and not GENERIC[b.label] and not b.label:find("^steps·")
-      and not b.label:find("^[✓·!✗] ") then -- a header flash (rexkit), not a name
+    if b.block_id == block and b.label and not GENERIC[b.label] and not b.label:find("^steps·") then
       return b.label
     end
   end

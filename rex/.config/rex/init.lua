@@ -55,7 +55,6 @@ local define = rex.action
 rex.action = function(spec)
   local run = spec.run
   spec.run = function(ctx, args)
-    kit.server = ctx and ctx.server
     if ctx and ctx.origin == "key" then
       if not ctx.server then kit.note_here(ctx.session_id, ctx.client_id) end
       note_key(ctx)
