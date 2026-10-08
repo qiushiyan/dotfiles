@@ -255,9 +255,11 @@ since.
   No report narrows the cause without excluding a crash.
 - **tmux keeps no log** unless the server was started with `-v`, which writes
   `tmux-server-<pid>.log` into its working directory at megabytes every few
-  seconds, too much for a server left running all day. It is the next step
-  only once the watcher reports an `error-exit`, since `fatal`'s reason
-  reaches nothing else.
+  seconds while a client is attached. It is the next step once the watcher
+  reports an `error-exit`, since `fatal`'s reason reaches nothing else: start
+  the replacement server with `tmux -v` from
+  `~/.local/state/tmux-exit/server-log`, so the log sits beside the records,
+  and the next fatal's last lines name its cause.
 - **A suspected trigger is tested on its own server**, `tmux -L <name>` from a
   scratch directory with a config that does not load tpm: continuum on a
   second server autosaves over the real snapshots. Attach a client and
