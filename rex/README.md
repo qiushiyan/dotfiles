@@ -239,6 +239,10 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
   wanted here. `rex-toast` draws one instead, in a small floating layer that
   takes no focus, sized in cells from the block's grid and rect, painting its
   own background, redrawing on resize, and closing when its process exits.
+  The app sizes a layer's terminal to the layer less its padding, about a row
+  and two columns: a 3-row layer is a 2-row terminal. A layer asks for that
+  much more, and what it draws must never outgrow the rows it got, or the
+  terminal scrolls its first line away.
 - A detached block (`session.new_block`: owned by a session, placed in no
   layout) is a background process that shows nowhere: `rexd` hosts its
   watcher in one. It lives as long as its session; a Rex shell starting

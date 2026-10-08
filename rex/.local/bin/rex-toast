@@ -29,18 +29,24 @@ draw() {
     local size rows cols
     size=$(stty size 2>/dev/null) || size="3 40"
     rows=${size% *} cols=${size#* }
-    local inner=$((cols - 4))
-    [ "${#msg}" -gt "$inner" ] && msg="${msg:0:$((inner - 1))}…"
+    local inner=$((cols - 4)) text=$msg
+    # Too long: keep the end, the telling part of a path.
+    [ "${#text}" -gt "$inner" ] && text="…${text:$(( ${#text} - inner + 1 ))}"
     local head=" $icon $title "
     # Palette slot 0 behind everything: the app draws a layer see-through.
-    local bg=$'\e[40m' border=$'\e[3'"$color"'m' text=$'\e[39m' bold=$'\e[1m' reset=$'\e[22m'
+    local bg=$'\e[40m' border=$'\e[3'"$color"'m' fg=$'\e[39m' bold=$'\e[1m' reset=$'\e[22m'
     local rule top bottom
     rule=$(printf '%*s' "$((cols - 2))" '' | sed 's/ /─/g')
     top="╭─${bold}${head}${reset}${border}${rule:$(( ${#head} + 1 ))}╮"
     bottom="╰${rule}╯"
     printf '\e[?25l%s\e[H\e[2J' "$bg"
+    # Fewer than the box's 3 rows: one line, never a scroll.
+    if [ "$rows" -lt 3 ]; then
+      printf '%s%s%s%s %s' "$border" "$bold" "$icon $title" "$reset$fg" "$text"
+      return
+    fi
     printf '%s%s\n' "$border" "$top"
-    printf '%s│%s %-*s %s│\n' "$border" "$text" "$inner" "$msg" "$border"
+    printf '%s│%s %-*s %s│\n' "$border" "$fg" "$inner" "$text" "$border"
     local i
     for ((i = 3; i < rows; i++)); do printf '%s│%*s│\n' "$border" "$((cols - 2))" ''; done
     printf '%s%s' "$border" "$bottom"

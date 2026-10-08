@@ -257,8 +257,10 @@ function M.toast(session_id, block_id, level, title, msg, seconds)
   for _, b in ipairs(M.terminals(session_id)) do
     if b.label == "toast" then M.try("block.close", { session_id = session_id, block_id = b.block_id }) end
   end
-  local width = math.min(math.max(#msg, #title + 6) + 6, math.floor(cols * 0.6))
-  local w, h = width / cols, 3 / rows
+  -- The box is 3 rows by the message plus its frame. The app pads a layer by
+  -- about a row and two columns, so the layer asks for that much more.
+  local width = math.min(math.max(#msg, #title + 6) + 4, math.floor(cols * 0.45))
+  local w, h = (width + 2) / cols, 4 / rows
   local r = M.try("session.new_layer", {
     session_id = session_id, window_id = window_id,
     bounds = { x = math.max(0, 1 - w - 2 / cols), y = math.min(1 / rows, 1 - h), w = w, h = h },
