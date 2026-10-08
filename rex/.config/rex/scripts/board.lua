@@ -9,7 +9,12 @@ package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
 local kit = require("rexkit")
 
 local ESC = string.char(27)
-local function sgr(code, s) return ESC .. "[" .. code .. "m" .. s .. ESC .. "[0m" end
+-- Resets bold and colour only, so a popup's background survives.
+local function sgr(code, s) return ESC .. "[" .. code .. "m" .. s .. ESC .. "[22;39m" end
+
+-- The app draws a floating layer's default background see-through, so the
+-- popup paints its own: palette slot 0, the theme's darkest.
+local BG = rex.args.popup and (ESC .. "[40m") or ""
 
 -- ANSI slots, so the board follows whatever theme the terminal has.
 local STYLE = {
@@ -78,7 +83,7 @@ local function render()
   end
 
   local width = columns()
-  local out = { ESC .. "[H" .. ESC .. "[2J" }
+  local out = { BG .. ESC .. "[H" .. ESC .. "[2J" }
   local head = sgr("1", " AGENTS ") .. "  "
     .. (need > 0 and sgr("1;31", need .. " need you") or sgr("90", "nobody waiting"))
     .. sgr("90", "  ·  " .. busy .. " working  ·  " .. os.date("%H:%M:%S"))
@@ -101,7 +106,8 @@ local function render()
     local text = steps_about(row)
     if text then out[#out + 1] = "    " .. sgr("90", fit(text, width - 6)) end
   end
-  io.write(table.concat(out, "\n"), "\n")
+  -- Erase-in-line fills each line's rest with the background (bce).
+  io.write(table.concat(out, ESC .. "[K\n"), ESC .. "[K\n")
   io.stdout:flush()
 end
 

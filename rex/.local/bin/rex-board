@@ -2,8 +2,10 @@
 # rex-board: the live agents board (~/.config/rex/scripts/board.lua).
 #
 #   rex-board           run it in this terminal until Ctrl-C
-#   rex-board --popup   any key closes it; the agents_board action
-#                       (cmd+shift+a) opens it this way in a floating layer
+#   rex-board --popup   the agents_board action (cmd+shift+a) runs it this
+#                       way in a floating layer, on an opaque background; a
+#                       key it receives closes it, though the app does not yet
+#                       send keystrokes to a layer (cmd+shift+a again does)
 set -u
 REX="$HOME/.local/bin/rex"
 board="$HOME/.config/rex/scripts/board.lua"
@@ -15,7 +17,7 @@ board="$HOME/.config/rex/scripts/board.lua"
 # shown only if the board dies.
 err=$(mktemp -t rex-board)
 trap 'rm -f "$err"' EXIT
-"$REX" do "$board" --all 2>"$err" &
+"$REX" do "$board" --all popup=1 2>"$err" &
 pid=$!
 while kill -0 "$pid" 2>/dev/null; do
   if read -rsn1 -t 1; then kill "$pid" 2>/dev/null; exit 0; fi

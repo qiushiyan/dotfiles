@@ -55,20 +55,29 @@ rex.action{
   end,
 }
 
--- The agents board in a floating layer over the current window. Any key
--- closes it.
+-- The agents board in a floating layer over the current window; ⌘⇧A again
+-- closes it. The app does not send keystrokes to a floating layer yet, so the
+-- key that opened the board is the one that closes it.
 rex.action{
   name = "agents_board",
   title = "Agents Board",
   run = function(ctx)
+    log_ctx("agents_board", ctx)
     local sid = current_session(ctx)
     if not sid then return { opened = false, reason = "no session" } end
-    kit.attach(sid)
+    local closed = 0
+    for _, b in ipairs(kit.terminals(sid)) do
+      if b.label == "agents-popup" then
+        kit.call("block.close", { session_id = sid, block_id = b.block_id })
+        closed = closed + 1
+      end
+    end
+    if closed > 0 then return { closed = closed } end
     local r = kit.call("session.new_layer", {
       session_id = sid,
       bounds = { x = 0.08, y = 0.08, w = 0.84, h = 0.6 },
       layout = { block = {
-        flavor = "com.superlogical.terminal.shell", label = "agents",
+        flavor = "com.superlogical.terminal.shell", label = "agents-popup",
         options = { command = { HOME .. "/.local/bin/rex-board", "--popup" } },
       } },
       focus = true,

@@ -46,7 +46,7 @@ removes it. With your own agents:
    `idle → working → done`, `blocked` on a permission prompt, `clear` on exit.
    A Rex terminal does not inherit the account choice: launch with the `x*`
    launchers, or set `CLAUDE_CONFIG_DIR`.
-3. ⌘⇧A opens the board over the current window; any key closes it.
+3. ⌘⇧A opens the board over the current window; ⌘⇧A again closes it.
    `rex-board` runs it in a pane.
 4. ⌘⇧J jumps to the agent that has waited longest in the most urgent state.
 5. ⌘⇧S in a Claude's terminal opens its steps sidecar, ⌘⇧S again closes it;
@@ -83,8 +83,11 @@ outside the app.
   hears, not what it may call.
 - Block methods: `rex.call("com.superlogical.terminal.<method>",
   {session_id=, block_id=, args={}})`.
-- `rex.action{ name=, title=, run=function(ctx, args) … end }`; `ctx.origin`
-  is `api` from `rex do`. Try one before reloading with
+- `rex.action{ name=, title=, run=function(ctx, args) … end }`. A key press
+  gives `ctx = {origin = "key", session_id, block_id, client_id}`: the
+  session and block it was pressed in. From `rex do`, `ctx.origin` is `api`
+  and nothing else, so the actions fall back to the first session. Each
+  action appends its ctx to `~/.local/state/rex-lab/ctx.log`. Try one before reloading with
   `rex do ~/.config/rex/init.lua --action NAME k=v`.
 - `rex.bind("cmd+shift+j", "action")` takes one chord (no tmux-style
   sequences); a mode's keys are bound as `"mode/key"`, and only to named
@@ -182,16 +185,16 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
 - Client actions from the CLI (`rex -C … do client.*`, `session.select`) are
   refused until Remote Control is on; server methods are not.
 - Stow will not stow an absolute symlink, hence the `rex` wrapper script.
+- The app does not send keystrokes to a floating layer yet (keys sent through
+  the server, `rex send`, do arrive), and draws a layer's default background
+  see-through. A popup paints its own background and closes from the key that
+  opened it. Closing a layer's only block removes the layer.
 - Rex's Lua crashes the whole `rex do` with a Go nil-pointer error on
   `for l in (("a"):gsub("a","b") .. ""):gmatch("b") do end`; through a local
   it works. Worth reporting.
 
 ## Open questions
 
-- What `ctx` an action gets from a key press (session? block? client?).
-  Every action appends its ctx to `~/.local/state/rex-lab/ctx.log`; until
-  that is known, the actions fall back to the first session and its focused
-  block, which can be the wrong one.
 - What else the app does with a status (notifications? the sidebar?).
 - Do sessions survive quitting the app (the server is `run-mode bundled`)?
   That decides whether resurrect-style persistence is needed at all.
