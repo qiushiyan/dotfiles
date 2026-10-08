@@ -113,11 +113,11 @@ function M.remotes()
   local out = {}
   if not rex.servers then return out end
   local me = M.try("server.status")
-  me = me and me.instance
+  me = me and me.instance_id
   for _, label in ipairs(rex.servers() or {}) do
     local ok, K = pcall(M.remote, label)
     local status = ok and K.try("server.status")
-    if status and status.instance ~= me then out[#out + 1] = K end
+    if status and status.instance_id and status.instance_id ~= me then out[#out + 1] = K end
   end
   return out
 end
