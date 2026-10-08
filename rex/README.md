@@ -293,8 +293,9 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
 - Floating layers stopped being drawn partway through the day: the app
   claims each one's size (so it lays them out) but paints nothing, across a
   full quit and relaunch and both themes, though the board popup and a toast
-  showed earlier. Settings changed meanwhile include pane headers off; under
-  test.
+  showed earlier. Turning pane headers back on did not bring them back.
+  Accepted as a gap for now: toasts and the board popup (⌘⇧A) are invisible
+  until the app draws layers again; `rex-board` in a pane still works.
 
 ## Next experiments
 
