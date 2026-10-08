@@ -487,6 +487,15 @@ an older binary files a brief where the new one reads another slug.
   subcommand (items, replies, replay, tracing) reaches the ledger and the
   run records over ssh.
   `~/dev/slackkit/docs/digest/operations.md` § Where it runs has the rest.
+- **gazette** — the morning edition at gazette.qiushiyan.dev (`~/dev/gazette`,
+  run from its clone here). `launchd-mini/` holds its agents:
+  `com.qiushi.gazette-mirrors` refreshes the read-only codebase mirrors at
+  01:30, `com.qiushi.gazette-night` makes the nightly run at 02:00, and
+  `com.qiushi.gazette-listen` applies what he did on the site every minute.
+  On the laptop, `com.qiushi.gazette-notify` (`scripts/.local/bin/gazette-notify`)
+  raises a notification for each new edition, with the reader key `twin`
+  carries in `~/.secrets.shared`. `~/dev/gazette/docs/operations.md` has the
+  rest.
 - **The hourly `twin tick`, the daily snapshot and the tmux exit watcher** —
   this repository's `launchd-mini/` package (`docs/twin.md` § The hourly
   tick; `docs/recovery.md` § Local snapshots and § A dead tmux server). The

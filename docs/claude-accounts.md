@@ -170,6 +170,12 @@ Everything derives from that tree:
 
 ## Invariants
 
+- Workspace trust is recorded per account, so every launcher (`x*`, `cx*`)
+  runs `workspace-trust` first: `~/dev`, `~/dotfiles`, `~/wiki` and every
+  repository under them are trusted in each account and in Codex before the
+  session starts, a new clone or account included. It writes only what is
+  missing, and a launch never waits on its outcome; trust given by hand
+  elsewhere lasts until `workspace-trust --prune` (`scripts/.local/bin/workspace-trust`).
 - Account dirs are runtime state — never in this repo. The symlinks inside
   them point *into* the repo.
 - The primary stays in `~/.claude`. Relocating it would orphan its history

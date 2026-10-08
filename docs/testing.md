@@ -22,6 +22,7 @@ zsh  zsh/.config/zsh/tests/block-dangerous-git.test.zsh          # runs whole
 zsh  zsh/.config/zsh/tests/rm-guard.test.zsh                     # runs whole
 zsh  zsh/.config/zsh/tests/account-launchers.test.zsh            # runs whole
 python3 scripts/.local/share/dotfiles/tests/test_skill_sync.py # requires uv
+python3 scripts/.local/share/dotfiles/tests/test_workspace_trust.py [W1 W4 …]  # requires Python 3.11+
 bash scripts/.local/share/dotfiles/tests/test-toclip.sh         [K1 K5 …]
 bash scripts/.local/share/dotfiles/tests/test-aws-login.sh    [A1 A4 …]
 bash scripts/.local/share/dotfiles/tests/test-snapshot.sh     [S1 S4 …]
@@ -54,6 +55,7 @@ Each suite owns one boundary:
 | rm guard | a recursive rm of a protected path is refused in every spelling (trailing slash, `..`, symlink, literal `~`, /var→/private/var) and every other call passes through unchanged; probes see only a logging stub `rm` |
 | account launchers | which x-*/cx-* names exist and which account each hands headroom (unique local part only, never the primary's or a utility's name, ambiguity drops the alias, `.lock` skipped); stub headroom, throwaway `$HOME` |
 | skill sync | invocation overrides, refreshed cloud exclusions, runtime metadata recovery, metadata preservation, byte-exact document copies, validation before writes, and symlink destinations; every case runs a copied script with a temporary home, manifests, and sentinel checkout, so scope regressions stay in the sandbox |
+| workspace trust | the roots and every repository under them are trusted in each Claude Code account and in Codex, a settled state is never rewritten, `--prune` removes only what its rule names, and a file it cannot handle is left byte for byte; a fresh temporary `HOME` per case, and W9 asserts the real Codex config is unchanged and no real Claude Code file names a sandbox path |
 | toclip | which clipboard a copy reaches: pbcopy at the screen, the ssh client (not tmux's activity pick) inside tmux, the buffer kept for oversize payloads; browser-clip follows the same routing for a URL, whatever ssh variables the pane inherited; private tmux socket, real clients on ptys, stub pbcopy and open, and K8 asserts the real clipboard is untouched |
 | aws-login | sign out, sign in, verify, then stamp; the device-code flow only on the mini marker; `--status` from the stamp; a stub `aws` on PATH records the calls, a temporary `HOME` holds the stamp, and A8 asserts the real state directory is untouched |
 | snapshot | a plain run deletes the previous plain run's snapshot only after the new one exists; `--daily` prunes by age and stands down once Time Machine has a destination; a stub `tmutil` on PATH keeps the snapshot dates in a sandbox file, a temporary `HOME` holds the state, and S7 asserts the real state directory is untouched |
