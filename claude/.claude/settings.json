@@ -228,5 +228,6 @@
   "editorMode": "vim",
   "verbose": true,
   "autoCompactEnabled": true,
+  "idleCompaction": false,
   "agentPushNotifEnabled": true
 }
