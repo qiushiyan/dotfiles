@@ -283,10 +283,28 @@ rex.action{
   end,
 }
 
+-- Moving to another tab of the session a key was pressed in is the app's
+-- own client.tab.next / previous, repeated: they walk the sidebar, where a
+-- session's tabs sit together, so the steps from this tab to tab N never
+-- leave the session. They work on any host's session; session.select from
+-- an action does not on another host's (show), and client.tab.goto counts
+-- every session's tabs together. The tab the key was pressed in is the one
+-- holding ctx's block, else the session's active tab.
+local function tab_index(ctx, view)
+  local here = ctx and ctx.block_id and kit.window_of(view, ctx.block_id)
+  local id = here and here.window_id or view.active_window_id
+  for i, w in ipairs(view.windows or {}) do
+    if w.window_id == id then return i end
+  end
+end
+
+local function step_tabs(from, to)
+  local action = to > from and "client.tab.next" or "client.tab.previous"
+  for _ = 1, math.abs(to - from) do rex.client.queue(action, {}) end
+end
+
 -- prefix 1–9: tab N of the session the key was pressed in, as tmux counts
--- windows and as rexd numbers the tabs. The app's client.tab.goto counts
--- every session's tabs in the sidebar together. The server activates the
--- window, and the app is asked to show it.
+-- windows and as rexd numbers the tabs.
 rex.action{
   name = "window_goto",
   title = "Go to Tab in This Session",
@@ -296,7 +314,12 @@ rex.action{
     local view = sid and index and kit.try("session.view", { session_id = sid })
     local w = view and view.windows and view.windows[index]
     if not w then return { moved = false, reason = "no tab " .. tostring(index) } end
-    show(ctx, sid, w.window_id)
+    local at = tab_index(ctx, view)
+    if ctx and ctx.origin == "key" and at then
+      step_tabs(at, index)
+    else
+      show(ctx, sid, w.window_id)
+    end
     return { moved = w.label }
   end,
 }
@@ -352,12 +375,16 @@ rex.action{
     local step = tonumber(args and args.step) or 1
     -- session.focus_next_window stops at the last tab; tmux wraps.
     local view = kit.call("session.view", { session_id = sid })
-    local windows, at = view.windows or {}, 1
+    local windows = view.windows or {}
     if #windows == 0 then return { moved = false } end
-    for i, w in ipairs(windows) do if w.window_id == view.active_window_id then at = i end end
-    local to = windows[(at - 1 + step) % #windows + 1].window_id
-    show(ctx, sid, to)
-    return { moved = to }
+    local at = tab_index(ctx, view) or 1
+    local to = (at - 1 + step) % #windows + 1
+    if ctx and ctx.origin == "key" then
+      step_tabs(at, to)
+    else
+      show(ctx, sid, windows[to].window_id)
+    end
+    return { moved = windows[to].label }
   end,
 }
 
