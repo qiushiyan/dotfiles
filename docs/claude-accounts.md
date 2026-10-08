@@ -190,8 +190,8 @@ Everything derives from that tree:
   headroom is — and launches whatever it returns.
 - Everything under the trust roots is trusted before anyone has read it: a
   clone there runs the hooks its own settings declare from its first launch,
-  unasked, and the launchers bypass permissions. Code that has not earned
-  that is cloned outside the roots.
+  unasked, and the `x*` launchers bypass permissions besides. Code that has
+  not earned that is cloned outside the roots.
 - The primary stays in `~/.claude`. Relocating it would orphan its history
   and its default-named Keychain item for no benefit.
 - `~/.claude/projects` is a real directory — never itself a link — and every

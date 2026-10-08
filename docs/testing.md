@@ -100,8 +100,8 @@ machine; one whose sandbox lacks the config link runs with no plugins at all,
 and the cases that depend on them pass over nothing. C34 and T12 hold both
 down. Likewise headroom reads and writes the account dirs and the session
 store under `$HOME`, and the launchers run `workspace-trust`, which rewrites
-every account's trust entries there, so every case in the Claude launch and account-launcher
-suites exports a throwaway `HOME` before running anything — ad-hoc
+every account's trust entries there, so every case in the Claude launch and
+account-launcher suites exports a throwaway `HOME` before running anything — ad-hoc
 verification that skips the override edits the user's real accounts and
 session state. Global patterns like `pkill` need the same care.
 
