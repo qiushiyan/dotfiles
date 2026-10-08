@@ -74,7 +74,8 @@ mode does not bind does nothing. `rex keymap` lists the whole map.
 | `\|` `\` / `-` | split right / down | app |
 | `h j k l` / `H J K L` | focus / resize | app |
 | `z` `X` `space` `b` | zoom, close pane, balance, pane to its own tab | app |
-| `c` `n` `p` `x` `m` `1`–`9` | new, next, previous, close, rename tab; go to tab | app |
+| `c` `n` `p` `x` `m` | new, next, previous, close, rename tab | app |
+| `1`–`9` | tab N of this session, the number its label shows | `window_goto` |
 | `T` `(` `)` | pick a session; previous / next session | app |
 | `y` / `Y` | copy the file nvim has open (absolute / relative), else the pane's directory | `copy_path` |
 | `g` | open the pane's repo on GitHub (gopen) | `gopen` |
@@ -83,8 +84,10 @@ mode does not bind does nothing. `rex keymap` lists the whole map.
 | `t` `r` `/` | theme picker, reload config, find | app |
 
 Tabs are numbered: `rexd` labels every window `<position> <name>` and keeps
-the numbers right as tabs open, close and move, so `prefix 1`–`9` goes where
-the vertical list says. A name is set once and kept, as tmux's were: the one
+the numbers right as tabs open, close and move, and `prefix 1`–`9` goes to
+the tab of this session with that number. (The app's own `client.tab.goto`
+counts the tabs of every session in the sidebar together, so it lands one
+session's worth off.) A name is set once and kept, as tmux's were: the one
 you give (`prefix m`), else the pane's label when it says something (`api`,
 `claude`), else the directory the pane started in. `y`, `g` and a new
 worktree confirm with a toast at the top right.

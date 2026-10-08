@@ -206,6 +206,25 @@ rex.action{
   end,
 }
 
+-- prefix 1–9: tab N of the session the key was pressed in, as tmux counts
+-- windows and as rexd numbers the tabs. The app's client.tab.goto counts
+-- every session's tabs in the sidebar together. The server activates the
+-- window, and the app is asked to show it.
+rex.action{
+  name = "window_goto",
+  title = "Go to Tab in This Session",
+  run = function(ctx, args)
+    local sid = (args and args.session_id) or current_session(ctx)
+    local index = tonumber(args and args.index)
+    local view = sid and index and kit.try("session.view", { session_id = sid })
+    local w = view and view.windows and view.windows[index]
+    if not w then return { moved = false, reason = "no tab " .. tostring(index) } end
+    kit.call("session.focus_window", { session_id = sid, window_id = w.window_id })
+    rex.client.queue("session.select", { session_id = sid, window_id = w.window_id })
+    return { moved = w.label }
+  end,
+}
+
 -- The tmux prefix, as a Rex mode: ctrl+a enters it for one key, as tmux's
 -- prefix does, and Escape leaves it. Exclusive, so a key it does not bind
 -- does nothing rather than reach the shell. Most keys are the app's own
@@ -232,7 +251,7 @@ local prefix = {
   { "shift+s", "steps_sidecar" }, { "shift+a", "agents_board" }, { "shift+j", "agents_next" },
   { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
 }
-for i = 1, 9 do prefix[#prefix + 1] = { tostring(i), "client.tab.goto", { index = i } } end
+for i = 1, 9 do prefix[#prefix + 1] = { tostring(i), "window_goto", { index = i } } end
 for _, b in ipairs(prefix) do rex.bind("prefix/" .. b[1], b[2], b[3]) end
 
 rex.bind("cmd+shift+j", "agents_next")
