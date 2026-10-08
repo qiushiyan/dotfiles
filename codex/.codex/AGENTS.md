@@ -37,3 +37,19 @@ reveals, since the path exists only once it runs. Skip it when every path
 involved is inside a scratchpad or temp directory, or was created by this
 session. If `snapshot` fails or is missing, tell the user before going ahead.
 Restoring needs sudo; `snapshot --help` has the mount command to hand the user.
+
+In the planlab repository (`~/dev/planlab/main` and its worktrees under
+`~/dev/.worktrees/main/`), my AWS CLI is signed in to PlanLab's production
+account (586794487474, eu-central-1). When a question turns on what production
+holds or did, query it yourself and answer from what comes back, rather than
+asking me or inferring from code. Reads need no go-ahead; anything that changes
+production still does.
+
+- `planlab-prod`: the default. Reads across the account, plus host sessions,
+  builds, Bedrock and the app's secrets.
+- `planlab-prod-readonly`: EC2, CloudWatch and S3 reads only.
+- `planlab-prod-breakglass`: administrator. Only when I say so, never to get
+  past a refusal.
+
+If a call fails because the sign-in expired, stop and tell me; I'll sign in
+again and you continue.
