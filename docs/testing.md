@@ -15,6 +15,7 @@ zsh  zsh/.config/zsh/tests/startup-options.test.zsh              # runs whole
 zsh  zsh/.config/zsh/tests/portability.test.zsh                 # requires fzf, zoxide, oh-my-posh
 zsh  zsh/.config/zsh/tests/theme-sync.test.zsh                   # runs whole
 zsh  zsh/.config/zsh/tests/gwt.test.zsh                         # requires gwt on PATH
+zsh  zsh/.config/zsh/tests/brief-completion.test.zsh            # runs whole
 zsh  zsh/.config/zsh/tests/git-wrapper.test.zsh                 # runs whole
 zsh  zsh/.config/zsh/tests/cwd-guard.test.zsh                    # runs whole
 zsh  zsh/.config/zsh/tests/stow-reach.test.zsh                   # runs whole
@@ -48,6 +49,7 @@ Each suite owns one boundary:
 | portability | the package starts silent on a bare `$HOME` from an empty environment, loads every module, and loads a host file only from `~/.config/machine`; interactive shells keep `git.zsh`'s `git()` and one fpath whatever they inherit; interactive cases run on a pty |
 | theme sync | startup + precmd switching against a throwaway `$HOME`; every theme-set name applies without error |
 | gwt shell | the subcommand list (checked against `gwt --help`), completion, parent-shell entry and `--cd` refusals, and configured placement in a temporary home with a stub `toclip`; caller HEAD and seeding are tested in `~/dev/gwt` |
+| brief completion | what Tab does with `brief resolve <word>`'s answer: a gapped word completes, matches the word does not prefix keep it on the first Tab and cycle on the second, a common prefix still extends, one binary call per Tab, an empty word asks bare; an interactive zsh on a pty with oh-my-zsh's completion styles, a throwaway `HOME`, and a logging stub `brief`, so no case reads a real corpus. Which slugs a word reaches is tested in `~/dev/brief` |
 | git wrapper | the branch guard fires on a stale base and follows `gitguard on/off`; under the working tree's `git/.gitconfig`, planlab pushes (clone and worktree) get `repo.pushArgs` and skip the pre-push hook, others run it; local repositories under a temporary home, no user git config, and a check that the live guard marker is untouched |
 | cwd guard | deleted-directory recovery without touching the caller |
 | Stow reach | root-memory and package-ignore invariants from the working tree, over the packages `make -s list` names; the list leaves out non-package directories and names only the launchd package of the machine `~/.config/machine` names, and `scripts/` keeps its entry points out of `HOME`, through `make list` and a `stow -n` dry run in scratch directories and a scratch `HOME` |
