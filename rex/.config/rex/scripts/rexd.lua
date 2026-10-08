@@ -10,13 +10,16 @@
 -- give a tab (prefix m), else its pane's label when it has a telling one
 -- (api, claude), else the directory its pane started in.
 --
--- Visits: each tab the app shows, however it got there (a key, a click, the
--- sidebar), is appended to STATE/visits as "session window", newest last;
--- prefix Tab and shift+Tab (window_last) read it.
+-- Where you are: the app does not say which session it shows, so the lab
+-- keeps its own record (kit.here): init.lua's actions note the session of
+-- each key they take, and this watcher the session whose active tab changed.
 --
--- Out of view: when an agent turns blocked, errored or done (OSC 7501) in a
--- tab the app is not showing, its terminal sends a desktop notification
--- (OSC 9), which the app shows as one.
+-- Visits: each tab you go to is appended to STATE/visits as "session
+-- window", newest last; prefix Tab and shift+Tab (window_last) read it.
+--
+-- Out of view: when an agent turns blocked, errored or done (OSC 7501) away
+-- from the tab you are on, its terminal sends a desktop notification (OSC 9),
+-- which the app shows as one.
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
 local kit = require("rexkit")
@@ -63,7 +66,7 @@ end
 
 -- Visits --------------------------------------------------------------------
 
-local STATE = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/rex-lab"
+local STATE = kit.STATE
 local VISITS, KEEP = STATE .. "/visits", 50
 os.execute("mkdir -p '" .. STATE .. "'")
 
@@ -90,9 +93,14 @@ local function visit()
   os.rename(VISITS .. ".tmp", VISITS)
 end
 
-for _, name in ipairs({ "active_window_changed", "session_view_changed", "client_changed" }) do
-  rex.on(name, visit)
-end
+-- A tab you switch to is where you are. Not every view change: rexd's own
+-- renumbering and agents' splits change views in sessions you are not in.
+rex.on("active_window_changed", function(target, ev)
+  local sid = (ev and ev.session_id) or (target and target.session_id)
+  if sid then kit.note_here(sid, select(2, kit.here())) end
+  visit()
+end)
+rex.on("session_view_changed", visit)
 
 -- Out of view ----------------------------------------------------------------
 

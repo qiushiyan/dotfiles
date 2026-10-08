@@ -8,54 +8,162 @@ local M = {}
 
 M.TERMINAL = "com.superlogical.terminal"
 
--- rex.call returns nil plus a message on failure instead of raising.
-function M.call(method, payload)
-  local result, err = M.try(method, payload)
-  if result == nil and err ~= nil then error(method .. ": " .. tostring(err), 2) end
-  return result
-end
+M.STATE = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/rex-lab"
 
--- A control connection must attach to a session before calling into it.
--- init.lua's state outlives the connection an action runs on, so the record
--- of what is attached can be stale: a call refused as not attached attaches
--- and tries once more.
-local attached = {}
-function M.attach(session_id)
-  if attached[session_id] then return end
-  M.call("session.attach", { session_id = session_id })
-  attached[session_id] = true
-end
+-- The calls below go to one server: this one (rex.call), or another host's
+-- (rex.server(label).call), for the views that span the laptop and the mini.
+-- bind gives a table those calls for one server; M is this server's, and
+-- M.remote(label) another's.
+local function bind(K, raw, label)
+  K.label = label
 
-function M.try(method, payload)
-  payload = payload or {}
-  local result, err = rex.call(method, payload)
-  if result == nil and payload.session_id and tostring(err):find("not attached", 1, true) then
-    attached[payload.session_id] = nil
-    rex.call("session.attach", { session_id = payload.session_id })
-    attached[payload.session_id] = true
-    result, err = rex.call(method, payload)
+  -- rex.call returns nil plus a message on failure instead of raising.
+  function K.call(method, payload)
+    local result, err = K.try(method, payload)
+    if result == nil and err ~= nil then error(method .. ": " .. tostring(err), 2) end
+    return result
   end
-  return result, err
-end
 
-function M.sessions()
-  return M.call("session.list").sessions or {}
-end
+  -- A control connection must attach to a session before calling into it.
+  -- init.lua's state outlives the connection an action runs on, so the
+  -- record of what is attached can be stale: a call refused as not attached
+  -- attaches and tries once more.
+  local attached = {}
+  function K.attach(session_id)
+    if attached[session_id] then return end
+    K.call("session.attach", { session_id = session_id })
+    attached[session_id] = true
+  end
 
-function M.terminals(session_id)
-  M.attach(session_id)
-  local out = {}
-  for _, b in ipairs(M.call("session.list_blocks", { session_id = session_id }).blocks or {}) do
-    if b.block_id and (b.creator_name == M.TERMINAL or (b.flavor or ""):find(M.TERMINAL, 1, true) == 1) then
-      out[#out + 1] = b
+  function K.try(method, payload)
+    payload = payload or {}
+    local result, err = raw(method, payload)
+    if result == nil and payload.session_id and tostring(err):find("not attached", 1, true) then
+      attached[payload.session_id] = nil
+      raw("session.attach", { session_id = payload.session_id })
+      attached[payload.session_id] = true
+      result, err = raw(method, payload)
     end
+    return result, err
+  end
+
+  function K.sessions()
+    return K.call("session.list").sessions or {}
+  end
+
+  function K.terminals(session_id)
+    K.attach(session_id)
+    local out = {}
+    for _, b in ipairs(K.call("session.list_blocks", { session_id = session_id }).blocks or {}) do
+      if b.block_id and (b.creator_name == M.TERMINAL or (b.flavor or ""):find(M.TERMINAL, 1, true) == 1) then
+        out[#out + 1] = b
+      end
+    end
+    return out
+  end
+
+  function K.block(session_id, block_id, method, args)
+    K.attach(session_id)
+    return K.try(M.TERMINAL .. "." .. method, { session_id = session_id, block_id = block_id, args = args or {} })
+  end
+
+  -- The block that has focus in a session's active window.
+  function K.focused_block(session_id)
+    K.attach(session_id)
+    local view = K.try("session.view", { session_id = session_id })
+    return view and view.focused_window and view.focused_window.focused_block_id
+  end
+
+  -- One row per agent record across every session on this server, each
+  -- naming the server when it is another host's.
+  function K.agents()
+    local rows = {}
+    for _, s in ipairs(K.sessions()) do
+      for _, b in ipairs(K.terminals(s.session_id)) do
+        local status = K.block(s.session_id, b.block_id, "program_status")
+        local title = K.block(s.session_id, b.block_id, "title")
+        for _, r in ipairs((status and status.records) or {}) do
+          rows[#rows + 1] = {
+            server = label, session_id = s.session_id, session = s.label or s.session_id,
+            block_id = b.block_id, block = b.label, window_id = b.window_id,
+            term_title = title and title.title or nil, record = r,
+          }
+        end
+      end
+    end
+    M.sort(rows)
+    return rows
+  end
+
+  return K
+end
+
+bind(M, function(method, payload) return rex.call(method, payload) end, nil)
+
+-- Another host's server, by its label in `rex hosts`.
+function M.remote(label)
+  local handle = rex.server(label)
+  return bind({}, function(method, payload) return handle.call(method, payload) end, label)
+end
+
+-- Every other host's server this one can reach, as M.remote gives them,
+-- leaving out a host that is this server under another name. A host that
+-- does not answer is left out, so a sleeping laptop costs one failed call.
+function M.remotes()
+  local out = {}
+  if not rex.servers then return out end
+  local me = M.try("server.status")
+  me = me and me.instance
+  for _, label in ipairs(rex.servers() or {}) do
+    local ok, K = pcall(M.remote, label)
+    local status = ok and K.try("server.status")
+    if status and status.instance ~= me then out[#out + 1] = K end
   end
   return out
 end
 
-function M.block(session_id, block_id, method, args)
-  M.attach(session_id)
-  return M.try(M.TERMINAL .. "." .. method, { session_id = session_id, block_id = block_id, args = args or {} })
+-- Agent rows from this server and every other host's, most urgent first.
+function M.agents_everywhere(remotes)
+  local rows = M.agents()
+  for _, K in ipairs(remotes or M.remotes()) do
+    local ok, more = pcall(K.agents)
+    for _, row in ipairs(ok and more or {}) do rows[#rows + 1] = row end
+  end
+  M.sort(rows)
+  return rows
+end
+
+-- Where you are: the session and client of the last thing you did, a key an
+-- action took or a tab you switched to (rexd). The app does not say which
+-- session it shows (it stays attached to every session it has opened), so
+-- this is the best the server knows.
+local HERE = M.STATE .. "/here"
+function M.note_here(session_id, client_id)
+  if not session_id then return end
+  os.execute("mkdir -p '" .. M.STATE .. "'")
+  local f = io.open(HERE .. ".tmp", "w")
+  if not f then return end
+  f:write(session_id, " ", client_id or "-", "\n")
+  f:close()
+  os.rename(HERE .. ".tmp", HERE)
+end
+
+function M.here()
+  local f = io.open(HERE, "r")
+  local line = f and f:read("*l")
+  if f then f:close() end
+  local sid, cid = (line or ""):match("^(%S+) (%S+)$")
+  return sid, cid ~= "-" and cid or nil
+end
+
+-- Whether a client runs on this machine: a remote app (the laptop's, over
+-- Tailscale) reaches the server over the network, so `open` here would open
+-- the URL on the wrong screen.
+function M.client_is_local(client_id)
+  if not client_id then return true end
+  local r = M.try("client.inspect", { client_id = client_id })
+  local transport = r and r.client and r.client.principal and r.client.principal.transport
+  return transport == nil or transport == "unix"
 end
 
 -- A table as one line of text, for logs.
@@ -66,13 +174,6 @@ function M.dump(v, depth)
   for key, x in pairs(v) do parts[#parts + 1] = tostring(key) .. "=" .. M.dump(x, depth + 1) end
   table.sort(parts)
   return "{" .. table.concat(parts, ", ") .. "}"
-end
-
--- The block that has focus in a session's active window.
-function M.focused_block(session_id)
-  M.attach(session_id)
-  local view = M.try("session.view", { session_id = session_id })
-  return view and view.focused_window and view.focused_window.focused_block_id
 end
 
 -- Layout geometry ---------------------------------------------------------------
@@ -128,17 +229,11 @@ function M.neighbor(view, block_id, direction)
   return best
 end
 
--- What the app shows: the session it is attached to and that session's
--- active window. nil when no app is connected.
+-- The session you are in (M.here) and its active window.
 function M.app_view()
-  local list = M.try("client.list", { kinds = { "app" } })
-  for _, c in ipairs((list and list.clients) or {}) do
-    local sid = c.connection_state == "connected" and c.session_ids and c.session_ids[1]
-    if sid then
-      local view = M.try("session.view", { session_id = sid })
-      return sid, view and view.active_window_id, c.client_id
-    end
-  end
+  local sid = M.here()
+  local view = sid and M.try("session.view", { session_id = sid })
+  if view then return sid, view.active_window_id end
 end
 
 -- Agent records (OSC 7501) ------------------------------------------------------
@@ -169,26 +264,6 @@ function M.age(iso)
   if s < 3600 then return math.floor(s / 60) .. "m" end
   if s < 86400 then return math.floor(s / 3600) .. "h" end
   return math.floor(s / 86400) .. "d"
-end
-
--- One row per agent record across every session on this server.
-function M.agents()
-  local rows = {}
-  for _, s in ipairs(M.sessions()) do
-    for _, b in ipairs(M.terminals(s.session_id)) do
-      local status = M.block(s.session_id, b.block_id, "program_status")
-      local title = M.block(s.session_id, b.block_id, "title")
-      for _, r in ipairs((status and status.records) or {}) do
-        rows[#rows + 1] = {
-          session_id = s.session_id, session = s.label or s.session_id,
-          block_id = b.block_id, block = b.label, window_id = b.window_id,
-          term_title = title and title.title or nil, record = r,
-        }
-      end
-    end
-  end
-  M.sort(rows)
-  return rows
 end
 
 function M.sort(rows)

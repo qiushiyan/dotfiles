@@ -7,13 +7,26 @@ local HOME = os.getenv("HOME")
 local REX_DIR = HOME .. "/.config/rex"
 package.path = REX_DIR .. "/lua/?.lua;" .. package.path
 local kit = require("rexkit")
-local STATE = (os.getenv("XDG_STATE_HOME") or (HOME .. "/.local/state")) .. "/rex-lab"
+local STATE = kit.STATE
+
+-- Every action a key runs first notes where the key was pressed (kit.here):
+-- the app does not tell the server which session it shows, and the out-of-view
+-- notifications and prefix Tab need to know.
+local define = rex.action
+rex.action = function(spec)
+  local run = spec.run
+  spec.run = function(ctx, args)
+    if ctx and ctx.origin == "key" then kit.note_here(ctx.session_id, ctx.client_id) end
+    return run(ctx, args)
+  end
+  return define(spec)
+end
 
 -- The session a key press came from, or the first session when the action was
 -- run another way (rex do, the palette).
 local function current_session(ctx)
   ctx = ctx or {}
-  local sid = ctx.session_id or (ctx.session and ctx.session.session_id)
+  local sid = ctx.session_id or (ctx.session and ctx.session.session_id) or kit.here()
   if sid then return sid end
   local first = kit.sessions()[1]
   return first and first.session_id
@@ -41,18 +54,21 @@ local function current_block(ctx, args)
 end
 
 -- Jump to the agent that has waited longest in the most urgent state:
--- blocked, then errored, then finished. The server moves focus to its block;
--- the client is asked to show that session.
+-- blocked, then errored, then finished, on this server or another host's (the
+-- mini's, seen from the laptop). The server moves focus to its block; the
+-- client is asked to show that session.
 rex.action{
   name = "agents_next",
   title = "Jump to Agent Needing Attention",
   run = function(ctx)
     log_ctx("agents_next", ctx)
-    local row = kit.most_urgent(kit.agents())
+    local row = kit.most_urgent(kit.agents_everywhere())
     if not row then return { jumped = false, reason = "no agent is waiting" } end
-    kit.call("session.focus_block", { session_id = row.session_id, block_id = row.block_id })
+    local K = row.server and kit.remote(row.server) or kit
+    K.call("session.focus_block", { session_id = row.session_id, block_id = row.block_id })
     rex.client.queue("session.select", { session_id = row.session_id, window_id = row.window_id })
-    return { jumped = true, session = row.session, block = row.block, state = row.record.state }
+    if not row.server then kit.note_here(row.session_id, ctx and ctx.client_id) end
+    return { jumped = true, server = row.server, session = row.session, block = row.block, state = row.record.state }
   end,
 }
 
@@ -172,6 +188,17 @@ rex.action{
     local dir = sid and bid and kit.cwd(sid, bid)
     if not dir then return { opened = false, reason = "no directory" } end
     kit.toast(sid, bid, "info", "GitHub", "opening " .. dir:match("[^/]+$") .. "…", 1.5)
+    -- A key pressed in the laptop's app would open the browser on this
+    -- machine: there the URL goes to that app's clipboard instead (OSC 52).
+    if not kit.client_is_local(ctx and ctx.client_id) then
+      local p = io.popen("cd " .. kit.sh_quote(dir) .. " && PATH=" .. kit.sh_quote(kit.PATH) .. " gopen --print </dev/null 2>/dev/null")
+      local url = p and p:read("*l")
+      if p then p:close() end
+      if not url or url == "" then return { opened = false, reason = "gopen found no URL" } end
+      kit.osc52(sid, bid, url)
+      kit.toast(sid, bid, "ok", "Copied GitHub URL", url)
+      return { copied = url }
+    end
     -- gopen prints the URL it opened; exit 3 means the branch is not on origin.
     local toast = "REX_SESSION=" .. kit.sh_quote(sid) .. " REX_BLOCK=" .. kit.sh_quote(bid) .. " rex-toast"
     os.execute("(cd " .. kit.sh_quote(dir) .. " && export PATH=" .. kit.sh_quote(kit.PATH)
@@ -247,6 +274,7 @@ rex.action{
     local to = tabs[((at or 1) - 1 + step) % #tabs + 1]
     kit.call("session.focus_window", { session_id = to.session_id, window_id = to.window_id })
     rex.client.queue("session.select", { session_id = to.session_id, window_id = to.window_id })
+    kit.note_here(to.session_id, ctx and ctx.client_id)
     return { moved = to.label }
   end,
 }
@@ -344,6 +372,7 @@ rex.action{
           { session_id = v.session_id, window_id = v.window_id })) then
           local window = across and view.active_window_id or v.window_id
           rex.client.queue("session.select", { session_id = v.session_id, window_id = window })
+          kit.note_here(v.session_id, ctx and ctx.client_id)
           return { moved = window }
         end
       end
@@ -530,7 +559,8 @@ rex.action{
   run = function(ctx, args)
     local sid, bid = current_block(ctx, args)
     if not (sid and bid) then return { opened = false } end
-    local r = helper_split(sid, bid, "urls", 0.6, { HOME .. "/.local/bin/rex-urls", sid, bid })
+    local where = kit.client_is_local(ctx and ctx.client_id) and "here" or "away"
+    local r = helper_split(sid, bid, "urls", 0.6, { HOME .. "/.local/bin/rex-urls", sid, bid, where })
     return { opened = r.block_ids[1] }
   end,
 }
@@ -545,6 +575,33 @@ rex.action{
     if not (sid and bid) then return { opened = false } end
     local r = helper_split(sid, bid, "rename", 0.85, { HOME .. "/.local/bin/rex-label", sid, bid })
     return { opened = r.block_ids[1] }
+  end,
+}
+
+-- prefix e: the pane's screen and scrollback, colours kept, as an HTML page
+-- (rex-export), opened in the browser of the machine the key was pressed on:
+-- here, or, from the laptop's app, the path goes to its clipboard.
+rex.action{
+  name = "export_pane",
+  title = "Export Pane as HTML",
+  run = function(ctx, args)
+    local sid, bid = current_block(ctx, args)
+    if not (sid and bid) then return { exported = false } end
+    local p = io.popen("PATH=" .. kit.sh_quote(kit.PATH) .. " " .. HOME .. "/.local/bin/rex-export "
+      .. kit.sh_quote(sid) .. " " .. kit.sh_quote(bid) .. " 2>/dev/null")
+    local path = p and p:read("*l")
+    if p then p:close() end
+    if not path or path == "" then
+      kit.toast(sid, bid, "error", "Export", "could not read the pane")
+      return { exported = false }
+    end
+    if kit.client_is_local(ctx and ctx.client_id) then
+      os.execute("open " .. kit.sh_quote(path) .. " >/dev/null 2>&1 &")
+    else
+      kit.osc52(sid, bid, path)
+    end
+    kit.toast(sid, bid, "ok", "Exported", (path:gsub("^" .. HOME:gsub("%p", "%%%0"), "~")))
+    return { exported = path }
   end,
 }
 
@@ -594,7 +651,8 @@ local prefix = {
   { "shift+t", "session.switch" }, { "shift+9", "session.previous" }, { "shift+0", "session.next" },
   -- tools
   { "y", "copy_path" }, { "shift+y", "copy_path", { rel = true } },
-  { "g", "gopen" }, { "shift+w", "worktrees" }, { "u", "urls" },
+  { "g", "gopen" }, { "shift+w", "worktrees" }, { "u", "urls" }, { "e", "export_pane" },
+  { "w", "session.open_on_web" },
   { "shift+s", "steps_sidecar" }, { "shift+a", "agents_board" }, { "a", "agents_next" },
   { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
 }

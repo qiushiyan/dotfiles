@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# rex-urls SESSION BLOCK: pick a URL from a Rex terminal's screen and
+# rex-urls SESSION BLOCK [here|away]: pick a URL from a Rex terminal's screen and
 # scrollback and open it (prefix u, the urls action, which runs this in a
 # split below the block). Rex's `format` method hands over the whole
 # scrollback as text, newest URL first in the list. Backslashes go first:
 # zsh escapes the ? and = of a URL typed at its prompt.
 #
-#   enter    open it
+#   enter    open it; with `away` (the key came from another machine's app,
+#            such as the laptop's) copy it instead, since a browser opened
+#            here would open on the wrong screen
 #   ctrl-y   copy it instead (OSC 52: the clipboard of the machine you look from)
 #   esc      close
 set -u
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 session=${1:?usage: rex-urls SESSION BLOCK}
 block=${2:?usage: rex-urls SESSION BLOCK}
+where=${3:-here}
 
 # rex probes the terminal on stderr, and the answer would arrive as input.
 urls=$(rex block call -s "$session" -b "$block" format '{"format":"text","unwrap":true}' 2>/dev/null \
@@ -33,6 +36,7 @@ key=$(sed -n 1p <<<"$out")
 url=$(sed -n 2p <<<"$out")
 [ -n "$url" ] || exit 0
 
+[ "$where" = away ] && key=ctrl-y
 case "$key" in
   ctrl-y)
     printf '\e]52;c;%s\a' "$(printf %s "$url" | base64 | tr -d '\n')"

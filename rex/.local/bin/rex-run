@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# rex-run: run a command in a Rex pane beside the agent (or shell) that asks,
+# so the human watches it live, then hand the caller its exit status and the
+# end of its output, as if it had run in place. For agents: a test suite, a
+# build, a dev server, anything worth watching.
+#
+#   rex-run [-l LABEL] [-n LINES] [--below] [--bg] -- COMMAND...
+#   rex-run tail LABEL [-n LINES]    the end of a run's output, now
+#   rex-run stop LABEL               close a run's pane
+#   rex-run list                     the runs open in this session
+#
+# One argument is a shell command line (run with $SHELL -c), several are an
+# argv. The pane opens to the right (--below: under) without taking focus,
+# runs in this directory, and stays open after the command ends so its
+# output can be read; the next run with the same LABEL (default "run")
+# replaces it. --bg returns at once, for servers: read them with `tail`.
+#
+# Outside Rex (no REX_BLOCK) the command simply runs here.
+set -u
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+
+# rex probes a terminal on stderr; an agent's tool has none, a shell does.
+rx() { rex "$@" 2>/dev/null; }
+
+session=${REX_SESSION:-}
+anchor=${REX_BLOCK:-}
+
+blocks_labelled() {
+  rx api call session.list_blocks "{\"session_id\":\"$session\"}" \
+    | jq -r --arg l "run:$1" '.blocks[] | select(.label == $l) | .block_id'
+}
+
+output_of() {
+  rx block call -s "$session" -b "$1" format '{"format":"text","unwrap":true,"trim":true}' \
+    | jq -r '.content // ""' | sed -e 's/[[:space:]]*$//' | tail -n "$2"
+}
+
+case "${1:-}" in
+  tail)
+    label=${2:?usage: rex-run tail LABEL [-n LINES]}; lines=80
+    [ "${3:-}" = -n ] && lines=${4:-80}
+    block=$(blocks_labelled "$label" | head -1)
+    [ -n "$block" ] || { echo "rex-run: no run labelled $label" >&2; exit 1; }
+    output_of "$block" "$lines"
+    exit 0 ;;
+  stop)
+    label=${2:?usage: rex-run stop LABEL}
+    for b in $(blocks_labelled "$label"); do
+      rx api call block.close "{\"session_id\":\"$session\",\"block_id\":\"$b\"}" >/dev/null
+    done
+    exit 0 ;;
+  list)
+    rx api call session.list_blocks "{\"session_id\":\"$session\"}" \
+      | jq -r '.blocks[] | select(.label // "" | startswith("run:")) | .label | ltrimstr("run:")'
+    exit 0 ;;
+  -h|--help|"") usage ;;
+esac
+
+label=run lines=60 split=right bg=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -l|--label) label=$2; shift 2 ;;
+    -n|--lines) lines=$2; shift 2 ;;
+    --below) split=below; shift ;;
+    --bg) bg=1; shift ;;
+    --) shift; break ;;
+    -*) usage ;;
+    *) break ;;
+  esac
+done
+[ $# -gt 0 ] || usage
+
+if [ $# -eq 1 ]; then set -- "${SHELL:-/bin/zsh}" -c "$1"; fi
+
+if [ -z "$anchor" ] || [ -z "$session" ]; then exec "$@"; fi
+
+for b in $(blocks_labelled "$label"); do
+  rx api call block.close "{\"session_id\":\"$session\",\"block_id\":\"$b\"}" >/dev/null
+done
+
+common=(run -s "$session" -b "$anchor" --split "$split" --ratio 40 --focus=false
+  --keep-open --label "run:$label" -c "$PWD" --shell none --json)
+
+if [ "$bg" = 1 ]; then
+  block=$(rx "${common[@]}" -- "$@" | jq -r '.block_ids[0] // empty')
+  [ -n "$block" ] || { echo "rex-run: could not open a pane" >&2; exit 1; }
+  echo "rex-run: running in pane run:$label; read it with: rex-run tail $label"
+  exit 0
+fi
+
+# With --wait, rex prints no creation result when its output is not a
+# terminal; the label is unique in the session, so it finds the pane.
+rx "${common[@]}" --wait -- "$@" >/dev/null
+status=$?
+block=$(blocks_labelled "$label" | head -1)
+if [ -z "$block" ]; then
+  echo "rex-run: exit $status; its pane is gone, so there is no output to show" >&2
+  exit "$status"
+fi
+echo "── rex-run: exit $status · pane run:$label · last $lines lines ──"
+output_of "$block" "$lines"
+exit "$status"

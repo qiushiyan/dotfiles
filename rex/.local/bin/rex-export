@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# rex-export SESSION BLOCK: write a Rex terminal's screen and scrollback,
+# colours kept, as a standalone HTML page, and print its path (prefix e, the
+# export_pane action, opens it). Rex's `format` method renders the HTML; this
+# only wraps it in a page in the terminal's own palette, so the page looks
+# much as the pane did.
+#
+# Pages go to ~/.local/state/rex-lab/exports, named for the pane and the time.
+set -eu
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+session=${1:?usage: rex-export SESSION BLOCK}
+block=${2:?usage: rex-export SESSION BLOCK}
+out_dir="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/exports"
+mkdir -p "$out_dir"
+
+# rex probes the terminal on stderr, and the answer would arrive as input.
+call() { rex "$@" 2>/dev/null; }
+
+body=$(call block call -s "$session" -b "$block" format '{"format":"html","unwrap":true,"extra_palette":true}' | jq -r .content)
+[ -n "$body" ] || exit 1
+label=$(call api call session.list_blocks "{\"session_id\":\"$session\"}" \
+  | jq -r --arg b "$block" '.blocks[] | select(.block_id == $b) | .label // "pane"')
+title=$(call block call -s "$session" -b "$block" title | jq -r '.title // ""')
+
+slug=$(printf '%s' "$label" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-*//; s/-*$//')
+path="$out_dir/${slug:-pane}-$(date +%Y%m%d-%H%M%S).html"
+
+# Rex's HTML names colours by palette slot (CSS variables it defines), but
+# not the terminal's default foreground and background: the page takes slots
+# 0 and 7, which most themes set to those.
+html_escape() { sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'; }
+
+{
+  printf '<!doctype html>\n<html><head><meta charset="utf-8">\n'
+  printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+  printf '<title>%s</title>\n' "$(printf '%s' "${title:-$label}" | html_escape)"
+  printf '<style>body{margin:0;padding:24px;background:var(--vt-palette-0,#1d1f21);color:var(--vt-palette-7,#c5c8c6);}' 
+  printf 'body>div{font:13px/1.35 "JetBrains Mono",ui-monospace,Menlo,monospace;overflow-x:auto;}</style>\n'
+  printf '</head><body>\n%s\n</body></html>\n' "$body"
+} > "$path"
+printf '%s\n' "$path"
