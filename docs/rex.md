@@ -32,11 +32,22 @@ any notes kept here:
   actions` (init.lua's and the blocks'); `rex -C <app client> actions --json`
   (the app's own actions with argument schemas, and which ones `repeats`);
   `rex keymap` (the resolved key map, modes included); `rex block inspect`.
-- **The Lua API** (init.lua, `rex do` scripts) is documented nowhere. Learn it
-  by probing: `rex do -e '<lua>'` prints what the chunk returns, and `rex
-  config check FILE` loads a scratch file and names the field or option a
-  call does not take. What the probes found is under § The model and
-  § Lessons.
+- **The Lua API** (init.lua, `rex do` scripts) is documented only in passing:
+  llms.txt names `rex.session.*`, `rex.block.call`, `rex.server`,
+  `rex.invoke`, `rex.host` and `rex.unbind` where its methods use them, and
+  `rex do --help` describes the script runtime. Learn the rest by probing:
+  `rex do -e '<lua>'` prints what the chunk returns, and `rex config check
+  FILE` loads a scratch file and names the field or option a call does not
+  take. An action runs with less than a script (§ Lessons). What the probes
+  found is under § The model and § Lessons.
+- **A scratch server** tries config and times it without touching the live
+  one: `HOME` set to a sandbox whose `.config/rex` links the working tree,
+  then `rex server run`, and every `rex` command under that `HOME` talks to
+  it. The `HOME` path must be short, since the socket's path under
+  `Library/Application Support/rex` has to fit a Unix socket's ~104 bytes.
+  The server log records every control request a client or script makes,
+  with its duration, and `os.clock` is wall time in Rex's Lua, so a wrapper
+  around `rex.action` can time each action and count its calls.
 - **The app is unseen, and its log is thin.** No screen capture reaches it
   from here, and what the server holds is not always what the app paints
   (§ What the app does not show). A claim about what the user sees is verified
@@ -73,7 +84,7 @@ any notes kept here:
   action meant to be scripted takes the session and block as arguments too.
 - **The app does not say which session it shows.** It stays attached to every
   session it has opened. The lab keeps its own record of where you are
-  (`rexkit`'s `here`): the session of the last key an action took, or of the
+  (`rexkit.state`'s `here`): the session of the last key an action took, or of the
   tab rexd saw you switch to.
 - **Events are the integration seam.** Block events carry a terminal's program
   status, title, foreground process, bell, clipboard writes and notifications;
@@ -145,10 +156,11 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
 - **A key in another host's session runs the config of the app's own
   machine.** The action sees `ctx.server`, and its `rex.call`s travel through
   the app to that host, but its files, processes, `$HOME`, clipboard and `open`
-  are the laptop's. `rexkit` carries the guards: `bin` names a tool for a pane
-  by the pane host's `$HOME`, `run_there` runs a command on the session's host
-  in a hidden block and reads its screen back, `read_state` reads the lab's
-  state there, `copy` copies on the app's machine.
+  are the laptop's. `rexkit.host` carries the guards: `run_there` runs a command on
+  the session's host in a hidden block and reads its screen back,
+  `read_state` reads the lab's state there, `copy` copies on the app's
+  machine; `rexkit.shell`'s `bin` names a tool for a pane by the pane host's
+  `$HOME`.
 - **The app cannot be sent to another host's session.** `session.select`
   queued by an action waits five seconds and gives up ("no host lists it" in
   the app's log). Moving between tabs is therefore the app's own
@@ -166,18 +178,33 @@ Each is a trap the Rex environment does not reveal; the guard is named where
 one exists.
 
 - **`rex.call` returns `nil, message`; it never raises.** A call that is not
-  checked fails later and elsewhere. `rexkit`'s `call` raises on the paths
+  checked fails later and elsewhere. `rexkit.api`'s `call` raises on the paths
   that must not continue.
-- **init.lua outlives the connection an action runs on.** A remembered
-  "already attached" goes stale after the first run, and the next call is
-  refused as not attached. Guard: `rexkit`'s `try` attaches again and retries
-  on that refusal.
+- **Attachment belongs to the connection, and init.lua outlives the
+  connection an action runs on.** A remembered "already attached" goes stale,
+  and the next call is refused. Guard: `rexkit.api` remembers nothing; a call
+  refused as not attached attaches and retries. Inside an action the refusal
+  is a bare "stream is not attached to session …", while a `rex do` script's
+  ends with `code=conflict`, so the guard matches both.
 - **Actions run the code loaded at the last `rex config reload`.** A `rex do`
   test loads everything fresh, so it passes while a key press still runs the
-  old code. Reload after editing anything init.lua requires, on each machine.
+  old code. Reload after editing anything init.lua requires, on each machine;
+  the reload reads the required modules again.
+- **An action has no `rex.sleep`, `rex.wait` or `rex.stop`;** those are a
+  `rex do` script's. An action that waits uses a shell sleep
+  (`rexkit.shell`'s `pause`), and one that waits on a block polls it, since
+  it hears no events.
+- **A fork costs an action about 5 ms, more than all the API calls of a key
+  press together.** The hot keys (pane focus, the tab keys) fork nothing:
+  `rexkit.state` makes the state directory once, at load, and reads and
+  writes its files in Lua. A new helper that shells out stays off those paths.
+- **A binding's args are checked against its action's `args` JSON Schema**
+  when Rex resolves the keymap. The warnings show in `rex keymap` (the
+  `client.keymap` diagnostics), not in `rex config check`, and a call from
+  `rex do` is not checked at all.
 - **Actions, and panes the server starts, get the server's bare system
   PATH.** Homebrew and `~/.local/bin` tools are missing unless the action or
-  script sets PATH itself (`rexkit.PATH`).
+  script sets PATH itself (`rexkit.shell`'s `PATH`).
 - **The `rex` CLI probes any terminal its stderr is attached to,** and the
   terminal's reply arrives on stdin as phantom input. A script that reads keys
   and calls `rex` sends rex's stderr elsewhere.
@@ -187,8 +214,7 @@ one exists.
 - **A client step runs after the action returns, and the app learns of a new
   window later still.** A tab step queued right after `session.new_window`
   lands one tab too far, in the next session. On this host the action selects
-  the new tab instead; on another host's it waits half a second for the app,
-  if `rex.sleep` exists in an action, which no probe has confirmed.
+  the new tab instead; on another host's it waits half a second for the app.
 - **The app's `client.tab.goto` counts every session's tabs in the sidebar.**
   Per-session numbers, as tmux keeps them, step from the current tab with
   `client.tab.next` / `previous`; `session.focus_next_window` does not wrap.
@@ -224,7 +250,7 @@ Each of these reaches the server and never the screen, so nothing essential
 depends on them:
 
 - **Floating layers:** laid out, never painted; the app also sends them no
-  keys. Toasts are off (`rexkit`'s `LAYER_TOASTS`), and splits stand in for
+  keys. Toasts are off (`rexkit.feedback`'s `LAYER_TOASTS`), and splits stand in for
   popups.
 - **Notifications:** OSC 9 becomes a `desktop_notification` event, and
   neither it nor an `osascript` notification appeared. rexd still sends one
@@ -258,6 +284,8 @@ for whoever tries again after a Rex update:
   found"), Rex never asks a plugin for data, and the app draws an
   "Unsupported block" card for any creator but the terminal. The probe after
   an update: does `data.connect` on a plugin block succeed?
+- **Removing a plugin takes a server restart:** with its executable deleted
+  and its process stopped, the creator stays listed, its methods dead.
 - **Two hazards on a live server:** a creator name with an underscore loads,
   then makes every `session.create` fail; a plugin may claim
   `com.superlogical.terminal` and silently replace the terminal.
@@ -265,7 +293,13 @@ for whoever tries again after a Rex update:
 ## What the lab builds
 
 The package is `rex/`; `rex-demo` builds an `agents-demo` session that shows
-the agent pieces working without spending Claude turns.
+the agent pieces working without spending Claude turns. Its Lua splits in two
+under `rex/.config/rex/lua/`: `rexkit/`, the library the actions, the `rex do`
+scripts and the tools share, one module per concern (calls to a server,
+agents, layout geometry, which host does the work, feedback, shell, state);
+and `lab/`, the config itself, one module of actions per domain defined
+through `lab/action.lua`, which notes where each key was pressed and logs
+failures. `init.lua` only loads them, and its header maps them.
 
 - **The tmux keys** (§ Keys), on Rex's own API: pane focus that passes
   `ctrl+h/j/k/l` through to nvim and fzf, per-session tab numbers kept by a
@@ -292,7 +326,8 @@ directory (`docs/stow-layout.md`).
 
 ## Keys
 
-`rex keymap` is the authority. The shape:
+`rex keymap` is the authority, and `rex/.config/rex/lua/lab/keys.lua` holds
+every binding. The shape:
 
 - **`ctrl+a`** enters the `prefix` mode for one key, as tmux's prefix does;
   `escape` leaves it, and `ctrl+a` again sends a literal `ctrl+a`.
@@ -319,3 +354,7 @@ directory (`docs/stow-layout.md`).
   the app or launchd brings the mini's server back after a reboot is untested.
 - **Comparison with tmux:** which workflows feel better in each, as sessions
   move to Rex during the trial.
+- **Hosts in config:** init.lua could declare the mini with `rex.host`, so
+  the server's host list is reproducible rather than stored by `rex hosts
+  add`; a declared host whose label a stored one already uses is left out,
+  so switching means removing the stored `mini` first. Held back for now.
