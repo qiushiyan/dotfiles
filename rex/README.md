@@ -253,6 +253,13 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
   brings it back. Window labels are what `session.set_window_label` sets and
   what a tab rename changes.
 
+### Persistence
+
+- Sessions survive quitting the app (⌘Q): the bundled server is its own
+  process and keeps running, with every session, window and agent in it, and
+  the relaunched app reconnects to it. No resurrect-style saving is needed
+  for that; a reboot or a server restart is another matter, untested.
+
 ### Popups, layouts, blocks
 
 - `session.new_layer` makes a floating layer with any command:
@@ -283,8 +290,11 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
 ## Open questions
 
 - What else the app does with a status (notifications? the sidebar?).
-- Do sessions survive quitting the app (the server is `run-mode bundled`)?
-  That decides whether resurrect-style persistence is needed at all.
+- Floating layers stopped being drawn partway through the day: the app
+  claims each one's size (so it lays them out) but paints nothing, across a
+  full quit and relaunch and both themes, though the board popup and a toast
+  showed earlier. Settings changed meanwhile include pane headers off; under
+  test.
 
 ## Next experiments
 
