@@ -23,6 +23,28 @@ local last_seed = 0
 
 local function key(row) return row.block_id .. "/" .. (row.record.id or "") end
 
+-- What claude-steps knows of an agent's Claude session: its title and branch,
+-- shown under the agent's row. Read again only when the agent changes state.
+local STEPS = os.getenv("HOME") .. "/.local/bin/claude-steps"
+local about = {}         -- block_id -> { state = …, text = … }
+
+local function steps_about(row)
+  local cached = about[row.block_id]
+  if cached and cached.state == row.record.state then return cached.text end
+  local text
+  local sid = kit.claude_session(row.session_id, row.block_id)
+  if sid then
+    local p = io.popen("CLICOLOR=0 " .. STEPS .. " show '" .. sid .. "' --json 2>/dev/null")
+    local body = p and p:read("*a") or ""
+    if p then p:close() end
+    local title = body:match('"title"%s*:%s*"(.-)"')
+    local branch = body:match('"branch"%s*:%s*"(.-)"')
+    if title then text = title .. (branch and branch ~= "" and ("  ⎇ " .. branch) or "") end
+  end
+  about[row.block_id] = { state = row.record.state, text = text }
+  return text
+end
+
 local function seed()
   rows = {}
   for _, s in ipairs(kit.sessions()) do labels[s.session_id] = s.label end
@@ -76,6 +98,8 @@ local function render()
       .. " " .. fit(r.msg or row.term_title or "", msg_w)
       .. " " .. sgr("90", kit.age(r.updated_at))
     out[#out + 1] = line
+    local text = steps_about(row)
+    if text then out[#out + 1] = "    " .. sgr("90", fit(text, width - 6)) end
   end
   io.write(table.concat(out, "\n"), "\n")
   io.stdout:flush()

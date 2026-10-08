@@ -18,6 +18,27 @@ local function current_session(ctx)
   return first and first.session_id
 end
 
+-- What a key press hands an action is undocumented: each action records its
+-- ctx here until we know (README, open questions).
+local function log_ctx(name, ctx)
+  local dir = (os.getenv("XDG_STATE_HOME") or (HOME .. "/.local/state")) .. "/rex-lab"
+  os.execute("mkdir -p '" .. dir .. "'")
+  local f = io.open(dir .. "/ctx.log", "a")
+  if f then
+    f:write(os.date("%Y-%m-%d %H:%M:%S "), name, " ", kit.dump(ctx), "\n")
+    f:close()
+  end
+end
+
+-- The block a key press came from: the one ctx names, else the focused block
+-- of the current session.
+local function current_block(ctx)
+  ctx = ctx or {}
+  local sid = current_session(ctx)
+  local bid = ctx.block_id or (ctx.block and ctx.block.block_id)
+  return sid, bid or (sid and kit.focused_block(sid))
+end
+
 -- Jump to the agent that has waited longest in the most urgent state:
 -- blocked, then errored, then finished. The server moves focus to its block;
 -- the client is asked to show that session.
@@ -25,7 +46,7 @@ rex.action{
   name = "agents_next",
   title = "Jump to Agent Needing Attention",
   run = function(ctx)
-    rex.log("info", "agents_next ctx: " .. tostring(ctx and ctx.origin))
+    log_ctx("agents_next", ctx)
     local row = kit.most_urgent(kit.agents())
     if not row then return { jumped = false, reason = "no agent is waiting" } end
     kit.call("session.focus_block", { session_id = row.session_id, block_id = row.block_id })
@@ -56,5 +77,43 @@ rex.action{
   end,
 }
 
+-- claude-steps as a live sidecar beside the focused agent (rex-steps): opens
+-- it, or closes it when it is already open. From inside a sidecar, closes
+-- that sidecar.
+rex.action{
+  name = "steps_sidecar",
+  title = "Steps Sidecar",
+  run = function(ctx)
+    log_ctx("steps_sidecar", ctx)
+    local sid, bid = current_block(ctx)
+    if not (sid and bid) then return { opened = false, reason = "no focused block" } end
+    local blocks = kit.terminals(sid)
+    for _, b in ipairs(blocks) do
+      if b.block_id == bid and (b.label or ""):find("^steps·") then
+        kit.call("block.close", { session_id = sid, block_id = bid })
+        return { closed = b.label }
+      end
+    end
+    local label = "steps·" .. bid:sub(-6)
+    for _, b in ipairs(blocks) do
+      if b.label == label then
+        kit.call("block.close", { session_id = sid, block_id = b.block_id })
+        return { closed = label }
+      end
+    end
+    local r = kit.call("session.new_split", {
+      session_id = sid, anchor_block_id = bid,
+      direction = "horizontal", side = "after", ratio = 0.62,
+      layout = { block = {
+        flavor = "com.superlogical.terminal.shell", label = label,
+        options = { command = { HOME .. "/.local/bin/rex-steps", "watch", sid, bid } },
+      } },
+      focus = false,
+    })
+    return { opened = label, block = r.block_ids[1] }
+  end,
+}
+
 rex.bind("cmd+shift+j", "agents_next")
+rex.bind("cmd+shift+s", "steps_sidecar")
 rex.bind("cmd+shift+a", "agents_board")

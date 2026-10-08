@@ -3,7 +3,7 @@
 # work without spending real Claude turns. Each agent works through a few
 # steps, stops for permission (press y in its tab), finishes, and starts over
 # on a key press, publishing every state with rex-agent. The first window runs
-# the agents board.
+# the agents board; the last runs a real Claude with its steps sidecar.
 #
 #   rex-demo         create the "agents-demo" session (replacing an old one)
 #   rex-demo stop    remove it
@@ -49,7 +49,9 @@ agent() {
 
 start() {
   "$REX" kill "$SESSION" >/dev/null 2>&1
-  "$REX" new "$SESSION" --window board --shell none -- "$BIN/rex-board" >/dev/null || exit 1
+  local session
+  session=$("$REX" new "$SESSION" --window board --shell none --json -- "$BIN/rex-board" | jq -r .session_id)
+  [ -n "$session" ] || exit 1
   local self
   self=$(command -v "$0" || printf '%s' "$0")
   "$REX" run -s "$SESSION" --focus=false --shell none --label api -- "$self" agent api 2 \
@@ -58,8 +60,22 @@ start() {
     "reading the checkout page" "fixing the coupon input" "updating snapshots" >/dev/null
   "$REX" run -s "$SESSION" --focus=false --shell none --label docs -- "$self" agent docs 15 \
     "scanning docs/ for stale links" "rewriting the setup guide" >/dev/null
-  printf 'session %s: a board and three agents (api, web, docs).\n' "$SESSION"
-  printf 'Open it in Rex; press y in a blocked tab to let that agent go on.\n'
+  # One real Claude (the x launcher picks the account) in REX_DEMO_DIR, by
+  # default this repository, with its claude-steps sidecar beside it. Idle until you type, so it costs nothing on its own.
+  local created block
+  created=$("$REX" run -s "$SESSION" --focus=false --shell none --label claude --json \
+    -c "${REX_DEMO_DIR:-$HOME/dotfiles}" \
+    -- /bin/zsh -lic 'x; exec zsh -l')
+  block=$(printf '%s' "$created" | jq -r '.block_ids[0] // empty')
+  if [ -n "$block" ]; then
+    "$REX" split -s "$session" -b "$block" --split right --ratio 38 --focus=false \
+      --label "steps·${block: -6}" --shell none -- "$BIN/rex-steps" watch "$session" "$block" >/dev/null
+  else
+    printf 'no claude window: rex run said %s\n' "$created" >&2
+  fi
+  printf 'session %s: a board, three simulated agents (api, web, docs), and a\n' "$SESSION"
+  printf 'real Claude with its steps sidecar. Press y in a blocked tab to let that\n'
+  printf 'agent go on; give the Claude a task to watch it report.\n'
 }
 
 case "${1:-}" in

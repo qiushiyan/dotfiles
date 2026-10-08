@@ -46,6 +46,23 @@ function M.block(session_id, block_id, method, args)
   return M.try(M.TERMINAL .. "." .. method, { session_id = session_id, block_id = block_id, args = args or {} })
 end
 
+-- A table as one line of text, for logs.
+function M.dump(v, depth)
+  depth = depth or 0
+  if type(v) ~= "table" or depth > 4 then return tostring(v) end
+  local parts = {}
+  for key, x in pairs(v) do parts[#parts + 1] = tostring(key) .. "=" .. M.dump(x, depth + 1) end
+  table.sort(parts)
+  return "{" .. table.concat(parts, ", ") .. "}"
+end
+
+-- The block that has focus in a session's active window.
+function M.focused_block(session_id)
+  M.attach(session_id)
+  local view = M.try("session.view", { session_id = session_id })
+  return view and view.focused_window and view.focused_window.focused_block_id
+end
+
 -- Agent records (OSC 7501) ------------------------------------------------------
 
 -- Lower ranks need the human sooner. `clear` never reaches a record list.
@@ -109,6 +126,49 @@ end
 function M.most_urgent(rows)
   for _, row in ipairs(rows) do
     if (M.RANK[row.record.state] or 9) <= M.RANK.done then return row end
+  end
+end
+
+-- Claude sessions ------------------------------------------------------------
+
+-- Claude Code writes <config dir>/sessions/<pid>.json for each running
+-- process, naming its session id. The pid comes from the block's status
+-- record (its owner is the process that reported) or, failing that, the
+-- block's foreground process.
+local function session_file(pid)
+  local home = os.getenv("HOME")
+  local dirs = { home .. "/.claude" }
+  -- Not in the constructor: a nil there would end ipairs before ~/.claude.
+  if os.getenv("CLAUDE_CONFIG_DIR") then table.insert(dirs, 1, os.getenv("CLAUDE_CONFIG_DIR")) end
+  local p = io.popen("ls -d " .. home .. "/.claude-accounts/*/ 2>/dev/null")
+  if p then
+    for d in p:lines() do dirs[#dirs + 1] = (d:gsub("/$", "")) end
+    p:close()
+  end
+  for _, dir in ipairs(dirs) do
+    local f = io.open(dir .. "/sessions/" .. pid .. ".json", "r")
+    if f then
+      local body = f:read("*a")
+      f:close()
+      return body
+    end
+  end
+end
+
+-- The Claude session running in a block: its id and directory, or nil.
+function M.claude_session(session_id, block_id)
+  local pids = {}
+  local status = M.block(session_id, block_id, "program_status")
+  for _, r in ipairs((status and status.records) or {}) do
+    if r.owner and r.owner.pid then pids[#pids + 1] = r.owner.pid end
+  end
+  local proc = M.block(session_id, block_id, "process")
+  if proc and proc.foreground then pids[#pids + 1] = proc.foreground.pid end
+  for _, pid in ipairs(pids) do
+    local body = session_file(pid)
+    if body then
+      return body:match('"sessionId"%s*:%s*"([^"]+)"'), body:match('"cwd"%s*:%s*"([^"]+)"')
+    end
   end
 end
 

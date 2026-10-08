@@ -9,13 +9,15 @@ file is the notebook: what is here, what we learned, what is still open.
 
 | Path | Stows to | What it does |
 |---|---|---|
-| `.config/rex/init.lua` | `~/.config/rex/init.lua` | Actions `agents_next` (⌘⇧J) and `agents_board` (⌘⇧A) |
-| `.config/rex/lua/rexkit.lua` | same | Shared helpers: calls, sessions, agent records |
-| `.config/rex/scripts/board.lua` | same | Live agents board, event-driven |
+| `.config/rex/init.lua` | `~/.config/rex/init.lua` | Actions `agents_next` (⌘⇧J), `agents_board` (⌘⇧A), `steps_sidecar` (⌘⇧S) |
+| `.config/rex/lua/rexkit.lua` | same | Shared helpers: calls, sessions, agent records, a block's Claude session |
+| `.config/rex/scripts/board.lua` | same | Live agents board, event-driven; each Claude's claude-steps title and branch under its row |
+| `.config/rex/scripts/steps.lua` | same | The steps sidecar: `claude-steps show` for one agent, redrawn when it reports |
 | `.local/bin/rex` | `~/.local/bin/rex` | The app's bundled CLI on PATH (Stow refuses absolute symlinks, so a wrapper) |
 | `.local/bin/rex-agent` | same | Publish agent state over OSC 7501; the Claude hooks call `rex-agent claude` |
 | `.local/bin/rex-board` | same | Run the board here, or `--popup` in a floating layer |
-| `.local/bin/rex-demo` | same | A session of simulated agents (board + three agents) to watch all of this work |
+| `.local/bin/rex-demo` | same | A demo session: board, three simulated agents, a real Claude with its steps sidecar |
+| `.local/bin/rex-steps` | same | Open a steps sidecar beside this terminal (or a named block) |
 | `.local/bin/rex-theme` | same | Called by `theme-set`: switches the app's theme by name; silent without a Rex server |
 
 `~/.config/rex` is a real directory (Makefile `REAL_DIRS`, `.gitignore`
@@ -30,9 +32,11 @@ outside Rex; `theme-set` step 6 calls `rex-theme`.
 
 ## Try it
 
-`rex-demo` builds an `agents-demo` session: a board window and three
-simulated agents that work, stop for permission (press `y` in their tab) and
-finish, publishing each state. `rex-demo stop` removes it. With real agents:
+`rex-demo` builds an `agents-demo` session: a board window, three simulated
+agents that work, stop for permission (press `y` in their tab) and finish,
+publishing each state, and a real Claude (started with `x` in this
+repository, idle until you type) with its steps sidecar. `rex-demo stop`
+removes it. With your own agents:
 
 1. Turn on **Show status badges** (Rex Settings, tab options): the app then
    draws a dot on a tab whose program reports a status. Without an agent,
@@ -45,7 +49,9 @@ finish, publishing each state. `rex-demo stop` removes it. With real agents:
 3. ⌘⇧A opens the board over the current window; any key closes it.
    `rex-board` runs it in a pane.
 4. ⌘⇧J jumps to the agent that has waited longest in the most urgent state.
-5. `prefix t` (or `theme-set NAME`) also switches Rex's theme, once Remote
+5. ⌘⇧S in a Claude's terminal opens its steps sidecar, ⌘⇧S again closes it;
+   `rex-steps` does the same from the shell.
+6. `prefix t` (or `theme-set NAME`) also switches Rex's theme, once Remote
    Control is on and the theme is imported (Themes below).
 
 Turning on **Remote Control** (Rex Settings → Rex Server) lets the CLI drive
@@ -122,8 +128,13 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
   (command palette, Import Theme File; ours in `ghostty/.config/ghostty/themes/`
   and Ghostty.app's bundled ones both work), or a migration that reads only
   `~/Library/Application Support/com.mitchellh.ghostty/config`, not our XDG
-  `~/.config/ghostty/config`. Imports are stored in the app's defaults
-  (`Workspace.customThemes`).
+  `~/.config/ghostty/config`. Imports are stored in the app's defaults as
+  `Workspace.customThemes`, JSON data: a list of `{id: "custom-<UUID>", name,
+  appearance: "dark"|"light", createdAt, palette: {background, foreground,
+  cursor, cursorText, selectionBackground, selectionForeground, ansi: [16]},
+  source: {ghosttyMigration: {themeName}}}`; the dark and light picks are
+  `Workspace.darkThemeID` and `Workspace.lightThemeID`. Enough to generate our
+  themes rather than import them one by one.
 - `client.theme.change name=…` fuzzy-matches a theme name or ID, and needs
   Remote Control from outside the app. `rex-theme` passes the Ghostty theme
   name theme-set chose.
@@ -135,6 +146,22 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
   answer", the `permission` and `question` kinds
   (`Workspace.showsProgramStatusInTabs`). The board is a second view across
   sessions, not the only one.
+
+### claude-steps in Rex
+
+- tmux's `prefix S` is a popup you open to read a session. In Rex the steps
+  live beside the agent: a sidecar split runs `claude-steps show` for that
+  agent's session and redraws on its `program_status_changed` events, so it
+  is current after every prompt, tool call and stop, with no polling.
+- The board puts each Claude session's claude-steps title and branch under
+  its row, read again only when that agent changes state.
+- No `@claude_ctx_sid` is needed. The status record names the process that
+  reported (`owner.pid`, Claude itself), and Claude writes
+  `<config dir>/sessions/<pid>.json` with its `sessionId` and `cwd`, so block
+  → session needs no extra plumbing, and /clear or /resume is followed on the
+  next redraw. Claude reports SessionStart before that file exists, so the
+  first lookup retries; a new session has no transcript until its first
+  prompt.
 
 ### Popups, layouts, blocks
 
@@ -155,14 +182,16 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
 - Client actions from the CLI (`rex -C … do client.*`, `session.select`) are
   refused until Remote Control is on; server methods are not.
 - Stow will not stow an absolute symlink, hence the `rex` wrapper script.
+- Rex's Lua crashes the whole `rex do` with a Go nil-pointer error on
+  `for l in (("a"):gsub("a","b") .. ""):gmatch("b") do end`; through a local
+  it works. Worth reporting.
 
 ## Open questions
 
-- The format of `Workspace.customThemes`, so all our themes can be generated
-  in one go instead of imported by hand.
 - What `ctx` an action gets from a key press (session? block? client?).
-  `agents_next` logs `ctx.origin`; the board popup falls back to the first
-  session when `ctx` names none.
+  Every action appends its ctx to `~/.local/state/rex-lab/ctx.log`; until
+  that is known, the actions fall back to the first session and its focused
+  block, which can be the wrong one.
 - What else the app does with a status (notifications? the sidebar?).
 - Do sessions survive quitting the app (the server is `run-mode bundled`)?
   That decides whether resurrect-style persistence is needed at all.

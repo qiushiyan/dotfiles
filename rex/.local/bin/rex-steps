@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# rex-steps: claude-steps as a live sidecar in Rex. A split beside an agent
+# shows `claude-steps show` for the Claude session in it, redrawn whenever
+# that agent reports a status (~/.config/rex/scripts/steps.lua).
+#
+#   rex-steps [--sid ID] [BLOCK]    open a sidecar beside BLOCK, by default
+#                                   this terminal; --sid shows that Claude
+#                                   session instead of the block's own
+#   rex-steps watch SESSION BLOCK [ID]   INTERNAL: the sidecar itself
+#
+# The sidecar is labelled steps·<last 6 of the agent's block id>. Inside Rex,
+# ⌘⇧S (the steps_sidecar action) opens or closes the focused agent's sidecar.
+set -u
+BIN="$HOME/.local/bin"
+REX="$BIN/rex"
+STEPS=$(command -v claude-steps || printf '%s' "$BIN/claude-steps")
+SELF="$BIN/rex-steps"
+
+watch() {
+  local session=$1 block=$2 sid=${3:-}
+  local log="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/steps.err"
+  mkdir -p "${log%/*}"
+  # rex probes a terminal it writes stderr to; keep its chatter out of the view.
+  "$REX" do "$HOME/.config/rex/scripts/steps.lua" -s "$session" \
+    session="$session" block="$block" bin="$STEPS" ${sid:+sid="$sid"} 2>>"$log"
+}
+
+open_beside() {
+  local sid="" block=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --sid) sid=$2; shift 2 ;;
+      *) block=$1; shift ;;
+    esac
+  done
+  block=${block:-${REX_BLOCK:-}}
+  local session=${REX_SESSION:-}
+  if [ -z "$block" ] || [ -z "$session" ]; then
+    printf 'rex-steps: run it inside Rex, or name a block of this session\n' >&2
+    exit 2
+  fi
+  "$REX" split -s "$session" -b "$block" --split right --ratio 38 --focus=false \
+    --label "steps·${block: -6}" --shell none -- "$SELF" watch "$session" "$block" "$sid" >/dev/null
+}
+
+case "${1:-}" in
+  watch) shift; watch "$@" ;;
+  -h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) open_beside "$@" ;;
+esac
