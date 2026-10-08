@@ -44,6 +44,17 @@ for _, dir in ipairs(DIRECTIONS) do
 end
 bind_all("panes", panes)
 
+-- Closing a tab asks first (prefix x) ---------------------------------------------------
+
+-- A mode, so the app's panel of its keys is the prompt: y closes the tab, n or
+-- escape keeps it. Exclusive, so any other key does nothing and the prompt
+-- stays until answered; entered once, so either answer leaves it.
+rex.mode("close-tab", { exclusive = true })
+bind_all("close-tab", {
+  { "y", "client.tab.close" },
+  { "n", "client.mode.exit" }, { "escape", "client.mode.exit" },
+})
+
 -- The prefix --------------------------------------------------------------------------
 
 -- The tmux prefix, as a Rex mode: ctrl+a enters it for one key, as tmux's
@@ -67,7 +78,7 @@ local prefix = {
   { "ctrl+h", "window_cycle", { step = -1 } }, { "ctrl+l", "window_cycle", { step = 1 } },
   { "ctrl+p", "window_cycle", { step = -1 } }, { "ctrl+n", "window_cycle", { step = 1 } },
   { "tab", "window_last" }, { "shift+tab", "window_last", { session = true } },
-  { "x", "client.tab.close" }, { "m", "client.tab.rename" }, { "shift+4", "session.rename" },
+  { "x", "client.mode.enter", { name = "close-tab", once = true } }, { "m", "client.tab.rename" }, { "shift+4", "session.rename" },
   { "shift+t", "session.switch" }, { "shift+9", "session.previous" }, { "shift+0", "session.next" },
   -- tools
   { "y", "copy_path" }, { "shift+y", "copy_path", { rel = true } },

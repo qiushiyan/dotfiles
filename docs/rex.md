@@ -337,8 +337,9 @@ every binding. The shape:
   (`hjkl` push, `HJKL` resize, `g` hold, `p` put, `G` release, `Esc` leave).
 - **Tabs and sessions after the prefix:** `1`–`9` this session's tab N, `C-h`
   `C-l` (`C-p` `C-n`) previous and next, `Tab` the last tab, `S-Tab` the last
-  session on this host, `c` new tab, `N` new tab here, `x` close, `m` rename,
-  `T` `(` `)` sessions, `$` rename the session.
+  session on this host, `c` new tab, `N` new tab here, `x` close after asking
+  (`y` closes, `n` or `escape` keeps it), `m` rename, `T` `(` `)` sessions, `$`
+  rename the session.
 - **Tools after the prefix:** `y`/`Y` copy path, `g` gopen, `u` URLs, `e`
   export, `W` worktrees, `S` steps sidecar, `A` agents board, `a` next agent.
 - **Without the prefix:** `ctrl+h/j/k/l` pane focus, `ctrl+shift+up/down`
