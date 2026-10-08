@@ -722,14 +722,14 @@ for _, dir in ipairs({ "left", "down", "up", "right" }) do
 end
 for _, b in ipairs(panes) do rex.bind("panes/" .. b[1], b[2], b[3]) end
 
--- The tmux prefix, as key sequences: ctrl+a then a key (ctrl+a>KEY), as
--- tmux's prefix does. Not a Rex mode: the app shows a panel listing a mode's
--- keys while it is active, which the prefix's single key does not need
--- (pane mode, which stays active while you work, keeps its panel). The app
--- waits for the key after ctrl+a; one no sequence binds reaches the
--- terminal, and ctrl+a never does. Most keys are the app's own actions; the
--- rest are defined above. ctrl+a twice sends a literal ctrl+a.
+-- The tmux prefix, as a Rex mode: ctrl+a enters it for one key, as tmux's
+-- prefix does, and Escape leaves it. Exclusive, so a key it does not bind
+-- does nothing rather than reach the shell. Most keys are the app's own
+-- actions; the rest are defined above. ctrl+a twice sends a literal ctrl+a.
+rex.mode("prefix", { exclusive = true })
+rex.bind("ctrl+a", "client.mode.enter", { name = "prefix", once = true })
 local prefix = {
+  { "escape", "client.mode.exit" },
   { "ctrl+a", "pane.send_key", { key = "ctrl+a" } },
   -- panes
   { "shift+\\", "pane.split.right" }, { "\\", "pane.split.right" }, { "-", "pane.split.down" },
@@ -755,7 +755,7 @@ local prefix = {
   { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
 }
 for i = 1, 9 do prefix[#prefix + 1] = { tostring(i), "window_goto", { index = i } } end
-for _, b in ipairs(prefix) do rex.bind("ctrl+a>" .. b[1], b[2], b[3]) end
+for _, b in ipairs(prefix) do rex.bind("prefix/" .. b[1], b[2], b[3]) end
 
 rex.bind("cmd+shift+j", "agents_next")
 rex.bind("cmd+shift+s", "steps_sidecar")
