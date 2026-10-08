@@ -2,8 +2,8 @@
 # test-tmux-exit-watch.sh — tmux-exit-watch's contract: every server in the
 # socket directory is watched, and its exit is recorded as the kernel reports
 # it (signal, clean exit, error exit), with the process table saved for any
-# exit but a clean one; a stale socket is never asked again until a new
-# server replaces it.
+# exit but a clean one, and the patched build's fatal.log lines for that pid;
+# a stale socket is never asked again until a new server replaces it.
 #
 # Usage: bash test-tmux-exit-watch.sh [X1 X4 ...]
 #
@@ -147,11 +147,18 @@ CASE=X5; if want "$@"; then
     /usr/bin/python3 -I "$SANDBOX/fake-server" "$SOCKS/fake-x5" 1 &
     wait_for 5 test -f "$SOCKS/fake-x5.pid"; pid=$(cat "$SOCKS/fake-x5.pid")
     wait_for 5 watching "$pid"
+    # what the patched tmux writes on a fatal, beside another pid's record
+    mkdir -p "$STATE"
+    printf '%s pid 1 tmux 3.7c slide 0x0 fatal: someone else\n0 tmux 0x1 x + 1\n\n' "$(date +%s)" >> "$STATE/fatal.log"
+    printf '%s pid %s tmux 3.7c slide 0x4000 fatal: bad thing\n0 tmux 0x2 fatalx + 9\n\n' "$(date +%s)" "$pid" >> "$STATE/fatal.log"
     n=$(records); touch "$SOCKS/fake-x5.go"; wait_for 5 has_records $((n + 1))
     r=$(last_record)
     ok X5-kind '"error-exit"' "$(field "$r" kind)"
     ok X5-code 1 "$(field "$r" exit_code)"
     ok X5-ps yes "$([ "$(field "$r" processes)" != null ] && echo yes)"
+    ok X5-fatal-own-pid yes "$(field "$r" fatal | grep -q "pid $pid tmux" && echo yes)"
+    ok X5-fatal-reason yes "$(field "$r" fatal | grep -q 'fatal: bad thing' && echo yes)"
+    ok X5-fatal-not-others no "$(field "$r" fatal | grep -q 'someone else' && echo yes || echo no)"
 fi
 
 CASE=X6; if want "$@"; then

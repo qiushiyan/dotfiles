@@ -10,6 +10,12 @@
 # screen_redraw_draw_pane_status underflowed the width to ~2^32 cells
 # (tmux/tmux#5664).
 #
+# Also, for diagnosis: a fatal (tmux's fatal/fatalx, or libevent's own fatal
+# error) appends its reason, a backtrace and the image's load slide to
+# ~/.local/state/tmux-exit/fatal.log ($TMUX_FATAL_LOG overrides) even with
+# logging off, since stock tmux writes a fatal's reason only to its -v log;
+# tmux-exit-watch joins those lines into its exit record (docs/recovery.md).
+#
 # Drop this formula and return to stock `tmux` once an upstream release
 # includes both fixes (check the tmux CHANGES for popup overlay fixes after
 # 3.7c; 3.8 rewrites the pane status drawing).
@@ -22,7 +28,7 @@ class TmuxPopupfix < Formula
   sha256 "7c60cae9a0e25288e2e24750aafc9e8800fc7fd4555e447e1b29ee4201cfb3bf"
   license "ISC"
   version "3.7c"
-  revision 1
+  revision 2
 
   depends_on "pkgconf" => :build
   depends_on "libevent"
@@ -133,3 +139,140 @@ __END__
  		r = screen_redraw_get_visible_ranges(wp, sb_x, wy, imax, r);
  		for (i = imin; i < imax; i++) {
  			px = sb_x + ox + i; /* tty x coordinate */
+--- a/log.c
++++ b/log.c
+@@ -19,9 +19,14 @@
+ #include <sys/types.h>
+ 
+ #include <errno.h>
++#include <execinfo.h>
++#include <fcntl.h>
++#include <limits.h>
++#include <mach-o/dyld.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <time.h>
+ #include <unistd.h>
+ 
+ #include "tmux.h"
+@@ -31,11 +36,22 @@
+ 
+ /* Log callback for libevent. */
+ static void
+-log_event_cb(__unused int severity, const char *msg)
++log_fatal_write(const char *, const char *);
++static void
++log_event_cb(int severity, const char *msg)
+ {
++	if (severity == EVENT_LOG_ERR)
++		log_fatal_write("libevent: ", msg);
+ 	log_debug("%s", msg);
+ }
+ 
++/* Local build: record libevent's fatal errors with logging off too. */
++__attribute__((constructor)) static void
++log_event_init(void)
++{
++	event_set_log_callback(log_event_cb);
++}
++
+ /* Increment log level. */
+ void
+ log_add_level(void)
+@@ -93,7 +109,7 @@
+ 		fclose(log_file);
+ 	log_file = NULL;
+ 
+-	event_set_log_callback(NULL);
++	event_set_log_callback(log_event_cb);
+ }
+ 
+ /* Write a log message. */
+@@ -135,6 +151,64 @@
+ 	va_end(ap);
+ }
+ 
++/*
++ * Local build: a fatal leaves its reason in a file even with logging off,
++ * with a backtrace and the image's load slide so `atos -o <tmux> -s <slide>
++ * <addr>...` names static functions. TMUX_FATAL_LOG overrides the path.
++ * libevent's own fatal errors (EVENT_LOG_ERR, then exit(1)) are recorded
++ * the same way. Only the stack and write(2): an allocation failure is one
++ * of the causes.
++ */
++static void
++log_fatal_write(const char *prefix, const char *text)
++{
++	char		 path[PATH_MAX], line[2048];
++	const char	*env, *home;
++	void		*frames[64];
++	int		 fd, n, len;
++
++	if ((env = getenv("TMUX_FATAL_LOG")) != NULL && *env != '\0')
++		len = snprintf(path, sizeof path, "%s", env);
++	else if ((home = getenv("HOME")) != NULL && *home != '\0')
++		len = snprintf(path, sizeof path,
++		    "%s/.local/state/tmux-exit/fatal.log", home);
++	else
++		return;
++	if (len < 0 || (size_t)len >= sizeof path)
++		return;
++	if ((fd = open(path, O_WRONLY|O_APPEND|O_CREAT, 0600)) == -1)
++		return;
++
++	len = snprintf(line, sizeof line,
++	    "%lld pid %ld tmux %s slide 0x%lx %s%s", (long long)time(NULL),
++	    (long)getpid(), getversion(),
++	    (unsigned long)_dyld_get_image_vmaddr_slide(0), prefix, text);
++	if (len < 0)
++		len = 0;
++	if ((size_t)len > sizeof line - 2)
++		len = sizeof line - 2;
++	line[len++] = '\n';
++	write(fd, line, len);
++
++	n = backtrace(frames, sizeof frames / sizeof frames[0]);
++	backtrace_symbols_fd(frames, n, fd);
++	write(fd, "\n", 1);
++	close(fd);
++}
++
++static void
++log_fatal_record(const char *prefix, const char *msg, va_list ap)
++{
++	char	text[1024];
++	va_list	aq;
++
++	va_copy(aq, ap);
++	if (vsnprintf(text, sizeof text, msg, aq) < 0)
++		text[0] = '\0';
++	va_end(aq);
++	log_fatal_write(prefix, text);
++}
++
+ /* Log a critical error with error string and die. */
+ __dead void
+ fatal(const char *msg, ...)
+@@ -146,6 +220,10 @@
+ 		exit(1);
+ 
+ 	va_start(ap, msg);
++	log_fatal_record(tmp, msg, ap);
++	va_end(ap);
++
++	va_start(ap, msg);
+ 	log_vwrite(msg, ap, tmp);
+ 	va_end(ap);
+ 
+@@ -159,6 +237,10 @@
+ 	va_list	 ap;
+ 
+ 	va_start(ap, msg);
++	log_fatal_record("fatal: ", msg, ap);
++	va_end(ap);
++
++	va_start(ap, msg);
+ 	log_vwrite(msg, ap, "fatal: ");
+ 	va_end(ap);
+ 

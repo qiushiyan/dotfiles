@@ -9,7 +9,8 @@ with kqueue (EVFILT_PROC, NOTE_EXIT with the exit status and macOS's exit
 detail) and, when one exits, appends a JSON line to exits.jsonl in the state
 directory. An exit other than a clean 0 also saves the process table as it
 stood at that moment, since whatever ran beside the server is gone a second
-later.
+later, and the lines the patched tmux build wrote to fatal.log for that pid
+(its fatal's reason and backtrace).
 
 It never starts or changes a server. It finds servers by scanning the socket
 directory and asking each socket it has not seen for the server's pid with
@@ -111,6 +112,28 @@ def describe(status, fflags):
     return rec
 
 
+def fatal_lines(state, pid):
+    """The lines a locally patched tmux wrote to fatal.log for pid, if any.
+
+    The tmux-popupfix build appends a fatal's reason and backtrace there
+    (docs/tmux-popupfix.rb), each record's first line starting
+    "<time> pid <pid> "; stock tmux writes nothing.
+    """
+    try:
+        with open(os.path.join(state, "fatal.log"), errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return None
+    out, mine = [], False
+    for line in text.splitlines():
+        head = line.split(" ", 3)
+        if len(head) > 2 and head[1] == "pid" and head[0].isdigit():
+            mine = head[2] == str(pid)
+        if mine and line:
+            out.append(line)
+    return out or None
+
+
 def snapshot_processes(state, pid, t):
     path = os.path.join(state, f"{time.strftime('%Y%m%dT%H%M%S', time.localtime(t))}-{pid}-ps.txt")
     try:
@@ -190,6 +213,7 @@ def main():
             rec.update(describe(ev.data, ev.fflags))
             if rec["kind"] != "clean":
                 rec["processes"] = snapshot_processes(state, ev.ident, t)
+                rec["fatal"] = fatal_lines(state, ev.ident)
             with open(os.path.join(state, "exits.jsonl"), "a") as f:
                 f.write(json.dumps(rec) + "\n")
             sock = info.get("socket")
