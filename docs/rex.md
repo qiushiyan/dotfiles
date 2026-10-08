@@ -178,8 +178,8 @@ directory (`docs/stow-layout.md`).
   `escape` leaves it, `ctrl+a` again sends a literal `ctrl+a`, and an unbound
   key does nothing.
 - **Panes and tabs after the prefix** follow tmux: `|` `-` split, `hjkl` focus,
-  `HJKL` resize, `z` zoom, `c` `n` `p` `x` `m` for tabs, `T` and `(` `)` for
-  sessions, `1`–`9` for this session's tab N.
+  `HJKL` resize, `z` zoom, `c` or `n` new tab, `x` close it, `m` rename it,
+  `T` and `(` `)` for sessions, `1`–`9` for this session's tab N.
 - **Tools after the prefix:** `y`/`Y` copy path, `g` gopen, `W` worktrees, `S`
   `A` `J` steps sidecar, agents board, next agent.
 - **Without the prefix:** `ctrl+shift+down`/`up` step through every tab in

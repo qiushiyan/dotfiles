@@ -10,7 +10,7 @@
 #
 # STATE is idle, working, done, blocked, error or clear; KIND is permission,
 # question or auth. Outside Rex (no REX_BLOCK) it does nothing, so hooks can
-# call it unconditionally. Wire format and findings: ~/dotfiles/rex/README.md.
+# call it unconditionally. Wire format and findings: ~/dotfiles/docs/rex.md.
 
 set -u
 [ -n "${REX_BLOCK:-}" ] || exit 0

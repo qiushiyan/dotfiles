@@ -45,7 +45,7 @@ remove that control. Theme additions follow `/add-theme`.
 **`theme-set`** (`scripts/.local/bin/theme-set`, on `PATH`) is the one writer.
 It validates the name, writes `~/.config/terminal-theme`, regenerates the
 Ghostty include, re-sources tmux, and asks a running Rex app to switch to the
-same Ghostty theme (`rex/README.md`: the Rex app owns its colours). It is
+same Ghostty theme (`docs/rex.md`: the Rex app owns its colours). It is
 UI-agnostic on purpose: the tmux `prefix t` menu, the CLI, and anything added
 later all call the same script.
 

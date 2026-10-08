@@ -1,6 +1,6 @@
 -- Rex config. An experiment, not a tmux port: what Rex makes possible for
 -- agent work. Lab notebook, findings and open questions:
--- ~/dotfiles/rex/README.md. Validate with `rex config check`, apply with
+-- ~/dotfiles/docs/rex.md. Validate with `rex config check`, apply with
 -- `rex config reload`.
 
 local HOME = os.getenv("HOME")
@@ -270,7 +270,8 @@ local prefix = {
   { "z", "pane.zoom" }, { "shift+x", "pane.close" }, { "space", "pane.balance" },
   { "b", "pane.move_to_new_tab" },
   -- tabs (tmux windows) and sessions
-  { "c", "client.tab.new" }, { "n", "client.tab.next" }, { "p", "client.tab.previous" },
+  -- moving between tabs is ctrl+shift+up/down (window_step), not prefix n/p
+  { "c", "client.tab.new" }, { "n", "client.tab.new" },
   { "x", "client.tab.close" }, { "m", "client.tab.rename" },
   { "shift+t", "session.switch" }, { "shift+9", "session.previous" }, { "shift+0", "session.next" },
   -- tools

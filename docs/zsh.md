@@ -80,7 +80,7 @@ zsh/.config/zsh/
   codex.zsh        # Codex accounts through headroom (cx, cx-<name>); plain `codex` stays the vendor default
   xcode.zsh
   tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep
-  rex.zsh          # an interactive shell inside Rex starts rexd (docs: rex/README.md)
+  rex.zsh          # an interactive shell inside Rex starts rexd (docs/rex.md)
   cout.zsh        # execution boundaries for the cout recorder (~/dev/cout)
   proxy.zsh
   hosts/<machine>.zsh  # one machine's identity (§ Machines); outside the glob

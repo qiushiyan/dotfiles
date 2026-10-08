@@ -2,7 +2,7 @@
 --
 -- Everything here runs inside Rex's Lua 5.1 (init.lua actions on the server,
 -- or `rex do` scripts), so the only API is the `rex` global. Lab notes on how
--- that API behaves live in ~/dotfiles/rex/README.md.
+-- that API behaves live in ~/dotfiles/docs/rex.md.
 
 local M = {}
 

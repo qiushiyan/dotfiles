@@ -73,7 +73,7 @@ require("config.theme").watch()
 -- The explicit -t matters: `tmux set -p` without it falls back to the
 -- *client's* active pane when TMUX_PANE is unset (true inside display-popup),
 -- silently writing some other pane's options.
--- Inside Rex (an experiment, ~/dotfiles/rex/README.md) the same answer goes to
+-- Inside Rex (an experiment, ~/dotfiles/docs/rex.md) the same answer goes to
 -- a file named for the Rex block, which Rex's copy_path action reads: Rex has
 -- no per-pane user options.
 do
