@@ -470,11 +470,67 @@ local function placement(session_id, block_id)
   end
 end
 
+-- Header flashes ---------------------------------------------------------------
+
+-- The app does not paint floating layers (docs/rex.md), so a toast is shown
+-- as the block's own label, which its pane header shows: "✓ Copied: ~/x" for
+-- a few seconds, then the label it had. The original is kept in
+-- STATE/flash/<block>, so a flash over a flash still restores the real one,
+-- and a background job puts it back unless the label was changed meanwhile.
+-- M.server names the host the calls go to: init.lua sets it per action from
+-- ctx.server, for the restore job, which runs outside the action.
+M.FLASH_ICON = { ok = "✓", info = "·", warn = "!", error = "✗" }
+M.server = nil
+
+function M.flash(session_id, block_id, level, title, msg, seconds)
+  local text = (M.FLASH_ICON[level] or "·") .. " " .. tostring(title or "")
+    .. ((msg and msg ~= "") and (": " .. tostring(msg)) or "")
+  if #text > 72 then text = text:sub(1, 71) .. "…" end
+  local dir = M.STATE .. "/flash"
+  local file = dir .. "/" .. block_id:gsub(":", "_")
+  local original
+  local f = io.open(file, "r")
+  if f then original = f:read("*l"); f:close() end
+  if not original then
+    for _, b in ipairs(M.terminals(session_id)) do
+      if b.block_id == block_id then original = b.label end
+    end
+    original = original or "shell"
+    os.execute("mkdir -p " .. M.sh_quote(dir))
+    f = io.open(file, "w")
+    if f then f:write(original, "\n"); f:close() end
+  end
+  if not M.try("session.set_block_label", { session_id = session_id, block_id = block_id, label = text }) then
+    return { shown = false }
+  end
+  local rex_cmd = "rex --autostart=false" .. (M.server and (" -S " .. M.sh_quote(M.server)) or "")
+  local list = string.format('{"session_id":%q}', session_id)
+  local set = string.format('{"session_id":%q,"block_id":%q,"label":%q}', session_id, block_id, original)
+  os.execute("(export PATH=" .. M.sh_quote(M.PATH) .. "; sleep " .. tonumber(seconds or 2.5) .. "; "
+    .. rex_cmd .. " api call session.list_blocks " .. M.sh_quote(list)
+    .. " | jq -e --arg b " .. M.sh_quote(block_id) .. " --arg l " .. M.sh_quote(text)
+    .. " '.blocks[] | select(.block_id == $b and .label == $l)' >/dev/null"
+    .. " && " .. rex_cmd .. " api call session.set_block_label " .. M.sh_quote(set)
+    .. "; [ \"$(" .. rex_cmd .. " api call session.list_blocks " .. M.sh_quote(list)
+    .. " | jq -r --arg b " .. M.sh_quote(block_id) .. " '.blocks[] | select(.block_id == $b) | .label')\" = "
+    .. M.sh_quote(text) .. " ] || rm -f " .. M.sh_quote(file) .. ") </dev/null >/dev/null 2>&1 &")
+  return { shown = true }
+end
+
+-- Floating-layer toasts, kept for when the app paints layers again; until
+-- then M.toast flashes the pane header instead.
+M.LAYER_TOASTS = false
+
+function M.toast(session_id, block_id, level, title, msg, seconds)
+  if not M.LAYER_TOASTS then return M.flash(session_id, block_id, level, title, msg, seconds) end
+  return M.layer_toast(session_id, block_id, level, title, msg, seconds)
+end
+
 -- A snacks-style notification at the top right of the window BLOCK is in
 -- (rex-toast draws it). The layer is sized in cells from the block's own grid
 -- and rect, takes no focus, and closes when the toast's process exits. A new
 -- toast replaces one still showing.
-function M.toast(session_id, block_id, level, title, msg, seconds)
+function M.layer_toast(session_id, block_id, level, title, msg, seconds)
   title, msg = tostring(title or ""), tostring(msg or "")
   local window_id, rect = placement(session_id, block_id)
   local size = M.block(session_id, block_id, "size")
