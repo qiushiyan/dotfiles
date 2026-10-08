@@ -17,7 +17,7 @@
 # pointed at it), pbcopy and open are stubs on PATH that record what they were
 # given, and TOCLIP_REMOTE_PIDS decides which clients count as ssh instead of
 # walking the real process tree. K8 asserts the real clipboard was never
-# touched.
+# touched, so a copy made by hand while the suite runs fails it.
 
 set -uo pipefail
 

@@ -38,9 +38,11 @@ involved is inside a scratchpad or temp directory, or was created by this
 session. If `snapshot` fails or is missing, tell the user before going ahead.
 Restoring needs sudo; `snapshot --help` has the mount command to hand the user.
 
-In the planlab repository (`~/dev/planlab/main` and its worktrees under
-`~/dev/.worktrees/main/`), my AWS CLI is signed in to PlanLab's production
-account (586794487474, eu-central-1). When a question turns on what production
+The next two rules apply in the planlab repository (`~/dev/planlab/main` and
+its worktrees under `~/dev/.worktrees/main/`).
+
+My AWS CLI is signed in to PlanLab's production account (586794487474,
+eu-central-1). When a question turns on what production
 holds or did, query it yourself and answer from what comes back, rather than
 asking me or inferring from code. Reads need no go-ahead; anything that changes
 production still does.
@@ -53,3 +55,10 @@ production still does.
 
 If a call fails because the sign-in expired, stop and tell me; I'll sign in
 again and you continue.
+
+When you drive Loopy or write anything on a deployed workspace (a
+conversation, a replay, an eval case, a file, a skill), use my sandbox
+workspace, `planlab-dev-qiushi`. The others belong to customers or serve demos,
+and experimenting on one has already broken a demo. Ask me before writing to
+any other workspace, including a replay, which lands on the original thread's
+workspace. Reading them needs no permission.

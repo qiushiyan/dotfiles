@@ -246,9 +246,9 @@ why the laptop tmux stays out of it) needs these on top of a default mini:
 - **Ctrl-click in Claude Code** is its own click handler, which runs
   `$BROWSER` (else `open`) on the host, the mini, as `gh --web` and `gopen`
   do. `hosts/mini.zsh` sets `BROWSER=~/.local/bin/browser-clip` in every
-  shell, and the shim asks `toclip` per URL: with an ssh client on the pane's
-  session the URL goes to the laptop clipboard instead of the mini's Safari,
-  otherwise it opens on the mini (§ Clipboard and attach). A check at shell
+  shell, and the shim asks `toclip` per URL: when the pane's session was last
+  typed at over ssh the URL goes to the laptop clipboard instead of the mini's
+  Safari, otherwise it opens on the mini (§ Clipboard and attach). A check at shell
   start goes stale: a pane keeps the environment it was created with, and
   tmux gives new panes the environment of the shell that started the server,
   so after a server started over ssh every pane would send URLs away even at
@@ -283,9 +283,15 @@ purpose:
 - **OSC 52 is fire-and-forget.** A terminal that ignores it, such as macOS
   Terminal.app, drops the copy without an error. The text still sits in the
   mini tmux's newest buffer, so `frommini` recovers it.
-- **`toclip` aims at the ssh client**, not the client tmux picks by activity,
-  so a session also shown on the Screen Sharing Ghostty still copies to the
-  laptop; an oversize payload stays in the tmux buffer for `frommini`
+- **`toclip` follows the keypress.** A session can be on both screens at
+  once, the laptop's ssh client and the mini's own Ghostty, so the session's
+  most recently active client decides: an ssh client gets the copy over
+  OSC 52, a local one means the mini's pasteboard. The keypress that asks for
+  a copy is that client's newest input. An attached ssh client alone decides
+  nothing, because the laptop's stays attached, idle, while I work at the
+  desk, and it would take every copy made there. A copy no keypress asked
+  for, such as a URL an agent opens on its own, goes to the screen last typed
+  at. An oversize payload stays in the tmux buffer for `frommini`
   (`scripts/.local/bin/toclip`, pinned by `test-toclip.sh`).
 - **Images:** a screenshot sent with `tomini` becomes the mini's pasteboard
   image, which Claude Code there pastes with Ctrl+V; `tomini` prints the path
