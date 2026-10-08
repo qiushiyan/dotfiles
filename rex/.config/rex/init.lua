@@ -782,7 +782,6 @@ local prefix = {
   -- tools
   { "y", "copy_path" }, { "shift+y", "copy_path", { rel = true } },
   { "g", "gopen" }, { "shift+w", "worktrees" }, { "u", "urls" }, { "e", "export_pane" },
-  { "w", "session.open_on_web" },
   { "shift+s", "steps_sidecar" }, { "shift+a", "agents_board" }, { "a", "agents_next" },
   { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
 }
