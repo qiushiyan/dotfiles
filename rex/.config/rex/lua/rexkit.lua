@@ -156,6 +156,38 @@ function M.here()
   return sid, cid ~= "-" and cid or nil
 end
 
+-- The text of a file in the lab's state directory (~/.local/state/rex-lab)
+-- on the host the calls go to, or nil. Here it is a plain read; on another
+-- host's session (an action run from the laptop's config with ctx.server)
+-- the file is there, so a hidden block in SESSION_ID prints it and its
+-- screen is read back, then the block is closed.
+function M.read_state(ctx, session_id, relpath)
+  if not (ctx and ctx.server) then
+    local f = io.open(M.STATE .. "/" .. relpath, "r")
+    if not f then return nil end
+    local body = f:read("*a")
+    f:close()
+    return body
+  end
+  local mark = "--rex-lab-end--"
+  local r = M.try("session.new_block", { session_id = session_id, flavor = M.TERMINAL .. ".shell",
+    label = "rex-lab-read", options = { command = { "/bin/sh", "-c",
+      'cat "${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/$1" 2>/dev/null; printf "\\n%s\\n" "$2"; sleep 10',
+      "read", relpath, mark } } })
+  if not (r and r.block_id) then return nil end
+  local text
+  for _ = 1, 20 do
+    local out = M.block(session_id, r.block_id, "format", { format = "text", unwrap = true })
+    out = out and out.content or ""
+    local at = out:find(mark, 1, true)
+    if at then text = out:sub(1, at - 1); break end
+    if rex.sleep then pcall(rex.sleep, 0.05) end
+  end
+  M.try("block.close", { session_id = session_id, block_id = r.block_id })
+  if text then text = text:gsub("%s+$", "") end
+  return text ~= "" and text or nil
+end
+
 -- Whether a client runs on this machine: a remote app (the laptop's, over
 -- Tailscale) reaches the server over the network, so `open` here would open
 -- the URL on the wrong screen.

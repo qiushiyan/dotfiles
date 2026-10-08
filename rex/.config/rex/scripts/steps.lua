@@ -4,8 +4,8 @@
 -- block, redrawn each time that block reports a status (rex-agent publishes
 -- on every prompt, tool call and stop), so it is current after every turn
 -- without polling. The block's Claude session is found again on each redraw,
--- so /clear and /resume carry it to the new session. It stops when the agent
--- block is gone. `rex-steps` and the steps_sidecar action (⌘⇧S) open it.
+-- so /clear and /resume carry it to the new session. It stops, closing its
+-- pane, when the agent block is gone. `rex-steps` and the steps_sidecar action (⌘⇧S) open it.
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
 local kit = require("rexkit")
@@ -81,6 +81,12 @@ rex.on("block_event", function(target, ev)
     state = (ev.record and ev.record.state) or ""
     render()
   end
+end)
+
+-- A closed agent block reports nothing more, so the layout changes are
+-- where its sidecar learns it is gone.
+rex.on("session_view_changed", function()
+  if not agent_label() then rex.stop(0) end
 end)
 
 kit.attach(SESSION)

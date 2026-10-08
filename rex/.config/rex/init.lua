@@ -214,7 +214,7 @@ rex.action{
 
 -- claude-steps as a live sidecar beside the focused agent (rex-steps): opens
 -- it, or closes it when it is already open. From inside a sidecar, closes
--- that sidecar.
+-- that sidecar; with a sidecar open whose agent is gone, closes that.
 rex.action{
   name = "steps_sidecar",
   title = "Steps Sidecar",
@@ -236,6 +236,18 @@ rex.action{
         return { closed = label }
       end
     end
+    -- A sidecar whose agent block is gone is closed instead of opening one
+    -- more beside it (a sidecar also closes itself then, steps.lua).
+    local alive, orphans = {}, {}
+    for _, b in ipairs(blocks) do alive[b.block_id:sub(-6)] = true end
+    for _, b in ipairs(blocks) do
+      local of = (b.label or ""):match("^steps·(%w+)$")
+      if of and not alive[of] then
+        kit.try("block.close", { session_id = sid, block_id = b.block_id })
+        orphans[#orphans + 1] = b.label
+      end
+    end
+    if #orphans > 0 then return { closed = orphans } end
     local r = kit.call("session.new_split", {
       session_id = sid, anchor_block_id = bid,
       direction = "horizontal", side = "after", ratio = 0.62,
@@ -264,12 +276,9 @@ rex.action{
     local path
     local fg = kit.foreground(sid, bid)
     if fg and fg.name == "nvim" then
-      local f = io.open(STATE .. "/yank/" .. bid:gsub(":", "_"), "r")
-      if f then
-        local abs, rel = f:read("*l"), f:read("*l")
-        f:close()
-        path = (args and args.rel) and rel or abs
-      end
+      local body = kit.read_state(ctx, sid, "yank/" .. bid:gsub(":", "_"))
+      local abs, rel = (body or ""):match("^([^\n]+)\n?([^\n]*)")
+      path = (args and args.rel) and rel ~= "" and rel or abs
     end
     path = path or (fg and fg.cwd)
     if not path then
