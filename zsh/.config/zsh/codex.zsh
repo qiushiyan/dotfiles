@@ -2,8 +2,8 @@
 # Codex CLI — several subscriptions, launched through headroom.
 #
 # The Codex counterpart of claude.zsh, deliberately smaller, and built on its
-# shared launch layer (_headroom_required, _account_launchers), which .zshenv's
-# glob sources first. One state dir
+# shared launch layer (_headroom_required, _workspace_trust,
+# _account_launchers), which .zshenv's glob sources first. One state dir
 # ("home") per extra subscription lives at ~/.codex-accounts/<email>; the
 # default ~/.codex is the primary. headroom's own files sit beside them:
 #
@@ -74,6 +74,7 @@ _codex_launch() {
   emulate -L zsh
   local sel="$1"; shift
   _headroom_required codex || return
+  _workspace_trust
   if [[ -n "$sel" ]]; then
     _codex_in_pane 6 headroom launch --vendor codex --account "$sel" -- "$@"
   else

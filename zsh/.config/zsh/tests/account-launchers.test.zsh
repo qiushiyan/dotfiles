@@ -147,9 +147,35 @@ test_add_retires_an_ambiguous_alias() {
     cx-dup@b.com "launch --vendor codex --account dup@b.com --"
 }
 
+# Every launcher that starts a session runs workspace-trust before headroom
+# and launches whatever it returns: the stub fails each time. The board
+# starts no session and does not run it.
+test_launchers_record_trust_first() {
+  sandbox yan@a.com || return 1
+  cat >"$SB/bin/workspace-trust" <<EOS
+#!/bin/sh
+if [ -s "$SB/headroom.log" ]; then echo "after headroom" >> "$SB/trust.log"
+else echo "\$*" >> "$SB/trust.log"; fi
+exit 1
+EOS
+  chmod +x "$SB/bin/workspace-trust"
+  local B='-- --dangerously-skip-permissions'
+  expect "$(probe 'route x x-yan x-select cx cx-yan x-acc')" \
+    x         "launch $B" \
+    x-yan     "launch --account yan@a.com $B" \
+    x-select  "sessions --cd-file * $B" \
+    cx        "launch --vendor codex --" \
+    cx-yan    "launch --vendor codex --account yan@a.com --" \
+    x-acc     "accounts --compact" || return 1
+  local got="$(<"$SB/trust.log")"
+  [[ "$got" == $'--quiet\n--quiet\n--quiet\n--quiet\n--quiet' ]] \
+    || { print -r -- "workspace-trust ran as: ${(qqq)got}"; return 1 }
+}
+
 t "x-* launchers: names and the account each reaches"   test_claude_launcher_names
 t "cx-* launchers: names and the account each reaches"  test_codex_launcher_names
 t "adding a same-local-part account retires the alias"  test_add_retires_an_ambiguous_alias
+t "session launchers run workspace-trust first"         test_launchers_record_trust_first
 
 rm -rf "${TMPDIR:-/tmp}"/al-test.*(N)
 print -r -- "----"

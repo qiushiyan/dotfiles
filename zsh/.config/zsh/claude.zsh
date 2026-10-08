@@ -127,6 +127,17 @@ _headroom_required() {  # <vendor>
   return 127
 }
 
+# Neither vendor has a switch for trusting every workspace: each records it
+# per repository, and Claude Code per account as well. workspace-trust
+# (scripts/) records ~/dev, ~/dotfiles and ~/wiki in every account's state,
+# and every launch runs it first, so a new clone or a new account is never
+# asked about. It writes only when something is missing, and a launch never
+# depends on its outcome; its header owns the rule and the cleanup (--prune).
+_workspace_trust() {
+  whence -p workspace-trust >/dev/null && workspace-trust --quiet
+  return 0
+}
+
 # _account_launchers <prefix> <root> <primary> <launch-fn> [reserved...]
 # Defines <prefix>-<email> for every account dir under <root>, each running
 # `<launch-fn> <email> "$@"`; it always exists and is the guaranteed identity.
@@ -231,6 +242,7 @@ x-select() {
   _headroom_required claude || return
   _claude_fast_args "$@" || return
   set -- "${reply[@]}"
+  _workspace_trust
   local tmp rc dir
   tmp=$(mktemp -d "${${TMPDIR:-/tmp}%/}/x-select.XXXXXX") || return
   headroom sessions --cd-file "$tmp/cwd" -- "${CLAUDE_X_BYPASS[@]}" "$@"
@@ -288,6 +300,7 @@ _claude_launch() {
   if (( ! ${argv[(I)(--effort|--effort=*)]} )) && _claude_workspace_effort; then
     effort=(--effort "$REPLY")
   fi
+  _workspace_trust
   if [[ -n "$sel" ]]; then
     headroom launch --account "$sel" -- "${effort[@]}" "$@"
   else

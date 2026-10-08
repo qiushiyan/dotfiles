@@ -1,0 +1,366 @@
+#!/usr/bin/env python3
+"""workspace-trust — record ~/dev, ~/dotfiles and ~/wiki as trusted workspaces
+in every Claude Code account and in Codex, so neither asks at launch.
+
+Usage:
+  workspace-trust              trust the roots and every repository under them
+  workspace-trust --prune      also drop what is recorded outside that rule
+  workspace-trust -n           print what would change; write nothing
+  workspace-trust -q           print problems only (what the launchers pass)
+
+Neither vendor has a switch for this. Each records trust per repository root,
+and Claude Code per account as well (verified on Claude Code 2.1.294 and
+Codex 0.160.0):
+
+  Claude Code   projects["<dir>"].hasTrustDialogAccepted in the account's
+                .claude.json. A repository's entry covers its subdirectories
+                and linked worktrees. A plain directory's entry covers the
+                plain directories under it and stops at a nested repository.
+  Codex         [projects."<dir>"] trust_level = "trusted" in config.toml,
+                which every home shares. Same reach for a repository; a
+                plain directory is never asked about.
+
+So the trusted set is each root plus every repository found up to MAX_DEPTH
+levels under it, written to every account that exists. A run that finds
+everything recorded writes nothing, which is what lets claude.zsh and
+codex.zsh call it before each launch: a new clone or a new account is
+covered by the launch that first uses it.
+
+--prune is the cleanup, and only ever explicit, so a folder trusted by hand
+outside the roots lasts until the next prune. It removes an entry whose
+directory is gone. For a directory that still exists outside the roots it
+takes the trust back: Codex's entry is deleted, since trust is all it holds;
+Claude Code's keeps the project state it also holds (local MCP servers, last
+session) and loses the flag.
+
+Each .claude.json is rewritten under Claude Code's own lock, the directory
+<file>.lock, read again once the lock is held, and replaced atomically. A
+file that stays locked is skipped and reported, and the next run takes it.
+Only Codex's projects tables are rewritten; the result is parsed back and
+must match the rest of the file key for key, or nothing is written.
+"""
+
+import argparse
+import json
+import os
+import re
+import stat
+import sys
+import tempfile
+import time
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    sys.exit(
+        "workspace-trust: needs Python 3.11 or newer for tomllib; "
+        f"python3 here is {sys.version.split()[0]}"
+    )
+
+ROOTS = ("dev", "dotfiles", "wiki")
+# Levels below a root searched for repositories: ~/dev/itell/apps/platform is 3.
+MAX_DEPTH = 4
+SKIP_DIRS = {"node_modules"}
+LOCK_WAIT = 2.0  # seconds to wait for a Claude Code session holding the lock
+
+HOME = os.path.realpath(os.path.expanduser("~"))
+PROJECTS_HEADER = re.compile(r"^\s*\[\s*projects\s*[.\]]")
+TABLE_HEADER = re.compile(r"^\s*\[")
+
+
+class Refused(Exception):
+    """A file this run leaves exactly as it found it."""
+
+
+def tilde(path):
+    return "~" + path[len(HOME):] if path == HOME or path.startswith(HOME + "/") else path
+
+
+def is_checkout(git_entry):
+    """True for a repository's own .git and a submodule's; false for a linked
+    worktree's, which rides on its main checkout's entry."""
+    if git_entry.is_dir(follow_symlinks=False):
+        return True
+    try:
+        with open(git_entry.path, encoding="utf-8") as f:
+            return "/worktrees/" not in f.readline()
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
+def trusted_dirs():
+    roots, found = [], set()
+    for name in ROOTS:
+        root = os.path.realpath(os.path.join(HOME, name))
+        if not os.path.isdir(root):
+            continue
+        roots.append(root)
+        found.add(root)
+        stack = [(root, 0)]
+        while stack:
+            directory, depth = stack.pop()
+            try:
+                entries = list(os.scandir(directory))
+            except OSError:
+                continue
+            for entry in entries:
+                if entry.name == ".git":
+                    if is_checkout(entry):
+                        found.add(directory)
+                elif (
+                    depth < MAX_DEPTH
+                    and entry.name not in SKIP_DIRS
+                    and entry.is_dir(follow_symlinks=False)
+                ):
+                    stack.append((entry.path, depth + 1))
+    return roots, sorted(found)
+
+
+def under(path, roots):
+    return any(path == root or path.startswith(root + "/") for root in roots)
+
+
+def prunable(path):
+    """Entries a prune may judge: absolute paths, and nothing on a volume
+    that may only be unplugged."""
+    return path.startswith("/") and not path.startswith("/Volumes/")
+
+
+def account_dirs(root):
+    try:
+        names = sorted(os.listdir(root))
+    except OSError:
+        return []
+    # <email>.lock is debris a crashed Claude Code strands, not an account.
+    return [
+        os.path.join(root, name)
+        for name in names
+        if not name.endswith(".lock") and os.path.isdir(os.path.join(root, name))
+    ]
+
+
+def claude_files():
+    candidates = [
+        os.path.join(HOME, ".claude.json"),
+        os.path.join(HOME, ".claude", ".claude.json"),
+    ]
+    candidates += [
+        os.path.join(d, ".claude.json")
+        for d in account_dirs(os.path.join(HOME, ".claude-accounts"))
+    ]
+    return [path for path in candidates if os.path.isfile(path)]
+
+
+def codex_files():
+    candidates = [os.path.join(HOME, ".codex", "config.toml")]
+    candidates += [
+        os.path.join(d, "config.toml")
+        for d in account_dirs(os.path.join(HOME, ".codex-accounts"))
+    ]
+    # Extra homes link the primary's config: one real file, written once.
+    return sorted({os.path.realpath(path) for path in candidates if os.path.isfile(path)})
+
+
+def replace_file(path, text):
+    mode = stat.S_IMODE(os.stat(path).st_mode)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=os.path.basename(path) + ".")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(tmp, mode)
+        os.replace(tmp, path)
+    except BaseException:
+        os.unlink(tmp)
+        raise
+
+
+# ---- Claude Code ----
+
+def plan_claude(data, roots, trusted, prune):
+    """Edit the parsed .claude.json in place; return the changes as (verb, dir)."""
+    projects = data.setdefault("projects", {})
+    if not isinstance(projects, dict):
+        raise Refused("its projects is not an object")
+    changes = []
+    if prune:
+        for path in list(projects):
+            entry = projects[path]
+            if not prunable(path) or not isinstance(entry, dict):
+                continue
+            if not os.path.isdir(path):
+                del projects[path]
+                changes.append(("removed", path))
+            elif not under(path, roots) and entry.get("hasTrustDialogAccepted") is True:
+                entry["hasTrustDialogAccepted"] = False
+                changes.append(("revoked", path))
+    for path in trusted:
+        entry = projects.setdefault(path, {})
+        if not isinstance(entry, dict):
+            raise Refused(f"its entry for {path} is not an object")
+        if entry.get("hasTrustDialogAccepted") is not True:
+            entry["hasTrustDialogAccepted"] = True
+            changes.append(("trusted", path))
+    return changes
+
+
+def read_claude(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError) as err:
+        raise Refused(f"cannot be read as JSON ({err})")
+    if not isinstance(data, dict):
+        raise Refused("is not a JSON object")
+    return data
+
+
+def update_claude(path, roots, trusted, prune, dry_run):
+    changes = plan_claude(read_claude(path), roots, trusted, prune)
+    if not changes or dry_run:
+        return changes
+    lock = path + ".lock"
+    deadline = time.monotonic() + LOCK_WAIT
+    while True:
+        try:
+            os.mkdir(lock)
+            break
+        except FileExistsError:
+            if time.monotonic() >= deadline:
+                raise Refused("is locked by a Claude Code session; the next run takes it")
+            time.sleep(0.05)
+    try:
+        data = read_claude(path)
+        changes = plan_claude(data, roots, trusted, prune)
+        if changes:
+            try:
+                text = json.dumps(data, indent=2, ensure_ascii=False)
+                text.encode("utf-8")
+            except UnicodeEncodeError:  # a lone surrogate in some stored string
+                text = json.dumps(data, indent=2)
+            if json.loads(text) != data:
+                raise Refused("did not survive a round trip through JSON")
+            replace_file(path, text)
+    finally:
+        os.rmdir(lock)
+    return changes
+
+
+# ---- Codex ----
+
+def toml_string(value):
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def projects_block(projects):
+    lines = ["[projects]\n"]
+    for path in sorted(projects):
+        lines.append(f"  [projects.{toml_string(path)}]\n")
+        for key, value in projects[path].items():
+            if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", key):
+                raise Refused(f"its entry for {path} holds more than plain strings")
+            lines.append(f"    {key} = {toml_string(value)}\n")
+    return lines
+
+
+def update_codex(path, roots, trusted, prune, dry_run):
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        doc = tomllib.loads(text)
+    except (OSError, ValueError) as err:
+        raise Refused(f"cannot be read as TOML ({err})")
+    current = doc.get("projects", {})
+    if not isinstance(current, dict) or not all(isinstance(v, dict) for v in current.values()):
+        raise Refused("its projects is not a table of tables")
+
+    wanted = {path_: dict(entry) for path_, entry in current.items()}
+    changes = []
+    if prune:
+        for entry_path in list(wanted):
+            if not prunable(entry_path):
+                continue
+            if not os.path.isdir(entry_path) or not under(entry_path, roots):
+                del wanted[entry_path]
+                changes.append(("removed", entry_path))
+    for entry_path in trusted:
+        entry = wanted.setdefault(entry_path, {})
+        if entry.get("trust_level") != "trusted":
+            entry["trust_level"] = "trusted"
+            changes.append(("trusted", entry_path))
+    if not changes or dry_run:
+        return changes
+
+    # Cut every projects table out and write one block where the first stood.
+    kept, at, cutting = [], None, False
+    for line in text.splitlines(keepends=True):
+        if TABLE_HEADER.match(line):
+            cutting = bool(PROJECTS_HEADER.match(line))
+            if cutting and at is None:
+                at = len(kept)
+        if not cutting:
+            kept.append(line)
+    block = projects_block(wanted) if wanted else []
+    if at is None:
+        at = len(kept)
+        if kept and not kept[-1].endswith("\n"):
+            kept[-1] += "\n"
+        if kept and kept[-1].strip():
+            block.insert(0, "\n")
+    elif block and at < len(kept):
+        block.append("\n")
+    new_text = "".join(kept[:at] + block + kept[at:])
+
+    try:
+        new_doc = tomllib.loads(new_text)
+    except ValueError as err:
+        raise Refused(f"would not parse after the edit ({err})")
+    rest = lambda d: {k: v for k, v in d.items() if k != "projects"}
+    if new_doc.get("projects", {}) != wanted or rest(new_doc) != rest(doc):
+        raise Refused("lays its projects tables out in a way this cannot rewrite")
+    replace_file(path, new_text)
+    return changes
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="workspace-trust",
+        description="Trust ~/dev, ~/dotfiles and ~/wiki in every Claude Code account and in Codex.",
+    )
+    parser.add_argument("--prune", action="store_true",
+                        help="also drop entries for missing directories and trust outside the roots")
+    parser.add_argument("-n", "--dry-run", action="store_true",
+                        help="print what would change; write nothing")
+    parser.add_argument("-q", "--quiet", action="store_true", help="print problems only")
+    args = parser.parse_args()
+
+    roots, trusted = trusted_dirs()
+    failed = changed = False
+    jobs = [("claude", p, update_claude) for p in claude_files()]
+    jobs += [("codex", p, update_codex) for p in codex_files()]
+    for vendor, path, update in jobs:
+        try:
+            changes = update(path, roots, trusted, args.prune, args.dry_run)
+        except Refused as err:
+            failed = True
+            print(f"workspace-trust: {tilde(path)} {err}; left as it was", file=sys.stderr)
+            continue
+        if not changes or args.quiet:
+            continue
+        changed = True
+        added = sum(verb == "trusted" for verb, _ in changes)
+        print(f"{vendor}  {tilde(path)}" + (f"  trusted {added}" if added else ""))
+        for verb, entry_path in changes:
+            if verb != "trusted" or args.dry_run:
+                print(f"    {verb:8} {tilde(entry_path)}")
+    if not args.quiet:
+        if not changed and not failed:
+            print(f"workspace-trust: nothing to change ({len(trusted)} directories trusted)")
+        elif args.dry_run:
+            print("dry run: nothing was written")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
