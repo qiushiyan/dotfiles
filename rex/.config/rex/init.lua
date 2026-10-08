@@ -485,12 +485,21 @@ rex.action{
     local options = {}
     options.cwd = bid and kit.cwd(sid, bid)
     local key = ctx and ctx.origin == "key"
-    local r = kit.call("session.new_window", { session_id = sid, focus = not key,
+    local r = kit.call("session.new_window", { session_id = sid, focus = not (key and ctx.server),
       layout = { block = { flavor = "com.superlogical.terminal.shell", options = options } } })
     if after then
       kit.call("session.move_window", { session_id = sid, window_id = r.window_id, before_window_id = after.window_id })
     end
-    if key and at then step_tabs(at, at + 1) else show(ctx, sid, r.window_id) end
+    -- On this host the app selects the new tab directly. On another host's
+    -- session it can only step to it, and a step sent at once lands before
+    -- the app has put the new tab in its sidebar, one tab too far: the
+    -- action waits for the app to catch up first.
+    if key and at and ctx.server then
+      if rex.sleep then pcall(rex.sleep, 0.5) end
+      step_tabs(at, at + 1)
+    else
+      show(ctx, sid, r.window_id)
+    end
     return { opened = r.window_id }
   end,
 }
