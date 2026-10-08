@@ -225,6 +225,34 @@ rex.action{
   end,
 }
 
+-- ctrl+shift+down / up: the next or previous tab in the sidebar's order,
+-- crossing into the next session at the end of one and wrapping at the ends.
+-- The sidebar lists sessions as session.list does, each with its windows in
+-- order.
+rex.action{
+  name = "window_step",
+  title = "Next or Previous Tab, Across Sessions",
+  run = function(ctx, args)
+    local step = tonumber(args and args.step) or 1
+    local here = (args and args.session_id) or current_session(ctx)
+    local tabs, at = {}, nil
+    for _, s in ipairs(kit.sessions()) do
+      local view = kit.try("session.view", { session_id = s.session_id })
+      for _, w in ipairs((view and view.windows) or {}) do
+        tabs[#tabs + 1] = { session_id = s.session_id, window_id = w.window_id, label = w.label }
+        if s.session_id == here and w.window_id == view.active_window_id then at = #tabs end
+      end
+    end
+    if #tabs == 0 then return { moved = false } end
+    local to = tabs[((at or 1) - 1 + step) % #tabs + 1]
+    kit.call("session.focus_window", { session_id = to.session_id, window_id = to.window_id })
+    rex.client.queue("session.select", { session_id = to.session_id, window_id = to.window_id })
+    return { moved = to.label }
+  end,
+}
+rex.bind("ctrl+shift+down", "window_step", { step = 1 })
+rex.bind("ctrl+shift+up", "window_step", { step = -1 })
+
 -- The tmux prefix, as a Rex mode: ctrl+a enters it for one key, as tmux's
 -- prefix does, and Escape leaves it. Exclusive, so a key it does not bind
 -- does nothing rather than reach the shell. Most keys are the app's own

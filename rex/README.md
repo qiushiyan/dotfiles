@@ -76,6 +76,10 @@ mode does not bind does nothing. `rex keymap` lists the whole map.
 | `z` `X` `space` `b` | zoom, close pane, balance, pane to its own tab | app |
 | `c` `n` `p` `x` `m` | new, next, previous, close, rename tab | app |
 | `1`–`9` | tab N of this session, the number its label shows | `window_goto` |
+
+Without the prefix, `ctrl+shift+down` / `ctrl+shift+up` step to the next or
+previous tab in the sidebar's order, crossing into the next session at the end
+of one and wrapping at the ends (`window_step`).
 | `T` `(` `)` | pick a session; previous / next session | app |
 | `y` / `Y` | copy the file nvim has open (absolute / relative), else the pane's directory | `copy_path` |
 | `g` | open the pane's repo on GitHub (gopen) | `gopen` |
