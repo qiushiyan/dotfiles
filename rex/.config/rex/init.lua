@@ -72,6 +72,25 @@ local function current_block(ctx, args)
   return sid, bid or (sid and kit.focused_block(sid))
 end
 
+-- Show tab WINDOW_ID of SESSION_ID in the app whose key ran the action: the
+-- server activates the window, which the app follows in the session it
+-- shows, and the app is asked to show that session. When the session is
+-- another host's (ctx.server: the laptop's app on the mini's session), the
+-- app's session.select cannot place it and gives up after 5 seconds ("no
+-- host lists it" in its log), so there a move to another session is the
+-- app's own session.next or session.previous, by the sign of STEP, and
+-- without a STEP the session stays as it is. K is the server to call (kit,
+-- or kit.remote for an agent on another host).
+local function show(ctx, session_id, window_id, step, K)
+  K = K or kit
+  K.call("session.focus_window", { session_id = session_id, window_id = window_id })
+  if not (ctx and ctx.server) then
+    rex.client.queue("session.select", { session_id = session_id, window_id = window_id })
+  elseif session_id ~= ctx.session_id and step then
+    rex.client.queue(step < 0 and "session.previous" or "session.next", {})
+  end
+end
+
 -- Jump to the agent that has waited longest in the most urgent state:
 -- blocked, then errored, then finished, on this server or another host's (the
 -- mini's, seen from the laptop). The server moves focus to its block; the
@@ -85,7 +104,7 @@ rex.action{
     if not row then return { jumped = false, reason = "no agent is waiting" } end
     local K = row.server and kit.remote(row.server) or kit
     K.call("session.focus_block", { session_id = row.session_id, block_id = row.block_id })
-    rex.client.queue("session.select", { session_id = row.session_id, window_id = row.window_id })
+    show(ctx, row.session_id, row.window_id, nil, K)
     if not row.server then kit.note_here(row.session_id, ctx and ctx.client_id) end
     return { jumped = true, server = row.server, session = row.session, block = row.block, state = row.record.state }
   end,
@@ -265,8 +284,7 @@ rex.action{
     local view = sid and index and kit.try("session.view", { session_id = sid })
     local w = view and view.windows and view.windows[index]
     if not w then return { moved = false, reason = "no tab " .. tostring(index) } end
-    kit.call("session.focus_window", { session_id = sid, window_id = w.window_id })
-    rex.client.queue("session.select", { session_id = sid, window_id = w.window_id })
+    show(ctx, sid, w.window_id)
     return { moved = w.label }
   end,
 }
@@ -291,8 +309,7 @@ rex.action{
     end
     if #tabs == 0 then return { moved = false } end
     local to = tabs[((at or 1) - 1 + step) % #tabs + 1]
-    kit.call("session.focus_window", { session_id = to.session_id, window_id = to.window_id })
-    rex.client.queue("session.select", { session_id = to.session_id, window_id = to.window_id })
+    show(ctx, to.session_id, to.window_id, step)
     kit.note_here(to.session_id, ctx and ctx.client_id)
     return { moved = to.label }
   end,
@@ -347,8 +364,7 @@ rex.action{
     if #windows == 0 then return { moved = false } end
     for i, w in ipairs(windows) do if w.window_id == view.active_window_id then at = i end end
     local to = windows[(at - 1 + step) % #windows + 1].window_id
-    kit.call("session.focus_window", { session_id = sid, window_id = to })
-    rex.client.queue("session.select", { session_id = sid, window_id = to })
+    show(ctx, sid, to)
     return { moved = to }
   end,
 }
@@ -390,7 +406,7 @@ rex.action{
         if view and view.windows and (across or kit.try("session.focus_window",
           { session_id = v.session_id, window_id = v.window_id })) then
           local window = across and view.active_window_id or v.window_id
-          rex.client.queue("session.select", { session_id = v.session_id, window_id = window })
+          show(ctx, v.session_id, window)
           kit.note_here(v.session_id, ctx and ctx.client_id)
           return { moved = window }
         end
@@ -421,7 +437,7 @@ rex.action{
     if after then
       kit.call("session.move_window", { session_id = sid, window_id = r.window_id, before_window_id = after.window_id })
     end
-    rex.client.queue("session.select", { session_id = sid, window_id = r.window_id })
+    show(ctx, sid, r.window_id)
     return { opened = r.window_id }
   end,
 }
