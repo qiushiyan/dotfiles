@@ -1,0 +1,19 @@
+#!/bin/zsh
+# rex-label SESSION BLOCK: name a Rex block (prefix M, the label_pane action,
+# which runs this in a split below the block). The line starts with the
+# current label; enter applies it, an empty line gives the block Rex's
+# default back, and ctrl-c leaves it as it was.
+setopt err_return no_unset
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+session=$1 block=$2
+
+# rex probes the terminal on stderr, and the answer would arrive as input.
+label=$(rex api call session.list_blocks "{\"session_id\":\"$session\"}" 2>/dev/null \
+  | jq -r --arg b "$block" '.blocks[] | select(.block_id == $b) | .label // ""')
+
+print -n '\n  '
+vared -p 'pane name: ' label || exit 0
+[[ -n $label ]] || label=shell
+rex api call session.set_block_label \
+  "$(jq -nc --arg s "$session" --arg b "$block" --arg l "$label" '{session_id: $s, block_id: $b, label: $l}')" \
+  >/dev/null 2>&1

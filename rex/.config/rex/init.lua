@@ -253,6 +253,320 @@ rex.action{
 rex.bind("ctrl+shift+down", "window_step", { step = 1 })
 rex.bind("ctrl+shift+up", "window_step", { step = -1 })
 
+-- tmux ports on Rex's own API ---------------------------------------------------
+
+-- ctrl+h/j/k/l, as vim-tmux-navigator did in tmux: in nvim, vim or fzf the key
+-- goes to the program (LazyVim moves between its splits with it); elsewhere
+-- it focuses the pane that way. At the right edge ctrl+l reaches the program,
+-- so it still clears the screen; at the other edges the key does nothing.
+local NAV_KEY = { left = "ctrl+h", down = "ctrl+j", up = "ctrl+k", right = "ctrl+l" }
+local NAV_PASS = { nvim = true, vim = true, vi = true, view = true, fzf = true }
+rex.action{
+  name = "nav",
+  title = "Focus Pane, Vim-Aware",
+  run = function(ctx, args)
+    local dir = args and args.direction
+    local sid, bid = current_block(ctx, args)
+    if not (NAV_KEY[dir] and sid and bid) then return { moved = false } end
+    local fg = kit.foreground(sid, bid)
+    local name = fg and (fg.name or ""):match("[^/]+$") or ""
+    if NAV_PASS[name] then
+      rex.client.queue("pane.send_key", { key = NAV_KEY[dir] })
+      return { passed = name }
+    end
+    if kit.neighbor(kit.try("session.view", { session_id = sid }), bid, dir) then
+      rex.client.queue("pane.focus", { direction = dir })
+      return { moved = dir }
+    end
+    if dir == "right" then rex.client.queue("pane.send_key", { key = "ctrl+l" }) end
+    return { moved = false }
+  end,
+}
+for dir, key in pairs(NAV_KEY) do rex.bind(key, "nav", { direction = dir }) end
+
+-- prefix C-h / C-l (C-p / C-n): the previous or next tab of this session,
+-- wrapping, as tmux's previous-window and next-window.
+rex.action{
+  name = "window_cycle",
+  title = "Next or Previous Tab in This Session",
+  run = function(ctx, args)
+    local sid = (args and args.session_id) or current_session(ctx)
+    if not sid then return { moved = false } end
+    kit.attach(sid)
+    local step = tonumber(args and args.step) or 1
+    -- session.focus_next_window stops at the last tab; tmux wraps.
+    local view = kit.call("session.view", { session_id = sid })
+    local windows, at = view.windows or {}, 1
+    if #windows == 0 then return { moved = false } end
+    for i, w in ipairs(windows) do if w.window_id == view.active_window_id then at = i end end
+    local to = windows[(at - 1 + step) % #windows + 1].window_id
+    kit.call("session.focus_window", { session_id = sid, window_id = to })
+    rex.client.queue("session.select", { session_id = sid, window_id = to })
+    return { moved = to }
+  end,
+}
+
+-- prefix Tab / shift+Tab: the tab, or the session, shown before this one, as
+-- tmux's last-window and switch-client -l. rexd records every tab the app
+-- shows, however it got there, in STATE/visits ("session window" per line,
+-- newest last).
+local function visits()
+  local out, f = {}, io.open(STATE .. "/visits", "r")
+  if not f then return out end
+  for line in f:lines() do
+    local s, w = line:match("^(%S+) (%S+)$")
+    if s then out[#out + 1] = { session_id = s, window_id = w } end
+  end
+  f:close()
+  return out
+end
+
+rex.action{
+  name = "window_last",
+  title = "Last Tab or Last Session",
+  run = function(ctx, args)
+    local sid = (args and args.session_id) or current_session(ctx)
+    local here = sid and kit.try("session.view", { session_id = sid })
+    if not here then return { moved = false } end
+    local across = args and args.session
+    local seen = {}
+    local list = visits()
+    for i = #list, 1, -1 do
+      local v = list[i]
+      local wanted
+      if across then wanted = v.session_id ~= sid and not seen[v.session_id]
+      else wanted = v.session_id == sid and v.window_id ~= here.active_window_id end
+      seen[v.session_id] = true
+      if wanted then
+        kit.attach(v.session_id)
+        local view = kit.try("session.view", { session_id = v.session_id })
+        if view and view.windows and (across or kit.try("session.focus_window",
+          { session_id = v.session_id, window_id = v.window_id })) then
+          local window = across and view.active_window_id or v.window_id
+          rex.client.queue("session.select", { session_id = v.session_id, window_id = window })
+          return { moved = window }
+        end
+      end
+    end
+    kit.toast(sid, kit.focused_block(sid), "info", across and "Last session" or "Last tab", "nothing earlier yet", 1.5)
+    return { moved = false }
+  end,
+}
+
+-- prefix N: a new tab right after this one, in the directory of the pane the
+-- key was pressed in (tmux's new-window -a -c).
+rex.action{
+  name = "window_new_here",
+  title = "New Tab After This One, Here",
+  run = function(ctx, args)
+    local sid, bid = current_block(ctx, args)
+    if not sid then return { opened = false } end
+    local view = kit.call("session.view", { session_id = sid })
+    local after
+    for i, w in ipairs(view.windows or {}) do
+      if w.window_id == view.active_window_id then after = view.windows[i + 1] end
+    end
+    local options = {}
+    options.cwd = bid and kit.cwd(sid, bid)
+    local r = kit.call("session.new_window", { session_id = sid,
+      layout = { block = { flavor = "com.superlogical.terminal.shell", options = options } } })
+    if after then
+      kit.call("session.move_window", { session_id = sid, window_id = r.window_id, before_window_id = after.window_id })
+    end
+    rex.client.queue("session.select", { session_id = sid, window_id = r.window_id })
+    return { opened = r.window_id }
+  end,
+}
+
+-- Pane mode (prefix p), as tmux's: hjkl push the pane that way, trading
+-- places with the pane there. With nothing there and one other pane in the
+-- window, it becomes that side's wall (stacked turns side by side); with
+-- more, Rex can only split beside a pane, not the whole window, so it stays.
+local MOVE = {
+  left = { direction = "horizontal", side = "before" }, right = { direction = "horizontal", side = "after" },
+  up = { direction = "vertical", side = "before" }, down = { direction = "vertical", side = "after" },
+}
+rex.action{
+  name = "pane_push",
+  title = "Push Pane",
+  run = function(ctx, args)
+    local dir = args and args.direction
+    local sid, bid = current_block(ctx, args)
+    if not (MOVE[dir] and sid and bid) then return { moved = false } end
+    local view = kit.call("session.view", { session_id = sid })
+    local other = kit.neighbor(view, bid, dir)
+    if other then
+      kit.call("session.swap_blocks", { session_id = sid, block_id = bid, other_block_id = other })
+      return { swapped = other }
+    end
+    local w, rest = kit.window_of(view, bid), {}
+    for _, layer in ipairs((w and w.layers) or {}) do
+      for _, b in ipairs(layer.kind == "tiled" and layer.blocks or {}) do
+        if b.block_id ~= bid then rest[#rest + 1] = b.block_id end
+      end
+    end
+    if #rest ~= 1 then return { moved = false, reason = "at the edge" } end
+    kit.call("session.move_block", { session_id = sid, block_id = bid, anchor_block_id = rest[1],
+      direction = MOVE[dir].direction, side = MOVE[dir].side })
+    kit.try("session.focus_block", { session_id = sid, block_id = bid })
+    return { walled = dir }
+  end,
+}
+
+-- Pane mode g / p / G: hold a pane, walk to any tab of the session, and put
+-- it beside the pane there (Rex moves a live block between windows, so
+-- nothing restarts). The hold is a file, so it survives a config reload.
+local HELD = STATE .. "/held"
+rex.action{
+  name = "pane_hold",
+  title = "Hold Pane",
+  run = function(ctx, args)
+    local sid, bid = current_block(ctx, args)
+    if not (sid and bid) then return { held = false } end
+    os.execute("mkdir -p '" .. STATE .. "'")
+    local f = assert(io.open(HELD, "w"))
+    f:write(sid, " ", bid, "\n")
+    f:close()
+    rex.client.queue("client.mode.exit", {})
+    kit.toast(sid, bid, "info", "Holding pane", "walk to a tab, then prefix p p", 2)
+    return { held = bid }
+  end,
+}
+
+rex.action{
+  name = "pane_put",
+  title = "Put Held Pane Here",
+  run = function(ctx, args)
+    local sid, bid = current_block(ctx, args)
+    local f = io.open(HELD, "r")
+    local line = f and f:read("*l")
+    if f then f:close() end
+    local hsid, hbid = (line or ""):match("^(%S+) (%S+)$")
+    if not (sid and bid and hbid) then return { put = false, reason = "nothing held" } end
+    if hsid ~= sid then
+      kit.toast(sid, bid, "warn", "Put pane", "the held pane is in another session", 2)
+      return { put = false, reason = "other session" }
+    end
+    os.remove(HELD)
+    if hbid == bid then return { put = false, reason = "same pane" } end
+    kit.call("session.move_block", { session_id = sid, block_id = hbid, anchor_block_id = bid,
+      direction = "horizontal", side = "after" })
+    kit.try("session.focus_block", { session_id = sid, block_id = hbid })
+    return { put = hbid }
+  end,
+}
+
+rex.action{
+  name = "pane_release",
+  title = "Release Held Pane",
+  run = function()
+    os.remove(HELD)
+    return { released = true }
+  end,
+}
+
+-- prefix Z: a throwaway shell below the pane, in its directory; prefix Z
+-- again (or exiting the shell) closes it. A split, since floating layers do
+-- not take keys yet.
+rex.action{
+  name = "scratch",
+  title = "Scratch Shell",
+  run = function(ctx, args)
+    local sid, bid = current_block(ctx, args)
+    if not (sid and bid) then return { opened = false } end
+    local view = kit.call("session.view", { session_id = sid })
+    local w = kit.window_of(view, bid)
+    for _, layer in ipairs((w and w.layers) or {}) do
+      for _, b in ipairs(layer.blocks or {}) do
+        if b.label == "scratch" then
+          kit.call("block.close", { session_id = sid, block_id = b.block_id })
+          return { closed = b.block_id }
+        end
+      end
+    end
+    local r = kit.call("session.new_split", {
+      session_id = sid, anchor_block_id = bid,
+      direction = "vertical", side = "after", ratio = 0.65,
+      layout = { block = { flavor = "com.superlogical.terminal.shell", label = "scratch",
+        options = { cwd = kit.cwd(sid, bid) } } },
+      focus = true,
+    })
+    return { opened = r.block_ids[1] }
+  end,
+}
+
+-- prefix C-k: clear the screen and the scrollback (tmux's send C-l plus
+-- clear-history); ctrl+l after it has the shell redraw its prompt.
+rex.action{
+  name = "clear_all",
+  title = "Clear Screen and Scrollback",
+  run = function(ctx, args)
+    local sid, bid = current_block(ctx, args)
+    if not (sid and bid) then return { cleared = false } end
+    kit.block(sid, bid, "clear")
+    rex.client.queue("pane.send_key", { key = "ctrl+l" })
+    return { cleared = bid }
+  end,
+}
+
+-- A small helper in a split below the block, for the ports that need a
+-- prompt or a picker: the app sends no keys to a floating layer yet.
+local function helper_split(sid, bid, label, ratio, command)
+  return kit.call("session.new_split", {
+    session_id = sid, anchor_block_id = bid,
+    direction = "vertical", side = "after", ratio = ratio,
+    layout = { block = { flavor = "com.superlogical.terminal.shell", label = label,
+      options = { cwd = kit.cwd(sid, bid), command = command } } },
+    focus = true,
+  })
+end
+
+-- prefix u: pick a URL from the block's screen and scrollback and open it
+-- (rex-urls). Rex hands over the whole scrollback as text (`format`), so no
+-- copy mode is involved.
+rex.action{
+  name = "urls",
+  title = "Open a URL from This Pane",
+  run = function(ctx, args)
+    local sid, bid = current_block(ctx, args)
+    if not (sid and bid) then return { opened = false } end
+    local r = helper_split(sid, bid, "urls", 0.6, { HOME .. "/.local/bin/rex-urls", sid, bid })
+    return { opened = r.block_ids[1] }
+  end,
+}
+
+-- prefix M: name the pane (rex-label). The label shows in the pane header
+-- and on the board; an empty name clears it.
+rex.action{
+  name = "label_pane",
+  title = "Rename Pane",
+  run = function(ctx, args)
+    local sid, bid = current_block(ctx, args)
+    if not (sid and bid) then return { opened = false } end
+    local r = helper_split(sid, bid, "rename", 0.85, { HOME .. "/.local/bin/rex-label", sid, bid })
+    return { opened = r.block_ids[1] }
+  end,
+}
+
+-- shift+left / shift+right slide the tab, as tmux's swap-window binding did.
+rex.bind("shift+left", "client.tab.move.backward")
+rex.bind("shift+right", "client.tab.move.forward")
+
+rex.mode("panes", { exclusive = true })
+local panes = {
+  { "escape", "client.mode.exit" }, { "enter", "client.mode.exit" }, { "q", "client.mode.exit" },
+  { "g", "pane_hold" }, { "p", "pane_put" }, { "shift+g", "pane_release" },
+  { "b", "pane.move_to_new_tab" }, { "e", "pane.balance" }, { "z", "pane.zoom" },
+}
+for dir, key in pairs({ left = "h", down = "j", up = "k", right = "l" }) do
+  panes[#panes + 1] = { key, "pane_push", { direction = dir } }
+  panes[#panes + 1] = { "shift+" .. key, "pane.resize", { direction = dir } }
+end
+for _, dir in ipairs({ "left", "down", "up", "right" }) do
+  panes[#panes + 1] = { dir, "pane.focus", { direction = dir } }
+end
+for _, b in ipairs(panes) do rex.bind("panes/" .. b[1], b[2], b[3]) end
+
 -- The tmux prefix, as a Rex mode: ctrl+a enters it for one key, as tmux's
 -- prefix does, and Escape leaves it. Exclusive, so a key it does not bind
 -- does nothing rather than reach the shell. Most keys are the app's own
@@ -268,16 +582,20 @@ local prefix = {
   { "shift+h", "pane.resize", { direction = "left" } }, { "shift+j", "pane.resize", { direction = "down" } },
   { "shift+k", "pane.resize", { direction = "up" } }, { "shift+l", "pane.resize", { direction = "right" } },
   { "z", "pane.zoom" }, { "shift+x", "pane.close" }, { "space", "pane.balance" },
-  { "b", "pane.move_to_new_tab" },
-  -- tabs (tmux windows) and sessions
-  -- moving between tabs is ctrl+shift+up/down (window_step), not prefix n/p
-  { "c", "client.tab.new" }, { "n", "client.tab.new" },
-  { "x", "client.tab.close" }, { "m", "client.tab.rename" },
+  { "b", "pane.move_to_new_tab" }, { "p", "client.mode.enter", { name = "panes" } },
+  { "shift+z", "scratch" }, { "shift+m", "label_pane" }, { "ctrl+k", "clear_all" },
+  -- tabs (tmux windows) and sessions; ctrl+shift+up/down also step through
+  -- every tab across sessions (window_step)
+  { "c", "client.tab.new" }, { "n", "client.tab.new" }, { "shift+n", "window_new_here" },
+  { "ctrl+h", "window_cycle", { step = -1 } }, { "ctrl+l", "window_cycle", { step = 1 } },
+  { "ctrl+p", "window_cycle", { step = -1 } }, { "ctrl+n", "window_cycle", { step = 1 } },
+  { "tab", "window_last" }, { "shift+tab", "window_last", { session = true } },
+  { "x", "client.tab.close" }, { "m", "client.tab.rename" }, { "shift+4", "session.rename" },
   { "shift+t", "session.switch" }, { "shift+9", "session.previous" }, { "shift+0", "session.next" },
   -- tools
   { "y", "copy_path" }, { "shift+y", "copy_path", { rel = true } },
-  { "g", "gopen" }, { "shift+w", "worktrees" },
-  { "shift+s", "steps_sidecar" }, { "shift+a", "agents_board" }, { "shift+j", "agents_next" },
+  { "g", "gopen" }, { "shift+w", "worktrees" }, { "u", "urls" },
+  { "shift+s", "steps_sidecar" }, { "shift+a", "agents_board" }, { "a", "agents_next" },
   { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
 }
 for i = 1, 9 do prefix[#prefix + 1] = { tostring(i), "window_goto", { index = i } } end

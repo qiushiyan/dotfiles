@@ -75,6 +75,72 @@ function M.focused_block(session_id)
   return view and view.focused_window and view.focused_window.focused_block_id
 end
 
+-- Layout geometry ---------------------------------------------------------------
+
+-- Every visible tiled block of a window, with its normalized rect.
+local function tiled_rects(window)
+  local out = {}
+  for _, layer in ipairs((window and window.layers) or {}) do
+    if layer.kind == "tiled" then
+      for _, b in ipairs(layer.blocks or {}) do out[#out + 1] = b end
+    end
+  end
+  return out
+end
+
+-- The window of a session's view that holds BLOCK_ID, else nil.
+function M.window_of(view, block_id)
+  for _, w in ipairs((view and view.windows) or {}) do
+    for _, b in ipairs(tiled_rects(w)) do
+      if b.block_id == block_id then return w end
+    end
+  end
+end
+
+-- The block beside BLOCK_ID in DIRECTION (left, right, up, down) within its
+-- window: of the blocks that touch that edge and overlap it across, the one
+-- that overlaps most. nil at the window's edge. tmux's pane_at_right, from
+-- the rects session.view reports.
+function M.neighbor(view, block_id, direction)
+  local w = M.window_of(view, block_id)
+  local rects = tiled_rects(w)
+  local me
+  for _, b in ipairs(rects) do if b.block_id == block_id then me = b.rect end end
+  if not me then return nil end
+  local eps, best, best_overlap = 1e-3, nil, 0
+  local function overlap(a0, a1, b0, b1) return math.min(a1, b1) - math.max(a0, b0) end
+  for _, b in ipairs(rects) do
+    local r = b.rect
+    if b.block_id ~= block_id then
+      local touches, across
+      if direction == "right" then
+        touches, across = math.abs(r.x - (me.x + me.w)) < eps, overlap(me.y, me.y + me.h, r.y, r.y + r.h)
+      elseif direction == "left" then
+        touches, across = math.abs(r.x + r.w - me.x) < eps, overlap(me.y, me.y + me.h, r.y, r.y + r.h)
+      elseif direction == "down" then
+        touches, across = math.abs(r.y - (me.y + me.h)) < eps, overlap(me.x, me.x + me.w, r.x, r.x + r.w)
+      else
+        touches, across = math.abs(r.y + r.h - me.y) < eps, overlap(me.x, me.x + me.w, r.x, r.x + r.w)
+      end
+      if touches and across > best_overlap then best, best_overlap = b.block_id, across end
+    end
+  end
+  return best
+end
+
+-- What the app shows: the session it is attached to and that session's
+-- active window. nil when no app is connected.
+function M.app_view()
+  local list = M.try("client.list", { kinds = { "app" } })
+  for _, c in ipairs((list and list.clients) or {}) do
+    local sid = c.connection_state == "connected" and c.session_ids and c.session_ids[1]
+    if sid then
+      local view = M.try("session.view", { session_id = sid })
+      return sid, view and view.active_window_id, c.client_id
+    end
+  end
+end
+
 -- Agent records (OSC 7501) ------------------------------------------------------
 
 -- Lower ranks need the human sooner. `clear` never reaches a record list.
@@ -221,6 +287,17 @@ function M.osc52(session_id, block_id, text)
   local cmd = "printf '\\033]52;c;%s\\007' \"$(printf %s " .. M.sh_quote(text)
     .. " | base64 | tr -d '\\n')\" > " .. M.sh_quote(tty)
   return os.execute(cmd) == 0
+end
+
+-- A desktop notification from the terminal in a block (OSC 9), as a program
+-- in it would send one: Rex turns it into a desktop_notification event for
+-- the app.
+function M.osc9(session_id, block_id, text)
+  local fg = M.foreground(session_id, block_id)
+  local tty = fg and tty_of(fg.pid)
+  if not tty then return false end
+  text = tostring(text):gsub("[%c]", " ")
+  return os.execute("printf '\\033]9;%s\\007' " .. M.sh_quote(text) .. " > " .. M.sh_quote(tty)) == 0
 end
 
 -- A macOS notification: the one way an action has to say something.

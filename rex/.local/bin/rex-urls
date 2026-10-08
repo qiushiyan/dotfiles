@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# rex-urls SESSION BLOCK: pick a URL from a Rex terminal's screen and
+# scrollback and open it (prefix u, the urls action, which runs this in a
+# split below the block). Rex's `format` method hands over the whole
+# scrollback as text, newest URL first in the list. Backslashes go first:
+# zsh escapes the ? and = of a URL typed at its prompt.
+#
+#   enter    open it
+#   ctrl-y   copy it instead (OSC 52: the clipboard of the machine you look from)
+#   esc      close
+set -u
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+session=${1:?usage: rex-urls SESSION BLOCK}
+block=${2:?usage: rex-urls SESSION BLOCK}
+
+# rex probes the terminal on stderr, and the answer would arrive as input.
+urls=$(rex block call -s "$session" -b "$block" format '{"format":"text","unwrap":true}' 2>/dev/null \
+  | jq -r .content \
+  | tr -d '\\' \
+  | grep -oE '(https?|file)://[^][[:space:]<>"'"'"'`()]+' \
+  | sed -E 's/[.,;:!?]+$//' \
+  | awk '{ a[NR] = $0 } END { for (i = NR; i > 0; i--) if (!seen[a[i]]++) print a[i] }')
+
+if [ -z "$urls" ]; then
+  printf '\n  no URLs in this pane\n'
+  sleep 1.2
+  exit 0
+fi
+
+out=$(printf '%s\n' "$urls" | fzf --reverse --height=100% --prompt='url> ' \
+  --expect=enter,ctrl-y --header='enter: open · ctrl-y: copy') || exit 0
+key=$(sed -n 1p <<<"$out")
+url=$(sed -n 2p <<<"$out")
+[ -n "$url" ] || exit 0
+
+case "$key" in
+  ctrl-y)
+    printf '\e]52;c;%s\a' "$(printf %s "$url" | base64 | tr -d '\n')"
+    rex-toast ok Copied "$url" ;;
+  *) open "$url" ;;
+esac
