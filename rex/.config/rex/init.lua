@@ -11,13 +11,32 @@ local STATE = kit.STATE
 
 -- Every action a key runs first notes where the key was pressed (kit.here):
 -- the app does not tell the server which session it shows, and the out-of-view
--- notifications and prefix Tab need to know.
+-- notifications and prefix Tab need to know. An action that fails also
+-- writes its error, with the ctx it ran under and a traceback, to
+-- STATE/actions.log before the app reports it: the app's own report is all
+-- that is left otherwise. ctx.server is set when the session belongs to
+-- another host (the mini's, shown in the laptop's app); every call the action
+-- makes then travels through the app to that host.
+local function log_error(name, ctx, err)
+  os.execute("mkdir -p '" .. STATE .. "'")
+  local f = io.open(STATE .. "/actions.log", "a")
+  if f then
+    f:write(os.date("%Y-%m-%d %H:%M:%S "), name, " failed: ", tostring(err), "\n  ctx ", kit.dump(ctx), "\n")
+    f:close()
+  end
+end
+
 local define = rex.action
 rex.action = function(spec)
   local run = spec.run
   spec.run = function(ctx, args)
-    if ctx and ctx.origin == "key" then kit.note_here(ctx.session_id, ctx.client_id) end
-    return run(ctx, args)
+    if ctx and ctx.origin == "key" and not ctx.server then kit.note_here(ctx.session_id, ctx.client_id) end
+    local result = { xpcall(function() return run(ctx, args) end, debug and debug.traceback or tostring) }
+    if not result[1] then
+      log_error(spec.name, ctx, result[2])
+      error(result[2], 0)
+    end
+    return unpack(result, 2)
   end
   return define(spec)
 end
@@ -605,9 +624,10 @@ rex.action{
   end,
 }
 
--- shift+left / shift+right slide the tab, as tmux's swap-window binding did.
-rex.bind("shift+left", "client.tab.move.backward")
-rex.bind("shift+right", "client.tab.move.forward")
+-- shift+up / shift+down slide the tab, as tmux's swap-window binding did
+-- with shift+left/right: up and down, since the tabs are a vertical list.
+rex.bind("shift+up", "client.tab.move.backward")
+rex.bind("shift+down", "client.tab.move.forward")
 
 rex.mode("panes", { exclusive = true })
 local panes = {
