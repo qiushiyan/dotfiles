@@ -4,7 +4,7 @@
 #   statusline-command.sh   this file: the payload, then the line itself
 #   statusline-chip.sh      the tmux pane chip, published before the line is
 #                           drawn so nothing below can stop it
-#   statusline-rex.sh       inside Rex, the same chip as the terminal title
+#   statusline-rex.sh       inside Rex, the chip's values for the Rex chip strip
 #   statusline-palette.sh   the colours, one arm per theme (docs/theming.md)
 # The others are sourced, not run: a fork here costs every pane on every
 # render.
