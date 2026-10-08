@@ -289,33 +289,13 @@ rex.action{
   end,
 }
 
--- ctrl+shift+down / up: the next or previous tab in the sidebar's order,
--- crossing into the next session at the end of one and wrapping at the ends.
--- The sidebar lists sessions as session.list does, each with its windows in
--- order.
-rex.action{
-  name = "window_step",
-  title = "Next or Previous Tab, Across Sessions",
-  run = function(ctx, args)
-    local step = tonumber(args and args.step) or 1
-    local here = (args and args.session_id) or current_session(ctx)
-    local tabs, at = {}, nil
-    for _, s in ipairs(kit.sessions()) do
-      local view = kit.try("session.view", { session_id = s.session_id })
-      for _, w in ipairs((view and view.windows) or {}) do
-        tabs[#tabs + 1] = { session_id = s.session_id, window_id = w.window_id, label = w.label }
-        if s.session_id == here and w.window_id == view.active_window_id then at = #tabs end
-      end
-    end
-    if #tabs == 0 then return { moved = false } end
-    local to = tabs[((at or 1) - 1 + step) % #tabs + 1]
-    show(ctx, to.session_id, to.window_id, step)
-    kit.note_here(to.session_id, ctx and ctx.client_id)
-    return { moved = to.label }
-  end,
-}
-rex.bind("ctrl+shift+down", "window_step", { step = 1 })
-rex.bind("ctrl+shift+up", "window_step", { step = -1 })
+-- ctrl+shift+down / up: the next or previous tab in the sidebar, crossing
+-- sessions and hosts (the laptop's and the mini's) and wrapping at the
+-- ends. The app's own actions, since only the app knows the sidebar: a
+-- server action sees one host's sessions, and the app cannot select another
+-- host's session for it.
+rex.bind("ctrl+shift+down", "client.tab.next")
+rex.bind("ctrl+shift+up", "client.tab.previous")
 
 -- tmux ports on Rex's own API ---------------------------------------------------
 
@@ -678,7 +658,7 @@ local prefix = {
   { "b", "pane.move_to_new_tab" }, { "p", "client.mode.enter", { name = "panes" } },
   { "shift+z", "scratch" }, { "shift+m", "label_pane" }, { "ctrl+k", "clear_all" },
   -- tabs (tmux windows) and sessions; ctrl+shift+up/down also step through
-  -- every tab across sessions (window_step)
+  -- every tab in the sidebar, across sessions and hosts
   { "c", "client.tab.new" }, { "n", "client.tab.new" }, { "shift+n", "window_new_here" },
   { "ctrl+h", "window_cycle", { step = -1 } }, { "ctrl+l", "window_cycle", { step = 1 } },
   { "ctrl+p", "window_cycle", { step = -1 } }, { "ctrl+n", "window_cycle", { step = 1 } },
