@@ -253,13 +253,14 @@ since.
   `~/Library/Logs/DiagnosticReports`, or a `JetsamEvent-*.ips` in
   `/Library/Logs/DiagnosticReports` whose killed process carries a `reason`.
   No report narrows the cause without excluding a crash.
-- **tmux keeps no log** unless the server was started with `-v`, which writes
-  `tmux-server-<pid>.log` into its working directory at megabytes every few
-  seconds while a client is attached. It is the next step once the watcher
-  reports an `error-exit`, since `fatal`'s reason reaches nothing else: start
-  the replacement server with `tmux -v` from
-  `~/.local/state/tmux-exit/server-log`, so the log sits beside the records,
-  and the next fatal's last lines name its cause.
+- **tmux keeps no log** unless the server was started with `-v` or sent
+  SIGUSR2, which toggles the log on and off (`kill -USR2 <server pid>`;
+  the file is `tmux-server-<pid>.log` in the server's working directory).
+  It is no way to wait for a rare fatal: attached to a busy session it
+  writes about half a megabyte a second, a line per keystroke and redraw,
+  synchronously, which makes typing and scrollback visibly sluggish, and the
+  file holds everything typed. Use it for a bounded reproduction, then
+  delete the file.
 - **A suspected trigger is tested on its own server**, `tmux -L <name>` from a
   scratch directory with a config that does not load tpm: continuum on a
   second server autosaves over the real snapshots. Attach a client and
