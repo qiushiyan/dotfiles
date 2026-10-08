@@ -45,6 +45,10 @@ carry = [
   ".gitconfig.personal",
   ".planlab/.env",
   ".secrets.shared",
+  # Personal Claude instructions for planlab, loaded from the parent of the
+  # main checkout and of its worktrees; keep the two copies identical.
+  "dev/.worktrees/main/CLAUDE.local.md",
+  "dev/planlab/CLAUDE.local.md",
 ]
 
 # ---- Repositories ----
