@@ -1,0 +1,82 @@
+#!/usr/bin/env zsh
+# git-warm — keep git status fast in the clones ~/.gitconfig registers for
+# background maintenance (maintenance.repo), in every worktree they have:
+# where a worktree's untracked cache or fsmonitor token has gone stale, run
+# the one git status that rewrites it.
+#
+# Both live in the worktree's index, and only a command holding the index
+# lock rewrites them. twin and gwt read without the lock, so a worktree no
+# one runs a plain git status in keeps a cache that a changed exclude file
+# (.git/info/exclude, which tools append to, or ~/.config/git/ignore) or a
+# restarted fsmonitor daemon has invalidated, and each later status walks
+# the whole tree again. launchd runs this at load, hourly, and when either
+# exclude file changes (com.qiushi.git-warm).
+#
+# Each worktree is read first without the lock. Only one whose read walked
+# directories or lstat'ed files the cache should have answered is rewritten,
+# and never one that git has locked (one being created), that has no index,
+# or whose index lock is already held. A rewrite holds the lock for one
+# status, so a commit started in that same moment finds it taken and fails;
+# that happens only where the cache was stale.
+#
+# Usage: git-warm [-n]    -n: report what would be rewritten, rewrite nothing
+# Prints a line per worktree rewritten (or that would be). Exit 0.
+emulate -L zsh
+set -u
+export PATH=/usr/bin:/bin:/opt/homebrew/bin
+zmodload zsh/datetime
+
+dry=0
+[[ ${1:-} == -n ]] && dry=1
+
+# A read the cache answered opens almost no directory and lstats almost no
+# file; a stale one opens thousands of directories (planlab: ~5,000) or
+# lstats every tracked file (~31,000).
+max_opendir=100
+max_lstat=1000
+
+# probe prints "<opendir> <lstat>" for a read of the worktree that takes no
+# lock; opendir is "none" when the index holds no untracked cache.
+probe() {
+  local out opendir lstat
+  out=$(GIT_OPTIONAL_LOCKS=0 GIT_TRACE2_PERF=1 git -C $1 status --porcelain 2>&1 >/dev/null)
+  opendir=${${(M)${(f)out}:#*opendir:*}##*opendir:}
+  lstat=${${(M)${(f)out}:#*preload/sum_lstat:*}##*sum_lstat:}
+  print -r -- "${${opendir%% *}:-none} ${${lstat%% *}:-0}"
+}
+
+for repo in ${(f)"$(git config --global --type=path --get-all maintenance.repo 2>/dev/null)"}; do
+  [[ -d $repo ]] || continue
+  # One record per worktree: its path, then "locked" or "prunable" when git
+  # says so.
+  local -a wts=()
+  local wt="" flag=""
+  for line in ${(f)"$(git -C $repo worktree list --porcelain)"} "worktree "; do
+    case $line in
+      worktree\ *)
+        [[ -n $wt && -z $flag ]] && wts+=$wt
+        wt=${line#worktree }; flag="" ;;
+      locked*|prunable*) flag=skip ;;
+    esac
+  done
+  for wt in $wts; do
+    [[ -d $wt ]] || continue
+    index=$(git -C $wt rev-parse --path-format=absolute --git-path index 2>/dev/null) || continue
+    [[ -f $index && ! -e $index.lock ]] || continue
+    read opendir lstat <<<"$(probe $wt)"
+    if [[ $opendir != none ]] && (( opendir <= max_opendir && lstat <= max_lstat )); then
+      continue
+    fi
+    if (( dry )); then
+      print -r -- "would rewrite ${wt/#$HOME/~}: opendir $opendir, lstat $lstat"
+      continue
+    fi
+    [[ -e $index.lock ]] && continue
+    start=$EPOCHREALTIME
+    git -C $wt status --porcelain >/dev/null 2>&1
+    read after_opendir after_lstat <<<"$(probe $wt)"
+    printf '%s rewrote %s: opendir %s, lstat %s -> opendir %s, lstat %s (%.1fs)\n' \
+      "$(date '+%F %T')" "${wt/#$HOME/~}" $opendir $lstat $after_opendir $after_lstat $(( EPOCHREALTIME - start ))
+  done
+done
+exit 0

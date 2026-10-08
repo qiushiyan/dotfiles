@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.git-warm</string>
+
+  <!-- Keeps git status fast in the clones ~/.gitconfig registers for
+       maintenance (planlab): rewrites a worktree's untracked cache and
+       fsmonitor token where they have gone stale, which only a command
+       holding the index lock does and twin and gwt never do. At load (a
+       restart leaves every fsmonitor token stale), hourly, and when an
+       exclude file changes, which invalidates every worktree's cache at
+       once. The log has a line per worktree rewritten.
+       scripts/.local/bin/git-warm. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushi/.local/bin/git-warm</string>
+  </array>
+
+  <key>WatchPaths</key>
+  <array>
+    <string>/Users/qiushi/dev/planlab/main/.git/info/exclude</string>
+    <string>/Users/qiushi/dotfiles/git/.config/git/ignore</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>3600</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushi/Library/Logs/git-warm.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushi/Library/Logs/git-warm.log</string>
+</dict>
+</plist>

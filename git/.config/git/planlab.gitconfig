@@ -6,3 +6,22 @@
 # that pushes for you: the zsh git() wrapper (~/.config/zsh/git.zsh) and gopen.
 [repo]
 	pushArgs = --no-verify
+
+# planlab is ~31k tracked files, worked on in many linked worktrees at once on
+# both machines, and git status there is mostly the scan for untracked files.
+# The untracked cache and the fsmonitor daemon (one per worktree) let it skip
+# what has not changed. Both are kept in each worktree's index, which only a
+# command holding the index lock rewrites; twin and gwt read without it, so
+# git-warm (scripts/.local/bin) repairs a worktree whose cache has gone stale.
+[core]
+	untrackedCache = true
+	fsmonitor = true
+# A branch deleted on GitHub, as a merged PR's is, stops being tracked at the
+# next fetch.
+[fetch]
+	prune = true
+# The com.qiushi.git-maintenance agents run maintenance in the background
+# (~/.gitconfig registers this clone); nothing runs it after a command.
+[maintenance]
+	auto = false
+	strategy = incremental

@@ -75,5 +75,9 @@ undo = reset --soft
 [delta "dark-mode"]
 	dark = true
 	syntax-theme = Nord
+# The clones background maintenance runs in, through the
+# com.qiushi.git-maintenance agents and git-warm. for-each-repo expands ~, so
+# one line serves both homes; `git maintenance register` would write an
+# absolute path into this stowed file, so a clone is added here by hand.
 [maintenance]
-	repo = /Users/qiushi/dev/planlab/main
+	repo = ~/dev/planlab/main
