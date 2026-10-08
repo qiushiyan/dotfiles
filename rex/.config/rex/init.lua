@@ -204,7 +204,7 @@ rex.action{
       bounds = { x = 0.08, y = 0.08, w = 0.84, h = 0.6 },
       layout = { block = {
         flavor = "com.superlogical.terminal.shell", label = "agents-popup",
-        options = { command = { HOME .. "/.local/bin/rex-board", "--popup" } },
+        options = { command = kit.bin("rex-board", "--popup") },
       } },
       focus = true,
     })
@@ -241,7 +241,7 @@ rex.action{
       direction = "horizontal", side = "after", ratio = 0.62,
       layout = { block = {
         flavor = "com.superlogical.terminal.shell", label = label,
-        options = { command = { HOME .. "/.local/bin/rex-steps", "watch", sid, bid } },
+        options = { command = kit.bin("rex-steps", "watch", sid, bid) },
       } },
       focus = false,
     })
@@ -334,7 +334,7 @@ rex.action{
       direction = "vertical", side = "after", ratio = 0.5,
       layout = { block = {
         flavor = "com.superlogical.terminal.shell", label = "worktrees",
-        options = { cwd = dir, command = { HOME .. "/.local/bin/rex-worktree", sid } },
+        options = { cwd = dir, command = kit.bin("rex-worktree", sid) },
       } },
       focus = true,
     })
@@ -689,7 +689,7 @@ rex.action{
     local sid, bid = current_block(ctx, args)
     if not (sid and bid) then return { opened = false } end
     local where = kit.client_is_local(ctx and ctx.client_id) and "here" or "away"
-    local r = helper_split(sid, bid, "urls", 0.6, { HOME .. "/.local/bin/rex-urls", sid, bid, where })
+    local r = helper_split(sid, bid, "urls", 0.6, kit.bin("rex-urls", sid, bid, where))
     return { opened = r.block_ids[1] }
   end,
 }
@@ -702,7 +702,7 @@ rex.action{
   run = function(ctx, args)
     local sid, bid = current_block(ctx, args)
     if not (sid and bid) then return { opened = false } end
-    local r = helper_split(sid, bid, "rename", 0.85, { HOME .. "/.local/bin/rex-label", sid, bid })
+    local r = helper_split(sid, bid, "rename", 0.85, kit.bin("rex-label", sid, bid))
     return { opened = r.block_ids[1] }
   end,
 }
@@ -716,7 +716,9 @@ rex.action{
   run = function(ctx, args)
     local sid, bid = current_block(ctx, args)
     if not (sid and bid) then return { exported = false } end
-    local p = io.popen("PATH=" .. kit.sh_quote(kit.PATH) .. " " .. HOME .. "/.local/bin/rex-export "
+    -- rex-export runs here; on another host's session its rex calls go there.
+    local server = (ctx and ctx.server) and ("REX_SERVER=" .. kit.sh_quote(ctx.server) .. " ") or ""
+    local p = io.popen(server .. "PATH=" .. kit.sh_quote(kit.PATH) .. " " .. HOME .. "/.local/bin/rex-export "
       .. kit.sh_quote(sid) .. " " .. kit.sh_quote(bid) .. " 2>/dev/null")
     local path = p and p:read("*l")
     if p then p:close() end

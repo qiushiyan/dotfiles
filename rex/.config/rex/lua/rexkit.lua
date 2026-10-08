@@ -332,6 +332,14 @@ M.PATH = os.getenv("HOME") .. "/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr
 
 function M.sh_quote(s) return "'" .. tostring(s):gsub("'", "'\\''") .. "'" end
 
+-- The command line for one of the lab's tools in a pane the server starts.
+-- The path is resolved by the pane's own shell, on the host it runs on: an
+-- action that runs from the laptop's config on the mini's session would
+-- otherwise name the laptop's home directory there.
+function M.bin(name, ...)
+  return { "/bin/sh", "-c", 'exec "$HOME/.local/bin/' .. name .. '" "$@"', name, ... }
+end
+
 -- The process in front in a block: the one a key press is about. Its cwd
 -- comes from the OS, so it is right while nvim or Claude runs.
 function M.foreground(session_id, block_id)
@@ -418,8 +426,8 @@ function M.toast(session_id, block_id, level, title, msg, seconds)
     bounds = { x = math.max(0, 1 - w - 2 / cols), y = math.min(1 / rows, 1 - h), w = w, h = h },
     layout = { block = {
       flavor = "com.superlogical.terminal.shell", label = "toast",
-      options = { command = { os.getenv("HOME") .. "/.local/bin/rex-toast", "draw",
-        level or "info", title, msg, tostring(seconds or 2.5) } },
+      options = { command = M.bin("rex-toast", "draw",
+        level or "info", title, msg, tostring(seconds or 2.5)) },
     } },
     focus = false,
   })
