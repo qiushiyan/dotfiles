@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# rex-demo: a Rex session of simulated agents, to watch the agent experiments
+# work without spending real Claude turns. Each agent works through a few
+# steps, stops for permission (press y in its tab), finishes, and starts over
+# on a key press, publishing every state with rex-agent. The first window runs
+# the agents board.
+#
+#   rex-demo         create the "agents-demo" session (replacing an old one)
+#   rex-demo stop    remove it
+#
+# Then in Rex: watch the tab badges and the board, press ⌘⇧J to jump to the
+# agent waiting longest, ⌘⇧A for the board as a popup.
+set -u
+SESSION=agents-demo
+BIN="$HOME/.local/bin"
+REX="$BIN/rex"
+
+agent() {
+  local name=$1 delay=$2; shift 2
+  local say=("$BIN/rex-agent" --id claude --app claude --title "$name")
+  printf '\e]0;%s\a' "$name"
+  clear
+  printf '\e[1m%s\e[0m  \e[90msimulated agent (rex-demo)\e[0m\n\n' "$name"
+  "$BIN/rex-agent" idle --id claude --app claude --title "$name"
+  sleep "$delay"
+  local round=1 step k
+  while true; do
+    for step in "$@"; do
+      "$BIN/rex-agent" working --id claude --app claude --title "$name" --msg "$step"
+      printf '  \e[33m◐\e[0m %s\n' "$step"
+      sleep $((4 + RANDOM % 6))
+    done
+    "$BIN/rex-agent" blocked --kind permission --id claude --app claude --title "$name" \
+      --msg "Allow Bash(pnpm test)?"
+    printf '\n  \e[1;31m● needs permission\e[0m  Bash(pnpm test)   \e[1mpress y to allow\e[0m\n'
+    until read -rsn1 k && [ "$k" = y ]; do :; done
+    "$BIN/rex-agent" working --id claude --app claude --title "$name" --msg "running pnpm test"
+    printf '  \e[33m◐\e[0m running pnpm test\n'
+    sleep $((3 + RANDOM % 4))
+    "$BIN/rex-agent" done --id claude --app claude --title "$name" --msg "round $round finished"
+    printf '\n  \e[1;32m✔ done\e[0m  press any key for the next task\n'
+    read -rsn1
+    "$BIN/rex-agent" idle --id claude --app claude --title "$name"
+    round=$((round + 1))
+    clear
+    printf '\e[1m%s\e[0m  \e[90msimulated agent (rex-demo), round %s\e[0m\n\n' "$name" "$round"
+  done
+}
+
+start() {
+  "$REX" kill "$SESSION" >/dev/null 2>&1
+  "$REX" new "$SESSION" --window board --shell none -- "$BIN/rex-board" >/dev/null || exit 1
+  local self
+  self=$(command -v "$0" || printf '%s' "$0")
+  "$REX" run -s "$SESSION" --focus=false --shell none --label api -- "$self" agent api 2 \
+    "reading src/routes/billing.ts" "planning the refund endpoint" "editing 3 files" >/dev/null
+  "$REX" run -s "$SESSION" --focus=false --shell none --label web -- "$self" agent web 8 \
+    "reading the checkout page" "fixing the coupon input" "updating snapshots" >/dev/null
+  "$REX" run -s "$SESSION" --focus=false --shell none --label docs -- "$self" agent docs 15 \
+    "scanning docs/ for stale links" "rewriting the setup guide" >/dev/null
+  printf 'session %s: a board and three agents (api, web, docs).\n' "$SESSION"
+  printf 'Open it in Rex; press y in a blocked tab to let that agent go on.\n'
+}
+
+case "${1:-}" in
+  "") start ;;
+  stop) "$REX" kill "$SESSION" ;;
+  agent) shift; agent "$@" ;;
+  *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac

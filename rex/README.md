@@ -15,6 +15,7 @@ file is the notebook: what is here, what we learned, what is still open.
 | `.local/bin/rex` | `~/.local/bin/rex` | The app's bundled CLI on PATH (Stow refuses absolute symlinks, so a wrapper) |
 | `.local/bin/rex-agent` | same | Publish agent state over OSC 7501; the Claude hooks call `rex-agent claude` |
 | `.local/bin/rex-board` | same | Run the board here, or `--popup` in a floating layer |
+| `.local/bin/rex-demo` | same | A session of simulated agents (board + three agents) to watch all of this work |
 | `.local/bin/rex-theme` | same | Called by `theme-set`: switches the app's theme by name; silent without a Rex server |
 
 `~/.config/rex` is a real directory (Makefile `REAL_DIRS`, `.gitignore`
@@ -28,6 +29,10 @@ Notification, Stop and SessionEnd, guarded by `$REX_BLOCK` so it is a no-op
 outside Rex; `theme-set` step 6 calls `rex-theme`.
 
 ## Try it
+
+`rex-demo` builds an `agents-demo` session: a board window and three
+simulated agents that work, stop for permission (press `y` in their tab) and
+finish, publishing each state. `rex-demo stop` removes it. With real agents:
 
 1. Turn on **Show status badges** (Rex Settings, tab options): the app then
    draws a dot on a tab whose program reports a status. Without an agent,
