@@ -120,6 +120,10 @@ The actions take `session_id=` and `block_id=` too, so a script can aim them:
   hears, not what it may call. init.lua's Lua state outlives the connection
   an action runs on, so a remembered attach goes stale: `rexkit` attaches
   again when a call is refused as not attached.
+- init.lua and what it `require`s are loaded when the config loads: an edit
+  to `rexkit.lua` reaches the actions only after `rex config reload` (a `rex
+  do` script loads it fresh, so a test from the shell can pass while a key
+  press still runs the old code).
 - Actions, and panes the server starts, get the server's bare PATH
   (`/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin`); `rexkit.PATH` and
   `rex-worktree` set their own.

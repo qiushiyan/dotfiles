@@ -259,7 +259,7 @@ function M.toast(session_id, block_id, level, title, msg, seconds)
   end
   -- The box is 3 rows by the message plus its frame. The app pads a layer by
   -- about a row and two columns, so the layer asks for that much more.
-  local width = math.min(math.max(#msg, #title + 6) + 4, math.floor(cols * 0.45))
+  local width = math.min(math.max(#msg + 4, #title + 10, 28), math.floor(cols * 0.45))
   local w, h = (width + 2) / cols, 4 / rows
   local r = M.try("session.new_layer", {
     session_id = session_id, window_id = window_id,
