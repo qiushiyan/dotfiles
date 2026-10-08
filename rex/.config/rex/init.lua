@@ -147,15 +147,22 @@ rex.action{
       end
     end
     path = path or (fg and fg.cwd)
-    if not path then return { copied = false, reason = "no path" } end
-    if not kit.osc52(sid, bid, path) then return { copied = false, reason = "no tty" } end
+    if not path then
+      kit.toast(sid, bid, "warn", "Copy path", "nothing to copy here")
+      return { copied = false, reason = "no path" }
+    end
+    if not kit.osc52(sid, bid, path) then
+      kit.toast(sid, bid, "error", "Copy path", "could not reach the terminal")
+      return { copied = false, reason = "no tty" }
+    end
+    kit.toast(sid, bid, "ok", "Copied", (path:gsub("^" .. HOME:gsub("%p", "%%%0"), "~")))
     return { copied = path }
   end,
 }
 
 -- prefix g: open the block's repo on GitHub with gopen (~/dev/gopen): the
 -- PR when the branch has one, else the branch. In the background, since the
--- PR lookup can take a network call; a notification says when it fails.
+-- PR lookup can take a network call; a toast says what it opened.
 rex.action{
   name = "gopen",
   title = "Open on GitHub",
@@ -164,11 +171,14 @@ rex.action{
     local sid, bid = current_block(ctx, args)
     local dir = sid and bid and kit.cwd(sid, bid)
     if not dir then return { opened = false, reason = "no directory" } end
-    local note = "osascript -e 'display notification \"'\"$msg\"'\" with title \"gopen\"'"
-    os.execute("(cd " .. kit.sh_quote(dir) .. " && PATH=" .. kit.sh_quote(kit.PATH)
-      .. " gopen </dev/null >/dev/null 2>/dev/null; rc=$?;"
-      .. " case $rc in 0) ;; 3) msg=\"the branch is not on origin: run gopen in the pane to push\"; " .. note .. " ;;"
-      .. " *) msg=\"gopen failed ($rc)\"; " .. note .. " ;; esac) >/dev/null 2>&1 &")
+    kit.toast(sid, bid, "info", "GitHub", "opening " .. dir:match("[^/]+$") .. "…", 1.5)
+    -- gopen prints the URL it opened; exit 3 means the branch is not on origin.
+    local toast = "REX_SESSION=" .. kit.sh_quote(sid) .. " REX_BLOCK=" .. kit.sh_quote(bid) .. " rex-toast"
+    os.execute("(cd " .. kit.sh_quote(dir) .. " && export PATH=" .. kit.sh_quote(kit.PATH)
+      .. " && url=$(gopen </dev/null 2>/dev/null); rc=$?;"
+      .. " case $rc in 0) " .. toast .. " ok 'Opened on GitHub' \"$url\" ;;"
+      .. " 3) " .. toast .. " warn GitHub 'branch not on origin: run gopen in the pane to push' ;;"
+      .. " *) " .. toast .. " error GitHub \"gopen failed ($rc)\" ;; esac) >/dev/null 2>&1 &")
     return { opening = dir }
   end,
 }

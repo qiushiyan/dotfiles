@@ -12,6 +12,7 @@ file is the notebook: what is here, what we learned, what is still open.
 | `.config/rex/init.lua` | `~/.config/rex/init.lua` | The `ctrl+a` prefix mode (Keys below) and the actions it reaches: agents, steps, copy path, gopen, worktrees |
 | `.config/rex/lua/rexkit.lua` | same | Shared helpers: calls, sessions, agent records, a block's Claude session |
 | `.config/rex/scripts/board.lua` | same | Live agents board, event-driven; each Claude's claude-steps title and branch under its row |
+| `.config/rex/scripts/rexd.lua` | same | The background watcher: numbers every session's tabs |
 | `.config/rex/scripts/steps.lua` | same | The steps sidecar: `claude-steps show` for one agent, redrawn when it reports |
 | `.local/bin/rex` | `~/.local/bin/rex` | The app's bundled CLI on PATH (Stow refuses absolute symlinks, so a wrapper) |
 | `.local/bin/rex-agent` | same | Publish agent state over OSC 7501; the Claude hooks call `rex-agent claude` |
@@ -19,6 +20,8 @@ file is the notebook: what is here, what we learned, what is still open.
 | `.local/bin/rex-demo` | same | A demo session: board, three simulated agents, a real Claude with its steps sidecar |
 | `.local/bin/rex-steps` | same | Open a steps sidecar beside this terminal (or a named block) |
 | `.local/bin/rex-worktree` | same | The worktree picker `prefix W` opens: go to a worktree's tab, or open it with Claude and its steps |
+| `.local/bin/rex-toast` | same | A snacks-style toast at the top right of a window; the actions use it, and so can any script in Rex |
+| `.local/bin/rexd` | same | Keeps `rexd.lua` running in a detached block; a Rex shell starts it |
 | `.local/bin/rex-theme` | same | Called by `theme-set`: switches the app's theme by name; silent without a Rex server |
 
 `~/.config/rex` is a real directory (Makefile `REAL_DIRS`, `.gitignore`
@@ -26,7 +29,8 @@ allow-list): Rex writes its own files there (`rex terminfo setup` adds
 `ssh_config` and `terminfo-hosts`). Both machines stow it: the laptop takes
 every package, and the mini lists it in `twin.toml`.
 
-Wiring outside the package: `claude/.claude/settings.json` runs
+Wiring outside the package: `zsh/.config/zsh/rex.zsh` runs `rexd` when an
+interactive shell starts inside Rex; `claude/.claude/settings.json` runs
 `rex-agent claude` on SessionStart, UserPromptSubmit, PostToolUse,
 Notification, Stop and SessionEnd, guarded by `$REX_BLOCK` so it is a no-op
 outside Rex; `theme-set` step 6 calls `rex-theme`.
@@ -78,6 +82,13 @@ mode does not bind does nothing. `rex keymap` lists the whole map.
 | `S` `A` `J` | steps sidecar, agents board, jump to the agent that needs you (also ⌘⇧S, ⌘⇧A, ⌘⇧J) | ours |
 | `t` `r` `/` | theme picker, reload config, find | app |
 
+Tabs are numbered: `rexd` labels every window `<position> <name>` and keeps
+the numbers right as tabs open, close and move, so `prefix 1`–`9` goes where
+the vertical list says. A name is set once and kept, as tmux's were: the one
+you give (`prefix m`), else the pane's label when it says something (`api`,
+`claude`), else the directory the pane started in. `y`, `g` and a new
+worktree confirm with a toast at the top right.
+
 The actions take `session_id=` and `block_id=` too, so a script can aim them:
 `rex do copy_path session_id=… block_id=… rel=true`.
 
@@ -128,9 +139,14 @@ The actions take `session_id=` and `block_id=` too, so a script can aim them:
   --json`): focus, resize, tab next/previous.
 - `rex.client.queue(action, args)` asks the client that pressed the key to
   perform a client action (`session.select`, `pane.split`, …).
-- `rex.on("block_event", fn(target, ev))` fires for `program_status_changed`,
-  `title_changed`, `bell` across sessions; `ev.name` says which. Specific
-  names (`program_status_changed`) register but never fire. Handlers only work
+- `rex.on("block_event", fn(target, ev))` fires for every block event across
+  sessions, `ev.name` saying which: `program_status_changed`, `title_changed`,
+  `bell`, `process_changed` (the foreground process), `clipboard_written`,
+  `desktop_notification`. A block event's own name (`program_status_changed`)
+  registers but never fires. Session-level events do fire under their own
+  names: `session_created`, `session_destroyed`, `window_created`,
+  `window_closed`, `window_label_changed`, `active_window_changed`,
+  `session_view_changed` (any layout change, moves included). Handlers only work
   in `rex do` scripts: in init.lua they are reserved for "a later version".
 
 ### Agent status: OSC 7501, the Program Status Protocol
@@ -211,6 +227,20 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
   event, and the app showing the session copies it: the clipboard of the
   machine you look from, with no pbcopy or toclip. An action writes it to the
   tty of the block's foreground process.
+
+### Feedback and background work
+
+- The app has its own floating notices but no API to post one. OSC 9 and
+  OSC 777 from a terminal become `desktop_notification` block events, which
+  the app presumably shows as system notifications: not the in-terminal look
+  wanted here. `rex-toast` draws one instead, in a small floating layer that
+  takes no focus, sized in cells from the block's grid and rect, painting its
+  own background, redrawing on resize, and closing when its process exits.
+- A detached block (`session.new_block`: owned by a session, placed in no
+  layout) is a background process that shows nowhere: `rexd` hosts its
+  watcher in one. It lives as long as its session; a Rex shell starting
+  brings it back. Window labels are what `session.set_window_label` sets and
+  what a tab rename changes.
 
 ### Popups, layouts, blocks
 

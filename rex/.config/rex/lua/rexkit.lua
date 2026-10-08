@@ -229,4 +229,47 @@ function M.notify(title, text)
   os.execute("osascript -e " .. M.sh_quote(script) .. " >/dev/null 2>&1 &")
 end
 
+-- Toasts ----------------------------------------------------------------------
+
+-- The window a block is placed in, with the block's normalized rect there.
+local function placement(session_id, block_id)
+  local view = M.try("session.view", { session_id = session_id })
+  for _, w in ipairs((view and view.windows) or {}) do
+    for _, layer in ipairs(w.layers or {}) do
+      for _, b in ipairs(layer.blocks or {}) do
+        if b.block_id == block_id then return w.window_id, b.rect end
+      end
+    end
+  end
+end
+
+-- A snacks-style notification at the top right of the window BLOCK is in
+-- (rex-toast draws it). The layer is sized in cells from the block's own grid
+-- and rect, takes no focus, and closes when the toast's process exits. A new
+-- toast replaces one still showing.
+function M.toast(session_id, block_id, level, title, msg, seconds)
+  title, msg = tostring(title or ""), tostring(msg or "")
+  local window_id, rect = placement(session_id, block_id)
+  local size = M.block(session_id, block_id, "size")
+  if not (window_id and rect and size and size.columns) then return { shown = false } end
+  local cols = size.columns / rect.w
+  local rows = size.rows / rect.h
+  for _, b in ipairs(M.terminals(session_id)) do
+    if b.label == "toast" then M.try("block.close", { session_id = session_id, block_id = b.block_id }) end
+  end
+  local width = math.min(math.max(#msg, #title + 6) + 6, math.floor(cols * 0.6))
+  local w, h = width / cols, 3 / rows
+  local r = M.try("session.new_layer", {
+    session_id = session_id, window_id = window_id,
+    bounds = { x = math.max(0, 1 - w - 2 / cols), y = math.min(1 / rows, 1 - h), w = w, h = h },
+    layout = { block = {
+      flavor = "com.superlogical.terminal.shell", label = "toast",
+      options = { command = { os.getenv("HOME") .. "/.local/bin/rex-toast", "draw",
+        level or "info", title, msg, tostring(seconds or 2.5) } },
+    } },
+    focus = false,
+  })
+  return { shown = r ~= nil }
+end
+
 return M

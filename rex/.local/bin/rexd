@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# rexd: keep the lab's background watcher (~/.config/rex/scripts/rexd.lua)
+# running on this Rex server, in a detached block labelled rexd: a block a
+# session owns but places in no layout, so it shows nowhere. One per server;
+# it lives as long as the session holding it, and a Rex shell starting
+# (zsh/.config/zsh/rex.zsh) starts it again when it is gone.
+#
+#   rexd           start it unless it runs
+#   rexd status    say where it runs
+#   rexd stop      close it
+#   rexd restart   stop, then start (after editing rexd.lua)
+#   rexd run       INTERNAL: the watcher itself
+set -u
+REX="$HOME/.local/bin/rex"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab"
+
+lua() {
+  "$REX" --autostart=false do -e "
+    package.path = os.getenv('HOME') .. '/.config/rex/lua/?.lua;' .. package.path
+    local kit = require('rexkit')
+    $1" "${@:2}" 2>/dev/null
+}
+
+# "session_id block_id" of each rexd block whose process still runs; closes
+# the ones whose process has exited.
+find_running() {
+  lua '
+    local out = {}
+    for _, s in ipairs(kit.sessions()) do
+      for _, b in ipairs(kit.terminals(s.session_id)) do
+        if b.label == "rexd" then
+          local p = kit.block(s.session_id, b.block_id, "process")
+          if p and p.last_exit then
+            kit.try("block.close", { session_id = s.session_id, block_id = b.block_id })
+          else
+            out[#out + 1] = s.session_id .. " " .. b.block_id
+          end
+        end
+      end
+    end
+    return table.concat(out, "\n")' | sed -e 's/^"//' -e 's/"$//' -e 's/\\n/\n/g'
+}
+
+start() {
+  [ -n "$(find_running)" ] && return 0
+  local session=${REX_SESSION:-}
+  lua '
+    local sid = rex.args.session
+    if sid == "" then
+      local first = kit.sessions()[1]
+      sid = first and first.session_id
+    end
+    if not sid then return "" end
+    kit.attach(sid)
+    local r = kit.call("session.new_block", {
+      session_id = sid, flavor = "com.superlogical.terminal.shell", label = "rexd",
+      options = { command = { os.getenv("HOME") .. "/.local/bin/rexd", "run" } },
+    })
+    return r.block_id' session="$session" >/dev/null
+}
+
+case "${1:-}" in
+  "") start ;;
+  status)
+    running=$(find_running)
+    if [ -n "$running" ]; then printf 'rexd runs in %s\n' "$running"; else echo 'rexd is not running'; fi ;;
+  stop)
+    find_running | while read -r s b; do
+      lua 'return kit.try("block.close", { session_id = rex.args.s, block_id = rex.args.b }) ~= nil' s="$s" b="$b" >/dev/null
+    done ;;
+  restart) "$0" stop; start ;;
+  run)
+    mkdir -p "$STATE"
+    exec "$REX" do "$HOME/.config/rex/scripts/rexd.lua" --all 2>>"$STATE/rexd.log" ;;
+  *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac

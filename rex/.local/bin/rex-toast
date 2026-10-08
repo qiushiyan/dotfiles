@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# rex-toast: a small notification at the top right of a Rex window, in the
+# style of nvim's snacks notifier: a rounded box, a coloured border and icon,
+# a title on the border and the message inside. It takes no keys and closes
+# itself after a few seconds.
+#
+#   rex-toast LEVEL TITLE MESSAGE      over this terminal's window
+#                                      (REX_SESSION, REX_BLOCK); LEVEL is
+#                                      info, ok, warn or error
+#   rex-toast draw LEVEL TITLE MESSAGE SECONDS    INTERNAL: the toast itself
+#
+# Actions call rexkit's toast(), which sizes the floating layer to the
+# message and starts `rex-toast draw` in it.
+set -u
+BIN="$HOME/.local/bin"
+
+draw() {
+  local level=$1 title=$2 msg=$3 secs=${4:-2.5}
+  local color icon
+  case "$level" in
+    ok) color=2 icon="󰄬" ;;
+    warn) color=3 icon="" ;;
+    error) color=1 icon="" ;;
+    *) color=4 icon="" ;;
+  esac
+  # Drawn again on every resize: the app sizes the layer's terminal after
+  # this process has started.
+  render() {
+    local size rows cols
+    size=$(stty size 2>/dev/null) || size="3 40"
+    rows=${size% *} cols=${size#* }
+    local inner=$((cols - 4))
+    [ "${#msg}" -gt "$inner" ] && msg="${msg:0:$((inner - 1))}…"
+    local head=" $icon $title "
+    # Palette slot 0 behind everything: the app draws a layer see-through.
+    local bg=$'\e[40m' border=$'\e[3'"$color"'m' text=$'\e[39m' bold=$'\e[1m' reset=$'\e[22m'
+    local rule top bottom
+    rule=$(printf '%*s' "$((cols - 2))" '' | sed 's/ /─/g')
+    top="╭─${bold}${head}${reset}${border}${rule:$(( ${#head} + 1 ))}╮"
+    bottom="╰${rule}╯"
+    printf '\e[?25l%s\e[H\e[2J' "$bg"
+    printf '%s%s\n' "$border" "$top"
+    printf '%s│%s %-*s %s│\n' "$border" "$text" "$inner" "$msg" "$border"
+    local i
+    for ((i = 3; i < rows; i++)); do printf '%s│%*s│\n' "$border" "$((cols - 2))" ''; done
+    printf '%s%s' "$border" "$bottom"
+  }
+  trap render WINCH
+  render
+  # Short sleeps, so a resize is handled while the toast is up.
+  local ticks tick=0
+  ticks=$(awk "BEGIN { print int($secs * 10) }")
+  while [ "$tick" -lt "$ticks" ]; do sleep 0.1; tick=$((tick + 1)); done
+}
+
+show() {
+  local level=${1:-info} title=${2:-} msg=${3:-}
+  [ -n "${REX_SESSION:-}" ] && [ -n "${REX_BLOCK:-}" ] || { printf '%s: %s\n' "$title" "$msg"; return 0; }
+  "$BIN/rex" do -e '
+    package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
+    local a = rex.args
+    return require("rexkit").toast(a.session, a.block, a.level, a.title, a.msg)
+  ' session="$REX_SESSION" block="$REX_BLOCK" level="$level" title="$title" msg="$msg" >/dev/null 2>&1
+}
+
+case "${1:-}" in
+  draw) shift; draw "$@" ;;
+  info|ok|warn|error) show "$@" ;;
+  *) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac

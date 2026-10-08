@@ -43,6 +43,7 @@ elif [ -n "$query" ]; then
   path=$(gwt create --non-interactive "$query" 2>&1 | tail -1)
   [ -d "$path" ] || fail "gwt create: $path"
   branch=$query
+  rex-toast ok Worktree "created $branch"
 else
   exit 0
 fi
