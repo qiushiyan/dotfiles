@@ -35,6 +35,7 @@ table.
 | tmux | reads the file when the config loads | `tmux/.config/tmux/tmux.conf` + `tmux/.config/tmux/themes/<theme>_tmux.conf` |
 | Neovim | reads file/env at startup, then watches the file | `nvim/.config/nvim/lua/config/theme.lua`, `colors/`, `lua/plugins/theme.lua` |
 | Ghostty | a generated include file | `ghostty/.config/ghostty/auto/theme.ghostty` (+ `themes/`, `config`) |
+| Rex (experiment) | the Ghostty theme name in that include | the Rex app's own themes, Ghostty files imported into it |
 
 Per-tool palettes preserve hand-tuned contrast; a shared colour generator would
 remove that control. Theme additions follow `/add-theme`.
@@ -43,8 +44,10 @@ remove that control. Theme additions follow `/add-theme`.
 
 **`theme-set`** (`scripts/.local/bin/theme-set`, on `PATH`) is the one writer.
 It validates the name, writes `~/.config/terminal-theme`, regenerates the
-Ghostty include, and re-sources tmux. It is UI-agnostic on purpose: the tmux
-`prefix t` menu, the CLI, and anything added later all call the same script.
+Ghostty include, re-sources tmux, and asks a running Rex app to switch to the
+same Ghostty theme (`rex/README.md`: the Rex app owns its colours). It is
+UI-agnostic on purpose: the tmux `prefix t` menu, the CLI, and anything added
+later all call the same script.
 
 A theme is each machine's own choice: `prefix t` on the office mini switches
 the mini alone, and nothing carries the laptop's pick across.
@@ -64,6 +67,7 @@ is the load-bearing mental model:
 | Neovim | each instance polls the file and re-applies `:colorscheme` | ✅ (instances older than the watcher need a restart) |
 | Claude statusline | re-renders constantly, reads the file each draw | ✅ |
 | Ghostty | include is rewritten, but **macOS has no external config reload** (the `SIGUSR2` reload is Linux-only) | ⚠️ press **⌘⇧,** |
+| Rex | `theme-set` asks the app to switch, by the Ghostty theme's name | ⚠️ only with Remote Control on and the theme imported |
 | zsh prompt / `ls` colors | `_theme_sync` precmd re-reads the file before each prompt and re-applies on change | ✅ (next prompt; a shell held by a foreground command catches up when it returns) |
 
 Consequences worth internalizing:

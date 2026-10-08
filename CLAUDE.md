@@ -12,10 +12,10 @@ them from the environment.
 
 ## Red lines
 
-1. **`~/.claude`, `~/.codex`, `~/.agents`, and `~/.config/lazygit` stay real
-   directories, never folded symlinks.** Link tracked config per item so
-   runtime state such as credentials and sessions stays outside this public
-   repo. Read `docs/stow-layout.md` before changing installation or the
+1. **`~/.claude`, `~/.codex`, `~/.agents`, `~/.config/lazygit` and
+   `~/.config/rex` stay real directories, never folded symlinks.** Link
+   tracked config per item so runtime state such as credentials and sessions
+   stays outside this public repo. Read `docs/stow-layout.md` before changing installation or the
    `.gitignore` allow-lists that protect this boundary.
 2. **`claude/.claude/CLAUDE.md` stays empty.** It reaches every project as
    `~/.claude/CLAUDE.md`. A `<pkg>/CLAUDE.md` also reaches every project as

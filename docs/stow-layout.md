@@ -29,8 +29,8 @@ unlinked: `scripts/` lists `bootstrap.sh` and `list-secrets.sh`, which run as
 
 ## Directories that must stay real
 
-`~/.claude`, `~/.codex`, `~/.agents` and `~/.config/lazygit` are listed in
-`REAL_DIRS` in the Makefile. `make install` / `make restow` `mkdir -p` them *before* running
+`~/.claude`, `~/.codex`, `~/.agents`, `~/.config/lazygit` and `~/.config/rex`
+are listed in `REAL_DIRS` in the Makefile. `make install` / `make restow` `mkdir -p` them *before* running
 `stow`. That ordering is the enforcement: Stow folds a package into an existing
 directory, but links the whole directory when it is absent.
 
@@ -38,8 +38,9 @@ If one of them became a single symlink to its package, everything the app writes
 at runtime would start landing inside this repo:
 
 ```
-~/.claude/     history.jsonl, sessions/, projects/, telemetry/, plugins/, caches
-~/.codex/      sqlite DBs, sessions/, caches — and auth.json, a live credential
+~/.claude/       history.jsonl, sessions/, projects/, telemetry/, plugins/, caches
+~/.codex/        sqlite DBs, sessions/, caches — and auth.json, a live credential
+~/.config/rex/   what Rex writes beside init.lua (`rex terminfo setup`: ssh_config, terminfo-hosts)
 ```
 
 The repo is public, so `~/.codex/auth.json` alone makes this a credential leak.
@@ -49,8 +50,8 @@ Nothing errors at the time; the files simply appear as untracked additions.
 writes into it as it runs, so each machine renders its own
 (`docs/twin.md` § Codex config).
 
-**Defense in depth:** the `.gitignore` blocks for both packages ignore
-`<pkg>/.<app>/*` wholesale and then allow-list only the config that belongs in
+**Defense in depth:** each of these packages' `.gitignore` block ignores the
+app's directory wholesale and then allow-lists only the config that belongs in
 git. A folded directory would still be wrong, but its runtime state would not be
 committable by accident.
 
