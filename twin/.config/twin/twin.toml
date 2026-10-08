@@ -15,8 +15,8 @@ ssh = "mac"
 ssh = "mini"
 packages = [
   "claude", "claude-steps", "codex", "ghostty", "git", "gwt", "karabiner",
-  "launchd-mini", "lessons", "nvim", "ohmyposh", "scripts", "tabtype", "tmux",
-  "twin", "zsh",
+  "launchd-mini", "lessons", "nvim", "ohmyposh", "rex", "scripts", "tabtype",
+  "tmux", "twin", "zsh",
 ]
 
 [dotfiles]

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# rex-theme: make Rex follow the theme theme-set selected. theme-set calls it.
+#
+# Two layers, because Rex splits theming in two:
+#   - every terminal's default colours on the server (set_theme), from the
+#     Ghostty include theme-set writes; no permission needed
+#   - the app's own theme, by name, when the app accepts remote actions
+#     (Rex Settings > Rex Server > Remote Control)
+# Silent no-op when no Rex server is running.
+set -u
+command -v rex >/dev/null 2>&1 || exit 0
+rex --autostart=false --timeout 2s whoami >/dev/null 2>&1 || exit 0
+
+include="$HOME/.config/ghostty/auto/theme.ghostty"
+rex --autostart=false do "$HOME/.config/rex/scripts/theme.lua" include="$include" \
+  | jq -r '"terminals: \(.terminals) set to \(.theme) (\(.scheme))" + (if (.failed | length) > 0 then ", failed: \(.failed | join("; "))" else "" end)'
+
+name=$(sed -n 's/^theme *= *//p' "$include" | head -1)
+if [ -n "$name" ] && rex --autostart=false do client.theme.change name="$name" >/dev/null 2>&1; then
+  printf 'app theme: %s\n' "$name"
+else
+  printf 'app theme: unchanged (needs Remote Control)\n'
+fi

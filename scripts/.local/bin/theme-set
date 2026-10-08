@@ -117,8 +117,17 @@ main() {
 
   # 4/5. neovim + Claude statusline self-update from the state file — no push.
 
+  # 6. Rex (an experiment, rex/README.md): rex-theme reads the include written
+  # in step 2 and pushes it to every Rex terminal; silent with no Rex server.
+  local rex_msg="skipped (no rex-theme)"
+  if command -v rex-theme >/dev/null 2>&1; then
+    rex_msg=$(rex-theme 2>&1 | tr '\n' ' ')
+    [ -n "$rex_msg" ] || rex_msg="skipped (no server)"
+  fi
+
   printf 'theme → %s\n' "$name"
   printf '  tmux:    %s\n' "$tmux_msg"
+  printf '  rex:     %s\n' "$rex_msg"
   printf '  nvim:    live (file watcher)\n'
   printf '  claude:  live (statusline re-render)\n'
   printf '  ghostty: include written — press ⌘⇧, in ghostty to reload\n'

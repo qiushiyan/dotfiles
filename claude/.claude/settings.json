@@ -95,6 +95,10 @@
           {
             "type": "command",
             "command": "bash ~/.config/tmux/scripts/tmux-agent-status.sh clear claude"
+          },
+          {
+            "type": "command",
+            "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
           }
         ]
       }
@@ -106,6 +110,50 @@
           {
             "type": "command",
             "command": "bash ~/.config/tmux/scripts/tmux-agent-status.sh activate claude"
+          },
+          {
+            "type": "command",
+            "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
           }
         ]
       }

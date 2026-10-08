@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# rex-agent: publish an agent's state to the Rex terminal it runs in, through
+# the Program Status Protocol (OSC 7501). Rex keeps one record per id on the
+# block, readable with `rex block call program_status` and announced as a
+# program_status_changed block event; the agents board and the
+# agents_next action read them.
+#
+#   rex-agent STATE [--kind K] [--id ID] [--app A] [--title T] [--msg M] [--progress N]
+#   rex-agent claude              # a Claude Code hook: reads the hook JSON on stdin
+#
+# STATE is idle, working, done, blocked, error or clear; KIND is permission,
+# question or auth. Outside Rex (no REX_BLOCK) it does nothing, so hooks can
+# call it unconditionally. Wire format and findings: ~/dotfiles/rex/README.md.
+
+set -u
+[ -n "${REX_BLOCK:-}" ] || exit 0
+
+b64() { printf '%s' "$1" | base64 | tr -d '\n'; }
+
+# The OSC has to reach the terminal's output side. A hook's stdout is captured
+# by its parent, so write to the controlling tty, or failing that to the
+# nearest ancestor's tty.
+emit() {
+  local seq=$'\e]7501;'"$1"$'\e\\'
+  if { printf '%s' "$seq" > /dev/tty; } 2>/dev/null; then return 0; fi
+  local pid=$$ tty
+  while [ "${pid:-1}" -gt 1 ]; do
+    tty=$(ps -o tty= -p "$pid" 2>/dev/null | tr -d ' ')
+    if [ -n "$tty" ] && [ "$tty" != "??" ] && [ -w "/dev/$tty" ]; then
+      printf '%s' "$seq" > "/dev/$tty" && return 0
+    fi
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+  done
+  return 1
+}
+
+report() {
+  local state=$1; shift
+  local kind="" id="" app="" title="" msg="" progress=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --kind) kind=$2; shift 2 ;;
+      --id) id=$2; shift 2 ;;
+      --app) app=$2; shift 2 ;;
+      --title) title=$2; shift 2 ;;
+      --msg) msg=$2; shift 2 ;;
+      --progress) progress=$2; shift 2 ;;
+      *) printf 'rex-agent: unknown option %s\n' "$1" >&2; return 2 ;;
+    esac
+  done
+  local body="state=$state"
+  [ -n "$kind" ] && body+=":kind=$kind"
+  [ -n "$id" ] && body+=":id=$id"
+  [ -n "$app" ] && body+=":app=$app"
+  [ -n "$progress" ] && body+=":progress=$progress"
+  [ -n "$title" ] && body+=":title=$(b64 "$title")"
+  [ -n "$msg" ] && body+=":msg=$(b64 "$msg")"
+  emit "$body"
+}
+
+# Claude Code hook events -> states. The title is the project the session works
+# in; the message is what the human would want to read first.
+claude_hook() {
+  local input event cwd message prompt tool ntype
+  input=$(cat)
+  IFS=$'\t' read -r event cwd message prompt tool ntype < <(
+    printf '%s' "$input" | jq -r '[
+      .hook_event_name // "-",
+      .cwd // "-",
+      (.message // "-" | gsub("[\t\n]"; " ")),
+      (.prompt // "-" | gsub("[\t\n]"; " ") | .[0:120]),
+      .tool_name // "-",
+      .notification_type // "-"
+    ] | @tsv' 2>/dev/null
+  )
+  # Tab is IFS whitespace, so empty fields would collapse; "-" stands in.
+  [ "$cwd" = - ] && cwd=""; [ "$message" = - ] && message=""
+  [ "$prompt" = - ] && prompt=""; [ "$tool" = - ] && tool=""
+  local common=(--id claude --app claude --title "${cwd##*/}")
+  case "$event" in
+    SessionStart) report idle "${common[@]}" ;;
+    UserPromptSubmit) report working "${common[@]}" --msg "$prompt" ;;
+    PostToolUse) report working "${common[@]}" --msg "ran $tool" ;;
+    Notification)
+      # idle_prompt only repeats that a finished turn awaits input: keep `done`.
+      case "$ntype:$message" in
+        idle_prompt:*|auth_success:*) ;;
+        permission_prompt:*|-:*permission*) report blocked --kind permission "${common[@]}" --msg "$message" ;;
+        *) report blocked --kind question "${common[@]}" --msg "$message" ;;
+      esac ;;
+    Stop) report done "${common[@]}" ;;
+    SessionEnd) report clear --id claude ;;
+  esac
+  return 0
+}
+
+case "${1:-}" in
+  claude) claude_hook ;;
+  idle|working|done|blocked|error|clear) report "$@" ;;
+  *) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac

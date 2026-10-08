@@ -56,6 +56,15 @@ codex/.codex/*
 # ...but skip the bundled system skills (Codex reinstalls these).
 codex/.codex/skills/.system/
 
+# === Rex (rex/.config/rex/) ===
+# ~/.config/rex is a real directory (Makefile REAL_DIRS): Rex writes its own
+# files there (`rex terminfo setup` adds ssh_config and terminfo-hosts). Only
+# the config below is ours; anything else Rex invents stays uncommittable.
+rex/.config/rex/*
+!rex/.config/rex/init.lua
+!rex/.config/rex/lua/
+!rex/.config/rex/scripts/
+
 # === Neovim scratch sandbox (nvim/.config/nvim/sandbox/) ===
 # Throwaway playground files for testing LSP/formatters/treesitter across
 # filetypes — not config. Kept on disk locally, out of the repo.

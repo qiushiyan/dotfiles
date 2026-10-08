@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# rex-board: the live agents board (~/.config/rex/scripts/board.lua).
+#
+#   rex-board           run it in this terminal until Ctrl-C
+#   rex-board --popup   any key closes it; the agents_board action
+#                       (cmd+shift+a) opens it this way in a floating layer
+set -u
+REX="$HOME/.local/bin/rex"
+board="$HOME/.config/rex/scripts/board.lua"
+
+[ "${1:-}" = --popup ] || exec "$REX" do "$board" --all
+
+# rex probes a terminal it writes stderr to, and the terminal's reply arrives
+# on stdin, where it reads as a key press. Its stderr goes to a file instead,
+# shown only if the board dies.
+err=$(mktemp -t rex-board)
+trap 'rm -f "$err"' EXIT
+"$REX" do "$board" --all 2>"$err" &
+pid=$!
+while kill -0 "$pid" 2>/dev/null; do
+  if read -rsn1 -t 1; then kill "$pid" 2>/dev/null; exit 0; fi
+done
+cat "$err"
+printf '\nboard exited; press any key to close\n'
+read -rsn1
