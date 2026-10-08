@@ -4,12 +4,14 @@
 #
 # Usage: bash test-toclip.sh [K1 K5 ...]
 #
-# The traps this pins: `tmux load-buffer -w` without a target writes to ONE
-# client tmux picks by activity, so with the laptop's ssh client and the mini's
-# Screen Sharing client both on a session, an untargeted copy can land on the
-# wrong machine. toclip aims at the session's ssh client instead. And a pane
-# keeps the environment it was created with: one made over ssh, viewed now at
-# the mini's own screen, must still open URLs there (K10).
+# The traps this pins: a session can be on both screens at once, the laptop's
+# ssh client and the mini's own, and a copy belongs to the one last typed at.
+# Sending to the ssh client whenever one is attached strands a copy made at the
+# mini's desk on the laptop (K13, K14); sending to the newest attach strands
+# the laptop's (K5, K11). toclip has to know which machine its pick is on, so
+# it makes the pick itself and names that client to `tmux load-buffer -w`. And
+# a pane keeps the environment it was created with: one made over ssh, viewed
+# now at the mini's own screen, must still open URLs there (K10).
 #
 # ISOLATION. tmux runs on a private socket (every toclip call gets $TMUX
 # pointed at it), pbcopy and open are stubs on PATH that record what they were
@@ -61,6 +63,7 @@ fresh() {
     R -f /dev/null new-session -d -s s -x 80 -y 20
     R set -g set-clipboard on
     R set -g history-limit 100
+    R bind -n F12 set -q @typed 1   # typed()'s key: counts as input, reaches no pane
 }
 
 # attach <name>: a real client on a pty via script(1); prints its pid.
@@ -73,6 +76,13 @@ attach() {
             grep -qx "$tty" "$SANDBOX/ttys" 2>/dev/null || { echo "$tty" >> "$SANDBOX/ttys"; echo "$pid"; }
         done | grep . && return
     done
+}
+
+# typed <pid>: a keypress at that client, which makes it the session's most
+# recently active one. client_activity has one-second resolution.
+typed() {
+    sleep 1.1
+    R send-keys -K -c "$(R list-clients -F '#{client_pid} #{client_name}' | awk -v p="$1" '$1 == p { print $2 }')" F12
 }
 
 # Run toclip, or browser-clip, as from pane %0 of the sandbox server.
@@ -109,12 +119,12 @@ CASE=K4; if want; then
 fi
 
 CASE=K5; if want; then
-    # The ssh client is the LESS recently active one: tmux's own pick would be
-    # the local client, which is the wrong machine.
+    # Both screens show the session and the mini's client attached last, but
+    # the keypress came from the laptop.
     fresh; : > "$SANDBOX/ttys"
     remote=$(attach remote)
-    sleep 1.1   # client_activity has one-second resolution
     attach local >/dev/null
+    typed "$remote"
     TOCLIP_REMOTE_PIDS="$remote" T -q 'to-laptop'
     ok "K5 buffer kept for frommini" "to-laptop" "$(newest_buffer)"
     ok "K5 not the mini's pbcopy" "" "$(pbcopied)"
@@ -143,10 +153,13 @@ fi
 CASE=K9; if want; then
     # --remote answers where a copy would go and copies nothing.
     fresh; : > "$SANDBOX/ttys"
-    attach local >/dev/null
+    local_pid=$(attach local)
     TOCLIP_REMOTE_PIDS="" T --remote; ok "K9 local client only: not remote" 1 "$?"
     remote=$(attach remote)
-    TOCLIP_REMOTE_PIDS="$remote" T --remote; ok "K9 ssh client on the session: remote" 0 "$?"
+    typed "$remote"
+    TOCLIP_REMOTE_PIDS="$remote" T --remote; ok "K9 ssh client typed at last: remote" 0 "$?"
+    typed "$local_pid"
+    TOCLIP_REMOTE_PIDS="$remote" T --remote; ok "K9 local client typed at last: not remote" 1 "$?"
     ( unset TMUX; "$TOCLIP" --remote ); ok "K9 outside tmux and ssh: not remote" 1 "$?"
     ( unset TMUX; SSH_CONNECTION='10.0.0.1 1 10.0.0.2 22' "$TOCLIP" --remote ); ok "K9 outside tmux over ssh: remote" 0 "$?"
     ok "K9 nothing copied" "" "$(pbcopied)$(newest_buffer)"
@@ -166,6 +179,7 @@ CASE=K11; if want; then
     fresh; : > "$SANDBOX/ttys"
     remote=$(attach remote)
     attach local >/dev/null
+    typed "$remote"
     TOCLIP_REMOTE_PIDS="$remote" B 'https://github.com/o/r/pull/1'
     ok "K11 ssh client: not opened on the mini" "" "$(opened)"
     ok "K11 ssh client: buffer kept" "https://github.com/o/r/pull/1" "$(newest_buffer)"
@@ -178,6 +192,30 @@ CASE=K12; if want; then
     ( unset TMUX; "$BROWSER_CLIP" 'https://github.com/o/r/tree/main' )
     ok "K12 outside tmux and ssh: opened here" "https://github.com/o/r/tree/main" "$(opened)"
     "$BROWSER_CLIP"; ok "K12 no URL fails" 1 "$?"
+fi
+
+CASE=K13; if want; then
+    # The laptop's ssh client is still attached, idle, while the keypress comes
+    # from the mini's own screen: the copy stays on the mini.
+    fresh; : > "$SANDBOX/ttys"
+    local_pid=$(attach local)
+    remote=$(attach remote)
+    typed "$local_pid"
+    TOCLIP_REMOTE_PIDS="$remote" T -q 'at-desk'
+    ok "K13 idle ssh client: pbcopy" "at-desk" "$(pbcopied)"
+    ok "K13 idle ssh client: buffer kept" "at-desk" "$(newest_buffer)"
+    settle
+    ok "K13 nothing sent to the ssh client" 0 "$(osc52_in remote at-desk)"
+fi
+
+CASE=K14; if want; then
+    fresh; : > "$SANDBOX/ttys"
+    local_pid=$(attach local)
+    remote=$(attach remote)
+    typed "$local_pid"
+    TOCLIP_REMOTE_PIDS="$remote" B 'https://github.com/o/r/issues/2'
+    ok "K14 idle ssh client: opened here" "https://github.com/o/r/issues/2" "$(opened)"
+    ok "K14 idle ssh client: nothing copied" "" "$(pbcopied)$(newest_buffer)"
 fi
 
 CASE=K8; if want; then

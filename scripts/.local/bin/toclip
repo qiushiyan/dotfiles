@@ -5,13 +5,15 @@
 #   toclip --remote      exit 0 if a copy from here would go to an ssh client's
 #                        terminal, 1 if it would stay on this machine
 #
-# At a machine's own screen (the laptop, or the mini over Screen Sharing) it
-# is pbcopy. In an ssh session to the mini it asks the laptop's terminal to
-# copy, over OSC 52: inside tmux through `load-buffer -w` aimed at this
-# session's ssh client, outside tmux straight at the session's tty. The request
-# is fire-and-forget — a terminal that ignores OSC 52 (Terminal.app) drops it —
-# so inside tmux the text also stays as the newest tmux buffer, which
-# `frommini` on the laptop fetches. See docs/qiushi-mini.md § Clipboard and attach.
+# At a machine's own screen (the laptop, or the mini at its desk or over Screen
+# Sharing) it is pbcopy. In an ssh session to the mini it asks the laptop's
+# terminal to copy, over OSC 52: inside tmux through `load-buffer -w` aimed at
+# the session's ssh client, outside tmux straight at the session's tty. A tmux
+# session can be on both screens at once, and then the client last typed at
+# says which one you are at. The request is fire-and-forget — a terminal that
+# ignores OSC 52 (Terminal.app) drops it — so inside tmux the text also stays
+# as the newest tmux buffer, which `frommini` on the laptop fetches. See
+# docs/qiushi-mini.md § Clipboard and attach.
 set -euo pipefail
 
 # Larger payloads stay in the tmux buffer only: tmux's input-buffer-size is
@@ -23,7 +25,7 @@ case ${1:-} in
   -q) quiet=1; shift ;;
   --remote) query=1; shift ;;
 esac
-case ${1:-} in -h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+case ${1:-} in -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
 
 say() { (( quiet )) || printf 'toclip: %s\n' "$*" >&2; }
 die() { printf 'toclip: %s\n' "$*" >&2; exit 1; }
@@ -61,12 +63,17 @@ caller_tty() {
 
 # Where a copy goes, decided now rather than from the environment: a tmux pane
 # keeps the environment it was created with, whichever client views it later.
-remote=0 target=
+# Of the session's clients, the one with the newest input decides: the laptop's
+# ssh client can stay attached while you work at the mini's desk, and the
+# keypress that asked for this copy came from the screen you are at.
+remote=0 target= newest=-1
 if [[ -n ${TMUX:-} ]]; then
   session=$(tmux display-message -p -t "${TMUX_PANE:-}" '#{session_id}')
-  while read -r _ pid name; do
-    if is_remote "$pid"; then target=$name; remote=1; break; fi
-  done < <(tmux list-clients -t "$session" -F '#{client_activity} #{client_pid} #{client_name}' | sort -rn)
+  while read -r activity pid name; do
+    (( activity > newest )) || continue
+    newest=$activity
+    if is_remote "$pid"; then remote=1 target=$name; else remote=0 target=; fi
+  done < <(tmux list-clients -t "$session" -F '#{client_activity} #{client_pid} #{client_name}')
 elif [[ -n ${SSH_CONNECTION:-} ]]; then
   remote=1
 fi
@@ -85,7 +92,7 @@ if [[ -n ${TMUX:-} ]]; then
   if [[ -z $target ]]; then
     tmux load-buffer - < "$payload"
     local_copy
-    say "copied $size bytes here (no ssh client on this session)"
+    say "copied $size bytes here"
   elif (( size > OSC52_MAX )); then
     tmux load-buffer - < "$payload"
     say "$size bytes is too large to send through the terminal; kept as the newest tmux buffer — run frommini on the laptop"
