@@ -120,6 +120,8 @@ end
 -- app's own session.next or session.previous, by the sign of STEP, and
 -- without a STEP the session stays as it is. K is the server to call (kit,
 -- or kit.remote for an agent on another host).
+local tab_index, step_tabs -- defined with the tab actions below
+
 local function show(ctx, session_id, window_id, step, K)
   K = K or kit
   K.call("session.focus_window", { session_id = session_id, window_id = window_id })
@@ -131,21 +133,51 @@ local function show(ctx, session_id, window_id, step, K)
 end
 
 -- Jump to the agent that has waited longest in the most urgent state:
--- blocked, then errored, then finished, on this server or another host's (the
--- mini's, seen from the laptop). The server moves focus to its block; the
--- client is asked to show that session.
+-- blocked, then errored, then finished, among the agents on the host of the
+-- session the key was pressed in. The app cannot be sent to another host's
+-- session from an action ("no host lists it"), so an agent elsewhere is
+-- named in a notification instead: on another host, or, while you work in
+-- another host's session, in a different session of it.
+local function where(row)
+  return (row.server and (row.server .. ": ") or "") .. (row.session or "?") .. " › " .. (row.block or "?")
+    .. " is " .. row.record.state
+end
+
 rex.action{
   name = "agents_next",
   title = "Jump to Agent Needing Attention",
   run = function(ctx)
     log_ctx("agents_next", ctx)
-    local row = kit.most_urgent(kit.agents_everywhere())
-    if not row then return { jumped = false, reason = "no agent is waiting" } end
-    local K = row.server and kit.remote(row.server) or kit
-    K.call("session.focus_block", { session_id = row.session_id, block_id = row.block_id })
-    show(ctx, row.session_id, row.window_id, nil, K)
-    if not row.server then kit.note_here(row.session_id, ctx and ctx.client_id) end
-    return { jumped = true, server = row.server, session = row.session, block = row.block, state = row.record.state }
+    local row = kit.most_urgent(kit.agents())
+    if row and not (ctx and ctx.server) then
+      kit.call("session.focus_block", { session_id = row.session_id, block_id = row.block_id })
+      show(ctx, row.session_id, row.window_id)
+      kit.note_here(row.session_id, ctx and ctx.client_id)
+      return { jumped = true, session = row.session, block = row.block, state = row.record.state }
+    end
+    if row and row.session_id == ctx.session_id then
+      local view = kit.call("session.view", { session_id = row.session_id })
+      local from, to = tab_index(ctx, view), nil
+      for i, w in ipairs(view.windows or {}) do if w.window_id == row.window_id then to = i end end
+      kit.call("session.focus_block", { session_id = row.session_id, block_id = row.block_id })
+      if from and to then step_tabs(from, to) end
+      return { jumped = true, session = row.session, block = row.block, state = row.record.state }
+    end
+    if not row and not (ctx and ctx.server) then
+      local rows = {}
+      for _, K in ipairs(kit.remotes()) do
+        local ok, more = pcall(K.agents)
+        for _, r in ipairs(ok and more or {}) do rows[#rows + 1] = r end
+      end
+      kit.sort(rows)
+      row = kit.most_urgent(rows)
+    end
+    if not row then
+      kit.notify("Agents", "no agent is waiting")
+      return { jumped = false, reason = "no agent is waiting" }
+    end
+    kit.notify("Agent waiting", where(row))
+    return { jumped = false, elsewhere = where(row) }
   end,
 }
 
@@ -317,7 +349,7 @@ rex.action{
 -- an action does not on another host's (show), and client.tab.goto counts
 -- every session's tabs together. The tab the key was pressed in is the one
 -- holding ctx's block, else the session's active tab.
-local function tab_index(ctx, view)
+function tab_index(ctx, view)
   local here = ctx and ctx.block_id and kit.window_of(view, ctx.block_id)
   local id = here and here.window_id or view.active_window_id
   for i, w in ipairs(view.windows or {}) do
@@ -325,7 +357,7 @@ local function tab_index(ctx, view)
   end
 end
 
-local function step_tabs(from, to)
+function step_tabs(from, to)
   local action = to > from and "client.tab.next" or "client.tab.previous"
   for _ = 1, math.abs(to - from) do rex.client.queue(action, {}) end
 end

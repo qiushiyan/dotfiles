@@ -78,14 +78,7 @@ claude_hook() {
   [ "$prompt" = - ] && prompt=""; [ "$tool" = - ] && tool=""
   local common=(--id claude --app claude --title "${cwd##*/}")
   case "$event" in
-    SessionStart)
-      report idle "${common[@]}"
-      # A SessionStart hook's output is the session's context: what an agent
-      # in Rex can do that it could not elsewhere (rex-run).
-      cat <<'NOTE'
-This Claude Code session runs inside Rex, the terminal multiplexer the user watches. When a command is worth the user seeing live (a test suite, a build, a migration, a dev server), run it through rex-run instead of directly: `rex-run -- '<command line>'` runs it in a pane beside this one and returns its exit status and the last 60 lines of its output (`-n N` for more). For a server, `rex-run --bg -l NAME -- '<command line>'` returns at once; `rex-run tail NAME` reads its output and `rex-run stop NAME` closes it. Quick commands still run directly.
-NOTE
-      ;;
+    SessionStart) report idle "${common[@]}" ;;
     UserPromptSubmit) report working "${common[@]}" --msg "$prompt" ;;
     PostToolUse) report working "${common[@]}" --msg "ran $tool" ;;
     Notification)
