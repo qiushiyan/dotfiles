@@ -1,0 +1,40 @@
+#!/usr/bin/env zsh
+# ask-grokbot — send a question to the Grok Bot webhook. A 2xx means the
+# question was accepted; the answer arrives later in the Grok Bot chat, not
+# in this response.
+#
+# Usage: ask-grokbot "<question>"
+#
+# Reads GROKBOT_WEBHOOK_URL and GROKBOT_WEBHOOK_AUTH from the gitignored .env
+# at the dotfiles root (GROKBOT_ENV_FILE overrides the path); values already
+# in the environment win. GROKBOT_WEBHOOK_AUTH is the full Authorization header
+# ("Authorization: Bearer …") or just its value. The key is never printed and
+# reaches curl on stdin, not argv, so it stays out of `ps`.
+# Exit codes: 0 accepted; 1 non-2xx or transport error; 2 usage or config.
+emulate -L zsh
+set -u
+
+(( $# == 1 )) && [[ -n $1 ]] || { print -u2 'usage: ask-grokbot "<question>"'; exit 2 }
+
+env_file=${GROKBOT_ENV_FILE:-${0:A:h:h:h:h}/.env}
+url=${GROKBOT_WEBHOOK_URL:-} auth=${GROKBOT_WEBHOOK_AUTH:-}
+if [[ -r $env_file ]]; then
+  [[ -z $url ]] && url=$(source $env_file && print -r -- ${GROKBOT_WEBHOOK_URL:-})
+  [[ -z $auth ]] && auth=$(source $env_file && print -r -- ${GROKBOT_WEBHOOK_AUTH:-})
+fi
+[[ -n $url ]]  || { print -u2 "ask-grokbot: GROKBOT_WEBHOOK_URL is not set (in $env_file)"; exit 2 }
+[[ -n $auth ]] || { print -u2 "ask-grokbot: GROKBOT_WEBHOOK_AUTH is not set (in $env_file)"; exit 2 }
+[[ ${auth:l} == authorization:* ]] || auth="Authorization: $auth"
+
+body=$(jq -nc --arg q "$1" '{question: $q}')
+resp=$(mktemp) || exit 1
+trap 'rm -f $resp' EXIT
+
+code=$(print -r -- $auth | curl -sS -m 30 -X POST "$url" \
+  -H @- -H 'Content-Type: application/json' --data-binary "$body" \
+  -o $resp -w '%{http_code}') || { print -u2 "ask-grokbot: request failed"; exit 1 }
+
+print "HTTP $code"
+cat $resp; [[ -s $resp ]] && print
+[[ $code == 2?? ]] && print -u2 "accepted — the answer will arrive in your Grok Bot chat"
+[[ $code == 2?? ]]

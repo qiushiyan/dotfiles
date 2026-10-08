@@ -104,3 +104,6 @@ vpn-private/
 .DS_Store
 
 .obelisk/
+
+# === Local secrets (ask-grokbot reads the Grok Bot webhook from here) ===
+.env
