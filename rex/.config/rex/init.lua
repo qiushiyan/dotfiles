@@ -14,7 +14,8 @@ local STATE = kit.STATE
 -- notifications and prefix Tab need to know. An action that fails also
 -- writes its error, with the ctx it ran under and a traceback, to
 -- STATE/actions.log before the app reports it: the app's own report is all
--- that is left otherwise. ctx.server is set when the session belongs to
+-- that is left otherwise. An action on another host's session also logs its
+-- result there. ctx.server is set when the session belongs to
 -- another host (the mini's, shown in the laptop's app); every call the action
 -- makes then travels through the app to that host.
 local function log_error(name, ctx, err)
@@ -31,10 +32,21 @@ rex.action = function(spec)
   local run = spec.run
   spec.run = function(ctx, args)
     if ctx and ctx.origin == "key" and not ctx.server then kit.note_here(ctx.session_id, ctx.client_id) end
+    local started = os.clock()
     local result = { xpcall(function() return run(ctx, args) end, debug and debug.traceback or tostring) }
     if not result[1] then
       log_error(spec.name, ctx, result[2])
       error(result[2], 0)
+    end
+    -- Another host's session: every call travelled through the app, so a
+    -- trace of what the action did is the only view of it.
+    if ctx and ctx.server then
+      local f = io.open(STATE .. "/actions.log", "a")
+      if f then
+        f:write(os.date("%Y-%m-%d %H:%M:%S "), spec.name, " on ", tostring(ctx.server), " args ", kit.dump(args),
+          " -> ", kit.dump(result[2]), string.format(" (%.0f ms cpu)", (os.clock() - started) * 1000), "\n")
+        f:close()
+      end
     end
     return unpack(result, 2)
   end
