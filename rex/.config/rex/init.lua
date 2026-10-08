@@ -261,40 +261,6 @@ rex.action{
   end,
 }
 
--- prefix C: the Claude context chip as a one-row strip above the focused
--- block (rex-chip), in colour, since Rex draws pane headers as plain text;
--- prefix C again, or from inside the strip, closes it. The strip runs on the
--- session's host and closes itself with the Claude pane.
-rex.action{
-  name = "chip_strip",
-  title = "Claude Chip Strip",
-  run = function(ctx, args)
-    local sid, bid = current_block(ctx, args)
-    if not (sid and bid) then return { opened = false, reason = "no focused block" } end
-    local blocks = kit.terminals(sid)
-    local label = "chip·" .. bid:sub(-6)
-    for _, b in ipairs(blocks) do
-      if (b.block_id == bid and (b.label or ""):find("^chip·")) or b.label == label then
-        kit.call("block.close", { session_id = sid, block_id = b.block_id })
-        return { closed = b.label }
-      end
-    end
-    local size = kit.block(sid, bid, "size")
-    local rows = (size and size.rows) or 40
-    local r = kit.call("session.new_split", {
-      session_id = sid, anchor_block_id = bid,
-      direction = "vertical", side = "before", ratio = math.min(0.5, 1 / rows),
-      layout = { block = { flavor = "com.superlogical.terminal.shell", label = label,
-        options = { command = kit.bin("rex-chip", sid, bid) } } },
-      focus = false,
-    })
-    -- The app evens out a new split ("balance splits on creation") after
-    -- this returns, so rex-chip sizes its own pane once it has.
-    local strip = r.block_ids[1]
-    return { opened = label, block = strip }
-  end,
-}
-
 -- prefix y / Y: copy the focused file's path when nvim runs in the block
 -- (nvim writes it to a file named for the block, config/autocmds.lua), else
 -- the directory the block's front process runs in. rel = true gives the
@@ -840,7 +806,7 @@ local prefix = {
   -- tools
   { "y", "copy_path" }, { "shift+y", "copy_path", { rel = true } },
   { "g", "gopen" }, { "shift+w", "worktrees" }, { "u", "urls" }, { "e", "export_pane" },
-  { "shift+s", "steps_sidecar" }, { "shift+c", "chip_strip" }, { "shift+a", "agents_board" }, { "a", "agents_next" },
+  { "shift+s", "steps_sidecar" }, { "shift+a", "agents_board" }, { "a", "agents_next" },
   { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
 }
 for i = 1, 9 do prefix[#prefix + 1] = { tostring(i), "window_goto", { index = i } } end

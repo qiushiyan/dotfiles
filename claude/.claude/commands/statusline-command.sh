@@ -1,12 +1,11 @@
 #!/bin/bash
 #
-# Claude Code statusline. One process per render, four files:
+# Claude Code statusline. One process per render, three files:
 #   statusline-command.sh   this file: the payload, then the line itself
 #   statusline-chip.sh      the tmux pane chip, published before the line is
 #                           drawn so nothing below can stop it
-#   statusline-rex.sh       inside Rex, the chip's values for the Rex chip strip
 #   statusline-palette.sh   the colours, one arm per theme (docs/theming.md)
-# The others are sourced, not run: a fork here costs every pane on every
+# The other two are sourced, not run: a fork here costs every pane on every
 # render.
 
 case "${BASH_SOURCE[0]}" in
@@ -106,7 +105,6 @@ else
 fi
 
 . "$STATUSLINE_DIR/statusline-chip.sh"
-[ -n "${REX_BLOCK:-}" ] && . "$STATUSLINE_DIR/statusline-rex.sh"
 
 # Resolve the active theme FILE-FIRST (not env-first): the file is the live
 # source of truth that `theme-set` rewrites, so an already-running Claude session
