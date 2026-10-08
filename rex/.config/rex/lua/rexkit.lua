@@ -156,27 +156,34 @@ function M.here()
   return sid, cid ~= "-" and cid or nil
 end
 
--- The text of a file in the lab's state directory (~/.local/state/rex-lab)
--- on the host the calls go to, or nil. Here it is a plain read; on another
+-- The output of a shell command run on the host the session's calls go
+-- to, in directory CWD (optional), or nil. Here it is io.popen; on another
 -- host's session (an action run from the laptop's config with ctx.server)
--- the file is there, so a hidden block in SESSION_ID prints it and its
--- screen is read back, then the block is closed.
-function M.read_state(ctx, session_id, relpath)
+-- a hidden block in SESSION_ID runs it there and its screen is read back,
+-- then the block is closed. SCRIPT is sh source; ARGS become $1, $2, ….
+function M.run_there(ctx, session_id, script, args, cwd)
+  args = args or {}
   if not (ctx and ctx.server) then
-    local f = io.open(M.STATE .. "/" .. relpath, "r")
-    if not f then return nil end
-    local body = f:read("*a")
-    f:close()
-    return body
+    local line = "PATH=" .. M.sh_quote(M.PATH) .. " sh -c " .. M.sh_quote(script) .. " sh"
+    for _, a in ipairs(args) do line = line .. " " .. M.sh_quote(a) end
+    if cwd then line = "cd " .. M.sh_quote(cwd) .. " && " .. line end
+    local p = io.popen(line .. " 2>/dev/null")
+    local out = p and p:read("*a") or ""
+    if p then p:close() end
+    out = out:gsub("%s+$", "")
+    return out ~= "" and out or nil
   end
   local mark = "--rex-lab-end--"
+  local command = { "/bin/sh", "-c",
+    'export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; '
+      .. 'mark=$1; shift; ( ' .. script .. ' ) 2>/dev/null; printf "\\n%s\\n" "$mark"; sleep 10',
+    "run", mark }
+  for _, a in ipairs(args) do command[#command + 1] = a end
   local r = M.try("session.new_block", { session_id = session_id, flavor = M.TERMINAL .. ".shell",
-    label = "rex-lab-read", options = { command = { "/bin/sh", "-c",
-      'cat "${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/$1" 2>/dev/null; printf "\\n%s\\n" "$2"; sleep 10',
-      "read", relpath, mark } } })
+    label = "rex-lab-run", options = { command = command, cwd = cwd } })
   if not (r and r.block_id) then return nil end
   local text
-  for _ = 1, 20 do
+  for _ = 1, 60 do
     local out = M.block(session_id, r.block_id, "format", { format = "text", unwrap = true })
     out = out and out.content or ""
     local at = out:find(mark, 1, true)
@@ -186,6 +193,34 @@ function M.read_state(ctx, session_id, relpath)
   M.try("block.close", { session_id = session_id, block_id = r.block_id })
   if text then text = text:gsub("%s+$", "") end
   return text ~= "" and text or nil
+end
+
+-- The text of a file in the lab's state directory (~/.local/state/rex-lab)
+-- on the session's host, or nil.
+function M.read_state(ctx, session_id, relpath)
+  return M.run_there(ctx, session_id,
+    'cat "${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/$1"', { relpath })
+end
+
+-- Whether the app whose key ran an action is on this machine, so `open` and
+-- the clipboard here are the ones you are looking at. On another host's
+-- session the action runs from the config of the app's own machine (here);
+-- otherwise the app may be another machine's, over Tailscale.
+function M.app_is_here(ctx)
+  if ctx and ctx.server then return true end
+  return M.client_is_local(ctx and ctx.client_id)
+end
+
+-- Put TEXT on the clipboard of the machine you are looking from: here with
+-- pbcopy when the app is here and the block is another host's (no tty of
+-- it here), else through the block's terminal (OSC 52).
+function M.copy(ctx, session_id, block_id, text)
+  if ctx and ctx.server then
+    -- Not io.popen(…, "w"): Rex's Lua never closes that pipe, so pbcopy
+    -- waits for the end of its input forever.
+    return os.execute("printf %s " .. M.sh_quote(text) .. " | pbcopy") == 0
+  end
+  return M.osc52(session_id, block_id, text)
 end
 
 -- Whether a client runs on this machine: a remote app (the laptop's, over

@@ -285,7 +285,7 @@ rex.action{
       kit.toast(sid, bid, "warn", "Copy path", "nothing to copy here")
       return { copied = false, reason = "no path" }
     end
-    if not kit.osc52(sid, bid, path) then
+    if not kit.copy(ctx, sid, bid, path) then
       kit.toast(sid, bid, "error", "Copy path", "could not reach the terminal")
       return { copied = false, reason = "no tty" }
     end
@@ -308,11 +308,22 @@ rex.action{
     kit.toast(sid, bid, "info", "GitHub", "opening " .. dir:match("[^/]+$") .. "…", 1.5)
     -- A key pressed in the laptop's app would open the browser on this
     -- machine: there the URL goes to that app's clipboard instead (OSC 52).
+    -- On another host's session gopen runs there, in the block's checkout,
+    -- and the URL opens here, where the app is.
+    if ctx and ctx.server then
+      local url = kit.run_there(ctx, sid, "gopen --print </dev/null", {}, dir)
+      url = url and url:match("https?://%S+")
+      if not url then
+        kit.notify("GitHub", "gopen found no URL: is the branch on origin?")
+        return { opened = false, reason = "gopen found no URL" }
+      end
+      os.execute("open " .. kit.sh_quote(url) .. " >/dev/null 2>&1 &")
+      return { opened = url }
+    end
     if not kit.client_is_local(ctx and ctx.client_id) then
-      local p = io.popen("cd " .. kit.sh_quote(dir) .. " && PATH=" .. kit.sh_quote(kit.PATH) .. " gopen --print </dev/null 2>/dev/null")
-      local url = p and p:read("*l")
-      if p then p:close() end
-      if not url or url == "" then return { opened = false, reason = "gopen found no URL" } end
+      local url = kit.run_there(ctx, sid, "gopen --print </dev/null", {}, dir)
+      url = url and url:match("https?://%S+")
+      if not url then return { opened = false, reason = "gopen found no URL" } end
       kit.osc52(sid, bid, url)
       kit.toast(sid, bid, "ok", "Copied GitHub URL", url)
       return { copied = url }
@@ -697,7 +708,9 @@ rex.action{
   run = function(ctx, args)
     local sid, bid = current_block(ctx, args)
     if not (sid and bid) then return { opened = false } end
-    local where = kit.client_is_local(ctx and ctx.client_id) and "here" or "away"
+    -- The picker runs on the session's host; it opens a URL only when the
+    -- app is there too, and copies it (OSC 52, to the app) otherwise.
+    local where = (not (ctx and ctx.server) and kit.client_is_local(ctx and ctx.client_id)) and "here" or "away"
     local r = helper_split(sid, bid, "urls", 0.6, kit.bin("rex-urls", sid, bid, where))
     return { opened = r.block_ids[1] }
   end,
@@ -735,7 +748,7 @@ rex.action{
       kit.toast(sid, bid, "error", "Export", "could not read the pane")
       return { exported = false }
     end
-    if kit.client_is_local(ctx and ctx.client_id) then
+    if kit.app_is_here(ctx) then
       os.execute("open " .. kit.sh_quote(path) .. " >/dev/null 2>&1 &")
     else
       kit.osc52(sid, bid, path)
