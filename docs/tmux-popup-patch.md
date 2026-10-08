@@ -2,7 +2,8 @@
 
 **Status: temporary carry.** Homebrew's `tmux` is replaced by
 `qiushiyan/local/tmux-popupfix` — stock tmux 3.7c with jemalloc plus a patch
-to `screen-redraw.c` for the defects below. Retire it (see below) once an
+to `screen-redraw.c` for the defects below, and a diagnostic patch to
+`log.c` that records why the server dies (§ A fatal's reason in fatal.log). Retire it (see below) once an
 upstream release after 3.7c passes the reproduction harness. Upstream's 3.8
 change log names broad redraw fixes around status lines, popups, and floating
 panes, and its branch rewrites pane status drawing, but neither names these
@@ -56,6 +57,22 @@ A server on an unpatched binary escapes it by config alone:
 `window-size smallest` (no client sees a cut-off window), a single attached
 client (`tmux attach -d`), or `pane-border-status off`.
 
+### A fatal's reason in fatal.log
+
+Not a fix: the servers on both machines exit by tmux's own fatal error
+every day or so (`docs/recovery.md` § A dead tmux server), and stock tmux
+writes a fatal's reason only to its `-v` log, which is too heavy to leave
+on. The `log.c` patch appends the reason, a backtrace and the image's load
+slide to `~/.local/state/tmux-exit/fatal.log` (`$TMUX_FATAL_LOG` overrides)
+on every `fatal`/`fatalx` and on libevent's own fatal errors, with logging
+off; `tmux-exit-watch` copies that pid's lines into its exit record. A
+static function in the backtrace is named with
+`atos -o "$(brew --prefix tmux-popupfix)/bin/tmux" -s <slide> <addr>...`,
+against the keg the dead server ran. Forcing one to check the patch: start
+a server with the open-file limit too low for its socket pair
+(`ulimit -n 7`, with `TMUX_TMPDIR` and `TMUX_FATAL_LOG` in a scratch
+directory), which fatals with `socketpair failed`.
+
 ## Where things live
 
 - **Formula + embedded patch**: `/opt/homebrew/Library/Taps/qiushiyan/homebrew-local/Formula/tmux-popupfix.rb`
@@ -79,7 +96,8 @@ Update the tracked formula, then copy it to the local tap's `Formula/` and run
 version needs the formula's `revision` raised, or brew sees nothing to upgrade
 and builds no new keg. Keep the previous keg until the
 old server has exited (`HOMEBREW_NO_INSTALL_CLEANUP=1` during the upgrade).
-Commit the tracked copy and local tap change in their respective repositories.
+Commit the tracked copy here, and the tap's copy where the tap is a git
+repository (the laptop's is; the mini's is not).
 
 Check the installed binary and its allocator:
 
@@ -132,6 +150,10 @@ intact, dividers present below it.
 
 The office mini carries the same tap and build (`docs/qiushi-mini.md`
 § Toolchain); retire it there in the same pass.
+
+The `log.c` patch goes once the fatal is explained, or with the rest: a
+stock build records nothing, so retiring it first means the watcher's next
+`error-exit` arrives without a reason.
 
 When a tmux release after 3.7c lands, install it and rerun the harness above;
 its CHANGES may not name either case. Once it passes:

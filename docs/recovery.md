@@ -236,7 +236,10 @@ since.
   tmux's own `fatal` exits 1) or `signaled` (with the signal) — plus
   `detail` `memory` when macOS killed it for memory. Any exit but a clean one
   names a process table saved beside it at that moment, which shows what ran
-  beside the server, and for how long. It does not name a signal's sender.
+  beside the server, and for how long. An `error-exit` from the patched build
+  also carries `fatal`: the reason and backtrace tmux wrote to
+  `~/.local/state/tmux-exit/fatal.log` (`docs/tmux-popup-patch.md` § A
+  fatal's reason in fatal.log). It does not name a signal's sender.
   `~/Library/Logs/tmux-exit-watch.log` shows which servers it is watching;
   it picks up a restarted server by itself (`scripts/.local/bin/tmux-exit-watch`).
 - **When, from everything else:** every transcript that was live at the time
