@@ -248,11 +248,11 @@ why the laptop tmux stays out of it) needs these on top of a default mini:
   do. `hosts/mini.zsh` sets `BROWSER=~/.local/bin/browser-clip` in every
   shell, and the shim asks `toclip` per URL: when the pane's session was last
   typed at over ssh the URL goes to the laptop clipboard instead of the mini's
-  Safari, otherwise it opens on the mini (§ Clipboard and attach). A check at shell
-  start goes stale: a pane keeps the environment it was created with, and
-  tmux gives new panes the environment of the shell that started the server,
-  so after a server started over ssh every pane would send URLs away even at
-  the desk.
+  Safari, otherwise it opens on the mini (§ Clipboard and attach). A check at
+  shell start goes stale: a pane keeps the environment it was created with,
+  and tmux gives new panes the environment of the shell that started the
+  server, so after a server started over ssh every pane would send URLs away
+  even at the desk.
 
 ## Clipboard and attach
 
