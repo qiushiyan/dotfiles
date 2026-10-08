@@ -5,6 +5,11 @@ if [[ -o interactive && -n $REX_BLOCK ]] && (( $+commands[rexd] )); then
   rexd &>/dev/null &!
 fi
 
+# Claude in Rex leaves the terminal title to its statusline, which writes the
+# conversation name with the context chip (claude/.claude/commands/
+# statusline-rex.sh): Rex draws the title in the pane header.
+[[ -n $REX_BLOCK ]] && export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
+
 # Commands as program status (OSC 7501, id=shell), as agents report theirs: a
 # command shows as working on its tab's badge and the board while it runs; one
 # that ran REX_JOB_MIN seconds or more stays done or error until the next
