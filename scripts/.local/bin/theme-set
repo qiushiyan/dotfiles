@@ -117,8 +117,8 @@ main() {
 
   # 4/5. neovim + Claude statusline self-update from the state file — no push.
 
-  # 6. Rex (an experiment, rex/README.md): rex-theme reads the include written
-  # in step 2 and pushes it to every Rex terminal; silent with no Rex server.
+  # 6. Rex (an experiment, rex/README.md): rex-theme switches the Rex app to
+  # the Ghostty theme named in step 2's include; silent with no Rex server.
   local rex_msg="skipped (no rex-theme)"
   if command -v rex-theme >/dev/null 2>&1; then
     rex_msg=$(rex-theme 2>&1 | tr '\n' ' ')

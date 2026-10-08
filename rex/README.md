@@ -9,14 +9,13 @@ file is the notebook: what is here, what we learned, what is still open.
 
 | Path | Stows to | What it does |
 |---|---|---|
-| `.config/rex/init.lua` | `~/.config/rex/init.lua` | Actions `agents_next` (⌘⇧J), `agents_board` (⌘⇧A), `theme_sync` |
-| `.config/rex/lua/rexkit.lua` | same | Shared helpers: calls, sessions, agent records, Ghostty theme parsing |
+| `.config/rex/init.lua` | `~/.config/rex/init.lua` | Actions `agents_next` (⌘⇧J) and `agents_board` (⌘⇧A) |
+| `.config/rex/lua/rexkit.lua` | same | Shared helpers: calls, sessions, agent records |
 | `.config/rex/scripts/board.lua` | same | Live agents board, event-driven |
-| `.config/rex/scripts/theme.lua` | same | Push the current terminal theme to every Rex terminal |
 | `.local/bin/rex` | `~/.local/bin/rex` | The app's bundled CLI on PATH (Stow refuses absolute symlinks, so a wrapper) |
 | `.local/bin/rex-agent` | same | Publish agent state over OSC 7501; the Claude hooks call `rex-agent claude` |
 | `.local/bin/rex-board` | same | Run the board here, or `--popup` in a floating layer |
-| `.local/bin/rex-theme` | same | Called by `theme-set`; silent without a Rex server |
+| `.local/bin/rex-theme` | same | Called by `theme-set`: switches the app's theme by name; silent without a Rex server |
 
 `~/.config/rex` is a real directory (Makefile `REAL_DIRS`, `.gitignore`
 allow-list): Rex writes its own files there (`rex terminfo setup` adds
@@ -30,18 +29,23 @@ outside Rex; `theme-set` step 6 calls `rex-theme`.
 
 ## Try it
 
-1. In Rex, run a Claude session in two or three windows. Each publishes
+1. Turn on **Show status badges** (Rex Settings, tab options): the app then
+   draws a dot on a tab whose program reports a status. Without an agent,
+   `rex-agent blocked --kind permission --app demo --title demo --msg hi` in
+   a Rex tab shows one; `rex-agent clear` removes it.
+2. In Rex, run a Claude session in two or three windows. Each publishes
    `idle → working → done`, `blocked` on a permission prompt, `clear` on exit.
    A Rex terminal does not inherit the account choice: launch with the `x*`
    launchers, or set `CLAUDE_CONFIG_DIR`.
-2. ⌘⇧A opens the board over the current window; any key closes it.
+3. ⌘⇧A opens the board over the current window; any key closes it.
    `rex-board` runs it in a pane.
-3. ⌘⇧J jumps to the agent that has waited longest in the most urgent state.
-4. `prefix t` (or `theme-set NAME`) now also recolours Rex terminals.
+4. ⌘⇧J jumps to the agent that has waited longest in the most urgent state.
+5. `prefix t` (or `theme-set NAME`) also switches Rex's theme, once Remote
+   Control is on and the theme is imported (Themes below).
 
 Turning on **Remote Control** (Rex Settings → Rex Server) lets the CLI drive
-the app as well: `rex-theme` then switches the app's own theme, and
-`rex do agents_next` can switch the app's session from outside.
+the app: `rex-theme` needs it, and so does `rex do agents_next` run from
+outside the app.
 
 ## Findings
 
@@ -103,17 +107,29 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
 
 ### Themes
 
-- The app owns its look: a light/dark pair of named themes, plus custom themes
-  imported from Ghostty or iTerm files (our `ghostty/.config/ghostty/themes/*`
-  are importable as they are). Its Ghostty migration only looks in
+- The app owns Rex's colours. It pushes its theme to every terminal on the
+  server, so a server-side `set_theme` is overwritten: tried, verified, and
+  dropped. (`set_theme` and a block's `theme` option set what programs see
+  when they query colours; palette entries are `"N=#rrggbb"`, `scheme` is
+  `light` or `dark`.)
+- The app's built-in themes are few (Merino, Buttercream Diner, Silver
+  Point…). It knows Ghostty themes only through import: one file at a time
+  (command palette, Import Theme File; ours in `ghostty/.config/ghostty/themes/`
+  and Ghostty.app's bundled ones both work), or a migration that reads only
   `~/Library/Application Support/com.mitchellh.ghostty/config`, not our XDG
-  `~/.config/ghostty/config`.
-- `client.theme.change name=…` fuzzy-matches a theme name or ID; it needs
-  Remote Control when sent from outside the app.
-- The server keeps each terminal's default colours (`set_theme`, or `theme` in
-  a block's creation options): what programs see when they query colours, and
-  the light/dark report. Palette entries are `"N=#rrggbb"`; `scheme` is
-  `light` or `dark`. `rex-theme` sets all of it from our Ghostty theme files.
+  `~/.config/ghostty/config`. Imports are stored in the app's defaults
+  (`Workspace.customThemes`).
+- `client.theme.change name=…` fuzzy-matches a theme name or ID, and needs
+  Remote Control from outside the app. `rex-theme` passes the Ghostty theme
+  name theme-set chose.
+
+### Status badges
+
+- The app draws OSC 7501 statuses itself: "Show status badges" puts a dot on
+  the tab, and its strings include "Waiting for permission" and "Waiting for an
+  answer", the `permission` and `question` kinds
+  (`Workspace.showsProgramStatusInTabs`). The board is a second view across
+  sessions, not the only one.
 
 ### Popups, layouts, blocks
 
@@ -137,14 +153,12 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
 
 ## Open questions
 
-- Does the app paint with the server-side colours `set_theme` sets, or only
-  with its own theme? Check visually: after `rex-theme`, Rex terminals should
-  show TokyoNight Moon while the app theme is still Merino.
+- The format of `Workspace.customThemes`, so all our themes can be generated
+  in one go instead of imported by hand.
 - What `ctx` an action gets from a key press (session? block? client?).
   `agents_next` logs `ctx.origin`; the board popup falls back to the first
   session when `ctx` names none.
-- Does the app surface OSC 7501 records itself (sidebar badges,
-  notifications)? If so the board is a second view, not the only one.
+- What else the app does with a status (notifications? the sidebar?).
 - Do sessions survive quitting the app (the server is `run-mode bundled`)?
   That decides whether resurrect-style persistence is needed at all.
 

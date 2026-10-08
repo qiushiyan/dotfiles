@@ -56,12 +56,5 @@ rex.action{
   end,
 }
 
--- Re-push the terminal theme theme-set selected to every terminal.
-rex.action{
-  name = "theme_sync",
-  title = "Sync Terminal Theme",
-  run = function() return kit.apply_theme() end,
-}
-
 rex.bind("cmd+shift+j", "agents_next")
 rex.bind("cmd+shift+a", "agents_board")

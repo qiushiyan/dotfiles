@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# rex-theme: make Rex follow the theme theme-set selected. theme-set calls it.
+# rex-theme: switch the Rex app to the theme theme-set selected. theme-set
+# calls it.
 #
-# Two layers, because Rex splits theming in two:
-#   - every terminal's default colours on the server (set_theme), from the
-#     Ghostty include theme-set writes; no permission needed
-#   - the app's own theme, by name, when the app accepts remote actions
-#     (Rex Settings > Rex Server > Remote Control)
-# Silent no-op when no Rex server is running.
+# The app owns Rex's colours and pushes its theme to the server, so the only
+# lever is the app's own theme, chosen by name (client.theme.change
+# fuzzy-matches it). The name is the Ghostty theme theme-set wrote into the
+# include; Rex knows it once that Ghostty theme file has been imported as a
+# custom theme. Driving the app from outside needs Remote Control
+# (Rex Settings > Rex Server). Silent no-op when no Rex server is running.
 set -u
 command -v rex >/dev/null 2>&1 || exit 0
 rex --autostart=false --timeout 2s whoami >/dev/null 2>&1 || exit 0
 
 include="$HOME/.config/ghostty/auto/theme.ghostty"
-rex --autostart=false do "$HOME/.config/rex/scripts/theme.lua" include="$include" \
-  | jq -r '"terminals: \(.terminals) set to \(.theme) (\(.scheme))" + (if (.failed | length) > 0 then ", failed: \(.failed | join("; "))" else "" end)'
+name=$(sed -n 's/^theme *= *//p' "$include" 2>/dev/null | head -1)
+[ -n "$name" ] || { printf 'no theme in %s\n' "$include"; exit 0; }
 
-name=$(sed -n 's/^theme *= *//p' "$include" | head -1)
-if [ -n "$name" ] && rex --autostart=false do client.theme.change name="$name" >/dev/null 2>&1; then
+if out=$(rex --autostart=false do client.theme.change name="$name" 2>&1); then
   printf 'app theme: %s\n' "$name"
 else
-  printf 'app theme: unchanged (needs Remote Control)\n'
+  printf 'app theme: unchanged (%s)\n' "$(printf '%s' "$out" | tail -1)"
 fi
