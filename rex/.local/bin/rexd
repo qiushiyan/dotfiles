@@ -17,7 +17,7 @@ STATE="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab"
 lua() {
   "$REX" --autostart=false do -e "
     package.path = os.getenv('HOME') .. '/.config/rex/lua/?.lua;' .. package.path
-    local kit = require('rexkit')
+    local kit = require('rexkit.api')
     $1" "${@:2}" 2>/dev/null
 }
 
@@ -51,7 +51,6 @@ start() {
       sid = first and first.session_id
     end
     if not sid then return "" end
-    kit.attach(sid)
     local r = kit.call("session.new_block", {
       session_id = sid, flavor = "com.superlogical.terminal.shell", label = "rexd",
       options = { command = { os.getenv("HOME") .. "/.local/bin/rexd", "run" } },

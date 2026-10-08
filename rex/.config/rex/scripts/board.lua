@@ -9,7 +9,9 @@
 -- opens it in a floating layer.
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
-local kit = require("rexkit")
+local agents = require("rexkit.agents")
+local api = require("rexkit.api")
+local shell = require("rexkit.shell")
 
 local ESC = string.char(27)
 -- Resets bold and colour only, so a popup's background survives.
@@ -25,14 +27,14 @@ local STYLE = {
 }
 local ICON = { blocked = "●", error = "✖", done = "✔", working = "◐", idle = "○" }
 
-local rows = {}          -- key -> row (see kit.agents)
+local rows = {}          -- key -> row (see rexkit.agents.rows)
 local labels = {}        -- session_id -> label
 local last_seed = 0
 
 local function key(row) return (row.server or "") .. "|" .. row.block_id .. "/" .. (row.record.id or "") end
 
 local POLL = 3           -- seconds between polls of other hosts
-local remotes = kit.remotes()
+local remotes = api.remotes()
 local last_remotes = os.time()
 
 -- What claude-steps knows of an agent's Claude session: its title and branch,
@@ -46,11 +48,9 @@ local function steps_about(row)
   local cached = about[row.block_id]
   if cached and cached.state == row.record.state then return cached.text end
   local text
-  local sid = kit.claude_session(row.session_id, row.block_id)
+  local sid = agents.claude_session(row.session_id, row.block_id)
   if sid then
-    local p = io.popen("CLICOLOR=0 " .. STEPS .. " show '" .. sid .. "' --json 2>/dev/null")
-    local body = p and p:read("*a") or ""
-    if p then p:close() end
+    local body = shell.capture("CLICOLOR=0 " .. STEPS .. " show " .. shell.quote(sid) .. " --json 2>/dev/null") or ""
     local title = body:match('"title"%s*:%s*"(.-)"')
     local branch = body:match('"branch"%s*:%s*"(.-)"')
     if title then text = title .. (branch and branch ~= "" and ("  ⎇ " .. branch) or "") end
@@ -66,7 +66,7 @@ local function poll_remotes()
     if row.server then rows[k] = nil end
   end
   for _, K in ipairs(remotes) do
-    local ok, list = pcall(K.agents)
+    local ok, list = pcall(agents.rows, K, { titles = true })
     for _, row in ipairs(ok and list or {}) do rows[key(row)] = row end
     local ok2, sessions = pcall(K.sessions)
     for _, s in ipairs(ok2 and sessions or {}) do labels[K.label .. "|" .. s.session_id] = s.label end
@@ -75,17 +75,18 @@ end
 
 local function seed()
   rows = {}
-  for _, s in ipairs(kit.sessions()) do labels[s.session_id] = s.label end
-  for _, row in ipairs(kit.agents()) do rows[key(row)] = row end
+  for _, s in ipairs(api.sessions()) do labels[s.session_id] = s.label end
+  for _, row in ipairs(agents.rows(api, { titles = true })) do rows[key(row)] = row end
   poll_remotes()
   last_seed = os.time()
 end
 
+-- The board's own terminal width: from Rex (the block's size method) inside
+-- Rex, which costs no shell per redraw; from the tty elsewhere.
 local function columns()
-  local p = io.popen("stty size < /dev/tty 2>/dev/null")
-  local out = p and p:read("*l") or ""
-  if p then p:close() end
-  return tonumber(out:match("%d+ (%d+)")) or 100
+  local size = (rex.block_id or "") ~= "" and api.block(rex.session_id, rex.block_id, "size")
+  if size and size.columns then return size.columns end
+  return tonumber((shell.capture("stty size < /dev/tty 2>/dev/null") or ""):match("%d+ (%d+)")) or 100
 end
 
 local function fit(s, n)
@@ -98,12 +99,11 @@ local function render()
   if os.time() - last_seed > 10 then seed() end
   local list = {}
   for _, row in pairs(rows) do list[#list + 1] = row end
-  kit.sort(list)
+  agents.sort(list)
 
   local need, busy = 0, 0
   for _, row in ipairs(list) do
-    local r = kit.RANK[row.record.state] or 9
-    if r <= kit.RANK.done then need = need + 1 elseif row.record.state == "working" then busy = busy + 1 end
+    if agents.waiting(row) then need = need + 1 elseif row.record.state == "working" then busy = busy + 1 end
   end
 
   local width = columns()
@@ -126,7 +126,7 @@ local function render()
       .. " " .. sgr("1", fit(r.title or r.effective_app or r.app or "", 14))
       .. " " .. sgr("90", fit(where, 18))
       .. " " .. fit(r.msg or row.term_title or "", msg_w)
-      .. " " .. sgr("90", kit.age(r.updated_at))
+      .. " " .. sgr("90", agents.age(r.updated_at))
     out[#out + 1] = line
     local text = steps_about(row)
     if text then out[#out + 1] = "    " .. sgr("90", fit(text, width - 6)) end
@@ -171,7 +171,7 @@ local last_render, last_poll = os.time(), os.time()
 while true do
   local ev, target = rex.wait("block_event", 1)
   local dirty = type(ev) == "table" and apply(target or ev, ev) or false
-  if os.time() - last_remotes >= 60 then remotes, last_remotes = kit.remotes(), os.time() end
+  if os.time() - last_remotes >= 60 then remotes, last_remotes = api.remotes(), os.time() end
   if #remotes > 0 and os.time() - last_poll >= POLL then
     poll_remotes()
     last_poll, dirty = os.time(), true

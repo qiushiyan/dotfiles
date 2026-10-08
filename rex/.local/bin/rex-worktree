@@ -54,7 +54,7 @@ name=${branch##*/}
 if [ "$key" = enter ]; then
   block=$(rex do -e "
     package.path = os.getenv('HOME') .. '/.config/rex/lua/?.lua;' .. package.path
-    local kit = require('rexkit')
+    local kit = require('rexkit.api')
     for _, b in ipairs(kit.terminals('$session')) do
       if b.label ~= 'worktrees' and kit.cwd('$session', b.block_id) == [[$path]] then return b.block_id end
     end

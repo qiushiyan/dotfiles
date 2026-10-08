@@ -9,7 +9,7 @@
 #                                      info, ok, warn or error
 #   rex-toast draw LEVEL TITLE MESSAGE SECONDS    INTERNAL: the toast itself
 #
-# Actions call rexkit's toast(), which sizes the floating layer to the
+# Actions call rexkit.feedback's toast(), which sizes the floating layer to the
 # message and starts `rex-toast draw` in it.
 set -u
 BIN="$HOME/.local/bin"
@@ -65,7 +65,7 @@ show() {
   "$BIN/rex" do -e '
     package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
     local a = rex.args
-    return require("rexkit").toast(a.session, a.block, a.level, a.title, a.msg)
+    return require("rexkit.feedback").toast(a.session, a.block, a.level, a.title, a.msg)
   ' session="$REX_SESSION" block="$REX_BLOCK" level="$level" title="$title" msg="$msg" >/dev/null 2>&1
 }
 
