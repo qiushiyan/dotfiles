@@ -14,9 +14,6 @@
 -- keeps its own record (kit.here): init.lua's actions note the session of
 -- each key they take, and this watcher the session whose active tab changed.
 --
--- Visits: each tab you go to is appended to STATE/visits as "session
--- window", newest last; prefix Tab and shift+Tab (window_last) read it.
---
 -- Out of view: when an agent turns blocked, errored or done (OSC 7501) away
 -- from the tab you are on, its terminal sends a desktop notification (OSC 9),
 -- which the app shows as one.
@@ -64,43 +61,12 @@ for _, name in ipairs({ "window_created", "window_closed", "window_label_changed
   rex.on(name, on_session)
 end
 
--- Visits --------------------------------------------------------------------
-
-local STATE = kit.STATE
-local VISITS, KEEP = STATE .. "/visits", 50
-os.execute("mkdir -p '" .. STATE .. "'")
-
-local visits = {}
-do
-  local f = io.open(VISITS, "r")
-  if f then
-    for line in f:lines() do visits[#visits + 1] = line end
-    f:close()
-  end
-end
-
-local function visit()
-  local sid, wid = kit.app_view()
-  if not (sid and wid) then return end
-  local line = sid .. " " .. wid
-  if visits[#visits] == line then return end
-  visits[#visits + 1] = line
-  while #visits > KEEP do table.remove(visits, 1) end
-  local f = io.open(VISITS .. ".tmp", "w")
-  if not f then return end
-  f:write(table.concat(visits, "\n"), "\n")
-  f:close()
-  os.rename(VISITS .. ".tmp", VISITS)
-end
-
 -- A tab you switch to is where you are. Not every view change: rexd's own
 -- renumbering and agents' splits change views in sessions you are not in.
 rex.on("active_window_changed", function(target, ev)
   local sid = (ev and ev.session_id) or (target and target.session_id)
   if sid then kit.note_here(sid, select(2, kit.here())) end
-  visit()
 end)
-rex.on("session_view_changed", visit)
 
 -- Out of view ----------------------------------------------------------------
 
@@ -129,4 +95,3 @@ rex.on("block_event", function(target, ev)
 end)
 
 for _, s in ipairs(kit.sessions()) do renumber(s.session_id) end
-visit()

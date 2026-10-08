@@ -27,11 +27,38 @@ local function log_error(name, ctx, err)
   end
 end
 
+-- Where each key was pressed, newest last: "<host> <session> <block>", the
+-- host "-" for this server. prefix Tab reads it. The record lives with the
+-- config that ran the action, so it covers another host's sessions too,
+-- which that host's own watcher cannot report here.
+local KEYS, KEEP_KEYS = STATE .. "/keys", 100
+local function note_key(ctx)
+  if not (ctx.session_id and ctx.block_id) then return end
+  local line = (ctx.server or "-") .. " " .. ctx.session_id .. " " .. ctx.block_id
+  local lines, f = {}, io.open(KEYS, "r")
+  if f then
+    for l in f:lines() do lines[#lines + 1] = l end
+    f:close()
+  end
+  if lines[#lines] == line then return end
+  lines[#lines + 1] = line
+  while #lines > KEEP_KEYS do table.remove(lines, 1) end
+  os.execute("mkdir -p '" .. STATE .. "'")
+  f = io.open(KEYS .. ".tmp", "w")
+  if not f then return end
+  f:write(table.concat(lines, "\n"), "\n")
+  f:close()
+  os.rename(KEYS .. ".tmp", KEYS)
+end
+
 local define = rex.action
 rex.action = function(spec)
   local run = spec.run
   spec.run = function(ctx, args)
-    if ctx and ctx.origin == "key" and not ctx.server then kit.note_here(ctx.session_id, ctx.client_id) end
+    if ctx and ctx.origin == "key" then
+      if not ctx.server then kit.note_here(ctx.session_id, ctx.client_id) end
+      note_key(ctx)
+    end
     local started = os.clock()
     local result = { xpcall(function() return run(ctx, args) end, debug and debug.traceback or tostring) }
     if not result[1] then
@@ -388,16 +415,17 @@ rex.action{
   end,
 }
 
--- prefix Tab / shift+Tab: the tab, or the session, shown before this one, as
--- tmux's last-window and switch-client -l. rexd records every tab the app
--- shows, however it got there, in STATE/visits ("session window" per line,
--- newest last).
-local function visits()
-  local out, f = {}, io.open(STATE .. "/visits", "r")
+-- prefix Tab: the tab of this session a key was last pressed in before this
+-- one, as tmux's last-window, stepped to with the app's own tab actions so it
+-- works on any host's session (step_tabs). prefix shift+Tab: the session a
+-- key was last pressed in before this one, as tmux's switch-client -l; the
+-- app selects it, which it does only for this host's sessions.
+local function keys()
+  local out, f = {}, io.open(KEYS, "r")
   if not f then return out end
   for line in f:lines() do
-    local s, w = line:match("^(%S+) (%S+)$")
-    if s then out[#out + 1] = { session_id = s, window_id = w } end
+    local host, s, b = line:match("^(%S+) (%S+) (%S+)$")
+    if host then out[#out + 1] = { server = host ~= "-" and host or nil, session_id = s, block_id = b } end
   end
   f:close()
   return out
@@ -408,30 +436,37 @@ rex.action{
   title = "Last Tab or Last Session",
   run = function(ctx, args)
     local sid = (args and args.session_id) or current_session(ctx)
-    local here = sid and kit.try("session.view", { session_id = sid })
-    if not here then return { moved = false } end
-    local across = args and args.session
-    local seen = {}
-    local list = visits()
+    local view = sid and kit.try("session.view", { session_id = sid })
+    if not view then return { moved = false } end
+    local at = tab_index(ctx, view)
+    local server = ctx and ctx.server
+    local list = keys()
     for i = #list, 1, -1 do
-      local v = list[i]
-      local wanted
-      if across then wanted = v.session_id ~= sid and not seen[v.session_id]
-      else wanted = v.session_id == sid and v.window_id ~= here.active_window_id end
-      seen[v.session_id] = true
-      if wanted then
-        kit.attach(v.session_id)
-        local view = kit.try("session.view", { session_id = v.session_id })
-        if view and view.windows and (across or kit.try("session.focus_window",
-          { session_id = v.session_id, window_id = v.window_id })) then
-          local window = across and view.active_window_id or v.window_id
-          show(ctx, v.session_id, window)
-          kit.note_here(v.session_id, ctx and ctx.client_id)
-          return { moved = window }
+      local k = list[i]
+      if k.server == server then
+        if args and args.session then
+          if k.session_id ~= sid and not server then
+            local other = kit.try("session.view", { session_id = k.session_id })
+            if other then
+              show(ctx, k.session_id, other.active_window_id)
+              return { moved = k.session_id }
+            end
+          end
+        elseif k.session_id == sid then
+          local w = kit.window_of(view, k.block_id)
+          local to
+          for j, x in ipairs(view.windows or {}) do
+            if w and x.window_id == w.window_id then to = j end
+          end
+          if to and at and to ~= at then
+            step_tabs(at, to)
+            return { moved = view.windows[to].label }
+          end
         end
       end
     end
-    kit.toast(sid, kit.focused_block(sid), "info", across and "Last session" or "Last tab", "nothing earlier yet", 1.5)
+    kit.toast(sid, ctx and ctx.block_id or kit.focused_block(sid), "info",
+      (args and args.session) and "Last session" or "Last tab", "nothing earlier yet", 1.5)
     return { moved = false }
   end,
 }
@@ -445,18 +480,17 @@ rex.action{
     local sid, bid = current_block(ctx, args)
     if not sid then return { opened = false } end
     local view = kit.call("session.view", { session_id = sid })
-    local after
-    for i, w in ipairs(view.windows or {}) do
-      if w.window_id == view.active_window_id then after = view.windows[i + 1] end
-    end
+    local at = tab_index(ctx, view)
+    local after = at and view.windows[at + 1]
     local options = {}
     options.cwd = bid and kit.cwd(sid, bid)
-    local r = kit.call("session.new_window", { session_id = sid,
+    local key = ctx and ctx.origin == "key"
+    local r = kit.call("session.new_window", { session_id = sid, focus = not key,
       layout = { block = { flavor = "com.superlogical.terminal.shell", options = options } } })
     if after then
       kit.call("session.move_window", { session_id = sid, window_id = r.window_id, before_window_id = after.window_id })
     end
-    show(ctx, sid, r.window_id)
+    if key and at then step_tabs(at, at + 1) else show(ctx, sid, r.window_id) end
     return { opened = r.window_id }
   end,
 }
