@@ -947,15 +947,27 @@ brief() {
 }
 
 _brief() {
-  # The binary owns brief detection; resolve's bare form is the completion
-  # feed (file scan only — no network on this path). With nothing to offer,
-  # show why (no repo, no handoff folder here) instead of completing silently.
-  local out
+  # The binary owns brief detection and matching: resolve lists the live
+  # slugs the word reaches by start's own rule (file scan only — no network
+  # on this path), so Tab offers what start would take, sandbox-utf for
+  # sandbox-textdecoder-utf16le included. -U keeps zsh's matchers from
+  # filtering them again; their answer is the same under every matcher, so
+  # only the first asks. With nothing to offer, show why (no repo, no handoff
+  # folder, no match) instead of completing silently.
+  (( _matcher_num > 1 )) && return 1
+  local out word=$PREFIX$SUFFIX expl
   local -a slugs
-  out=$("$HOME/.local/bin/brief" resolve 2>&1) || { _message -r "${out#brief: }"; return 1 }
+  [[ $word == -* ]] && return 1
+  out=$("$HOME/.local/bin/brief" resolve ${word:+"$word"} 2>&1) || { _message -r "${out#brief: }"; return 1 }
   slugs=(${(f)out})
   (( $#slugs )) || { _message -r 'no live briefs in this project'; return 1 }
-  _describe 'brief' slugs
+  _wanted briefs expl brief compadd -U -a slugs
+  # Matches that do not all start with the word would have zsh replace it
+  # with their common prefix, often nothing: keep the word and list them,
+  # and the next Tab starts the menu as usual.
+  if (( $#slugs > 1 )) && [[ -n ${(M)slugs:#^(#i)${(b)word}*} ]]; then
+    [[ $compstate[insert] == *unambiguous ]] && compstate[insert]=
+  fi
 }
 
 # --------------------------------------------------------------------
