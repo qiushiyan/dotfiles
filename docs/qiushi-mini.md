@@ -502,10 +502,11 @@ an older binary files a brief where the new one reads another slug.
   raises a notification for each new edition, with the reader key `twin`
   carries in `~/.secrets.shared`. `~/dev/gazette/docs/operations.md` has the
   rest.
-- **The hourly `twin tick`, the daily snapshot and the tmux exit watcher** —
-  this repository's `launchd-mini/` package (`docs/twin.md` § The hourly
-  tick; `docs/recovery.md` § Local snapshots and § A dead tmux server). The
-  snapshot run does nothing here, because Time Machine has a destination.
+- **The hourly `twin tick`, the daily snapshot, the tmux exit watcher and
+  planlab's git upkeep** — this repository's `launchd-mini/` package
+  (`docs/twin.md` § The hourly tick; `docs/recovery.md` § Local snapshots
+  and § A dead tmux server; `docs/git-performance.md`). The snapshot run
+  does nothing here, because Time Machine has a destination.
 
 ## Steward host
 

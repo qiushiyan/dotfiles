@@ -289,6 +289,41 @@ twin tools install gwt         # works
 twin files sync home           # exit 2: the laptop runs the reconciler and did not answer
 ```
 
+### A run was slow, or failed partway
+
+```bash
+pp --trace                     # any twin command with --trace: recorded on both machines
+twin trace                     # the newest run recorded from this machine
+twin trace <run>               # one by name, from either machine (ls ~/.local/state/twin/trace)
+twin trace --json              # every event, for a program
+```
+
+```text
+run 20261008T104131-mini-22540
+mini  twin repos pull planlab --both --trace  started 11:41:31.730, 1.402s, exit 0
+  +0.001s     0.876s  git fetch --quiet  [~/dev/planlab/main]
+  +0.001s     0.877s  · mini planlab fetch
+  +0.001s     1.120s  ssh mac twin repos pull planlab --json
+  +0.880s     0.453s  git status --porcelain  [~/dev/.worktrees/main/fix/steward-account-login]
+    mac  twin repos pull planlab --json  started 11:41:31.790, called by mini-22540, 1.034s, exit 0
+      +0.002s     0.702s  git fetch --quiet  [~/dev/planlab/main]
+```
+
+Each line is a process the run started, or a step it marked (`·`): when it
+began, as an offset from the start of that machine's twin, and how long it
+ran. The other machine's twin sits under the call that started it, on its
+own clock, so its offsets never compare with the caller's; the call's line
+is where it falls in the run. A traced run does and prints exactly what it
+would have untraced, and each machine keeps its newest 30 runs. A launchd
+agent records each of its runs with `TWIN_TRACE=1` in its environment.
+
+```text
+note: mac's twin predates tracing; its half of the run is not shown
+        -> twin tools install twin there
+git status --porcelain taking ~1s in a planlab worktree
+        -> its untracked cache is stale: docs/git-performance.md
+```
+
 ## Carried files
 
 A carry set is reconciled, not copied in a direction: a file changed on one
