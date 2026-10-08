@@ -381,8 +381,10 @@ twin/.config/twin/codex/<machine>.toml  merged over it on that machine
                                         (trust decisions, the desktop app's plugins and MCP servers)
 ```
 
-Codex and its desktop app write into `~/.codex/config.toml` as they run, so
-it cannot be a link into this repository. A setting changed in the local
+Codex and its desktop app write into `~/.codex/config.toml` as they run, and
+`workspace-trust` writes its `projects` table before a launch
+(`docs/claude-accounts.md` § Use patterns), so it cannot be a link into this
+repository. A setting changed in the local
 file outside the runtime keys, a `/model` default included, is drift:
 
 ```text

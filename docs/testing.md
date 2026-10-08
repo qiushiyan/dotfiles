@@ -53,7 +53,7 @@ Each suite owns one boundary:
 | Stow reach | root-memory and package-ignore invariants from the working tree, over the packages `make -s list` names; the list leaves out non-package directories and names only the launchd package of the machine `~/.config/machine` names, and `scripts/` keeps its entry points out of `HOME`, through `make list` and a `stow -n` dry run in scratch directories and a scratch `HOME` |
 | dangerous-git hook | force and mirror pushes and work-destroying commands (forced checkouts and switches, whole-tree pathspecs included) refused in any argument order, behind wrappers and inside command substitutions and expanding heredocs; force-with-lease and remote deletes passed; the `branch -D` gate and its per-command bypass; quoted text, quoted heredoc bodies and comments inert; synthetic PreToolUse payloads under the PATH `python3` and `/usr/bin/python3` (3.9) |
 | rm guard | a recursive rm of a protected path is refused in every spelling (trailing slash, `..`, symlink, literal `~`, /var→/private/var) and every other call passes through unchanged; probes see only a logging stub `rm` |
-| account launchers | which x-*/cx-* names exist and which account each hands headroom (unique local part only, never the primary's or a utility's name, ambiguity drops the alias, `.lock` skipped); stub headroom, throwaway `$HOME` |
+| account launchers | which x-*/cx-* names exist and which account each hands headroom (unique local part only, never the primary's or a utility's name, ambiguity drops the alias, `.lock` skipped); every launcher that starts a session runs `workspace-trust` before headroom and launches whatever it returns; stub headroom and `workspace-trust`, throwaway `$HOME` |
 | skill sync | invocation overrides, refreshed cloud exclusions, runtime metadata recovery, metadata preservation, byte-exact document copies, validation before writes, and symlink destinations; every case runs a copied script with a temporary home, manifests, and sentinel checkout, so scope regressions stay in the sandbox |
 | workspace trust | the roots and every repository under them are trusted in each Claude Code account and in Codex, a settled state is never rewritten, `--prune` removes only what its rule names, and a file it cannot handle is left byte for byte; a fresh temporary `HOME` per case, and W9 asserts the real Codex config is unchanged and no real Claude Code file names a sandbox path |
 | toclip | which clipboard a copy reaches: pbcopy at the screen, the ssh client (not tmux's activity pick) inside tmux, the buffer kept for oversize payloads; browser-clip follows the same routing for a URL, whatever ssh variables the pane inherited; private tmux socket, real clients on ptys, stub pbcopy and open, and K8 asserts the real clipboard is untouched |
@@ -99,7 +99,8 @@ exists). A server started under the caller's `HOME` runs them against the live
 machine; one whose sandbox lacks the config link runs with no plugins at all,
 and the cases that depend on them pass over nothing. C34 and T12 hold both
 down. Likewise headroom reads and writes the account dirs and the session
-store under `$HOME`, so every case in the Claude launch and account-launcher
+store under `$HOME`, and the launchers run `workspace-trust`, which rewrites
+every account's trust entries there, so every case in the Claude launch and account-launcher
 suites exports a throwaway `HOME` before running anything — ad-hoc
 verification that skips the override edits the user's real accounts and
 session state. Global patterns like `pkill` need the same care.

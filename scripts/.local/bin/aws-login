@@ -47,9 +47,13 @@ for arg in "$@"; do
 done
 profile=${profile:-$DEFAULT_PROFILE}
 
-if ! aws configure list-profiles 2>/dev/null | grep -qx -- "$profile"; then
+# Read the whole list before matching: piped straight into `grep -q`, which
+# stops at the first match, the CLI exits on a broken pipe whenever profiles
+# follow the match, and pipefail turns that into "no profile".
+profiles=$(aws configure list-profiles 2>/dev/null)
+if ! grep -qx -- "$profile" <<<"$profiles"; then
   echo "aws-login: no profile '$profile' in ~/.aws/config; known profiles:" >&2
-  aws configure list-profiles 2>/dev/null | sed 's/^/  /' >&2
+  sed 's/^/  /' <<<"$profiles" >&2
   exit 2
 fi
 

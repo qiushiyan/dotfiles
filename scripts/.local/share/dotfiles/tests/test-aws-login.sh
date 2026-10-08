@@ -36,7 +36,10 @@ cat > "$SANDBOX/bin/aws" <<'EOF'
 # aws-login uses.
 printf '%s\n' "$*" >> "$STUB_LOG"
 case "$1 $2" in
-  "configure list-profiles") printf 'default\nplanlab-dev\nplanlab-prod\nplanlab-legacy\n' ;;
+  "configure list-profiles")
+    printf 'default\nplanlab-dev\nplanlab-prod\nplanlab-legacy\n'
+    # Profiles after the match outlast a reader that stops at it.
+    if [ -n "${STUB_PROFILES_PAD:-}" ]; then seq 1 200000 | sed 's/^/pad-/'; fi ;;
   "configure get")  # sso_session for the sso profiles; legacy has none
     case "$*" in *planlab-legacy*) exit 1 ;; *) echo planlab ;; esac ;;
   "sso logout") echo "Successfully signed out of all SSO profiles." ;;
@@ -55,7 +58,7 @@ fresh() {
     rm -rf "$SANDBOX/home"; mkdir -p "$SANDBOX/home/.config"
     export HOME="$SANDBOX/home" STUB_LOG="$SANDBOX/calls"
     : > "$STUB_LOG"
-    unset STUB_LOGIN_RC STUB_STS_RC XDG_STATE_HOME
+    unset STUB_LOGIN_RC STUB_STS_RC STUB_PROFILES_PAD XDG_STATE_HOME
 }
 calls() { cat "$STUB_LOG"; }
 stamp() { cat "$HOME/.local/state/aws-login/$1" 2>/dev/null; }
@@ -127,6 +130,12 @@ CASE=A7; if want; then
     ok "A7 unknown profile signs nothing out" 0 "$(calls | grep -c '^sso')"
     "$LOGIN" --bogus >/dev/null 2>&1; ok "A7 unknown option exits 2" 2 "$?"
     "$LOGIN" a b >/dev/null 2>&1; ok "A7 two profiles exits 2" 2 "$?"
+fi
+
+CASE=A9; if want; then
+    fresh; export STUB_PROFILES_PAD=1
+    out=$("$LOGIN" --status 2>&1); rc=$?
+    ok "A9 profile found ahead of a long list" "0 0" "$rc $(printf '%s' "$out" | grep -c 'no profile')"
 fi
 
 CASE=A8; if want; then

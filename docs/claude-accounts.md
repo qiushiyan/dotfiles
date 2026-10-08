@@ -163,6 +163,18 @@ Everything derives from that tree:
   cannot read the key from the environment, because Claude Code strips
   credential-named variables from the helper's process. iTELL's PostHog
   server (`POSTHOG_MCP_API_KEY`) is the instance.
+- **A folder asks to be trusted**: it is outside `~/dev`, `~/dotfiles` and
+  `~/wiki`, or the session was started without a launcher in a clone newer
+  than the last launch. Every launcher that starts a session (`x`,
+  `x-<name>`, `x-select`, `claude-account`, `cx`, `cx-<name>`) first runs
+  `workspace-trust`, which records those roots and every repository under
+  them as trusted in each account's `.claude.json` and in Codex's
+  `config.toml`; Claude Code keeps trust per account, so without it each
+  repository asks once on each. Trust given at a prompt elsewhere lasts until
+  `workspace-trust --prune`, the cleanup that also drops entries for
+  directories that are gone (`-n` previews it). The roots, the search depth
+  and each vendor's rule are in the script's header
+  (`scripts/.local/bin/workspace-trust`).
 - **Logged into the wrong account in a dir**: the dashboard's red
   `(dir says …!)` warning catches it. Cleanest fix: `headroom login <name>`,
   or `/login` again in that
@@ -170,14 +182,16 @@ Everything derives from that tree:
 
 ## Invariants
 
-- Workspace trust is recorded per account, so every launcher (`x*`, `cx*`)
-  runs `workspace-trust` first: `~/dev`, `~/dotfiles`, `~/wiki` and every
-  repository under them are trusted in each account and in Codex before the
-  session starts, a new clone or account included. It writes only what is
-  missing, and a launch never waits on its outcome; trust given by hand
-  elsewhere lasts until `workspace-trust --prune` (`scripts/.local/bin/workspace-trust`).
 - Account dirs are runtime state — never in this repo. The symlinks inside
   them point *into* the repo.
+- Workspace trust belongs to `workspace-trust` and the launchers that run
+  it, not to headroom, which stays read-only against the vendors' state. A
+  wrapper only invokes the script — resolved from PATH at each launch, as
+  headroom is — and launches whatever it returns.
+- Everything under the trust roots is trusted before anyone has read it: a
+  clone there runs the hooks its own settings declare from its first launch,
+  unasked, and the launchers bypass permissions. Code that has not earned
+  that is cloned outside the roots.
 - The primary stays in `~/.claude`. Relocating it would orphan its history
   and its default-named Keychain item for no benefit.
 - `~/.claude/projects` is a real directory — never itself a link — and every
