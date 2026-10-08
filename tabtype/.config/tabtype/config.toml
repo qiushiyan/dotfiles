@@ -122,6 +122,9 @@ case_sensitive = false
 max_branch_age_days = 90
 badge_palette = "minimal"
 ignore_patterns = ["node_modules", ".git", "dist", "build"]
+# A Rex session on the mini's Rex server is served from the mini, over ssh:
+# Rex names the server, ssh the machine, and nothing else links the two.
+rex_hosts = [{ server = "mini", ssh = "qiushi-mini" }]
 
 
 # misc helpers
