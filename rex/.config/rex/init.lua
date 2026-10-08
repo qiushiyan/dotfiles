@@ -261,7 +261,7 @@ rex.action{
   end,
 }
 
--- prefix C: the Claude context chip as a two-row strip under the focused
+-- prefix C: the Claude context chip as a one-row strip above the focused
 -- block (rex-chip), in colour, since Rex draws pane headers as plain text;
 -- prefix C again, or from inside the strip, closes it. The strip runs on the
 -- session's host and closes itself with the Claude pane.
@@ -283,7 +283,7 @@ rex.action{
     local rows = (size and size.rows) or 40
     local r = kit.call("session.new_split", {
       session_id = sid, anchor_block_id = bid,
-      direction = "vertical", side = "after", ratio = math.max(0.5, (rows - 2) / rows),
+      direction = "vertical", side = "before", ratio = math.min(0.5, 1 / rows),
       layout = { block = { flavor = "com.superlogical.terminal.shell", label = label,
         options = { command = kit.bin("rex-chip", sid, bid) } } },
       focus = false,

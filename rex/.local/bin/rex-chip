@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# rex-chip SESSION BLOCK: the Claude context chip as a strip, a two-row pane
-# under a Claude pane, in colour: the Rex lab's counterpart of the tmux border
+# rex-chip SESSION BLOCK: the Claude context chip as a strip, a one-row pane
+# above a Claude pane, in colour: the Rex lab's counterpart of the tmux border
 # chip (tmux/.config/tmux/scripts/context-chip.md), since Rex draws pane
 # headers in plain text. prefix C (the chip_strip action) opens and closes it.
 #
@@ -59,20 +59,30 @@ render() {
   printf '%*s%s' "$pad" '' "$line"
 }
 
-# Two rows tall. The app evens out a new split ("balance splits on creation")
-# after the action that made it returns, so the strip sizes itself once that
-# has happened: the share of the pair's height that leaves it two rows.
+# One row tall. The app evens out a new split ("balance splits on creation")
+# after the action that made it returns, so the strip watches its own height
+# for a moment and gives the rows back as soon as the app has.
 fit() {
-  local a b
-  a=$(rex block call -s "$session" -b "$block" size 2>/dev/null | jq -r '.rows // empty')
-  b=$(stty size </dev/tty 2>/dev/null); b=${b% *}
-  [ -n "$a" ] && [ -n "$b" ] || return
-  [ "$b" -le 3 ] && return
-  rex api call session.resize_pane "$(jq -nc --arg s "$session" --arg a "$block" --arg b "$REX_BLOCK" \
-    --argjson r "$(awk "BEGIN { t = $a + $b; r = (t - 2) / t; if (r > 0.97) r = 0.97; print r }")" \
-    '{session_id: $s, direction: "vertical", before_block_id: $a, after_block_id: $b, ratio: $r}')" >/dev/null 2>&1
+  local a b i
+  for i in $(seq 1 30); do
+    b=$(stty size </dev/tty 2>/dev/null); b=${b% *}
+    if [ -n "$b" ] && [ "$b" -gt 1 ]; then
+      a=$(rex block call -s "$session" -b "$block" size 2>/dev/null | jq -r '.rows // empty')
+      [ -n "$a" ] || return
+      rex api call session.resize_pane "$(jq -nc --arg s "$session" --arg a "$REX_BLOCK" --arg b "$block" \
+        --argjson r "$(awk "BEGIN { t = $a + $b; r = 1 / t; if (r < 0.01) r = 0.01; print r }")" \
+        '{session_id: $s, direction: "vertical", before_block_id: $a, after_block_id: $b, ratio: $r}')" >/dev/null 2>&1
+      sleep 0.3
+      b=$(stty size </dev/tty 2>/dev/null); b=${b% *}
+      [ "${b:-2}" -le 1 ] && return
+    fi
+    sleep 0.1
+  done
 }
-( sleep 1; fit ) &
+fit &
+
+# The pane's own header: a short name instead of the app's "bash ~".
+printf '\e]0;claude\a'
 
 trap render WINCH
 render; : > "$stamp"
