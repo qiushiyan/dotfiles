@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# rex-worktree SESSION: the worktree picker for Rex (prefix W). Runs in a
+# split the worktrees action opens beside the block, in that block's
+# directory; picks a worktree of its repository from `gwt list`, or names a
+# new branch for `gwt create`, then shows it as a tab of SESSION.
+#
+#   enter    go to the worktree: the tab already in it, else a new tab
+#   ctrl-x   a new tab running Claude there (the x launcher), with its
+#            claude-steps sidecar beside it (rex-steps)
+#   esc      close
+#
+# gwt owns listing, creation and every verdict (~/dev/gwt); this only picks
+# and places. Panes Rex starts get the server's bare PATH, hence the export.
+set -u
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+session=${1:?usage: rex-worktree SESSION}
+
+fail() { printf '\n  %s\n\n  press a key to close' "$1"; read -rsn1; exit 1; }
+
+json=$(gwt list --json 2>/dev/null) || fail "gwt list: $(pwd) is not in a Git repository"
+
+# branch TAB path TAB marks, the current checkout first.
+rows=$(printf '%s' "$json" | jq -r '
+  .worktrees | sort_by(.current | not) | .[]
+  | [.branch // "(detached)", .path,
+     ([if .main then "main" else empty end, if .dirty then "dirty" else empty end,
+       if .merged and (.main | not) then "merged" else empty end] | join(" "))]
+  | @tsv')
+
+out=$(printf '%s\n' "$rows" | fzf --delimiter='\t' --with-nth=1,3 --print-query \
+  --expect=enter,ctrl-x --reverse --height=100% --prompt='worktree> ' \
+  --header='enter: go · ctrl-x: open with Claude + steps · a new name creates a branch') || exit 0
+
+query=$(sed -n 1p <<<"$out")
+key=$(sed -n 2p <<<"$out")
+pick=$(sed -n 3p <<<"$out")
+
+if [ -n "$pick" ]; then
+  branch=$(cut -f1 <<<"$pick")
+  path=$(cut -f2 <<<"$pick")
+elif [ -n "$query" ]; then
+  printf 'creating %s…\n' "$query"
+  path=$(gwt create --non-interactive "$query" 2>&1 | tail -1)
+  [ -d "$path" ] || fail "gwt create: $path"
+  branch=$query
+else
+  exit 0
+fi
+
+name=${branch##*/}
+
+# enter on a worktree a tab already sits in: go there.
+if [ "$key" = enter ]; then
+  block=$(rex do -e "
+    package.path = os.getenv('HOME') .. '/.config/rex/lua/?.lua;' .. package.path
+    local kit = require('rexkit')
+    for _, b in ipairs(kit.terminals('$session')) do
+      if b.label ~= 'worktrees' and kit.cwd('$session', b.block_id) == [[$path]] then return b.block_id end
+    end
+    return ''" 2>/dev/null | tr -d '"')
+  if [ -n "$block" ]; then
+    rex focus -s "$session" "$block" >/dev/null 2>&1 && exit 0
+  fi
+  rex run -s "$session" -c "$path" --label "$name" -- "${SHELL:-/bin/zsh}" -l >/dev/null
+  exit 0
+fi
+
+# ctrl-x: an agent tab with its steps sidecar.
+created=$(rex run -s "$session" -c "$path" --label "$name" --shell none --json \
+  -- /bin/zsh -lic 'x; exec zsh -l')
+block=$(jq -r '.block_ids[0] // empty' <<<"$created")
+[ -n "$block" ] && rex split -s "$session" -b "$block" --split right --ratio 38 --focus=false \
+  --label "steps·${block: -6}" --shell none -- "$HOME/.local/bin/rex-steps" watch "$session" "$block" >/dev/null
+exit 0

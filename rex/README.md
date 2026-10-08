@@ -9,7 +9,7 @@ file is the notebook: what is here, what we learned, what is still open.
 
 | Path | Stows to | What it does |
 |---|---|---|
-| `.config/rex/init.lua` | `~/.config/rex/init.lua` | Actions `agents_next` (⌘⇧J), `agents_board` (⌘⇧A), `steps_sidecar` (⌘⇧S) |
+| `.config/rex/init.lua` | `~/.config/rex/init.lua` | The `ctrl+a` prefix mode (Keys below) and the actions it reaches: agents, steps, copy path, gopen, worktrees |
 | `.config/rex/lua/rexkit.lua` | same | Shared helpers: calls, sessions, agent records, a block's Claude session |
 | `.config/rex/scripts/board.lua` | same | Live agents board, event-driven; each Claude's claude-steps title and branch under its row |
 | `.config/rex/scripts/steps.lua` | same | The steps sidecar: `claude-steps show` for one agent, redrawn when it reports |
@@ -18,6 +18,7 @@ file is the notebook: what is here, what we learned, what is still open.
 | `.local/bin/rex-board` | same | Run the board here, or `--popup` in a floating layer |
 | `.local/bin/rex-demo` | same | A demo session: board, three simulated agents, a real Claude with its steps sidecar |
 | `.local/bin/rex-steps` | same | Open a steps sidecar beside this terminal (or a named block) |
+| `.local/bin/rex-worktree` | same | The worktree picker `prefix W` opens: go to a worktree's tab, or open it with Claude and its steps |
 | `.local/bin/rex-theme` | same | Called by `theme-set`: switches the app's theme by name; silent without a Rex server |
 
 `~/.config/rex` is a real directory (Makefile `REAL_DIRS`, `.gitignore`
@@ -51,12 +52,34 @@ removes it. With your own agents:
 4. ⌘⇧J jumps to the agent that has waited longest in the most urgent state.
 5. ⌘⇧S in a Claude's terminal opens its steps sidecar, ⌘⇧S again closes it;
    `rex-steps` does the same from the shell.
-6. `prefix t` (or `theme-set NAME`) also switches Rex's theme, once Remote
+6. tmux's `prefix t` (or `theme-set NAME`) also switches Rex's theme, once Remote
    Control is on and the theme is imported (Themes below).
 
 Turning on **Remote Control** (Rex Settings → Rex Server) lets the CLI drive
 the app: `rex-theme` needs it, and so does `rex do agents_next` run from
 outside the app.
+
+## Keys
+
+`ctrl+a` enters the `prefix` mode for one key, as tmux's prefix does;
+`escape` leaves it, `ctrl+a` again sends a literal `ctrl+a`, and a key the
+mode does not bind does nothing. `rex keymap` lists the whole map.
+
+| Key | Does | |
+|---|---|---|
+| `\|` `\` / `-` | split right / down | app |
+| `h j k l` / `H J K L` | focus / resize | app |
+| `z` `X` `space` `b` | zoom, close pane, balance, pane to its own tab | app |
+| `c` `n` `p` `x` `m` `1`–`9` | new, next, previous, close, rename tab; go to tab | app |
+| `T` `(` `)` | pick a session; previous / next session | app |
+| `y` / `Y` | copy the file nvim has open (absolute / relative), else the pane's directory | `copy_path` |
+| `g` | open the pane's repo on GitHub (gopen) | `gopen` |
+| `W` | worktree picker in a split: enter goes to the worktree's tab or opens one; ctrl-x opens it with Claude and its steps; a new name creates the branch (gwt) | `worktrees` |
+| `S` `A` `J` | steps sidecar, agents board, jump to the agent that needs you (also ⌘⇧S, ⌘⇧A, ⌘⇧J) | ours |
+| `t` `r` `/` | theme picker, reload config, find | app |
+
+The actions take `session_id=` and `block_id=` too, so a script can aim them:
+`rex do copy_path session_id=… block_id=… rel=true`.
 
 ## Findings
 
@@ -80,7 +103,12 @@ outside the app.
 - `rex.call(method, payload)` returns `nil, message` on failure; it does not
   raise. A connection must `rex.call("session.attach", {session_id=…})` before
   calling into a session; `rex.session.attach` changes which events a script
-  hears, not what it may call.
+  hears, not what it may call. init.lua's Lua state outlives the connection
+  an action runs on, so a remembered attach goes stale: `rexkit` attaches
+  again when a call is refused as not attached.
+- Actions, and panes the server starts, get the server's bare PATH
+  (`/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin`); `rexkit.PATH` and
+  `rex-worktree` set their own.
 - Block methods: `rex.call("com.superlogical.terminal.<method>",
   {session_id=, block_id=, args={}})`.
 - `rex.action{ name=, title=, run=function(ctx, args) … end }`. A key press
@@ -89,9 +117,15 @@ outside the app.
   and nothing else, so the actions fall back to the first session. Each
   action appends its ctx to `~/.local/state/rex-lab/ctx.log`. Try one before reloading with
   `rex do ~/.config/rex/init.lua --action NAME k=v`.
-- `rex.bind("cmd+shift+j", "action")` takes one chord (no tmux-style
-  sequences); a mode's keys are bound as `"mode/key"`, and only to named
-  actions.
+- `rex.bind(key, action, args)` takes one chord (no tmux-style sequences)
+  and an optional args table. A mode is declared with `rex.mode(name,
+  {exclusive=, blocked=})` and its keys bound as `"mode/key"`, only to named
+  actions; `client.mode.enter {name=, once=true}` makes a tmux-style prefix.
+  The client keeps the mode, the server only checks the map. Key names:
+  letters, digits, `-`, `/`, `space`, `tab`, `escape`, `\\` (backslash),
+  `shift+\\` (`|`), `shift+9`; not `|`, `(`, `%`, `minus` or `backslash`.
+  The app's actions say which repeat (`repeats` in `rex -C … actions
+  --json`): focus, resize, tab next/previous.
 - `rex.client.queue(action, args)` asks the client that pressed the key to
   perform a client action (`session.select`, `pane.split`, …).
 - `rex.on("block_event", fn(target, ev))` fires for `program_status_changed`,
@@ -165,6 +199,18 @@ ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=N][:title=B64][:msg=B64]
   next redraw. Claude reports SessionStart before that file exists, so the
   first lookup retries; a new session has no transcript until its first
   prompt.
+
+### Paths and the clipboard
+
+- `process` gives a block's child and foreground process with their `cwd`
+  from the OS, right while nvim or Claude runs: tmux's `pane_current_path`.
+- nvim writes the focused file's absolute and relative paths to
+  `~/.local/state/rex-lab/yank/<block id>` (`config/autocmds.lua`, beside
+  the tmux options it sets), and removes the file on exit or suspend.
+- OSC 52 written to a block's terminal becomes a `clipboard_written` block
+  event, and the app showing the session copies it: the clipboard of the
+  machine you look from, with no pbcopy or toclip. An action writes it to the
+  tty of the block's foreground process.
 
 ### Popups, layouts, blocks
 

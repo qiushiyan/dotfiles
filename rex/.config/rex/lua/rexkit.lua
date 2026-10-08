@@ -10,21 +10,32 @@ M.TERMINAL = "com.superlogical.terminal"
 
 -- rex.call returns nil plus a message on failure instead of raising.
 function M.call(method, payload)
-  local result, err = rex.call(method, payload or {})
+  local result, err = M.try(method, payload)
   if result == nil and err ~= nil then error(method .. ": " .. tostring(err), 2) end
   return result
 end
 
-function M.try(method, payload)
-  return rex.call(method, payload or {})
-end
-
 -- A control connection must attach to a session before calling into it.
+-- init.lua's state outlives the connection an action runs on, so the record
+-- of what is attached can be stale: a call refused as not attached attaches
+-- and tries once more.
 local attached = {}
 function M.attach(session_id)
   if attached[session_id] then return end
   M.call("session.attach", { session_id = session_id })
   attached[session_id] = true
+end
+
+function M.try(method, payload)
+  payload = payload or {}
+  local result, err = rex.call(method, payload)
+  if result == nil and payload.session_id and tostring(err):find("not attached", 1, true) then
+    attached[payload.session_id] = nil
+    rex.call("session.attach", { session_id = payload.session_id })
+    attached[payload.session_id] = true
+    result, err = rex.call(method, payload)
+  end
+  return result, err
 end
 
 function M.sessions()
@@ -43,6 +54,7 @@ function M.terminals(session_id)
 end
 
 function M.block(session_id, block_id, method, args)
+  M.attach(session_id)
   return M.try(M.TERMINAL .. "." .. method, { session_id = session_id, block_id = block_id, args = args or {} })
 end
 
@@ -170,6 +182,51 @@ function M.claude_session(session_id, block_id)
       return body:match('"sessionId"%s*:%s*"([^"]+)"'), body:match('"cwd"%s*:%s*"([^"]+)"')
     end
   end
+end
+
+-- Panes: directory, tty, clipboard, feedback ---------------------------------
+
+-- Actions and the panes they start inherit the server's bare system PATH.
+M.PATH = os.getenv("HOME") .. "/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+function M.sh_quote(s) return "'" .. tostring(s):gsub("'", "'\\''") .. "'" end
+
+-- The process in front in a block: the one a key press is about. Its cwd
+-- comes from the OS, so it is right while nvim or Claude runs.
+function M.foreground(session_id, block_id)
+  local proc = M.block(session_id, block_id, "process")
+  return proc and (proc.foreground or proc.child)
+end
+
+function M.cwd(session_id, block_id)
+  local fg = M.foreground(session_id, block_id)
+  return fg and fg.cwd
+end
+
+local function tty_of(pid)
+  local p = io.popen("ps -o tty= -p " .. tonumber(pid) .. " 2>/dev/null")
+  local tty = p and (p:read("*l") or ""):gsub("%s", "") or ""
+  if p then p:close() end
+  if tty == "" or tty == "??" then return nil end
+  return "/dev/" .. tty
+end
+
+-- Ask the terminal in a block to copy TEXT (OSC 52 on its output side). Rex
+-- turns that into a clipboard_written event, and the app showing the block
+-- copies it: the clipboard of the machine you are looking from.
+function M.osc52(session_id, block_id, text)
+  local fg = M.foreground(session_id, block_id)
+  local tty = fg and tty_of(fg.pid)
+  if not tty then return false end
+  local cmd = "printf '\\033]52;c;%s\\007' \"$(printf %s " .. M.sh_quote(text)
+    .. " | base64 | tr -d '\\n')\" > " .. M.sh_quote(tty)
+  return os.execute(cmd) == 0
+end
+
+-- A macOS notification: the one way an action has to say something.
+function M.notify(title, text)
+  local script = "display notification " .. string.format("%q", text) .. " with title " .. string.format("%q", title)
+  os.execute("osascript -e " .. M.sh_quote(script) .. " >/dev/null 2>&1 &")
 end
 
 return M

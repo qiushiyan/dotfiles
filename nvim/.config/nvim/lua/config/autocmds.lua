@@ -73,10 +73,42 @@ require("config.theme").watch()
 -- The explicit -t matters: `tmux set -p` without it falls back to the
 -- *client's* active pane when TMUX_PANE is unset (true inside display-popup),
 -- silently writing some other pane's options.
+-- Inside Rex (an experiment, ~/dotfiles/rex/README.md) the same answer goes to
+-- a file named for the Rex block, which Rex's copy_path action reads: Rex has
+-- no per-pane user options.
 do
   local pane = vim.env.TMUX_PANE
-  if pane and vim.fn.executable("tmux") == 1 then
+  local use_tmux = pane and vim.fn.executable("tmux") == 1
+  local rex_file = vim.env.REX_BLOCK
+    and (vim.fn.stdpath("state"):gsub("/nvim$", "") .. "/rex-lab/yank/" .. vim.env.REX_BLOCK:gsub(":", "_"))
+  if use_tmux or rex_file then
     local last -- last published "abs\nrel" ("" = unset); nil forces a publish
+
+    -- abs nil unsets
+    local function sink(abs, rel)
+      if use_tmux then
+        local cmd
+        if abs then
+          -- one tmux invocation; ";" is tmux's command separator, no shell involved
+          cmd = { "tmux", "set", "-p", "-t", pane, "@yank_path", abs, ";", "set", "-p", "-t", pane, "@yank_path_rel", rel }
+        else
+          cmd = { "tmux", "set", "-pu", "-t", pane, "@yank_path", ";", "set", "-pu", "-t", pane, "@yank_path_rel" }
+        end
+        return vim.system(cmd, {})
+      end
+    end
+
+    local function rex_sink(abs, rel)
+      if not rex_file then
+        return
+      end
+      if abs then
+        vim.fn.mkdir(vim.fs.dirname(rex_file), "p")
+        vim.fn.writefile({ abs, rel }, rex_file)
+      else
+        os.remove(rex_file)
+      end
+    end
 
     local function copyable_path()
       if vim.bo.buftype ~= "" then
@@ -113,14 +145,8 @@ do
           return
         end
         last = key
-        local cmd
-        if abs then
-          -- one tmux invocation; ";" is tmux's command separator, no shell involved
-          cmd = { "tmux", "set", "-p", "-t", pane, "@yank_path", abs, ";", "set", "-p", "-t", pane, "@yank_path_rel", rel }
-        else
-          cmd = { "tmux", "set", "-pu", "-t", pane, "@yank_path", ";", "set", "-pu", "-t", pane, "@yank_path_rel" }
-        end
-        vim.system(cmd, {})
+        sink(abs, rel)
+        rex_sink(abs, rel)
       end)
     end
 
@@ -138,7 +164,11 @@ do
     vim.api.nvim_create_autocmd({ "VimLeavePre", "VimSuspend" }, {
       group = group,
       callback = function()
-        vim.system({ "tmux", "set", "-pu", "-t", pane, "@yank_path", ";", "set", "-pu", "-t", pane, "@yank_path_rel" }, {}):wait(200)
+        local job = sink(nil)
+        if job then
+          job:wait(200)
+        end
+        rex_sink(nil)
         last = nil
       end,
     })

@@ -7,6 +7,7 @@ local HOME = os.getenv("HOME")
 local REX_DIR = HOME .. "/.config/rex"
 package.path = REX_DIR .. "/lua/?.lua;" .. package.path
 local kit = require("rexkit")
+local STATE = (os.getenv("XDG_STATE_HOME") or (HOME .. "/.local/state")) .. "/rex-lab"
 
 -- The session a key press came from, or the first session when the action was
 -- run another way (rex do, the palette).
@@ -21,21 +22,21 @@ end
 -- What a key press hands an action is undocumented: each action records its
 -- ctx here until we know (README, open questions).
 local function log_ctx(name, ctx)
-  local dir = (os.getenv("XDG_STATE_HOME") or (HOME .. "/.local/state")) .. "/rex-lab"
-  os.execute("mkdir -p '" .. dir .. "'")
-  local f = io.open(dir .. "/ctx.log", "a")
+  os.execute("mkdir -p '" .. STATE .. "'")
+  local f = io.open(STATE .. "/ctx.log", "a")
   if f then
     f:write(os.date("%Y-%m-%d %H:%M:%S "), name, " ", kit.dump(ctx), "\n")
     f:close()
   end
 end
 
--- The block a key press came from: the one ctx names, else the focused block
--- of the current session.
-local function current_block(ctx)
-  ctx = ctx or {}
-  local sid = current_session(ctx)
-  local bid = ctx.block_id or (ctx.block and ctx.block.block_id)
+-- The block a key press came from: the one args or ctx names, else the
+-- focused block of the current session. Args let a script or `rex do ACTION
+-- session_id=… block_id=…` aim an action, which a key press does through ctx.
+local function current_block(ctx, args)
+  ctx, args = ctx or {}, args or {}
+  local sid = args.session_id or current_session(ctx)
+  local bid = args.block_id or ctx.block_id or (ctx.block and ctx.block.block_id)
   return sid, bid or (sid and kit.focused_block(sid))
 end
 
@@ -92,9 +93,9 @@ rex.action{
 rex.action{
   name = "steps_sidecar",
   title = "Steps Sidecar",
-  run = function(ctx)
+  run = function(ctx, args)
     log_ctx("steps_sidecar", ctx)
-    local sid, bid = current_block(ctx)
+    local sid, bid = current_block(ctx, args)
     if not (sid and bid) then return { opened = false, reason = "no focused block" } end
     local blocks = kit.terminals(sid)
     for _, b in ipairs(blocks) do
@@ -122,6 +123,107 @@ rex.action{
     return { opened = label, block = r.block_ids[1] }
   end,
 }
+
+-- prefix y / Y: copy the focused file's path when nvim runs in the block
+-- (nvim writes it to a file named for the block, config/autocmds.lua), else
+-- the directory the block's front process runs in. rel = true gives the
+-- path relative to nvim's cwd. The copy goes through the block's terminal
+-- (OSC 52), so it lands on the clipboard of the machine you are looking from.
+rex.action{
+  name = "copy_path",
+  title = "Copy Path",
+  run = function(ctx, args)
+    log_ctx("copy_path", ctx)
+    local sid, bid = current_block(ctx, args)
+    if not (sid and bid) then return { copied = false, reason = "no focused block" } end
+    local path
+    local fg = kit.foreground(sid, bid)
+    if fg and fg.name == "nvim" then
+      local f = io.open(STATE .. "/yank/" .. bid:gsub(":", "_"), "r")
+      if f then
+        local abs, rel = f:read("*l"), f:read("*l")
+        f:close()
+        path = (args and args.rel) and rel or abs
+      end
+    end
+    path = path or (fg and fg.cwd)
+    if not path then return { copied = false, reason = "no path" } end
+    if not kit.osc52(sid, bid, path) then return { copied = false, reason = "no tty" } end
+    return { copied = path }
+  end,
+}
+
+-- prefix g: open the block's repo on GitHub with gopen (~/dev/gopen): the
+-- PR when the branch has one, else the branch. In the background, since the
+-- PR lookup can take a network call; a notification says when it fails.
+rex.action{
+  name = "gopen",
+  title = "Open on GitHub",
+  run = function(ctx, args)
+    log_ctx("gopen", ctx)
+    local sid, bid = current_block(ctx, args)
+    local dir = sid and bid and kit.cwd(sid, bid)
+    if not dir then return { opened = false, reason = "no directory" } end
+    local note = "osascript -e 'display notification \"'\"$msg\"'\" with title \"gopen\"'"
+    os.execute("(cd " .. kit.sh_quote(dir) .. " && PATH=" .. kit.sh_quote(kit.PATH)
+      .. " gopen </dev/null >/dev/null 2>/dev/null; rc=$?;"
+      .. " case $rc in 0) ;; 3) msg=\"the branch is not on origin: run gopen in the pane to push\"; " .. note .. " ;;"
+      .. " *) msg=\"gopen failed ($rc)\"; " .. note .. " ;; esac) >/dev/null 2>&1 &")
+    return { opening = dir }
+  end,
+}
+
+-- prefix W: the worktree picker (rex-worktree) in a split beside the block.
+-- Not a floating layer: the app does not send keys to one yet.
+rex.action{
+  name = "worktrees",
+  title = "Worktrees",
+  run = function(ctx, args)
+    log_ctx("worktrees", ctx)
+    local sid, bid = current_block(ctx, args)
+    local dir = sid and bid and kit.cwd(sid, bid)
+    if not dir then return { opened = false, reason = "no directory" } end
+    local r = kit.call("session.new_split", {
+      session_id = sid, anchor_block_id = bid,
+      direction = "vertical", side = "after", ratio = 0.5,
+      layout = { block = {
+        flavor = "com.superlogical.terminal.shell", label = "worktrees",
+        options = { cwd = dir, command = { HOME .. "/.local/bin/rex-worktree", sid } },
+      } },
+      focus = true,
+    })
+    return { opened = r.block_ids[1] }
+  end,
+}
+
+-- The tmux prefix, as a Rex mode: ctrl+a enters it for one key, as tmux's
+-- prefix does, and Escape leaves it. Exclusive, so a key it does not bind
+-- does nothing rather than reach the shell. Most keys are the app's own
+-- actions; the rest are defined above. ctrl+a twice sends a literal ctrl+a.
+rex.mode("prefix", { exclusive = true })
+rex.bind("ctrl+a", "client.mode.enter", { name = "prefix", once = true })
+local prefix = {
+  { "escape", "client.mode.exit" },
+  { "ctrl+a", "pane.send_key", { key = "ctrl+a" } },
+  -- panes
+  { "shift+\\", "pane.split.right" }, { "\\", "pane.split.right" }, { "-", "pane.split.down" },
+  { "h", "pane.focus.left" }, { "j", "pane.focus.down" }, { "k", "pane.focus.up" }, { "l", "pane.focus.right" },
+  { "shift+h", "pane.resize", { direction = "left" } }, { "shift+j", "pane.resize", { direction = "down" } },
+  { "shift+k", "pane.resize", { direction = "up" } }, { "shift+l", "pane.resize", { direction = "right" } },
+  { "z", "pane.zoom" }, { "shift+x", "pane.close" }, { "space", "pane.balance" },
+  { "b", "pane.move_to_new_tab" },
+  -- tabs (tmux windows) and sessions
+  { "c", "client.tab.new" }, { "n", "client.tab.next" }, { "p", "client.tab.previous" },
+  { "x", "client.tab.close" }, { "m", "client.tab.rename" },
+  { "shift+t", "session.switch" }, { "shift+9", "session.previous" }, { "shift+0", "session.next" },
+  -- tools
+  { "y", "copy_path" }, { "shift+y", "copy_path", { rel = true } },
+  { "g", "gopen" }, { "shift+w", "worktrees" },
+  { "shift+s", "steps_sidecar" }, { "shift+a", "agents_board" }, { "shift+j", "agents_next" },
+  { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
+}
+for i = 1, 9 do prefix[#prefix + 1] = { tostring(i), "client.tab.goto", { index = i } } end
+for _, b in ipairs(prefix) do rex.bind("prefix/" .. b[1], b[2], b[3]) end
 
 rex.bind("cmd+shift+j", "agents_next")
 rex.bind("cmd+shift+s", "steps_sidecar")
