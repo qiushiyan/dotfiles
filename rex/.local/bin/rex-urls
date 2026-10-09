@@ -3,7 +3,8 @@
 # scrollback and open it (prefix u, the urls action, which runs this in a
 # split below the block). Rex's `format` method hands over the whole
 # scrollback as text, newest URL first in the list. Backslashes go first:
-# zsh escapes the ? and = of a URL typed at its prompt.
+# zsh escapes the ? and = of a URL typed at its prompt. A scrollback past the
+# 1 MiB one control reply carries comes back as an error, which is shown.
 #
 #   enter    open it; with `away` (the key came from another machine's app,
 #            such as the laptop's) copy it instead, since a browser opened
@@ -16,8 +17,12 @@ session=${1:?usage: rex-urls SESSION BLOCK}
 block=${2:?usage: rex-urls SESSION BLOCK}
 where=${3:-here}
 
-# rex probes the terminal on stderr, and the answer would arrive as input.
-urls=$(rex block call -s "$session" -b "$block" format '{"format":"text","unwrap":true}' 2>/dev/null \
+say() { printf '\n  %s\n' "$1"; sleep "$2"; }
+
+# rex probes the terminal on stderr, and the answer would arrive as input; the
+# error is kept to say why a pane gave nothing.
+err=$(mktemp); trap 'rm -f "$err"' EXIT
+urls=$(rex block call -s "$session" -b "$block" format '{"format":"text","unwrap":true}' 2>"$err" \
   | jq -r .content \
   | tr -d '\\' \
   | grep -oE '(https?|file)://[^][[:space:]<>"'"'"'`()]+' \
@@ -25,8 +30,13 @@ urls=$(rex block call -s "$session" -b "$block" format '{"format":"text","unwrap
   | awk '{ a[NR] = $0 } END { for (i = NR; i > 0; i--) if (!seen[a[i]]++) print a[i] }')
 
 if [ -z "$urls" ]; then
-  printf '\n  no URLs in this pane\n'
-  sleep 1.2
+  if grep -q too_large "$err"; then
+    say "this pane's scrollback is past the 1 MiB Rex sends in one reply; clear it (prefix C-k) to pick from what follows" 5
+  elif [ -s "$err" ]; then
+    say "$(head -1 "$err")" 5
+  else
+    say "no URLs in this pane" 1.2
+  fi
   exit 0
 fi
 

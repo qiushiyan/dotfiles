@@ -141,13 +141,13 @@ define{
     if not (sid and bid) then return { exported = false } end
     -- rex-export runs here; on another host's session its rex calls go there.
     local server = ctx.server and ("REX_SERVER=" .. shell.quote(ctx.server) .. " ") or ""
-    local path = shell.capture(server .. "PATH=" .. shell.quote(shell.PATH) .. " "
+    -- It prints the page's path, or why it could not: raised, so the log and
+    -- the app say it while toasts are off.
+    local out = shell.capture(server .. "PATH=" .. shell.quote(shell.PATH) .. " "
       .. shell.quote(os.getenv("HOME") .. "/.local/bin/rex-export") .. " "
-      .. shell.quote(sid) .. " " .. shell.quote(bid) .. " 2>/dev/null")
-    if not path then
-      feedback.toast(sid, bid, "error", "Export", "could not read the pane")
-      return { exported = false }
-    end
+      .. shell.quote(sid) .. " " .. shell.quote(bid) .. " 2>&1")
+    local path = out and out:match("^/[^\n]+%.html$")
+    if not path then error(out or "rex-export printed nothing", 0) end
     if host.app_is_here(ctx) then
       shell.open(path)
     else

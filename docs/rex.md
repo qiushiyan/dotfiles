@@ -45,9 +45,14 @@ any notes kept here:
   then `rex server run`, and every `rex` command under that `HOME` talks to
   it. The `HOME` path must be short, since the socket's path under
   `Library/Application Support/rex` has to fit a Unix socket's ~104 bytes.
+  From inside a Rex pane, the pane's `REX_SERVER` outranks `HOME` and every
+  command reaches the live server, so each one runs under
+  `env -u REX_SERVER -u REX_SESSION -u REX_BLOCK HOME=…`.
   The server log records every control request a client or script makes,
   with its duration, and `os.clock` is wall time in Rex's Lua, so a wrapper
-  around `rex.action` can time each action and count its calls.
+  around `rex.action` can time each action and count its calls. `footprint
+  PID` measures a Rex process's memory, and `vmmap --summary PID` separates
+  what its allocator holds live from what it keeps free (§ Memory).
 - **The app is unseen, and its log is thin.** No screen capture reaches it
   from here, and what the server holds is not always what the app paints
   (§ What the app does not show). A claim about what the user sees is verified
@@ -131,8 +136,9 @@ agents; a new integration should reach for them first.
   `process` block method, right while nvim or Claude runs: tmux's
   `pane_current_path`.
 - **A terminal's whole scrollback** comes back as text, HTML (palette slots as
-  CSS variables) or VT from the `format` block method; `plain` returns
-  nothing. The URL picker and the pane export read it.
+  CSS variables) or VT from the `format` block method, as long as it fits one
+  control reply (§ Lessons); `plain` returns nothing. The URL picker and the
+  pane export read it.
 - **A block's Claude session** needs no plumbing: the status record names the
   Claude process that reported, and Claude writes
   `<config dir>/sessions/<pid>.json` with its session id and directory, which
@@ -179,6 +185,29 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
   `Workspace.*` defaults, which the app reads when it launches. "Prefer
   generated titles" stays off on both, or pane headers show the program's
   name and folder instead of the title it sets.
+
+## Memory
+
+Measured on the mini with `footprint` on a live server and a scratch one.
+Rex's resident cost is the app, the scrollback the server holds, and every
+long-running script; the layout and idle blocks are nearly free.
+
+- **The server** starts near 16 MB, and an idle block adds about 0.4 MB. A
+  working day's session of a dozen blocks sat at about 75 MB.
+- **Scrollback is the server's variable cost, and its limit counts cells, not
+  lines:** about 7.7 million per block, so some 96,000 rows at 80 columns and
+  31,000 at 250. A full scrollback of incompressible text costs about 16 MB;
+  repetitive output costs a fraction of that.
+- **The server's footprint is a high-water mark.** Closing blocks frees their
+  memory to the server's allocator, which keeps it for the next block rather
+  than returning it to the system, so the number falls only on a restart. A
+  footprint that stays up after blocks closed is not a leak; one that climbs
+  past what the open blocks' scrollback can hold is.
+- **Each `rex do` script is a whole `rex` process, about 22 MB,** a third of a
+  server. `rexd` and each `claude-steps` sidecar's watcher run one, which
+  makes the lab's scripts together outweigh the server they serve; a new
+  always-on script is weighed against that.
+- **The app** sat near 340 MB, a third of it the GPU surfaces it draws into.
 
 ## Lessons
 
@@ -240,6 +269,16 @@ one exists.
   as `pbcopy` waits forever; pipe through the shell. It also crashes the whole
   script on `for … in (s:gsub(…) .. x):gmatch(…)`; the same through a local
   works.
+- **A control reply carries at most 1 MiB, and Rex never splits one.** A
+  larger result, such as `format` on a long scrollback, is a `too_large`
+  error, reached by the HTML long before the text; a full scrollback can be
+  several times the limit even as text. `rex block stream` is not
+  implemented in the CLI, so a script has no other way to read it. Guard:
+  `rex-urls` and `rex-export` keep the call's error and say why a pane gave
+  nothing, the export falling back to plain text first, and the
+  `export_pane` action raises the reason; clearing the pane (prefix `C-k`)
+  makes it readable again. Pulling a reply near the limit briefly inflates
+  the server by a few hundred MB.
 - **`rex run --wait` prints no creation result when its output is not a
   terminal.** A caller finds the block by its label (`rex-run`).
 - **The app owns the colours.** It pushes its theme to every terminal on the
@@ -379,6 +418,9 @@ every binding. The shape:
 - **Display:** whether notifications, API-set names and floating layers
   appear after an app update, or with a setting not yet found
   (§ What the app does not show).
+- **The app's share of scrollback:** whether the app keeps its own copy of
+  each block's scrollback, doubling § Memory's per-block cost; the probe is
+  the app's footprint while a pane it shows fills its scrollback.
 - **Persistence past a reboot:** a server restart ends every session; whether
   the app or launchd brings the mini's server back after a reboot is untested.
 - **Comparison with tmux:** which workflows feel better in each, as sessions

@@ -3,7 +3,9 @@
 # colours kept, as a standalone HTML page, and print its path (prefix e, the
 # export_pane action, opens it). Rex's `format` method renders the HTML; this
 # only wraps it in a page in the terminal's own palette, so the page looks
-# much as the pane did.
+# much as the pane did. One control reply carries at most 1 MiB, and the HTML
+# outgrows that long before the text does: past it the page is the plain text,
+# and past that too the export fails and says why on stderr.
 #
 # Pages go to ~/.local/state/rex-lab/exports, named for the pane and the time.
 set -eu
@@ -15,9 +17,25 @@ mkdir -p "$out_dir"
 
 # rex probes the terminal on stderr, and the answer would arrive as input.
 call() { rex "$@" 2>/dev/null; }
+err=$(mktemp); trap 'rm -f "$err"' EXIT
+scrollback() { rex block call -s "$session" -b "$block" format "$1" 2>"$err" | jq -r .content; }
+html_escape() { sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'; }
 
-body=$(call block call -s "$session" -b "$block" format '{"format":"html","unwrap":true,"extra_palette":true}' | jq -r .content)
-[ -n "$body" ] || exit 1
+body=$(scrollback '{"format":"html","unwrap":true,"extra_palette":true}')
+if [ -z "$body" ] && grep -q too_large "$err"; then
+  text=$(scrollback '{"format":"text","unwrap":true}')
+  [ -n "$text" ] && body="<p style=\"opacity:.6\">Plain text: the coloured page was past the 1 MiB Rex sends in one reply.</p>
+<div><pre style=\"margin:0;font:inherit\">$(printf '%s' "$text" | html_escape)</pre></div>"
+fi
+if [ -z "$body" ]; then
+  if grep -q too_large "$err"; then
+    echo "rex-export: the scrollback is past the 1 MiB Rex sends in one reply, even as text; clear it (prefix C-k) to export what follows" >&2
+  else
+    why=$(head -1 "$err")
+    echo "rex-export: ${why:-the pane returned nothing}" >&2
+  fi
+  exit 1
+fi
 label=$(call api call session.list_blocks "{\"session_id\":\"$session\"}" \
   | jq -r --arg b "$block" '.blocks[] | select(.block_id == $b) | .label // "pane"')
 title=$(call block call -s "$session" -b "$block" title | jq -r '.title // ""')
@@ -28,7 +46,6 @@ path="$out_dir/${slug:-pane}-$(date +%Y%m%d-%H%M%S).html"
 # Rex's HTML names colours by palette slot (CSS variables it defines), but
 # not the terminal's default foreground and background: the page takes slots
 # 0 and 7, which most themes set to those.
-html_escape() { sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'; }
 
 {
   printf '<!doctype html>\n<html><head><meta charset="utf-8">\n'
