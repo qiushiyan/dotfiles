@@ -12,6 +12,11 @@ and name the shape in a few words so the list can grow from real cases.
 - `wrong-reason-test` — a test that passes for the wrong reason: the fixture
   supplies the value under test, it asserts on a mock or on a call count, or
   it was edited to match the new output.
+- `low-value-test` — a test that costs upkeep without guarding a credible
+  regression: it restates the implementation, pins wording no caller reads,
+  drives a helper the public path already proves, or re-proves another
+  file's behaviour (the shapes in `../testing/test-quality.md`). Its fix is
+  deletion, or folding it into the test that owns the behaviour.
 - `second-mechanism` — a new route beside an existing owner that already
   answers the same question: a parallel queue, policy, decoder or lifecycle,
   or a copied helper.

@@ -6,6 +6,7 @@ argument-hint: "[PR number or URL] [optional: a question this PR raises]"
 requires:
   - lessons:collaboration/finding-classes.md
   - lessons:codebase-design/composition.md
+  - lessons:testing/test-quality.md
 ---
 
 # Strategic review of a pull request
@@ -22,7 +23,8 @@ The deliverable is one report the user decides from: is it ready, what must
 change before merge, and what would make it better. Report every problem
 you can point at code for, minor ones included. The user sorts them and
 usually answers "fold these in", in this same session. Change no code
-until then.
+until then; [Folding the findings in](#folding-the-findings-in) says how
+to build it once they do.
 
 ## How to work
 
@@ -42,6 +44,9 @@ until then.
      for code quality and the "code judo" reshape;
    - `~/dotfiles/claude/.claude/skills/codebase-design/SKILL.md` with
      `~/.config/lessons/codebase-design/composition.md`, for design;
+   - `~/.config/lessons/testing/test-quality.md`, for tests: what earns a
+     place in a suite, the shapes of a test that cannot fail for a real
+     reason, and why review drifts toward asking for more tests;
    - `~/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md`, when the
      PR description or the touched files show a model-facing change: a
      prompt section, tool description, tool result, command help, refusal or
@@ -73,9 +78,21 @@ until then.
 - **Outcomes.** A partial, timed-out or failed result reaches every consumer
   as what it is. A deadline, abort or size cap bounds the work itself, not
   only the wait for it.
-- **Tests.** Each behaviour that matters has a test that goes red when it is
-  reverted. No test passes for the wrong reason, and the tests the PR relies
-  on actually run in CI.
+- **Tests**, by `test-quality.md`. Start from the risk, not the test
+  files: name the few behaviours in this PR most likely to break and
+  costliest when they do, such as an ordering rule, a bound, an outcome
+  that can collapse, a permission check, or wiring between processes or
+  packages. Each needs a test at the boundary that owns it, one that goes
+  red when the behaviour breaks and that runs in CI. Where you can, break
+  the guarded line in a scratch worktree and run the test: wiring you can
+  remove with the suite still green is a finding even when every line is
+  covered. Then
+  weigh the tests the PR added, since each costs upkeep like code. A test
+  that pins whole sentences a model or user reads, restates the
+  implementation, checks only a mock's arguments, or asserts a value its
+  own fixture supplied is a finding, fixed by asserting the token or
+  relation a caller depends on, or by deleting it. A test you ask for names
+  the bug it would catch and why no existing test catches it.
 - **What the model is told**, when step 2 found a model-facing change. For
   every tool, command, result, refusal or prompt section whose behaviour
   changed, read everything a model is told about it, whether or not the PR
@@ -105,3 +122,17 @@ including the reshape when one would make the problem disappear. Answer the
 user's question if they asked one; if it does not fit this PR, say so and
 answer the nearest question that does. Close with what you checked and
 found correct, so the user knows what the verdict covers.
+
+## Folding the findings in
+
+When the user folds the findings in, build them as one change rather than
+a patch per finding. Land the reshapes first, since they make some
+findings disappear, then fix each remaining finding at the code that owns
+it, one commit per owner. Tests follow the Tests lens, not the finding
+list: pin the fragile behaviours it named, and any fix that changes what a
+caller depends on, at the owning boundary, extending an existing case where
+one fits. Break the fixed line and watch each new test go red before
+trusting it. A fix to text a model or user reads is pinned, if at all, by
+the token that carries its contract rather than the sentence; a finding
+about naming or structure gets no test of its own. Delete or rewrite the
+tests the lens marked.

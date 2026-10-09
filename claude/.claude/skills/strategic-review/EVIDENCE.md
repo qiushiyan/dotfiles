@@ -178,3 +178,100 @@ Kept:
   description or the touched files show a model-facing change, a changed
   tool behaviour included. Both rehearsed PRs had such a change, so neither
   rehearsal tests the skip.
+
+## 2026-10-09 — first real uses, and a tests lens that weighs both ways
+
+Session `mini:88b18cbd` (an `/improve-tool` pass, dogfooding `~/dev/skill-evals`).
+
+**Corpus.**
+- Obelisk, both machines: user messages starting
+  `<command-message>strategic-review</command-message>`, this session excluded.
+  9 sessions, all on the mini, 2026-10-07 → 10-09; mac 0.
+  - 8 PlanLab PRs (8677 8680 8675 8758 8806 8809 8859 8857) and gazette.
+  - Report = the longest assistant text between the invocation and the next
+    user turn, read in full with `raw()`. For 8809 that is `d517b218`, plus
+    the revision `cdb60526`.
+- Envoy jobs on the mini for the codex rounds after the fold-ins:
+  `automation-files-save` `review-r1+2`/`r2+2`, `sandbox-deadline` `review-r1`.
+- Test-quality remarks: typed user text since 08-01 that mentions tests with
+  quality words.
+- Three read-only graders scored the tests PRs 8809, 8806 and 8680 added,
+  build phase against fold-in, by `test-quality.md`, with mutation runs in
+  scratch worktrees. Their ledgers lived in this session's scratchpad.
+
+**Findings.**
+- **Fold-in is the norm.** All 9 uses folded in every finding. In 5 the user
+  typed the same instruction ("structured and holistic, prepare refactoring
+  if needed"): 8806 and 8809 verbatim, 8859, 8857, and gazette.
+- **The Tests lens only ever added.** The 9 reports carry 16 `unpinned` and 7
+  `wrong-reason-test` tags, and no finding to delete, merge or loosen a test.
+  The additive-bias counterweight was in `review-lens.md`, dropped in v2.
+  The user's own lesson, `testing/test-quality.md`, was never read.
+- **The user's complaint recurs:** mac `f79d7036` 08-12 (review-driven tests
+  "tailored to the review itself"), `3f7f1fe0` 08-13, `8b472a5b` 08-18,
+  `a9194a78` 09-05 ("too literal and not behavior-focused"), and this request.
+- **What the graders found.** "Inflated coverage" is weak: 63–91% of tests
+  keep, and no fold-in out-paced its code. Two shapes are strong:
+  - **Wording pins induced by review.** Low-quality share went from build to
+    fold-in as 28% → 37% (8680) and 9% → 20% (8806); 8809 was flat. The
+    excess is sentence pins of model-facing text and mocked tests restating
+    a minor fix. 8680's report asked for the `REMEDY` lines to be pinned,
+    and the fold-in pinned the table verbatim.
+  - **Fragile wiring left unguarded**, mutation-confirmed in all three:
+    - 8680: deleting `withdrawAttempt` left 23/23 green;
+    - 8806: the save-sweep adapter, 69 green;
+    - 8809: the S3 ETag check, 424 unit tests green.
+- **One retracted verdict.** In 8809 the report was written before area 1's
+  fuller report arrived, and its critical hang reversed the verdict (`cdb60526`).
+  1 of 9, cause not established: watch it, no change.
+- **Later rounds still find criticals.** The codex rounds after fold-in found 2
+  criticals on 8806 and 1 on 8758. One pass is a sample, as v2 showed.
+
+**Changed.**
+- The skill:
+  - `test-quality.md` joins the standards read in full.
+  - The Tests lens starts from the risk: break the guarded line in a scratch
+    worktree. It weighs the tests the PR added; a sentence pin, a
+    restatement, a mock-only or fixture-supplied assertion is a finding,
+    fixed by asserting the token or deleting the test.
+  - A new "Folding the findings in" section: reshapes first, one commit per
+    owner, tests from the lens rather than one per finding, each seen red,
+    text pinned by its token, no test for a naming or structure finding.
+- `finding-classes.md` gains `low-value-test`.
+- `test-audit` became a local adaptation built on the same lesson (734508c).
+
+**Eval** (`~/dev/skill-evals`, case `strategic-review/weighs-added-tests`).
+- **Setup.** PR 8680 frozen at `faaceea7d8`, the head the first real review
+  saw, offline, on Opus via the subscription. The judge was `gpt-6-sol`.
+  The fixture's lessons already held `low-value-test`, so both revisions saw
+  that tag.
+- **Result.** Red `55a88cb`: 0/3. Candidate: 3/3, at $13.22 against $13.53 a
+  rollout. All six still carried a known correctness finding.
+  - The candidates named `bridge_facade.test.ts:98`,
+    `workspace_files.test.ts:134` and the whole-stdout pin in
+    `commit_files_save.test.ts`.
+  - All three called `files-save-right.test.ts` "agrees with the Files
+    routes" a tautology, overruling the grader. The source confirms it:
+    `filesSaveRightOf` calls `canWriteSharepointFiles`.
+  - Candidate 2 also found a new critical: a cron Task under approve-all
+    saves to SharePoint with no card.
+  - Red 3 named two whole-string tests "restate rather than guard" under the
+    new tag but asked for stronger tests. It was judged fail.
+- **Harness fixes this needed.** The judge first saw only 4k of each 20k
+  report and returned fail or unresolved on all six. The final answer now
+  reaches it whole, and `judge` re-renders from the raw transcript.
+- **Limits.**
+  - One case, one PR, n=3.
+  - The fold-in section is untested: it needs a second scripted turn.
+  - The fixture's lesson copies predate `734508c`'s risk bullet.
+
+**Next comparison.** Real uses after this commit, read through the class tags:
+- **Measures:**
+  - `low-value-test` findings appear and are folded in;
+  - the fold-in's low-quality share is no higher than the build phase's;
+  - a mutation of each fragile behaviour the report named goes red after
+    fold-in;
+  - the user stops typing the holistic fold-in instruction.
+- **Revise** if real findings drop below the v2 yield, if deletions remove a
+  test that was a contract's only proof, or if the lens crowds out
+  correctness findings.
