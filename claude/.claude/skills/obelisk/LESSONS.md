@@ -362,3 +362,58 @@ Not measured: Codex, other models, requests unlike these nine, and the
 laptop's corpus. The judge agreed with a regex check on 44 of 48 runs where one
 exists; the four disagreements were descriptive query names the regex could
 not see, and the judge was right on each.
+
+## 2026-10-09 — skill delta 3e045af → 5b8c789, engine 0.2.6-rc.0 → 0.2.6
+
+Upstream added a Kiro provider and an opt-in `search(text, { fallback: 'or' })`
+for semantic recall. npm's latest is now the stable 0.2.6 (rc still
+0.2.6-rc.0); installed that exact version with pnpm, one copy, and moved the
+twin pin to it. The mini keeps 0.2.6-rc.0 until `twin tools install obelisk`
+runs there.
+
+Verdicts:
+
+- **`fallback: 'or'` — adopted.** 0.2.6's `query.js` implements it, and an
+  isolated fixture (temporary HOME, packaged schema, unchanged
+  `createQueryApi`) confirmed the semantics: `tmux zsh` returned 0 hits
+  without it and both one-term rows with it; a non-empty primary result came
+  back unchanged; `sessionId`, meta and inactive filters held on the retry.
+  Round 1's sweep passes it, and the empty-reading rule says what its hits
+  are worth and where to leave it off (session-scoped correlation, exact
+  phrases, existence checks). #13's two-or-three-terms rule stays: the
+  fallback catches the empty conjunction, it does not make long topic
+  strings good queries.
+- **Kiro — deferred.** 0.2.6 registers claude, codex, copilot, deepseek,
+  hermes, kimi, omp, pi and zcode; nothing mentions kiro. The escalation
+  section's provider boundary now names 0.2.6's set, which also settles the
+  3e045af review's deferral: ZCode, Copilot and the negative-limit
+  `RangeError` are in the installed runtime. Host scope stays narrow (#9);
+  the live mac index holds claude, codex and pi sessions only.
+
+Rechecked against 0.2.6 (isolated fixture, plus a temporary-HOME CLI query):
+all six hot-schema column sets match the skill (#1); scalar `replace()` and
+keyword literals succeed; writes and multiple statements are rejected; named
+parameters work and positional arrays still fail with `Unknown named
+parameter '0'` (08-29); `search` still ignores `sessions: [...]` and honours
+`sessionId` (09-15); the memory guard rejects CJK queries; `context()` and
+`raw()` return `null` and `thread()` `[]` for an unknown id (#20); `forget()`
+of an unknown id fails with `memory not found` (#21); a negative `limit`
+throws `RangeError`. The CLI still passes the typed path plus the script
+text (≥ 40 chars, strict) as identity candidates.
+
+Through `obq --on mac` against the live index (incremental refresh, no
+rebuild): one JSON document on stdout; a throwing script exits 1 with
+`{error}`; the typed per-session path resolved this session in 0.1 s; a
+`mktemp` path absent from the transcript waited 4.3 s and then resolved
+through the script text, so #17's four-second wait and the typed-path rule
+(#11–12) hold. The first query after the upgrade took 26 s, once; the next
+took 0.1 s. `tests/test-obq.sh`: 47 passed, 0 failed.
+
+#3–5, #7, #8, #10, #14–16, #18–19 concern budgets, batching, persistence,
+project fragments, self-exclusion, sandbox fallback and wrapper output;
+nothing in this delta or engine touches them. #2 stays retired, #6
+withdrawn.
+
+Not verified: the mini on 0.2.6 (not reached from here), a live index with
+Copilot, Hermes, OMP or ZCode sessions, and how often round 1's sweep now
+lands on OR hits in real use.

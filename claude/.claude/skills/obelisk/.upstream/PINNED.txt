@@ -1,19 +1,22 @@
 Before upgrading, read docs/skill-customizations.md in the dotfiles repo
 (the obelisk entry). It owns the customization intent and preservation constraints.
 
-Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 3e045afda883d40f46a8d9e3cb8ae265dd722706
-(2026-09-23). Reviewed and verified byte-identical on 2026-09-24,
+Pinned from tommy0103/obelisk-skill skills/obelisk/ @ 5b8c789ce8f5e243805c10905ba99bdcef008619
+(2026-10-08). Reviewed and verified byte-identical on 2026-10-09,
 excluding this PINNED.txt; ../references/ is a verbatim copy of references/ here.
-Installed CLI: @obelisk-apps/cli 0.2.6-rc.0, still npm's latest and rc tag
-on 2026-09-24. The skill pin and engine version are independent.
+Installed CLI: @obelisk-apps/cli 0.2.6, npm's latest tag on 2026-10-09 (rc
+still 0.2.6-rc.0); a stable release, upgraded from 0.2.6-rc.0 that day.
+The skill pin and engine version are independent.
 
-The skill delta from b164d90 documents ZCode and GitHub Copilot providers and
-a RangeError for negative helper limits. The installed provider registry has
-claude, codex, deepseek, kimi, and pi only, and its query layer has no limit
-validation, so the whole delta runs ahead of the runtime. Deferred: adopt when
-an installed engine ships those providers and a workflow needs them. The
-body's escalation boundary already covers ahead-of-runtime references, so
-../SKILL.md is unchanged. LESSONS.md records the review.
+The skill delta from 3e045af adds a Kiro provider and an opt-in
+`search(text, { fallback: 'or' })`. 0.2.6 implements the fallback (it reruns
+safe tokens joined by OR only on an empty primary result, keeping every
+filter), so ../SKILL.md adopts it in round 1 and the empty-reading rule.
+0.2.6 registers claude, codex, copilot, deepseek, hermes, kimi, omp, pi and
+zcode, but no kiro: Kiro is deferred until an engine ships it and a workflow
+needs it. The engine now also has the negative-limit RangeError and the
+ZCode/Copilot providers the 3e045af review deferred. LESSONS.md records the
+review.
 
 Installed via pnpm global only (/Users/qiushi/Library/pnpm/bin), deliberately:
 pnpm's bin directory survives node upgrades where an nvm-scoped npm global does
@@ -30,7 +33,7 @@ Pin the exact version when upgrading: pnpm's packument cache serves a stale
 `latest` for a day or so after a release, and `pnpm add -g
 @obelisk-apps/cli@latest` installed 0.2.4 while printing "0.2.5 is available".
 
-History: previous pins b164d90 (2026-09-14), 109b8b1 (2026-08-26), 3226391 (2026-08-24). Before that the skill lived in
+History: previous pins 3e045af (2026-09-23), b164d90 (2026-09-14), 109b8b1 (2026-08-26), 3226391 (2026-08-24). Before that the skill lived in
 tommy0103/obelisk skill-doc/ (pin 7c1b478, 2026-08-04). It now ships from its own docs-only repo.
 
 Upgrade the engine during every skill-upgrade pass, even if the skill hash is

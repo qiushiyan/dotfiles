@@ -84,7 +84,7 @@ return {
     .map(s => ({ id: s.id, title: s.title, ended_at: s.ended_at })),
   prior_memories: memories({ ...scoped, query: topic, limit: 4 })
     .map(m => ({ id: m.id, path: m.path, summary: m.summary?.slice(0, 240) })),
-  evidence: search(topic.replace(/[-_]/g, ' '), { ...scoped, limit: 8 })
+  evidence: search(topic.replace(/[-_]/g, ' '), { ...scoped, limit: 8, fallback: 'or' })
     .filter(h => h.session.id !== self)
     .map(h => ({ session_id: h.session.id, title: h.session.title,
                  uuid: h.message.uuid, ts: h.message.timestamp,
@@ -130,9 +130,9 @@ the tool call still resolves, through the script's text, but took 7 s against
 
 ## Hot schema
 
-Verified against CLI 0.2.6-rc.0's installed schema in an isolated database via
-`pragma_table_info` on 2026-09-15, and against both machines' live indexes on
-2026-10-06. Guessed
+Verified against CLI 0.2.6's installed schema in an isolated database via
+`pragma_table_info` on 2026-10-09; the columns are those of 0.2.6-rc.0, which
+both machines' live indexes matched on 2026-10-06. Guessed
 column names are the top historical failure class — trust this list over
 instinct:
 
@@ -156,7 +156,8 @@ Helpers cover the first pass: `overview()`, `memories({ query })`,
 `{ message: { uuid, text, content_type, is_meta, role, timestamp, cwd },
 session: { id, title, project, is_invoking? }, rank, context }`, already
 FTS5-ranked — trust the returned order. Common opts:
-`{ limit, sessionId, project, after, before, cwd, source }`; on `subagents()`
+`{ limit, sessionId, project, after, before, cwd, source }`, plus `fallback`
+on `search()` (Query rules); on `subagents()`
 the `after`/`before` pair bounds overlap (still-active / already-started), not
 start time. `sql()` is the escalation for exact joins and aggregations.
 
@@ -200,9 +201,14 @@ start time. `sql()` is the escalation for exact joins and aggregations.
 - **Reading an empty:** FTS ANDs every term, so a long topic string is a
   conjunction that quietly returns nothing (one measured sweep: 1 term 30 hits,
   4 terms 0). Sweep with two or three high-signal terms and widen with `OR`.
-  Once the terms are that lean, a scoped empty is an answer — report it plainly
-  and broaden only when asked. When a machine was not reached, name it beside
-  the empty.
+  Once the terms are that lean, a scoped empty is an answer — report it
+  plainly and broaden only when asked. When a machine was not reached, name
+  it beside the empty.
+- **`fallback: 'or'`** does the widening for round 1: only when the AND query
+  returns nothing, it reruns the terms joined by `OR` under the same filters,
+  so its hits match any one term and are weaker evidence. Leave it off where
+  an empty is the answer: a `sessionId`-scoped correlation, an exact phrase,
+  an existence check.
 - Real user input is `role='user' AND content_type='text'`; `thinking` rows are
   trace material, never user-visible conclusions. Two more rows wear the user
   role: context-continuation summaries (`text LIKE 'This session is being
@@ -286,7 +292,8 @@ return remember({
 ## Escalation references
 
 Upstream references can describe features ahead of the installed CLI,
-which indexes Claude, Codex, DeepSeek, Kimi, and Pi, but not OMP. Use their
+which indexes Claude, Codex, Copilot, DeepSeek, Hermes, Kimi, OMP, Pi, and
+ZCode, but not Kiro. Use their
 provider and visibility guidance only when the runtime and corpus support it.
 
 | Read | when |
