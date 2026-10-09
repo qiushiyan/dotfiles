@@ -12,15 +12,16 @@ vim.opt.swapfile = false
 -- always show markdown symbols (backticks, stars, etc)
 vim.opt.conceallevel = 0
 
--- Over SSH to a macOS host (the office mini), y must reach the laptop and p
--- must read what the host's own tools copied, such as `brief start`'s pointer.
--- Copy therefore writes both OSC 52 (the local terminal's clipboard) and the
--- host's pbcopy; paste reads pbpaste, so no OSC 52 read prompt and yy/p still
--- round-trips. LazyVim leaves 'clipboard' empty over SSH, which made p paste
--- a stale shada register instead; unnamedplus matches the laptop. Test SSH
--- the way LazyVim does: a Rex session inherits SSH_CONNECTION from the ssh
--- login that started the server but has no SSH_TTY, so P read an empty register.
-if vim.env.SSH_CONNECTION then
+-- Over SSH to a macOS host (the office mini), and in any Rex pane, y must
+-- reach the screen you are at and p must read what the host's own tools
+-- copied, such as `brief start`'s pointer. Copy therefore writes both OSC 52
+-- (the terminal's clipboard; Rex hands it to the app showing the session) and
+-- the host's pbcopy; paste reads pbpaste, so no OSC 52 read prompt and yy/p
+-- still round-trips. LazyVim leaves 'clipboard' empty whenever SSH_CONNECTION
+-- is set, which made p paste a stale register instead; unnamedplus matches the
+-- laptop. A Rex pane's SSH variables are those of the shell that started its
+-- server, so they cannot decide this there.
+if vim.env.SSH_CONNECTION or vim.env.REX_BLOCK then
   if vim.fn.executable("pbcopy") == 1 then
     local osc52 = require("vim.ui.clipboard.osc52")
     local function copy(reg)

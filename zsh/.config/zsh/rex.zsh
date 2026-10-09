@@ -5,6 +5,11 @@ if [[ -o interactive && -n $REX_BLOCK ]] && (( $+commands[rexd] )); then
   rexd &>/dev/null &!
 fi
 
+# Claude Code does not know TERM_PROGRAM=rex, so it prints URLs as plain text
+# unless told the terminal takes OSC 8 links. On the mini this was set only by
+# accident, by the server's inherited SSH variables (hosts/mini.zsh).
+[[ -n $REX_BLOCK ]] && export FORCE_HYPERLINK=1
+
 # Commands as program status (OSC 7501, id=shell), as agents report theirs: a
 # command shows as working on its tab's badge and the board while it runs; one
 # that ran REX_JOB_MIN seconds or more stays done or error until the next

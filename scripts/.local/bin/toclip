@@ -2,18 +2,21 @@
 # toclip — put text on the clipboard of the machine you are sitting at.
 #
 #   <cmd> | toclip       toclip <text>...       (-q: no report on stderr)
-#   toclip --remote      exit 0 if a copy from here would go to an ssh client's
-#                        terminal, 1 if it would stay on this machine
+#   toclip --remote      exit 0 if a copy from here would go through a terminal
+#                        (an ssh client's, or the Rex app showing this pane),
+#                        1 if it would stay on this machine
 #
 # At a machine's own screen (the laptop, or the mini at its desk or over Screen
 # Sharing) it is pbcopy. In an ssh session to the mini it asks the laptop's
 # terminal to copy, over OSC 52: inside tmux through `load-buffer -w` aimed at
-# the session's ssh client, outside tmux straight at the session's tty. A tmux
-# session can be on both screens at once, and then the client last typed at
-# says which one you are at. The request is fire-and-forget — a terminal that
-# ignores OSC 52 (Terminal.app) drops it — so inside tmux the text also stays
-# as the newest tmux buffer, which `frommini` on the laptop fetches. See
-# docs/qiushi-mini.md § Clipboard and attach.
+# the session's ssh client, outside tmux straight at the session's tty. In a
+# Rex pane it always asks the terminal: Rex hands OSC 52 to the app showing the
+# session, on whichever machine that is. A tmux session can be on both screens
+# at once, and then the client last typed at says which one you are at. The
+# request is fire-and-forget — a terminal that ignores OSC 52 (Terminal.app)
+# drops it — so inside tmux the text also stays as the newest tmux buffer,
+# which `frommini` on the laptop fetches. See docs/qiushi-mini.md § Clipboard
+# and attach.
 set -euo pipefail
 
 # Larger payloads stay in the tmux buffer only: tmux's input-buffer-size is
@@ -25,7 +28,7 @@ case ${1:-} in
   -q) quiet=1; shift ;;
   --remote) query=1; shift ;;
 esac
-case ${1:-} in -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+case ${1:-} in -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
 
 say() { (( quiet )) || printf 'toclip: %s\n' "$*" >&2; }
 die() { printf 'toclip: %s\n' "$*" >&2; exit 1; }
@@ -66,7 +69,7 @@ caller_tty() {
 # Of the session's clients, the one with the newest input decides: the laptop's
 # ssh client can stay attached while you work at the mini's desk, and the
 # keypress that asked for this copy came from the screen you are at.
-remote=0 target= newest=-1
+remote=0 rex=0 target= newest=-1
 if [[ -n ${TMUX:-} ]]; then
   session=$(tmux display-message -p -t "${TMUX_PANE:-}" '#{session_id}')
   while read -r activity pid name; do
@@ -74,6 +77,11 @@ if [[ -n ${TMUX:-} ]]; then
     newest=$activity
     if is_remote "$pid"; then remote=1 target=$name; else remote=0 target=; fi
   done < <(tmux list-clients -t "$session" -F '#{client_activity} #{client_pid} #{client_name}')
+elif [[ -n ${REX_BLOCK:-} ]]; then
+  # A Rex pane's SSH variables are those of the shell that started the server,
+  # and every app stays attached to every session, so neither says where you
+  # are. The terminal's copy reaches you wherever you are.
+  remote=1 rex=1
 elif [[ -n ${SSH_CONNECTION:-} ]]; then
   remote=1
 fi
@@ -102,10 +110,19 @@ if [[ -n ${TMUX:-} ]]; then
     say "sent $size bytes to the laptop terminal ($target); also kept as the newest tmux buffer"
   fi
 elif (( remote )); then
-  (( size <= OSC52_MAX )) || die "$size bytes is too large to send through the terminal"
+  if (( size > OSC52_MAX )); then
+    (( rex )) || die "$size bytes is too large to send through the terminal"
+    local_copy
+    say "$size bytes is too large to send through the terminal; copied to this machine's pasteboard instead"
+    exit 1
+  fi
   tty=$(caller_tty) || die "no terminal to send to"
   printf '\033]52;c;%s\a' "$(base64 < "$payload" | tr -d '\n')" > "$tty"
-  say "sent $size bytes to the laptop terminal"
+  if (( rex )); then
+    say "sent $size bytes to the Rex app showing this pane"
+  else
+    say "sent $size bytes to the laptop terminal"
+  fi
 else
   local_copy
   say "copied $size bytes"

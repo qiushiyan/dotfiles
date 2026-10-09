@@ -5,7 +5,8 @@
 # through toclip instead of opening the mini's Safari; at the mini's own
 # display, or over Screen Sharing, it opens in the mini's browser. toclip
 # --remote decides per URL, because a tmux pane keeps the environment it was
-# created with, whichever client views it now.
+# created with, whichever client views it now. In a Rex pane it always copies:
+# Rex cannot say which screen you are at, and its copy reaches either.
 [ -n "$1" ] || exit 1
 bin=$(dirname "$0")
 "$bin/toclip" --remote && exec "$bin/toclip" -q "$1"

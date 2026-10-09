@@ -11,13 +11,18 @@
 # the laptop's (K5, K11). toclip has to know which machine its pick is on, so
 # it makes the pick itself and names that client to `tmux load-buffer -w`. And
 # a pane keeps the environment it was created with: one made over ssh, viewed
-# now at the mini's own screen, must still open URLs there (K10).
+# now at the mini's own screen, must still open URLs there (K10). A Rex pane
+# carries the SSH variables of whatever shell started the server, with or
+# without them: its copies go through the terminal either way, which Rex hands
+# to the app showing the pane (K15, K17).
 #
 # ISOLATION. tmux runs on a private socket (every toclip call gets $TMUX
 # pointed at it), pbcopy and open are stubs on PATH that record what they were
 # given, and TOCLIP_REMOTE_PIDS decides which clients count as ssh instead of
-# walking the real process tree. K8 asserts the real clipboard was never
-# touched, so a copy made by hand while the suite runs fails it.
+# walking the real process tree. A Rex case runs toclip under script(1), whose
+# pty stands in for the pane's terminal and keeps what was sent to it. K8
+# asserts the real clipboard was never touched, so a copy made by hand while
+# the suite runs fails it.
 
 set -uo pipefail
 
@@ -52,7 +57,7 @@ printf '%s\n' "\$*" >> "$SANDBOX/open.out"
 EOF
 chmod +x "$SANDBOX/bin/pbcopy" "$SANDBOX/bin/open"
 export PATH="$SANDBOX/bin:$PATH"
-unset SSH_CONNECTION SSH_TTY
+unset SSH_CONNECTION SSH_TTY REX_BLOCK
 
 R() { tmux -S "$SOCK" "$@"; }
 
@@ -96,6 +101,9 @@ settle() { R kill-server 2>/dev/null; sleep 0.5; }
 osc52_in() { grep -ac "$(printf '\033')]52;[a-z]*;$(printf %s "$2" | base64)" "$SANDBOX/ts.$1" 2>/dev/null || true; }
 newest_buffer() { R show-buffer 2>/dev/null; }
 pbcopied() { cat "$SANDBOX/pbcopy.out" 2>/dev/null; }
+# rex <name> <cmd...>: run as from a Rex pane, outside tmux, on a pty whose
+# output lands in ts.<name> for osc52_in.
+rex() { local name=$1; shift; ( unset TMUX; REX_BLOCK=block:test script -q "$SANDBOX/ts.$name" "$@" < /dev/null > /dev/null 2>&1 ); }
 opened() { cat "$SANDBOX/open.out" 2>/dev/null; }
 
 CASE=K1; if want; then
@@ -216,6 +224,34 @@ CASE=K14; if want; then
     TOCLIP_REMOTE_PIDS="$remote" B 'https://github.com/o/r/issues/2'
     ok "K14 idle ssh client: opened here" "https://github.com/o/r/issues/2" "$(opened)"
     ok "K14 idle ssh client: nothing copied" "" "$(pbcopied)$(newest_buffer)"
+fi
+
+CASE=K15; if want; then
+    # Whatever SSH variables the server handed the pane, a copy goes through
+    # the terminal, never to this machine's pasteboard.
+    fresh
+    SSH_CONNECTION='10.0.0.1 1 10.0.0.2 22' rex rex-ssh "$TOCLIP" -q 'rex-with-ssh'
+    rex rex-bare "$TOCLIP" -q 'rex-without-ssh'
+    ok "K15 server started over ssh: OSC 52 to the pane" 1 "$(osc52_in rex-ssh rex-with-ssh)"
+    ok "K15 server started locally: OSC 52 to the pane" 1 "$(osc52_in rex-bare rex-without-ssh)"
+    ok "K15 not this machine's pasteboard" "" "$(pbcopied)"
+fi
+
+CASE=K16; if want; then
+    fresh
+    ( unset TMUX; REX_BLOCK=block:test TOCLIP_OSC52_MAX=4 "$TOCLIP" -q 'too-big' )
+    ok "K16 Rex oversize fails" 1 "$?"
+    ok "K16 Rex oversize lands on this machine's pasteboard" "too-big" "$(pbcopied)"
+fi
+
+CASE=K17; if want; then
+    fresh
+    ( unset TMUX; REX_BLOCK=block:test "$TOCLIP" --remote ); ok "K17 Rex, no ssh variables: remote" 0 "$?"
+    ( unset TMUX; REX_BLOCK=block:test SSH_CONNECTION='10.0.0.1 1 10.0.0.2 22' "$TOCLIP" --remote ); ok "K17 Rex, ssh variables: remote" 0 "$?"
+    rex rex-url "$BROWSER_CLIP" 'https://github.com/o/r/pull/3'
+    ok "K17 Rex URL: not opened here" "" "$(opened)"
+    ok "K17 Rex URL: OSC 52 to the pane" 1 "$(osc52_in rex-url https://github.com/o/r/pull/3)"
+    ok "K17 Rex URL: not this machine's pasteboard" "" "$(pbcopied)"
 fi
 
 CASE=K8; if want; then
