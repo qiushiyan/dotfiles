@@ -6,8 +6,8 @@ if [[ -o interactive && -n $REX_BLOCK ]] && (( $+commands[rexd] )); then
 fi
 
 # Claude Code does not know TERM_PROGRAM=rex, so it prints URLs as plain text
-# unless told the terminal takes OSC 8 links. On the mini this was set only by
-# accident, by the server's inherited SSH variables (hosts/mini.zsh).
+# unless told the terminal takes OSC 8 links. .zshenv takes it back out of the
+# shells Claude Code runs its tools in.
 [[ -n $REX_BLOCK ]] && export FORCE_HYPERLINK=1
 
 # Commands as program status (OSC 7501, id=shell), as agents report theirs: a

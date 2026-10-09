@@ -42,6 +42,15 @@ if [[ -r "$HOME/.config/machine" ]]; then
   fi
 fi
 
+# ── No FORCE_HYPERLINK in Claude Code's tool shells ──────────────────────
+# rex.zsh and hosts/mini.zsh set it so Claude Code's own screen draws OSC 8
+# links. Every program that reads it writes them, into a pipe too, and a shell
+# Claude Code runs a tool in (CLAUDECODE) hands that output to the model, which
+# reads the sequences as text. After the host file, so nothing sets it again.
+if [[ -n ${CLAUDECODE-} ]]; then
+  unset FORCE_HYPERLINK
+fi
+
 # ── EQUALS off ────────────────────────────────────────────  docs/zsh.md
 # zsh expands a leading-`=` word to that command's path (`=ls` → /bin/ls),
 # on assignment right-hand sides too (`x==ls`). Nothing here uses it, and it

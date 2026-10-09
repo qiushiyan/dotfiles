@@ -193,6 +193,23 @@ test_unknown_marker_warns_only_interactively() {
   }
 }
 
+# Claude Code draws OSC 8 links on its own screen only when told the terminal
+# takes them: in a Rex pane, or over ssh to the mini. A shell Claude Code runs
+# a tool in must not pass that on, inherited or set again by a module or the
+# host file: every program that reads the variable writes OSC 8 into output
+# the model then reads as text.
+test_hyperlinks_reach_claude_not_its_tools() {
+  sandbox
+  print mini >"$H/.config/machine"
+  local read='print -r -- ${FORCE_HYPERLINK:-unset}'
+  local ssh='SSH_CONNECTION=10.0.0.1 1 10.0.0.2 22'
+  eq "unset" "$(probe -c "$read")" "at the machine's screen" || return 1
+  eq "1" "$(command "${CLEAN_ENV[@]}" REX_BLOCK=block:t zsh -c "$read")" "a Rex pane" || return 1
+  eq "1" "$(command "${CLEAN_ENV[@]}" "$ssh" zsh -c "$read")" "ssh to the mini" || return 1
+  eq "unset" "$(command "${CLEAN_ENV[@]}" REX_BLOCK=block:t "$ssh" CLAUDECODE=1 FORCE_HYPERLINK=1 \
+    zsh -c "$read")" "a Claude Code tool shell in a Rex pane on the mini"
+}
+
 t "throwaway \$HOME holds (else everything below is void)"  test_sandbox_holds
 t "non-interactive startup is silent on a bare machine"    test_noninteractive_startup_is_silent
 t "every module loads, with no allowlist"                  test_every_module_loads
@@ -204,6 +221,7 @@ t "no ~/.config/machine loads no host file"                test_no_marker_loads_
 t "~/.config/machine loads its tracked host file"          test_marker_loads_its_host
 t "the mac's host file is silent and sets no badge"         test_mac_marker_sets_no_badge
 t "an unknown machine warns only interactively"            test_unknown_marker_warns_only_interactively
+t "FORCE_HYPERLINK reaches Claude, not its tool shells"   test_hyperlinks_reach_claude_not_its_tools
 
 rm -rf "${TMPDIR:-/tmp}"/port-test.*(N)
 print -r -- "----"

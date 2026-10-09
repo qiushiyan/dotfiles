@@ -14,13 +14,18 @@
 # now at the mini's own screen, must still open URLs there (K10). A Rex pane
 # carries the SSH variables of whatever shell started the server, with or
 # without them: its copies go through the terminal either way, which Rex hands
-# to the app showing the pane (K15, K17).
+# to the app showing the pane (K15, K17), and nothing lands on this machine's
+# pasteboard, where the app's viewer may not be (K16). A tmux client running in
+# a Rex pane is such a terminal too (K19), and tmux inside Rex still picks the
+# client last typed at (K18).
 #
 # ISOLATION. tmux runs on a private socket (every toclip call gets $TMUX
 # pointed at it), pbcopy and open are stubs on PATH that record what they were
 # given, and TOCLIP_REMOTE_PIDS decides which clients count as ssh instead of
-# walking the real process tree. A Rex case runs toclip under script(1), whose
-# pty stands in for the pane's terminal and keeps what was sent to it. K8
+# walking the real process tree (K19 walks it, under a stand-in Rex server). A
+# Rex case runs toclip under script(1), whose pty stands in for the pane's
+# terminal and keeps what was sent to it, so a misrouted copy lands in the
+# sandbox rather than in the terminal running the suite. K8
 # asserts the real clipboard was never touched, so a copy made by hand while
 # the suite runs fails it.
 
@@ -102,8 +107,28 @@ osc52_in() { grep -ac "$(printf '\033')]52;[a-z]*;$(printf %s "$2" | base64)" "$
 newest_buffer() { R show-buffer 2>/dev/null; }
 pbcopied() { cat "$SANDBOX/pbcopy.out" 2>/dev/null; }
 # rex <name> <cmd...>: run as from a Rex pane, outside tmux, on a pty whose
-# output lands in ts.<name> for osc52_in.
+# output lands in ts.<name> for osc52_in. Returns the command's status.
 rex() { local name=$1; shift; ( unset TMUX; REX_BLOCK=block:test script -q "$SANDBOX/ts.$name" "$@" < /dev/null > /dev/null 2>&1 ); }
+# rex_detached <name> <cmd...>: as rex, but the command has no controlling
+# terminal, as when Claude Code runs $BROWSER for a link click; only its parent
+# holds the pty.
+rex_detached() {
+    local name=$1; shift
+    rex "$name" /bin/sh -c 'perl -MPOSIX -e "setsid() >= 0 or die qq(setsid: \$!\n); exec @ARGV" "$@"; exit $?' sh "$@"
+}
+# attach_rex <name>: attach as attach does, under a stand-in Rex server: a
+# process whose path ends in /rex, as the app's server's does. Prints its pid.
+attach_rex() {
+    mkdir -p "$SANDBOX/Helpers"; ln -sf /bin/bash "$SANDBOX/Helpers/rex"
+    ( "$SANDBOX/Helpers/rex" -c 'script -q "$1" env TERM=xterm-256color tmux -S "$2" attach -t s; :' \
+        rex "$SANDBOX/ts.$1" "$SOCK" < /dev/null > /dev/null 2>&1 & )
+    local i; for i in $(seq 1 30); do
+        sleep 0.1
+        R list-clients -F '#{client_pid} #{client_tty}' | while read -r pid tty; do
+            grep -qx "$tty" "$SANDBOX/ttys" 2>/dev/null || { echo "$tty" >> "$SANDBOX/ttys"; echo "$pid"; }
+        done | grep . && return
+    done
+}
 opened() { cat "$SANDBOX/open.out" 2>/dev/null; }
 
 CASE=K1; if want; then
@@ -231,27 +256,66 @@ CASE=K15; if want; then
     # the terminal, never to this machine's pasteboard.
     fresh
     SSH_CONNECTION='10.0.0.1 1 10.0.0.2 22' rex rex-ssh "$TOCLIP" -q 'rex-with-ssh'
+    ok "K15 server started over ssh: succeeds" 0 "$?"
     rex rex-bare "$TOCLIP" -q 'rex-without-ssh'
+    ok "K15 server started locally: succeeds" 0 "$?"
     ok "K15 server started over ssh: OSC 52 to the pane" 1 "$(osc52_in rex-ssh rex-with-ssh)"
     ok "K15 server started locally: OSC 52 to the pane" 1 "$(osc52_in rex-bare rex-without-ssh)"
     ok "K15 not this machine's pasteboard" "" "$(pbcopied)"
 fi
 
 CASE=K16; if want; then
+    # Too large for the terminal: refused, and said so even under -q, since
+    # the pane's viewer may be on another machine than this pasteboard.
     fresh
-    ( unset TMUX; REX_BLOCK=block:test TOCLIP_OSC52_MAX=4 "$TOCLIP" -q 'too-big' )
+    rex rex-big env TOCLIP_OSC52_MAX=4 "$TOCLIP" -q 'too-big' 2> /dev/null
     ok "K16 Rex oversize fails" 1 "$?"
-    ok "K16 Rex oversize lands on this machine's pasteboard" "too-big" "$(pbcopied)"
+    ok "K16 Rex oversize leaves this machine's pasteboard alone" "" "$(pbcopied)"
+    ok "K16 Rex oversize not emitted" 0 "$(osc52_in rex-big too-big)"
+    ok "K16 Rex oversize names its cause" 1 "$(grep -c 'too large' "$SANDBOX/ts.rex-big")"
 fi
 
 CASE=K17; if want; then
     fresh
     ( unset TMUX; REX_BLOCK=block:test "$TOCLIP" --remote ); ok "K17 Rex, no ssh variables: remote" 0 "$?"
     ( unset TMUX; REX_BLOCK=block:test SSH_CONNECTION='10.0.0.1 1 10.0.0.2 22' "$TOCLIP" --remote ); ok "K17 Rex, ssh variables: remote" 0 "$?"
-    rex rex-url "$BROWSER_CLIP" 'https://github.com/o/r/pull/3'
+    rex_detached rex-url "$BROWSER_CLIP" 'https://github.com/o/r/pull/3'
+    ok "K17 Rex URL from a detached opener: succeeds" 0 "$?"
     ok "K17 Rex URL: not opened here" "" "$(opened)"
     ok "K17 Rex URL: OSC 52 to the pane" 1 "$(osc52_in rex-url https://github.com/o/r/pull/3)"
     ok "K17 Rex URL: not this machine's pasteboard" "" "$(pbcopied)"
+fi
+
+CASE=K18; if want; then
+    # tmux running inside a Rex pane: tmux's clients still decide, the one
+    # typed at last taking the copy, never the Rex pane tmux itself runs in.
+    fresh; : > "$SANDBOX/ttys"
+    local_pid=$(attach local)
+    remote=$(attach remote)
+    in_rex() { rex "$1" env TMUX="$SOCK,$(R display -p '#{pid}'),0" TMUX_PANE=%0 TOCLIP_REMOTE_PIDS="$remote" "$TOCLIP" -q "$2"; }
+    typed "$remote"
+    in_rex rex-tmux1 'to-viewer'
+    ok "K18 tmux in Rex, ssh client typed at: not pbcopy" "" "$(pbcopied)"
+    typed "$local_pid"
+    in_rex rex-tmux2 'at-desk'
+    ok "K18 tmux in Rex, local client typed at: pbcopy" "at-desk" "$(pbcopied)"
+    ok "K18 tmux in Rex: not sent to the Rex pane" 0 "$(( $(osc52_in rex-tmux1 to-viewer) + $(osc52_in rex-tmux2 at-desk) ))"
+    settle
+    ok "K18 tmux in Rex: OSC 52 reaches the ssh client" 1 "$(osc52_in remote to-viewer)"
+fi
+
+CASE=K19; if want; then
+    # A tmux client whose terminal is a Rex pane: its viewer may be on the
+    # other machine, so the copy goes through that client's terminal, as for
+    # an ssh client. The real process tree is walked here.
+    fresh; : > "$SANDBOX/ttys"
+    viewer=$(attach_rex rexclient)
+    typed "$viewer"
+    T -q 'via-rex-client'
+    ok "K19 Rex-hosted client: not this machine's pasteboard" "" "$(pbcopied)"
+    ok "K19 Rex-hosted client: buffer kept" "via-rex-client" "$(newest_buffer)"
+    settle
+    ok "K19 OSC 52 reaches the Rex-hosted client" 1 "$(osc52_in rexclient via-rex-client)"
 fi
 
 CASE=K8; if want; then
