@@ -1,17 +1,15 @@
 # Test-pruning campaign
 
-A campaign prunes one subsystem's whole test surface in one PR: a plugin, a
-service, or one core area. The risk map, retention bar, candidate evidence
-and validation in [SKILL.md](SKILL.md) apply to every lane. This file adds the
-order of work and the lessons of a full campaign, drawn from one that pruned
-a Telegram messaging plugin.
+Campaign mode prunes one subsystem's whole test surface in one PR: a plugin
+such as `extensions/telegram`, or one core area. The value bar, retention bar,
+candidate evidence, and validation in [SKILL.md](SKILL.md) apply to every
+lane. This file adds the order of work and the lessons of a full campaign.
 Each step ends on its completion criterion; do not start the next step early.
 
 ## 1. Baseline
 
 Record the subsystem's test and support line counts and every test file's
-pass/fail state at a pinned `main` SHA, and map its fragile behaviours as
-SKILL.md's step 1 describes. Keep baseline failures in their own
+pass/fail state at a pinned `main` SHA. Keep baseline failures in their own
 list: in the Telegram campaign, all three were real delivery bugs, not stale
 tests.
 
@@ -32,10 +30,17 @@ one lane.
 
 Give each lane to its own read-only agent. The agent reads every assigned test
 in full, including parameter tables. It also reads the production owners and
-their entry points, callers, history, and CI routing. Each test, or each
-table row that needs its own verdict, goes into a written **ledger** with one
-of [SKILL.md](SKILL.md)'s marks and an evidence line. A retained test that
-only moves to a better-named file stays `R`, with the move noted.
+their entry points, callers, history, and CI routing. Each test declaration
+goes into a written **ledger** with one mark. An `it.each` is one declaration
+unless its rows need different marks; then mark each row.
+
+- `R`: retain, naming the contract and the bug it catches; a retained test that
+  only moves to a better-named file stays `R` with the move noted;
+- `F`: retain the contract but repair the assertion, such as a vacuous negative
+  that passes when only one of several items is missing;
+- `C`: consolidate, naming the owner that absorbs the assertion first: a sibling
+  table case, a stronger boundary suite, or the shared owner in another package;
+- `D`: delete, naming the proof that remains, or why no contract exists.
 
 Judge a test by its assertions, not its name. One Telegram test named for
 retiring a progress window asserted the window was _not_ cleared.
@@ -61,7 +66,7 @@ Edit lane by lane. Serialize changes to shared harnesses and support files
 through one owner. With each lane, remove the test-only production seams it
 unlocks: injection parameters, getters, reset exports, and indirection layers.
 Register moved suites in CI routing and test inventories. Update shrink-only
-baselines the project keeps, such as line caps. Put durable test-ownership rules in the subsystem's
+line-cap baselines. Put durable test-ownership rules in the subsystem's
 `AGENTS.md`, drawn from mistakes this campaign actually found.
 
 Done when every lane plan is applied and each lane's keepers pass.

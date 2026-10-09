@@ -1,0 +1,10 @@
+Before upgrading, read docs/skill-customizations.md in the dotfiles repo
+(the test-audit entry). It owns the customization intent and what an update
+must preserve.
+
+Pinned from openclaw/openclaw .agents/skills/test-audit/ @ 80930af448ebabc84174146b56bc106d37fab3b4
+(2026-09-23). Installed 2026-10-01 through the Skills CLI; on 2026-10-09 both
+files here were verified byte-identical to that commit, and the skill left the
+CLI lockfile to become a local adaptation. SKILL.md and CAMPAIGN.md in this
+directory are that pristine upstream copy, kept to diff a future upstream
+against.

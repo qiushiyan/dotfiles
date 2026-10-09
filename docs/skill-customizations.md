@@ -114,6 +114,27 @@ to upstream. The [sync procedure in agent-skills.md](agent-skills.md#the-ruleboo
 owns the review method; the rulebook's
 [evidence log](../claude/.claude/skills/prompt-engineering/EVIDENCE.md) records the fold baseline and each sync's decisions.
 
+## Test audit
+
+**Purpose:** audit tests by the owner's own test philosophy,
+`lessons/.config/lessons/testing/test-quality.md`, in any project. Upstream
+is OpenClaw's skill, written for that repo. The local skill keeps its
+workflow (marks, retention bar, candidate evidence, the campaign) and drops
+its OpenClaw commands and vocabulary. Its patterns that the lesson lacked
+moved into the lesson, which stays the one home for the philosophy;
+strategic-review reads the lesson directly rather than this skill.
+
+**Preserve:** the lesson as the standard, and the risk map as the first
+step. Usage showed fragile wiring left unguarded was the costlier half of
+"tests too literal" (`claude/.claude/skills/strategic-review/EVIDENCE.md`,
+2026-10-09).
+
+**Adopt:** new low-value patterns, retention cases and campaign lessons,
+written into the lesson or this skill's structure. **Leave upstream:**
+OpenClaw scripts, lanes and PR tooling.
+
+Sources: [pin](../claude/.claude/skills/test-audit/.upstream/PINNED.txt).
+
 ## Adding another customization
 
 Before treating another skill as a maintained fork, record its purpose, what

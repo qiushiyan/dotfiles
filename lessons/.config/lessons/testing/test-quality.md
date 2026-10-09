@@ -5,6 +5,7 @@ What earns a place in the suite, and what to do about what doesn't. [tdd-loop.md
 ## The bar
 
 - **Coverage is feedback, not the goal.** A test that cannot fail for a real reason is worse than no test: it costs maintenance, and it makes a green suite lie.
+- **Spend tests on risk.** A suite's effort belongs where breakage is likely and costly: an ordering rule, a bound, an outcome that can collapse to success, a permission check, wiring between processes or packages. A mapping, a label or a one-off change that nothing else depends on can go without a test; wiring you could delete with the suite still green cannot.
 - **Deleting a test is a legitimate outcome of a code review.** So is refusing to add one — review's own **additive bias** is what makes that hard.
 - **One owner per behaviour.** Before adding a test, find where that behaviour already lives. A second test may assert its own *delta* — never re-prove the original.
 - **Assert what a caller depends on.** Bytes of human-facing prose are rarely that; the structure carrying them is.
@@ -110,6 +111,7 @@ Then a new case is a row, and a changed rule touches one table instead of eight 
 2. **Check the branches, not the topic.** Two tests about the same function may cover disjoint arms. Verify the *specific branches* have twins.
 3. **If a deletion turns something red, that's a finding.** Report it. Never patch production code to make a test-removal green — you just deleted the test that was working.
 4. **Never delete a test to make a refactor pass.** A red test during a refactor means the refactor changed behaviour. Fix the refactor.
+5. **Take the seam with it.** An export, flag, getter or injection hook that only tests use goes in the same change, and so does production code whose only callers are tests.
 
 Expect roughly a fifth of any redundancy list to dissolve under this check. That is the check working, not failing.
 
@@ -133,6 +135,8 @@ Then the per-test questions:
 - Can I state the bug it catches in one sentence?
 - Are near-identical tests a table wanting to happen?
 - Does a new test for *added* code assert anything the code doesn't literally say?
+- Does the body exercise what the title claims? A test named for retiring a window that asserts the window was *not* cleared, or a refusal test whose refusal comes from a different guard, passes for an unrelated reason.
+- Does the fixture or a mock supply the very value the test asserts?
 - Am I asking for this test because it catches a bug, or because asking is cheap?
 
 ## Checklist per test
