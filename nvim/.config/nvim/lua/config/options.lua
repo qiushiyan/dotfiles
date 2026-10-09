@@ -17,8 +17,10 @@ vim.opt.conceallevel = 0
 -- Copy therefore writes both OSC 52 (the local terminal's clipboard) and the
 -- host's pbcopy; paste reads pbpaste, so no OSC 52 read prompt and yy/p still
 -- round-trips. LazyVim leaves 'clipboard' empty over SSH, which made p paste
--- a stale shada register instead; unnamedplus matches the laptop.
-if vim.env.SSH_TTY then
+-- a stale shada register instead; unnamedplus matches the laptop. Test SSH
+-- the way LazyVim does: a Rex session inherits SSH_CONNECTION from the ssh
+-- login that started the server but has no SSH_TTY, so P read an empty register.
+if vim.env.SSH_CONNECTION then
   if vim.fn.executable("pbcopy") == 1 then
     local osc52 = require("vim.ui.clipboard.osc52")
     local function copy(reg)
