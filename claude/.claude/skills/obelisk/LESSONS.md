@@ -326,3 +326,39 @@ identity marker is not guaranteed on the first query after a gap: one
 checks. `improve-tool/MINE.md` runs its mining script through `obq` and reads
 each tally per machine: its counts join rows in JS, which holds one machine's
 rows at a time.
+
+## 2026-10-09 — the lessons replayed against their own revisions (session `32b62d52`, dotfiles)
+
+First runtime check of these lessons. `~/dev/skill-evals` (mini only, private)
+ran nine of them as prose cases: each case's request went to `claude -p` with
+the skill at the revision before its fix (red) and at the fix (green). Agent
+Opus 5.5 through OpenRouter, judge `openai/gpt-6-sol`. Fixture: the mini's
+dotfiles-project sessions 2026-09-28 → 10-09, minus the designing session.
+Each run stops after a few obelisk calls, except where the outcome only shows
+in the answer. Reports: `runs/pilot-admit`, `pilot-self`, `pilot-head`,
+`pilot-qp-head`, `ablate-hot-schema` under that repo.
+
+| lesson | red passed | green passed | HEAD passed | reading |
+|---|---|---|---|---|
+| positional params (08-29) | 0 of 3 | 3 of 3 | 3 of 3 | still needed: Opus 5.5 writes `?` + array and hits `Unknown named parameter '0'` |
+| #11–12 per-session query path | 0 of 9 (`9417525`) | 5 of 9 (`0fa660e`) | 9 of 9 | still needed; the 08-24 fix half-held (descriptive names such as `/tmp/obq-screenshare-mini.mjs`), the later rewrites made it hold. One earlier HEAD run named its file with an invented token (`obq-screenshare-k7q2`); the case accepts any token unique to the session, which is what resolution needs |
+| #1 schema guessing | 3 of 3 | 3 of 3 | 8 of 8 | saturated: without the inline schema the model reads `references/schema.md` or probes `pragma_table_info` first |
+| #3 `\| head` | 3 of 3 | 3 of 3 | 3 of 3 | saturated |
+| #10 self-exclusion | 5 of 5 | 5 of 5 | 3 of 3 | saturated: the model recognises and drops its own session unprompted |
+| #13 long FTS conjunction | 3 of 3 | 3 of 3 | 3 of 3 | saturated on this request |
+| correlation (09-15) | 3 of 3 | 3 of 3 | 3 of 3 | saturated: it scopes the second topic to the first topic's sessions unprompted |
+| summaries/briefs as user words (08-29) | 1 of 2 | 3 of 3 | 2 of 2 | weak signal; the red failure was one run quoting unrecognised briefs |
+| #7 memory offer | 3 of 3 | 2 of 3 | 3 of 3 | saturated; the green failure missed the answer session entirely |
+
+Counts are over decided runs; a run the judge could not decide (one each for
+the summaries case at red and HEAD) is left out. Saturated means today's model does not
+make the mistake under the old text either; it does not mean the rule costs
+nothing to delete. The one deletion tested: HEAD without the "Hot schema"
+section passed 5/5 on the column-name case at $0.21 a run against HEAD's
+$0.19, every run spending an extra lookup. The section stays; it now earns
+its place as a saved round, not as error prevention.
+
+Not measured: Codex, other models, requests unlike these nine, and the
+laptop's corpus. The judge agreed with a regex check on 44 of 48 runs where one
+exists; the four disagreements were descriptive query names the regex could
+not see, and the judge was right on each.

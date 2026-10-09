@@ -129,9 +129,46 @@ or say that outcome remains untested. Fix what verification reveals; add a
 broader review when a material question remains. Another review is not a
 substitute for testing the behavior in question.
 
+Where `~/dev/skill-evals` exists (the mini), it replays a skill headless
+against chosen revisions; its README covers cases, fixtures and commands.
+Use it when a finding reproduces within one headless session, from the
+request alone or with one scripted reply. Rollouts send the fixture's session
+content to OpenRouter, for the agent model and the judge, so name that in
+the pass's disclosure.
+
+Before editing, record the commit the skill is at; that sha is the case's
+`red`. Write the finding as a case there: the request, the source session,
+and what passes and what fails, stated as things a transcript shows. Include
+the outcome, so a run cannot pass on process alone. If a case already tests
+the behaviour, tighten it instead; a case that passed the failure you found
+is itself a finding. Then run every case of the tool at both the earlier
+sha and `WORKTREE`, so each case has a baseline to regress from. Set the
+run count from how often the failure shows: a mistake seen in a few live
+sessions a week needs more than three runs to appear. To keep the candidate
+out of live sessions until it passes, edit a copy and pass its directory as
+the revision.
+
+- **Evidence for the edit:** the earlier revision fails the case, the edit
+  passes it, and no case that passed starts failing. Report per-case counts,
+  not a single verdict.
+- **Earlier revision passes too:** the harness did not reproduce the
+  mistake at this run count. Say so rather than claim the edit helped. The
+  rule becomes a deletion candidate when enough runs and the live history
+  both show the model no longer makes the mistake.
+- **Deleting a rule:** run its cases against a copy of the skill without it.
+  Compare cost as well as verdicts, since a rule can stop guarding
+  correctness and still save work.
+- **After a model upgrade:** rerunning a tool's cases at HEAD shows which of
+  its rules the new model still needs.
+
+After committing, set the case's `green` to the commit. Findings that need
+several of the user's turns, or a tool with no fixture, fall back to the
+replay above.
+
 Record this pass in the existing evidence log, beside the instructions if
 there is no engine. Preserve the predicates, receipts, decisions, changes,
-validation limits, and what the next pass should compare. Each improvement
+validation limits, the eval run behind any runtime claim, and what the next
+pass should compare. Each improvement
 needs an observable success measure and a quality condition that would cause
 revision or reversal. Choose a window based on enough comparable uses;
 missing observations are pending evidence, not success.

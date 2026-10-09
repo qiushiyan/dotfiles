@@ -236,3 +236,57 @@ Not verified: no cross-machine pair was built end to end, and no mining pass
 has run through the new block. The next pass compares whether its report
 states the corpus per machine, and whether a writerless pair was checked on
 the other machine before being counted.
+
+## 2026-10-09 — runtime replay through skill-evals (a procedure change, not a mining pass)
+
+Every pass since 2026-09-01 ended its runtime claims with "unproven until
+future uses" or a read-only cold-reader comparison; replay of the seed
+scenario was proposed on 09-01 and never run. `~/dev/skill-evals` (mini only,
+private repo) now replays a skill headless: each case is a prose file (request,
+source session, what passes and fails), each rollout a `claude -p` session
+with the skill at one revision in a throwaway HOME, under a write sandbox,
+billed to OpenRouter, graded by `openai/gpt-6-sol` against the case. SKILL.md's
+verification section now routes reproducible findings through it.
+
+Calibrated on obelisk's own lessons before trusting it (obelisk
+`LESSONS.md`, same date, has the table): two of nine lessons still separate
+the revision before the fix from the fix (positional params 0/3 → 3/3;
+per-session query path 0/9 → 5/9 at the fix → 9/9 today), so the harness can
+see an instruction change land. Six are saturated: Opus 5.5 avoids the
+mistake under the old text too, which is the second use this gives a pass,
+finding rules the current model no longer needs. The judge agreed with a
+regex on 44 of 48 checkable runs and was right on the four disagreements.
+
+Case-design lessons from the pilot, now in the skill-evals README or this
+skill:
+
+- **A check on process passes wrong outcomes.** A memory-offer case passed a
+  run that never found the session holding the answer, because "says nothing
+  durable came out" was an acceptable ending. The case now names the answer
+  session; SKILL.md asks for the outcome in every case.
+- **Stopping before the outcome makes the verdict a coin flip.** Self-exclusion
+  stopped after two obelisk calls read 1/2 then 4/2/3 for the old revision;
+  run to the answer it read 5/0. A case runs at least as far as the step its
+  criteria judge.
+- **The judge is not told what its verdict decides** (prompt-engineering's
+  judge case study): the first judge prompt said a wrong pass "hides a
+  regression"; it was removed and the pilot regraded.
+
+Cost of the whole pilot: about $25 on OpenRouter for 134 rollouts and their
+regrades, a 2-call obelisk rollout costing $0.10–0.25.
+
+One cold reader walked the new section with a concrete obelisk finding
+(descriptive query file names). Adopted from it: "earlier revision passes too"
+now says the harness did not reproduce the mistake at that run count, not that
+the model no longer makes it, since a failure seen a few times a week may not
+show in three runs; a case that already covers the behaviour is tightened, not
+duplicated; every case runs at both the earlier sha and `WORKTREE` so each has
+a baseline; `red` is a sha recorded before editing; and the disclosure names
+OpenRouter. In the harness, a case without `green` now admits against
+`WORKTREE` instead of crashing the run.
+
+Not verified: no improve-tool pass has used the new step yet; that one cold
+reader is the only check of the route. Next pass on a tool
+with cases: did it write the case before editing, run red and `WORKTREE`, and
+report per-case counts; and did it name a saturated rule rather than claim it
+as an improvement.
