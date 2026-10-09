@@ -187,16 +187,21 @@ if git -C "$top" lfs ls-files -l 2>/dev/null | awk '{print $1}' > "$work/oids" &
 fi
 remote apply
 
-# Stage a copy whose cwd fields name the mini's paths, so the mini's session
-# list shows it under the worktree. Only the "cwd" fields are rewritten:
-# thinking blocks carry signatures over their exact text, so message content
-# stays byte-identical and earlier turns still name laptop paths.
-cp "$transcript" "$work/"
-[[ -d $sidecar ]] && cp -R "$sidecar" "$work/"
-find "$work" -name '*.jsonl' -exec env OLD="$HOME" NEW="$rhome" \
-  perl -pi -e 's/"cwd":"\Q$ENV{OLD}\E(?=[\/"])/"cwd":"$ENV{NEW}/g' {} +
+# Stage a copy whose directory fields name the mini's paths, so the mini's
+# session list shows it under the worktree: "cwd" on each turn, and
+# "relocatedCwd", which /cd records and the resume picker files the session
+# by. Only those fields are rewritten: thinking blocks carry signatures over
+# their exact text, so message content stays byte-identical and earlier turns
+# still name laptop paths. The stage is its own dir because all of it is
+# copied into the mini's project dir.
+stage="$work/stage"
+mkdir "$stage"
+cp "$transcript" "$stage/"
+[[ -d $sidecar ]] && cp -R "$sidecar" "$stage/"
+find "$stage" -name '*.jsonl' -exec env OLD="$HOME" NEW="$rhome" \
+  perl -pi -e 's/"(cwd|relocatedCwd)":"\Q$ENV{OLD}\E(?=[\/"])/"$1":"$ENV{NEW}/g' {} +
 ssh "$HOST" "mkdir -p $(printf %q "$rproj")"
-rsync -a "$work/" "$HOST:$rproj/"
+rsync -a "$stage/" "$HOST:$rproj/"
 say "transcript copied"
 
 # The notes are keyed by session id, so they follow the session. The mini's
