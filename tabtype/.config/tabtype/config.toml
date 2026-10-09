@@ -48,7 +48,7 @@ For each, as if briefing a CEO: why it matters now, what it actually means in pl
 [[snippets]]
 key = "consult-codex"
 expand = '''
-Now run consult with codex — I agree with the general direction; settle the high-level design and the implementation tenets. For important decisions you can ask them as open ended questions with my preference. $0'''
+Agreeing with the general direction. Now run consult with astra and opus — I agree with the general direction; settle the high-level design and the implementation tenets. For important decisions you can ask them as open ended questions with my preference. $0'''
 
 [[snippets]]
 key = "consult-then-build"
