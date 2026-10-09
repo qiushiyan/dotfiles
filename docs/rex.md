@@ -11,8 +11,10 @@ This doc carries what the trial learned, so the next agent builds on it
 instead of re-deriving it: how Rex is shaped, where its truth lives, which of
 its protocols carry agent work, how the two machines meet in it, and the
 traps. Each tool under `rex/` explains itself in its header. Everything here
-was established against CLI build `c50b257` and app build 1026, and Rex moves
-fast: re-probe what matters after an update.
+was established against CLI build `c50b257` and app build 1026; app build
+1069 (CLI `7b5bf3e`) added to the API and loads the config without a warning.
+Rex moves fast: re-probe what matters after an update, and restart the server
+first (§ Lessons).
 
 ## Where Rex's truth lives
 
@@ -213,6 +215,15 @@ long-running script; the layout and idle blocks are nearly free.
 
 Each is a trap the Rex environment does not reveal; the guard is named where
 one exists.
+
+- **An app update leaves the old server running on a binary that is gone.**
+  The server starts every terminal through its own executable, so after the
+  bundle is replaced each split and new tab fails (`posix_spawn … no such
+  file or directory` in the server log) while the keys still resolve.
+  `rex server status` shows the old version. Restarting the server fixes it
+  and ends its sessions (§ The model), so do it from outside Rex and on each
+  machine as its app updates. Updates also move the CLI inside the bundle:
+  `rex/.local/bin/rex` puts it on PATH and tries each layout it knows.
 
 - **`rex.call` returns `nil, message`; it never raises.** A call that is not
   checked fails later and elsewhere. `rexkit.api`'s `call` raises on the paths
