@@ -1,3 +1,9 @@
 #!/bin/sh
-# rex: the CLI Rex.app ships inside its bundle, put on PATH.
-exec "/Applications/Rex Beta.app/Contents/Helpers/Rex Server.app/Contents/MacOS/rex" "$@"
+# rex: the CLI Rex.app ships inside its bundle, put on PATH. App build 1069
+# moved it into Rex Server.app; the old path serves a machine not yet updated.
+app="/Applications/Rex Beta.app/Contents/Helpers"
+for cli in "$app/Rex Server.app/Contents/MacOS/rex" "$app/rex"; do
+  [ -x "$cli" ] && exec "$cli" "$@"
+done
+echo "rex: no CLI found in $app" >&2
+exit 127
