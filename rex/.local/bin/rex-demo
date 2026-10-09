@@ -3,7 +3,9 @@
 # work without spending real Claude turns. Each agent works through a few
 # steps, stops for permission (press y in its tab), finishes, and starts over
 # on a key press, publishing every state with rex-agent. The first window runs
-# the agents board; the last runs a real Claude with its steps sidecar.
+# the agents board; the last runs a real Claude with its steps sidecar; the
+# links window before it is the click check for the OSC 8 links Claude Code
+# draws in Rex (rex.zsh's FORCE_HYPERLINK), worth repeating after a Rex update.
 #
 #   rex-demo         create the "agents-demo" session (replacing an old one)
 #   rex-demo stop    remove it
@@ -47,6 +49,25 @@ agent() {
   done
 }
 
+# Claude Code draws a link as OSC 8, its label free to differ from its URL;
+# a terminal that only finds URLs in plain text opens the second line and not
+# the first.
+links() {
+  local k
+  printf '\e]0;links\a'
+  clear
+  printf '\e[1mlinks\e[0m  \e[90mclick check (rex-demo)\e[0m\n\n'
+  printf '  Cmd-click each line: each opens example.com in the browser of the\n'
+  printf '  machine you are looking from.\n\n'
+  printf '  OSC 8, as Claude Code draws links:  \e]8;;%s\e\\%s\e]8;;\e\\\n' \
+    'https://example.com/?rex-demo=osc8' 'this label hides its URL'
+  printf '  plain text, found by the terminal:  %s\n\n' 'https://example.com/?rex-demo=plain'
+  printf '  \e[90mIf only the plain one opens, Rex does not follow OSC 8 links and\n'
+  printf '  Claude Code'"'"'s links in Rex are text (docs/rex.md § Lessons).\e[0m\n\n'
+  printf '  press q to close\n'
+  while read -rsn1 k; do [ "$k" = q ] && break; done
+}
+
 start() {
   "$REX" kill "$SESSION" >/dev/null 2>&1
   local session
@@ -60,6 +81,7 @@ start() {
     "reading the checkout page" "fixing the coupon input" "updating snapshots" >/dev/null
   "$REX" run -s "$SESSION" --focus=false --shell none --label docs -- "$self" agent docs 15 \
     "scanning docs/ for stale links" "rewriting the setup guide" >/dev/null
+  "$REX" run -s "$SESSION" --focus=false --shell none --label links -- "$self" links >/dev/null
   # One real Claude (the x launcher picks the account) in REX_DEMO_DIR, by
   # default this repository, with its claude-steps sidecar beside it. Idle until you type, so it costs nothing on its own.
   local created block
@@ -73,14 +95,16 @@ start() {
   else
     printf 'no claude window: rex run said %s\n' "$created" >&2
   fi
-  printf 'session %s: a board, three simulated agents (api, web, docs), and a\n' "$SESSION"
-  printf 'real Claude with its steps sidecar. Press y in a blocked tab to let that\n'
-  printf 'agent go on; give the Claude a task to watch it report.\n'
+  printf 'session %s: a board, three simulated agents (api, web, docs), a links\n' "$SESSION"
+  printf 'click check, and a real Claude with its steps sidecar. Press y in a\n'
+  printf 'blocked tab to let that agent go on; give the Claude a task to watch it\n'
+  printf 'report; Cmd-click both lines in the links tab.\n'
 }
 
 case "${1:-}" in
   "") start ;;
   stop) "$REX" kill "$SESSION" ;;
   agent) shift; agent "$@" ;;
-  *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+  links) links ;;
+  *) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
