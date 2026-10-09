@@ -92,6 +92,11 @@ excluded. Time Machine thins on its own (hourly for a day, daily for a
 month, weekly until the drive fills, then the oldest weekly goes), so the
 drive never needs pruning.
 
+The hourly backups run while the screen is locked, which on the mini is every
+night. A locked run copies everything except the handful of files macOS keeps
+unreadable until someone unlocks it; the first unlocked run copies those
+first. So the screen lock stays on: what it delays is those files alone.
+
 The drive sits in the office beside the mini: it answers a bad change or a
 dead mini, not a loss of the office. Work on the mini survives that
 only once it is pushed.
@@ -105,7 +110,11 @@ tmutil destinationinfo                       # the destination, on the mini
 tmutil status                                # a backup in progress
 tmutil listbackups                           # backups on the drive (needs Full Disk Access)
 tmutil isexcluded <path>                     # whether a path is backed up
+/usr/bin/log show --last 1d --info --predicate 'subsystem == "com.apple.TimeMachine" AND (eventMessage CONTAINS "Successfully completed" OR eventMessage CONTAINS "Backup failed")'   # each run's outcome
 ```
+
+zsh has a `log` builtin, so the outcome query needs `/usr/bin/log`; a bare
+`log show` fails with "too many arguments".
 
 ## Local snapshots
 

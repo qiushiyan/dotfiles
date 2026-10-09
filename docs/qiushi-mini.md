@@ -54,6 +54,7 @@ into it, because accepting a share needs the admin console.
 | OS | macOS 27.0 (26A425) |
 | power | `pmset -a sleep 0 autorestart 1 womp 1`: never sleeps, restarts after power loss, wake-on-LAN |
 | FileVault | **on**, and not mine to turn off. After an unplanned restart the mini waits at the FileVault unlock screen, and `tailscaled` is down until someone unlocks it in person. For planned reboots, use `sudo fdesetup authrestart`. |
+| updates | macOS updates download on their own and install by hand ("Install macOS updates" is off): an unattended install restarts into the FileVault screen and leaves the mini unreachable until someone is at the desk. Security responses and system data files still install on their own, since they need no restart. |
 
 ## At the desk
 
