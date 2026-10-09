@@ -125,9 +125,9 @@ moved into the lesson, which stays the one home for the philosophy;
 strategic-review reads the lesson directly rather than this skill.
 
 **Preserve:** the lesson as the standard, and the risk map as the first
-step. Usage showed fragile wiring left unguarded was the costlier half of
-"tests too literal" (`claude/.claude/skills/strategic-review/EVIDENCE.md`,
-2026-10-09).
+step: fragile wiring no test guards is the half of "tests too literal" that
+coverage hides, and in graded PlanLab PRs it was the costlier half
+(`claude/.claude/skills/strategic-review/EVIDENCE.md`).
 
 **Adopt:** new low-value patterns, retention cases and campaign lessons,
 written into the lesson or this skill's structure. **Leave upstream:**

@@ -282,8 +282,10 @@ grep -rn "writing-for-agents" --exclude-dir=.git . | grep -v "skills/writing-for
 `~/dev/skill-evals` replays a skill headless against chosen revisions, so an
 instruction change is judged by what agents do with it, not only by cold
 readers of the text. It is a private repository in `twin`, which carries its
-fixtures (copies of real sessions, kept off the remote) between the machines.
-Its README owns cases, fixtures, commands and how to read a report.
+fixtures (copies of real sessions, kept off the remote) between the machines;
+a fixture bound to one machine, such as a repository checkout that borrows that
+machine's git objects, stays in its uncarried `local-fixtures/`. Its README owns
+cases, fixtures, commands and how to read a report.
 
 - **What a case is:** a prose file per lesson or correction, holding the
   request, the session it came from, and what passes and fails in terms a
@@ -300,8 +302,11 @@ Its README owns cases, fixtures, commands and how to read a report.
 - **Isolation:** each run gets a throwaway home and runs under `sandbox-exec`.
   It cannot write outside its own directory, read the cases or the real
   session stores, or reach the other machine, which keeps the `CLAUDE.md`
-  rule on isolating live state. Runs bill the OpenRouter key and send the
-  fixture's sessions to the agent and judge providers.
+  rule on isolating live state. A run bills the subscription through
+  `SKILL_EVAL_OAUTH_TOKEN`, or else the OpenRouter key, and the judge always
+  goes through OpenRouter, so the fixture's content (sessions, or a
+  repository's code) reaches both providers. Why a launcher such as `x -p`
+  cannot stand in: the README's billing note.
 
 Two readings decide what a result means. A case the revision before a fix
 also passes shows only that the harness did not reproduce the mistake at
