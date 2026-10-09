@@ -79,6 +79,22 @@ path = "~/.codex/skills/.system/skill-installer/SKILL.md"
 enabled = false
 
 [[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/built-in-browser/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/chrome-browser/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/computer-use/SKILL.md"
+enabled = false
+
+[[skills.config]]
+path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/deep-research/SKILL.md"
+enabled = false
+
+[[skills.config]]
 path = "~/dotfiles/claude/.claude/skills/synced/1ea5f4ea-2f1c-4a7b-b260-8fa51f268b81_9deddc4e-f050-4bb9-a250-e73b68a278e3/docs/SKILL.md"
 enabled = false
 
