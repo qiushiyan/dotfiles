@@ -5,6 +5,16 @@ rulebook; counts are written so the next pass can re-run them. Passes run
 under `improve-tool`; queries are obelisk scripts over `tool_calls` reads of
 the file and user turns naming it.
 
+## 2026-10-09 — upstream sync: empty delta
+
+`writing-for-agents` remains at folder hash
+`ad2925850efb8973a72d2e666f7a975f9a2d4a9b`, the fold baseline. The global
+Skills CLI 1.7.1 update left it untouched, and a fresh clone of
+`mattpocock/skills` at 49dd158 matches the installed files. Upstream's
+`retro` now always loads it (8267225), which changes no rule here. Nothing
+to graduate or reclassify. The pointer check found only skill-mechanics
+routes and ownership guidance; the rulebook body is unchanged.
+
 ## 2026-09-24 — upstream sync: empty delta
 
 `writing-for-agents` remains at folder hash
