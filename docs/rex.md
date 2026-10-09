@@ -263,9 +263,11 @@ one exists.
 - **Claude Code does not recognise `TERM_PROGRAM=rex`** and prints URLs as
   plain text unless `FORCE_HYPERLINK` says the terminal takes OSC 8 links.
   `rex.zsh` sets it in every Rex shell, and `.zshenv` takes it back out of
-  Claude Code's tool shells (`docs/zsh.md` § Lessons learned). Whether the app
-  makes those links clickable has not been confirmed: the links tab of
-  `rex-demo` is the check, worth repeating after a Rex update.
+  Claude Code's tool shells (`docs/zsh.md` § Lessons learned). The app opens
+  those links on Cmd-click, as it does plain-text URLs: clicked in the mini's
+  app on a mini session, both open in the mini's browser. Which browser opens
+  for a click in one machine's app on the other machine's session is untested.
+  The links tab of `rex-demo` is the check, worth repeating after a Rex update.
 
 ## What the app does not show
 

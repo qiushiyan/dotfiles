@@ -57,8 +57,7 @@ links() {
   printf '\e]0;links\a'
   clear
   printf '\e[1mlinks\e[0m  \e[90mclick check (rex-demo)\e[0m\n\n'
-  printf '  Cmd-click each line: each opens example.com in the browser of the\n'
-  printf '  machine you are looking from.\n\n'
+  printf '  Cmd-click each line: each should open example.com.\n\n'
   printf '  OSC 8, as Claude Code draws links:  \e]8;;%s\e\\%s\e]8;;\e\\\n' \
     'https://example.com/?rex-demo=osc8' 'this label hides its URL'
   printf '  plain text, found by the terminal:  %s\n\n' 'https://example.com/?rex-demo=plain'
