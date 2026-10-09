@@ -18,6 +18,7 @@ flag exists).
 Human output from `gh` is column-formatted. If you want structured data:
 
 - Add `--json field1,field2,...` for structured output.
+- For `gh issue view` and `gh pr view`, use `--json ...,comments` to include comments in structured data; use `--comments` only with the human-readable view.
 - Run a command with `--json` and **no field list** to print the full set of
   available fields, then pick what you need.
 - Use `--jq '<expr>'` for filtering without piping through a separate `jq`.
@@ -126,7 +127,8 @@ blocked-by/blocking relationships.
   of `--body`, `--body-file`, or `--editor`.
 - Uploads require GitHub.com or a GHE.com tenant, an OAuth token, classic PAT,
   or fine-grained PAT, and `WRITE`, `MAINTAIN`, or `ADMIN` repository
-  permission. GitHub Enterprise Server and GitHub App tokens are unsupported.
+  permission. GitHub Enterprise Server and most GitHub App tokens are
+  unsupported.
 - Uploads stop at the first failure. If earlier files uploaded, `gh` still
   writes those attachments and exits non-zero. Create and edit commands also
   print the issue or pull request URL.

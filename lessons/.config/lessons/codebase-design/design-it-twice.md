@@ -32,7 +32,7 @@ Each design gets one constraint, and follows it further than feels comfortable â
 
 Each design states its interface (types, methods, params â€” plus invariants, ordering, error modes), a usage example from the caller's side, what stays hidden behind the seam, its dependency strategy and adapters, and where its leverage is high and where it's thin.
 
-Name things in the project's domain language (`CONTEXT.md`) and the vocabulary of [deep-modules.md](deep-modules.md), so designs stay comparable rather than each inventing its own words.
+Name things in the project's domain language (`GLOSSARY.md`) and the vocabulary of [deep-modules.md](deep-modules.md), so designs stay comparable rather than each inventing its own words.
 
 ## Choosing
 

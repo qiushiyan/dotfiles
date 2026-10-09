@@ -35,7 +35,7 @@ The cure is the **vertical slice**, driven by tracer bullets: one test → one i
 
 ### 1. Planning
 
-When exploring the codebase, read `CONTEXT.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
+When exploring the codebase, read `GLOSSARY.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
 
 Settle these before writing code:
 

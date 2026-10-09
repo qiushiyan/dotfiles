@@ -34,7 +34,7 @@ Use these terms exactly — don't substitute "component," "service," "API," or "
 
 **Locality** — what maintainers get from depth: change, bugs, knowledge, and verification concentrate in one place rather than spreading across callers. Fix once, fixed everywhere.
 
-**Name modules after domain concepts.** Good seams usually already have names in the project's domain language — `CONTEXT.md` is a map to where they belong. If `CONTEXT.md` defines "Order," it's "the Order intake module" — not "the FooBarHandler," and not "the Order service."
+**Name modules after domain concepts.** Good seams usually already have names in the project's domain language — `GLOSSARY.md` is a map to where they belong. If `GLOSSARY.md` defines "Order," it's "the Order intake module" — not "the FooBarHandler," and not "the Order service."
 
 ## Deep vs shallow
 
