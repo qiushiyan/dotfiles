@@ -98,6 +98,16 @@ over that history; the passes themselves are the provenance below.
   the first line where it would guess a flag, path, field, or file. Two
   readers stalling at one line is the first fix; a cut one reader proposes
   that another's sequence relied on is not a cut.
+- **A cold reader checks what the text says; a replay checks what agents
+  do with it.** Run the revision before a fix and the fix on the same
+  request before calling the fix a win or a rule dead weight. Replayed
+  under Opus 5.5, six of obelisk's nine logged mistakes did not recur even
+  under the text written before their fixes. One fix had only half-held
+  when it landed: 5 of 9 runs passed at its commit, 9 of 9 after later
+  rewrites (obelisk `LESSONS.md`, 2026-10-09; the harness is
+  `~/dev/skill-evals`). A replay that passes the old text has not
+  reproduced the mistake at that run count; it has not shown the rule is
+  unneeded.
 - **Leave `allowed-tools` out of a skill.** This machine runs Claude Code
   with permissions bypassed as the standing mode, so an allowlist buys no
   safety; it only narrows what the skill can do, invisibly until a run hits

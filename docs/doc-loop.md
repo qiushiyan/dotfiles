@@ -148,7 +148,10 @@ Both passes defer to `docs/documentation-standards.md`.
 A complaint about a tool the loop runs — `brief`, a skill, obelisk, a
 snippet — is `/improve-tool <tool> [engine] [the complaint]`: a mining pass
 over the sessions that used it, with supported changes made in the owning
-tool and remeasured in later uses. Shared lessons belong in
+tool. A finding that reproduces in one headless session is replayed against
+the revision before the change
+(`docs/agent-skills.md` § Testing a skill by running it); the rest are
+remeasured in later uses. Shared lessons belong in
 `lessons/.config/lessons/agent-tooling/usage-lessons.md`.
 
 ## Principles

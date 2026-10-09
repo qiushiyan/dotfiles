@@ -277,6 +277,40 @@ missed.
 grep -rn "writing-for-agents" --exclude-dir=.git . | grep -v "skills/writing-for-agents/"
 ```
 
+## Testing a skill by running it
+
+`~/dev/skill-evals` replays a skill headless against chosen revisions, so an
+instruction change is judged by what agents do with it, not only by cold
+readers of the text. It is a private repository in `twin`, which carries its
+fixtures (copies of real sessions, kept off the remote) between the machines.
+Its README owns cases, fixtures, commands and how to read a report.
+
+- **What a case is:** a prose file per lesson or correction, holding the
+  request, the session it came from, and what passes and fails in terms a
+  transcript shows. A judge from another model family grades each run.
+- **When it applies:** a finding that one headless session reproduces, from
+  the request alone or with one scripted reply. Work whose value spans
+  several of the user's turns (`review`, `consult`) stays with cold readers
+  and later uses. `improve-tool` routes its runtime claims here; a session
+  outside it reaches the tool by naming it ("run obelisk's skill-evals cases
+  at HEAD").
+- **What it swaps:** the skill's text at a git revision, the working tree, or
+  a directory holding a variant. A CLI's binary is whatever is installed, so
+  the tool tests instructions, never two builds.
+- **Isolation:** each run gets a throwaway home and runs under `sandbox-exec`.
+  It cannot write outside its own directory, read the cases or the real
+  session stores, or reach the other machine, which keeps the `CLAUDE.md`
+  rule on isolating live state. Runs bill the OpenRouter key and send the
+  fixture's sessions to the agent and judge providers.
+
+Two readings decide what a result means. A case the revision before a fix
+also passes shows only that the harness did not reproduce the mistake at
+that run count. A rare failure needs more runs before it reads as a rule
+the current model no longer needs. A case that checks only how the agent
+worked passes runs that got the answer wrong, so every case names its
+outcome. The first replay, over obelisk's own lessons, is in its
+`LESSONS.md`.
+
 ## Bundled skills
 
 Claude owns bundled skill bodies and supporting files. Keep them upstream;
