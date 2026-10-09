@@ -11,8 +11,9 @@ You are auditing a project's tests so that the suite guards what is likely
 to break and stops paying for tests that cannot fail for a real reason. The
 complaint that usually starts an audit is that tests are too literal: they
 restate the code, pin wording, and spend effort where nothing is likely to
-break, while the fragile paths stay thin. Both halves are findings, and the
-second is usually the costlier one.
+break, while the fragile paths stay thin. Both halves are findings, and
+coverage hides the second: a covered line can still be deleted with the
+suite green.
 
 The standard is `~/.config/lessons/testing/test-quality.md`. Read it in
 full before judging anything: it names the low-value shapes, one owner per
@@ -67,11 +68,22 @@ needs a different verdict, one mark:
   stronger boundary suite;
 - `D` delete, naming the proof that remains or why no contract exists.
 
+<example>
+D  files-save-right.test.ts:53 "agrees with the Files routes": compares
+   filesSaveRightOf(...).canSave with canWriteSharepointFiles, which
+   filesSaveRightOf itself calls, so it cannot fail. Owner of the contract:
+   files_save.sharepoint.pg.test.ts:602-680.
+F  commit_files_save.test.ts:216 pins the seven-line receipt byte for byte;
+   any rewording turns it red while the remedy per reason stays unpinned.
+   Assert the tokens a caller reads: the counts, each file's state and path,
+   the link, a remedy line present for each failure.
+</example>
+
 ### Retention bar
 
 Keep a test that independently guards a public API, protocol, storage,
-migration, config, security or platform contract, or a release or package
-contract; call ordering that callers observe; a regression with a credible
+migration, config, security, platform, release or package contract; call
+ordering that callers observe; a regression with a credible
 failure mode; or exact bytes a model or client parses, held in the one place
 the lesson's pin harness describes. Static or slow is not a reason to
 delete. A test that resembles the implementation may still be the only
@@ -110,9 +122,6 @@ as cleanup.
    scratch checkout, and confirm the guard still goes red.
 3. Where a removed test claimed a script, plan or generated output, run the
    thing that owns that contract.
-4. Run the project's formatter on the changed files and `git diff --check`.
-5. Count lines with `git diff --numstat`, production and tooling apart from
-   tests and test support.
 
 Commit, push or open a PR only as the project's rules and the user allow.
 
@@ -125,6 +134,7 @@ found each behaviour already guarded. Then:
 - each test's mark with its evidence line, and the removed and repaired
   categories with counts, including the false positives you kept and why;
 - production simplifications the deletions unlocked, or none;
-- production against test line counts;
+- production and tooling lines against test and test-support lines, from
+  `git diff --numstat`;
 - what you ran and what rests on reading alone;
 - follow-ups, each with the reason it was left.

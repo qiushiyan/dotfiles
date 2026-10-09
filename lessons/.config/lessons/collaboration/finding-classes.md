@@ -48,4 +48,6 @@ and name the shape in a few words so the list can grow from real cases.
 > _Lesson · collaboration. Distilled 2026-10-07 from a classification of
 > 354 findings in 33 PlanLab review rounds (2026-09-24 → 10-06) and two
 > fresh-session PR reviews (`~/dotfiles/claude/.claude/skills/strategic-review/EVIDENCE.md`).
-> The classes are that corpus's own, with `structure` and `other` added._
+> The classes are that corpus's own, with `structure` and `other` added;
+> `low-value-test` came 2026-10-09 from grading the tests three of those PRs
+> added (same evidence log)._

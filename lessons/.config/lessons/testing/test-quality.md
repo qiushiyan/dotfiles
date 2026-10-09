@@ -152,4 +152,4 @@ Then the per-test questions:
 
 ---
 
-> _Lesson · testing. Distilled from a whole-suite audit and consolidation pass (1400+ tests): every low-quality test that had to be removed, classified by why someone wrote it. The recurring cause was never laziness — it was writing a test without asking who already owns the behaviour, or a reviewer asking for one because asking was cheap._
+> _Lesson · testing. Distilled from a whole-suite audit and consolidation pass (1400+ tests): every low-quality test that had to be removed, classified by why someone wrote it. The recurring cause was never laziness — it was writing a test without asking who already owns the behaviour, or a reviewer asking for one because asking was cheap. "Spend tests on risk", the title and fixture questions, and the seam rule came 2026-10-09 from grading three PlanLab PRs' tests by mutation and from OpenClaw's test-audit skill._
