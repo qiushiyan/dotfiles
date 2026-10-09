@@ -237,19 +237,22 @@ why the laptop tmux stays out of it) needs these on top of a default mini:
 - **Clipboard (OSC 52)**: every tmux between a pane and Ghostty must run
   `set-clipboard on`, because `external` drops OSC 52 sent from panes; the
   shared `tmux.conf` sets it. tmux forwards it only to a client that is
-  showing the pane. Over SSH, nvim's `y` copies to both the laptop (OSC 52)
-  and the mini's pasteboard, and `p` reads what mini tools copied, such as
-  `brief start`'s pointer, without an OSC 52 read prompt (`options.lua`).
+  showing the pane. Over SSH, and in any Rex pane, nvim's `y` copies to both
+  the screen you are at (OSC 52) and the mini's pasteboard, and `p` reads what
+  mini tools copied, such as `brief start`'s pointer, without an OSC 52 read
+  prompt (`options.lua`, pinned by `nvim/.config/nvim/tests/test-clipboard.sh`).
 - **Links**: open them with **Cmd+Shift+click**. Ghostty opens OSC 8 links
   on Cmd-click, and Shift bypasses tmux's mouse capture. sshd doesn't forward
   `TERM_PROGRAM`, so `hosts/mini.zsh` sets `FORCE_HYPERLINK=1` for SSH sessions;
-  without it Claude Code prints plain-text URLs.
+  without it Claude Code prints plain-text URLs. The shells Claude Code runs
+  its tools in drop it again (`docs/zsh.md` § Lessons learned).
 - **Ctrl-click in Claude Code** is its own click handler, which runs
   `$BROWSER` (else `open`) on the host, the mini, as `gh --web` and `gopen`
   do. `hosts/mini.zsh` sets `BROWSER=~/.local/bin/browser-clip` in every
   shell, and the shim asks `toclip` per URL: when the pane's session was last
   typed at over ssh the URL goes to the laptop clipboard instead of the mini's
-  Safari, otherwise it opens on the mini (§ Clipboard and attach). A check at
+  Safari, otherwise it opens on the mini (§ Clipboard and attach); in a Rex
+  pane it always copies (`docs/rex.md` § Lessons). A check at
   shell start goes stale: a pane keeps the environment it was created with,
   and tmux gives new panes the environment of the shell that started the
   server, so after a server started over ssh every pane would send URLs away
@@ -284,16 +287,23 @@ purpose:
 - **OSC 52 is fire-and-forget.** A terminal that ignores it, such as macOS
   Terminal.app, drops the copy without an error. The text still sits in the
   mini tmux's newest buffer, so `frommini` recovers it.
-- **`toclip` follows the keypress.** A session can be on both screens at
-  once, the laptop's ssh client and the mini's own Ghostty, so the session's
-  most recently active client decides: an ssh client gets the copy over
-  OSC 52, a local one means the mini's pasteboard. The keypress that asks for
-  a copy is that client's newest input. An attached ssh client alone decides
-  nothing, because the laptop's stays attached, idle, while I work at the
-  desk, and it would take every copy made there. A copy no keypress asked
-  for, such as a URL an agent opens on its own, goes to the screen last typed
-  at. An oversize payload stays in the tmux buffer for `frommini`
-  (`scripts/.local/bin/toclip`, pinned by `test-toclip.sh`).
+- **`toclip` follows the keypress.** A session can be on both screens at once,
+  the laptop's ssh client and the mini's own Ghostty, so the session's most
+  recently active client decides: an ssh client, or a tmux client running in a
+  Rex pane, gets the copy over OSC 52, a local one means the mini's
+  pasteboard. The keypress that asks for a copy is that client's newest input.
+  An attached ssh client alone decides nothing, because the laptop's stays
+  attached, idle, while I work at the desk, and it would take every copy made
+  there. A copy no keypress asked for, such as a URL an agent opens on its
+  own, goes to the screen last typed at. An oversize payload stays in the tmux
+  buffer for `frommini` (`scripts/.local/bin/toclip`, pinned by
+  `test-toclip.sh`).
+- **In a Rex pane, `toclip` always copies through the terminal.** Rex hands
+  OSC 52 to the app showing the session, on whichever machine it runs, and
+  nothing in Rex says which screen that is (`docs/rex.md`). Rex keeps no
+  buffer for `frommini`, so a copy too large for OSC 52 is refused with its
+  cause instead of landing on the mini's pasteboard, where `brief start`'s
+  pointer may be waiting.
 - **Images:** a screenshot sent with `tomini` becomes the mini's pasteboard
   image, which Claude Code there pastes with Ctrl+V; `tomini` prints the path
   of its file copy. `scripts/.local/share/dotfiles/pasteboard` owns the

@@ -93,8 +93,11 @@ any notes kept here:
   reserved for a later Rex. Anything always-on is therefore a long-running
   script, and a detached block (owned by a session, placed in no layout, shown
   nowhere) is the place to host one.
-- **Every terminal knows where it is:** `REX_SESSION`, `REX_BLOCK`,
-  `REX_SERVER` and `TERM_PROGRAM=rex`, as `$TMUX_PANE` does in tmux.
+- **Every terminal knows where it is, not who is looking at it:**
+  `REX_SESSION`, `REX_BLOCK`, `REX_SERVER` and `TERM_PROGRAM=rex`, as
+  `$TMUX_PANE` does in tmux. Both machines' apps stay attached to both
+  servers' sessions and no client reports its input, so nothing in Rex says
+  which screen the person is at; tmux's `client_activity` has no counterpart.
 
 ## Protocols that carry agent work
 
@@ -119,6 +122,11 @@ agents; a new integration should reach for them first.
 - **The clipboard, OSC 52.** Written to a terminal, it becomes a
   `clipboard_written` event and the app showing that session copies it: the
   clipboard of the machine you are looking from, with no ssh-aware routing.
+  Since a pane cannot say where you are, the shared copy tools send it this
+  way in every Rex pane: `toclip` (so `browser-clip` copies a URL rather than
+  open it on the host), Neovim's `y`, which also writes the host's pasteboard
+  so `p` round-trips, and tmux's `load-buffer -w` for a tmux client running in
+  a Rex pane. `docs/qiushi-mini.md` § Clipboard and attach owns the routing.
 - **The foreground process and its cwd** come from the OS through the
   `process` block method, right while nvim or Claude runs: tmux's
   `pane_current_path`.
@@ -242,6 +250,21 @@ one exists.
   Claude with the `x` launchers or an explicit `CLAUDE_CONFIG_DIR`.
 - **Claude reports SessionStart before it writes its sessions file,** so a
   lookup made on that first report retries for a moment.
+- **A pane's SSH variables are the server's, not the viewer's.** A pane
+  inherits the server's environment, so `SSH_CONNECTION` is whatever the
+  shell that started the server had: a long-closed ssh login, or nothing when
+  the app starts it. A tool that reads it to decide where you are decides by
+  how the server last started. Guard: `toclip` and Neovim's clipboard gate
+  test `REX_BLOCK` and copy through the terminal (§ Protocols that carry agent
+  work), pinned by `scripts/.local/share/dotfiles/tests/test-toclip.sh` and
+  `nvim/.config/nvim/tests/test-clipboard.sh`. headroom's `login` reads
+  `SSH_CONNECTION` unguarded, so in a mini pane on a server started over ssh it
+  treats you as remote.
+- **Claude Code does not recognise `TERM_PROGRAM=rex`** and prints URLs as
+  plain text unless `FORCE_HYPERLINK` says the terminal takes OSC 8 links.
+  `rex.zsh` sets it in every Rex shell, and `.zshenv` takes it back out of
+  Claude Code's tool shells (`docs/zsh.md` § Lessons learned). Whether the app
+  makes those links clickable has not been confirmed.
 
 ## What the app does not show
 
@@ -321,8 +344,10 @@ It reaches into other packages, which is where a change to them can break it:
 the Claude hooks in `claude/.claude/settings.json` (each guarded by
 `$REX_BLOCK`, so a no-op outside Rex), step 6 of
 `scripts/.local/bin/theme-set`, `zsh/.config/zsh/rex.zsh`, the yank-path block
-in `nvim/.config/nvim/lua/config/autocmds.lua`, and `~/.config/rex` as a real
-directory (`docs/stow-layout.md`).
+in `nvim/.config/nvim/lua/config/autocmds.lua`, the clipboard gate in
+`nvim/.config/nvim/lua/config/options.lua`, the Rex route in
+`scripts/.local/bin/toclip`, and `~/.config/rex` as a real directory
+(`docs/stow-layout.md`).
 
 ## Keys
 

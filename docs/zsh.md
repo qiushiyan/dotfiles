@@ -13,7 +13,9 @@ different kind of shell:
   mosh-server would otherwise miss it), forces a UTF-8 locale for the same
   reason, sources `toolchain.zsh`, then sources every other
   `~/.config/zsh/*.zsh` so functions and aliases exist everywhere, then this
-  machine's host file (§ Machines), then global options such as `EQUALS` off.
+  machine's host file (§ Machines), then takes `FORCE_HYPERLINK` out of the
+  shells Claude Code runs its tools in and sets global options such as
+  `EQUALS` off.
   It must end with status 0 (§ Lessons learned).
 - **`.zprofile`** — login shells only. Homebrew + OrbStack `shellenv`.
 - **`.zshrc`** — interactive shells only. oh-my-zsh, syntax highlighting,
@@ -232,6 +234,13 @@ Read before editing.
   bash-flavoured `echo ====` aborts the rest of the eval'd line. A script
   that wants the default back uses `emulate zsh` or `zsh -f`. Pinned by
   `zsh/.config/zsh/tests/startup-options.test.zsh`.
+- **`FORCE_HYPERLINK` is for Claude Code's own screen.** `rex.zsh` and the
+  mini's host file set it where Claude Code cannot tell that the terminal takes
+  OSC 8 links. Every other program that reads it writes links into pipes too,
+  and Claude Code hands a tool's output to the model with the escape byte
+  stripped, as `]8;;url\label` text. `.zshenv` unsets it in any shell with
+  `CLAUDECODE` set, after the host file so nothing sets it again. Pinned by
+  `zsh/.config/zsh/tests/portability.test.zsh`.
 - **Measure, don't guess.** Profile with `zmodload zsh/zprof`; verify a perf
   change with an _interleaved_ A/B benchmark (`git stash` the change, time both
   back-to-back, repeat) — not before/after numbers taken minutes apart.
