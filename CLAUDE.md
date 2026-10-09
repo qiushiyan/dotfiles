@@ -123,3 +123,24 @@ Additional routes beyond the feature docs above:
 - The personal Slack toolkit: the `slack` skill is `~/dev/slackkit`'s,
   linked here; its design is that repo's `docs/`.
 
+## Cursor Cloud specific instructions
+
+Cloud Agents check this repository out at `/workspace`. `make install` invokes
+`stow` with its default target, the parent of the checkout, so that command
+links packages into `/`. Create the Makefile's real directories first
+(`~/.claude`, `~/.codex`, `~/.agents`, `~/.config/lazygit`, `~/.config/rex`),
+then stow with an explicit target:
+
+```bash
+stow -d /workspace -t "$HOME" $(make -s list | tr -d '/')
+```
+
+With `~/.config/machine` absent, `make list` includes neither launchd package.
+Run suites from a scratch directory (`docs/testing.md`). The image has `stow`,
+`zsh`, `tmux`, `fzf`, `jq`, `zoxide`, `oh-my-posh` on `/usr/bin` (the path
+`portability.test.zsh` searches), and `uv` on `/usr/local/bin` for
+`skill-sync`. `portability.test.zsh` starts interactive shells with BSD
+`script(1)`; Ubuntu's `script` rejects that command line.
+`theme-sync.test.zsh` applies each theme name through `env … command zsh`,
+and `command` is a shell builtin on this image.
+
