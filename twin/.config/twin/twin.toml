@@ -167,6 +167,13 @@ url = "https://github.com/qiushiyan/mailkit.git"
 path = "~/dev/raycast-tab-utils"
 url = "https://github.com/qiushiyan/raycast-tab-utils.git"
 
+# fixtures/ holds copies of session transcripts the evals search; they stay
+# off the remote and travel between the machines only through twin.
+[repos.skill-evals]
+path = "~/dev/skill-evals"
+url = "https://github.com/qiushiyan/skill-evals.git"
+carry = ["fixtures"]
+
 [repos.slackkit]
 path = "~/dev/slackkit"
 url = "https://github.com/qiushiyan/slackkit.git"

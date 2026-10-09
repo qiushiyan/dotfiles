@@ -241,8 +241,8 @@ the other machine before being counted.
 
 Every pass since 2026-09-01 ended its runtime claims with "unproven until
 future uses" or a read-only cold-reader comparison; replay of the seed
-scenario was proposed on 09-01 and never run. `~/dev/skill-evals` (mini only,
-private repo) now replays a skill headless: each case is a prose file (request,
+scenario was proposed on 09-01 and never run. `~/dev/skill-evals` (a private
+repo, registered in twin with its fixtures carried) now replays a skill headless: each case is a prose file (request,
 source session, what passes and fails), each rollout a `claude -p` session
 with the skill at one revision in a throwaway HOME, under a write sandbox,
 billed to OpenRouter, graded by `openai/gpt-6-sol` against the case. SKILL.md's

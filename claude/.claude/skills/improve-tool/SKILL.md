@@ -129,7 +129,7 @@ or say that outcome remains untested. Fix what verification reveals; add a
 broader review when a material question remains. Another review is not a
 substitute for testing the behavior in question.
 
-Where `~/dev/skill-evals` exists (the mini), it replays a skill headless
+`~/dev/skill-evals` (a private repo on both machines, through twin) replays a skill headless
 against chosen revisions; its README covers cases, fixtures and commands.
 Use it when a finding reproduces within one headless session, from the
 request alone or with one scripted reply. Rollouts send the fixture's session
