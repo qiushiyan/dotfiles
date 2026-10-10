@@ -154,24 +154,33 @@ checks that an inherited `FPATH` changes nothing and does not leak.
 
 ## Copying a command and its output
 
-`cout [N]` and tmux `prefix o` copy a completed command and its terminal output
-to the clipboard of the machine you sit at, through `toclip` when it is
-installed (over SSH to the mini, the laptop's; `docs/qiushi-mini.md`
-§ Clipboard and attach), else `pbcopy`; `cout --print N` writes the same text
-to stdout for agents. Usage belongs to `tmux/.config/tmux/workflow.md`
-§ Reading back & copying output (copy mode).
+`cout [N]`, in a tmux pane or a Rex block, and tmux `prefix o` copy a
+completed command and its terminal output to the clipboard of the machine you
+sit at, through `toclip` when it is installed (over SSH to the mini, the
+laptop's; in a Rex block, that of the machine whose app shows it;
+`docs/qiushi-mini.md` § Clipboard and attach), else `pbcopy`; `cout --print N` writes the same text
+to stdout for agents, and `--pane` takes a tmux pane (`%3`) or a block
+(`block:<uuid>`). Usage belongs to `tmux/.config/tmux/workflow.md`
+§ Reading back & copying output (copy mode); Rex has no copy key yet
+(`docs/rex.md` § Open questions).
 
 The engine is the `cout` CLI (`~/dev/cout`, built into `~/.local/bin` on each
-machine). Its README owns the pane's `pipe-pane`
-recorder, the marker protocol, completed records and indexes, retention and
-its limits, and replay.
+machine). Its README owns the pane's recorder (tmux's `pipe-pane`, or for a
+block a detached recorder on Rex's data stream), the marker protocol,
+completed records and indexes, retention and its limits, and replay.
 
 `zsh/.config/zsh/cout.zsh` owns execution boundaries and shell identity:
 `preexec` saves the exact command text and the working directory, then marks
 the start, `precmd`/`zshexit` mark the end, and `zsh/.zshrc` registers these
 hooks after Oh My Posh consumes the exit status. Standalone copies and empty
-or cancelled prompts create no record. The `precmd` also carries the prompt's
-tmux round trip (`tmux/.config/tmux/scripts/context-chip.md` § Ownership).
+or cancelled prompts create no record. The hooks record the Rex block when
+`TERM_PROGRAM` is `rex`, else the tmux pane, since each multiplexer sets it
+for its own children while the other's variables can be inherited. A shell
+publishes whether it is at a prompt, and its latest command, as tmux pane
+options, or in a block as the store's `state` file, renamed into place with
+zsh/files' `zf_mv` (loaded alone, so the user's `mv` stays the command). In
+tmux the `precmd` also carries the prompt's tmux round trip
+(`tmux/.config/tmux/scripts/context-chip.md` § Ownership).
 
 Every active execution receives output, so a parent `zsh` or `ssh` record
 contains the nested interaction; a local child shell has its own index, and
@@ -187,12 +196,13 @@ clipboard unchanged.
 Recordings live under `${XDG_CACHE_HOME:-~/.cache}/cout` (700/600); oldest
 records expire first. Leave cleanup to the recorder: deleting an active cache
 interrupts recording and prompts for a reload, and setup refuses to replace
-another logger.
+another tmux logger.
 
 `zshreload` picks up changed shell hooks but reuses the pane's live recorder,
-so a new `cout` build or changed retention needs a new pane. After a recorder
-failure, reload the shell and run a new command to resume capture; earlier
-output is gone. The isolated suite is in `docs/testing.md`.
+so a new `cout` build or changed retention needs a new pane or block. After a
+recorder failure, reload the shell and run a new command to resume capture;
+earlier output is gone. The isolated suites, tmux and Rex, are in
+`docs/testing.md`.
 
 ## Lessons learned
 

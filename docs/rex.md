@@ -141,6 +141,17 @@ agents; a new integration should reach for them first.
   CSS variables) or VT from the `format` block method, as long as it fits one
   control reply (§ Lessons); `plain` returns nothing. The URL picker and the
   pane export read it.
+- **A block's raw bytes** come from the data protocol (`/api/data`,
+  `rex.data.terminal.v1`): a ticket from `data.connect` on a control
+  connection attached to the session, then HELLO (`0x01` and the ticket's 16
+  bytes) and a WELCOME whose first byte is `0x81`. The stream opens with a
+  binary snapshot of the terminal (libghostty's `GHOSTSNP`), then carries
+  the terminal's bytes verbatim, with Rex's own events in band as `ESC _
+  rex1 ; <stream> ; <json> ESC \` (`resize`, `child_exited`); a closed
+  block ends it with close code 4000. `rex attach` is the CLI's own data
+  client, the one to watch when re-probing. `cout` records blocks this way
+  (`~/dev/cout` README § Recording a Rex block; its `internal/rex` keeps the
+  rest of what probing found).
 - **A block's Claude session** needs no plumbing: the status record names the
   Claude process that reported, and Claude writes
   `<config dir>/sessions/<pid>.json` with its session id and directory, which
@@ -210,6 +221,9 @@ long-running script; the layout and idle blocks are nearly free.
   makes the lab's scripts together outweigh the server they serve; a new
   always-on script is weighed against that.
 - **The app** sat near 340 MB, a third of it the GPU surfaces it draws into.
+- **`cout` keeps a recorder per recorded block,** a Go process of about
+  5 MB holding a control and a data connection to the server, and ending
+  with the block.
 
 ## Lessons
 
@@ -284,12 +298,23 @@ one exists.
   larger result, such as `format` on a long scrollback, is a `too_large`
   error, reached by the HTML long before the text; a full scrollback can be
   several times the limit even as text. `rex block stream` is not
-  implemented in the CLI, so a script has no other way to read it. Guard:
+  implemented in the CLI, and the data protocol carries the scrollback only
+  inside its binary snapshot (§ Protocols that carry agent work), so a
+  script has no other way to read it as text. Guard:
   `rex-urls` and `rex-export` keep the call's error and say why a pane gave
   nothing, the export falling back to plain text first, and the
   `export_pane` action raises the reason; clearing the pane (prefix `C-k`)
   makes it readable again. Pulling a reply near the limit briefly inflates
   the server by a few hundred MB.
+- **A data stream lasts only as long as the control connection that asked
+  for its ticket:** closing that connection cancels the stream (close code
+  1001). A reader keeps both open and drains the control side's session
+  events, or they back up until the server closes it (`cout`'s
+  `internal/rex`).
+- **A server started with `rex server run` leaves `REX_SERVER` unset in its
+  blocks,** where the live server sets it. A tool that finds its server from
+  a block falls back to `~/Library/Application Support/rex/server.sock`, as
+  the `rex` CLI does (`cout setup`).
 - **`rex run --wait` prints no creation result when its output is not a
   terminal.** A caller finds the block by its label (`rex-run`).
 - **The app owns the colours.** It pushes its theme to every terminal on the
@@ -436,6 +461,15 @@ every binding. The shape:
   the app or launchd brings the mini's server back after a reboot is untested.
 - **Comparison with tmux:** which workflows feel better in each, as sessions
   move to Rex during the trial.
+- **Copying a command from Rex:** `cout` records and copies in blocks, but
+  no key copies the latest command as tmux's `prefix o` does (`prefix o` is
+  free in `lab/keys.lua`). An action would run `cout --print --pane
+  <block>` and hand the text to `rexkit.host.copy`, raising cout's stderr on
+  a non-zero exit. On another host's session, `host.run_there` reads a
+  hidden block's screen back, which trims trailing spaces and stops at the
+  1 MiB reply, so the text would travel base64-encoded and fail loudly past
+  that size. Also untested: a copy from a mini block in the laptop's app,
+  which `toclip`'s OSC 52 should deliver to the laptop.
 - **Hosts in config:** init.lua could declare the mini with `rex.host`, so
   the server's host list is reproducible rather than stored by `rex hosts
   add`; a declared host whose label a stored one already uses is left out,
