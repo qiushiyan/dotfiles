@@ -263,6 +263,19 @@ class CoutRexTest(unittest.TestCase):
         self.assertEqual(self.capture(), self.fenced("$ print recovered\nrecovered\n"))
         self.assertFalse(store.exists())
 
+    def test_recorder_fault_is_reported_with_its_reason(self):
+        self.execute("print retained")
+        store = self.store()
+        pid = json.loads((store / "recorder.json").read_text())["pid"]
+        self.execute("_cout_mark invalid")
+        self.wait(lambda: subprocess.run(["kill", "-0", str(pid)], capture_output=True).returncode != 0)
+        self.assertIn('recorder stopped: invalid recorder marker "invalid"; run zshreload',
+                      self.capture(success=False))
+        self.execute("exec zsh")
+        self.execute("print recovered")
+        self.assertEqual(self.capture(), self.fenced("$ print recovered\nrecovered\n"))
+        self.assertFalse(store.exists())
+
     def test_state_is_replaced_whole_and_mv_stays_the_users(self):
         self.execute("print one")
         state = self.store() / "state"

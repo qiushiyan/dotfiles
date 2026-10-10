@@ -299,7 +299,9 @@ class CoutTest(unittest.TestCase):
         self.execute("_cout_mark invalid")
         self.wait(lambda: self.tmux("display-message", "-p", "-t", self.pane, "#{pane_pipe}").strip() == "0")
         self.assertEqual((store / f"{identity}.raw").read_bytes(), saved)
-        self.assertIn("recorder stopped; run zshreload", self.capture(success=False))
+        # The recorder kept why it stopped, and the copy says so.
+        self.assertIn('recorder stopped: invalid recorder marker "invalid"; run zshreload',
+                      self.capture(success=False))
         self.execute("exec zsh")
         self.execute("print recovered")
         self.assertEqual(self.capture(), self.fenced("$ print recovered\nrecovered\n"))
