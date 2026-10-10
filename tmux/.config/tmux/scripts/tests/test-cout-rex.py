@@ -48,7 +48,8 @@ class CoutRexTest(unittest.TestCase):
         clipboard.chmod(0o700)
         # Records where toclip was aimed from: in Rex, the block it runs in.
         toclip = bin_dir / "toclip"
-        toclip.write_text('#!/bin/sh\nprintf "%s|%s" "$REX_BLOCK" "$TMUX_PANE" > "$HOME/toclip-from"\nexec pbcopy\n')
+        toclip.write_text('#!/bin/sh\nprintf "%s|%s|%s" "$REX_BLOCK" "$TMUX" "$TMUX_PANE" > "$HOME/toclip-from"\n'
+                          'exec pbcopy\n')
         toclip.chmod(0o700)
         (bin_dir / "cout").symlink_to(Path(COUT).resolve())
         # Rex starts a block with the server's bare system PATH; the rc file
@@ -159,9 +160,22 @@ class CoutRexTest(unittest.TestCase):
         # cout in the block's own shell finds the block without --pane.
         self.execute("cout")
         self.assertEqual((self.home / "clipboard").read_text(), expected)
-        self.assertEqual((self.home / "toclip-from").read_text(), self.block + "|")
+        self.assertEqual((self.home / "toclip-from").read_text(), self.block + "||")
         self.assertIn('Copied "printf', self.screen())
         self.assertEqual(self.capture(), expected)
+
+    def test_a_rex_server_started_from_tmux_still_records_and_copies_in_rex(self):
+        # Blocks of such a server inherit TMUX and TMUX_PANE, which toclip
+        # would follow to that tmux session instead of the Rex app.
+        self.execute("print before")
+        store = self.store()
+        self.execute(f"export TMUX={self.home}/no-tmux,1,0 TMUX_PANE=%99")
+        self.execute("exec zsh")
+        self.execute("print inside")
+        self.assertEqual(self.store(), store)
+        self.execute("cout")
+        self.assertEqual((self.home / "clipboard").read_text(), self.fenced("$ print inside\ninside\n"))
+        self.assertEqual((self.home / "toclip-from").read_text(), self.block + "||")
 
     def test_indexed_history_skips_copies_and_empty_prompts(self):
         self.execute("print first")
@@ -232,14 +246,51 @@ class CoutRexTest(unittest.TestCase):
         self.execute("print retained")
         store = self.store()
         pid = json.loads((store / "recorder.json").read_text())["pid"]
+        # Killed while a command runs: the stopped recorder, not the running
+        # command, is what the copy reports.
+        self.send("sleep 30\r")
+        self.wait(lambda: self.state()[0] == "0")
         os.kill(pid, signal.SIGKILL)
         started = time.monotonic()
         self.assertIn("recorder stopped; run zshreload", self.capture(success=False))
         self.assertLess(time.monotonic() - started, 2)
+        generation = self.generation()
+        self.send("\x03")
+        self.wait(lambda: self.generation() != generation)
+        self.assertIn("recorder stopped; run zshreload", self.capture(success=False))
         self.execute("exec zsh")
         self.execute("print recovered")
         self.assertEqual(self.capture(), self.fenced("$ print recovered\nrecovered\n"))
         self.assertFalse(store.exists())
+
+    def test_state_is_replaced_whole_and_mv_stays_the_users(self):
+        self.execute("print one")
+        state = self.store() / "state"
+        # A link to the published file keeps its content only if the next
+        # publication replaces the file rather than rewriting it in place,
+        # which a copy reading at that moment could see half done.
+        kept = self.home / "state-then"
+        os.link(state, kept)
+        published = kept.read_text()
+        self.execute("print two")
+        self.assertEqual(kept.read_text(), published)
+        self.assertNotEqual(state.read_text(), published)
+        # Publishing loads zsh/files' zf_mv alone; the user's mv is untouched.
+        self.execute(f"whence -w mv > {self.home}/mv-kind")
+        self.assertEqual((self.home / "mv-kind").read_text().strip(), "mv: command")
+
+    def test_recording_limits_reach_a_block_recorder(self):
+        # Limits belong to the recorder, so they apply to the next one setup
+        # starts: here, after this one is killed and the shell reloads.
+        self.execute("export COUT_LIMITS=1024,4096,3")
+        os.kill(json.loads((self.store() / "recorder.json").read_text())["pid"], signal.SIGKILL)
+        self.execute("exec zsh")
+        for number in range(4):
+            self.execute(f"print short-{number}")
+        self.assertIn("short-1", self.capture(index=3))
+        self.assertIn("unavailable", self.capture(success=False, index=4))
+        self.execute("print '" + "x" * 1500 + "'")
+        self.assertIn("per-command recording limit", self.capture(success=False))
 
     def test_recorder_takes_no_size_and_names_itself(self):
         self.execute("true")
