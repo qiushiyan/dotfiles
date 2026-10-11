@@ -5,18 +5,19 @@
   <key>Label</key>
   <string>com.qiushi.gazette-night</string>
 
-  <!-- 02:00, after the 01:30 mirror refresh: gazette's nightly run for each
-       instance, PlanLab's (gazette.planlab.ai) then his own
-       (gazette.qiushiyan.dev). Each night drains its site's inbox, then
-       runs the feeds, the editor, up to three evaluations, the edition and
-       research PRs. The ; runs his night even when PlanLab's fails. Run
-       records: ~/.local/share/gazette-planlab/runs and
-       ~/.local/share/gazette/runs. ~/dev/gazette/docs/operations.md. -->
+  <!-- 02:00, after the 01:30 mirror refresh: gazette's nightly run for his
+       own instance (gazette.qiushiyan.dev). It drains the site's inbox,
+       then runs the feeds, the editor, up to three evaluations, the
+       edition and research PRs. PlanLab's night joins ahead of it, as
+       "gazette --instance planlab night; ", once gazette.planlab.ai serves.
+       Run records: ~/.local/share/gazette/runs.
+       ~/dev/gazette/docs/operations.md. -->
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/sh</string>
-    <string>-c</string>
-    <string>/Users/qiushiyan/dev/gazette/bin/gazette --instance planlab night; /Users/qiushiyan/dev/gazette/bin/gazette --instance qiushi night</string>
+    <string>/Users/qiushiyan/dev/gazette/bin/gazette</string>
+    <string>--instance</string>
+    <string>qiushi</string>
+    <string>night</string>
   </array>
 
   <key>StartCalendarInterval</key>
