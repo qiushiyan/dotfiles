@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.gazette-settle</string>
+
+  <!-- Every 15 minutes: perform each instance's owed effects that are due,
+       such as a research PR whose last try failed. It never reads a site's
+       inbox; the 02:00 night does. A settle that finds the night (or
+       another settle) holding the effects lock leaves it to finish.
+       ~/dev/gazette/docs/operations.md. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>/Users/qiushiyan/dev/gazette/bin/gazette --instance planlab settle; /Users/qiushiyan/dev/gazette/bin/gazette --instance qiushi settle</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>WorkingDirectory</key>
+  <string>/tmp</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-settle.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-settle.log</string>
+</dict>
+</plist>
