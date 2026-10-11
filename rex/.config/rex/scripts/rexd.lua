@@ -20,11 +20,17 @@
 -- Out of view: when an agent turns blocked, errored or done (OSC 7501) away
 -- from the tab you are on, its terminal sends a desktop notification (OSC 9),
 -- which the app shows as one.
+--
+-- The host's pasteboard: a terminal's clipboard write (OSC 52, such as
+-- Claude Code's copy on selection) reaches only the clipboard of the app
+-- showing the pane, the laptop's when you look from there. Nvim's p in a
+-- Rex pane reads this host's pbpaste, so the text goes here too.
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
 local api = require("rexkit.api")
 local feedback = require("rexkit.feedback")
 local layout = require("rexkit.layout")
+local shell = require("rexkit.shell")
 local state = require("rexkit.state")
 
 local DEFAULT = "^Window %x+$" -- the label Rex gives a window nobody named
@@ -148,8 +154,23 @@ local function in_view(session_id, block_id)
   return w ~= nil and w.window_id == view.active_window_id
 end
 
+-- Through a file, not printf's argument: a copy can outgrow ARG_MAX.
+local function to_pasteboard(text)
+  local path = os.tmpname()
+  local f = io.open(path, "w")
+  if not f then return end
+  f:write(text)
+  f:close()
+  os.execute("pbcopy <" .. shell.quote(path))
+  os.remove(path)
+end
+
 rex.on("block_event", function(target, ev)
   if ev.name == "process_changed" then return on_process(target, ev) end
+  if ev.name == "clipboard_written" then
+    if type(ev.text) == "string" and ev.text ~= "" then to_pasteboard(ev.text) end
+    return
+  end
   if ev.name ~= "program_status_changed" or not ev.record then return end
   local r = ev.record
   local k = target.block_id .. "/" .. (r.id or "")
