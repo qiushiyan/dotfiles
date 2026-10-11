@@ -129,11 +129,14 @@ agents; a new integration should reach for them first.
 - **The clipboard, OSC 52.** Written to a terminal, it becomes a
   `clipboard_written` event and the app showing that session copies it: the
   clipboard of the machine you are looking from, with no ssh-aware routing.
-  Since a pane cannot say where you are, the shared copy tools send it this
-  way in every Rex pane: `toclip` (so `browser-clip` copies a URL rather than
-  open it on the host), Neovim's `y`, which also writes the host's pasteboard
-  so `p` round-trips, and tmux's `load-buffer -w` for a tmux client running in
-  a Rex pane. `docs/qiushi-mini.md` § Clipboard and attach owns the routing.
+  rexd puts the event's text on the host's pasteboard too, because Neovim's
+  `p` in a Rex pane reads `pbpaste` there: without it, a selection copied
+  from the laptop's app never reaches nvim on the mini. Since a pane cannot
+  say where you are, the shared copy tools send it this way in every Rex
+  pane: `toclip` (so `browser-clip` copies a URL rather than open it on the
+  host), Neovim's `y`, and tmux's `load-buffer -w` for a tmux client running
+  in a Rex pane. `docs/qiushi-mini.md` § Clipboard and attach owns the
+  routing.
 - **The foreground process and its cwd** come from the OS through the
   `process` block method, right while nvim or Claude runs: tmux's
   `pane_current_path`.

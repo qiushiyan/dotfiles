@@ -300,10 +300,11 @@ purpose:
   `test-toclip.sh`).
 - **In a Rex pane, `toclip` always copies through the terminal.** Rex hands
   OSC 52 to the app showing the session, on whichever machine it runs, and
-  nothing in Rex says which screen that is (`docs/rex.md`). Rex keeps no
-  buffer for `frommini`, so a copy too large for OSC 52 is refused with its
-  cause instead of landing on the mini's pasteboard, where `brief start`'s
-  pointer may be waiting.
+  nothing in Rex says which screen that is (`docs/rex.md`). rexd also puts
+  every copy that goes through on the mini's pasteboard, so nvim's `p` there
+  reads it from either screen. Rex keeps no buffer for `frommini`, so a copy
+  too large for OSC 52 is refused with its cause rather than landing only on
+  the mini's pasteboard, which may not be the screen you are at.
 - **Images:** a screenshot sent with `tomini` becomes the mini's pasteboard
   image, which Claude Code there pastes with Ctrl+V; `tomini` prints the path
   of its file copy. `scripts/.local/share/dotfiles/pasteboard` owns the
