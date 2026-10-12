@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+# planlab-tokens — PlanLab's Backstage tokens expire 30 days after they are
+# minted and nothing renews them. This reads when each one expires and, on
+# the mini's weekday morning run, DMs a reminder for any due within a week,
+# so a token is replaced before what uses it starts failing.
+#
+# Usage: planlab-tokens check            each token's label and expiry
+#        planlab-tokens check --notify   the LaunchAgent's run: the same, and
+#                                        a Slack DM when one is due
+#        planlab-tokens rotate-eval      put the token on the clipboard into
+#                                        production's `app` secret as its
+#                                        EVAL_SUBMIT_TOKEN line (breakglass)
+#
+# One call covers every token: GET /api/admin/backstage-tokens, made with
+# PLANLAB_BACKSTAGE_TOKEN from ~/.planlab/.env, lists each unrevoked token
+# of that account with its expiry, the eval's token in AWS included. A
+# label stands for where a token is used (`dev` for the file, and
+# EVAL_SUBMIT_TOKEN), so mint a replacement under the same label: the
+# newest token of each label is the one that counts. Revoke a token nothing
+# uses any more, or it is reminded about every day after it lapses.
+#
+# Due: the newest token of a label expires within PLANLAB_TOKENS_WARN_DAYS
+# (7) days or already has; the file's own token is rejected; or no answer
+# has come for 3 days. The DM comes from the Slack app's bot (the
+# `planlab-bot` line of ~/.config/slack/tokens.env) into the DM the morning
+# briefing uses, so it notifies; without that line it goes to your own DM
+# through `slack`, which does not. No token is ever put on a command line.
+#
+# Exit codes: 0 checked, or rotated; 1 a token, request or DM failed;
+# 2 bad arguments.
+set -uo pipefail
+
+ENV_FILE=${PLANLAB_ENV_FILE:-$HOME/.planlab/.env}
+WARN_DAYS=${PLANLAB_TOKENS_WARN_DAYS:-7}
+STALE_DAYS=3
+SLACK_WS=${PLANLAB_TOKENS_SLACK_WS:-planlab}
+SLACK_TOKENS=${SLACK_CONFIG_DIR:-$HOME/.config/slack}/tokens.env
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/planlab-tokens"
+ROTATE_PROFILE=${PLANLAB_TOKENS_AWS_PROFILE:-planlab-prod-breakglass}
+ROTATE_REGION=eu-central-1
+
+usage() { sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; }
+die() { printf 'planlab-tokens: %s\n' "$*" >&2; exit 1; }
+log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
+
+# value <file> <key>: the key's value in a KEY=value file, with an `export `
+# prefix and surrounding quotes stripped; empty when absent.
+value() {
+  sed -n "s/^\(export \)\{0,1\}$2=//p" "$1" 2>/dev/null | head -1 | sed -e "s/^[\"']//" -e "s/[\"']\$//"
+}
+
+# split <token>: HOST and SECRET. The planlab CLI's form is <host>:<secret>,
+# and the server takes only the secret as the bearer.
+split() {
+  if [[ $1 == *:* ]]; then HOST=${1%:*}; SECRET=${1##*:}; else HOST=www.planlab.ai; SECRET=$1; fi
+}
+
+# list <secret>: the token list's body, then its HTTP status on a last line
+# (000 when nothing answered). The bearer reaches curl on stdin.
+list() {
+  printf 'Authorization: Bearer %s\n' "$1" |
+    curl -sS -m 20 -H @- -w '\n%{http_code}' "https://$HOST/api/admin/backstage-tokens" 2>/dev/null
+}
+
+# when <epoch> <now>: the expiry as a date and a distance from now.
+when() {
+  local d; d=$(date -r "$1" '+%a %-d %b %H:%M')
+  if (( $1 <= $2 )); then
+    local ago=$(( ($2 - $1) / 86400 ))
+    if (( ago == 0 )); then echo "expired $d, today"; else echo "expired $d, $ago days ago"; fi
+  else
+    local left=$(( ($1 - $2) / 86400 ))
+    if (( left == 0 )); then echo "expires $d, within a day"; else echo "expires $d, in $left days"; fi
+  fi
+}
+
+# where <label>: what to do with a replacement minted under that label.
+where() {
+  case $1 in
+    EVAL_SUBMIT_TOKEN) echo "copy it, then run \`planlab-tokens rotate-eval\` (the breakglass role)" ;;
+    dev) echo "put it in PLANLAB_BACKSTAGE_TOKEN in \`~/.planlab/.env\`; twin carries it to the laptop" ;;
+    *) echo "put it wherever this one is used" ;;
+  esac
+}
+
+# dm <text>: from the app's bot into the briefing's DM, which notifies; the
+# bot posts to the user id the user token's auth.test names. Without the
+# bot's line, your own DM through `slack`, which does not notify.
+dm() {
+  local user bot uid body resp
+  user=$(value "$SLACK_TOKENS" "$SLACK_WS")
+  bot=$(value "$SLACK_TOKENS" "$SLACK_WS-bot")
+  if [[ -n $user && -n $bot ]]; then
+    uid=$(printf 'Authorization: Bearer %s\n' "$user" |
+      curl -sS -m 20 -H @- https://slack.com/api/auth.test 2>/dev/null |
+      jq -r 'if .ok then .user_id else empty end' 2>/dev/null)
+    [[ -n $uid ]] || { echo "planlab-tokens: Slack auth.test failed for $SLACK_WS" >&2; return 1; }
+    body=$(jq -n --arg c "$uid" --arg t "$1" '{channel: $c, text: $t, unfurl_links: false}')
+    resp=$(printf 'Authorization: Bearer %s\n' "$bot" |
+      curl -sS -m 20 -H @- -H 'Content-Type: application/json; charset=utf-8' \
+        --data-binary "$body" https://slack.com/api/chat.postMessage 2>/dev/null)
+    if [[ $(printf '%s' "$resp" | jq -r .ok 2>/dev/null) != true ]]; then
+      echo "planlab-tokens: chat.postMessage: $(printf '%s' "$resp" | jq -r '.error // "no answer"' 2>/dev/null)" >&2
+      return 1
+    fi
+    log "DM sent from the app"
+    return 0
+  fi
+  uid=$(slack whoami 2>/dev/null | sed -n "s/^$SLACK_WS: [^(]*(\(U[A-Z0-9]*\)).*/\1/p" | head -1)
+  [[ -n $uid ]] || { echo "planlab-tokens: no Slack identity for $SLACK_WS" >&2; return 1; }
+  printf '%s\n' "$1" | slack post "$uid" -w "$SLACK_WS" --format mrkdwn --text-file - --send >/dev/null || return 1
+  log "DM sent to your own DM, which does not notify (no $SLACK_WS-bot line)"
+}
+
+check() {
+  local notify=$1 raw now out code body rows label exp last due="" n=0
+  raw=$(value "$ENV_FILE" PLANLAB_BACKSTAGE_TOKEN)
+  [[ -n $raw ]] || die "no PLANLAB_BACKSTAGE_TOKEN in ${ENV_FILE/#$HOME/~}"
+  split "$raw"
+  now=$(date +%s)
+  mkdir -p "$STATE_DIR"
+  # The first run starts the no-answer clock, so a check that has never had
+  # an answer still says so after STALE_DAYS.
+  [[ -s $STATE_DIR/last-answer ]] || echo "$now" > "$STATE_DIR/last-answer"
+
+  out=$(list "$SECRET")
+  code=${out##*$'\n'}; body=${out%$'\n'*}
+  case $code in
+    200)
+      echo "$now" > "$STATE_DIR/last-answer"
+      rows=$(printf '%s' "$body" | jq -r '.tokens | group_by(.label // "(no label)") | map(max_by(.createdAt))[]
+        | [(.label // "(no label)"),
+           (if .expiresAt then (.expiresAt | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601 | floor | tostring) else "never" end)]
+        | @tsv' 2>/dev/null) || die "$HOST answered with a token list this cannot read"
+      while IFS=$'\t' read -r label exp; do
+        [[ -n $label ]] || continue
+        n=$((n + 1))
+        if [[ $exp == never ]]; then printf '  %-20s never expires\n' "$label"; continue; fi
+        printf '  %-20s %s\n' "$label" "$(when "$exp" "$now")"
+        if (( exp - now < WARN_DAYS * 86400 )); then
+          due+="• *$label* $(when "$exp" "$now"): $(where "$label")"$'\n'
+        fi
+      done <<<"$rows"
+      ;;
+    401)
+      echo "  PLANLAB_BACKSTAGE_TOKEN was rejected (HTTP 401)"
+      due+="• *PLANLAB_BACKSTAGE_TOKEN* in \`~/.planlab/.env\` was rejected: it has expired or been revoked. Replace it first, since this check reads the others with it."$'\n'
+      ;;
+    *)
+      last=$(cat "$STATE_DIR/last-answer")
+      echo "  no token list from $HOST (HTTP $code)"
+      if (( now - last > STALE_DAYS * 86400 )); then
+        due+="• No token list from $HOST since $(date -r "$last" '+%a %-d %b') (now HTTP $code), so expiries are unknown."$'\n'
+      fi
+      ;;
+  esac
+
+  if [[ -z $due ]]; then
+    log "checked $n tokens on $HOST; none due within $WARN_DAYS days"
+    return 0
+  fi
+  log "due:"
+  printf '%s' "$due"
+  [[ $notify == 1 ]] || return 0
+  dm "PlanLab tokens to replace. Mint each under the same label at https://$HOST/backstage?tab=apiTokens"$'\n'"${due%$'\n'}" ||
+    die "the reminder was not sent"
+}
+
+rotate_eval() {
+  local raw out code current line updated vid
+  raw=$(pbpaste 2>/dev/null)
+  [[ -n $raw && $raw != *$'\n'* ]] || die "the clipboard is empty or holds more than one line; copy the new token first"
+  raw=${raw//[$' \t\r']/}
+  split "$raw"
+
+  # Proven before anything is written: a wrong clipboard never reaches AWS.
+  out=$(list "$SECRET"); code=${out##*$'\n'}
+  [[ $code == 200 ]] || die "$HOST rejected the token on the clipboard (HTTP $code); nothing was written"
+  echo "the clipboard token authenticates on $HOST"
+
+  export AWS_PROFILE=$ROTATE_PROFILE AWS_REGION=$ROTATE_REGION
+  aws sts get-caller-identity >/dev/null 2>&1 ||
+    die "no AWS session for $AWS_PROFILE; run: aws sso login --profile $AWS_PROFILE"
+  current=$(aws secretsmanager get-secret-value --secret-id app --query SecretString --output text) ||
+    die "could not read the app secret; nothing was written"
+  [[ -n $current ]] || die "the app secret read back empty; nothing was written"
+  line=$(printf '%s\n' "$current" | sed -n '/^EVAL_SUBMIT_TOKEN=/p')
+  [[ -n $line ]] || die "the app secret has no EVAL_SUBMIT_TOKEN line; nothing was written"
+  if [[ $line == "EVAL_SUBMIT_TOKEN=$raw" ]]; then
+    echo "EVAL_SUBMIT_TOKEN already holds this token; nothing to write"
+    return 0
+  fi
+
+  updated=$(printf '%s\n' "$current" | NEW_TOKEN=$raw awk '/^EVAL_SUBMIT_TOKEN=/{print "EVAL_SUBMIT_TOKEN=" ENVIRON["NEW_TOKEN"]; next} {print}')
+  # Every other line of the secret is the app's and the loopy-master's.
+  if ! diff -q <(printf '%s\n' "$current" | grep -v '^EVAL_SUBMIT_TOKEN=') \
+               <(printf '%s\n' "$updated" | grep -v '^EVAL_SUBMIT_TOKEN=') >/dev/null; then
+    die "the edit would change more than the EVAL_SUBMIT_TOKEN line; nothing was written"
+  fi
+
+  vid=$(printf '%s' "$updated" | aws secretsmanager put-secret-value --secret-id app \
+    --secret-string file:///dev/stdin --query VersionId --output text) ||
+    die "put-secret-value failed"
+  line=$(aws secretsmanager get-secret-value --secret-id app --query SecretString --output text |
+    sed -n 's/^EVAL_SUBMIT_TOKEN=//p')
+  [[ $line == "$raw" ]] || die "version $vid was written but does not read back with the new token"
+  echo "EVAL_SUBMIT_TOKEN now ends …${raw: -4} (version $vid); the next nightly eval uses it"
+  echo "this used the breakglass role: tell the production account's owner"
+}
+
+case ${1:-} in
+  check)
+    case $# in
+      1) check 0 ;;
+      2) [[ $2 == --notify ]] || { usage >&2; exit 2; }; check 1 ;;
+      *) usage >&2; exit 2 ;;
+    esac ;;
+  rotate-eval) [[ $# -eq 1 ]] || { usage >&2; exit 2; }; rotate_eval ;;
+  -h|--help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac
