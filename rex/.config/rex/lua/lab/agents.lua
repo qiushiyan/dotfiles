@@ -1,6 +1,7 @@
 -- lab.agents: the actions over agents (Claude sessions publishing OSC 7501
--- status, rex-agent): jump to the one that waits, the board, and the
--- claude-steps sidecar.
+-- status, rex-agent): jump to the one that waits, the board, the
+-- claude-steps sidecar, and the guard on ctrl+c that quits a tab's last
+-- Claude.
 
 local action = require("lab.action")
 local client = require("lab.client")
@@ -120,5 +121,65 @@ define{
     local block = api.split(sid, bid, { direction = "horizontal", ratio = 0.62, label = label,
       command = shell.bin("rex-steps", "watch", sid, bid) })
     return { opened = label, block = block }
+  end,
+}
+
+-- ctrl+c on a tab's last pane, while the Claude in it waits on you (idle,
+-- done or blocked, not working), asks first: it enters the quit-claude mode,
+-- whose panel is the prompt (y quits Claude, n or escape keeps it). Anywhere
+-- else the key goes to the program, as nav passes its keys. Claude's own
+-- record (rex-agent's id=claude) says whether it waits, falling back to the
+-- one Claude Code publishes itself; its owner must still be the pane's
+-- foreground process, so a record a crashed Claude left behind guards
+-- nothing. An interrupted turn reports no Stop, so after one ctrl+c stops a
+-- turn the next passes through until Claude finishes a turn again.
+local PENDING = { idle = true, done = true, blocked = true }
+
+local function claude_record(records)
+  local native
+  for _, r in ipairs(records or {}) do
+    if r.id == "claude" then return r end
+    if r.app == "claude-code" then native = native or r end
+  end
+  return native
+end
+
+local function guards(sid, bid)
+  local status = api.block(sid, bid, "program_status")
+  local r = claude_record(status and status.records)
+  if not (r and PENDING[r.state] and r.owner and r.owner.pid) then return false end
+  local fg = api.foreground(sid, bid)
+  if not (fg and fg.pid == r.owner.pid) then return false end
+  return #layout.tiled(layout.window_of(api.view(sid), bid)) == 1, r.state
+end
+
+define{
+  name = "claude_ctrl_c",
+  title = "Ctrl+C, Asking Before Quitting a Tab's Last Claude",
+  args = action.schema({}),
+  run = function(ctx, args)
+    local sid, bid = action.block(ctx, args)
+    local ok, guarded, waiting = pcall(guards, sid, bid)
+    if ok and guarded then
+      rex.client.queue("client.mode.enter", { name = "quit-claude", once = true })
+      return { asked = waiting }
+    end
+    rex.client.queue("pane.send_key", { key = "ctrl+c" })
+    return { passed = true }
+  end,
+}
+
+-- quit-claude's y: two ctrl+c in one write, which Claude takes as the
+-- double press that exits, a draft in its prompt or not.
+define{
+  name = "claude_quit",
+  title = "Quit Claude",
+  args = action.schema({}),
+  run = function(ctx, args)
+    local sid, bid = action.block(ctx, args)
+    if not (sid and bid) then return { quit = false, reason = "no focused block" } end
+    local _, err = api.block(sid, bid, "write", { data = "\3\3" })
+    if err then error("write: " .. tostring(err), 0) end
+    return { quit = bid }
   end,
 }

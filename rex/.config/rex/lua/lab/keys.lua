@@ -24,6 +24,9 @@ local root = {
   -- with shift+left/right: up and down, since the tabs are a vertical list.
   { "shift+up", "client.tab.move.backward" }, { "shift+down", "client.tab.move.forward" },
   { "cmd+shift+j", "agents_next" }, { "cmd+shift+s", "steps_sidecar" }, { "cmd+shift+a", "agents_board" },
+  -- ctrl+c asks before it quits a tab's last Claude while it waits on you
+  -- (lab.agents claude_ctrl_c); anywhere else it reaches the program.
+  { "ctrl+c", "claude_ctrl_c" },
 }
 -- ctrl+h/j/k/l: pane focus that passes the key to nvim and fzf (lab.panes nav).
 for _, dir in ipairs(DIRECTIONS) do root[#root + 1] = { "ctrl+" .. HJKL[dir], "nav", { direction = dir } } end
@@ -52,6 +55,16 @@ bind_all("panes", panes)
 rex.mode("close-tab", { exclusive = true })
 bind_all("close-tab", {
   { "y", "client.tab.close" },
+  { "n", "client.mode.exit" }, { "escape", "client.mode.exit" },
+})
+
+-- Quitting a tab's last Claude asks first (ctrl+c) -------------------------------------
+
+-- As close-tab: y quits Claude, n or escape keeps it, any other key does
+-- nothing.
+rex.mode("quit-claude", { exclusive = true })
+bind_all("quit-claude", {
+  { "y", "claude_quit" },
   { "n", "client.mode.exit" }, { "escape", "client.mode.exit" },
 })
 
