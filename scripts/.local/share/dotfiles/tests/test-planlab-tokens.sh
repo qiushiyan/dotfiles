@@ -2,10 +2,13 @@
 # test-planlab-tokens.sh — planlab-tokens' contract: the newest token of
 # each label decides whether a reminder is due; a due token, a rejected
 # local token, or a long silence sends one DM from the app's bot (or your
-# own DM through `slack` without it); rotate-eval proves the clipboard
-# token before it writes, and changes only the EVAL_SUBMIT_TOKEN line.
+# own DM through `slack` without it); the ops wall saying its token is
+# rejected is due whatever the list says, and a wall that does not answer
+# is not; rotate-eval proves the clipboard token before it writes, and
+# changes only the EVAL_SUBMIT_TOKEN line; rotate-dashboard proves it the
+# same way and stores the secret half alone.
 #
-# Usage: bash test-planlab-tokens.sh [P1 R2 ...]
+# Usage: bash test-planlab-tokens.sh [P1 W2 R2 D1 ...]
 #
 # ISOLATION. curl, slack, aws and pbpaste are stubs on PATH that log every
 # call and answer from sandbox files, and HOME is a temporary directory, so
@@ -36,6 +39,7 @@ ONLY=("$@")
 
 LOCAL_SECRET=localSecretAAAA1111
 EVAL_SECRET=evalSecretBBBB2222
+WALL_SECRET=wallSecretCCCC3333
 NOW=$(date +%s)
 iso() { date -u -r $(( NOW + $1 )) +%Y-%m-%dT%H:%M:%S.000Z; }  # iso <seconds from now>
 DAY=86400
@@ -43,12 +47,13 @@ DAY=86400
 mkdir -p "$SANDBOX/bin"
 # Stub curl: the bearer arrives on stdin (-H @-) and is logged apart from
 # argv. The token list answers 200 to an accepted secret, else 401, unless
-# STUB_LIST_CODE forces a status; Slack answers auth.test and records the
+# STUB_LIST_CODE forces a status; the wall answers from $STUB_WALL, or not
+# at all under STUB_WALL_DOWN; Slack answers auth.test and records the
 # chat.postMessage body.
 cat > "$SANDBOX/bin/curl" <<'EOF'
 #!/bin/bash
 printf 'curl %s\n' "$*" >> "$STUB_ARGV"
-hdr=$(cat); printf '%s\n' "$hdr" >> "$STUB_STDIN"
+hdr=""; case " $* " in *" @- "*) hdr=$(cat); printf '%s\n' "$hdr" >> "$STUB_STDIN" ;; esac
 bearer=$(printf '%s' "$hdr" | sed -n 's/^Authorization: Bearer //p')
 url=${!#}; data=""
 while [ $# -gt 0 ]; do [ "$1" = --data-binary ] && data=$2; shift; done
@@ -56,6 +61,9 @@ case $url in
   */api/admin/backstage-tokens)
     if [ -n "${STUB_LIST_CODE:-}" ]; then printf '\n%s' "$STUB_LIST_CODE"; [ "$STUB_LIST_CODE" = 000 ] && exit 7; exit 0; fi
     case " $STUB_ACCEPT " in *" $bearer "*) cat "$STUB_LIST"; printf '\n200' ;; *) printf 'unauthorized\n401' ;; esac ;;
+  */api/loopy-status)
+    [ -z "${STUB_WALL_DOWN:-}" ] || exit 7
+    cat "$STUB_WALL" ;;
   */auth.test)
     if [ "$bearer" = xoxp-test ]; then echo '{"ok":true,"user_id":"UTEST"}'; else echo '{"ok":false,"error":"invalid_auth"}'; fi ;;
   */chat.postMessage)
@@ -98,9 +106,13 @@ fresh() {
     export HOME="$SANDBOX/home"
     export STUB_ARGV="$SANDBOX/argv.log" STUB_STDIN="$SANDBOX/stdin.log" STUB_POSTED="$SANDBOX/posted.json"
     export STUB_SLACK_POSTED="$SANDBOX/posted-slack.txt" STUB_LIST="$SANDBOX/list.json"
-    export STUB_CLIPBOARD="$SANDBOX/clipboard" STUB_SECRET="$SANDBOX/secret" STUB_ACCEPT="$LOCAL_SECRET $EVAL_SECRET"
+    export STUB_CLIPBOARD="$SANDBOX/clipboard" STUB_SECRET="$SANDBOX/secret"
+    export STUB_ACCEPT="$LOCAL_SECRET $EVAL_SECRET $WALL_SECRET" STUB_WALL="$SANDBOX/wall.json"
     : > "$STUB_ARGV"; : > "$STUB_STDIN"
-    unset STUB_LIST_CODE STUB_AWS_NOAUTH XDG_STATE_HOME SLACK_CONFIG_DIR PLANLAB_ENV_FILE PLANLAB_TOKENS_WARN_DAYS AWS_PROFILE
+    unset STUB_LIST_CODE STUB_AWS_NOAUTH STUB_WALL_DOWN XDG_STATE_HOME SLACK_CONFIG_DIR PLANLAB_ENV_FILE
+    unset PLANLAB_TOKENS_WARN_DAYS PLANLAB_TOKENS_WALL_URL AWS_PROFILE
+    # An accepted token: the wall's answer carries the snapshot and no error.
+    echo '{"window":"24h","configured":true,"data":{"ok":true}}' > "$STUB_WALL"
     echo "PLANLAB_BACKSTAGE_TOKEN=www.planlab.example:$LOCAL_SECRET" > "$HOME/.planlab/.env"
     printf 'planlab=xoxp-test\nplanlab-bot=xoxb-test\n' > "$HOME/.config/slack/tokens.env"
     local spec label c e rows=""
@@ -111,6 +123,7 @@ fresh() {
     echo "{\"tokens\":[$rows]}" > "$STUB_LIST"
 }
 posted_text() { jq -r .text "$STUB_POSTED" 2>/dev/null; }
+wall_says() { printf '{"window":"24h","configured":true,"error":"%s","data":null}\n' "$1" > "$STUB_WALL"; }
 calls() { grep -c "$1" "$STUB_ARGV"; }
 
 CASE=P1; if want; then
@@ -123,6 +136,8 @@ CASE=P1; if want; then
     ok "P1 sends nothing" 0 "$(calls 'chat.postMessage')"
     ok "P1 asks the token's own host" 1 "$(calls 'https://www.planlab.example/api/admin/backstage-tokens')"
     ok "P1 sends only the secret as the bearer" yes "$(has "Authorization: Bearer $LOCAL_SECRET" "$(cat "$STUB_STDIN")")"
+    ok "P1 asks the wall once, with no bearer" 1 "$(calls 'curl -sS -m 20 http://dashboard/api/loopy-status$')"
+    ok "P1 says the wall's token is accepted" yes "$(has "the wall's token is accepted" "$out")"
 fi
 
 CASE=P2; if want; then
@@ -203,7 +218,60 @@ CASE=P7; if want; then
     ok "P7 names the file" yes "$(has 'no PLANLAB_BACKSTAGE_TOKEN in ~/.planlab/.env' "$out")"
     "$TOOL" check --bogus >/dev/null 2>&1; ok "P7 an unknown flag exits 2" 2 $?
     "$TOOL" rotate-eval extra >/dev/null 2>&1; ok "P7 rotate-eval takes no argument" 2 $?
+    "$TOOL" rotate-dashboard extra >/dev/null 2>&1; ok "P7 rotate-dashboard takes no argument" 2 $?
     "$TOOL" >/dev/null 2>&1; ok "P7 no verb exits 2" 2 $?
+fi
+
+CASE=W1; if want; then
+    # Every listed token is fresh, the wall's label among them: the secret
+    # holds an older one, and only the wall can say so.
+    fresh "dev:-$DAY:$((20*DAY))" "infra-dashboard:-$DAY:$((20*DAY))"
+    wall_says 'token rejected 401'
+    out=$("$TOOL" check 2>&1); rc=$?
+    ok "W1 exit 0" 0 "$rc"
+    ok "W1 prints the wall's answer" yes "$(has 'the wall rejects its token (token rejected 401)' "$out")"
+    ok "W1 without --notify sends nothing" 0 "$(calls 'chat.postMessage')"
+    "$TOOL" check --notify >/dev/null 2>&1
+    text=$(posted_text)
+    ok "W1 --notify DMs it under the wall's label" yes "$(has '*infra-dashboard* is rejected on the wall (token rejected 401)' "$text")"
+    ok "W1 says what to do with it" yes "$(has 'planlab-tokens rotate-dashboard' "$text")"
+    ok "W1 a fresh token is not due" no "$(has '*dev*' "$text")"
+fi
+
+CASE=W2; if want; then
+    # The wall's label is due by its date while the wall still accepts it.
+    fresh "infra-dashboard:$((-27*DAY)):$((3*DAY - DAY/2))"
+    "$TOOL" check --notify >/dev/null 2>&1
+    text=$(posted_text)
+    ok "W2 the label is due by its date" yes "$(has '*infra-dashboard* expires' "$text")"
+    ok "W2 says what to do with it" yes "$(has 'planlab-tokens rotate-dashboard' "$text")"
+    # Lapsed and rejected: the wall's line stands for both.
+    fresh "infra-dashboard:$((-31*DAY)):$((-DAY - DAY/2))"
+    wall_says 'token rejected 401'
+    out=$("$TOOL" check --notify 2>&1)
+    ok "W2 the check still lists the label" yes "$(has 'expired' "$out")"
+    ok "W2 one line in the DM for the wall's token" 1 "$(posted_text | grep -c 'infra-dashboard')"
+fi
+
+CASE=W3; if want; then
+    fresh "dev:-$DAY:$((20*DAY))"; export STUB_WALL_DOWN=1
+    out=$("$TOOL" check --notify 2>&1); rc=$?
+    ok "W3 a silent wall exits 0" 0 "$rc"
+    ok "W3 says its token is unchecked" yes "$(has 'the wall did not answer, so its token is unchecked' "$out")"
+    ok "W3 sends nothing" 0 "$(calls 'chat.postMessage')"
+    fresh "dev:-$DAY:$((20*DAY))"; wall_says 'app answered 502'
+    out=$("$TOOL" check --notify 2>&1)
+    ok "W3 a failure that is not the token's is said" yes "$(has 'the wall could not ask the app (app answered 502)' "$out")"
+    ok "W3 and sends nothing" 0 "$(calls 'chat.postMessage')"
+    # The local token rejected: the wall is still asked, and both are due.
+    fresh "dev:-$DAY:$((20*DAY))"; export STUB_ACCEPT="$EVAL_SECRET"; wall_says 'token rejected 403'
+    "$TOOL" check --notify >/dev/null 2>&1
+    text=$(posted_text)
+    ok "W3 a rejected local token is due" yes "$(has '*PLANLAB_BACKSTAGE_TOKEN*' "$text")"
+    ok "W3 and so is the wall's" yes "$(has 'rejected on the wall (token rejected 403)' "$text")"
+    fresh "dev:-$DAY:$((20*DAY))"; export PLANLAB_TOKENS_WALL_URL=http://wall.example/api/loopy-status
+    "$TOOL" check >/dev/null 2>&1
+    ok "W3 PLANLAB_TOKENS_WALL_URL moves the question" 1 "$(calls 'http://wall.example/api/loopy-status')"
 fi
 
 SECRET_BODY=$'DATABASE_URL=postgres://x\nEVAL_SUBMIT_TOKEN=www.planlab.example:oldSecret\nOPENROUTER_API_KEY=sk-or\nPEM<<EOF\nline\nEOF'
@@ -261,6 +329,37 @@ CASE=R4; if want; then
     ok "R4 never reads the secret" 0 "$(calls 'get-secret-value')"
 fi
 
+CASE=D1; if want; then
+    fresh
+    printf 'oldWallSecret' > "$STUB_SECRET"
+    printf '  www.planlab.example:%s\n' "$WALL_SECRET" > "$STUB_CLIPBOARD"
+    out=$("$TOOL" rotate-dashboard 2>&1); rc=$?
+    ok "D1 exit 0" 0 "$rc"
+    ok "D1 the secret holds the secret half alone" "$WALL_SECRET" "$(cat "$STUB_SECRET")"
+    ok "D1 the breakglass profile wrote the wall's secret" 1 "$(grep -c 'put-secret-value --secret-id infra-dashboard-loopy-status-token --secret-string file:///dev/stdin .*profile=planlab-prod-breakglass' "$STUB_ARGV")"
+    ok "D1 reports the version and the token's end" yes "$(has "ends …3333 (version v-new)" "$out")"
+    ok "D1 says when the wall picks it up" yes "$(has 'within 15 minutes' "$out")"
+    "$TOOL" rotate-dashboard >/dev/null 2>&1; rc=$?
+    ok "D1 again: already in place, exit 0" 0 "$rc"
+    ok "D1 again: no second write" 1 "$(calls 'put-secret-value')"
+fi
+
+CASE=D2; if want; then
+    fresh
+    printf 'oldWallSecret' > "$STUB_SECRET"
+    echo "www.planlab.example:notAToken" > "$STUB_CLIPBOARD"
+    out=$("$TOOL" rotate-dashboard 2>&1); rc=$?
+    ok "D2 a rejected clipboard token exits 1" 1 "$rc"
+    ok "D2 says nothing was written" yes "$(has 'rejected the token on the clipboard (HTTP 401); nothing was written' "$out")"
+    ok "D2 never reaches AWS" 0 "$(calls '^aws')"
+    echo "www.planlab.example:$WALL_SECRET" > "$STUB_CLIPBOARD"; export STUB_AWS_NOAUTH=1
+    out=$("$TOOL" rotate-dashboard 2>&1); rc=$?
+    ok "D2 no AWS session exits 1" 1 "$rc"
+    ok "D2 says how to sign in" yes "$(has 'aws sso login --profile planlab-prod-breakglass' "$out")"
+    ok "D2 never reads the secret" 0 "$(calls 'get-secret-value')"
+    ok "D2 the secret is as it was" oldWallSecret "$(cat "$STUB_SECRET")"
+fi
+
 CASE=P8; if want; then
     # Every case above logged its argv here; run one more of each kind.
     fresh "dev:-$DAY:$((2*DAY))"
@@ -268,7 +367,10 @@ CASE=P8; if want; then
     printf '%s' "$SECRET_BODY" > "$STUB_SECRET"
     echo "www.planlab.example:$EVAL_SECRET" > "$STUB_CLIPBOARD"
     "$TOOL" rotate-eval >/dev/null 2>&1
-    leaked=$(grep -cE "$LOCAL_SECRET|$EVAL_SECRET|xoxp-test|xoxb-test|oldSecret" "$STUB_ARGV")
+    printf 'oldWallSecret' > "$STUB_SECRET"
+    echo "www.planlab.example:$WALL_SECRET" > "$STUB_CLIPBOARD"
+    "$TOOL" rotate-dashboard >/dev/null 2>&1
+    leaked=$(grep -cE "$LOCAL_SECRET|$EVAL_SECRET|$WALL_SECRET|xoxp-test|xoxb-test|oldSecret|oldWallSecret" "$STUB_ARGV")
     ok "P8 no secret on any command line" 0 "$leaked"
 fi
 

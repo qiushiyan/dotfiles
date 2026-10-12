@@ -4,27 +4,41 @@
 # the mini's weekday morning run, DMs a reminder for any due within a week,
 # so a token is replaced before what uses it starts failing.
 #
-# Usage: planlab-tokens check            each token's label and expiry
-#        planlab-tokens check --notify   the LaunchAgent's run: the same, and
-#                                        a Slack DM when one is due
-#        planlab-tokens rotate-eval      put the token on the clipboard into
-#                                        production's `app` secret as its
-#                                        EVAL_SUBMIT_TOKEN line (breakglass)
+# Usage: planlab-tokens check             each token's label and expiry, and
+#                                         whether the ops wall's is accepted
+#        planlab-tokens check --notify    the LaunchAgent's run: the same,
+#                                         and a Slack DM when one is due
+#        planlab-tokens rotate-eval       put the token on the clipboard into
+#                                         production's `app` secret as its
+#                                         EVAL_SUBMIT_TOKEN line (breakglass)
+#        planlab-tokens rotate-dashboard  put it into production's
+#                                         `infra-dashboard-loopy-status-token`
+#                                         secret, which the ops wall reads its
+#                                         Loopy column with (breakglass)
 #
 # One call covers every token: GET /api/admin/backstage-tokens, made with
 # PLANLAB_BACKSTAGE_TOKEN from ~/.planlab/.env, lists each unrevoked token
-# of that account with its expiry, the eval's token in AWS included. A
-# label stands for where a token is used (`dev` for the file, and
-# EVAL_SUBMIT_TOKEN), so mint a replacement under the same label: the
-# newest token of each label is the one that counts. Revoke a token nothing
-# uses any more, or it is reminded about every day after it lapses.
+# of that account with its expiry, the ones in AWS included. A label stands
+# for where a token is used (`dev` for the file, EVAL_SUBMIT_TOKEN, and
+# `infra-dashboard` for the wall), so mint a replacement under the same
+# label: the newest token of each label is the one that counts. Revoke a
+# token nothing uses any more, or it is reminded about every day after it
+# lapses.
+#
+# The list says when a token expires, not which token a secret holds: one
+# minted and never rotated in reads as fresh. The wall can be asked, so the
+# check asks it. Its Loopy status answer (PLANLAB_TOKENS_WALL_URL,
+# http://dashboard/api/loopy-status on the tailnet) names a rejected token,
+# whatever label that token was minted under. A wall that does not answer
+# is said in the check and never DMed.
 #
 # Due: the newest token of a label expires within PLANLAB_TOKENS_WARN_DAYS
-# (7) days or already has; the file's own token is rejected; or no answer
-# has come for 3 days. The DM comes from the Slack app's bot (the
-# `planlab-bot` line of ~/.config/slack/tokens.env) into the DM the morning
-# briefing uses, so it notifies; without that line it goes to your own DM
-# through `slack`, which does not. No token is ever put on a command line.
+# (7) days or already has; the file's own token is rejected; the wall says
+# its token is rejected; or no answer has come for 3 days. The DM comes from
+# the Slack app's bot (the `planlab-bot` line of ~/.config/slack/tokens.env)
+# into the DM the morning briefing uses, so it notifies; without that line
+# it goes to your own DM through `slack`, which does not. No token is ever
+# put on a command line.
 #
 # Exit codes: 0 checked, or rotated; 1 a token, request or DM failed;
 # 2 bad arguments.
@@ -38,8 +52,11 @@ SLACK_TOKENS=${SLACK_CONFIG_DIR:-$HOME/.config/slack}/tokens.env
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/planlab-tokens"
 ROTATE_PROFILE=${PLANLAB_TOKENS_AWS_PROFILE:-planlab-prod-breakglass}
 ROTATE_REGION=eu-central-1
+WALL_URL=${PLANLAB_TOKENS_WALL_URL:-http://dashboard/api/loopy-status}
+WALL_LABEL=infra-dashboard
+WALL_SECRET_ID=infra-dashboard-loopy-status-token
 
-usage() { sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,44p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf 'planlab-tokens: %s\n' "$*" >&2; exit 1; }
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
@@ -62,6 +79,22 @@ list() {
     curl -sS -m 20 -H @- -w '\n%{http_code}' "https://$HOST/api/admin/backstage-tokens" 2>/dev/null
 }
 
+# ask_wall: what the ops wall says of its own token: `ok`, `rejected <why>`,
+# `silent` when nothing answered, or `other <why>` for a failure that is
+# not the token's. Only the answer's head is read: an accepted token
+# returns the whole snapshot.
+ask_wall() {
+  local head why
+  head=$(curl -sS -m 20 "$WALL_URL" 2>/dev/null | head -c 400)
+  [[ -n $head ]] || { echo silent; return; }
+  why=$(printf '%s' "$head" | sed -n 's/.*"error":"\([^"]*\)".*/\1/p')
+  case $why in
+    '') echo ok ;;
+    'token rejected'*) echo "rejected $why" ;;
+    *) echo "other $why" ;;
+  esac
+}
+
 # when <epoch> <now>: the expiry as a date and a distance from now.
 when() {
   local d; d=$(date -r "$1" '+%a %-d %b %H:%M')
@@ -78,6 +111,7 @@ when() {
 where() {
   case $1 in
     EVAL_SUBMIT_TOKEN) echo "copy it, then run \`planlab-tokens rotate-eval\` (the breakglass role)" ;;
+    "$WALL_LABEL") echo "copy it, then run \`planlab-tokens rotate-dashboard\` (the breakglass role)" ;;
     dev) echo "put it in PLANLAB_BACKSTAGE_TOKEN in \`~/.planlab/.env\`; twin carries it to the laptop" ;;
     *) echo "put it wherever this one is used" ;;
   esac
@@ -113,7 +147,7 @@ dm() {
 }
 
 check() {
-  local notify=$1 raw now out code body rows label exp last due="" n=0
+  local notify=$1 raw now out code body rows label exp last wall due="" n=0
   raw=$(value "$ENV_FILE" PLANLAB_BACKSTAGE_TOKEN)
   [[ -n $raw ]] || die "no PLANLAB_BACKSTAGE_TOKEN in ${ENV_FILE/#$HOME/~}"
   split "$raw"
@@ -125,6 +159,7 @@ check() {
 
   out=$(list "$SECRET")
   code=${out##*$'\n'}; body=${out%$'\n'*}
+  wall=$(ask_wall)
   case $code in
     200)
       echo "$now" > "$STATE_DIR/last-answer"
@@ -137,6 +172,8 @@ check() {
         n=$((n + 1))
         if [[ $exp == never ]]; then printf '  %-20s never expires\n' "$label"; continue; fi
         printf '  %-20s %s\n' "$label" "$(when "$exp" "$now")"
+        # A rejected wall token is one line, said below with the wall's reason.
+        [[ $label == "$WALL_LABEL" && $wall == rejected* ]] && continue
         if (( exp - now < WARN_DAYS * 86400 )); then
           due+="• *$label* $(when "$exp" "$now"): $(where "$label")"$'\n'
         fi
@@ -155,6 +192,16 @@ check() {
       ;;
   esac
 
+  case $wall in
+    ok) echo "  the wall's token is accepted" ;;
+    rejected*)
+      echo "  the wall rejects its token (${wall#rejected })"
+      due+="• *$WALL_LABEL* is rejected on the wall (${wall#rejected }): $(where "$WALL_LABEL")"$'\n'
+      ;;
+    silent) echo "  the wall did not answer, so its token is unchecked" ;;
+    *) echo "  the wall could not ask the app (${wall#other }), so its token is unchecked" ;;
+  esac
+
   if [[ -z $due ]]; then
     log "checked $n tokens on $HOST; none due within $WARN_DAYS days"
     return 0
@@ -166,21 +213,30 @@ check() {
     die "the reminder was not sent"
 }
 
-rotate_eval() {
-  local raw out code current line updated vid
-  raw=$(pbpaste 2>/dev/null)
-  [[ -n $raw && $raw != *$'\n'* ]] || die "the clipboard is empty or holds more than one line; copy the new token first"
-  raw=${raw//[$' \t\r']/}
-  split "$raw"
-
-  # Proven before anything is written: a wrong clipboard never reaches AWS.
+# clipboard: RAW, HOST and SECRET from the clipboard's one line. Proven
+# before anything is written: a wrong clipboard never reaches AWS.
+clipboard() {
+  local out code
+  RAW=$(pbpaste 2>/dev/null)
+  [[ -n $RAW && $RAW != *$'\n'* ]] || die "the clipboard is empty or holds more than one line; copy the new token first"
+  RAW=${RAW//[$' \t\r']/}
+  split "$RAW"
   out=$(list "$SECRET"); code=${out##*$'\n'}
   [[ $code == 200 ]] || die "$HOST rejected the token on the clipboard (HTTP $code); nothing was written"
   echo "the clipboard token authenticates on $HOST"
+}
 
+# breakglass: the role that may write production's secrets, signed in.
+breakglass() {
   export AWS_PROFILE=$ROTATE_PROFILE AWS_REGION=$ROTATE_REGION
   aws sts get-caller-identity >/dev/null 2>&1 ||
     die "no AWS session for $AWS_PROFILE; run: aws sso login --profile $AWS_PROFILE"
+}
+
+rotate_eval() {
+  local raw current line updated vid
+  clipboard; raw=$RAW
+  breakglass
   current=$(aws secretsmanager get-secret-value --secret-id app --query SecretString --output text) ||
     die "could not read the app secret; nothing was written"
   [[ -n $current ]] || die "the app secret read back empty; nothing was written"
@@ -208,6 +264,27 @@ rotate_eval() {
   echo "this used the breakglass role: tell the production account's owner"
 }
 
+# The wall sends its whole secret as the bearer, so the secret holds the
+# token's secret half and nothing else.
+rotate_dashboard() {
+  local current vid
+  clipboard
+  breakglass
+  current=$(aws secretsmanager get-secret-value --secret-id "$WALL_SECRET_ID" --query SecretString --output text) ||
+    die "could not read the $WALL_SECRET_ID secret; nothing was written"
+  if [[ $current == "$SECRET" ]]; then
+    echo "$WALL_SECRET_ID already holds this token; nothing to write"
+    return 0
+  fi
+  vid=$(printf '%s' "$SECRET" | aws secretsmanager put-secret-value --secret-id "$WALL_SECRET_ID" \
+    --secret-string file:///dev/stdin --query VersionId --output text) ||
+    die "put-secret-value failed"
+  current=$(aws secretsmanager get-secret-value --secret-id "$WALL_SECRET_ID" --query SecretString --output text)
+  [[ $current == "$SECRET" ]] || die "version $vid was written but does not read back with the new token"
+  echo "$WALL_SECRET_ID now ends …${SECRET: -4} (version $vid); the wall reads it again within 15 minutes"
+  echo "this used the breakglass role: tell the production account's owner"
+}
+
 case ${1:-} in
   check)
     case $# in
@@ -216,6 +293,7 @@ case ${1:-} in
       *) usage >&2; exit 2 ;;
     esac ;;
   rotate-eval) [[ $# -eq 1 ]] || { usage >&2; exit 2; }; rotate_eval ;;
+  rotate-dashboard) [[ $# -eq 1 ]] || { usage >&2; exit 2; }; rotate_dashboard ;;
   -h|--help) usage ;;
   *) usage >&2; exit 2 ;;
 esac
