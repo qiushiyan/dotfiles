@@ -19,11 +19,11 @@ A fresh session ("the reviewer") reviews commits the host or the user wrote. The
 Name the model on every cold voice, and the effort on a codex one, so the job records what ran whatever the provider's config holds that day. Resolve it from the user's words:
 
 ```sh
---with codex:gpt-6.1-sol:xhigh   # the default: no voice named, "codex", or "sol"
---with codex:gpt-6-astra:high    # "astra"
+--with codex:gpt-6-astra:high    # the default: no voice named, "codex", or "astra"
+--with codex:gpt-6.1-sol:xhigh   # "sol"
 --with claude:claude-opus-5-5    # "claude", "opus"
 --with claude:claude-fable-5-1   # "fable"
---with codex:gpt-6.1-sol:high    # another effort only when the user asks: "sol on high"
+--with codex:gpt-6-astra:xhigh   # another effort only when the user asks: "astra on xhigh"
 ```
 
 A model ID the user spells out goes through as written, a codex one on `xhigh` unless they name an effort. A warm voice (`@<job>/<member>`) keeps the model it started on. Beside a warm voice, the default cold voice is the other family's (step 4).
@@ -75,7 +75,7 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
 4. **Dispatch**, anchored to the range, as one background Bash task, the job named for the round — `review-r1`, then `review-r2` — and return: the task completing is the completion signal, and nothing the dispatch prints needs relaying. `goal` is **one cold voice, single turn**, 45-minute cap, never a fan-out on its own. A warm voice there is not merely spare but wrong: it holds the design, which is the thing `goal` must judge without.
 
    ```sh
-   envoy run review-r1 --with codex:gpt-6.1-sol:xhigh --prompt-file <brief> --baseline <base-sha> --timeout-min 45
+   envoy run review-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --baseline <base-sha> --timeout-min 45
    ```
 
    For `full`, the cap is 60 minutes and the shape follows one question: did a consult in this session weigh the design this range implements?
@@ -83,30 +83,30 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
    No consult — one cold reviewer:
 
    ```sh
-   envoy run review-r1 --with codex:gpt-6.1-sol:xhigh --prompt-file <brief> --baseline <base-sha> --timeout-min 60
+   envoy run review-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --baseline <base-sha> --timeout-min 60
    ```
 
    A consult exists — both voices as one fan-out, the consult session continued beside a cold one:
 
    ```sh
-   envoy run review-r1 --with @consult-r1/codex-gpt-6.1-sol --with claude:claude-opus-5-5 --prompt-file <brief> --baseline <base-sha> --timeout-min 60
+   envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-opus-5-5 --prompt-file <brief> --baseline <base-sha> --timeout-min 60
    ```
 
-   `@consult-r1/codex-gpt-6.1-sol` names the *member* whose position the implementation followed, as the consult's synthesis recorded it. A consult that ran as one voice is `@consult-r1` alone. A consult that ran as a fan-out holds one session per member, named `<provider>` or `<provider>-<model>` as its collect block prints them — the voice `codex:gpt-6.1-sol:xhigh` is member `codex-gpt-6.1-sol`, the voice `claude:claude-opus-5-5` is member `claude-claude-opus-5-5` — and there `@consult-r1` alone would continue every member and seat no cold voice. Name the consult's latest round: after a round 2, `@consult-r2/codex-gpt-6.1-sol`. Seating every member warm is the user's call, one `--with @<member>` each.
+   `@consult-r1/codex-gpt-6-astra` names the *member* whose position the implementation followed, as the consult's synthesis recorded it. A consult that ran as one voice is `@consult-r1` alone. A consult that ran as a fan-out holds one session per member, named `<provider>` or `<provider>-<model>` as its collect block prints them — the voice `codex:gpt-6-astra:high` is member `codex-gpt-6-astra`, the voice `claude:claude-opus-5-5` is member `claude-claude-opus-5-5` — and there `@consult-r1` alone would continue every member and seat no cold voice. Name the consult's latest round: after a round 2, `@consult-r2/codex-gpt-6-astra`. Seating every member warm is the user's call, one `--with @<member>` each.
 
    Warm judges follow-through — did the implementation integrate what was agreed, did it dodge the traps its rounds discussed — and, having committed to the design in its own context, is a poor judge of the design itself; cold buys the unanchored, strategic read this skill exists for. Both get the complete brief; the warm voice re-reads cheaply what it already holds.
 
-   The cold voice comes from the other model family than the warm one: two voices of one model read the same areas and mostly find the same things, while a second family samples the range differently. A codex consult, whether one voice or a member, takes `claude:claude-opus-5-5` cold, as above; a Claude one takes `codex:gpt-6.1-sol:xhigh`. This settles the default, which the stock words "codex" and "sol" name too; a voice the user picks beyond them ("opus", "astra", a model ID) is the cold voice as typed.
+   The cold voice comes from the other model family than the warm one: two voices of one model read the same areas and mostly find the same things, while a second family samples the range differently. A codex consult, whether one voice or a member, takes `claude:claude-opus-5-5` cold, as above; a Claude one takes `codex:gpt-6-astra:high`. This settles the default, which the stock words "codex" and "astra" name too; a voice the user picks beyond them ("opus", "sol", a model ID) is the cold voice as typed.
 
    A warm voice takes only a full brief — it already holds the design, so there is nothing left to withhold from it. When the user wants the design re-judged as well as its execution checked, the goal read joins the same fan-out as a cold voice on its own brief, each brief attached to its voice:
 
    ```sh
-   envoy run review-r1 --with @consult-r1/codex-gpt-6.1-sol=<full-brief> --with claude:claude-opus-5-5=<goal-brief> --baseline <base-sha> --timeout-min 60
+   envoy run review-r1 --with @consult-r1/codex-gpt-6-astra=<full-brief> --with claude:claude-opus-5-5=<goal-brief> --baseline <base-sha> --timeout-min 60
    ```
 
    Two briefs, one job: the warm voice checks follow-through against the spec, the cold one derives what the feature should do with the design withheld, and one collect returns both. The withholding is what the separate file buys — a goal section inside the full brief would hand the cold voice the design on the next page.
 
-   Collapse to the single cold turn when the user asks for one voice only, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex:gpt-6.1-sol:xhigh --with claude:claude-opus-5-5`), each resolved per **Resolving the voice**.
+   Collapse to the single cold turn when the user asks for one voice only, when the consult weighed a different design than this range implements, or when the user prefers the cheaper dispatch. Warm-only — the user asking the consult voice itself to do the review — is a follow-through check, not an independent review: run it, and name it that in the report. More cold voices only when the user asks (`--with codex:gpt-6-astra:high --with claude:claude-opus-5-5`), each resolved per **Resolving the voice**.
 
    If the completion notification is lost to a compaction or a restart, `envoy pending` says what still needs attention.
 
