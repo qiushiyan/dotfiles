@@ -1131,9 +1131,9 @@ c32() {
     g() { env GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 git -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
     mkdir -p "$repo/sub" "${home}2/x"
     g -C "$repo" init -b main
-    check "C32 an unborn branch is its name" "$(render "$repo")" "proj | main ⏎ 0%"
+    check "C32 an unborn branch is its name" "$(render "$repo")" "proj | main | 0%"
     check "C32 a row wider than the pane wraps within itself" \
-        "$(render "$repo" COLUMNS=8)" "proj ⏎ main ⏎ 0%"
+        "$(render "$repo" COLUMNS=12)" "proj | main ⏎ 0%"
     printf '1\n2\n3\n' > "$repo/a.txt"; printf 'k\n' > "$repo/sub/k.txt"
     g -C "$repo" add -A; g -C "$repo" commit -m init
     g -C "$repo" checkout -b release-1.2; g -C "$repo" branch -u main
@@ -1141,13 +1141,13 @@ c32() {
     printf 'b\n' > "$repo/b.txt"; g -C "$repo" add b.txt   # staged new file: +1
     printf 'c\n' > "$repo/c.txt"                       # untracked
     check "C32 a dotted branch keeps its dots and drops its upstream" \
-        "$(render "$repo")" "proj | release-1.2 | +1 +3 -1 ?1 ⏎ 0%"
+        "$(render "$repo")" "proj | release-1.2 | 0% | +1 +3 -1 ?1"
     g -C "$repo" worktree add -b feat/x.y "$wt"
     check "C32 a linked worktree draws its main checkout and subpath" \
-        "$(render "$wt/sub")" "$(printf '\xef\x89\x8d') proj/sub | feat/x.y ⏎ 0%"
+        "$(render "$wt/sub")" "$(printf '\xef\x89\x8d') proj/sub | feat/x.y | 0%"
     check "C32 a sibling of HOME is not abbreviated" \
-        "$(render "${home}2/x")" "${home}2/x ⏎ 0%"
-    check "C32 HOME itself is ~" "$(render "$home")" "~ ⏎ 0%"
+        "$(render "${home}2/x")" "${home}2/x | 0%"
+    check "C32 HOME itself is ~" "$(render "$home")" "~ | 0%"
     rm -rf "$SANDBOX_HOME/dev" "${home}2"
 }
 
@@ -1162,7 +1162,7 @@ c33() {
     fresh || return
     PUB_THEME=no_such_theme pub sid-A 'claude-opus-5[1m]' 600000
     check "C33 an unknown theme still publishes the chip" "$(opt @claude_ctx)" "60"
-    check "C33 and the line still draws" "$(render / TERMINAL_THEME=no_such_theme)" "/ ⏎ 0%"
+    check "C33 and the line still draws" "$(render / TERMINAL_THEME=no_such_theme)" "/ | 0%"
 }
 
 # ---------------------------------------------------------------------------
@@ -1175,15 +1175,15 @@ c35() {
     local now; now=$(date +%s)
     cache() { RENDER_EXTRA=",\"prompt_cache\":$1" render /; }
     check "C35 minutes left, rounded up" \
-        "$(cache "{\"warm\":true,\"expires_at\":$((now + 1500))}")" "/ ⏎ 0% | cache 25m"
+        "$(cache "{\"warm\":true,\"expires_at\":$((now + 1500))}")" "/ | 0% ⏎ cache 25m"
     check "C35 the last minute still counts as one" \
-        "$(cache "{\"warm\":true,\"expires_at\":$((now + 30))}")" "/ ⏎ 0% | cache 1m"
+        "$(cache "{\"warm\":true,\"expires_at\":$((now + 30))}")" "/ | 0% ⏎ cache 1m"
     check "C35 a passed expiry is cold" \
-        "$(cache "{\"warm\":true,\"expires_at\":$((now - 5))}")" "/ ⏎ 0% | cache cold"
+        "$(cache "{\"warm\":true,\"expires_at\":$((now - 5))}")" "/ | 0% ⏎ cache cold"
     check "C35 a cache that is not warm is cold" \
-        "$(cache "{\"warm\":false,\"expires_at\":$((now + 1500))}")" "/ ⏎ 0% | cache cold"
+        "$(cache "{\"warm\":false,\"expires_at\":$((now + 1500))}")" "/ | 0% ⏎ cache cold"
     check "C35 no expiry draws nothing" \
-        "$(cache '{"warm":false,"expires_at":null}')" "/ ⏎ 0%"
+        "$(cache '{"warm":false,"expires_at":null}')" "/ | 0%"
 }
 
 # ---------------------------------------------------------------------------
@@ -1196,11 +1196,11 @@ c36() {
     local home; home=$(cd "$SANDBOX_HOME" && pwd -P)
     mkdir -p "$SANDBOX_HOME/.claude-accounts/yan@planlab.ai"
     check "C36 an extra account draws its local part" \
-        "$(render / CLAUDE_CONFIG_DIR="$home/.claude-accounts/yan@planlab.ai")" "/ ⏎ yan | 0%"
+        "$(render / CLAUDE_CONFIG_DIR="$home/.claude-accounts/yan@planlab.ai")" "/ | 0% ⏎ yan"
     primary_login 'qiushi@example.com'
-    check "C36 the primary draws its login's local part" "$(render /)" "/ ⏎ qiushi | 0%"
+    check "C36 the primary draws its login's local part" "$(render /)" "/ | 0% ⏎ qiushi"
     rm -f "$SANDBOX_HOME/.claude.json"
-    check "C36 no login draws no account" "$(render /)" "/ ⏎ 0%"
+    check "C36 no login draws no account" "$(render /)" "/ | 0%"
     rm -rf "$SANDBOX_HOME/.claude-accounts"
 }
 
