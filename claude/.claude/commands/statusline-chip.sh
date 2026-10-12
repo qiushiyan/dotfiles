@@ -5,8 +5,8 @@
 # the pane chip (tmux/.config/tmux/scripts/context-chip.md). Sourced by
 # statusline-command.sh after the payload parse and BEFORE the line is drawn,
 # so neither the palette nor the render can keep the chip from publishing.
-# Reads PERCENT_USED SESSION_ID MODEL_ID EFFORT FIVE_HOUR SEVEN_DAY; prints
-# nothing. It runs in the render's process, ~3×/second per pane while a
+# Reads PERCENT_USED SESSION_ID MODEL_ID EFFORT FIVE_HOUR SEVEN_DAY; sets
+# ACCOUNT, which the line draws too; prints nothing. It runs in the render's process, ~3×/second per pane while a
 # session streams: builtins only, beyond one jq read of ~/.claude.json and the
 # one tmux call.
 

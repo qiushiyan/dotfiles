@@ -2,8 +2,8 @@
 #
 # Claude Code statusline. One process per render, three files:
 #   statusline-command.sh   this file: the payload, then the line itself
-#   statusline-chip.sh      the tmux pane chip, published before the line is
-#                           drawn so nothing below can stop it
+#   statusline-chip.sh      the account lane and the tmux pane chip, published
+#                           before the line is drawn so nothing below can stop it
 #   statusline-palette.sh   the colours, one arm per theme (docs/theming.md)
 # The other two are sourced, not run: a fork here costs every pane on every
 # render.
@@ -202,48 +202,51 @@ if IFS= read -r line <&4; then
 fi
 exec 4<&- 5<&-
 
-# Assemble the line as ordered segments, each carrying its colored form and its
-# plain (visible) text. render_segments decides between one line and wrapping.
+# Assemble the line as two rows of ordered segments, each segment carrying its
+# colored form and its plain (visible) text. The first row is where the session
+# works (path, branch, diff), the second what it spends (account, context,
+# cache, billing), so a long worktree path or branch never pushes the second
+# row's numbers off the pane. Claude Code draws each printed line as a row.
+# ACCOUNT is the lane label statusline-chip.sh worked out for the tmux border;
+# the line draws it too, because outside tmux (a Rex pane, a bare terminal)
+# nothing else says which account the session burns.
 SEG_COLORED=(); SEG_PLAIN=()
 add_seg() { [ -n "$2" ] && { SEG_COLORED+=("$1"); SEG_PLAIN+=("$2"); }; }
 
-add_seg "${LAVENDER}${DISPLAY_DIR}${RESET}" "$DISPLAY_DIR"
-add_seg "${PINK}${BRANCH}${RESET}" "$BRANCH"
-add_seg "$CTX_DISPLAY" "$CTX_PLAIN"
-add_seg "$CACHE_DISPLAY" "$CACHE_PLAIN"
-add_seg "$GIT_STATUS" "$GIT_PLAIN"
-add_seg "$API_DISPLAY" "$API_PLAIN"
-
-# Greedy-wrap segments to the pane width. Claude Code sets $COLUMNS to the
-# terminal/pane width before invoking us (v2.1.153+); when it's absent or the
-# whole line fits, we emit a single row identical to the pre-wrap behavior. A
-# lone segment wider than the pane still overflows — accepted, not fought.
+# Greedy-wrap the collected segments to the pane width and append them to OUT
+# as one or more rows, then start the next row empty. Claude Code sets $COLUMNS
+# to the terminal/pane width before invoking us (v2.1.153+); when it's absent
+# or the row fits, the row stays whole. A lone segment wider than the pane
+# still overflows — accepted, not fought.
 SEP=" | "; SEPLEN=3
 COLS="${COLUMNS:-0}"
-n=${#SEG_PLAIN[@]}
-
-total=0
-for ((i=0; i<n; i++)); do total=$(( total + ${#SEG_PLAIN[i]} )); done
-[ "$n" -gt 0 ] && total=$(( total + (n-1)*SEPLEN ))
-
-if [ "$COLS" -le 0 ] || [ "$total" -le "$COLS" ]; then
-    out=""
-    for ((i=0; i<n; i++)); do
-        [ "$i" -gt 0 ] && out="${out}${SEP}"
-        out="${out}${SEG_COLORED[i]}"
-    done
-    printf '%s' "$out"
-else
-    out=""; line=""; linelen=0
+OUT=""
+end_row() {
+    local n=${#SEG_PLAIN[@]} i line="" linelen=0 seglen
+    [ "$n" -gt 0 ] || return 0
     for ((i=0; i<n; i++)); do
         seglen=${#SEG_PLAIN[i]}
         if [ -z "$line" ]; then
             line="${SEG_COLORED[i]}"; linelen=$seglen
-        elif [ $(( linelen + SEPLEN + seglen )) -le "$COLS" ]; then
+        elif [ "$COLS" -le 0 ] || [ $(( linelen + SEPLEN + seglen )) -le "$COLS" ]; then
             line="${line}${SEP}${SEG_COLORED[i]}"; linelen=$(( linelen + SEPLEN + seglen ))
         else
-            out="${out}${line}"$'\n'; line="${SEG_COLORED[i]}"; linelen=$seglen
+            OUT="${OUT:+$OUT$'\n'}${line}"; line="${SEG_COLORED[i]}"; linelen=$seglen
         fi
     done
-    printf '%s' "${out}${line}"
-fi
+    OUT="${OUT:+$OUT$'\n'}${line}"
+    SEG_COLORED=(); SEG_PLAIN=()
+}
+
+add_seg "${LAVENDER}${DISPLAY_DIR}${RESET}" "$DISPLAY_DIR"
+add_seg "${PINK}${BRANCH}${RESET}" "$BRANCH"
+add_seg "$GIT_STATUS" "$GIT_PLAIN"
+end_row
+
+add_seg "${LAVENDER}${ACCOUNT}${RESET}" "$ACCOUNT"
+add_seg "$CTX_DISPLAY" "$CTX_PLAIN"
+add_seg "$CACHE_DISPLAY" "$CACHE_PLAIN"
+add_seg "$API_DISPLAY" "$API_PLAIN"
+end_row
+
+printf '%s' "$OUT"
