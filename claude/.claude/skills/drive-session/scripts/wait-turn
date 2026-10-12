@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# wait-turn BLOCK [QUIET_SECS]
+# Wait until the Claude Code session in Rex block BLOCK has ended its turn and
+# stayed that way QUIET_SECS (default 60): its Rex status is `done` with no
+# background shell job left, or `blocked` on a question or permission prompt.
+# Then print the status record, the session's transcript path and the bottom
+# of its screen. Exit 2 if the block has no Claude session.
+set -u
+block=$1 quiet=${2:-60}
+last="" since=$(date +%s)
+while true; do
+  rec=$(rex block call -b "$block" program_status 2>/dev/null | jq -c '.records[]? | select(.id=="claude")')
+  [ -n "$rec" ] || { echo "no Claude session in block $block"; exit 2; }
+  key=$(jq -r '.state + " " + .updated_at' <<<"$rec")
+  [ "$key" = "$last" ] || { last=$key since=$(date +%s); }
+  state=$(jq -r .state <<<"$rec") owner=$(jq -r '.owner.pid // empty' <<<"$rec")
+  # A turn that started a background Bash job reports done while the job runs;
+  # Claude Code runs each Bash call as a child shell sourcing its snapshot.
+  bg=0
+  kids=$(pgrep -P "${owner:-0}" | paste -sd, -)
+  [ -n "$kids" ] && bg=$(ps -o command= -p "$kids" | grep -c shell-snapshots)
+  if { [ "$state" = blocked ] || { [ "$state" = done ] && [ "$bg" -eq 0 ]; }; } &&
+     [ $(( $(date +%s) - since )) -ge "$quiet" ]; then
+    echo "status: $rec"
+    for f in ~/.claude/sessions/"$owner".json ~/.claude-accounts/*/sessions/"$owner".json; do
+      [ -f "$f" ] || continue
+      sid=$(jq -r .sessionId "$f")
+      ls "$(dirname "$(dirname "$f")")"/projects/*/"$sid".jsonl 2>/dev/null | sed 's/^/transcript: /'
+    done
+    echo "--- screen ---"
+    rex capture -b "$block" --trim --unwrap | tail -40
+    exit 0
+  fi
+  sleep 15
+done
