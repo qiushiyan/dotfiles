@@ -66,7 +66,7 @@ drop() {
 }
 
 # --------------------------------------------------------------------
-# p / pp - Jump to the planlab checkout; pp pulls it and its briefs
+# p / pl / pp - Jump to the planlab checkout; pp pulls it and its briefs
 # --------------------------------------------------------------------
 # Functions rather than aliases so the path lives in one place and `p` can
 # take a subpath (`p apps/web`). `pp` fast-forwards the checkout and
@@ -77,13 +77,15 @@ drop() {
 # holds (`branch = "main"` in ~/.config/twin/twin.toml). `pp --cd` then
 # enters the checkout, even after a refused pull, and keeps the pull's
 # status. `pp` shadows Homebrew nss's certificate printer; `command pp`
-# still reaches it.
+# still reaches it. `pl` is `p` under a second name, subpath included, and
+# shadows macOS's property-list printer the same way (`command pl`).
 : ${PLANLAB_DIR:=$HOME/dev/planlab/main}
 
 p() {
   emulate -L zsh
   cd -- "$PLANLAB_DIR/${1:-}"
 }
+alias pl=p
 
 pp() {
   emulate -L zsh
