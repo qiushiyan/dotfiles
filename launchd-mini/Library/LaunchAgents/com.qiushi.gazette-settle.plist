@@ -9,13 +9,13 @@
        research PR whose last try failed. It never reads the site's inbox;
        the 02:00 night does. A settle that finds the night (or another
        settle) holding the effects lock leaves it to finish. PlanLab's
-       settle joins with its night. ~/dev/gazette/docs/operations.md. -->
+       settle runs first, with ";" so a failed one still settles qiushi's.
+       ~/dev/gazette/docs/operations.md. -->
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/qiushiyan/dev/gazette/bin/gazette</string>
-    <string>--instance</string>
-    <string>qiushi</string>
-    <string>settle</string>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>/Users/qiushiyan/dev/gazette/bin/gazette --instance planlab settle; /Users/qiushiyan/dev/gazette/bin/gazette --instance qiushi settle</string>
   </array>
 
   <key>StartInterval</key>

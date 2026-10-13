@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.gazette-planlab-site</string>
+
+  <!-- Always: PlanLab's gazette site, the shell on 127.0.0.1:8790 and the
+       report pages on :8791, which `tailscale serve` publishes on the
+       tailnet at https://qiushi-mini.tailf7adf1.ts.net (443 and 8443).
+       The launcher reads its three secrets from ~/.secrets. Restart it
+       after a release: launchctl kickstart -k
+       gui/$(id -u)/com.qiushi.gazette-planlab-site.
+       ~/dev/gazette/docs/operations.md § PlanLab's site on the tailnet. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushiyan/dev/gazette/instances/planlab/site/tailnet</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>WorkingDirectory</key>
+  <string>/tmp</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-planlab-site.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-planlab-site.log</string>
+</dict>
+</plist>
