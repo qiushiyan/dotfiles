@@ -154,23 +154,25 @@ passes, or a `red` that passes, means the case cannot tell the conditions
 apart; make the outcome depend on what reading cannot reach before you run
 it. A question about phrasing or about a skill against none is a set of arms
 (`arms.json`: a request and a skill together), and every arm set needs a
-control: the same request with the case's `## Control` naming where the
-outcome lives. Without the control, zeros cannot say whether the arms
-missed the outcome or the rig hid it. One judge pass moves checks by one,
-so use `--judge-passes 3`, a blind `rank` for quality, and `findings`
+control: an arm marked `hints`, whose request carries the case's
+`## Control`, naming where the outcome lives. Without the control, zeros
+cannot say whether the arms missed the outcome or the rig hid it. A regrade
+can move a check either way, so use `--judge-passes 3`, a blind `rank` for
+quality, and `findings`
 against the whole answer key, where a report raises problems the checks
 do not score.
 
 For a tool whose value shows only on real work, replay merged PRs. The
 replay head is the commit the PR was at when the tool was asked for. The
 answer key is what its reviews, bots, CI and later fixes found at that
-head. Mark which defects the stack can reach. Such a replay is a live tool
-on the owner's machine, so read its shared state before anything runs. On
-2026-10-13 replays dropped other sessions' lane databases twice: once from
-a separate clone, and once by agents routing an old head's lane tool around
-a newer shared registry. The tool's read-only `preflight.check` must refuse
-while anything shared would be treated as the replay's to reap, and its
-`forbid` list must deny the commands that redirect or destroy shared state.
+head. Mark which defects the stack can reach. Such a replay runs the
+project's real stack on the owner's machine, beside the owner's other
+sessions. An old head's tooling meets today's shared state there: its
+cleanup can take another checkout's resources for orphans, and an agent
+blocked by a format it cannot read will route around the block. So give
+the live tool a read-only `preflight.check` that refuses while any shared
+state would look like the replay's own, and a `forbid` list that denies the
+commands that redirect or destroy it.
 
 - **Evidence for the edit:** the earlier revision fails the case, the edit
   passes it, and no case that passed starts failing. Report per-case counts,

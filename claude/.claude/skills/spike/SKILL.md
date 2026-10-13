@@ -13,7 +13,9 @@ A spike is throwaway code whose output answers a question that reading cannot. I
 Write the claim so it could turn out false, and what you would have to observe to call it true or false, in program output. If reading the code settles it, read; if nothing you can run settles it, say so and stop.
 
 - **Design:** test the assumptions the plan fails without, costliest first.
-- **Verification:** a change's claims are its own description of itself; its defects sit where those claims meet the rest of the product. Drive the scenarios a user or caller actually runs, through the entry point they use (the CLI, the API, the page, the running app), with the changed behaviors meeting the way they meet in use: the parked run also meets the drain rule; the crash restart lands mid-redial. Then push each claim across the inputs and clauses it covers, not only the one that shows it working, and rerun the existing flows that share the changed code.
+- **Verification:** a change's claims are its own description of itself; its defects sit where those claims meet the rest of the product. Work two fronts and report them apart, so a gap in one cannot hide behind a pass in the other:
+  - **Target:** the scenarios the change exists for, driven end to end through the entry point a user or caller uses (the CLI, the API, the page, the running app), with the changed behaviors meeting the way they meet in use: a restart in the middle of a write, the page that renders the new field, the report that totals the changed rows.
+  - **Risk:** beyond the target, where the change is fragile or would do the most damage if wrong: paths it shares with other features, the inputs each claim covers beyond the one that shows it working, the next consumer of what it produces, the existing flows through the changed code. Choose by how likely each is to break and how much would break.
 
 ## Keep the thing under test real
 
@@ -29,6 +31,6 @@ When the change alters existing behavior, run the same command on a baseline: a 
 
 ## Report the verdict
 
-VERIFIED or NOT VERIFIED per claim or scenario, carrying the output that decides it. Report what happened before what it means: the surprise is often worth more than the answer. VERIFIED covers only what the run drove; name what was not driven and what would settle it. A reader who never saw the run should reach your verdict from what you quote.
+VERIFIED or NOT VERIFIED per claim or target scenario, carrying the output that decides it; in verification, the risk probes follow apart, each with what it showed. Report what happened before what it means: the surprise is often worth more than the answer. VERIFIED covers only what the run drove; name what was not driven and what would settle it. A reader who never saw the run should reach your verdict from what you quote.
 
 Fold the verdict into the plan: adopt it, or on NOT VERIFIED take it back to the user, plainly. Record claim, expected, actual and verdict where the plan lives, or in the report. Then delete the spike or leave it in its throwaway home. A verification claim worth guarding permanently becomes a real test, with the spike as its draft.
