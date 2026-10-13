@@ -15,41 +15,57 @@ or a step that needs the user's decision; then report.
 
 ## Judgment
 
-- **Wait in the background, not by polling.** Run
-  `~/.agents/skills/drive-session/scripts/wait-turn BLOCK [QUIET_SECS]` with
-  `run_in_background`; you are woken when the session's turn has ended and
-  stayed ended for the quiet window (60 s default). It prints the status
-  record, the transcript path and the screen's tail. Exit 2 means no Claude
-  session runs in that block.
-- **An ended turn is not yet the trigger.** Read the session's last message
-  in its transcript before acting; the screen shows only a tail. A turn ends
-  while a background subagent works, on a question to the user, or partway
-  through a sequence. If the message is not the state the user named, arm
-  the wait again.
+- **Wait in the background, not by polling.** `wait-turn` under
+  `run_in_background` wakes you once the session's turn has ended and stayed
+  ended.
+- **An ended turn is not yet the trigger.** Read its last reply
+  (`read-turn ID`) before acting: a turn also ends while a background
+  subagent works, on a question to the user, or partway through a sequence.
+  If the reply is not the state the user named, arm the wait again.
 - **Send the user's words as written.** The session treats every word as
-  instruction, so a qualifier you add changes the work it does.
+  instruction, so a qualifier you add changes the work it does. A request of
+  your own, something you need from the session, goes as a brief file.
 - **Conditional steps get a full read.** For "if the plan is sound and
   nothing needs my decision", read the whole report. When something does
   need the user, stop there and leave the decision summarised; otherwise
   send.
+- **A permission prompt is yours to judge.** `wait-turn` returns `blocked` on
+  one. Read the whole command (`read-turn ID --pending`; the screen cuts it
+  off), approve with `enter` what stays inside the session's own task and
+  scratch space, otherwise let it auto-deny, and name either in the report.
 
 ## Rex
 
-- **Find the target:** `rex block ls`, then
-  `rex block call -b ID title` for each block: the title is the Claude
-  session's, and the owner pid is its process. Your own block is
-  `$REX_BLOCK`.
-- **Send a prompt:** `rex send -b ID 'text'`, check with
-  `rex capture -b ID --trim --unwrap | tail` that it sits alone in the
-  input box (typed text joins whatever is already there), then
-  `rex send-key -b ID enter`. A few seconds later
-  `rex block call -b ID program_status` should show the `claude` record
-  `working`.
-- **Start a session:**
-  `rex run -s "$REX_SESSION" -c DIR --label NAME --focus=false --shell none --json -- /bin/zsh -lic 'x; exec zsh -l'`
-  opens a new window without taking the user's focus and prints its block
-  id. `x` is the user's Claude launcher, a zsh function, hence the
-  interactive shell. Wait for the empty input box on screen before sending.
+The scripts are in `~/.agents/skills/drive-session/scripts/`; each prints its
+usage when run bare.
+
+```bash
+rex block ls; rex block call -b ID title    # the title is the session's; your own block is $REX_BLOCK
+wait-turn ID [QUIET_SECS]                   # run_in_background: status, transcript path, screen tail (quiet 60 s)
+read-turn ID [--last|--pending|--user]      # its last reply · the call a permission prompt waits on · the prompt it got
+send-turn ID 'one short line'               # types, submits, confirms from the transcript that it arrived whole
+send-turn ID --file brief.md                # anything longer than one short line: typing drops a long prompt's head
+rex send-key -b ID enter                    # approve a permission prompt
+```
+
+A prompt sent while the session works is queued whole and taken mid-turn;
+`send-turn` says so and exits 0. When it exits 1, something else arrived and
+the session is working on it. Take it back:
+
+```bash
+rex send-key -b ID ctrl+c      # once, while it works: interrupts the turn; a second press quits Claude Code
+read-turn ID --user            # "[Request interrupted by user…]" once it took; Rex reads `working` until the next turn
+rex send-key -b ID ctrl+u      # repeat until the box is empty, if the prompt came back into it
+send-turn ID --file brief.md
+```
+
+Start a session without taking the user's focus; `x` is their Claude
+launcher, a zsh function. It prints the new block's id; send once the input
+box shows on screen:
+
+```bash
+rex run -s "$REX_SESSION" -c DIR --label NAME --focus=false --shell none --json -- /bin/zsh -lic 'x; exec zsh -l'
+```
 
 ## Report
 

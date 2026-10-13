@@ -6,7 +6,7 @@
 # Then print the status record, the session's transcript path and the bottom
 # of its screen. Exit 2 if the block has no Claude session.
 set -u
-block=$1 quiet=${2:-60}
+block=${1:?usage: wait-turn BLOCK [QUIET_SECS]} quiet=${2:-60}
 last="" since=$(date +%s)
 while true; do
   rec=$(rex block call -b "$block" program_status 2>/dev/null | jq -c '.records[]? | select(.id=="claude")')
@@ -22,11 +22,7 @@ while true; do
   if { [ "$state" = blocked ] || { [ "$state" = done ] && [ "$bg" -eq 0 ]; }; } &&
      [ $(( $(date +%s) - since )) -ge "$quiet" ]; then
     echo "status: $rec"
-    for f in ~/.claude/sessions/"$owner".json ~/.claude-accounts/*/sessions/"$owner".json; do
-      [ -f "$f" ] || continue
-      sid=$(jq -r .sessionId "$f")
-      ls "$(dirname "$(dirname "$f")")"/projects/*/"$sid".jsonl 2>/dev/null | sed 's/^/transcript: /'
-    done
+    echo "transcript: $("$(dirname "$0")/read-turn" "$block" --path)"
     echo "--- screen ---"
     rex capture -b "$block" --trim --unwrap | tail -40
     exit 0
