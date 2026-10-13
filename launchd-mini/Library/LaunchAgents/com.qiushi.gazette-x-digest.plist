@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.gazette-x-digest</string>
+
+  <!-- 01:15, after Grok's 00:30 post and before the 02:00 night: gazette's
+       X digest reader, outside gazette, so no Slack credential enters a
+       gazette process. It reads the digest threads in his self-DM in the
+       personal workspace through the slack CLI (~/.local/bin) and writes
+       one envelope per delivery into each instance's drop/x/, which the
+       night reads. A delivery already written is skipped. Node 24 from
+       nvm, as bin/gazette finds it.
+       ~/dev/gazette/docs/operations.md § Scheduled jobs. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-c</string>
+    <string>export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/bin:/bin"; node=($HOME/.nvm/versions/node/v24.*/bin/node(NOn) node); exec $node[1] --no-warnings $HOME/dev/gazette/bin/x-digest.ts --workspace personal --channel D05ALA97H9A --since 3d --to $HOME/.local/share/gazette/drop/x --to $HOME/.local/share/gazette-planlab/drop/x</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>1</integer>
+    <key>Minute</key>
+    <integer>15</integer>
+  </dict>
+
+  <key>WorkingDirectory</key>
+  <string>/tmp</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-x-digest.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/gazette-x-digest.log</string>
+</dict>
+</plist>
