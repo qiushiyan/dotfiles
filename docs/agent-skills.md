@@ -300,13 +300,13 @@ cases, fixtures, commands and how to read a report.
   a directory holding a variant. A CLI's binary is whatever is installed, so
   the tool tests instructions, never two builds.
 - **Isolation:** each run gets a throwaway home and runs under `sandbox-exec`.
-  It cannot write outside its own directory, read the cases or the real
-  session stores, or reach the other machine, which keeps the `CLAUDE.md`
-  rule on isolating live state. A run bills the subscription through
-  `SKILL_EVAL_OAUTH_TOKEN`, or else the OpenRouter key, and the judge always
-  goes through OpenRouter, so the fixture's content (sessions, or a
-  repository's code) reaches both providers. Why a launcher such as `x -p`
-  cannot stand in: the README's billing note.
+  It cannot write outside its own directory, read the cases, the real
+  session stores or any credential, or reach the other machine, which keeps
+  the `CLAUDE.md` rule on isolating live state. The agent bills the Claude
+  subscriptions by default, each session on an account headroom picks, and
+  the judge always goes through OpenRouter, so the fixture's content
+  (sessions, or a repository's code) reaches both Anthropic and OpenAI. Why a
+  launcher such as `x -p` cannot stand in: the README's billing note.
 
 Two readings decide what a result means. A case the revision before a fix
 also passes shows only that the harness did not reproduce the mistake at

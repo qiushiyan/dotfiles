@@ -133,8 +133,8 @@ substitute for testing the behavior in question.
 against chosen revisions; its README covers cases, fixtures and commands.
 Use it when a finding reproduces within one headless session, from the
 request alone or with one scripted reply. Rollouts send the fixture's session
-content to OpenRouter, for the agent model and the judge, so name that in
-the pass's disclosure.
+content to Anthropic for the agent and to OpenRouter for the judge (OpenRouter
+for both under `--route openrouter`), so name them in the pass's disclosure.
 
 Before editing, record the commit the skill is at; that sha is the case's
 `red`. Write the finding as a case there: the request, the source session,
