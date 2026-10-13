@@ -1,0 +1,19 @@
+#!/bin/sh
+# tmutil as asimov's scheduled run sees it (com.qiushi.asimov puts this
+# folder first on PATH). A sticky exclusion is an extended attribute on the
+# item itself; tmutil sets it through Time Machine's daemon at ~11 s a call,
+# which makes a first pass over agent worktrees take hours. Writing the
+# attribute tmutil writes takes milliseconds, and `tmutil isexcluded` reads it
+# back the same. Every other verb, and the fixed-path `-p` form, is the real
+# tmutil. docs/recovery.md § Time Machine on the mini.
+if [ "$1" = addexclusion ] && [ "$2" != -p ]; then
+  shift
+  status=0
+  for item in "$@"; do
+    xattr -wx com.apple.metadata:com_apple_backup_excludeItem \
+      62706C69737430305F1011636F6D2E6170706C652E6261636B75706408000000000000010100000000000000010000000000000000000000000000001C \
+      "$item" || status=1
+  done
+  exit "$status"
+fi
+exec /usr/bin/tmutil "$@"
