@@ -90,7 +90,27 @@ encrypted APFS volume named `T7 Backup`, the whole drive given to Time
 Machine, password in 1Password. `~/Library/Caches` and `~/.cache` are
 excluded. Time Machine thins on its own (hourly for a day, daily for a
 month, weekly until the drive fills, then the oldest weekly goes), so the
-drive never needs pruning.
+drive never needs pruning. Nothing can be removed from a backup already
+taken: each is a read-only APFS snapshot, deletable only whole, so an
+exclusion applies from the next backup and the old copies leave as thinning
+ages their backups out.
+
+Dependency folders are excluded as well, by asimov (§ Toolchain in
+`docs/qiushi-mini.md`): it gives each `node_modules`, `.venv` or similar
+folder that sits beside its manifest Time Machine's sticky exclusion, which
+travels with the folder, while the source around it is still backed up.
+The mini needs it because every agent worktree installs its own
+dependencies: a project with a handful of worktrees holds hundreds of
+thousands of files, and without the exclusion copying them keeps `backupd`
+busy through most of each hour, load the mini shows as heat. A folder created since asimov's
+last run is copied until its next one. asimov has no schedule yet: brew's
+own service runs it daily, slower than worktrees appear, so run `asimov` by
+hand after a burst of new worktrees.
+
+`tmutil isexcluded` answers for the path it is given, not for what is inside
+it. OrbStack marks its disk images (`data/data.img.raw` and `swap.img` in
+its group container) excluded, and their folder still reports `[Included]`;
+ask about the file before concluding a large file is backed up.
 
 The hourly backups run while the screen is locked, which on the mini is every
 night. A locked run copies everything except the handful of files macOS keeps
@@ -110,6 +130,7 @@ tmutil destinationinfo                       # the destination, on the mini
 tmutil status                                # a backup in progress
 tmutil listbackups                           # backups on the drive (needs Full Disk Access)
 tmutil isexcluded <path>                     # whether a path is backed up
+asimov --dry-run                             # dependency folders asimov would exclude now
 /usr/bin/log show --last 1d --info --predicate 'subsystem == "com.apple.TimeMachine" AND (eventMessage CONTAINS "Successfully completed" OR eventMessage CONTAINS "Backup failed")'   # each run's outcome
 ```
 
