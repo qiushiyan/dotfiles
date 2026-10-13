@@ -5,7 +5,7 @@
   <key>Label</key>
   <string>com.qiushi.asimov</string>
 
-  <!-- Every 15 minutes: exclude new dependency folders (node_modules, .venv)
+  <!-- Every 30 minutes: exclude new dependency folders (node_modules, .venv)
        from Time Machine before the hourly backup copies them; agent worktrees
        create them all day. A run with nothing new takes under a minute.
        The shim folder first on PATH makes asimov's addexclusion an attribute
@@ -23,7 +23,7 @@
   </dict>
 
   <key>StartInterval</key>
-  <integer>900</integer>
+  <integer>1800</integer>
 
   <key>RunAtLoad</key>
   <true/>

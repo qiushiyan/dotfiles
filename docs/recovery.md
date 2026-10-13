@@ -103,10 +103,12 @@ The mini needs it because every agent worktree installs its own
 dependencies: a project with a handful of worktrees holds hundreds of
 thousands of files, and without the exclusion copying them keeps `backupd`
 busy through most of each hour, load the mini shows as heat. The
-`com.qiushi.asimov` agent in `launchd-mini/` runs it every 15 minutes, so a
-new worktree's dependencies are usually marked before the hourly backup
-reaches them; brew's own `asimov` service runs daily, too slow for
-worktrees, and stays off. A run with nothing new takes under a minute.
+`com.qiushi.asimov` agent in `launchd-mini/` runs it every 30 minutes. The
+interval trades the run's cost (under a minute when nothing is new) against
+the chance that the hourly backup reaches a new worktree's dependencies
+first, about a quarter at this interval; a folder it reaches first is copied
+once and skipped from the next backup on. brew's own `asimov` service runs
+daily, too slow for worktrees, and stays off.
 
 The agent puts `~/.local/share/dotfiles/asimov` first on PATH, where a
 `tmutil` shim answers asimov's `addexclusion` by writing the exclusion
