@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# find-session [DIR]
+# List the Rex blocks in this Rex session that run a Claude Code session: its
+# block id, state, working directory and title. With DIR, only the sessions
+# working in DIR or below it. A session's title is its own summary, so a
+# worktree path is the surer way to find the one the user named.
+set -u
+want=""
+if [ -n "${1:-}" ]; then
+  want=$(cd "$1" 2>/dev/null && pwd -P) || { echo "no such directory: $1" >&2; exit 2; }
+fi
+found=0
+for id in $(rex block ls -q); do
+  st=$(rex block call -b "$id" program_status 2>/dev/null) || continue
+  rec=$(jq -c '.records[]? | select(.id=="claude")' <<<"$st")
+  [ -n "$rec" ] || continue
+  pid=$(jq -r '.owner.pid // empty' <<<"$rec")
+  cwd=$(lsof -a -p "${pid:-0}" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')
+  [ -z "$want" ] || case "$cwd/" in "$want"/*) ;; *) continue ;; esac
+  title=$(rex block call -b "$id" title 2>/dev/null | jq -r '.title // ""')
+  printf '%s\t%s\t%s\t%s\n' "${id: -6}" "$(jq -r .state <<<"$rec")" "$cwd" "$title"
+  found=1
+done
+[ "$found" = 1 ] || { echo "no Claude session${want:+ working in $want}" >&2; exit 1; }

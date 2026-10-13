@@ -15,32 +15,56 @@ or a step that needs the user's decision; then report.
 
 ## Judgment
 
+- **Keep a checklist when the plan spans sessions.** One line per queued
+  step in your scratchpad: its block, what was sent, and where it stands.
+  Update it as each step lands. Your context may be compacted on a long
+  drive, and the checklist carries the plan through and becomes the report.
 - **Wait in the background, not by polling.** `wait-turn` under
   `run_in_background` wakes you once the session's turn has ended and stayed
-  ended.
+  ended. A turn that ended while its background jobs run wakes you after
+  ten quiet minutes with a `background jobs:` line, since the reply may be a
+  question rather than "I'll report when they finish".
 - **An ended turn is not yet the trigger.** Read its last reply
   (`read-turn ID`) before acting: a turn also ends while a background
   subagent works, on a question to the user, or partway through a sequence.
   If the reply is not the state the user named, arm the wait again.
+- **Check the next step still fits.** A session can go past what it was
+  sent: run another review round, push a fix, answer a question the next
+  step was meant to ask. When the reply makes the next queued step stale or
+  redundant, that is a decision for the user.
 - **Send the user's words as written.** The session treats every word as
   instruction, so a qualifier you add changes the work it does. A request of
   your own, something you need from the session, goes as a brief file.
-- **Conditional steps get a full read.** For "if the plan is sound and
-  nothing needs my decision", read the whole report. When something does
-  need the user, stop there and leave the decision summarised; otherwise
-  send.
+- **Stop only where the next step needs the user.** Sessions end steps with
+  decisions for the user. One the next step does not act on rides to the
+  report, and you send. For a conditional step ("if the plan is sound and
+  nothing needs my decision"), read the whole report; when something there
+  needs the user, stop and leave the decision summarised. A step can still
+  reach into what a session marked as the user's, such as a docs sync
+  rewriting an entry they own: the report names it.
+- **One session edits a worktree at a time.** Sessions sharing a worktree
+  share its files and its git index. Send a step that edits only once no
+  other session there is mid-edit, a verification or spike run included.
+  When one session offers to do what another is already doing, leave the
+  offer unanswered.
 - **A permission prompt is yours to judge.** `wait-turn` returns `blocked` on
   one. Read the whole command (`read-turn ID --pending`; the screen cuts it
   off), approve with `enter` what stays inside the session's own task and
   scratch space, otherwise let it auto-deny, and name either in the report.
+- **A held message from another session is the user's.** `blocked` also
+  means a message from another session waits for approval; the screen says
+  so. Delivering it wakes the session, which may start work no step sent, so
+  leave it and name it in the report. When your next step goes to that
+  session, read the held message on screen and deny it unless the plan
+  wants what it asks.
 
 ## Rex
 
-The scripts are in `~/.agents/skills/drive-session/scripts/`; each prints its
-usage when run bare.
+The scripts are in `~/.agents/skills/drive-session/scripts/`; each of the
+`-turn` ones prints its usage when run bare.
 
 ```bash
-rex block ls; rex block call -b ID title    # the title is the session's; your own block is $REX_BLOCK
+find-session [DIR]                          # each Claude session: block, state, cwd, title; DIR keeps those in it or below; yours is $REX_BLOCK
 wait-turn ID [QUIET_SECS]                   # run_in_background: status, transcript path, screen tail (quiet 60 s)
 read-turn ID [--last|--pending|--user]      # its last reply · the call a permission prompt waits on · the prompt it got
 send-turn ID 'one short line'               # types, submits, confirms from the transcript that it arrived whole

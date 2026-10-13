@@ -2,9 +2,13 @@
 # wait-turn BLOCK [QUIET_SECS]
 # Wait until the Claude Code session in Rex block BLOCK has ended its turn and
 # stayed that way QUIET_SECS (default 60): its Rex status is `done` with no
-# background shell job left, or `blocked` on a question or permission prompt.
-# Then print the status record, the session's transcript path and the bottom
-# of its screen. Exit 2 if the block has no Claude session.
+# background shell job left, or `blocked` on a permission prompt or a held
+# message. A turn that ends while its background jobs run usually resumes when
+# they finish, but it may also have ended on a question; so after 10 quiet
+# minutes it returns anyway, with a `background jobs:` line, for the caller to
+# read the reply and decide. Then print the status record, the session's
+# transcript path and the bottom of its screen. Exit 2 if the block has no
+# Claude session.
 set -u
 block=${1:?usage: wait-turn BLOCK [QUIET_SECS]} quiet=${2:-60}
 last="" since=$(date +%s)
@@ -19,9 +23,11 @@ while true; do
   bg=0
   kids=$(pgrep -P "${owner:-0}" | paste -sd, -)
   [ -n "$kids" ] && bg=$(ps -o command= -p "$kids" | grep -c shell-snapshots)
-  if { [ "$state" = blocked ] || { [ "$state" = done ] && [ "$bg" -eq 0 ]; }; } &&
-     [ $(( $(date +%s) - since )) -ge "$quiet" ]; then
+  still=$(( $(date +%s) - since ))
+  if { [ "$state" = blocked ] || { [ "$state" = done ] && [ "$bg" -eq 0 ]; }; } && [ "$still" -ge "$quiet" ] ||
+     { [ "$state" = done ] && [ "$still" -ge 600 ]; }; then
     echo "status: $rec"
+    [ "$bg" -gt 0 ] && echo "background jobs: $bg (the turn ended while they run)"
     echo "transcript: $("$(dirname "$0")/read-turn" "$block" --path)"
     echo "--- screen ---"
     rex capture -b "$block" --trim --unwrap | tail -40
