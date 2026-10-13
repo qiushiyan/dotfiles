@@ -102,10 +102,19 @@ travels with the folder, while the source around it is still backed up.
 The mini needs it because every agent worktree installs its own
 dependencies: a project with a handful of worktrees holds hundreds of
 thousands of files, and without the exclusion copying them keeps `backupd`
-busy through most of each hour, load the mini shows as heat. A folder created since asimov's
-last run is copied until its next one. asimov has no schedule yet: brew's
-own service runs it daily, slower than worktrees appear, so run `asimov` by
-hand after a burst of new worktrees.
+busy through most of each hour, load the mini shows as heat. The
+`com.qiushi.asimov` agent in `launchd-mini/` runs it every 15 minutes, so a
+new worktree's dependencies are usually marked before the hourly backup
+reaches them; brew's own `asimov` service runs daily, too slow for
+worktrees, and stays off. A run with nothing new takes under a minute.
+
+The agent puts `~/.local/share/dotfiles/asimov` first on PATH, where a
+`tmutil` shim answers asimov's `addexclusion` by writing the exclusion
+attribute directly. Through Time Machine's daemon the same call costs about
+11 seconds a folder, so a first pass over thousands of worktree folders
+would take most of a day; the shim does it in minutes, and `tmutil
+isexcluded` reads the result back as `[Excluded]`. asimov run by hand
+outside the agent uses the real `tmutil`: correct, only slow.
 
 `tmutil isexcluded` answers for the path it is given, not for what is inside
 it. OrbStack marks its disk images (`data/data.img.raw` and `swap.img` in
@@ -131,6 +140,7 @@ tmutil status                                # a backup in progress
 tmutil listbackups                           # backups on the drive (needs Full Disk Access)
 tmutil isexcluded <path>                     # whether a path is backed up
 asimov --dry-run                             # dependency folders asimov would exclude now
+tail ~/Library/Logs/asimov.log               # what the scheduled runs excluded
 /usr/bin/log show --last 1d --info --predicate 'subsystem == "com.apple.TimeMachine" AND (eventMessage CONTAINS "Successfully completed" OR eventMessage CONTAINS "Backup failed")'   # each run's outcome
 ```
 

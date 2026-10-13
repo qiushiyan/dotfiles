@@ -163,7 +163,7 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | AWS CLI | 2.37.3 | `brew install awscli`; `~/.aws/config` is carried by `twin` (SSO profiles only; no `credentials`) | `brew upgrade awscli` |
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
 | poppler | 26.09.0 | `brew install poppler` (`pdftotext` for planlab `debug:run` document reads) | `brew upgrade` |
-| asimov | 0.12.0 | `brew install asimov`; excludes dependency folders from Time Machine (`docs/recovery.md` § Time Machine on the mini) | `brew upgrade` |
+| asimov | 0.12.0 | `brew install asimov`, run every 15 minutes by `com.qiushi.asimov` (§ Personal jobs), never `brew services`; excludes dependency folders from Time Machine (`docs/recovery.md` § Time Machine on the mini) | `brew upgrade` |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
 | obelisk | the manifest's pin | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` holds the mini's own sessions, and the skill asks it and the laptop's together (`docs/claude-sessions-store.md`) | change the pin, then `twin tools install obelisk` (`docs/twin.md`) |
 | portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
@@ -515,10 +515,11 @@ an older binary files a brief where the new one reads another slug.
   raises a notification for each new edition, with the reader key `twin`
   carries in `~/.secrets.shared`. `~/dev/gazette/docs/operations.md` has the
   rest.
-- **The hourly `twin tick`, the daily snapshot, the tmux exit watcher and
-  planlab's git upkeep** — this repository's `launchd-mini/` package
-  (`docs/twin.md` § The hourly tick; `docs/recovery.md` § Local snapshots
-  and § A dead tmux server; `docs/git-performance.md`). The snapshot run
+- **The hourly `twin tick`, the daily snapshot, the tmux exit watcher,
+  asimov's Time Machine exclusions and planlab's git upkeep** — this
+  repository's `launchd-mini/` package (`docs/twin.md` § The hourly tick;
+  `docs/recovery.md` § Local snapshots, § Time Machine on the mini and
+  § A dead tmux server; `docs/git-performance.md`). The snapshot run
   does nothing here, because Time Machine has a destination.
 
 ## Steward host

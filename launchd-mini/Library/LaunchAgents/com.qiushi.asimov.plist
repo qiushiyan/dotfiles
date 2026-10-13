@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.asimov</string>
+
+  <!-- Every 15 minutes: exclude new dependency folders (node_modules, .venv)
+       from Time Machine before the hourly backup copies them; agent worktrees
+       create them all day. A run with nothing new takes under a minute.
+       The shim folder first on PATH makes asimov's addexclusion an attribute
+       write instead of an ~11 s tmutil call.
+       docs/recovery.md § Time Machine on the mini. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/asimov</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/qiushiyan/.local/share/dotfiles/asimov:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>LowPriorityIO</key>
+  <true/>
+
+  <key>Nice</key>
+  <integer>10</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/asimov.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/asimov.log</string>
+</dict>
+</plist>
