@@ -14,9 +14,10 @@ claude/.agents/.skill-lock.json # CLI's global lock, stowed to ~/.agents/.skill-
 ```
 
 `~/.claude`, `~/.codex`, and `~/.agents` remain real directories. The personal
-skill tree and lockfile are linked into the repo. Claude cloud downloads land
-under the linked tree's ignored `synced/` directory; other runtime state stays
-outside it. Codex exclusions leave those downloads on disk.
+skill tree and lockfile are linked into the repo. Claude's claude.ai skill
+cache, `synced/` and the `.trash/` it moves copies into while sync is off
+(`docs/bundled-skills.md`), sits in the linked tree and is ignored by Git;
+other runtime state stays outside it.
 `make install` / `make restow` enforce that boundary; see [Stow layout](stow-layout.md).
 
 [Codex discovers `~/.agents/skills` and follows symlinked skill folders](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills).
@@ -156,9 +157,9 @@ same files to Codex. An external folder symlink points to its owning project's
 source; review and commit changes there.
 
 After changing skills, global invocation overrides, or the Codex policy—and
-after cloud imports, skill or Codex runtime updates (either can overwrite
-metadata), or restoring dotfiles on another machine (generated paths reflect
-the local cache)—reconcile the derived files and commit them with the policy:
+after skill or Codex runtime updates (either can overwrite metadata), or
+restoring dotfiles on another machine (generated paths reflect the local
+cache)—reconcile the derived files and commit them with the policy:
 
 ```bash
 skill-sync

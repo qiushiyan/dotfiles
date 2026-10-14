@@ -11,8 +11,7 @@ under the global kill switch.
 
 `disableBundledSkills` stays false. The global switch removes bundled skills
 before `skillOverrides` can enable them; it has no per-skill exemption.
-`CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1` has the same effect. The separate tool
-deny list, workflow disablement, and connector disablement stay in force.
+`CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1` has the same effect.
 
 Overrides use exact skill names, including for personal skills; they are not
 scoped to the bundled source. Use the canonical `code-review` name to hide
@@ -27,13 +26,37 @@ override, so invoke `/dataviz` explicitly when chart guidance is needed.
 Feature-gated skills remain subject to their upstream availability gates even
 when an override permits invocation.
 
+## Tools and claude.ai skills
+
+Every tool definition and every listed skill rides on each request, so the
+global settings also cut what this setup never uses:
+
+- **Tools:** a bare name in `permissions.deny` removes the tool's definition;
+  a scoped rule such as `Skill(name)` only blocks calls and saves nothing.
+  `disableWorkflows` removes `Workflow` and `feedbackDrafts: "off"` removes
+  `SendFeedback`. `ListAgents` is denied beside `SendMessage`, since it only
+  finds sessions to message.
+- **Kept on purpose:** `ScheduleWakeup` is the fallback heartbeat while
+  background agents run; denying it left sessions inventing their own waits
+  (`lessons/.config/lessons/agent-tooling/usage-lessons.md`). The Artifact
+  tool and Remote Control stay on.
+- **claude.ai skills:** `syncClaudeAiSkills: false` keeps the account's
+  claude.ai skills (office formats, desktop browser and computer use, a second
+  `skill-creator`) out of every session, and `syncClaudeAiPlugins: false` does
+  the same for plugins. At launch Claude Code moves copies already synced into
+  `claude/.claude/skills/.trash/`, which Git ignores and Codex skips as a
+  hidden folder; re-enabling sync downloads fresh copies instead of restoring
+  them.
+
 ## Upstream ownership and upgrades
 
 Keep bundled skill names out of the personal skill directory: a personal copy
 shadows the native one.
 
 After a Claude Code upgrade, inspect `/skills` in a fresh session and set new
-unwanted bundled names to `off` in the global settings. Unlisted names default
+unwanted bundled names to `off` in the global settings. `/context` there shows
+whether the tool total grew; `~/.claude/cache/changelog.md` names new tools
+and the setting that turns each off. Unlisted names default
 to `on`; there is no supported bundled-only wildcard or allowlist. The `/skills`
 menu saves overrides to project-local settings, so use the global file for
 machine-wide policy.
@@ -55,10 +78,12 @@ References: [skill overrides](https://code.claude.com/docs/en/skills#override-sk
 ## Codex controls
 
 Codex discovers runtime-owned `~/.codex/skills/.system/`, plugin skills,
-and shared personal skills — including every Claude cloud download under the
-shared tree's `synced/` cache, one copy per organization/account, without
-Claude's active-account selection
-([claude.ai skill syncing](https://code.claude.com/docs/en/skills#where-synced-skills-load)).
+and shared personal skills. It skips hidden folders such as `.trash/`, but
+loads whatever sits in the shared tree's `synced/` cache — with claude.ai sync
+on, one copy per organization/account, without Claude's active-account
+selection
+([claude.ai skill syncing](https://code.claude.com/docs/en/skills#where-synced-skills-load)) —
+so the policy keeps that cache excluded.
 The Codex bundled switch covers only `.system`. The tracked policy supplies the
 selection and `skill-sync` derives
 [local-skill configuration](https://learn.chatgpt.com/docs/build-skills#enable-or-disable-local-codex-skills)
