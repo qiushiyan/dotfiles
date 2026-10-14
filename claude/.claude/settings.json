@@ -16,6 +16,7 @@
       "RemoteTrigger",
       "ReportFindings",
       "AskUserQuestion",
+      "ListAgents",
       "CronCreate",
       "CronDelete",
       "CronList"
@@ -23,6 +24,9 @@
     "defaultMode": "auto"
   },
   "disableClaudeAiConnectors": true,
+  "syncClaudeAiSkills": false,
+  "syncClaudeAiPlugins": false,
+  "feedbackDrafts": "off",
   "skillOverrides": {
     "artifact-capabilities": "off",
     "artifact-components": "off",
@@ -161,7 +165,6 @@
   },
   "disableRemoteControl": false,
   "disableWorkflows": true,
-  "disableArtifact": false,
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/commands/statusline-command.sh",

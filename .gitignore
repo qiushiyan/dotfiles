@@ -21,8 +21,10 @@ claude/.claude/*
 !claude/.claude/skills/
 # ...but never the packaged skill exports (zip artifacts).
 claude/.claude/skills/**/*.skill
-# Account-scoped cloud downloads are runtime cache, not personal skill sources.
+# Account-scoped cloud downloads are runtime cache, not personal skill sources;
+# with claude.ai skill sync off, Claude Code moves them to .trash/.
 claude/.claude/skills/synced/
+claude/.claude/skills/.trash/
 # terminal-browser's skill is a link its own installer writes, as an absolute
 # path into that machine's home (`terminal-browser setup` and `upgrade`
 # rewrite it), so each machine keeps its own and none holds a broken one.
