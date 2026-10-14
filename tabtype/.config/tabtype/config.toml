@@ -46,14 +46,14 @@ For each, as if briefing a CEO: why it matters now, what it actually means in pl
 
 # ── Consult and verify ─────────────────────────────────
 [[snippets]]
-key = "consult-codex"
+key = "consult-design"
 expand = '''
-Agreeing with the general direction. Now run consult with astra and opus; settle the high-level design and the implementation tenets. For important decisions you can ask them as open ended questions with my preference. $0'''
+Agreeing with the general direction. Now run consult with astra and fable; settle the high-level design and the implementation tenets. For important decisions you can ask them as open ended questions with my preference. $0'''
 
 [[snippets]]
 key = "consult-then-build"
 expand = '''
-Agreeing with the general direction, now run a consult with opus, one round — settle the design, then build without waiting for me. Put the technical unknowns and the questions I left unanswered on trial in the round, each with the default you would take. Stop only for what a sensible default cannot settle: a disagreement with the voice you could not resolve, a problem it replaced or found unsupported, or a new fork that would be expensive to undo. Otherwise take the converged position, implement end to end, committing at major milestones, and say in the final report which defaults you took. $0'''
+Agreeing with the general direction, now run a consult with astra, one round — settle the design, then build without waiting for me. Put the technical unknowns and the questions I left unanswered on trial in the round, each with the default you would take. Stop only for what a sensible default cannot settle: a disagreement with the voice you could not resolve, a problem it replaced or found unsupported, or a new fork that would be expensive to undo. Otherwise take the converged position, implement end to end, committing at major milestones, and say in the final report which defaults you took. $0'''
 
 [[snippets]]
 key = "spike-check"
