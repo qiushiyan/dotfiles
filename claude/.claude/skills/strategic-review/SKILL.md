@@ -63,11 +63,16 @@ to build it once they do.
    each finding whether a probe confirmed it or it was read from the source.
    Keep for yourself the read no single area shows: how the change joins the
    existing code, whether it duplicates a mechanism that already exists, and
-   which reshape would delete a concept.
+   which reshape would delete a concept. Start the report only once every
+   area has returned, and wait on their completion notices rather than a
+   scheduled wakeup: a wakeup prompted with `/strategic-review` fires later
+   as a request for a second review.
 4. **Verify before you report.** Re-read the cited code for every finding
    the report will carry, because reviewers state wrong findings with the
-   same confidence as real ones. Drop what does not hold, and say which
-   findings rest on reading alone.
+   same confidence as real ones. Every finding an area reported reaches the
+   report or is dropped here with its reason, since past reports lost more
+   findings this way than any other. Say which findings rest on reading
+   alone.
 
 ## The lenses
 
@@ -86,8 +91,8 @@ to build it once they do.
   red when the behaviour breaks and that runs in CI. Where you can, break
   the guarded line in a scratch worktree and run the test: wiring you can
   remove with the suite still green is a finding even when every line is
-  covered. Then
-  weigh the tests the PR added, since each costs upkeep like code. A test
+  covered. Then weigh the tests the PR added, since each costs upkeep like
+  code. A test
   that pins whole sentences a model or user reads, restates the
   implementation, checks only a mock's arguments, or asserts a value its
   own fixture supplied is a finding, fixed by asserting the token or

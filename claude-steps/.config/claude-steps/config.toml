@@ -37,7 +37,7 @@ color = "green"
 [[label]]
 name = "review"
 skills = ["review"]
-snippets = ["review-verify", "loopy-review-verify", "review-then-closeout"]
+snippets = ["review-verify", "loopy-review-verify", "review-then-closeout", "strategic-review-brief"]
 jobs = ["review-"]
 count_commits = true
 color = "magenta"

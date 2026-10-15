@@ -275,3 +275,105 @@ Session `mini:88b18cbd` (an `/improve-tool` pass, dogfooding `~/dev/skill-evals`
 - **Revise** if real findings drop below the v2 yield, if deletions remove a
   test that was a contract's only proof, or if the lens crowds out
   correctness findings.
+
+## 2026-10-14 — second opinions from inside the review, replayed on four PRs
+
+Session `mac:9f01709a` (an `/improve-tool` pass). The user asked whether the
+skill should send issues worth a second opinion to astra or fable, tested by
+replay, without changing the skill until the evidence was in.
+
+**Corpus.**
+- Obelisk, both machines, the same predicate as the 10-09 pass: 14 sessions
+  since then, all on the mini, 13 PRs (8858 8860 8874 gazette#1 8885 8948 8949
+  8955 8959 "2" 8994 9042×2 9069).
+- Answer keys for #8858, #8948, #8955 and #8959, each at the head its real
+  review read. They were built from the session, the envoy rounds, the bots, CI
+  and later fixes, and each was checked at that head. They live in the cases
+  under `~/dev/skill-evals/cases/strategic-review/pr-*.md`.
+
+**Findings from the live uses.**
+- **No second model.** No review consulted one: all 56 area subagents ran on
+  the host model. Wherever another voice later disagreed, it was about a
+  prescribed fix, not a finding:
+  - 8955: astra r3 overturned F1 and F4, then CodeRabbit overturned F1's
+    replacement;
+  - 8959: r6's two criticals came from the review's own fixes.
+- **The fold-in is unreviewed by default.** All 5 PRs that got a review after
+  the fold-in turned up a critical or several moderates, mostly in fold-in
+  code: 8948 r3, 8955 r3, 8959 r6, 9042 `08eb4785`, gazette#2. In 3 of the 5
+  the fold-in's "each new test seen red" did not hold.
+- **Findings lost before the report.** In #8858, 12 of the 21 defects the
+  report missed were in its own areas' second passes, which arrived after it.
+  In #8948 the lead dropped an area's finding (K10). Reports were written
+  before every area returned in 332b9785 and 53805ced, and 8809 in the last
+  pass.
+- **Stale wakeups.** Four sessions set a wakeup whose prompt was
+  `/strategic-review …`: 53805ced, 3836e63b, d174f8f0, a93c3d7e. It fired
+  after the work in three:
+  - d174f8f0: an unrequested 27-minute round;
+  - a93c3d7e: a refused Skill call, and the user confused.
+- **The 10-09 measures hold.**
+  - `low-value-test` appeared in 11 of 14 reports.
+  - Prose pins in the fold-in were no higher than in the build in 11 of 13 PRs.
+  - The holistic fold-in instruction was typed in 0 of 14 sessions (5 of 9
+    before).
+
+**Replay** (`~/dev/skill-evals`, run `sr-consult-w1` on the mini).
+- **Rig.** 60 rollouts on the subscriptions; the judge was gpt-6-sol with 3
+  passes.
+- **Arms:**
+  - `current`;
+  - `astra` / `fable`: a step to ask another model wherever being wrong costs
+    most and reading has not settled it;
+  - `fixes`: astra tries to break each prescribed fix;
+  - `builder`: the build session's own "look hardest at" paragraph, forked
+    from it at the moment of invocation;
+  - `control`: hindsight hints.
+- Per run, summed over the four PRs:
+
+| arm | checked defects (39) | of those the real review missed (18) | fix checks (4) | min | $ |
+|---|---|---|---|---|---|
+| current | 8.3 | 1.9 | 2.7 | 14 | 13 |
+| astra | 9.0 | 2.0 | 1.3 | 16 | 13 |
+| fable | 9.2 | 1.0 | 1.3 | 24 | 20 |
+| fixes | 10.0 | 3.7 | 2.6 | 20 | 14 |
+| builder | 10.9 | 3.9 | 2.3 | 16 | 12.5 |
+| control | 22.0 | 14.3 | 1.0 | 14 | 11 |
+
+- **Whole-key recall** was flat, 49–56% a run in every arm.
+- **Blind rank (pairwise, of 36):**
+  - fixes beat current 27, builder 26 and astra 24;
+  - builder beat current 23, and astra beat current 22.
+  - The ranker and astra are both OpenAI models.
+- **What it showed:**
+  - A general "ask another model" step does not pay: the consults confirmed
+    findings the reviewer already had, and fable cost 50% more.
+  - Aiming astra at the fixes, or handing over the builder's doubts, roughly
+    doubles the hard misses. Neither made the prescribed fixes safer.
+  - The control shows the ceiling is where the reviewer looks, not how well
+    it reads.
+- **Limits:**
+  - 2–3 runs per arm per PR, and the realistic arms differ by 1–2 defects
+    over four PRs.
+  - In two #8948 rows the report was not the final message, so recall
+    excludes them.
+
+**Decisions** (the user's, after the results).
+- **Not adopted:** no consult step in the skill.
+- **Builder hints** become the TabType snippet `strategic-review-brief`, asked
+  of the build session at its end and pasted after `/strategic-review <pr>`.
+- **Changed here:**
+  - step 3 writes nothing until every area has returned, and waits on
+    completion notices rather than a wakeup;
+  - step 4 accounts for every area finding, reported or dropped with a reason.
+
+**Next comparison.** Real uses after this commit:
+- reviews opened with a pasted brief against bare ones, by finding yield and
+  by what later rounds still find;
+- no report written before its areas return;
+- no wakeup prompted with the skill command;
+- whether a post-fold-in review becomes routine, and what it still finds.
+
+Revise if briefed reviews find no more than bare ones over about ten uses,
+or if the accounting rule bloats reports without moving what later rounds
+find.
