@@ -81,6 +81,7 @@ carry = [
   ".githooks/reference-transaction",
   "application/.env.development.local",
   "application/tests/e2e/loopy-stress/.env.smoke.local",
+  ".tabtype.local.toml",
 ]
 
 [repos.planlab-handoffs]

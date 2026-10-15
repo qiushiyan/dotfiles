@@ -14,10 +14,11 @@ frame the problem → settle the direction → build → review → close out
                      and a review into the closeout)
 ```
 
-The skills own the procedure at each stage (`docs/doc-loop.md`); a snippet is
-the user's entry into one. `WORKFLOW.md` owns which snippet fits which moment.
-`DESIGN.md` owns the prompt patterns. `EVIDENCE.md` holds the usage counts a
-removal or an addition is argued from. Read only the branch being edited.
+The skills own the procedure at each stage; a snippet is the user's entry into
+one. `docs/session-pipeline.md` owns the stages, which snippet starts each, and
+the project files that replace a key. `DESIGN.md` owns the prompt patterns.
+`EVIDENCE.md` holds the usage counts a removal or an addition is argued from.
+Read only the branch being edited.
 
 ## Invariants
 

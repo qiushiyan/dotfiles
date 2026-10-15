@@ -4,20 +4,15 @@ How durable knowledge crosses coding-agent sessions: **the project's docs are th
 memory; each session deserializes them at start (onboarding) and serializes what
 it learned at end (update-docs / handoff)**. Sessions are ephemeral; a fresh
 session with a distilled artifact beats a long session with `/compact`. Between
-those bookends the work has its own checkpoints, each buying a judgment this
-session cannot make about itself and leaving an artifact the next phase reads.
-All checkpoints are user-triggered by design — the skills never fire themselves.
+those bookends a branch goes through the stages in `docs/session-pipeline.md`
+— design, spec, build, review, landing — each started by the user's prompt.
+The skills never fire themselves.
 
 ## The loop
 
 ```
 /onboarding <project input>  ← project-specific context and first-turn contract
-    /consult                 ← position taken, then fresh voices judge it → the settled direction
-    /spike                   ← optional: throwaway code settles what the direction rests on
-    /write-spec              ← unknowns settled by running them; the direction becomes a committed spec, read cold and validated
-    /enter-worktree          ← names the branch; gwt places it, this session moves in and keeps its context
-    …implement…              ← the host builds from the spec
-    /review                  ← a cold session judges the committed range → the PR
+    …the stages…             ← docs/session-pipeline.md
 /update-docs                 ← docs reconciled with the diff (may run mid-session too)
 /handoff [next: …]           ← lessons + a brief in ~/dev/.handoffs, itself the next first prompt
   → brief start <slug> places the worktree and hands over the pointer
@@ -28,25 +23,6 @@ All checkpoints are user-triggered by design — the skills never fire themselve
 doc pass with no handoff; a mid-task stop wants a handoff with the doc pass
 deferred. `/handoff` _contains_ the doc pass (it defers to the project's
 update-docs skill) — never the reverse.
-
-## The work loop — consult → build → review
-
-The bookends carry knowledge between sessions; the work loop introduces
-independent judgment inside one. An artifact's author is never its only judge.
-
-| Checkpoint | Input → output |
-|---|---|
-| `/consult` | host position → independent designs → settled direction + continuable job |
-| `/spike` | one technical uncertainty → executable evidence → verdict that amends the direction |
-| `/write-spec` | settled direction → unknowns run down → committed design → cold read + validation consult |
-| `/review` | committed range + design anchor → verified findings → merge verdict |
-
-The host verifies outside findings against source; a peer is evidence, not
-authority. Implementation is ordinarily the host's, with `/delegate` as the
-explicit alternative.
-
-Compact at artifact boundaries. Once a spec or committed range carries the
-state, the exploration that produced it is disposable.
 
 ## The commands, by project
 

@@ -1,7 +1,7 @@
 # Prompt design patterns
 
-Satellite of `tabtype/CLAUDE.md`. `tabtype/WORKFLOW.md` owns which snippet
-fits which moment; this page owns why they are shaped as they are.
+Satellite of `tabtype/CLAUDE.md`. `docs/session-pipeline.md` owns which
+snippet starts which stage; this page owns why they are shaped as they are.
 
 ## What a snippet carries
 

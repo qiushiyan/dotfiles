@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""snippet KEY [DIR] [TEXT]
+snippet --list [DIR]
+
+Print the user's TabType snippet KEY as it expands for a session working in
+DIR (default: the current directory), with TEXT where its `$0` caret stop
+is, or after it when it has none: what the user would have typed after the
+snippet. The file the key came from goes to stderr, since a project can give
+a key a different meaning (planlab's `closeout` is a post-merge step; the
+global one merges and installs).
+
+Layers, lowest precedence first, as TabType reads them; in each, a TOML file
+wins over a JSON sibling:
+
+  ~/.config/tabtype/config       global
+  ~/.config/tabtype/config.local
+  <root>/.tabtype                project, committed (the worktree's own)
+  <primary>/.tabtype.local       personal, from the main checkout when <root> is a linked worktree
+  <root>/.tabtype.local          personal, the worktree's own
+
+<root> is DIR's git toplevel. Exit 1 when no layer defines KEY.
+"""
+import json
+import os
+import subprocess
+import sys
+import tomllib
+
+
+def git(directory, *args):
+    out = subprocess.run(["git", "-C", directory, *args], capture_output=True, text=True)
+    return out.stdout.strip() if out.returncode == 0 else ""
+
+
+def layer_files(directory):
+    conf = os.path.expanduser("~/.config/tabtype")
+    root = git(directory, "rev-parse", "--show-toplevel") or os.path.abspath(directory)
+    common = git(directory, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    primary = os.path.dirname(common) if common.endswith("/.git") else ""
+    layers = [(conf, "config"), (conf, "config.local"), (root, ".tabtype")]
+    if primary and os.path.realpath(primary) != os.path.realpath(root):
+        layers.append((primary, ".tabtype.local"))
+    layers.append((root, ".tabtype.local"))
+    for base, name in layers:
+        for ext in ("toml", "json"):
+            path = os.path.join(base, f"{name}.{ext}")
+            if os.path.exists(path):
+                yield path
+                break
+
+
+def snippets(path):
+    with open(path, "rb") as f:
+        data = tomllib.load(f) if path.endswith(".toml") else json.load(f)
+    return {s["key"]: s.get("expand", "") for s in data.get("snippets", []) if "key" in s}
+
+
+def main():
+    args = sys.argv[1:]
+    if not args:
+        sys.exit(__doc__)
+    if args[0] == "--list":
+        effective = {}
+        for path in layer_files(args[1] if len(args) > 1 else "."):
+            for key in snippets(path):
+                effective[key] = path
+        for key, path in sorted(effective.items()):
+            print(f"{key}\t{path}")
+        return
+    key, directory = args[0], args[1] if len(args) > 1 else "."
+    found = None
+    for path in layer_files(directory):
+        found = (path, snippets(path)[key]) if key in snippets(path) else found
+    if not found:
+        sys.exit(f"no snippet {key!r} for {os.path.abspath(directory)}; snippet --list {directory} shows the keys")
+    path, text = found
+    print(f"from: {path}", file=sys.stderr)
+    tail = " ".join(args[2:])
+    text = text.strip("\n")
+    if "$0" in text:
+        text = text.replace("$0", tail, 1)
+    elif tail:
+        text = f"{text}\n\n{tail}"  # typed after an insert with no caret stop
+    print(text.rstrip())
+
+
+if __name__ == "__main__":
+    main()

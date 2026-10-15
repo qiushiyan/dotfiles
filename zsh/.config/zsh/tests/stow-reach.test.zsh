@@ -82,7 +82,7 @@ case_no_package_claude_md_reaches_home() {
 
 case_tabtype_docs_stay_repo_local() {
   local doc
-  for doc in CLAUDE.md WORKFLOW.md DESIGN.md; do
+  for doc in CLAUDE.md DESIGN.md EVIDENCE.md; do
     ignored tabtype "$doc" || {
       print "tabtype/.stow-local-ignore no longer excludes $doc"
       return 1

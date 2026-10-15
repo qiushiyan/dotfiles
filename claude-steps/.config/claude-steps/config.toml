@@ -29,8 +29,15 @@ color = "blue"
 [[label]]
 name = "spec"
 skills = ["write-spec"]
-snippets = ["implement-spec"]
 color = "green"
+
+# The build: from a spec, from settled decisions, or straight after a consult
+# round, so consult-then-build stands under both.
+[[label]]
+name = "build"
+snippets = ["implement-spec", "implement-now", "consult-then-build"]
+count_commits = true
+color = "blue"
 
 # loopy-review-verify asks for the review and the verification in one paste,
 # so it stands under both; review-then-closeout likewise, under closeout.
@@ -54,6 +61,7 @@ color = "cyan"
 [[label]]
 name = "docs"
 skills = ["update-docs", "pl-loopy-update-docs", "handoff", "pl-loopy-handoff", "pl-loopy-infra-handoff", "pl-loopy-handoff-distill"]
+snippets = ["land-pr"]
 count_commits = true
 color = "green"
 

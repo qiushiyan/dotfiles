@@ -50,10 +50,12 @@ key = "consult-design"
 expand = '''
 Agreeing with the general direction. Now run consult with astra and fable; settle the high-level design and the implementation tenets. For important decisions you can ask them as open ended questions with my preference. $0'''
 
+# ~/dev/planlab/main/.tabtype.local.toml replaces this key there, naming that
+# repo's spike toolkit; the rest of the text is the same in both.
 [[snippets]]
 key = "consult-then-build"
 expand = '''
-Agreeing with the general direction, now run a consult with astra, one round — settle the design, then build without waiting for me. Put the technical unknowns and the questions I left unanswered on trial in the round, each with the default you would take. Stop only for what a sensible default cannot settle: a disagreement with the voice you could not resolve, a problem it replaced or found unsupported, or a new fork that would be expensive to undo. Otherwise take the converged position, implement end to end, committing at major milestones, and say in the final report which defaults you took. $0'''
+Agreeing with the general direction, now run a consult with astra, one round — settle the design, then build without waiting for me. Put the technical unknowns and the questions I left unanswered on trial in the round, each with the default you would take. Stop only for what a sensible default cannot settle: a disagreement with the voice you could not resolve, a problem it replaced or found unsupported, or a new fork that would be expensive to undo. Otherwise take the converged position. Where it rests on an assumption that reading the code cannot settle, settle that first with throwaway spikes (read ~/dotfiles/claude/.claude/skills/spike/SKILL.md, its design moment) and let the verdicts amend the direction. Then implement end to end, committing at major milestones, and say in the final report which defaults you took and what the spikes showed. $0'''
 
 [[snippets]]
 key = "spike-check"
