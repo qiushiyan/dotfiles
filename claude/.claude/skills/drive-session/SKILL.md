@@ -64,9 +64,9 @@ The scripts are in `~/.agents/skills/drive-session/scripts/`; each of the
 `-turn` ones prints its usage when run bare.
 
 ```bash
-find-session [DIR]                          # each Claude session: block, state, session id, cwd, title; DIR keeps those in it or below; yours is $REX_BLOCK
-wait-turn ID [QUIET_SECS]                   # run_in_background: status, transcript path, screen tail (quiet 60 s)
-read-turn ID [--last|--pending|--user]      # its last reply · the call a permission prompt waits on · the prompt it got
+find-session [DIR]                          # each Claude session: window, block, state, session id, cwd, title; DIR keeps those in it or below; yours is $REX_BLOCK
+wait-turn ID [QUIET_SECS] [BG_SECS]         # run_in_background: status, transcript path, screen tail (quiet 60 s; through background jobs 600 s, longer when the reply names a long run)
+read-turn ID [--last|--pending|--user|--prompts N]  # its last reply · the call a permission prompt waits on · the prompt it got · what it has been told
 send-turn ID 'one short line'               # types, submits, confirms from the transcript that it arrived whole; a slash command too
 send-turn ID --file brief.md                # anything longer than one short line: typing drops a long prompt's head
 rex send-key -b ID enter                    # approve a permission prompt
