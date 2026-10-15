@@ -206,14 +206,17 @@ rex run … -- /bin/zsh -lic 'x --resume SESSION_ID; exec zsh -l'    # resume on
 
 ## Report
 
-The user did not watch the night. Lead with each session's state, by window
-and block:
+The user did not watch the night. When a session reaches its finish or
+parks, send it `recap` and wait for that turn: the session knows what it
+built and why, and reads its own diff for the facts. Your report is built
+from those recaps. Lead with what needs the user across every session, each
+item explained so they can decide from your words alone. Then a section per
+session, by window and block:
 
-- **Finished:** what it reached and what is left for the user, such as the
-  merge.
-- **Parked:** what it needs, explained so the user can decide from your
-  words alone.
-- **Halted:** what happened and what is still running.
-
-Then, per session: the stages sent, the defaults taken, how the PR's code
-review ended, and anything a step did that reached into what is the user's.
+- **Where it ended:** finished (the PR and how its code review ended, or
+  the merge and install), parked (what it needs), or halted (what happened
+  and what is still running).
+- **The recap**, quoted rather than retold, trimmed only of what the
+  needs-you list already says.
+- **How the night went:** the stages sent, the defaults taken, and anything
+  a step did that reached into what is the user's.

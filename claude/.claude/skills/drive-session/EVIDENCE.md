@@ -3,6 +3,18 @@
 Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares.
 
+## 2026-10-15 — the morning recap
+
+The morning after the 10-14 drive the user asked two driven sessions to
+repeat what they had recommended ("i forgot what you recommend", `ada7af18`;
+"i forgot what it is", `08eb4785`) and a third what it was for "in plain
+terms" (`ad62fa19`); `explain-diff` has no real use in the history. A
+`recap` snippet, after HumanLayer's `show-me`, is now the last stage of a
+driven session, and the report quotes the recaps. `show-me` is installed
+unchanged for later questions; planlab PR bodies take its views (planlab
+#9135). The next pass counts morning re-asks in driven sessions against
+these three.
+
 ## 2026-10-15 — stage-aware driving (improve-tool pass)
 
 **Ask.** Drive sessions through the user's own stage pipeline when they leave

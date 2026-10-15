@@ -98,6 +98,22 @@ Review and revise the model-facing surfaces this session touched — prompts, sk
 
 Prefer short, clear instructions that invite reasoning, with an informative code example as the pattern, over long prose repeating what the code already says. A structural rewrite is sometimes more effective than patching. Report each finding as a named defect with its fix, and each deliberate keep with its reason; say plainly if nothing needs changing. Do not add literal tests for these surfaces.'''
 
+# ── Re-orient ─────────────────────────────────────────
+# The last stage of a driven session, and a by-hand catch-up on any session.
+# Its views follow HumanLayer's show-me skill (/show-me).
+[[snippets]]
+key = "recap"
+expand = '''
+Recap this session for me as if I had not watched it. Read the diff, the commits and any spec first: your memory supplies the intent, the diff supplies the facts.
+
+- **The problem**, in one sentence, in product terms.
+- **What changed**, as the smallest views that show it: a call tree, a file tree with one line of responsibility each, a diff of the shape, or pseudocode. Use diff notation where the shape existed before, and leave out what did not change.
+- **The approach**, and the alternative it beat, in two sentences.
+- **What was verified** and how, and what was not.
+- **What waits for me**, each with your recommendation, or that nothing does.
+
+Views over prose; keep each to what answers these. $0'''
+
 # ── Closeout ───────────────────────────────────────────
 # Both carry the same numbered closeout: an edit to one is an edit to the other.
 # ~/dev/tabtype/.tabtype.local.toml replaces both keys there, with a release as

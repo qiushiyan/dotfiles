@@ -61,14 +61,20 @@ commits on `main`, and its `closeout` then skips the merge.
 6. **Prompt check**, when the branch's diff touches model-facing text —
    prompts, skill bodies, snippets, tool descriptions and results, a
    `CLAUDE.md`: `loopy-prompt-check` in planlab, `prompt-check` elsewhere.
-7. **Land.** By project (§ Finishes): planlab `land-pr`; a personal tool
-   `closeout`. `review-then-closeout` is stages 5 and 7 in one prompt, for
-   a branch nothing has reviewed yet; sent after a review, it would start
-   another.
+7. **Land.** By project (§ Finishes): planlab `land-pr`, whose PR body is
+   the one `pl-pr`'s step 6 lays out (the why, a change outline, notes for
+   reviewers); a personal tool `closeout`. `review-then-closeout` is stages
+   5 and 7 in one prompt, for a branch nothing has reviewed yet; sent after a
+   review, it would start another.
 8. **Code review on the PR** (planlab). `/pl-handle-code-review` loops over
    the bots' findings until the PR is caught up or the fixes stop
    converging. `handle-review` is its single-round form, for when the user
    runs the loop.
+9. **Recap**, once a session has finished or stopped on something that is
+   the user's: `recap` has it say, from its diff, the problem it solved,
+   what changed as a few structural views, the approach, what was verified,
+   and what waits for the user. It is how the user catches up on work they
+   did not watch; `/show-me` answers a narrower question about it later.
 
 After the merge and deploy, which are the user's, planlab's `closeout` key
 runs `/pl-loopy-handoff-distill merged and deployed`; elsewhere
