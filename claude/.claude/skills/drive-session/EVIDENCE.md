@@ -89,7 +89,9 @@ points below are the candidates).
 **Next pass compares** drives after this commit with `847c0c59`:
 
 - mid-drive pointers the user had to give (target none);
-- sends that are a snippet verbatim vs. hand-composed prompts;
+- sends that are a snippet verbatim vs. hand-composed prompts — claude-steps
+  shows a driven snippet as `pasted <key>  in a file`, so `claude-steps show
+  <sid> --all` counts them;
 - parks the user overrode, and continues the user would have stopped;
 - heavy sessions reaching the PR, and where the rest parked.
 
