@@ -292,9 +292,11 @@ cases, fixtures, commands and how to read a report.
   request, the session it came from, and what passes and fails in terms a
   transcript shows. A judge from another model family grades each run.
 - **When it applies:** a finding that one headless session reproduces, from
-  the request alone or with one scripted reply. Work whose value spans
-  several of the user's turns (`review`, `consult`) stays with cold readers
-  and later uses. `improve-tool` routes its runtime claims here; a session
+  the request alone or with one scripted reply. That includes a tool whose
+  value shows only on real work, replayed on a merged PR frozen at the head
+  it was used on (the repository's `docs/pr-replay.md`; `strategic-review`'s
+  cases are the examples). Work whose value spans several of the user's turns
+  (`consult`, a review's fold-in) stays with cold readers and later uses. `improve-tool` routes its runtime claims here; a session
   outside it reaches the tool by naming it ("run obelisk's skill-evals cases
   at HEAD").
 - **What it swaps:** the skill's text at a git revision, the working tree, or
@@ -303,10 +305,13 @@ cases, fixtures, commands and how to read a report.
 - **Isolation:** each run gets a throwaway home and runs under `sandbox-exec`.
   It cannot write outside its own directory, read the cases, the real
   session stores or any credential, or reach the other machine, which keeps
-  the `CLAUDE.md` rule on isolating live state. The agent bills the Claude
+  the `CLAUDE.md` rule on isolating live state. A skill that consults codex
+  gets it as a provider: the run copies in an access token that cannot
+  refresh, so the live login stays out of reach. The agent bills the Claude
   subscriptions by default, each session on an account headroom picks, and
   the judge always goes through OpenRouter, so the fixture's content
-  (sessions, or a repository's code) reaches both Anthropic and OpenAI. Why a
+  (sessions, or a repository's code) reaches both Anthropic and OpenAI, and a
+  codex consult sends it to OpenAI directly. Why a
   launcher such as `x -p` cannot stand in: the README's billing note.
 
 Two readings decide what a result means. A case the revision before a fix

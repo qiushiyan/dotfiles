@@ -134,7 +134,8 @@ against chosen revisions; its README covers cases, fixtures and commands.
 Use it when a finding reproduces within one headless session, from the
 request alone or with one scripted reply. Rollouts send the fixture's session
 content to Anthropic for the agent and to OpenRouter for the judge (OpenRouter
-for both under `--route openrouter`), so name them in the pass's disclosure.
+for both under `--route openrouter`), and to OpenAI when the tool consults
+codex, so name them in the pass's disclosure.
 
 Before editing, record the commit the skill is at; that sha is the case's
 `red`. Write the finding as a case there: the request, the source session,
@@ -148,8 +149,9 @@ sessions a week needs more than three runs to appear. To keep the candidate
 out of live sessions until it passes, edit a copy and pass its directory as
 the revision.
 
-Before spending runs on a new case, run `skill-eval calibrate` on it: a
-reader arm that may only read, and one rollout at `red`. A reader that
+Before spending runs on a new case, run `skill-eval calibrate` on it, unless
+reading is the tool's whole method, as in a review: a reader arm that may
+only read, and one rollout at `red`. A reader that
 passes, or a `red` that passes, means the case cannot tell the conditions
 apart; make the outcome depend on what reading cannot reach before you run
 it. A question about phrasing or about a skill against none is a set of arms
@@ -158,16 +160,19 @@ control: an arm marked `hints`, whose request carries the case's
 `## Control`, naming where the outcome lives. Without the control, zeros
 cannot say whether the arms missed the outcome or the rig hid it. A regrade
 can move a check either way, so use `--judge-passes 3`, a blind `rank` for
-quality, and `findings`
-against the whole answer key, where a report raises problems the checks
-do not score.
+quality, and `findings` against the whole answer key, where a report raises
+problems the checks do not score. Read an arm's difference from the
+baseline by the report's interval: one spanning 0 is noise at that many
+runs. Read whether an arm took its treatment at all from the counts
+`tool.json` `track` adds.
 
-For a tool whose value shows only on real work, replay merged PRs. The
-replay head is the commit the PR was at when the tool was asked for. The
-answer key is what its reviews, bots, CI and later fixes found at that
-head. Mark which defects the stack can reach. Such a replay runs the
-project's real stack on the owner's machine, beside the owner's other
-sessions. An old head's tooling meets today's shared state there: its
+For a tool whose value shows only on real work, replay merged PRs
+(`docs/pr-replay.md` in the repo: the answer key, a fixture recipe, the
+case, arms). The replay head is the commit the PR was at when the tool was
+asked for. The answer key is what its reviews, bots, CI and later fixes
+found at that head. Mark which defects the stack can reach. A replay that
+needs the project's running stack runs it on the owner's machine, beside
+the owner's other sessions. An old head's tooling meets today's shared state there: its
 cleanup can take another checkout's resources for orphans, and an agent
 blocked by a format it cannot read will route around the block. So give
 the live tool a read-only `preflight.check` that refuses while any shared
