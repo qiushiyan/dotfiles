@@ -27,10 +27,11 @@ Other homes:
 ## The stages
 
 In order; a stage the branch does not need is skipped, and a later fix can
-send the branch back through review and docs. Before anything is built, a
-session still on a project's main checkout moves to a branch:
-`/enter-worktree` names it, `gwt` places it, and the session follows with its
-context.
+send the branch back through review and docs. Where a project builds on
+branches — planlab, itell, the tools under `~/dev` — a session still on the
+main checkout moves to one before anything is built: `/enter-worktree` names
+it, `gwt` places it, and the session follows with its context. `~/dotfiles`
+commits on `main`, and its `closeout` then skips the merge.
 
 1. **Onboard.** `/onboarding <goal>` (itell, duet), `/pl-loopy-onboarding
    <goal>` (planlab's Loopy), or a handoff brief's pointer. It ends in an

@@ -37,17 +37,25 @@ the user's, and the report written.
    a worktree or will close out into the same main checkout. Something the
    session was told ("pause before phase 5 until I name the workspaces")
    outranks the pipeline.
-2. **Plan in one message, then give the user a few minutes to veto it.** A
-   line per session: where it is → the stages you will send → its finish.
-   Then the defaults you will take and the sessions you will park, each with
-   what it needs. Ask only what blocks a session: a fact or permission only
-   the user holds, such as the finish of a project the pipeline does not
-   cover or a workspace to create. Start a `sleep 300` under
-   `run_in_background`, send the message, and send nothing to any session
-   until the sleep ends. A question still unanswered then holds its session
-   only at the step that needs the answer, and you drive it up to there. An
-   answer arriving later counts from then on, and the report names what
-   already ran on the default.
+2. **Plan in one message, and give the user five minutes to veto it.** A
+   line per session — where it is → the stages you will send → its finish —
+   then the defaults you will take and what waits for the user. Ask only what
+   blocks a session: a fact or permission only the user holds, such as an
+   unknown project's finish or a workspace to create. An unanswered question
+   holds its session only at the step that needs the answer. Start a
+   `sleep 300` under `run_in_background` and end your turn with the message;
+   the sleep's end wakes you, and nothing goes to any session before it. An
+   answer that arrives later counts from then on, and the report names what
+   ran on the default.
+
+   <example>
+   - **1 · a1b2c3 · infra-runtime/pool-drain** (heavy): onboarded → consult-design, /write-spec, build, review and verify, land-pr, code review → polished PR. Defaults: Q1 oldest first, Q2 no flag.
+   - **2 · d4e5f6 · perf/cache-hits**: review folded in → land-pr, code review → polished PR.
+   - **3 · 778899 · dotfiles zsh-faster**: built → review-then-closeout → merged and synced.
+
+   **Needs you:** window 1's experiment wants workspaces loopy-drain-a and loopy-drain-b; it builds and reviews without them and stops before the experiment.
+   Sending starts in 5 minutes; reply to change any of this.
+   </example>
 3. **Drive** each session as its turns end (§ Each step), keeping a
    checklist in your scratchpad: one line per send with the time, block,
    what was sent and whether it arrived. The checklist carries the drive
@@ -68,8 +76,8 @@ ready to build. Then take one of three actions:
   recommendation is the default for anything inside the change, on the heavy
   path too. A spec's decisions are answered in one line that has them
   written into the spec, `Go with your recommendations on D1 and D2; write
-  them into the spec and commit.`, then `/compact`, then `implement-spec`,
-  then on through review to the finish. Decisions the next step does not act
+  them into the spec and commit.`, then `/compact`, and once its turn ends
+  `implement-spec`, then on through review to the finish. Decisions the next step does not act
   on ride to the report.
 - **Hold what is the user's at the step that needs it.** Something on the
   pipeline doc's list of what stays the user's — a hard-to-undo decision with
@@ -98,15 +106,18 @@ snippets are the words they have already tuned, so send those rather than a
 paraphrase:
 
 ```bash
-# SESSION_DIR: the session's cwd from find-session
-# F: a new file in your scratchpad for each send, left in place: a busy session reads it later
-F=<scratchpad>/$ID-3.md
-$S/snippet loopy-review-verify "$SESSION_DIR" > $F    # the key as TabType expands it there; stderr names the file
-$S/snippet consult-then-build "$SESSION_DIR" "Take your recommendations on Q1 and Q2." > $F   # text the user would type after it
+# SESSION_DIR is the session's cwd from find-session. Each send gets its own file in your
+# scratchpad, left in place: a busy session reads it only when it takes the prompt.
+F=<scratchpad>/$ID-1.md          # your first send to this session carries the notice
+$S/snippet consult-then-build "$SESSION_DIR" "Take your recommendations on Q1 and Q2." > $F   # TEXT lands where the user types after it
+cat ~/.agents/skills/drive-session/NOTICE.md $F > $F.first && $S/send-turn ID --file $F.first
+
+F=<scratchpad>/$ID-4.md
+$S/snippet loopy-review-verify "$SESSION_DIR" > $F    # stderr names the file the key came from
 $S/send-turn ID --file $F
-cat ~/.agents/skills/drive-session/NOTICE.md $F > $F.first && $S/send-turn ID --file $F.first   # your first send to a session
-$S/send-turn ID '/write-spec Go with your recommendations on the open decisions.'                # a user-invoked skill, typed
 claude-steps note SESSION_ID "drive: sent loopy-review-verify"
+
+$S/send-turn ID '/write-spec Go with your recommendations on the open decisions.'   # a skill only the user can start: typed
 ```
 
 - **Check the `from:` line.** A project can give a key another meaning. A
@@ -115,17 +126,15 @@ claude-steps note SESSION_ID "drive: sent loopy-review-verify"
   recommendation or by naming what waits for the user, as the snippet's tail
   or one line. A request of your own goes as a brief file.
 - **Typed or from a file.** A file the session reads can start a skill the
-  model may call (`/review`, `/consult`, `/update-docs`, planlab's
-  handoff, verify and code-review skills). One only the user can start
-  (`/write-spec`, `/enter-worktree`, `/spike`, itell's `/onboarding`) is
-  sent typed, as one line.
+  model may call, such as `/review` or `/pl-loopy-handoff`. A skill whose
+  `SKILL.md` sets `disable-model-invocation: true` only starts when typed,
+  so it goes as one typed line: `/write-spec`, `/enter-worktree` and
+  `/spike` among the global ones.
 - **The notice goes before the first step you send a session.** Sessions run
   with permissions bypassed, and you act only between their turns. The
   limits reach a session only through what it reads. When that first step
   is typed, send the notice as a file on its own and wait for its turn to
   end.
-- **`/compact` waits for its own turn.** Send it once the spec carries the
-  accepted decisions, wait for the turn to end, then send `implement-spec`.
 - **Long waits get a longer background cap.** A planlab PR's code review,
   `/pl-handle-code-review`, loops for up to an hour. Wait on it with a
   `BG_SECS` of 3600, then report how the loop ended.
@@ -159,7 +168,8 @@ claude-steps note SESSION_ID "drive: sent loopy-review-verify"
 
 ## Rex
 
-Each script prints its usage when run bare.
+`read-turn`, `send-turn`, `wait-turn` and `snippet` print their usage when
+run bare.
 
 ```bash
 find-session [DIR]                     # each Claude session: window, block, state, session id, cwd, title; yours is $REX_BLOCK

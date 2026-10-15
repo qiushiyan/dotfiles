@@ -72,7 +72,7 @@ reading the code. The parked list is what `consult-then-build` puts on trial.
 Entries that chain are told apart by where the turn ends:
 
 ```text
-consult-codex        → at the synthesis; the user decides what follows
+consult-design       → at the synthesis; the user decides what follows
 consult-then-build   → at the finished build, unless the round leaves what a default cannot settle
 implement-spec       → at the finished build
 implement-now        → at the finished build, or at a settled decision the code proves wrong

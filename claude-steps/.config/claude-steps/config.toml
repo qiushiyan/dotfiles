@@ -22,7 +22,7 @@ snippets = [
 [[label]]
 name = "consult"
 skills = ["consult"]
-snippets = ["consult-codex", "consult-then-build"]
+snippets = ["consult-design", "consult-then-build"]
 jobs = ["consult-"]
 color = "blue"
 

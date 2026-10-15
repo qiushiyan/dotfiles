@@ -50,8 +50,11 @@ def layer_files(directory):
 
 
 def snippets(path):
-    with open(path, "rb") as f:
-        data = tomllib.load(f) if path.endswith(".toml") else json.load(f)
+    try:
+        with open(path, "rb") as f:
+            data = tomllib.load(f) if path.endswith(".toml") else json.load(f)
+    except (OSError, ValueError) as e:  # TOMLDecodeError and JSONDecodeError are ValueErrors
+        sys.exit(f"{path} does not load, so no key from it can be trusted: {e}")
     return {s["key"]: s.get("expand", "") for s in data.get("snippets", []) if "key" in s}
 
 
