@@ -115,13 +115,15 @@ cat ~/.agents/skills/drive-session/NOTICE.md $F > $F.first && $S/send-turn ID --
 F=<scratchpad>/$ID-4.md
 $S/snippet loopy-review-verify "$SESSION_DIR" > $F    # stderr names the file the key came from
 $S/send-turn ID --file $F
-claude-steps note SESSION_ID "drive: sent loopy-review-verify"
 
 $S/send-turn ID '/write-spec Go with your recommendations on the open decisions.'   # a skill only the user can start: typed
 ```
 
 - **Check the `from:` line.** A project can give a key another meaning. A
   key that resolves to the wrong project's file is a stop, not a fallback.
+- **The board already shows the send.** `claude-steps` reads the snippet a
+  file carried from the session's own read of it and shows it as
+  `pasted <key>  in a file`. Notes are the user's: write none.
 - **Your own words** only answer the session's question, with its own
   recommendation or by naming what waits for the user, as the snippet's tail
   or one line. A request of your own goes as a brief file.

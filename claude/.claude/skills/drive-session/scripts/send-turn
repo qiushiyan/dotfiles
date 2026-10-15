@@ -10,7 +10,9 @@
 # Code keeps only what follows the last full one, silently; from about 1000
 # bytes it also wraps typing as pasted content. So a longer prompt, or one of
 # several lines, is written to a file, and --file sends "Read PATH and do what
-# it asks." in its place.
+# it asks." in its place. claude-steps matches that sentence word for word to
+# show the snippet the file carried, so a change to it goes there too
+# (~/dev/claude-steps, internal/record/decode.go).
 #
 # A slash command is compared as typed ("/review astra"). /compact records
 # itself only once compaction ends, so it is given ten minutes, not one.
