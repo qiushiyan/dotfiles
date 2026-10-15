@@ -64,10 +64,10 @@ The scripts are in `~/.agents/skills/drive-session/scripts/`; each of the
 `-turn` ones prints its usage when run bare.
 
 ```bash
-find-session [DIR]                          # each Claude session: block, state, cwd, title; DIR keeps those in it or below; yours is $REX_BLOCK
+find-session [DIR]                          # each Claude session: block, state, session id, cwd, title; DIR keeps those in it or below; yours is $REX_BLOCK
 wait-turn ID [QUIET_SECS]                   # run_in_background: status, transcript path, screen tail (quiet 60 s)
 read-turn ID [--last|--pending|--user]      # its last reply · the call a permission prompt waits on · the prompt it got
-send-turn ID 'one short line'               # types, submits, confirms from the transcript that it arrived whole
+send-turn ID 'one short line'               # types, submits, confirms from the transcript that it arrived whole; a slash command too
 send-turn ID --file brief.md                # anything longer than one short line: typing drops a long prompt's head
 rex send-key -b ID enter                    # approve a permission prompt
 ```
@@ -83,12 +83,14 @@ rex send-key -b ID ctrl+u      # repeat until the box is empty, if the prompt ca
 send-turn ID --file brief.md
 ```
 
-Start a session without taking the user's focus; `x` is their Claude
-launcher, a zsh function. It prints the new block's id; send once the input
-box shows on screen:
+Start or resume a session without taking the user's focus, always through
+`x`, their Claude launcher (a zsh function): it lets headroom place the
+session on the least-loaded account. It prints the new block's id; send once
+the input box shows on screen:
 
 ```bash
 rex run -s "$REX_SESSION" -c DIR --label NAME --focus=false --shell none --json -- /bin/zsh -lic 'x; exec zsh -l'
+rex run … -- /bin/zsh -lic 'x --resume SESSION_ID; exec zsh -l'    # resume one, in its own DIR
 ```
 
 ## Report

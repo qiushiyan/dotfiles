@@ -12,9 +12,12 @@
 # several lines, is written to a file, and --file sends "Read PATH and do what
 # it asks." in its place.
 #
+# A slash command is compared as typed ("/review astra"). /compact records
+# itself only once compaction ends, so it is given ten minutes, not one.
+#
 # Exit 0: arrived as sent, or queued whole while the session is busy (it takes
 # a queued prompt mid-turn). 1: something else arrived (printed). 3: nothing in
-# the transcript after 60 s. 2: usage, or no session in BLOCK.
+# the transcript in time. 2: usage, or no session in BLOCK.
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
 block=${1:?usage: send-turn BLOCK TEXT | send-turn BLOCK --file PATH}
@@ -33,7 +36,9 @@ before=$("$here/read-turn" "$block" --user --json 2>/dev/null | jq -r .id)
 "$here/read-turn" "$block" --path >/dev/null || exit 2
 rex send -b "$block" "$text" && sleep 1 && rex send-key -b "$block" enter || exit 2
 
-for _ in $(seq 30); do
+polls=30
+case "$text" in /compact*) polls=300 ;; esac
+for _ in $(seq "$polls"); do
   sleep 2
   now=$("$here/read-turn" "$block" --user --json 2>/dev/null) || continue
   [ "$(jq -r .id <<<"$now")" = "$before" ] && continue
@@ -54,5 +59,5 @@ the session is working on it; take it back:
 EOF
   exit 1
 done
-echo "nothing in the transcript after 60 s; read-turn $block --user shows what it last received"
+echo "nothing in the transcript after $((polls * 2)) s; read-turn $block --user shows what it last received"
 exit 3

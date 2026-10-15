@@ -7,8 +7,9 @@ holds what the screen cuts off:
   --last     its last reply to the user (default)
   --pending  the tool call it is waiting on, in full: what a permission
              prompt asks to run
-  --user     the newest prompt it received, as it arrived; "(queued) " leads
-             one typed while it was busy that it has not taken yet
+  --user     the newest prompt it received, as it arrived, a slash command as
+             typed ("/review astra"); "(queued) " leads one typed while it was
+             busy that it has not taken yet
   --path     the transcript's path
   --json     print {"id", "text", "queued"}, the id naming the transcript entry
 
@@ -17,6 +18,7 @@ Exit 2 when the block has no Claude session or its transcript is not found.
 import glob
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -61,6 +63,23 @@ def texts(e, kind):
     return [b for b in content or [] if b.get("type") == kind]
 
 
+COMMAND = re.compile(r"<command-name>(/[^<]*)</command-name>")
+ARGS = re.compile(r"<command-args>(.*?)</command-args>", re.S)
+# Claude Code's own records under the user role: a local command's output, the
+# caveat before it. Neither is a prompt.
+LOCAL = ("<local-command-stdout>", "<local-command-stderr>", "<local-command-caveat>")
+HARNESS = ("<task-notification>", "<system-reminder>")
+
+
+def prompt_text(text):
+    """A typed slash command is recorded as markup; give it back as typed."""
+    name = COMMAND.search(text)
+    if not name:
+        return text
+    args = ARGS.search(text)
+    return f"{name.group(1)} {args.group(1).strip() if args else ''}".strip()
+
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
@@ -85,12 +104,16 @@ def main():
             # A typed prompt is origin "human"; task notifications and other
             # harness messages arrive with the user role too.
             human = (e.get("origin") or {}).get("kind", "human") == "human"
-            t = [x if isinstance(x, str) else x.get("text", "") for x in texts(e, "text")]
-            if mode == "--user" and human and t and not e.get("isMeta"):
-                found, found_id, queued = "\n".join(t), e.get("uuid"), False
-        elif mode == "--user" and e.get("type") == "queue-operation" and e.get("operation") == "enqueue":
+            t = "\n".join(x if isinstance(x, str) else x.get("text", "") for x in texts(e, "text"))
+            prompt = human and t and not e.get("isMeta") and not e.get("isCompactSummary") \
+                and not t.lstrip().startswith(LOCAL + HARNESS)
+            if mode == "--user" and prompt:
+                found, found_id, queued = prompt_text(t), e.get("uuid"), False
+        elif mode == "--user" and e.get("type") == "queue-operation" and e.get("operation") == "enqueue" \
+                and not (e.get("content") or "").lstrip().startswith(HARNESS):
             # A prompt typed while the session works is queued at once, then
-            # taken mid-turn as a queued_command attachment.
+            # taken mid-turn as a queued_command attachment. A background
+            # task's notification is queued the same way.
             found, found_id, queued = e.get("content", ""), "queued:" + e.get("timestamp", ""), True
         elif mode == "--user" and e.get("type") == "attachment":
             a = e.get("attachment") or {}
