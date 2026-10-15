@@ -22,6 +22,10 @@ when it asks for every assumption the approach fails without, against the
 skill's default of the costliest one.
 
 `think-holistic` has no skill behind it, so it carries its whole method.
+So does `strategic-review-brief`, whose reader is the build session rather
+than a skill. It asks for the builder's doubts and forbids its reassurances:
+the review judges the work on its own, and a brief that says what is done
+grades it.
 
 `closeout` and `review-then-closeout` cross several owners, so they carry the
 order between them as numbered steps and leave each step to its owner: the

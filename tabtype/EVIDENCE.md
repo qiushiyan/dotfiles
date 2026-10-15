@@ -177,3 +177,35 @@ removal of the worktree it was started in.
 expanded in at least three sessions and the closeout tails on `/update-docs`
 lower than 13; `review-then-closeout` expanded at all. A key still at zero
 while its phrase is typed has the wrong wording or the wrong home.
+
+## 2026-10-15 — the build session writes the strategic review's opening prompt
+
+Session `mac:9f01709a`; the evidence is the strategic-review skill's
+evidence log, 2026-10-14 entry
+(`claude/.claude/skills/strategic-review/EVIDENCE.md`).
+
+**Why the key exists.** The user ends a large build by asking the session,
+in their own words, what the coming strategic review should look at. A
+replay of four PlanLab PRs measured the answer itself:
+- The build session was forked at the moment each review opened, and its
+  paragraph was handed to the reviewer.
+- The paragraph found 3.9 of the 18 checked defects the real reviews had
+  missed, against 1.9 for the bare `/strategic-review <PR>`.
+- It was the cheapest arm, with no consult round.
+
+**Wording.**
+- The snippet asks for the prompt itself: one fenced block, opening with the
+  slash command, so it pastes as is.
+- It carries the four kinds of doubt the replay's briefs held: the
+  behaviours that cost most if wrong, the parts the builder is least sure
+  of, what is unmeasured, and lessons to absorb before merge.
+- It asks for no reassurances, under the Independent judgment invariant.
+- No cold reader or live paste has tested it.
+
+**Next pass compares**, from `history.json` and the strategic-review
+sessions:
+- `strategic-review-brief` expanded in at least three sessions;
+- briefed reviews against bare ones, by findings and by what later rounds
+  still find.
+
+A key at zero while the request is still typed by hand has the wrong wording.

@@ -37,6 +37,9 @@ implement-now  → from decisions settled in the conversation
 
 `review-verify` starts `/review` and spends the wait re-proving the intended
 behavior. `prompt-check` follows a session that touched model-facing text.
+`strategic-review-brief` ends a large build: the build session writes the
+`/strategic-review <PR>` prompt that opens the fresh review session, naming
+where it should look hardest.
 
 ## 5. Close out
 
