@@ -10,11 +10,11 @@ argument-hint: "[which sessions, e.g. windows 1-4] [what each should do; unsaid,
 The user names Claude Code sessions running in Rex blocks, often by window
 number, and goes away, usually overnight. You are the hands at the keyboard:
 when a session finishes a stage, send it the next one the way the user
-would, until each session reaches its finish or needs something only the
-user can give. What the user said for a session decides what it runs; what
-they left unsaid follows `~/dotfiles/docs/session-pipeline.md`, which owns
-the stages, the light and heavy paths, each project's finish, and what stays
-the user's. Read it before planning.
+would, until each reaches its finish or needs something only the user can
+give. What the user said for a session decides what it runs; what they left
+unsaid follows `~/dotfiles/docs/session-pipeline.md`, which owns the stages,
+the paths, each project's finish, and what stays the user's. Read it before
+planning.
 
 Done is every named session at its finish or parked on something that is
 the user's, and the report written.
@@ -40,13 +40,11 @@ the user's, and the report written.
 2. **Plan in one message, and give the user five minutes to veto it.** A
    line per session — where it is → the stages you will send → its finish —
    then the defaults you will take and what waits for the user. Ask only what
-   blocks a session: a fact or permission only the user holds, such as an
-   unknown project's finish or a workspace to create. An unanswered question
-   holds its session only at the step that needs the answer. Start a
-   `sleep 300` under `run_in_background` and end your turn with the message;
-   the sleep's end wakes you, and nothing goes to any session before it. An
-   answer that arrives later counts from then on, and the report names what
-   ran on the default.
+   blocks a session, a fact or permission only the user holds, and hold that
+   session only at the step that needs the answer. Start a `sleep 300` under
+   `run_in_background` and end your turn with the message; nothing goes to
+   any session before the sleep wakes you. A later answer counts from then
+   on, and the report names what ran on the default.
 
    <example>
    - **1 · a1b2c3 · infra-runtime/pool-drain** (heavy): onboarded → consult-design, /write-spec, build, review and verify, land-pr, code review → polished PR. Defaults: Q1 oldest first, Q2 no flag.
@@ -58,46 +56,48 @@ the user's, and the report written.
    </example>
 3. **Drive** each session as its turns end (§ Each step), keeping a
    checklist in your scratchpad: one line per send with the time, block,
-   what was sent and whether it arrived. The checklist carries the drive
-   through a compaction of your own context and becomes the report.
+   what was sent and whether it arrived. It becomes the report, and after
+   your own context is compacted or restarted, read `read-turn ID --prompts`
+   against it before sending again.
 4. **Report** (§ Report).
 
 ## Each step
 
 `wait-turn` under `run_in_background` wakes you once a session's turn has
-ended and stayed ended. Read the reply in full before acting: a turn also
-ends while a background job runs, on a question, or partway through a
-sequence. Advance on finished work, not recorded activity. A review that
-was dispatched has not been folded in, and a spec with open decisions is not
-ready to build. Then take one of three actions:
+ended and stayed ended. A wait can vanish silently: while any session works
+keep a `sleep 1800` fallback under `run_in_background`, and on each wake
+re-arm a wait for every working session missing from the armed waits,
+which `pgrep -lf 'wait-turn|notify-driver'` lists by block.
+
+Read the reply in full before acting: a turn also ends while a background
+job runs, on a question, or partway through a sequence. Advance on finished
+work, not recorded activity: a dispatched review has not been folded in, and
+a spec with open decisions is not ready to build. Then:
 
 - **Continue.** The stage is done, or the session ended on a question it
-  answered with a recommendation. Send the next stage. The session's
-  recommendation is the default for anything inside the change, on the heavy
-  path too. A spec's decisions are answered in one line that has them
-  written into the spec, `Go with your recommendations on D1 and D2; write
-  them into the spec and commit.`, then `/compact`, and once its turn ends
-  `implement-spec`, then on through review to the finish. Decisions the next step does not act
-  on ride to the report.
+  answered with a recommendation, which is the default for anything inside
+  the change, on the heavy path too. Send the next stage. A spec's decisions
+  are answered in one line that has them written into the spec, `Go with
+  your recommendations on D1 and D2; write them into the spec and commit.`,
+  then `/compact`, and once its turn ends `implement-spec`, then on through
+  review to the finish. Decisions the next step does not act on ride to the
+  report.
 - **Hold what is the user's at the step that needs it.** Something on the
-  pipeline doc's list of what stays the user's — a hard-to-undo decision with
-  no recommendation, a workspace to create, an AWS profile that is not logged
-  in — stops only the work that depends on it. Send the step with a tail that
-  names what waits, as in `implement-spec` followed by `D3 and phase 4's EC2
-  run wait for me: build the rest, commit, and stop before them.` Park the
-  session when its next step cannot proceed without it, or when the session
-  went past the step you were about to send, which makes that step stale.
-  Send a parked session nothing more, note what it needs, and keep driving
-  the others.
-- **Halt the drive.** A secret was exposed, or shared state was damaged.
-  Send nothing more to any session, note what is still running, and lead the
-  report with it.
+  pipeline doc's list of what stays the user's stops only the work that
+  depends on it. Send the step with a tail that names what waits, as in
+  `implement-spec` followed by `D3 and phase 4's EC2 run wait for me: build
+  the rest, commit, and stop before them.` Park the session when its next
+  step cannot proceed without it, or when it went past the step you were
+  about to send. Send a parked session nothing more, note what it needs, and
+  keep driving the others.
+- **Halt the drive** when a secret was exposed or shared state damaged:
+  send nothing more to any session, note what is still running, and lead
+  the report with it.
 
-A permission prompt is a step too. `wait-turn` returns `blocked`; read the
-whole call (`read-turn ID --pending`, since the screen cuts it off). Judge
-it by what it touches, not by the directory it runs in. Approve with `enter`
-what stays within the session's own change and scratch space; otherwise let
-it auto-deny. Name either in the report.
+A permission prompt is a step too: `wait-turn` returns `blocked`, and
+`read-turn ID --pending` shows the whole call. Approve with `enter` what
+touches only the session's own change and scratch space, wherever it runs;
+otherwise let it auto-deny. Name either in the report.
 
 ## Sending
 
@@ -117,70 +117,69 @@ $S/snippet loopy-review-verify "$SESSION_DIR" > $F    # stderr names the file th
 $S/send-turn ID --file $F
 
 $S/send-turn ID '/write-spec Go with your recommendations on the open decisions.'   # a skill only the user can start: typed
+$S/send-turn ID '        /pl-loopy-handoff-distill merged and deployed'   # resent padded after typing lost its head
 ```
 
-- **Check the `from:` line.** A project can give a key another meaning. A
+- **Check the `from:` line.** A project can give a key another meaning; a
   key that resolves to the wrong project's file is a stop, not a fallback.
-- **The board already shows the send.** `claude-steps` reads the snippet a
-  file carried from the session's own read of it and shows it as
-  `pasted <key>  in a file`. Notes are the user's: write none.
+- **Write no notes;** they are the user's, and `claude-steps` already shows a
+  file's snippet as `pasted <key>  in a file`.
 - **Your own words** only answer the session's question, with its own
   recommendation or by naming what waits for the user, as the snippet's tail
   or one line. A request of your own goes as a brief file.
+- **Check a brief's stages before sending it.** The new session acts on a
+  brief before you get a turn, so return one that breaks the pipeline doc's
+  rule for briefs — "open the PR, then handle code review" drops review and
+  verification — to the session that wrote it.
 - **Typed or from a file.** A file the session reads can start a skill the
   model may call, such as `/review` or `/pl-loopy-handoff`. A skill whose
-  `SKILL.md` sets `disable-model-invocation: true` only starts when typed,
-  so it goes as one typed line: `/write-spec`, `/enter-worktree` and
-  `/spike` among the global ones.
+  `SKILL.md` sets `disable-model-invocation: true` starts only when typed,
+  as one line: `/write-spec`, `/enter-worktree` and `/spike` among the global
+  ones, and planlab's `/pl-loopy-handoff-distill`, the whole of its
+  `closeout` key.
+- **Pad a typed skill command whose head was lost.** Eight leading spaces
+  absorb the first characters typing sometimes drops. The model then starts
+  the skill from the words, a typed-only one included, and `claude-steps`
+  shows `you: "/…" → skill …`. `/compact` stays unpadded: padded, it is
+  only words.
 - **The notice goes before the first step you send a session.** Sessions run
-  with permissions bypassed, and you act only between their turns. The
-  limits reach a session only through what it reads. When that first step
-  is typed, send the notice as a file on its own and wait for its turn to
-  end.
-- **Long waits get a longer background cap.** A planlab PR's code review,
-  `/pl-handle-code-review`, loops for up to an hour. Wait on it with a
-  `BG_SECS` of 3600, then report how the loop ended.
-- **Work the user asks you to do goes to a new session.** Open it with `x`
-  (§ Rex) in the project's main checkout and start it at stage 1 with the
-  user's request: the project's onboarding command with the request as its
-  argument, or `think-holistic` with the request as its tail where the
-  project has none. Then drive it like the others; the pipeline moves it to
-  a branch before the build. Your own session stays a reader and sender, so
-  every edit falls under the same rules.
+  with permissions bypassed, so the limits reach one only through what it
+  reads. Before a typed first step, send the notice as a file on its own and
+  wait for its turn.
+- **Work the user asks you to do goes to a new session**, which you open
+  with `x` (§ Rex) in the project's main checkout and start at stage 1 with
+  the user's request; you stay a reader and sender. Other sessions run from
+  that checkout, so the first step ends with `This checkout is shared:
+  install nothing here. If the work needs an install, stop and say so.`
+  Type `/enter-worktree` when it stops there or reaches the build.
 
 ## Shared worktrees and checkouts
 
 - **One session edits a worktree at a time.** Sessions in one worktree share
-  its files and its git index. Send a step that edits only once no other
-  session there is mid-edit, a verification or spike run included. When one
-  session offers to do what another is already doing, leave the offer
-  unanswered.
-- **One closeout into a main checkout at a time.** Two personal-tool
-  branches merge in the same main checkout, and planlab handoffs write one
-  briefs repository. Serialize those steps across sessions.
+  its files and git index. Send a step that edits only once no other session
+  there is mid-edit, a verification or spike run included, and leave
+  unanswered one session's offer to do what another is already doing.
+- **One closeout into a main checkout at a time.** Personal-tool branches
+  merge in their main checkout and planlab handoffs write one briefs
+  repository, so serialize those steps across sessions.
 - **A held message from another session is the user's.** `blocked` also
-  means a message from another session waits for approval; the screen says
-  so. Delivering it wakes the session, which may start work no step sent, so
-  leave it and name it in the report. When your next step goes to that
-  session, read the held message and deny it unless the plan wants what it
-  asks.
-- **After your own context is compacted or restarted,** read
-  `read-turn ID --prompts` against the checklist before sending anything
-  again.
+  means one waits for approval, as the screen says. Delivering it wakes the
+  session into work no step sent: leave it, name it in the report, and deny
+  it when your next step goes there, unless the plan wants what it asks.
 
 ## Rex
 
-`read-turn`, `send-turn`, `wait-turn` and `snippet` print their usage when
-run bare.
-
 ```bash
+# read-turn, send-turn, wait-turn and snippet print their usage when run bare
 find-session [DIR]                     # each Claude session: window, block, state, session id, cwd, title; yours is $REX_BLOCK
 wait-turn ID [QUIET_SECS] [BG_SECS]    # run_in_background: status, transcript path, screen tail (quiet 60 s; through background jobs 600 s)
+wait-turn ID 60 3600                   # planlab's /pl-handle-code-review loops for up to an hour; report how it ended
 read-turn ID [--last|--pending|--user|--prompts N]   # last reply · the call a permission prompt waits on · newest prompt · what it was told
 send-turn ID 'one short line'          # types, submits, confirms from the transcript that it arrived whole; a slash command too
 send-turn ID --file brief.md           # anything longer: typing drops a long prompt's head
 snippet KEY [DIR] [TEXT] | snippet --list [DIR]
 rex send-key -b ID enter               # approve a permission prompt
+rex block close ID                     # close a session's tab once its last step has run
 ```
 
 A prompt sent while the session works is queued whole and taken mid-turn;
@@ -195,9 +194,8 @@ send-turn ID --file brief.md
 ```
 
 Start or resume a session without taking the user's focus, always through
-`x`, their Claude launcher (a zsh function). It lets headroom place the
-session on the least-loaded account. `rex run` prints the new block's id;
-send once the input box shows on screen:
+`x`, the user's Claude launcher, which places it on the least-loaded
+account. `rex run` prints the new block's id; send once the input box shows:
 
 ```bash
 rex run -s "$REX_SESSION" -c DIR --label NAME --focus=false --shell none --json -- /bin/zsh -lic 'x; exec zsh -l'
@@ -208,14 +206,15 @@ rex run … -- /bin/zsh -lic 'x --resume SESSION_ID; exec zsh -l'    # resume on
 
 The user did not watch the night. When a session reaches its finish or
 parks, send it `recap` and wait for that turn: the session knows what it
-built and why, and reads its own diff for the facts. Your report is built
-from those recaps. Lead with what needs the user across every session, each
-item explained so they can decide from your words alone. Then a section per
+built and why, and reads its own diff for the facts. Once its last step has
+run — the closeout, or the recap for a session with no PR — close its tab.
+Lead the report with what needs the user across every session, each item
+explained so they can decide from your words alone; then a section per
 session, by window and block:
 
-- **Where it ended:** finished (the PR and how its code review ended, or
-  the merge and install), parked (what it needs), or halted (what happened
-  and what is still running).
+- **Where it ended:** finished (the PR and how its code review ended, the
+  merge and install, or the recap alone), parked (what it needs), or halted
+  (what happened and what is still running).
 - **The recap**, quoted rather than retold, trimmed only of what the
   needs-you list already says.
 - **How the night went:** the stages sent, the defaults taken, and anything
