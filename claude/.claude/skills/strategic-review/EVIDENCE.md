@@ -377,3 +377,68 @@ replay, without changing the skill until the evidence was in.
 Revise if briefed reviews find no more than bare ones over about ten uses,
 or if the accounting rule bloats reports without moving what later rounds
 find.
+
+## 2026-10-17 — a fields lens, replayed on the same four PRs
+
+Session `mini:e0ebda78`, an `/improve-tool` pass over the agent workflow set
+against Felix Rieseberg's "How to be more ambitious" (2026-10-13). Its Range
+idea is to bring in other fields and do what each does, not write in its
+voice: "don't ask the model to write like a short seller, ask it to do what a
+short seller does".
+
+**History** (Obelisk, mini only, 2026-09-24 → 10-16; the laptop was
+unreachable).
+- **The user rarely brings in a field.** One of 2,706 typed turns does
+  (`1a990a25/9aceddfe`, "as an outsider": p50/p90 and real threads, which is
+  the field's method). Sessions wrote 898 briefs with no role-play.
+- **This skill's Tests lens is the one field method in the reviews.** "Break
+  the guarded line" produced mutation findings in at least 6 reviews since
+  10-13: #9042, #9069, #9120 twice, and two codex voices.
+- **pl-bugbot's charters skip the big PRs.** Its security-access and product
+  charters skip PRs over about 5,000 lines (#9081 at 5,103, #8959 at 16,976),
+  the PRs this skill exists for.
+
+**Replay** (`~/dev/skill-evals`, run `sr-fields-1017` on the mini).
+- **Rig:** 24 rollouts on the subscriptions, 3 per arm per PR, judged by
+  gpt-6-sol with 3 passes. The leak check found no reads of today's planlab
+  or handoffs.
+- **Arms:**
+  - `current-1016`: this skill as of 2026-10-16;
+  - `fields`: a lens before Tests. An operator replays the deploy, restart and
+    rollback order with old and new code on one wire, table or queue. A
+    performance engineer bounds each new wait, queue and fan-out on a path
+    that runs often at ten times today's load. A security engineer traces
+    each moved credential, permission or tenant boundary to all it reaches.
+- Per run, summed over the four PRs (90% bootstrap interval on the difference):
+
+| arm | checked defects (36) | of those the real review missed (18) | fix checks (4) | min | $ |
+|---|---|---|---|---|---|
+| current-1016 | 12.1 | 5.2 | 2.0 | 16 | 13.7 |
+| fields | 12.4 [−2.3, +2.7] | 4.6 [−2.2, +0.9] | 1.9 [−1.6, +1.2] | 16 | 14.9 |
+
+- **The defects it was aimed at stayed missed.** The operator-shaped misses
+  scored 0 in both arms: #8959 K26 (the committer's replay arm after the
+  contract bump), #8959 K28 (the operator script's unchecked `--limit`), and
+  #8948 K4 (each poll's publication with no deadline).
+- **Whole key:** about the same number of key items per run in both arms.
+  Fields raised more new, unverified findings on #8858 (21.7 against 14.3) and
+  #8948 (18 against 12), and fewer on #8955 and #8959.
+- **Blind rank:** fields beat current 22 of 36, split by PR (9/9 on #8948, 8/9
+  on #8959; current 6/9 on #8858, 7/9 on #8955). The one ranker was an OpenAI
+  model.
+- **Not comparable with the 10-14 table.** Those rows were graded on older
+  case text, and step 3 and 4 changed on 10-15.
+
+**The 10-14 limit, explained.** "In two #8948 rows the report was not the
+final message": in `astra-1` and `fixes-1` a background task's notification
+arrived after the report, and the grader took it for a new prompt and judged
+only what followed it. skill-evals `f96f2a7` keeps the report in the answer.
+`sr-consult-w1` has not been regraded: OpenRouter was out of credit (HTTP 402)
+on 10-17.
+
+**Decision** (the user's): the fields lens is not adopted. The skill is
+unchanged.
+
+**Next comparison.** One option stays untested: field charters as subagents
+of their own on the PRs pl-bugbot skips. Score it on the three misses above;
+adopt it only if it moves them.
