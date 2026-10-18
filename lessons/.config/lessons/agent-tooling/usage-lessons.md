@@ -326,6 +326,23 @@ half of compounding is re-measurement: a pass that records each friction's
 count beside its fix lets the next pass ask whether the fix held, which is
 the only evidence a rule has earned its place.
 
+## An example in an instruction is what the reader says back
+
+An instruction to say what an onboarding goal is for listed the users it
+might serve: "a planner, an operator, Loopy's main agent when it delegates, a
+later session". On the replay whose answer was "the main agent is the user",
+the instructed arm passed 5 of 5 against 0 of 5, and one reply said the
+children "are used by the main agent itself when it delegates". On the three
+replays whose answers the list did not name, the instruction gained nothing.
+The model copies an example more readily than it applies the principle
+behind it. A list of examples steers hard toward its items, so choose them
+from the cases that recur. When testing an instruction, keep its examples off
+every case's answer, or the eval measures the examples. A check that the
+control arm fails is broken, not hard: in the same run, a check demanded an
+order that another check ruled out (improve-tool pass 2026-10-17, skill-evals
+run `onb-altitude-1017`; receipts in planlab's
+`.agents/skills/pl-loopy-handoff/EVIDENCE.md`).
+
 ## Observed, not inferred
 
 A stall in a job log is a fact; "the engine hung" is an inference. One
