@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# notify-driver BLOCK [QUIET_SECS] [BG_SECS]   -> run wait-turn, POST result to Session Driver webhook
+# notify-driver --sleep SECS [NOTE]            -> sleep, then POST a timer wake (e.g. the 5-minute veto)
+# Config: ~/.config/drive-session/webhook (0600) with two lines:
+#   URL=<webhook url>
+#   AUTH=<full Authorization header value>
+set -u
+conf=~/.config/drive-session/webhook
+[ -r "$conf" ] || { echo "missing $conf" >&2; exit 3; }
+URL=$(sed -n 's/^URL=//p' "$conf"); AUTH=$(sed -n 's/^AUTH=//p' "$conf")
+S=~/.agents/skills/drive-session/scripts
+if [ "${1:-}" = "--sleep" ]; then
+  sleep "${2:?secs}"; kind=timer; block=""; out="timer ${2}s done${3:+: $3}"; rc=0
+else
+  block=${1:?usage: notify-driver BLOCK [QUIET] [BG] | --sleep SECS [NOTE]}
+  out=$("$S/wait-turn" "$@" 2>&1); rc=$?; kind=turn
+fi
+body=$(jq -n --arg kind "$kind" --arg block "$block" --arg host "$(hostname -s)" \
+  --argjson rc "$rc" --arg out "$(printf '%s' "$out" | tail -c 6000)" \
+  '{kind:$kind, block:$block, host:$host, exit:$rc, output:$out}')
+log=~/.local/state/drive-session/notify.log; mkdir -p "${log%/*}"
+resp=$(mktemp); trap 'rm -f "$resp"' EXIT
+# Payload is built by jq (valid JSON); output capped at 6000 bytes above.
+# Retries: 6 tries, exponential backoff 15s..~8m with jitter (a 400 "rate limit exceeded" is transient).
+for i in 1 2 3 4 5 6; do
+  code=$(curl -sS -m 20 -o "$resp" -w '%{http_code}' -X POST "$URL" -H "Authorization: ${AUTH#Authorization: }" \
+    -H 'Content-Type: application/json' --data-binary "$body" 2>>"$log") || code=000
+  case "$code" in 2??) [ "$i" -gt 1 ] && echo "$(date '+%F %T') ok block=$block kind=$kind try=$i" >>"$log"; exit 0;; esac
+  echo "$(date '+%F %T') FAIL block=$block kind=$kind try=$i http=$code bytes=${#body} resp=$(head -c 300 "$resp" | tr '\n' ' ')" >>"$log"
+  sleep $(( 15 * (1 << (i-1)) + RANDOM % 10 ))
+done
+echo "webhook POST failed (see $log)" >&2; exit 4

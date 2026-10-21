@@ -17,15 +17,15 @@ posts the result to your webhook routine, which wakes you. One wait per
 session, named for it, so you can stop it when you park the session:
 
 ```bash
-tmux new -d -s wait-$ID "notify-driver $ID"          # a turn; arguments as in its header on the mini
+tmux new -d -s wait-$ID "notify-driver $ID"          # a turn; QUIET_SECS and BG_SECS as wait-turn takes them
 tmux new -d -s veto "notify-driver --sleep 300 veto"  # the plan's veto window
 tmux kill-session -t wait-$ID                        # parking: a live wait keeps waking you
 ```
 
-`notify-driver` lives at `~/.local/bin/notify-driver` on the mini, not yet in
-the dotfiles repository. While a drive runs, keep a watchdog routine that
-tells the user only when a session has gone quiet with no wake, and pause it
-when the drive ends.
+A failed post is retried and logged to `notify.log` in the state directory
+below. While a drive runs, keep a watchdog routine that tells the user only
+when a session has gone quiet with no wake, and pause it when the drive
+ends.
 
 ## Your memory
 

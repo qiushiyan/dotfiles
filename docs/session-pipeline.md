@@ -101,7 +101,11 @@ The user's word decides. Without it:
   itself. In planlab, `infra-runtime` worktrees usually take it.
 - **Light:** a contained feature or fix; nearly every personal tool.
 
-The onboarding analysis's account of risk is the evidence to read.
+The onboarding analysis's account of risk is the evidence to read. A
+planlab batch that `drive-session` starts decides later: every session runs
+`consult-design`, the user reviews all the designs at once, and each then
+takes `/write-spec` or `implement-now`
+(`claude/.claude/skills/drive-session/PLANLAB.md` § The design checkpoint).
 
 ## Spikes
 

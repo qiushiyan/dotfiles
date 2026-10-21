@@ -515,6 +515,16 @@ an older binary files a brief where the new one reads another slug.
   raises a notification for each new edition, with the reader key `twin`
   carries in `~/.secrets.shared`. `~/dev/gazette/docs/operations.md` has the
   rest.
+- **Session Driver** — the Grok Bot that drives this machine's Rex
+  sessions by the `drive-session` skill
+  (`claude/.claude/skills/drive-session/BOT.md`), through the Grok Bot app's
+  local-exec daemon here (`~/.grokbot`). Its waits run
+  `scripts/.local/bin/notify-driver` under tmux, which posts each wake to
+  the bot's webhook with the key in `~/.config/drive-session/webhook`
+  (0600, this machine's own; `twin` does not carry it). Each batch's
+  checklist, send files and recaps live in
+  `~/.local/state/drive-session/`, beside `notify.log`. Its chat is read
+  from the laptop's Grok Bot app with `grokbot-transcript`.
 - **The hourly `twin tick`, the daily snapshot, the tmux exit watcher,
   asimov's Time Machine exclusions and planlab's git upkeep** — this
   repository's `launchd-mini/` package (`docs/twin.md` § The hourly tick;
