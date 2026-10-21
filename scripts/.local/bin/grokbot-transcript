@@ -1,0 +1,151 @@
+#!/usr/bin/python3 -I
+"""grokbot-transcript — print a Grok Bot chat from the desktop app's local copy.
+
+The Grok Bot app keeps a replica of each bot's recent chat on this machine,
+under sand-client-persistence/ as files whose names are base32 slice keys
+("…transcript.replicas.<bot id>"), next to a roster of the bots. A replica is
+a window: the most recent entries the app holds (about 200), with what each
+side said, the bot's widgets, Slack drafts, routine changes and notices. The
+bot's tool calls, its memory journal and anything older than the window stay
+in Grok's own store for that bot (the roster's `path`, on its box); ask a bot
+to export those.
+
+Usage:
+  grokbot-transcript --list                 # bots: id, name, local window
+  grokbot-transcript BOT [--jsonl|--profile]
+    BOT is a name ("Session Driver", case-insensitive) or an id prefix.
+    Default prints the window as text, local time; --jsonl the raw entries;
+    --profile the bot's instructions.
+
+GROKBOT_DATA_DIR overrides the app's data directory.
+Exit codes: 0 printed; 1 no such bot or no local window; 2 usage or no data.
+"""
+
+import base64
+import datetime
+import glob
+import json
+import os
+import sys
+
+DATA = os.environ.get("GROKBOT_DATA_DIR") or os.path.expanduser(
+    "~/Library/Application Support/Grok Bot")
+
+
+def slices():
+    """Map each decoded slice key to its file."""
+    out = {}
+    for path in glob.glob(os.path.join(DATA, "sand-client-persistence", "*.blob")):
+        name = os.path.basename(path)[:-len(".blob")].upper()
+        try:
+            key = base64.b32decode(name + "=" * (-len(name) % 8)).decode()
+        except ValueError:
+            continue
+        out[key] = path
+    return out
+
+
+def load(path):
+    with open(path) as f:
+        return json.load(f).get("value") or {}
+
+
+def when(ms):
+    return datetime.datetime.fromtimestamp(ms / 1000).strftime("%m-%d %H:%M")
+
+
+def render(e):
+    """One entry as text, or None for an entry with nothing to read."""
+    kind, msg = e.get("kind"), e.get("message") or {}
+    if kind == "message":
+        who = ((e.get("fromAgent") or {}).get("name")
+               or (e.get("fromUser") or {}).get("name")
+               or ("you" if e.get("role") == "user" else "bot"))
+        if e.get("toAgent"):
+            who = f"bot → {e['toAgent'].get('name')}"
+        return f"{who}: {e.get('content', '')}"
+    if kind == "send-message":
+        t = msg.get("type")
+        if t == "text":
+            return f"bot: {msg.get('content', '')}"
+        if t == "widget":
+            w = msg.get("widget") or {}
+            opts = " | ".join(o.get("label", "") for o in w.get("options", []))
+            answer = e.get("respondedValue") or ("skipped" if e.get("widgetSkipped") else "unanswered")
+            return f"bot asks: {w.get('prompt', '')} [{opts}] → {answer}"
+        if t == "slack-draft":
+            d = msg.get("draft") or {}
+            return (f"bot drafts Slack to {d.get('target')} ({e.get('draftSendState', 'unsent')}):\n"
+                    f"{d.get('body', '')}")
+        if t == "local-tool-permission":
+            a = msg.get("ask") or {}
+            return f"· permission {a.get('action')} ({a.get('status')}): {a.get('target', '')}"
+        return f"· {t}: {json.dumps(msg, ensure_ascii=False)[:300]}"
+    if kind == "event":
+        ev = e.get("event") or {}
+        if ev.get("type") == "automation-changed":
+            return f"· routine {ev.get('automationName')} {ev.get('action')}"
+        return f"· event {json.dumps(ev, ensure_ascii=False)[:200]}"
+    if kind == "notice":
+        return f"· notice: {e.get('text', '')}"
+    if kind == "user-attachment":
+        return f"you attach: {e.get('file_name')}"
+    return f"· {kind}"
+
+
+def main(argv):
+    keys = slices()
+    if not keys:
+        print(f"grokbot-transcript: no Grok Bot data under {DATA}", file=sys.stderr)
+        return 2
+    roster_key = next((k for k in keys if k.endswith(".roster.last-roster")), None)
+    rows = load(keys[roster_key]).get("rows", []) if roster_key else []
+    replicas = {k.rsplit(".", 1)[1]: p for k, p in keys.items() if ".transcript.replicas." in k}
+
+    if argv == ["--list"]:
+        for r in rows:
+            p = replicas.get(r["id"])
+            ents = load(p).get("entries", []) if p else []
+            window = f"{len(ents)} entries, {when(ents[0]['timestampMs'])} → {when(ents[-1]['timestampMs'])}" if ents else "no local window"
+            print(f"{r['id']}  {r['name']:<16} {window}")
+        return 0
+
+    if not argv or argv[0].startswith("-") or len(argv) > 2 or (
+            len(argv) == 2 and argv[1] not in ("--jsonl", "--profile")):
+        print("usage:" + __doc__.split("Usage:")[1].split("GROKBOT_DATA_DIR")[0].rstrip(), file=sys.stderr)
+        return 2
+
+    want = argv[0].lower()
+    bot = next((r for r in rows if r["name"].lower() == want), None) or next(
+        (r for r in rows if r["id"].startswith(want)), None)
+    if not bot:
+        print(f"grokbot-transcript: no bot named {argv[0]!r}; try --list", file=sys.stderr)
+        return 1
+    if argv[1:] == ["--profile"]:
+        print(bot.get("description", ""))
+        return 0
+    if bot["id"] not in replicas:
+        print(f"grokbot-transcript: {bot['name']} has no local window; open its chat in the app", file=sys.stderr)
+        return 1
+
+    entries = load(replicas[bot["id"]]).get("entries", [])
+    if argv[1:] == ["--jsonl"]:
+        for e in entries:
+            print(json.dumps(e, ensure_ascii=False))
+        return 0
+    if entries:
+        print(f"# {bot['name']} — local window from seq {entries[0].get('seq')}; "
+              f"older entries and tool calls are in Grok's store", file=sys.stderr)
+    for e in entries:
+        line = render(e)
+        if line is not None:
+            print(f"[{when(e['timestampMs'])}] {line}")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except BrokenPipeError:
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(0)

@@ -3,6 +3,54 @@
 Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares.
 
+## 2026-10-21 — the Grok Session Driver (improve-tool pass)
+
+**Corpus.** The Grok Bot "Session Driver" (`e1edc3cc`), which drives the
+mini's sessions on this skill with a profile that adapts waiting
+(`notify-driver` and a webhook) and the scratchpad (a checklist in
+`~/.local/state/drive-session/`). Its local replica, read with
+`grokbot-transcript "Session Driver"`, covers seq 274–494, 10-17 → 10-21,
+what each side said only; 10-15 → 10-17 and the bot's tool calls stay in
+Grok's store. Obelisk could not reach the mini, which holds every Claude
+drive and driven session since 10-15; the mac has none.
+
+**Findings,** by message seq in that chat:
+
+- **A status answer came from the brief, not the session.** At #346 the
+  driver reported that P's consult settled on orientation in
+  `schedule_summary`; at #377 it told the user P writes "fewer, larger
+  scripts", the brief's framing. The user set P's review bar on that (#378)
+  and asked again four days later (#466), when the driver read the session
+  and corrected it (#468, #470).
+- **Needs-you items the user could not decide from.** "Whats this lab tier
+  thing" (#322); "I forgot what it is" twice and "not exactly sure" for
+  bare ids (QIU-279, QIU-276, fsmonitor) in #417 (#419). § Report asks for
+  this already, for the final report; in a chat driver interim pings carry
+  most of the decisions.
+- **Held messages surfaced three times** (#351, #384, #417) until the user
+  said deny (#419): a session at its finish gets no next step, so the
+  deny-on-next-step rule never fires.
+- **The role outgrew a drive.** The bot runs batches across days:
+  onboarding, proposal, gate, drive, merge train, deploy, closeouts, recap,
+  next onboarding. The user handed it merges, deploys, strategic-review
+  choices and cleanup in chat (#373, #388, #399, #447).
+- **Grok-mode mechanics live outside the repo:** `notify-driver` on the
+  mini, and the bot's journal rules (waits run inside tmux; kill a parked
+  session's wait).
+- **Held up:** the veto and its re-arm on an amendment (#330–#336), the
+  notice first (#337), a user-set gate with leftover "go build" suggestions
+  left unsent (#346), new sessions through `x` for requested work.
+
+**Changes.** `grokbot-transcript` (scripts) prints a bot's local window.
+Skill edits are proposed, not made: answer a question about a session from
+the session; every needs-you item self-explaining; deny held messages at a
+session's finish; track `notify-driver` and the non-Claude adaptation in
+this repository.
+
+**Next pass** reads the mini: the driver's checklist, `claude-steps show
+--all` on the driven sessions for snippet against hand-written sends, and
+the Claude drives since 10-15, to compare the two drivers.
+
 ## 2026-10-15 — the morning recap
 
 The morning after the 10-14 drive the user asked two driven sessions to
