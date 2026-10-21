@@ -126,8 +126,8 @@ user to read the verdicts.
   have run, the PR is open against `develop` with the required checks green,
   and at least one round of `/pl-handle-code-review` has been handled; its
   outcome, caught up or stopped on churn, is reported. The bots help but are
-  not relied on. The merge, the deploy and the post-merge closeout are the
-  user's.
+  not relied on. The merge and the deploy are the user's; the post-merge
+  closeout follows once the deploy serves.
 - **Personal tools** (`~/dotfiles` and the tools under `~/dev` that `twin`
   installs): `closeout` merges to `main` locally, with no PR, installs on
   both machines with `twin sync`, and removes the branch.
@@ -143,17 +143,21 @@ default, and the user takes it in most sessions. These stay the user's:
 
 - **Shared bases and releases** — a merge or deploy outside the finishes
   above.
-- **Effects beyond the branch** — writes to production systems or data,
-  messages to people (Slack, announcements, PR comments addressed to a
-  person), and anything that reaches shared machine state: another
-  checkout's database, lanes or working tree. The merge a personal tool's
-  `closeout` makes in its main checkout is that finish, not such an effect.
-  Judge an action by what it touches, not by the directory it runs in: a
-  cleanup run inside an isolated clone has deleted other checkouts' lane
-  databases.
+- **Effects beyond the branch** — writes that reach a customer (their
+  workspaces, their data, or what they run), messages to people (Slack,
+  announcements, PR comments addressed to a person), and anything that
+  reaches shared machine state: another checkout's database, lanes or
+  working tree. Reads of production, and writes to the user's own, internal
+  or demo workspaces and to internal systems, are not such effects: they go
+  ahead and are reported. A project says which of its spaces are internal
+  (planlab: AGENTS.md, "Size caution to who can be hurt"). The merge a
+  personal tool's `closeout` makes in its main checkout is that finish, not
+  such an effect. Judge an action by what it touches, not by the directory
+  it runs in: a cleanup run inside an isolated clone has deleted other
+  checkouts' lane databases.
 - **What only the user can do** — creating a workspace, logging in to an AWS
   profile, credentials, money, an account beyond the ones named.
-- **Deleting data the session did not create.**
+- **Deleting data the session did not create and cannot restore.**
 - **Text the user owns**, such as a decision-ledger entry.
 - **A decision that is hard to undo and comes with no recommendation**, a
   review finding the session judges foundational, or a design objection it

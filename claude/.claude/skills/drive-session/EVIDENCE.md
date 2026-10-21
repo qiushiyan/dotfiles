@@ -41,15 +41,42 @@ drive and driven session since 10-15; the mac has none.
   notice first (#337), a user-set gate with leftover "go build" suggestions
   left unsent (#346), new sessions through `x` for requested work.
 
+**The user's approval line.** Asked afterwards, the user said the driver
+stops for more than it should; it asked about cleanup (#298, #387, #445),
+its own watchdog (#429), card filing (#417) and demo replays (#386). Stop
+only for what reaches a customer or a person or cannot easily be undone;
+in planlab, reads of production and writes to internal and personal
+workspaces go ahead.
+
 **Changes.** `grokbot-transcript` (scripts) prints a bot's local window.
-Skill edits are proposed, not made: answer a question about a session from
-the session; every needs-you item self-explaining; deny held messages at a
-session's finish; track `notify-driver` and the non-Claude adaptation in
-this repository.
+`session-pipeline.md` § What stays the user's draws that line, and the
+planlab finish lets the closeout follow the deploy; `NOTICE.md` matches.
+SKILL.md: § What you do without asking (cleanup, own machinery, follow-ups;
+authority handed over in chat holds for the batch, written in the
+checklist); the report and every interim message lead with Needs you,
+Done without asking, Waiting on time, each item self-explaining; a question
+about a session is answered from the session; a held message to a landed
+session is dropped with its tab. `PLANLAB.md`: internal against customer
+workspaces, what asks, and merges and releases once handed over. `BOT.md`:
+waiting through `notify-driver`, the batch directory as scratchpad and
+memory, one message per event. The Session Driver's own profile is the
+user's to replace with a pointer to `BOT.md`.
+
+**Validation.** Two cold readers, one a Claude driver at the end of a
+planlab batch, one the bot after a reset with a merge grant. Both held the
+`--as-user` replay, kept the half-typed tab, read the session before
+answering and found the grant through the checklist. Their gaps were fixed:
+cleanup only after work lands, one closeout rule, a dropped held message,
+"drive to the end" stops at the PR, the batch directory's date, recaps
+kept in it. Not run: a live drive on this body; `notify-driver` is
+unverified (the mini was unreachable) and still outside the repository.
 
 **Next pass** reads the mini: the driver's checklist, `claude-steps show
 --all` on the driven sessions for snippet against hand-written sends, and
-the Claude drives since 10-15, to compare the two drivers.
+the Claude drives since 10-15, to compare the two drivers. It counts asks
+the user answered with "just do it" (target none) and items the user had
+to have explained (target none); revise the approval line if a driver's
+action reaches a customer or cannot be restored.
 
 ## 2026-10-15 — the morning recap
 

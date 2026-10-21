@@ -14,7 +14,9 @@ would, until each session reaches its finish or needs something only the
 user can give. What the user said for a session decides what it runs; what
 they left unsaid follows `~/dotfiles/docs/session-pipeline.md`, which owns
 the stages, the light and heavy paths, each project's finish, and what stays
-the user's. Read it before planning.
+the user's. Read it before planning, and for planlab sessions
+[`PLANLAB.md`](PLANLAB.md) too. A driver that is not a Claude Code session,
+such as a chat bot, reads [`BOT.md`](BOT.md) for how it waits and reports.
 
 Done is every named session at its finish or parked on something that is
 the user's, and the report written.
@@ -96,8 +98,37 @@ ready to build. Then take one of three actions:
 A permission prompt is a step too. `wait-turn` returns `blocked`; read the
 whole call (`read-turn ID --pending`, since the screen cuts it off). Judge
 it by what it touches, not by the directory it runs in. Approve with `enter`
-what stays within the session's own change and scratch space; otherwise let
-it auto-deny. Name either in the report.
+what the pipeline doc does not keep for the user, such as an edit in the
+session's own change or a read of production; let the rest auto-deny. Name
+either in the report.
+
+## What you do without asking
+
+The user wants to be stopped only for what the pipeline doc keeps theirs:
+what reaches a customer or another person, or cannot easily be undone. An
+ask they did not need holds its work until they next look, often hours
+later. So everything else the drive needs, do it, or have the session do
+it, and tell the user afterwards under **Done without asking** (§ Report),
+one line each, so they can reverse it. Typical actions:
+
+- **Clean up what the batch made** once a session's work has landed
+  (merged, installed, or closed out), not while its PR waits for a merge:
+  remove its worktree through `gwt`, which keeps a recovery ref; delete a
+  local branch whose commits are pushed or merged; close its idle Rex tab;
+  delete a scratch copy once you have checked the kept one. A tab with text
+  in its input box, uncommitted changes in its worktree, or a running job
+  stays open, and you name it.
+- **Run your own machinery:** start, pause or remove your waits, watchdogs
+  and routines.
+- **Move a session along:** the next stage, `recap`, or the closeout once
+  the merge or deploy it waits on has happened.
+- **File the follow-ups sessions recommend** in the project's own tracker.
+
+Authority the user hands over in conversation, such as "merge and release
+when ready", holds for the rest of the batch it was given in: the sessions
+they asked you to drive together, from your plan to its report. Write it at
+the top of your checklist, so it survives a reset of your context and ends
+with the batch.
 
 ## Sending
 
@@ -145,8 +176,9 @@ $S/send-turn ID '/write-spec Go with your recommendations on the open decisions.
   user's request: the project's onboarding command with the request as its
   argument, or `think-holistic` with the request as its tail where the
   project has none. Then drive it like the others; the pipeline moves it to
-  a branch before the build. Your own session stays a reader and sender, so
-  every edit falls under the same rules.
+  a branch before the build. Your own session stays a reader and sender,
+  apart from the cleanup in § What you do without asking, so every edit to
+  a project falls under the same rules.
 
 ## Shared worktrees and checkouts
 
@@ -158,12 +190,15 @@ $S/send-turn ID '/write-spec Go with your recommendations on the open decisions.
 - **One closeout into a main checkout at a time.** Two personal-tool
   branches merge in the same main checkout, and planlab handoffs write one
   briefs repository. Serialize those steps across sessions.
-- **A held message from another session is the user's.** `blocked` also
+- **A held message from another session stays undelivered.** `blocked` also
   means a message from another session waits for approval; the screen says
-  so. Delivering it wakes the session, which may start work no step sent, so
-  leave it and name it in the report. When your next step goes to that
-  session, read the held message and deny it unless the plan wants what it
-  asks.
+  so. Delivering it wakes the session, which may start work no step sent.
+  When your next step goes to that session, read the held message and deny
+  it unless the plan wants what it asks. A session whose work has landed
+  gets no next step: closing its tab in the cleanup drops the message
+  undelivered.
+  Either way, name it once under **Done without asking**; it is not a
+  question for the user.
 - **After your own context is compacted or restarted,** read
   `read-turn ID --prompts` against the checklist before sending anything
   again.
@@ -209,14 +244,30 @@ rex run … -- /bin/zsh -lic 'x --resume SESSION_ID; exec zsh -l'    # resume on
 The user did not watch the night. When a session reaches its finish or
 parks, send it `recap` and wait for that turn: the session knows what it
 built and why, and reads its own diff for the facts. Your report is built
-from those recaps. Lead with what needs the user across every session, each
-item explained so they can decide from your words alone. Then a section per
-session, by window and block:
+from those recaps, in this order:
 
-- **Where it ended:** finished (the PR and how its code review ended, or
-  the merge and install), parked (what it needs), or halted (what happened
-  and what is still running).
-- **The recap**, quoted rather than retold, trimmed only of what the
-  needs-you list already says.
-- **How the night went:** the stages sent, the defaults taken, and anything
-  a step did that reached into what is the user's.
+- **Needs you:** what waits for the user across every session, such as a
+  decision that holds work or a merge that is theirs. Each says what it is in plain words, why it is asked now, the session's
+  recommendation, and what happens if the user does not answer. A card id,
+  a branch, a config key or a session id comes with the phrase that says
+  what it is: the user meets it cold, and an item they cannot decide from
+  costs a round trip. If nothing needs them, say so.
+- **Done without asking:** what you did on your own authority (§ What you
+  do without asking), and what you left in place and why, one line each.
+- **Waiting on time:** reads or checks owed on a date, with the date.
+- **A section per session,** by window and block:
+  - **Where it ended:** finished (the PR and how its code review ended, or
+    the merge and install), parked (what it needs), or halted (what
+    happened and what is still running).
+  - **The recap**, quoted rather than retold, trimmed only of what the
+    needs-you list already says.
+  - **How the night went:** the stages sent, the defaults taken, and
+    anything a step did that reached into what is the user's.
+
+A message to the user before the end, such as a decision a session parked
+on, takes the same shape, with only the sections that have something in
+them. When the user asks where a session stands or what it found, read the
+session before answering (`read-turn`, its recap, `claude-steps show`) and
+answer from what it says. A brief or your plan says what the session set
+out to do; consults and spikes change course, and an answer from the brief
+sounds current while being wrong.
