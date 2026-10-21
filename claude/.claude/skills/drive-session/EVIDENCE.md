@@ -62,6 +62,14 @@ waiting through `notify-driver`, the batch directory as scratchpad and
 memory, one message per event. The Session Driver's own profile is the
 user's to replace with a pointer to `BOT.md`.
 
+**The design checkpoint.** The user then asked that a planlab batch stop
+once every session's design is in, for one review, with the spec decided
+per session after the consult. The 10-17 batch ran it on the user's word
+(#339 → #346, calls in #348 and #353). `PLANLAB.md` § The design checkpoint
+makes it the default: `consult-design` for every session, `spike-check`
+where needed, one report, then `/write-spec` → `/compact` →
+`implement-spec` or `implement-now` on the user's word.
+
 **Validation.** Two cold readers, one a Claude driver at the end of a
 planlab batch, one the bot after a reset with a merge grant. Both held the
 `--as-user` replay, kept the half-typed tab, read the session before

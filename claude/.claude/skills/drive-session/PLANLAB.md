@@ -7,6 +7,40 @@ planlab's own. The stages and snippet keys are in
 `~/dotfiles/docs/session-pipeline.md`, and the rest of the drive is in
 SKILL.md.
 
+## The design checkpoint
+
+When a batch starts sessions whose design is not settled, the user reviews
+every design before anything is built, in one report once all of them have
+reached it. That is when they still steer cheaply: a design they would amend
+costs a rebuild once built. A session handed over already past its design
+goes straight on.
+
+After onboarding, every such session gets the same design stage, whatever
+its path, and the spec question waits until its design is in:
+
+```bash
+$S/snippet consult-design "$SESSION_DIR" > $F   # astra and fable settle the design; it ends with its decisions
+$S/snippet spike-check "$SESSION_DIR" > $F      # next, where the design rests on an assumption reading cannot settle
+```
+
+Hold each session there. Until all have arrived or parked, message the user
+only for a decision that holds a session. Then report, as SKILL.md § Report
+shapes it: per session, the design in a few lines, what the spikes showed,
+the decisions it needs with its recommendations, and your call on a spec.
+A spec pays where the change is infrastructure or runtime with a large
+blast radius, or its design has decisions worth fixing in writing
+(`session-pipeline.md` § Choosing the path).
+
+Nothing goes past the checkpoint without the user's word; this outranks
+SKILL.md's Continue. With their answers, per session:
+
+```bash
+$S/send-turn ID '/write-spec <their answers>'                 # spec: then /compact, then implement-spec
+$S/snippet implement-now "$SESSION_DIR" "<their answers>" > $F  # no spec: builds from the settled design
+```
+
+Then on through review to the finish.
+
 ## Who can be hurt decides what you ask
 
 Planlab's `AGENTS.md` sizes caution to who can be hurt: Eval, Steward,
