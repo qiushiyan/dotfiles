@@ -79,8 +79,8 @@ ready to build. Then take one of three actions:
   path too. A spec's decisions are answered in one line that has them
   written into the spec, `Go with your recommendations on D1 and D2; write
   them into the spec and commit.`, then `/compact`, and once its turn ends
-  `implement-spec`, then on through review to the finish. Decisions the next step does not act
-  on ride to the report.
+  `implement-spec`, then on through review to the finish. Decisions the
+  next step does not act on ride to the report.
 - **Hold what is the user's at the step that needs it.** Something on the
   pipeline doc's list of what stays the user's — a hard-to-undo decision with
   no recommendation, a workspace to create, an AWS profile that is not logged
@@ -107,22 +107,18 @@ either in the report.
 The user wants to be stopped only for what the pipeline doc keeps theirs:
 what reaches a customer or another person, or cannot easily be undone. An
 ask they did not need holds its work until they next look, often hours
-later. So everything else the drive needs, do it, or have the session do
-it, and tell the user afterwards under **Done without asking** (§ Report),
-one line each, so they can reverse it. Typical actions:
+later. Everything else the drive needs, do or have the session do, and list
+it under **Done without asking** (§ Report) so they can reverse it: the
+closeout once the merge or deploy it waits on has happened, the follow-up
+cards sessions recommend, your own waits and watchdogs, and the cleanup
+once a session's work has landed (merged, installed, or closed out):
 
-- **Clean up what the batch made** once a session's work has landed
-  (merged, installed, or closed out), not while its PR waits for a merge:
-  remove its worktree through `gwt`, which keeps a recovery ref; delete a
-  local branch whose commits are pushed or merged; close its idle Rex tab;
-  delete a scratch copy once you have checked the kept one. A tab with text
-  in its input box, uncommitted changes in its worktree, or a running job
-  stays open, and you name it.
-- **Run your own machinery:** start, pause or remove your waits, watchdogs
-  and routines.
-- **Move a session along:** the next stage, `recap`, or the closeout once
-  the merge or deploy it waits on has happened.
-- **File the follow-ups sessions recommend** in the project's own tracker.
+```bash
+gwt merged BRANCH           # landed? gwt owns the verdict; a PR still waiting for its merge keeps everything
+rex capture -b ID           # an unsent line in the input box or a running job: leave the block and name it
+rex block close ID          # close the session before its checkout goes
+gwt remove BRANCH           # without flags it refuses uncommitted work and an unmerged branch: leave those and name them
+```
 
 Authority the user hands over in conversation, such as "merge and release
 when ready", holds for the rest of the batch it was given in: the sessions
@@ -190,15 +186,12 @@ $S/send-turn ID '/write-spec Go with your recommendations on the open decisions.
 - **One closeout into a main checkout at a time.** Two personal-tool
   branches merge in the same main checkout, and planlab handoffs write one
   briefs repository. Serialize those steps across sessions.
-- **A held message from another session stays undelivered.** `blocked` also
-  means a message from another session waits for approval; the screen says
-  so. Delivering it wakes the session, which may start work no step sent.
-  When your next step goes to that session, read the held message and deny
-  it unless the plan wants what it asks. A session whose work has landed
-  gets no next step: closing its tab in the cleanup drops the message
-  undelivered.
-  Either way, name it once under **Done without asking**; it is not a
-  question for the user.
+- **A held message from another session stays undelivered.** `blocked` can
+  also mean one waits for approval (the screen says so), and delivering it
+  wakes the session into work no step sent. Deny it when your next step
+  goes to that session, unless the plan wants what it asks; a landed
+  session's message goes with its block in the cleanup. Name it once under
+  **Done without asking**.
 - **After your own context is compacted or restarted,** read
   `read-turn ID --prompts` against the checklist before sending anything
   again.
@@ -243,18 +236,29 @@ rex run … -- /bin/zsh -lic 'x --resume SESSION_ID; exec zsh -l'    # resume on
 
 The user did not watch the night. When a session reaches its finish or
 parks, send it `recap` and wait for that turn: the session knows what it
-built and why, and reads its own diff for the facts. Your report is built
-from those recaps, in this order:
+built and why, and reads its own diff for the facts. Build the report from
+those recaps. The user meets every id in it cold, and an item they cannot
+decide from costs a round trip, so each item stands on its own:
 
-- **Needs you:** what waits for the user across every session, such as a
-  decision that holds work or a merge that is theirs. Each says what it is in plain words, why it is asked now, the session's
-  recommendation, and what happens if the user does not answer. A card id,
-  a branch, a config key or a session id comes with the phrase that says
-  what it is: the user meets it cold, and an item they cannot decide from
-  costs a round trip. If nothing needs them, say so.
-- **Done without asking:** what you did on your own authority (§ What you
-  do without asking), and what you left in place and why, one line each.
-- **Waiting on time:** reads or checks owed on a date, with the date.
+<example>
+**Needs you**
+- **Take down the remote-workers lab host after the 31 Oct read?** It is the one `planlab-prod` EC2 host (about $277 a month) running the experiment for `qiushi-lab`; no customer uses it. #9251 recommends taking it down once that read is in. Unanswered, it keeps running.
+
+**Done without asking**
+- Closed #9254's block and removed its worktree `run-state/adoption-and-parks`.
+- Filed QIU-280, a backlog card: importPlan charges each edit row a flat 1 KiB, about a third of its real size.
+- Left the `qiu-272` block open: its input box holds an unsent line.
+
+**Waiting on time**
+- Thu 22 Oct: #9255's production read of the lane ceiling.
+</example>
+
+- **Needs you:** what waits for the user across every session, a decision
+  or a merge that is theirs: what it is, why now, the recommendation, and
+  what happens unanswered. If nothing, say so.
+- **Done without asking:** what you did on your own authority, and what you
+  left in place and why.
+- **Waiting on time:** reads or checks owed on a date.
 - **A section per session,** by window and block:
   - **Where it ended:** finished (the PR and how its code review ended, or
     the merge and install), parked (what it needs), or halted (what
@@ -264,10 +268,11 @@ from those recaps, in this order:
   - **How the night went:** the stages sent, the defaults taken, and
     anything a step did that reached into what is the user's.
 
-A message to the user before the end, such as a decision a session parked
-on, takes the same shape, with only the sections that have something in
-them. When the user asks where a session stands or what it found, read the
-session before answering (`read-turn`, its recap, `claude-steps show`) and
-answer from what it says. A brief or your plan says what the session set
-out to do; consults and spikes change course, and an answer from the brief
-sounds current while being wrong.
+A message before the end, such as a decision a session parked on, takes
+the same shape with only the sections that have something in them.
+
+When the user asks where a session stands or what it found, read the
+session first (`read-turn`, its recap, `claude-steps show`) and answer from
+what it says. A brief or your plan says what the session set out to do;
+consults and spikes change course, so an answer from the brief can sound
+current and be wrong.

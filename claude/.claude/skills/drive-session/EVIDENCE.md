@@ -56,7 +56,7 @@ authority handed over in chat holds for the batch, written in the
 checklist); the report and every interim message lead with Needs you,
 Done without asking, Waiting on time, each item self-explaining; a question
 about a session is answered from the session; a held message to a landed
-session is dropped with its tab. `PLANLAB.md`: internal against customer
+session goes with its block in the cleanup. `PLANLAB.md`: internal against customer
 workspaces, what asks, and merges and releases once handed over. `BOT.md`:
 waiting through `notify-driver`, the batch directory as scratchpad and
 memory, one message per event. The Session Driver's own profile is the

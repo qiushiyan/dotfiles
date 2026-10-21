@@ -125,7 +125,7 @@ def main(argv):
         print(bot.get("description", ""))
         return 0
     if bot["id"] not in replicas:
-        print(f"grokbot-transcript: {bot['name']} has no local window; open its chat in the app", file=sys.stderr)
+        print(f"grokbot-transcript: the app keeps no local copy of {bot['name']}'s chat; ask the bot to export it", file=sys.stderr)
         return 1
 
     entries = load(replicas[bot["id"]]).get("entries", [])

@@ -22,11 +22,10 @@ same line. Do these, or let the session do them, and report them under
   and a demo check after a release.
 - **Use internal systems:** file and update Bench cards, and create, rename
   and sync briefs in the handoffs repository.
-- **Clean up after a merged PR:** the closeout once the release serves, the
-  session's worktree and tab, and a review branch such as `pr-<N>-review`
-  whose commits are on the PR's branch.
+- **Clean up a review branch** such as `pr-<N>-review` in the main
+  checkout once its PR has merged, beside SKILL.md's cleanup.
 - **Leave a Bench card's verifier unnamed:** the card closes itself after a
-  quiet week. Say so; it is not a question.
+  quiet week. Say so under **Done without asking**.
 
 A workspace is internal when PlanLab's own organization owns it; the names
 above are the known ones. Some customer-looking workspaces are run by
@@ -50,10 +49,9 @@ Ask, holding only the work that depends on it:
 
 The finish is a polished PR, and its merge and release are the user's. They
 become yours only when the user says so about merging or releasing; "drive
-these to the end" means to the polished PR. When the user hands a batch's
-merges and releases to you, have each PR's
-own session merge it once its checks are green and its code review is
-handled. Choose the order, merging PRs that touch the same code one after
-another, and release once for the batch through one session. Then send the
-closeouts one at a time. A PR whose session is gone gets a new session for
-its merge, so the merge runs where its checks and its report are.
+these to the end" means to the polished PR. Once they are yours, have each
+PR's own session merge it when its checks are green and its code review is
+handled, merging PRs that touch the same code one after another. Release
+once for the batch through one session, then send the closeouts one at a
+time. A PR whose session is gone gets a new session for its merge, so the
+merge runs where its checks and its report are.
