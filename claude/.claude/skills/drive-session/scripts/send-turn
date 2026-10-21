@@ -14,8 +14,10 @@
 # show the snippet the file carried, so a change to it goes there too
 # (~/dev/claude-steps, internal/record/decode.go).
 #
-# A slash command is compared as typed ("/review astra"). /compact records
-# itself only once compaction ends, so it is given ten minutes, not one.
+# A slash command is compared as typed ("/review astra"), leading spaces
+# aside: a skill's command padded with them loses only spaces when typing
+# drops the head. /compact records itself only once compaction ends, so it
+# is given ten minutes, not one.
 #
 # Exit 0: arrived as sent, or queued whole while the session is busy (it takes
 # a queued prompt mid-turn). 1: something else arrived (printed). 3: nothing in
@@ -47,7 +49,7 @@ for _ in $(seq "$polls"); do
   got=$(jq -r .text <<<"$now")
   how=arrived
   [ "$(jq -r .queued <<<"$now")" = true ] && how="queued (the session takes it mid-turn)"
-  if [ "$got" = "$text" ]; then
+  if [ "${got#"${got%%[! ]*}"}" = "${text#"${text%%[! ]*}"}" ]; then
     echo "$how: $text"
     exit 0
   fi

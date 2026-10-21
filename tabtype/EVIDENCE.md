@@ -209,3 +209,58 @@ sessions:
   still find.
 
 A key at zero while the request is still typed by hand has the wrong wording.
+
+## 2026-10-17 — the light path's build stops at its report
+
+Session `mini:e0ebda78`, an `/improve-tool` pass over the agent workflow set
+against Felix Rieseberg's "How to be more ambitious" (2026-10-13), whose Depth
+section asks for an outside judge instead of the model judging itself. The
+ledger stayed in that session's scratchpad.
+
+**Corpus.** Obelisk on the mini only; the laptop was unreachable. A use of
+`consult-then-build` is a user turn containing `run a consult with astra, one
+round`: 7 sessions, 2026-10-14 → 10-15, 6 planlab and 1 claude-steps. The
+window runs from the snippet to the next real user turn.
+
+**Observed.**
+- **No review before "done".** None of the 7 builds ran a review round before
+  reporting. 6 drove an instrument: the running stack in 5, a test against the
+  old code in 1.
+- **The review came next anyway.** The user's next turn asked for one in 5 of
+  7, and 6 of 7 had one eventually.
+- **It found something every time.** All 6 planlab builds drew review findings
+  after being reported done, criticals in two:
+  - #9036 (`fcf8ab0b/9bc23b1b`): an answer split across a transaction boundary.
+  - #9081 (`8513072d/6fe53425`): joins that never finished looked finished.
+- **One build went past its stage.** #9033 (`ad5f78fc/8da71859`) opened a PR,
+  ran the code-review loop and reported "🟢 PR #9033 has finished its automated
+  review and is ready for you to merge … nothing needed fixing", while noting
+  that Codex and cursor-bugbot never reviewed it. The cold review the user
+  asked for next found tokens opened to grading and stored images, patches and
+  prompts.
+- **The personal-tool build** (claude-steps, `a232c685`) closed out with no
+  review.
+
+**Not the cause.** The code-review loop's report of 10-04, "the merge is your
+call" on a red CI (#8447, `d4cdf757/df5e2bca`), was fixed in planlab #8931
+(10-12), which reads CI on the PR head. #9033's report followed that loop's
+contract; the gap is the stage the build skipped.
+
+**Changed** (the user's decision). Both keys, global and planlab, end:
+"Stop at the report: the review comes next, so don't open a PR or call the
+branch ready." The global key is `b12b0f2`; planlab's gitignored
+`.tabtype.local.toml` carries the same line and was live from 10-17.
+Rejected: folding `loopy-review-verify` into the snippet. It would save the
+turn the user sends after 5 of 7 builds, but it changes the stage structure
+the pipeline and drive-session follow.
+
+**Not tested.** No replay: replaying this snippet means a whole build on the
+live stack. No cold reader.
+
+**Next pass compares** light-path sessions after the line went live (planlab
+from 10-17; the global key once this branch reaches main):
+- a PR opened or "ready" claimed before any review round (1 of 7 before);
+- the user's next turn after the report (a review in 5 of 7 before).
+
+Revise if sessions now stop short of work the user expected done, so that the
+next turn is more often "continue" or "open the PR" than the review itself.

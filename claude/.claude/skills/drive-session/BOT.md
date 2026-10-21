@@ -23,9 +23,10 @@ tmux kill-session -t wait-$ID                        # parking: a live wait keep
 ```
 
 A failed post is retried and logged to `notify.log` in the state directory
-below. While a drive runs, keep a watchdog routine that tells the user only
-when a session has gone quiet with no wake, and pause it when the drive
-ends.
+below. SKILL.md's 30-minute fallback sleep is, for you, a watchdog routine
+that runs while a drive does: on each of its wakes, re-arm the waits that
+`pgrep` no longer lists, as SKILL.md says, and tell the user only when a
+session has gone quiet with no wake. Pause it when the drive ends.
 
 ## Your memory
 
