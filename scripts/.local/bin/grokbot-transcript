@@ -27,6 +27,7 @@ Exit codes: 0 printed; 1 no such bot or nothing local for it; 2 usage or no data
 
 import base64
 import datetime
+import fcntl
 import glob
 import json
 import os
@@ -189,30 +190,43 @@ def main(argv):
         print(bot.get("description", ""))
         return 0
 
-    window = load(replicas[bot["id"]]).get("entries", []) if bot["id"] in replicas else []
-    kept = archived(bot["id"])
-    if not window and not kept:
-        print(f"grokbot-transcript: the app keeps no local copy of {bot['name']}'s chat and nothing is archived; "
-              "ask the bot to export it", file=sys.stderr)
-        return 1
-    merged = dict(kept)
-    merged.update((e["seq"], e) for e in window)   # the window holds each entry's latest state
-    entries = [merged[k] for k in sorted(merged)]
+    def read():
+        window = load(replicas[bot["id"]]).get("entries", []) if bot["id"] in replicas else []
+        kept = archived(bot["id"])
+        merged = dict(kept)
+        merged.update((e["seq"], e) for e in window)   # the window holds each entry's latest state
+        return window, kept, [merged[k] for k in sorted(merged)]
 
     if mode == "archive":
-        new = [e for e in window if e["seq"] not in kept]
         os.makedirs(ARCHIVE, exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=ARCHIVE, prefix=".archive.")
-        with os.fdopen(fd, "w") as f:
-            for e in entries:
-                f.write(json.dumps(e, ensure_ascii=False) + "\n")
-        os.replace(tmp, archive_path(bot["id"]))
+        # One archiver at a time, reading inside the lock: each replaces the
+        # archive with what it read, so an overlapping one would drop the
+        # entries the other added.
+        with open(os.path.join(ARCHIVE, f".{bot['id']}.lock"), "w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            window, kept, entries = read()
+            if not entries:
+                print(f"grokbot-transcript: the app keeps no local copy of {bot['name']}'s chat; nothing to archive",
+                      file=sys.stderr)
+                return 1
+            new = [e for e in window if e["seq"] not in kept]
+            fd, tmp = tempfile.mkstemp(dir=ARCHIVE, prefix=".archive.")
+            with os.fdopen(fd, "w") as f:
+                for e in entries:
+                    f.write(json.dumps(e, ensure_ascii=False) + "\n")
+            os.replace(tmp, archive_path(bot["id"]))
         print(f"{bot['name']}: {len(new)} new entries archived; {archive_path(bot['id'])} holds "
               f"seq {entries[0]['seq']}–{entries[-1]['seq']} ({len(entries)} entries)")
         if kept and window and window[0]["seq"] > max(kept) + 1:
             print(f"gap: seq {max(kept) + 1}–{window[0]['seq'] - 1} rolled out of the window before they were "
                   "archived; archive more often", file=sys.stderr)
         return 0
+
+    window, kept, entries = read()
+    if not entries:
+        print(f"grokbot-transcript: the app keeps no local copy of {bot['name']}'s chat and nothing is archived; "
+              "ask the bot to export it", file=sys.stderr)
+        return 1
 
     if since:
         try:
