@@ -38,15 +38,16 @@ drive wait T1                        # until its turn ends (run it in the backgr
 An action carries the view you decided it on and is refused once the
 session has moved past it: a refusal (exit 1) changed nothing, and its
 message says what changed and what to do. Read the session again and
-decide on what it shows now. Exit 4 is a session whose login or API failed;
-its message gives the relaunch.
+decide on what it shows now. Exit 4 is a session whose login was rejected;
+its message gives the relaunch, with the step on it.
 
 ## How a drive runs
 
 1. **Survey every named session before asking anything.** Find each in
    `drive status`, then read where it stands and what it has been told:
    `drive read T1 --prompts 10` (open any brief a prompt points at),
-   `drive read T1`, and `claude-steps show SESSION_ID` for the stages that
+   `drive read T1`, and `claude-steps show SESSION_ID` (the id `drive read`
+   prints) for the stages that
    ran, the commits since each and its PR. Settle for each: its project's
    finish, its path, the stage it is in and whether that stage is finished,
    what it waits on, and which sessions share a worktree or close out into
@@ -96,7 +97,7 @@ a spec with open decisions is not ready to build. Then:
   depends on it. Send the step with a tail that names what waits, as in
   `implement-spec` followed by `D3 and phase 4's EC2 run wait for me: build
   the rest, commit, and stop before them.` Park the session
-  (`drive park T1 "<what it needs>"`) when its next step cannot proceed
+  (`drive park T1@… "<what it needs>"`) when its next step cannot proceed
   without it, or when it went past the step you were about to send, and
   keep driving the others.
 - **Halt the drive** when a secret was exposed or shared state damaged:
@@ -108,7 +109,8 @@ and `drive read T1 --pending` shows the whole call. Judge it by what it
 touches, wherever it runs: approve (`drive respond VIEW approve`) what the
 pipeline doc does not keep for the user, such as an edit in the session's
 own change or a read of production, and deny the rest. drive records either
-for the report.
+for the report. A deny stops the session's turn: it reads `interrupted`, and
+takes its next step as usual.
 
 ## What you do without asking
 
@@ -121,8 +123,8 @@ it under **Done without asking** (§ Report) so they can reverse it:
 - the closeout once the merge or deploy it waits on has happened, the
   follow-up cards sessions recommend, your own waits;
 - relaunching a session whose login was rejected on another account
-  (`drive close`, then `drive open … --resume`, as drive's message says),
-  then sending its step again;
+  (`drive close`, then `drive open … --resume` with its step on it, as
+  drive's message says);
 - a judgment the user would hand to a model — a spec review, a blind
   comparison, whether a gate's evidence holds: open a fresh Fable session
   for it (`drive open … --model fable`) and act on its verdict;
@@ -149,7 +151,8 @@ session reports now and what production serves, since another session or a
 teammate may already have done it. Then ask once, standing alone (§ Report
 says how), and record it with what happens while nobody answers:
 `drive record ask T1 --question … --recommendation … --if-unanswered …`.
-An ask still open is rechecked on each wake of its session: one that no
+An ask still open is rechecked on every wake, whichever session it comes
+from, since the session it holds is parked and wakes no one: one that no
 longer holds, because a teammate's release shipped it or another session did
 it, is recorded `--took moot --source '<what showed it>'`, and the session
 goes on. When the user answers, record how: `drive record answer A3
@@ -197,9 +200,11 @@ paraphrase: `--snippet KEY` with the text the user would type after it.
 - **One closeout into a main checkout, and one release, at a time.**
   Personal-tool branches merge in their main checkout, planlab handoffs
   write one briefs repository, and a release ships everything merged before
-  it. Send such a step with `--hold` naming what it uses (`--hold
-  planlab-main`, `--hold release`): another send holding the same name is
-  refused until the first one's turn ends.
+  it. Send such a step, or any other only one session may take at a time,
+  such as commits into a checkout others share, with `--hold` naming what it
+  uses (`--hold planlab-main`, `--hold release`): another send holding the
+  same name is refused until the first one's turn has ended, background jobs
+  it started included.
 - **A held message from another session stays undelivered.** `blocked` can
   also mean one waits for approval (the screen says so), and delivering it
   wakes the session into work no step sent. Deny it unless the plan wants

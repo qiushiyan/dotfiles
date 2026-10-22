@@ -23,7 +23,7 @@ drive send T1@… --snippet spike-check      # next, where the design rests on a
 ```
 
 Hold each session there: the design reply stands in for its recap, so send
-no `recap`; park it (`drive park T1 "design checkpoint"`) and leave its block
+no `recap`; park it (`drive park T1@… "design checkpoint"`) and leave its block
 open for the user's answers. Until all have arrived or parked, message the
 user only for a decision that holds a session. Then report, as SKILL.md
 § Report shapes it: per session, the design in a few lines, what the spikes

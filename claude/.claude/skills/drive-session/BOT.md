@@ -32,15 +32,16 @@ woken with the session's label, how its turn ended, the end of its reply and
 the view to act on.
 Arm one yourself with `drive watch T1` when you leave a session working
 without sending it anything, and wait out the plan's veto with
-`drive watch --sleep 300 veto`. `drive park T1 "<what it needs>"` stops the
-wakes for a session that waits on the user.
+`drive watch --sleep 300 veto`. `drive park T1@… "<what it needs>"` stops
+the wakes for a session that waits on the user.
 
-Several of your runs can act at once. drive refuses a step decided on a view
-another run has already moved past, so any wake may send to any session from
+Several of your runs can act at once. drive lets one act on a session at a
+time and refuses a step decided on a view another run has already moved
+past, so any wake may send to any session from
 what `drive status` and `drive read` show now: a closeout after the release
 another session ran, a merge once a review has reported. A session with
 nothing to do until something else happens is parked with what it waits for
-(`drive park T3s "waits for the release hold"`), and the wake that brings
+(`drive park T3s@… "waits for the release hold"`), and the wake that brings
 that event sends to it. A send refused on a hold comes back with the
 holder's wake, which names each session waiting for what it held and the
 step it was refused; `drive status` lists them too until each is sent.
@@ -50,7 +51,9 @@ that a wake does the acting. On each run it reads `drive status` and runs
 `drive watch` for every session not parked whose wake reads `none`, `ended
 without a wake`, `stuck`, or `woken … (nothing sent since)` more than ten
 minutes ago, and for each parked session the hold lines show waiting for a
-hold that is free; a session already waiting is woken within a minute. When
+hold that is free; a session already waiting is woken within a minute. It
+also rechecks each open ask `drive status` lists, as SKILL.md § Asking
+says, and records one that no longer holds as moot. When
 `drive log` shows a session's watch has ended without a wake twice, tell the
 user once, with what `watches.log` says, and record that you did
 (`drive record note --session F2 'told the user: …'`).
