@@ -161,6 +161,16 @@
           }
         ]
       }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
+          }
+        ]
+      }
     ]
   },
   "disableRemoteControl": false,

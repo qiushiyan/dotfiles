@@ -61,16 +61,17 @@ report() {
 # Claude Code hook events -> states. The title is the project the session works
 # in; the message is what the human would want to read first.
 claude_hook() {
-  local input event cwd message prompt tool ntype
+  local input event cwd message prompt tool ntype error
   input=$(cat)
-  IFS=$'\t' read -r event cwd message prompt tool ntype < <(
+  IFS=$'\t' read -r event cwd message prompt tool ntype error < <(
     printf '%s' "$input" | jq -r '[
       .hook_event_name // "-",
       .cwd // "-",
-      (.message // "-" | gsub("[\t\n]"; " ")),
+      (.message // .last_assistant_message // "-" | gsub("[\t\n]"; " ") | .[0:200]),
       (.prompt // "-" | gsub("[\t\n]"; " ") | .[0:120]),
       .tool_name // "-",
-      .notification_type // "-"
+      .notification_type // "-",
+      .error // "-"
     ] | @tsv' 2>/dev/null
   )
   # Tab is IFS whitespace, so empty fields would collapse; "-" stands in.
@@ -89,6 +90,13 @@ claude_hook() {
         *) report blocked --kind question "${common[@]}" --msg "$message" ;;
       esac ;;
     Stop) report done "${common[@]}" ;;
+    # An API error ended the turn. No Stop follows it, so without this the
+    # session would read `working` for good. An expired login waits on a person.
+    StopFailure)
+      case "$error" in
+        authentication_failed) report blocked --kind auth "${common[@]}" --msg "$message" ;;
+        *) report error "${common[@]}" --msg "$message" ;;
+      esac ;;
     SessionEnd) report clear --id claude ;;
   esac
   return 0
