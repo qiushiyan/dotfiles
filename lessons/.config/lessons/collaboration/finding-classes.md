@@ -17,6 +17,14 @@ and name the shape in a few words so the list can grow from real cases.
   drives a helper the public path already proves, or re-proves another
   file's behaviour (the shapes in `../testing/test-quality.md`). Its fix is
   deletion, or folding it into the test that owns the behaviour.
+- `unearned-handling` — a guard, fallback, retry, validator, try/catch,
+  clamp or state for a case nothing real reaches: no production data, log,
+  external contract or reproduction from a real caller's input shows it,
+  and no traced path reaches it with a severe cost. A test whose input the
+  test itself built shows the mechanism, not that the case occurs. Its fix
+  is deletion once the cover is named (the boundary, type or single caller
+  that already rules the case out), or, for a case a review asks for, a
+  known limit rather than code.
 - `second-mechanism` — a new route beside an existing owner that already
   answers the same question: a parallel queue, policy, decoder or lifecycle,
   or a copied helper.
@@ -50,4 +58,5 @@ and name the shape in a few words so the list can grow from real cases.
 > fresh-session PR reviews (`~/dotfiles/claude/.claude/skills/strategic-review/EVIDENCE.md`).
 > The classes are that corpus's own, with `structure` and `other` added;
 > `low-value-test` came 2026-10-09 from grading the tests three of those PRs
-> added (same evidence log)._
+> added (same evidence log); `unearned-handling` 2026-10-23 from classifying
+> the review-driven changes of 37 PlanLab PRs (same evidence log)._

@@ -442,3 +442,187 @@ unchanged.
 **Next comparison.** One option stays untested: field charters as subagents
 of their own on the PRs pl-bugbot skips. Score it on the three misses above;
 adopt it only if it moves them.
+
+## 2026-10-23 — earned handling: what a review asks for, and what a PR already holds
+
+Session `mac:175dfedf` (an `/improve-tool` pass, then `/consult` with fable and
+astra, then a replay, all while the user was away under "go with your
+recommended default and apply"). The user asked to push against slop and
+unearned edge cases, taking inspiration from pstack
+(github.com/backnotprop/pstack, clone `e44668c`), especially its review
+skills. Their bar: handling is earned by a severe consequence on a real path,
+or by production data. Later suspicion: most of it enters through
+`pl-handle-code-review` from the Bugbot and codex GitHub integrations, though
+many of those fixes are genuine.
+
+**Corpus.**
+- Obelisk, both machines, the same invocation predicate as 10-09: 8 PR uses
+  10-16 → 10-22, all mini. They are #9240 (`b3094c4e`; `9277a03a` was an
+  abandoned start), #9498, #9511, #9531, #9567, #9566, #9539 and #9260
+  (`7cd316ae`), plus the new `drive` repo.
+- Review-driven code changes, classified as earned / unearned / unclear under
+  one written definition, by four subagents and two consult voices:
+  - 37 PlanLab PRs merged 09-23 → 10-22;
+  - the population was the user's 110 merged PRs of ≥1,000 added lines in that
+    month, of the 229 the search API reported (200 fetched).
+- Bot denominator: 128 inline bot threads on the user's last 40 merged PRs.
+  The user replied fixed 71, dropped 27, product 2.
+- User-typed corrections about over-building: at least 8 independent sessions
+  since 08-01. All of them are at design time, and none names a review.
+
+**Findings.**
+- **Reviews file cases their own text calls unreached, and the fold-in builds
+  them.** Seen in 4 of the 7 reports.
+  - #9567 finding 4 (moderate): "No body does this today (searched every
+    routed body)". It was built as a re-entry guard on every master write.
+  - #9567 finding 13: "Production sets no `MemoryMax`". It was built, and broke
+    the release bundle.
+  - #9511 KIT10 and KB12 have the same shape.
+  - Cause: severity follows consequence, and "fold these in" builds every
+    finding. The handling counterweight left with `review-lens.md` on 10-07,
+    and nothing restored it, unlike the tests counterweight on 10-09.
+- **Unearned handling is a minority, in small pieces.**
+  - It is about 15% of the classified lines in the first 12 PRs, usually
+    5–25 lines per item.
+  - Sources: the strategic review's own minors are the largest count in the
+    newest PRs. Astra's 12 PRs found 4 unearned of 42.
+- **The bot share depends on whether the bots ran (an unresolved fork).**
+  - Fable's 13 PRs (09-23 → 10-14, bots mostly running) put the GitHub bots
+    first: 55 of 101 unearned items.
+  - prs-C's bot-heavy PRs found 4 of 30 fixed bot threads unearned.
+  - Astra found codex-GitHub fixes earned 12 of 13.
+  - Raters differ at the "severe" boundary.
+- **The larger maintenance cost is real cases patched at the symptom.** Seven
+  chains in Fable's 13 PRs, and #9531's r2–r4 attribution machinery, deleted
+  by the strategic review (9fc132b +112/−210). The strategic review is the
+  pipeline's main deletion source: it produced every applied deletion in
+  #9498, #9531 and #9539.
+- **The 10-14 measures hold.** No report was written before its areas
+  returned (0 of 7), and no wakeup carried the skill command (0 of 8). 7 of 7
+  fold-ins went unreviewed, and in 3 of them CI or a bot later found faults.
+- **Other frictions, owned elsewhere:**
+  - a command inside a brief file left the skill unloaded (3 uses);
+  - the scratch-worktree mutation instruction collided with the no-install
+    rule (3 uses);
+  - the driver answered reports "Fold all in" (`drive-session` § Each step).
+
+**Consult** (`consult-r1/codex-gpt-6-astra`, `consult-r1-fable`, 60 minutes,
+each on its own half of the 99 PRs not yet classified).
+- Adopted:
+  - severity stays consequence-based, and the basis line decides build or
+    list (both voices);
+  - three dispositions: findings, investigate, known limits (astra);
+  - a deletion names its cover (astra);
+  - the fix names the callers and invariants it changes (astra, from #8955's
+    three successive save-recovery fixes);
+  - the `reaches:` field (fable);
+  - the round history comes from commit bodies and bot threads (fable);
+  - the driver line (fable).
+- Rebutted:
+  - P6's deferral: the class is for counting, and the disposition does the
+    preventing;
+  - Comment Sicko's deletion under doubt, against astra's #8913 counterexample.
+- Escalated: whether `pl-handle-code-review` gets the same rule. It is
+  PlanLab's skill, in a repository shared with teammates.
+
+**Changed.**
+- **The skill.** A new **Earned handling** lens reads both ways:
+  - a finding that asks for handling carries `reaches: traced | evidence |
+    none <cover>`;
+  - a `none` or minor case goes to known limits, and a serious case that
+    stays unsettled goes to investigate;
+  - handling the PR already holds without a basis is deleted once its cover is
+    named.
+
+  A **Rounds that patched the same place** lens was added. The report gains
+  the investigate and known-limits lists, and each fix names the callers and
+  invariants it changes. The fold-in builds reshapes and deletions first,
+  settles investigate items by their observation, and leaves known limits
+  unbuilt. Examples are a deleted clamp and two known limits, invented so
+  they leak no case.
+- `finding-classes.md` gains `unearned-handling`.
+- `drive-session` answers a report with "Fold these in." and lets the known
+  limits ride to the report.
+
+**Eval** (`~/dev/skill-evals`, runs `sr-earned-1023a`…`e` on the mini; new case
+`pr-9567-earned`; arms `current-1022` (this skill at `1d509a6`), `earned`,
+`earned-v2`, `control-1022`).
+- **Grading.** OpenRouter refused every judge call with 403 "violation of
+  provider Terms Of Service", for every model, including a bare "hi"; key
+  usage was $99 of $1,000. So blind subagents graded instead: arm names were
+  scrubbed and letters shuffled, against each case's own Checks. This is one
+  grader per case, and an Anthropic model judging Anthropic answers.
+- **#9567, 2 turns** (the report, then "Fold these in. Before you change any
+  code, write out the plan…"; n = 3, control 1):
+  - The re-entry guard was left unbuilt in current 1 of 3 runs (built in 2),
+    earned 3 of 3, and earned-v2 2 of 2.
+  - The cgroup page-cache arithmetic was built in no run. The cgroup leg was
+    deleted in current 0 of 3, earned 2 of 3, and control 1 of 1.
+  - The earned worker-loss bound was found only by the hinted control (0 of 3
+    in each realistic arm). The check measures where a reviewer looks, so the
+    case cannot score a loss of earned findings. All 7 case verdicts fail on
+    it.
+- **Regression on the four older PR replays** (n = 2 per arm):
+
+| | current-1022 | earned |
+|---|---|---|
+| checked defects named (8 runs) | 24 | 24 |
+| fix checks held | 3 / 8 | 8 / 8 |
+| case passes | 1 / 8 | 5 / 8 |
+| handling asked for cases the report calls unreached (grader count) | 5 | 2 |
+| key defects filed as unreached, a known limit or wrong | ≥3 (#8959) | ≥8 (#8948 3, #8858 1, #8959 4–5) |
+
+- **The over-correction.** In `earned`, a reachable key defect sometimes landed
+  in the lists: #8948 K5 and K7 as "Nothing known reaches it", #8858 K7. Under
+  the first fold-in contract it would not have been built. earned-v2 required
+  a `none` to name its cover, sent an uncovered serious case to investigate,
+  and had the fold-in settle the investigate list.
+  - **Result on #8858 and #8948 (n = 2):** checked defects 5, 2 and 1, 3,
+    against earned's 6, 3 and 4, 4 and current's 4, 2 and 2, 2.
+  - **Misfiling did not drop.** Reports named a wrong cover ("A reservation
+    lives one turn, so this isn't reached", #8948 K7). One filed a reachable
+    defect as a known limit because "the base behaved the same" (#8858 K5).
+  - **The current skill misfiles too, in the old format.** It lists key
+    defects under "checked and found correct": four in one #8858 report,
+    three in #8959.
+  - **What shipped:** earned's wording plus two lines from v2, the fold-in
+    settling each investigate item by its observation, and a pre-existing
+    reachable case staying a finding. Those two lines are untested.
+- **weighs-added-tests** (n = 2): every run passed in both arms. Named
+  correctness findings carried: current 3 and 1, earned 2 and 1. Handling
+  asked for an unreached case: current 1, earned 0.
+- **Limits.**
+  - 2–3 runs per arm.
+  - One grader per case.
+  - transcript.txt truncates the 9567 reports, so the 9567 grading read the
+    plan.
+  - The shipped text is earned plus two untested lines.
+  - The skill grew from 143 to 218 lines, longer only where the named gap
+    was filled: two lenses, two lists and their examples.
+
+**Deliberate keeps.**
+- "Report every problem" stays: the known limits are reported, not dropped.
+- Severity stays consequence-based.
+- No `review-lens.md` stance.
+
+**Next comparison.** Real uses after this commit, read through the class tags
+and the fold-ins:
+- In a fold-in, `none` items stay unbuilt and investigate items get their
+  observation run. Watch whether any item later found reachable had been
+  filed as a known limit, which is the over-correction.
+- The share of review-driven lines classified unearned, by the same
+  definition, on PRs merged after this commit, against the 15% here.
+- Whether the user still types holistic fold-in instructions or prunes the
+  lists by hand.
+
+Revise if a known limit later proves reachable and costly, if real findings
+drop below the v2 yield, or if the lists grow past the findings.
+
+**Pending.**
+- `pl-handle-code-review` (PlanLab) has no "real but unreached" disposition.
+  Its "pin it red first" accepts a constructed input, and 11 threads merged
+  untriaged in #9126 and #9128. This is the user's decision, as above.
+- The Grok `drive-session-test` dogfood: this terminal has no Accessibility
+  grant (AXIsProcessTrusted false), and the bot has no webhook. The message
+  to send it is in this session's closing report.
+- OpenRouter's 403 blocks skill-eval judging on the mini.
