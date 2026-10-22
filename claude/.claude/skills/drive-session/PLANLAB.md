@@ -45,6 +45,7 @@ report is sent. With their answers, per session:
 
 ```bash
 drive send T1@… '/write-spec <their answers>'                  # spec: then /compact, then implement-spec
+drive send T1@… '/write-spec Read /path/answers.md for my answers'   # answers longer than a line
 drive send T1@… --snippet implement-now '<their answers>'      # no spec: builds from the settled design
 ```
 

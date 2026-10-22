@@ -3,6 +3,54 @@
 Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares.
 
+## 2026-10-22 — strategic review of `drive` and this body (fold-in)
+
+**Corpus.** `~/dev/drive` 05bbfd4..973e787 and this branch, read by area;
+728 transcripts under `~/.claude/projects` (denies, `/compact`, queued input,
+expired logins, resumes, held peer messages); the Session Driver's chat
+10-21 11:04 → 10-22 15:58 (`grokbot-transcript`); three probe sessions on
+Claude Code 2.1.308 (Haiku, isolated tmux, scratch directory, no Rex) with
+every hook logged and the registry polled; read-only `drive read`/`status`
+on the live blocks; two Sonnet cold readers playing the bot.
+
+**Findings.**
+- **Rex misses what drives need.** No hook reports a held peer message (Rex
+  blocked, the session idle: live on e8fec0 since 15:46, every send
+  refused), a permission prompt's first six seconds, an approved command
+  until its PostToolUse, a queued turn, a `/compact`, a deny or an
+  interrupt, or an API error (a0c02b read `working` after a weekly rate
+  limit ended its turn). Claude Code's registry (`sessions/<pid>.json`
+  `status`) says where the session itself stands and changed within 160 ms
+  of each transition in the probes: `drive` now reads it first.
+- **Wakes went missing:** `respond` armed none and status read the old wake
+  as handled; the watchdog rule keyed on status words could not see it.
+- **A first step with the notice** shared the step's intent, so a hold went
+  free in the gap and a run killed mid-notice lost the step silently.
+- **Text that did not run as written:** `drive wait` told to a bot, a
+  literal `approve|deny` and `VIEW`, a relaunch on a view already moved and
+  with `'<the step>'`.
+- **Chat:** about a third of the bot's 148 messages were "I'll tell you
+  once…"/"Checking…"; on 10-22 10:33 it fast-forwarded the mini's main
+  checkout and reinstalled packages to run a CLI itself. Both rules were
+  already in the body as bare rules.
+
+**Changes.** `drive`: 30 commits (`git log 973e787..c5f2385`), each fix
+pinned by a test that goes red with the line put back. This body: rewritten
+shorter around command examples; the watchdog is `drive watch --due`; a
+refused command arms nothing, so the bot parks; a window joins with `send
+--as`; the plan is recorded for the veto run; recap before park; a cut-short
+command is settled from the transcript; the two failed rules carry their
+cited cost.
+
+**Validation.** `make check`; installed. A cold reader on the new body with
+real message texts generated from the fake. Not run: a live batch on this
+`drive`, the bot itself on this body, metrics on a real night.
+
+**Next pass compares** the first bot batches on this body against 10-21/22:
+turns left unwatched (`drive metrics`, target none), wakes re-posted by
+`--due`, acknowledgement messages in the chat (target none), work the
+driver ran from its own shell (target none).
+
 ## 2026-10-22 — the driver's scripts become `drive` (improve-tool pass)
 
 **Corpus.** On the mini, read-only: the 10-21/22 batch
