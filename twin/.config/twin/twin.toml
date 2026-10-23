@@ -119,6 +119,10 @@ url = "https://github.com/qiushiyan/ccclean.git"
 path = "~/dev/claude-steps"
 url = "https://github.com/qiushiyan/claude-steps.git"
 
+[repos.clikit]
+path = "~/dev/clikit"
+url = "https://github.com/qiushiyan/clikit.git"
+
 [repos.cout]
 path = "~/dev/cout"
 url = "https://github.com/qiushiyan/cout.git"
