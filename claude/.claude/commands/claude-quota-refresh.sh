@@ -57,7 +57,7 @@
 # safe and the budget is respected without this script knowing anything about
 # it); reading back is `headroom limits`, which touches disk alone and spends
 # nothing. The read is by EMAIL, not `--account`: headroom knows the primary by
-# its configured name ("qiushi") while the lane the statusline computes is an
+# its configured name ("qiushi.yann") while the lane the statusline computes is an
 # email, and only the email identifies both kinds of lane. The email alone is
 # not unique — a Codex subscription on the same address is its own row — so
 # the row is the claude one.

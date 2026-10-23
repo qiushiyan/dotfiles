@@ -93,19 +93,21 @@ expect() {
   return bad
 }
 
-ACCOUNTS=(yan@a.com dup@a.com dup@b.com qiushi@b.com select@a.com acc@a.com yan@a.com.lock)
+ACCOUNTS=(yan@a.com dup@a.com dup@b.com qiushi@b.com qiushi.yann@b.com select@a.com acc@a.com yan@a.com.lock)
 
 test_claude_launcher_names() {
   sandbox $ACCOUNTS || return 1
   local B='-- --dangerously-skip-permissions'
-  expect "$(probe 'route x-yan x-yan@a.com x-dup x-dup@a.com x-dup@b.com x-qiushi x-qiushi@b.com x-select x-select@a.com x-acc x-acc@a.com x-yan@a.com.lock')" \
+  expect "$(probe 'route x-yan x-yan@a.com x-dup x-dup@a.com x-dup@b.com x-qiushi x-qiushi@b.com x-qiushi.yann x-qiushi.yann@b.com x-select x-select@a.com x-acc x-acc@a.com x-yan@a.com.lock')" \
     x-yan             "launch --account yan@a.com $B" \
     x-yan@a.com       "launch --account yan@a.com $B" \
     x-dup             absent \
     x-dup@a.com       "launch --account dup@a.com $B" \
     x-dup@b.com       "launch --account dup@b.com $B" \
-    x-qiushi          "launch --account qiushi $B" \
+    x-qiushi          "launch --account qiushi@b.com $B" \
     x-qiushi@b.com    "launch --account qiushi@b.com $B" \
+    x-qiushi.yann     "launch --account qiushi.yann $B" \
+    x-qiushi.yann@b.com "launch --account qiushi.yann@b.com $B" \
     x-select          "sessions --cd-file * $B" \
     x-select@a.com    "launch --account select@a.com $B" \
     x-acc             "accounts --compact" \
@@ -116,7 +118,7 @@ test_claude_launcher_names() {
 test_codex_launcher_names() {
   sandbox $ACCOUNTS || return 1
   local V='launch --vendor codex'
-  expect "$(probe 'route cx-yan cx-yan@a.com cx-dup cx-dup@a.com cx-dup@b.com cx-qiushi cx-qiushi@b.com cx-select cx-acc cx-acc@a.com cx-yan@a.com.lock')" \
+  expect "$(probe 'route cx-yan cx-yan@a.com cx-dup cx-dup@a.com cx-dup@b.com cx-qiushi cx-qiushi@b.com cx-qiushi.yann cx-select cx-acc cx-acc@a.com cx-yan@a.com.lock')" \
     cx-yan            "$V --account yan@a.com --" \
     cx-yan@a.com      "$V --account yan@a.com --" \
     cx-dup            absent \
@@ -124,6 +126,7 @@ test_codex_launcher_names() {
     cx-dup@b.com      "$V --account dup@b.com --" \
     cx-qiushi         "$V --account qiushi --" \
     cx-qiushi@b.com   "$V --account qiushi@b.com --" \
+    cx-qiushi.yann    "$V --account qiushi.yann@b.com --" \
     cx-select         "$V --account select@a.com --" \
     cx-acc            "accounts --compact --vendor codex" \
     cx-acc@a.com      "$V --account acc@a.com --" \

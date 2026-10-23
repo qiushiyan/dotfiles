@@ -90,10 +90,13 @@ typeset -ga CLAUDE_X_EFFORT=(
   "$HOME/wiki"      high
   "$HOME/dotfiles"  high
 )
-typeset -g CLAUDE_PRIMARY_NAME="qiushi"   # x-qiushi ≡ default ~/.claude
-# headroom derives the primary's name from the logged-in email unless told;
-# pin it to ours so `.current`, `--account qiushi` and x-qiushi agree even
-# across a primary logout. Exported: the launchers, tmux and hooks all inherit it.
+typeset -g CLAUDE_PRIMARY_NAME="qiushi.yann"   # x-qiushi.yann ≡ default ~/.claude
+# The primary answers to its login's local part (qiushi.yann@gmail.com on both
+# machines), as every extra's short alias does, so x-qiushi is
+# qiushi@planlab.ai. headroom derives that same name from the logged-in email
+# unless told; pin it so `.current`, `--account qiushi.yann` and x-qiushi.yann
+# agree even across a primary logout. Exported: the launchers, tmux and hooks
+# all inherit it.
 export HEADROOM_PRIMARY_NAME="$CLAUDE_PRIMARY_NAME"
 # The board advertises `headroom launch --account <name>` by default; this
 # shell has x-<name> for every account, so let it promise that spelling.
