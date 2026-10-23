@@ -203,10 +203,12 @@ When the user folds the findings in, build them as one change rather than
 a patch per finding. Land the reshapes and the deletions first, since
 they make some findings disappear, then fix each
 remaining finding at the code that owns it, one commit per owner. "Fold
-these in" covers the findings and the investigate list: run each item's
-observation first, build the ones it shows are reached, and move the rest
-to the known limits. The known limits stay unbuilt unless the user names
-one; that a fix is cheap does not earn it a place.
+these in" and "fold all in" cover every finding, minors included, since a
+problem fixed now is one no later session has to rediscover, and the
+investigate list: run each item's observation first, build the ones it
+shows are reached, and move the rest to the known limits. The known limits
+stay unbuilt unless the user names one; that a fix is cheap does not earn
+it a place.
 
 Tests follow the Tests lens, not the finding list: pin the fragile
 behaviours it named, and any fix that changes what a caller depends on, at

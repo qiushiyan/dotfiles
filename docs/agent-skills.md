@@ -295,10 +295,12 @@ cases, fixtures, commands and how to read a report.
   the request alone or with one scripted reply. That includes a tool whose
   value shows only on real work, replayed on a merged PR frozen at the head
   it was used on (the repository's `docs/pr-replay.md`; `strategic-review`'s
-  cases are the examples). Work whose value spans several of the user's turns
-  (`consult`, a review's fold-in) stays with cold readers and later uses. `improve-tool` routes its runtime claims here; a session
-  outside it reaches the tool by naming it ("run obelisk's skill-evals cases
-  at HEAD").
+  cases are the examples). A review's fold-in fits as its plan: the scripted
+  reply asks for what the session would build and leave, and stops before
+  any edit. Work whose value spans several of the user's turns (`consult`,
+  the fold-in as built) stays with cold readers and later uses.
+  `improve-tool` routes its runtime claims here; a session outside it
+  reaches the tool by naming it ("run obelisk's skill-evals cases at HEAD").
 - **What it swaps:** the skill's text at a git revision, the working tree, or
   a directory holding a variant. A CLI's binary is whatever is installed, so
   the tool tests instructions, never two builds.
