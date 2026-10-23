@@ -95,24 +95,49 @@ expect() {
 
 ACCOUNTS=(yan@a.com dup@a.com dup@b.com qiushi@b.com qiushi.yann@b.com select@a.com acc@a.com yan@a.com.lock)
 
+# As on a machine whose host file names the primary "qiushi": that local part
+# is the primary's, so qiushi@b.com keeps only its full launcher.
 test_claude_launcher_names() {
   sandbox $ACCOUNTS || return 1
   local B='-- --dangerously-skip-permissions'
-  expect "$(probe 'route x-yan x-yan@a.com x-dup x-dup@a.com x-dup@b.com x-qiushi x-qiushi@b.com x-qiushi.yann x-qiushi.yann@b.com x-select x-select@a.com x-acc x-acc@a.com x-yan@a.com.lock')" \
+  expect "$(probe '_claude_primary qiushi
+    route x-yan x-yan@a.com x-dup x-dup@a.com x-dup@b.com x-qiushi x-qiushi@b.com x-qiushi.yann x-qiushi.yann@b.com x-select x-select@a.com x-acc x-acc@a.com x-yan@a.com.lock')" \
     x-yan             "launch --account yan@a.com $B" \
     x-yan@a.com       "launch --account yan@a.com $B" \
     x-dup             absent \
     x-dup@a.com       "launch --account dup@a.com $B" \
     x-dup@b.com       "launch --account dup@b.com $B" \
-    x-qiushi          "launch --account qiushi@b.com $B" \
+    x-qiushi          "launch --account qiushi $B" \
     x-qiushi@b.com    "launch --account qiushi@b.com $B" \
-    x-qiushi.yann     "launch --account qiushi.yann $B" \
+    x-qiushi.yann     "launch --account qiushi.yann@b.com $B" \
     x-qiushi.yann@b.com "launch --account qiushi.yann@b.com $B" \
     x-select          "sessions --cd-file * $B" \
     x-select@a.com    "launch --account select@a.com $B" \
     x-acc             "accounts --compact" \
     x-acc@a.com       "launch --account acc@a.com $B" \
     x-yan@a.com.lock  absent
+}
+
+# Unnamed, the primary is "primary"; a host file's name moves its launcher and
+# the export headroom reads, and the short alias the old name held back (here
+# qiushi, once the primary's) goes to the extra that owns that local part.
+test_host_names_the_primary() {
+  sandbox $ACCOUNTS || return 1
+  local B='-- --dangerously-skip-permissions'
+  local -a out=("${(@f)$(probe 'route x-primary x-qiushi.yann
+    print -r -- "export => $HEADROOM_PRIMARY_NAME"
+    _claude_primary qiushi; _claude_primary qiushi.yann
+    route x-primary x-qiushi x-qiushi.yann
+    print -r -- "export => $HEADROOM_PRIMARY_NAME"')}")
+  expect "${(F)out[1,3]}" \
+    x-primary         "launch --account primary $B" \
+    x-qiushi.yann     "launch --account qiushi.yann@b.com $B" \
+    export            primary || return 1
+  expect "${(F)out[4,7]}" \
+    x-primary         absent \
+    x-qiushi          "launch --account qiushi@b.com $B" \
+    x-qiushi.yann     "launch --account qiushi.yann $B" \
+    export            qiushi.yann
 }
 
 test_codex_launcher_names() {
@@ -177,6 +202,7 @@ EOS
 
 t "x-* launchers: names and the account each reaches"   test_claude_launcher_names
 t "cx-* launchers: names and the account each reaches"  test_codex_launcher_names
+t "a host file names the primary and moves its launcher" test_host_names_the_primary
 t "adding a same-local-part account retires the alias"  test_add_retires_an_ambiguous_alias
 t "session launchers run workspace-trust first"         test_launchers_record_trust_first
 

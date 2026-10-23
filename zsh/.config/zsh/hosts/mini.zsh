@@ -6,6 +6,10 @@
 # Machine badge: the shared oh-my-posh prompt and tmux status bar read it.
 export PROMPT_MACHINE=mini
 
+# The login ~/.claude holds here; the primary answers to its local part
+# (claude.zsh, _claude_primary).
+(( $+functions[_claude_primary] )) && _claude_primary qiushi.yann   # qiushi.yann@gmail.com
+
 # sshd does not forward TERM_PROGRAM, so Claude Code decides the terminal lacks
 # OSC 8 support and prints URLs as plain text (no Ctrl-click). The laptop
 # client (Ghostty -> tmux with the hyperlinks feature) passes OSC 8 through.

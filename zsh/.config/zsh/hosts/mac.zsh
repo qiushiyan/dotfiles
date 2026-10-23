@@ -5,3 +5,7 @@
 #
 # No machine badge: the prompt, the tmux status bar and the window title stay
 # unmarked here, so a mark always means another machine (hosts/mini.zsh).
+
+# The login ~/.claude holds here; the primary answers to its local part
+# (claude.zsh, _claude_primary).
+(( $+functions[_claude_primary] )) && _claude_primary qiushi   # qiushi@planlab.ai

@@ -90,13 +90,14 @@ typeset -ga CLAUDE_X_EFFORT=(
   "$HOME/wiki"      high
   "$HOME/dotfiles"  high
 )
-typeset -g CLAUDE_PRIMARY_NAME="qiushi.yann"   # x-qiushi.yann ≡ default ~/.claude
-# The primary answers to its login's local part (qiushi.yann@gmail.com on both
-# machines), as every extra's short alias does, so x-qiushi is
-# qiushi@planlab.ai. headroom derives that same name from the logged-in email
-# unless told; pin it so `.current`, `--account qiushi.yann` and x-qiushi.yann
-# agree even across a primary logout. Exported: the launchers, tmux and hooks
-# all inherit it.
+# The primary (default ~/.claude) answers to its login's local part, as every
+# extra's short alias does. Which login it holds is a fact about the machine,
+# so each host file names it with _claude_primary (below); until one does it
+# is "primary", headroom's own name for a primary nothing names. headroom
+# derives the local part from the logged-in email unless told; the pin keeps
+# `.current`, `--account <name>` and x-<name> agreeing even across a primary
+# logout. Exported: the launchers, tmux and hooks all inherit it.
+typeset -g CLAUDE_PRIMARY_NAME="primary"
 export HEADROOM_PRIMARY_NAME="$CLAUDE_PRIMARY_NAME"
 # The board advertises `headroom launch --account <name>` by default; this
 # shell has x-<name> for every account, so let it promise that spelling.
@@ -417,3 +418,15 @@ _claude_gen_launchers() {
   _account_launchers x "$CLAUDE_ACCOUNTS_ROOT" "$CLAUDE_PRIMARY_NAME" _claude_x "${CLAUDE_X_RESERVED[@]}"
 }
 _claude_gen_launchers
+
+# _claude_primary <name>: this machine's primary answers to <name>, its login's
+# local part. A host file calls it, after the launchers exist, so it moves
+# them: the old name's launcher goes, and a short alias the old name held
+# back comes back.
+_claude_primary() {
+  [[ -n "$1" && "$1" != "$CLAUDE_PRIMARY_NAME" ]] || return 0
+  unfunction "x-$CLAUDE_PRIMARY_NAME" 2>/dev/null || true
+  typeset -g CLAUDE_PRIMARY_NAME="$1"
+  export HEADROOM_PRIMARY_NAME="$1"
+  _claude_gen_launchers
+}
