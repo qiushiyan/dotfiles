@@ -46,6 +46,17 @@ cited cost.
 real message texts generated from the fake. Not run: a live batch on this
 `drive`, the bot itself on this body, metrics on a real night.
 
+**Revision pass (10-23, prompt-engineering).** The body and drive's text now
+divide the work: drive's `next:` carries the command for the session as it
+stands, `--help` the words, this body the judgment; mechanics a message
+states were cut here. A Sonnet cold reader on four routes that lean on
+`next:` routed them all; the five lines it guessed at were fixed in drive.
+Kept on purpose: the plan and report examples (patterns), the two rules with
+their cited cost (no mechanism can stop a chat message or a shell command
+the bot runs itself), PLANLAB unchanged (already example-led, its checkpoint
+states its own precedence), NOTICE unchanged (the owner's voice to the
+driven session, matching drive's notice-first delivery).
+
 **Next pass compares** the first bot batches on this body against 10-21/22:
 turns left unwatched (`drive metrics`, target none), wakes re-posted by
 `--due`, acknowledgement messages in the chat (target none), work the

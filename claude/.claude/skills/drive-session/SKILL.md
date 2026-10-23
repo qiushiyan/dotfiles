@@ -22,9 +22,7 @@ user can give, and the report written.
 
 ## Your tool
 
-`drive` reads sessions, acts on them and keeps the batch's record;
-`drive --help` is its reference. Every action names the view it was decided
-on, and is refused once the session has moved past it:
+`drive` reads sessions, acts on them and keeps the batch's record:
 
 ```bash
 drive batch new 2026-10-23                  # once per batch; it starts with no grants
@@ -35,19 +33,23 @@ drive read T1                               # from then on, by label
 drive wait T1                               # until its turn ends, in the background (a bot is woken instead: BOT.md)
 ```
 
-A refusal (exit 1) changed nothing: read the session again and decide on
-what it shows now. Exit 3 is an action that ran and did not end as asked,
-and says what did happen. Exit 4 is a rejected login, and prints the
-relaunch.
+Every action names the view it was decided on and is refused once the
+session has moved past it; a refusal (exit 1) did nothing, so read the
+session again and decide on what it shows now. drive and this skill divide
+the work: `drive --help` names the commands and the words status prints, and
+a refusal, failure or wake that leaves something to do ends with `next:`,
+the command to run on the session as it stands. That command is drive's
+part; whether the step still makes sense is yours.
 
 ## How a drive runs
 
-1. **Survey every named session before asking anything.** `drive read T1
-   --prompts 10` shows what it was told (open any brief a prompt points at),
-   `drive read T1` where it stopped, `claude-steps show SESSION_ID` its
-   stages, commits and PR. Settle each one's finish, path and stage, whether
-   that stage is done, what it waits on, and which sessions share a worktree
-   or close out into the same main checkout. What a session was told ("pause
+1. **Survey every named session before asking anything**, by its block until
+   it joins the batch: `drive read e8fec0 --prompts 10` shows what it was
+   told (open any brief a prompt points at), `drive read e8fec0` where it
+   stopped, `claude-steps show SESSION_ID` its stages, commits and PR.
+   Settle each one's finish, path and stage, whether that stage is done,
+   what it waits on, and which sessions share a worktree or close out into
+   the same main checkout. What a session was told ("pause
    before phase 5 until I name the workspaces") outranks the pipeline.
 2. **Plan in one message, and give the user five minutes to veto it.** A
    line per session, the defaults you take, what waits for them. Ask only
@@ -99,13 +101,11 @@ ready to build.
 - **Halt the drive** when a secret was exposed or shared state damaged:
   send nothing more, note what still runs, and lead the report with it.
 
-A prompt is a step too. On `blocked:permission`, `drive read T1 --pending`
-shows the call; judge it by what it touches: approve what the pipeline doc
-does not keep for the user, such as an edit in the session's own change or a
-read of production, and deny the rest. On `blocked:question`, `drive read T1
---screen` shows the options; approve takes the marked one, deny dismisses
-it. A deny ends the turn (`interrupted`); the session takes its next step as
-usual.
+A prompt is a step too, judged by what it touches: approve what the
+pipeline doc does not keep for the user, such as an edit in the session's
+own change or a read of production, and deny the rest. Its `next:` shows how
+to see the call or the options and how to answer. A deny ends the turn; the
+session takes its next step as usual.
 
 ## What you do without asking
 

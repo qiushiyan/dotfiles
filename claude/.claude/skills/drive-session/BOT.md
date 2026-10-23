@@ -24,33 +24,29 @@ stops the last batch's wakes.
 
 ## Waiting
 
-Every drive command that types or presses into a session (`send`, `open`,
-`respond`) arms its wake: when its turn ends or it stops on a prompt, your
-routine is woken with the session's label, how its turn ended, the end of
-its reply and the view to act on. A refused command touched nothing and
-armed nothing, so act on that session or park it:
+After you send, open or respond, a wake brings you back when that session's
+turn ends or it stops on a prompt. A refused command did nothing and brings
+no wake: do what its `next:` says instead, which for a session left waiting
+is to park it, stopping its wakes until a step is sent to it:
 
 ```bash
-drive park T3@… "waits for the release hold"   # no wakes until a step is sent to it
+drive park T3@… "waits for the release hold"
 drive watch --sleep 300 veto                     # the plan's veto, as a timer wake
 ```
 
 Any wake may act on any session, from what `drive status` and `drive read`
-show now: drive lets one run act on a session at a time and refuses a step
-decided on a view another run has moved past. A send refused on a hold says
-who holds it: park the waiter. The holder's wake names each waiter with the
-send to run.
+show now: drive keeps two runs off one session, and refuses a step decided
+on a view another run has moved past.
 
-A command your shell cuts short loses nothing: `drive status` lists what it
-began as left unfinished, and the next action on that session settles it
-from the transcript. Read the session (`drive read T1 --user` shows its
-newest prompt) and send the step again only if it never arrived; `drive
-log` has the step in full.
+A command your shell cuts short loses nothing: the next send, respond, park
+or close on that session settles it from the transcript. Send the step again only once
+`drive read T1 --user` shows it never arrived; `drive log` has it in full.
 
 ## Your watchdog
 
-Your watchdog routine runs on a schedule. It sends nothing; it keeps the
-wakes coming, so that a wake does the acting. Each run:
+Your watchdog routine runs on a schedule. It sends and answers nothing; it
+keeps the wakes coming, so that a wake does the acting. A wake no run acted
+on is posted once more by `--due`, and that wake's run acts. Each run:
 
 ```bash
 drive watch --due    # arms every session whose wakes stopped coming, and says why
