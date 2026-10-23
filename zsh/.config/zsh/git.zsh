@@ -958,7 +958,7 @@ _brief() {
   local out word=$PREFIX$SUFFIX expl
   local -a slugs
   [[ $word == -* ]] && return 1
-  out=$("$HOME/.local/bin/brief" resolve ${word:+"$word"} 2>&1) || { _message -r "${out#brief: }"; return 1 }
+  out=$("$HOME/.local/bin/brief" resolve ${word:+"$word"} 2>&1) || { _message -r "${${out#brief: }#error: }"; return 1 }
   slugs=(${(f)out})
   (( $#slugs )) || { _message -r 'no live briefs in this project'; return 1 }
   _wanted briefs expl brief compadd -U -a slugs

@@ -63,7 +63,7 @@ case "$*" in
   'resolve sandbox-utf') echo sandbox-textdecoder-utf16le ;;
   'resolve sandbox') printf '%s\n' sandbox-deadline-and-lib-reuse sandbox-textdecoder-utf16le ;;
   'resolve wording') printf '%s\n' degraded-platform-wording long-read-wording ;;
-  *) echo "brief: no brief matching \"${2-}\"" >&2; exit 1 ;;
+  *) echo "brief: error: no brief matching \"${2-}\"" >&2; exit 1 ;;
 esac
 EOF
   chmod +x "$H/.local/bin/brief"
