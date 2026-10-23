@@ -1,6 +1,8 @@
 ---
 name: go-cli
-description: Build or change a personal Go command-line tool in ~/dev — project shape, commands and help on clikit (Kong), tests, Go 1.27 idioms, module design and performance traps. Use when implementing a new Go CLI from a settled design, or adding or changing commands, flags, output or help in an existing one.
+description: Conventions for building or changing a personal Go CLI in ~/dev — project shape, clikit commands and help, tests, Go 1.27, module design, performance traps.
+disable-model-invocation: true
+argument-hint: "[the tool or change to build]"
 ---
 
 # Personal Go CLIs
