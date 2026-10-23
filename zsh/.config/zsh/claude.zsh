@@ -3,7 +3,7 @@
 # System model and use patterns: docs/claude-accounts.md.
 #
 # The filesystem is the account registry:
-#   ~/.claude                      primary (qiushi@planlab.ai)
+#   ~/.claude                      primary, logged in per machine (host file)
 #   ~/.claude-accounts/<email>/    one dir per extra subscription
 #   ~/.claude-accounts/.current    which account bare `x` targets — written
 #                                  by headroom (the board's enter; `launch

@@ -105,8 +105,8 @@ that working:
   (`xcode`, `proxy`) needs no guard: its functions just fail where the tool is
   absent.
 - **Only identity is per machine.** What is about being a particular
-  machine, such as its prompt badge or its SSH client quirks, goes in
-  `hosts/<name>.zsh`. `.zshenv` sources it last, in every shell, when the
+  machine, such as its prompt badge, its SSH client quirks or the account its
+  `~/.claude` is logged in to, goes in `hosts/<name>.zsh`. `.zshenv` sources it last, in every shell, when the
   untracked one-word `~/.config/machine` names it, so it can override a
   module. The laptop's marker is `mac` and the mini's is `mini`; a machine
   without a marker loads no host file. A marker naming a missing file warns
