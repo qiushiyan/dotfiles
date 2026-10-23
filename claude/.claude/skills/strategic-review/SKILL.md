@@ -91,8 +91,9 @@ to build it once they do.
   external contract, or a reproduction from an input a real caller
   produces; or a path you traced reaches it and missing it means data loss,
   a permission breach, a customer-visible wrong or stuck result, or
-  unbounded cost. A test or probe on an input you built shows the
-  mechanism, not that the case occurs. Read it both ways:
+  unbounded cost. A test or probe that builds a state nothing real
+  produces shows the mechanism, not that the case occurs; a mocked
+  timeout a contract allows is real. Read it both ways:
   - *What you ask for.* Each finding that asks for handling carries a
     `reaches:` line: `traced <caller and path>`, `evidence <what showed
     it>`, or `none`. A `none` case, or one whose cost is minor, is not a
@@ -127,10 +128,10 @@ to build it once they do.
   threads are on the PR. They show where review fixed one area more than
   once: a later fix repairs an earlier one, or each round adds machinery
   for one more case. Read that area's accumulated diff and ask what
-  premise the fixes shared. When you
-  can name it and test it, the pile is one finding whose fix is the
-  reshape that removes the condition, and the machinery with it; fixes
-  that guard different obligations stay separate findings.
+  premise the fixes shared. When you can name it and test it, the pile is
+  one finding whose fix is the reshape that removes the condition, and the
+  machinery with it; fixes that guard different obligations stay separate
+  findings.
 - **Tests**, by `test-quality.md`. Start from the risk, not the test
   files: name the few behaviours in this PR most likely to break and
   costliest when they do, such as an ordering rule, a bound, an outcome
@@ -172,7 +173,7 @@ findings grouped by lens. Give each one a severity (critical blocks merge,
 moderate is fixed before merge, minor is optional) and its class tag from
 `~/.config/lessons/collaboration/finding-classes.md`, then where it is
 (file:line), the evidence, and how it was confirmed. A finding that asks
-for handling adds its basis. Give the fix, including the reshape when one
+for handling carries its `reaches:` line. Give the fix, including the reshape when one
 would make the problem disappear, and name the callers and invariants the
 fix changes, since a right finding with a wrong fix still ships a defect.
 Answer the user's question if they asked one; if it does not fit this PR,
@@ -199,8 +200,8 @@ verdict covers.
 ## Folding the findings in
 
 When the user folds the findings in, build them as one change rather than
-a patch per finding. Land the reshapes and the deletions they make
-possible first, since they make some findings disappear, then fix each
+a patch per finding. Land the reshapes and the deletions first, since
+they make some findings disappear, then fix each
 remaining finding at the code that owns it, one commit per owner. "Fold
 these in" covers the findings and the investigate list: run each item's
 observation first, build the ones it shows are reached, and move the rest
@@ -210,7 +211,8 @@ one; that a fix is cheap does not earn it a place.
 Tests follow the Tests lens, not the finding list: pin the fragile
 behaviours it named, and any fix that changes what a caller depends on, at
 the owning boundary, extending an existing case where one fits. Break the
-fixed line and watch each new test go red before trusting it. A fix to text a model or user reads is pinned, if at all, by
-the token that carries its contract rather than the sentence; a finding
-about naming or structure gets no test of its own. Delete or rewrite the
-tests the lens marked.
+fixed line and watch each new test go red before trusting it. A fix to
+text a model or user reads is pinned, if at all, by the token that
+carries its contract rather than the sentence; a finding about naming or
+structure gets no test of its own. Delete or rewrite the tests the lens
+marked.

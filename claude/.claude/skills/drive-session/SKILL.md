@@ -83,9 +83,8 @@ a spec with open decisions is not ready to build. Then:
   your recommendations on D1 and D2; write them into the spec and commit.`,
   then `/compact`, and once its turn ends `implement-spec`, then on through
   review to the finish. A strategic review's report is answered `Fold these
-  in.`: that builds its findings and settles its investigate list, and its
-  known limits are the user's to pick from, so they ride to the report
-  unbuilt. Decisions the next step does not act on ride to the report.
+  in.`, and its known limits ride to the report for the user to pick from.
+  Decisions the next step does not act on ride to the report.
 - **Hold what is the user's at the step that needs it.** Something on the
   pipeline doc's list of what stays the user's stops only the work that
   depends on it. Send the step with a tail that names what waits, as in

@@ -20,11 +20,12 @@ and name the shape in a few words so the list can grow from real cases.
 - `unearned-handling` — a guard, fallback, retry, validator, try/catch,
   clamp or state for a case nothing real reaches: no production data, log,
   external contract or reproduction from a real caller's input shows it,
-  and no traced path reaches it with a severe cost. A test whose input the
-  test itself built shows the mechanism, not that the case occurs. Its fix
-  is deletion once the cover is named (the boundary, type or single caller
-  that already rules the case out), or, for a case a review asks for, a
-  known limit rather than code.
+  and no traced path reaches it with a severe cost. A test that builds a
+  state nothing real produces shows the mechanism, not that the case
+  occurs. Its fix is deletion once the cover is named (the boundary, type
+  or single caller that already rules the case out), or, for a case a
+  review asks for, a limit recorded with what would earn handling rather
+  than code.
 - `second-mechanism` — a new route beside an existing owner that already
   answers the same question: a parallel queue, policy, decoder or lifecycle,
   or a copied helper.
