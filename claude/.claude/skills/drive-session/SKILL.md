@@ -130,7 +130,7 @@ without asking** so they can reverse it:
 
   ```bash
   gwt merged BRANCH       # landed? gwt owns the verdict; a PR still waiting keeps everything
-  drive close T1@…        # refused while it works, runs a job or holds a typed line: leave it, name it
+  drive close T1@…        # refused while it works, runs a job or holds a typed line: do what its next: says, name what you leave
   gwt remove BRANCH       # refuses uncommitted work and an unmerged branch: leave those, name them
   ```
 
@@ -173,9 +173,10 @@ drive send T1@… --file /tmp/t1-fixups.md                     # your own reques
 drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to look hardest'
 ```
 
-- A session's first step carries its task. A setup command sent first, such
-  as `/enter-worktree`, has nothing to set up for, and the session stops to
-  ask; setup goes once the session stops for it or reaches the build.
+- A session's first step carries its task: setup sent first, such as
+  `/enter-worktree`, has nothing to set up for, and the session waits for a
+  task instead. Setup goes once the session stops for it or reaches the
+  build.
 - A key that resolves to another project's file is a stop, not a fallback.
 - Your own words only answer the session's question, with its own
   recommendation or by naming what waits for the user.
@@ -194,8 +195,8 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
   10-22 a driver fast-forwarded the mini's main checkout and reinstalled its
   packages to run a CLI itself). Other sessions share that checkout, so the
   first step ends `This checkout is shared: install nothing here. If the
-  work needs an install, stop and say so.`, and you type `/enter-worktree`
-  when it stops there or reaches the build.
+  work needs an install, stop and say so.`, and `/enter-worktree` follows
+  as above.
 
 ## Shared worktrees and checkouts
 
@@ -206,8 +207,7 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
 - **One closeout into a main checkout, and one release, at a time**, and so
   for anything else only one session may do, such as commits into a checkout
   others share. Name what it uses; drive refuses a second send naming it
-  while the holder still works, later steps included, waits on a prompt, or
-  runs a job it started:
+  until the first is through, and says what frees it:
 
   ```bash
   drive send T2@… --snippet closeout --hold planlab-main

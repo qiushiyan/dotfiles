@@ -13,14 +13,13 @@ context does not carry over, and the files change.
 ## Your batch
 
 ```bash
-drive batch new 2026-10-23 --wake webhook --webhook session-driver --rex-session work \
-  --tz Asia/Shanghai --after-wake 'grokbot-transcript "Session Driver" --archive'
+drive batch new 2026-10-23 --webhook session-driver --rex-session work --tz Asia/Shanghai \
+  --after-wake 'grokbot-transcript "Session Driver" --archive'
 ```
 
-`--wake webhook` wakes your routine when a session's turn ends, through
-`--webhook`, the file of your own routine's webhook, which the owner writes:
-another bot's file wakes that bot. `--after-wake` keeps your chat beyond the
-app's local window. Start a batch
+`--webhook` names your own routine's webhook, a file the owner writes, and
+wakes it when a session's turn ends; another bot's file wakes that bot.
+`--after-wake` keeps your chat beyond the app's local window. Start a batch
 once per drive, never after a reset (`drive batch` names the current one):
 a new batch starts with no grants, however recently one was given, and
 stops the last batch's wakes.

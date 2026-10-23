@@ -32,6 +32,18 @@ This body: the first step carries the task, a job is the session's to stop,
 the hold wording, BOT's `--webhook` and its premise (a command holds for
 minutes, not a turn's hour).
 
+**Revision pass (10-23, prompt-engineering).** drive 323fd10: a hold's
+`next:` says what frees it from where the holder stands (answer its prompt,
+or its job ends), and a wake or read with a job gives the stop step this
+body points at; `--webhook` alone starts a webhook batch, so BOT's example
+lost `--wake webhook`. This body: the hold bullet points at the refusal
+instead of restating how long a hold lasts, a wording that had already
+drifted once; the cleanup's `drive close` comment follows `next:` instead of
+"leave it", which contradicted stopping a stale job; the first-step rule
+holds the timing once. A Sonnet cold reader on the new hold and wake texts
+routed them as meant. Kept: BOT's example names the Session Driver (its
+reader); a test bot's owner gives it its own name.
+
 **Next pass compares** a rerun with the test bot's webhook on its batch and a
 task whose closeout is a local merge: wakes posted, wakes re-posted by
 `--due`, a session that continued on its own, work the bot ran from its own
