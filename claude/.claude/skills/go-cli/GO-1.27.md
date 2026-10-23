@@ -1,56 +1,29 @@
----
-name: go-1.27-changes
-description: What changes when a Go project lands on 1.27 — the toolchain gate, the stdlib that replaces hand-rolled code, and the rewrites to overrule.
-disable-model-invocation: true
-argument-hint: "optional: the module to work in — defaults to the current one"
----
+# Go 1.27: what to write, and what to overrule
 
-# Landing on Go 1.27
+The reference behind the go-cli skill's 1.27 section. `go fix` holds the
+authoritative list of rewrites; this file adds what it does not print: when
+each idiom landed, so the draft is current before the gate runs, and the
+handful of rewrites to overrule.
 
-Two jobs here. **Upgrading** a module runs the gate, then works the overrules.
-**Writing** Go on 1.27 reads the stale → current tables first, so the draft is
-already current and the gate has nothing to say.
+## The toolchain outside a module
 
-Model-default Go is stale: training data is dominated by pre-1.21 code, so the
-reflex is a hand-rolled loop where a stdlib call now exists. `go fix` holds the
-authoritative list of rewrites. This file adds what it does not print — when each
-idiom landed, what only 1.27 has, and the handful of rewrites to overrule.
-
-## Turning 1.27 on
-
-```
-go mod edit -go=1.27.0     # or: go mod init <path> && go mod edit -go=1.27.0
-go mod tidy
-```
-
-The `go` directive is the switch. It gates language features and vet behaviour,
-and under the default `GOTOOLCHAIN=auto` it also makes the go command fetch that
-toolchain on demand — so the module builds on 1.27 even when the installed `go`
-is older, and a package manager lagging behind the release is no reason to wait.
-
-That leaves one gap: `go` invoked **outside** a module — `go install x@latest`,
-gopls, a scratch `go run` — still uses the installed toolchain. Close it by
-pinning a floor, which reuses the already-fetched toolchain and downloads nothing:
+The `go` directive in `go.mod` switches a module to 1.27 and, under the default
+`GOTOOLCHAIN=auto`, fetches that toolchain on demand, so a module builds on
+1.27 even when the installed `go` is older. A `go` run **outside** a module
+(`go install x@latest`, gopls, a scratch `go run`) still uses the installed
+toolchain. Pin a floor, which reuses the fetched toolchain and downloads
+nothing:
 
 ```
 go env -w GOTOOLCHAIN=go1.27.0+auto
 ```
 
-`+auto` keeps 1.27.0 as a floor rather than a ceiling: a module requiring newer
-still upgrades. Reset with `GOTOOLCHAIN=auto` once the installed go catches up.
+`+auto` keeps 1.27.0 a floor rather than a ceiling: a module requiring newer
+still upgrades. `go mod tidy` on a 1.27 module also enforces a two-block
+require layout (direct, then indirect) and reclassifies dependencies wrongly
+marked `// indirect`.
 
-`go mod tidy` on a 1.27 module also enforces a two-block require layout — direct,
-then indirect — and re-classifies dependencies that were mislabelled `// indirect`.
-
-## The gate
-
-Every Go change closes on this, in order:
-
-```
-go fix -diff ./...    # must print nothing
-go vet ./...
-go test ./...
-```
+## The gate, in detail
 
 `go fix -diff` prints a unified diff of every stale idiom it can rewrite, and
 changes no files. Nothing printed is the completion bar — not "it compiles".
@@ -145,34 +118,6 @@ if errors.As(err, &myErr) { handle(myErr) }
 // current
 if myErr, ok := errors.AsType[*MyErr](err); ok { handle(myErr) }
 ```
-
-## Only in 1.27
-
-What no pre-1.27 training data contains:
-
-- **`uuid` is in the standard library.** `uuid.New()`, `NewV4()`, `NewV7()`,
-  `Parse`, `MustParse`; `UUID` is a comparable `[16]byte` with `String()`.
-  Generate UUIDs with it, and let a third-party uuid module earn its place only
-  by an API this one lacks.
-- **`encoding/json` is backed by json/v2.** v1 semantics are preserved and no
-  migration is required; unmarshal is significantly faster. Error message *text*
-  may differ, so tests asserting on JSON error strings can break.
-  `encoding/json/v2` and `encoding/json/jsontext` are importable directly for
-  stricter defaults and token-level processing.
-- **Generic methods.** A method may declare its own type parameters. Interface
-  methods still may not, and cannot be satisfied by generic methods.
-- **Struct literals accept any valid field selector as a key**, so a promoted
-  field is set directly: `T{U: U{X: 1}}` becomes `T{X: 1}`.
-- **`strings.CutLast` / `bytes.CutLast`**, `math/big.Int.Divide`,
-  `net/url.URL.Clone`, `hash/maphash.Hasher`, `crypto/mldsa` (post-quantum).
-- **`testing/synctest.Sleep`** combines `time.Sleep` and `synctest.Wait`;
-  `httptest.NewTestServer` gives a server on an in-memory network that works
-  under `synctest`.
-- **Goroutine leak profile** is GA — `goroutineleak` in `runtime/pprof`, and
-  `/debug/pprof/goroutineleak` via `net/http/pprof`. Worth wiring into tests for
-  anything with a concurrent fan-out.
-- **macOS 13 Ventura is the floor** for darwin binaries. Say so in the release
-  notes of anything shipping macOS builds.
 
 ## Overrule these
 
