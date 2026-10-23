@@ -98,6 +98,9 @@ ready to build.
   EC2 run wait for me: build the rest, commit, and stop before them."` Park
   a session whose next step cannot go on without it (`drive park T1@…
   "<what it needs>"`) and keep driving the others.
+- **A background job past its purpose is the session's to stop**: send the
+  step drive's `next:` gives, never a kill from your own shell. The session
+  started the job and knows whether its work still needs it.
 - **Halt the drive** when a secret was exposed or shared state damaged:
   send nothing more, note what still runs, and lead the report with it.
 
@@ -170,6 +173,9 @@ drive send T1@… --file /tmp/t1-fixups.md                     # your own reques
 drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to look hardest'
 ```
 
+- A session's first step carries its task. A setup command sent first, such
+  as `/enter-worktree`, has nothing to set up for, and the session stops to
+  ask; setup goes once the session stops for it or reaches the build.
 - A key that resolves to another project's file is a stop, not a fallback.
 - Your own words only answer the session's question, with its own
   recommendation or by naming what waits for the user.
@@ -200,7 +206,8 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
 - **One closeout into a main checkout, and one release, at a time**, and so
   for anything else only one session may do, such as commits into a checkout
   others share. Name what it uses; drive refuses a second send naming it
-  until the first one's turn, background jobs included, has ended:
+  while the holder still works, later steps included, waits on a prompt, or
+  runs a job it started:
 
   ```bash
   drive send T2@… --snippet closeout --hold planlab-main

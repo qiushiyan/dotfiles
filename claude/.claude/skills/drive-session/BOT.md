@@ -1,9 +1,10 @@
 # Driving from a bot
 
 You are a bot outside Claude Code, such as the Grok Bot "Session Driver",
-driving the mini's Rex sessions by this skill. You cannot hold a command
-open, your context resets between runs, several of your runs can act at
-once, and the user reads you in a chat on their phone, hours later. So this
+driving the mini's Rex sessions by this skill. A command you run can be
+held for minutes, not the hour a session's turn can take; your context
+resets between runs, several of your runs can act at once, and the user
+reads you in a chat on their phone, hours later. So this
 file replaces how SKILL.md waits, remembers and reports; the rest of
 SKILL.md, NOTICE.md, PLANLAB.md and `~/dotfiles/docs/session-pipeline.md`
 applies as written. Read them from the mini at the start of every run: your
@@ -12,12 +13,14 @@ context does not carry over, and the files change.
 ## Your batch
 
 ```bash
-drive batch new 2026-10-23 --wake webhook --rex-session work --tz Asia/Shanghai \
-  --after-wake 'grokbot-transcript "Session Driver" --archive'
+drive batch new 2026-10-23 --wake webhook --webhook session-driver --rex-session work \
+  --tz Asia/Shanghai --after-wake 'grokbot-transcript "Session Driver" --archive'
 ```
 
-`--wake webhook` wakes your routine when a session's turn ends;
-`--after-wake` keeps your chat beyond the app's local window. Start a batch
+`--wake webhook` wakes your routine when a session's turn ends, through
+`--webhook`, the file of your own routine's webhook, which the owner writes:
+another bot's file wakes that bot. `--after-wake` keeps your chat beyond the
+app's local window. Start a batch
 once per drive, never after a reset (`drive batch` names the current one):
 a new batch starts with no grants, however recently one was given, and
 stops the last batch's wakes.

@@ -520,9 +520,9 @@ an older binary files a brief where the new one reads another slug.
   (`claude/.claude/skills/drive-session/BOT.md`), through the Grok Bot app's
   local-exec daemon here (`~/.grokbot`). Its hands are `drive`
   (`~/dev/drive`, built here by `twin`): each wake is a detached `drive`
-  watch that posts to the bot's webhook with the key in
-  `~/.config/drive/webhook` (0600, this machine's own; `twin` does not carry
-  it), and each batch's record — its event log, the files sent and what each
+  watch that posts to the webhook its batch names, each bot's URL and key in
+  its own `~/.config/drive/webhooks/<bot>` (0600, this machine's own; `twin`
+  does not carry it), and each batch's record — its event log, the files sent and what each
   watch printed — lives in `~/.local/state/drive/batches/<name>/`. Each
   wake's after-wake command archives the bot's chat past the app's window
   (`~/.local/state/grokbot/`); `grokbot-transcript "Session Driver"` reads

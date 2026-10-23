@@ -3,6 +3,40 @@
 Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares.
 
+## 2026-10-23 — dogfood by a test bot (drive-session-test)
+
+**Corpus.** The Grok bot "drive-session-test" drove four Sonnet sessions in a
+scratch repository through the personal-tool path by this branch's body
+(`grokbot-transcript drive-session-test`), its report checked against the
+batch's `drive log` and `drive metrics`.
+
+**Findings.** Plan and veto, a file first step, `/compact`, two closeouts
+taking turns on one hold, a park with an ask, recap, close and the report
+went as written. Every one of the 14 wakes failed: the machine's one webhook
+was the live bot's, `drive` armed watches it could not post, and metrics
+counted the failed posts as watched turns. A background job (`find ~ -name
+twin.toml`, from a closeout in a repository `twin` does not know) kept a hold
+behind a turn `drive` read as done; no command stopped it, so the bot killed
+it from its own shell. The bot sent `/enter-worktree` as a first step, and
+the session waited for a task. Its proposals were mostly rules working
+around `drive`: the fixes went where each wrong fact starts. The one it
+made on holds (a send without `--hold` frees one) would have let a second
+closeout land on a first one's follow-up, so the rule stands and its wording
+changed.
+
+**Changes.** `drive` 7191bd5 and 361964c: a batch names its own webhook and
+refuses to start or arm a wake or timer without one; `batch new` starts its Rex session; a background
+job is shown, says it keeps a hold, and is stopped through its session; a
+compaction's output is its answer; a failed post leaves its turn unwatched.
+This body: the first step carries the task, a job is the session's to stop,
+the hold wording, BOT's `--webhook` and its premise (a command holds for
+minutes, not a turn's hour).
+
+**Next pass compares** a rerun with the test bot's webhook on its batch and a
+task whose closeout is a local merge: wakes posted, wakes re-posted by
+`--due`, a session that continued on its own, work the bot ran from its own
+shell (target none).
+
 ## 2026-10-22 — strategic review of `drive` and this body (fold-in)
 
 **Corpus.** `~/dev/drive` 05bbfd4..973e787 and this branch, read by area;
