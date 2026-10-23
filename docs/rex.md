@@ -413,7 +413,12 @@ failures. `init.lua` only loads them, and its header maps them.
 - **Agent status:** every Claude in Rex publishes its state over OSC 7501
   (`rex-agent`, from the hooks); the tab badge shows it, `rex-board` lists the
   agents of every server it can reach most-urgent first, and a key jumps to
-  the one on this host that has waited longest.
+  the one on this host that has waited longest. It is only what a hook
+  reported: no hook fires for a deny, an interrupt, a typed `/compact`, a
+  queued turn or a held message from another session, so the badge can read
+  working or blocked for a session idle at its prompt. Code that must know
+  reads Claude Code's own registry status (`sessions/<pid>.json`), as
+  `~/dev/drive` does (its `docs/sessions.md` § Where a turn stands).
 - **claude-steps beside the agent:** a split that runs `claude-steps show` for
   the agent next to it, redraws on each of its status events, and closes with
   it.
