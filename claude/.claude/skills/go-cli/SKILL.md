@@ -8,7 +8,9 @@ argument-hint: "[the tool or change to build]"
 # Personal Go CLIs
 
 You are turning a settled design into a Go command-line tool in `~/dev`, or
-changing one that exists. These tools are used by agents as much as by the
+changing one that exists. Moving an existing tool onto clikit, or changing a
+command line whose output other programs read: read `MIGRATE.md` beside this
+file first. These tools are used by agents as much as by the
 user: skills tell an agent to run `<tool> --help` and to read its `--json`
 output, so the help pages and the output contract are the tool's
 documentation. The work is done when `make check` passes, every help page
@@ -19,30 +21,35 @@ has put the binary where callers find it.
 
 ```
 <tool>/
-  cmd/<tool>/main.go   the clikit App, the command structs, main
-  internal/<domain>/   the work: plain Go taking values, an io.Writer, a context
-  testdata/help/       golden help pages (make golden rewrites them)
-  Makefile             build, install, test, check, golden
-  AGENTS.md            CLAUDE.md is a symlink to it
-  README.md            what the tool is for, how to use it, its design
+  cmd/<tool>/main.go            the clikit App, the command structs, main
+  cmd/<tool>/testdata/help/     golden help pages; Golden resolves from the test's package
+  internal/<domain>/            the work: plain Go taking values, an io.Writer, a context
+  Makefile                      build, install, test, vet, fix, check, golden
+  AGENTS.md, CLAUDE.md          one file, the other a symlink to it
+  README.md                     what the tool is for, how to use it, its design
 ```
 
 - **Module** `github.com/qiushiyan/<tool>`, created with `go mod init`, then
-  `go mod edit -go=1.27.0` and `go get github.com/qiushiyan/clikit@latest`.
+  `go mod edit -go=1.27.0`, `go get github.com/qiushiyan/clikit@latest` and
+  `go mod tidy` (until tidy runs, clikit and Kong stay marked `// indirect`).
 - **Dependencies**: the standard library, plus clikit and Kong for the command
   line. Any other module earns its place by an API the standard library lacks
   (`BurntSushi/toml` and `golang.org/x/term` have); a few lines of our own beat
-  a dependency.
+  a dependency. Kong links `net/url` and `net/netip`, which only parse: a tool
+  that promises to open no connection tests for package `net` itself
+  (`~/dev/claude-steps/cmd/claude-steps/stands_test.go`).
 - **Makefile**: `install` builds beside the target and renames into place,
   because agents and tmux call the binary by path and must never run a
   half-written file. `check` runs vet, `go fix -diff` (must print nothing) and
-  `go test -race ./...`. Copy the targets from `~/dev/clikit/Makefile` and
-  `~/dev/gwt/Makefile`.
+  `go test -race ./...`. `golden` runs only the help-page test with
+  `CLIKIT_UPDATE=1`, since the whole suite can take minutes. Copy
+  `~/dev/claude-steps/Makefile`, which has every target, and narrow its
+  `golden` to that test.
 - **AGENTS.md** carries what the code cannot show: the contracts other
   repositories depend on (output, exit codes, flags, files they read), how
   tests isolate live state, and that callers stay on the old binary until
-  `make install`. Read `~/dev/gwt/agents.md` and `~/dev/claude-steps/AGENTS.md`
-  for the shape.
+  `make install`. Read `~/dev/claude-steps/CLAUDE.md` and
+  `~/dev/brief/AGENTS.md` for the shape.
 - **Both machines**: register the repository and the tool for the mini as
   `~/dotfiles/docs/twin.md` describes, before anything relies on the tool.
 
@@ -90,18 +97,24 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
 - **Global flags** are fields on the root struct. A Run method or provider
   that needs them takes the root (`cli *CLI`); Kong binds it. Options are
   shared by every run, so they never capture a grammar instance
-  (`kong.Bind(&cli.Globals)` carries one run's values into the next).
+  (`kong.Bind(&cli.Globals)` carries one run's values into the next). A root
+  flag's name is taken for every command below it: Kong refuses a grammar
+  where a subcommand declares `--json` too, so a mode that only some commands
+  accept lives on those commands, or on a `default:"withargs"` command.
 - **Dependencies load lazily** through `kong.BindToProvider`, called only when
-  a Run method asks for the value. Config, tokens and stores loaded anywhere
-  earlier would make `--help` fail on a broken config.
+  a Run method asks for the value (`kong.BindSingletonProvider` for one that
+  several providers share). Config, tokens and stores loaded anywhere earlier
+  would make `--help` fail on a broken config. A command that must validate
+  its arguments before loading anything calls its loader inside `Run`.
 - **Output** goes to `ctx.Stdout`, errors and progress to `ctx.Stderr`, input
   comes from an `io.Reader` parameter. These are the App's writers, so tests
   capture them; `os.Stdout` directly escapes the tests.
 - **Statuses**: return an error for a failure; Run prints it as
   `<tool>: error: <err>` and exits 1, so the command prints nothing itself.
-  A status of the tool's own is `clikit.Exit(n)` after the command has
-  reported it, declared in `App.ExitCodes` so help lists it. A rule the tags
-  cannot express (one flag only valid with another's value) is
+  A failure with a code of the tool's own is `clikit.Fail(n, err)`, printed
+  the same way; `clikit.Exit(n)` exits silently after the command has
+  reported. Declare each such code in `App.ExitCodes` so help lists it. A rule
+  the tags cannot express (one flag only valid with another's value) is
   `clikit.Usage(err)`, returned before anything changed.
 - **Constraints belong in tags**, where help states them: `enum:""` with a
   `default:""` among its values, `xor:"g"` (mark every member `required:""`
@@ -110,9 +123,13 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
   to use it (what it does, side effects, output shape); `HelpSections()`
   adds titled blocks such as Examples, with `Shared: true` for one that
   belongs on every page below. Both print verbatim.
-- **Less common forms**: a default subcommand (`default:"withargs"`),
-  passthrough to a child program (`arg:"" passthrough:""`, which keeps `--`),
-  hidden internal commands (`hidden:""`).
+- **Less common forms**: a default subcommand (`default:"withargs"`, whose
+  arguments and flags help lists on its parent's page), passthrough to a child
+  program (`arg:"" passthrough:""`, which keeps `--`), hidden internal
+  commands (`hidden:""`), and a flag that takes values up to the next flag,
+  which Kong's slices do not: a custom mapper using `ctx.Scan.PopWhile`
+  (`--paths` in `~/dev/brief/cmd/brief/main.go`). `help [command…]` works in
+  every tool without being declared.
 
 clikit rejects a declaration whose help would be missing or untrue, so the
 first test names every flag without help. The full contract is
@@ -136,9 +153,13 @@ above; Kong's tags are in its README (`find-docs` with `/alecthomas/kong`).
 - Run the tool through the App, exactly as main does:
   `clikittest.Run(app, "add", "milk")` returns the code, stdout and stderr.
   Copy the App to set `Stdin`; set environment with `t.Setenv`.
+- **Seams** for what a test must replace (the clock, tmux, a terminal check):
+  bind an interface in `App.Options`, and in the test append a binding of the
+  same type to a copy of `app.Options`; the later binding wins. A provider
+  may take `*kong.Context`, to detect a terminal from `ctx.Stdout`.
 - `clikittest.Golden(t, app, "testdata/help")` pins every help page and
-  reports stale ones; `make golden` (`CLIKIT_UPDATE=1 go test ./...`) accepts
-  an intended change, and the diff is reviewed like code.
+  reports stale ones; `make golden` accepts an intended change, and the diff
+  is reviewed like code.
 - Tests never touch live state: a temporary `HOME`, temporary repositories
   and config, stub `gh`/`git`/`tmux` binaries on a `PATH` without the real
   ones, a private tmux socket (`tmux -L <name>`), no network.
@@ -155,6 +176,9 @@ go fix -diff ./...    # prints nothing; apply with go fix ./... and repeat to a 
 go vet ./...
 go test -race ./...
 ```
+
+On an existing repository the first `go fix` pass rewrites code the change
+never touched; land it as a commit of its own.
 
 What only 1.27 has, so no model knows it unprompted:
 
