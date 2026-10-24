@@ -46,6 +46,10 @@ checkable.
    there is a clikit release plus a `go.mod` bump reviewed through the help
    pages. A session iterating on the tool then knows which fixes are the
    engine's.
+8. **Reconcile the agent guide with `AGENTS-TEMPLATE.md`.** Add the house
+   lines it lacks and keep everything that is the tool's own. A commands list
+   or an architecture tour moves to `--help`, the Makefile or the design doc
+   it names, since the guide is read at the start of every session.
 
 Where a hand-written parser and Kong disagree:
 

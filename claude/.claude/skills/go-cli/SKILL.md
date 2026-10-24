@@ -45,11 +45,11 @@ has put the binary where callers find it.
   `CLIKIT_UPDATE=1`, since the whole suite can take minutes. Copy
   `~/dev/claude-steps/Makefile`, which has every target, and narrow its
   `golden` to that test.
-- **AGENTS.md** carries what the code cannot show: the contracts other
-  repositories depend on (output, exit codes, flags, files they read), how
-  tests isolate live state, and that callers stay on the old binary until
-  `make install`. Read `~/dev/claude-steps/CLAUDE.md` and
-  `~/dev/brief/AGENTS.md` for the shape.
+- **AGENTS.md** starts from `AGENTS-TEMPLATE.md` beside this file: the house
+  conventions word for word, then what the code cannot show, the contracts
+  other repositories depend on (output, exit codes, flags, files they read),
+  the tool's invariants with the tests that hold them, and the live state its
+  tests must never reach.
 - **Both machines**: register the repository and the tool for the mini as
   `~/dotfiles/docs/twin.md` describes, before anything relies on the tool.
 
