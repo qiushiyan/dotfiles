@@ -229,6 +229,11 @@ repo = "gwt"
 method = "make-install"
 repo = "headroom"
 
+# mail-find and send-mail: both binaries come from one make install.
+[tools.mailkit]
+method = "make-install"
+repo = "mailkit"
+
 [tools.slackkit]
 method = "make-install"
 repo = "slackkit"
