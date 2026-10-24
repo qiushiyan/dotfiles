@@ -8,6 +8,10 @@
 # include; Rex knows it once that Ghostty theme file has been imported as a
 # custom theme. Driving the app from outside needs Remote Control
 # (Rex Settings > Rex Server). Silent no-op when no Rex server is running.
+#
+# The other machine's app can be attached to this server too, which makes
+# the default client ambiguous, so the target is this machine's app: the app
+# client on the unix socket (a remote one arrives over tailscale).
 set -u
 command -v rex >/dev/null 2>&1 || exit 0
 rex --autostart=false --timeout 2s whoami >/dev/null 2>&1 || exit 0
@@ -16,7 +20,12 @@ include="$HOME/.config/ghostty/auto/theme.ghostty"
 name=$(sed -n 's/^theme *= *//p' "$include" 2>/dev/null | head -1)
 [ -n "$name" ] || { printf 'no theme in %s\n' "$include"; exit 0; }
 
-if out=$(rex --autostart=false do client.theme.change name="$name" 2>&1); then
+app=$(rex --autostart=false --timeout 2s client ls --json 2>/dev/null | jq -r '
+  [.clients[] | select(.info.kind? == "app" and .principal.transport? == "unix")
+   | .client_id][0] // empty')
+[ -n "$app" ] || { printf 'app theme: unchanged (no local Rex.app attached)\n'; exit 0; }
+
+if out=$(rex --autostart=false -C "$app" do client.theme.change name="$name" 2>&1); then
   printf 'app theme: %s\n' "$name"
 else
   printf 'app theme: unchanged (%s)\n' "$(printf '%s' "$out" | tail -1)"
