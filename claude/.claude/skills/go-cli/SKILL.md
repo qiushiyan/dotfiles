@@ -142,8 +142,10 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
 
 clikit rejects a declaration whose help would be missing or untrue, so the
 first test names every flag without help. The full contract is
-`~/dev/clikit/doc.go`; `~/dev/clikit/run_test.go` exercises every grammar form
-above; Kong's tags are in its README (`find-docs` with `/alecthomas/kong`).
+`~/dev/clikit/doc.go`; the fixtures in `~/dev/clikit/run_test.go` and
+`help_test.go` declare these grammar forms, and `testdata/` beside them holds
+the page each renders; Kong's tags are in its README (`find-docs` with
+`/alecthomas/kong`).
 
 ## Help and output are the interface
 
