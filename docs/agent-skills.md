@@ -296,7 +296,9 @@ cases, fixtures, commands and how to read a report.
   value shows only on real work, replayed on a merged PR frozen at the head
   it was used on (the repository's `docs/pr-replay.md`; `strategic-review`'s
   cases are the examples). Work whose value spans several of the user's turns
-  (`consult`, a review's fold-in) stays with cold readers and later uses. `improve-tool` routes its runtime claims here; a session
+  (`consult`, a review's fold-in) stays with cold readers and later uses;
+  `drive-session`, which a chat bot runs over a night, is tried by a real bot
+  (its `DOGFOOD.md`). `improve-tool` routes its runtime claims here; a session
   outside it reaches the tool by naming it ("run obelisk's skill-evals cases
   at HEAD").
 - **What it swaps:** the skill's text at a git revision, the working tree, or

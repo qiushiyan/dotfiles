@@ -1,7 +1,8 @@
 # drive-session — evidence
 
 Usage passes over the sessions that ran this skill, newest first. Each names
-its corpus, what it found, what changed, and what the next pass compares.
+its corpus, what it found, what changed, and what the next pass compares. A
+run by a real bot follows `DOGFOOD.md`.
 
 ## 2026-10-24 — second dogfood (drive-session-test, dogfood-2-2026-10-23)
 
