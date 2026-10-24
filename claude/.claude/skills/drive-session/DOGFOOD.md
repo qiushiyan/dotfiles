@@ -101,7 +101,7 @@ alike.
 
 ```bash
 B=dogfood-<today>
-drive log --batch $B; drive metrics $B
+drive log --batch $B; drive metrics --batch $B
 # the friction notes in full (times UTC)
 jq -r 'select(.kind == "note" and (.note | startswith("after_wake") | not)) | "\(.at[11:16]) \(.session // "-") \(.note)"' \
   ~/.local/state/drive/batches/$B/events.jsonl

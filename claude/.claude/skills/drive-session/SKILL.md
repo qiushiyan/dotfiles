@@ -36,10 +36,11 @@ drive wait T1                               # until its turn ends, in the backgr
 Every action names the view it was decided on and is refused once the
 session has moved past it; a refusal (exit 1) did nothing, so read the
 session again and decide on what it shows now. drive and this skill divide
-the work: `drive --help` names the commands and the words status prints, and
-a refusal, failure or wake that leaves something to do ends with `next:`,
-the command to run on the session as it stands. That command is drive's
-part; whether the step still makes sense is yours.
+the work: `drive --help` and each command's own `--help` name the commands,
+their flags and the words status prints, and a refusal, failure or wake that
+leaves something to do ends with `next:`, the command to run on the session
+as it stands. That command is drive's part; whether the step still makes
+sense is yours.
 
 ## How a drive runs
 

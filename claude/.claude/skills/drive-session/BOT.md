@@ -13,7 +13,7 @@ context does not carry over, and the files change.
 ## Your batch
 
 ```bash
-drive batch new 2026-10-23 --webhook session-driver --rex-session work --tz Asia/Shanghai \
+drive batch new 2026-10-23 --webhook session-driver --rex-session work --tz Europe/London \
   --after-wake 'grokbot-transcript "Session Driver" --archive'
 ```
 
@@ -33,7 +33,7 @@ is to park it, stopping its wakes until a step is sent to it:
 
 ```bash
 drive park T3@… "waits for the release hold"
-drive watch --sleep 300 veto                     # the plan's veto, as a timer wake; once the user answers, it brings nothing to do
+drive timer 300 veto                             # the plan's veto, as a timer wake; once the user answers, it brings nothing to do
 ```
 
 Any wake may act on any session, from what `drive status` and `drive read`
