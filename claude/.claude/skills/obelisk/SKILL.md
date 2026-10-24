@@ -98,9 +98,13 @@ that survives the reading-an-empty rule below.
 **2 — batched detail.** One script, `const out = {}`, 3–4 facets built from
 round 1's ids and learned vocabulary, each budgeted. Serial single-facet
 probing is the historical **thrash**: a dozen rounds where one batched script
-answers everything. Expand a promising hit vertically with `context(uuid)`
-(parent chain + session + subagent). Ids from both machines go in the same
-script: `context()`, `raw()` and `thread()` return `null` or an empty list
+answers everything. Expand a promising hit with a bounded `messages()` window:
+`messages({ around: uuid, relation: 'parents', beforeCount: 3 })` is the
+causal path that led to it, `messages({ around: uuid })` its temporal
+neighbours, and `messages({ sessionId, limit: 20 })` a page of one session,
+continued with the returned `nextCursor`. Each returns `{ anchor, messages,
+hasMore, nextCursor }`. Ids from both machines go in the same script:
+`messages()` and `raw()` return `null`, and a session page comes back empty,
 for a row the machine does not hold, so each machine answers for its own.
 Done when every facet you named has an answer or a measured empty.
 
@@ -130,9 +134,9 @@ the tool call still resolves, through the script's text, but took 7 s against
 
 ## Hot schema
 
-Verified against CLI 0.2.6's installed schema in an isolated database via
-`pragma_table_info` on 2026-10-09; the columns are those of 0.2.6-rc.0, which
-both machines' live indexes matched on 2026-10-06. Guessed
+Verified against CLI 0.3.0's installed schema in an isolated database via
+`pragma_table_info` on 2026-10-24; the columns are unchanged since 0.2.6-rc.0,
+which both machines' live indexes matched on 2026-10-06. Guessed
 column names are the top historical failure class — trust this list over
 instinct:
 
@@ -149,11 +153,11 @@ one cheap round beats a failed one:
 ``sql(`SELECT name FROM pragma_table_info('tool_calls')`)``.
 
 Helpers cover the first pass: `overview()`, `memories({ query })`,
-`search(text, opts)`, `sessions()`, `summaries()`, `thread(sessionId)`,
-`context(uuid)`, `fileHistory(path)`, `failures()`, `trace(uuid)`,
-`raw(uuid, { offset, limit })`, `subagents()`, `workflows()`,
-`workflowTree(runId)`. `search()` rows are
-`{ message: { uuid, text, content_type, is_meta, role, timestamp, cwd },
+`search(text, opts)`, `sessions()`, `summaries()`, `messages()`,
+`fileHistory(path)`, `failures()`, `raw(uuid, { offset, limit })`,
+`subagents()`. `context()`, `thread()` and `trace()` still run but return
+whole chains or sessions unbounded; `messages()` replaces them. `search()`
+rows are `{ message: { uuid, text, content_type, is_meta, role, timestamp, cwd },
 session: { id, title, project, is_invoking? }, rank, context }`, already
 FTS5-ranked — trust the returned order. Common opts:
 `{ limit, sessionId, project, after, before, cwd, source }`, plus `fallback`
@@ -229,8 +233,8 @@ start time. `sql()` is the escalation for exact joins and aggregations.
 - A failed `obelisk` call is answered by fixing the call, never by reading the
   SQLite file or the JSONL directly — the CLI refreshes the index before
   answering, so a manual fallback silently drops the newest sessions.
-  `SQLITE_READONLY`, `EACCES`, or "attempt to write a readonly database"
-  against `~/.obelisk` means the shell was sandboxed: rerun the same command
+  `SQLITE_READONLY`, `EACCES`, `EPERM`, or "attempt to write a readonly
+  database" against `~/.obelisk` means the shell was sandboxed: rerun the same command
   unsandboxed. If write access stays unavailable, stop and report the blocker.
 
 ## Codex sessions
@@ -292,14 +296,15 @@ return remember({
 ## Escalation references
 
 Upstream references can describe features ahead of the installed CLI,
-which indexes Claude, Codex, Copilot, DeepSeek, Hermes, Kimi, OMP, Pi, and
-ZCode, but not Kiro. Use their
+which indexes Claude, Codex, Copilot, DeepSeek, Hermes, Kimi, Kiro, OMP, Pi,
+and ZCode, but not OpenCode. Use their
 provider and visibility guidance only when the runtime and corpus support it.
 
 | Read | when |
 |---|---|
 | `references/query-patterns.md` | a synthesis needs recipes beyond the three rounds |
-| `references/api-reference.md` | exact helper options or return fields |
+| `references/api-reference.md` | exact helper options or return fields, including the full `messages()` contract |
+| `references/advanced-helpers.md` | workflow runs and trees (`workflows()`, `workflowTree()`) |
 | `references/retrieval-semantics.md` | multi-step retrieval design |
 | `references/pitfalls.md` | an error the Query rules don't cover |
 | `references/schema.md` | joins beyond the hot schema |

@@ -417,3 +417,73 @@ withdrawn.
 Not verified: the mini on 0.2.6 (not reached from here), a live index with
 Copilot, Hermes, OMP or ZCode sessions, and how often round 1's sweep now
 lands on OR hits in real use.
+
+## 2026-10-24 — skill delta 5b8c789 → e883398, engine 0.2.6 → 0.3.0
+
+Two upstream publishes. `c1dceb3` (obelisk@a4b7329, shipped in 0.3.0) adds a
+bounded `messages()` helper, shrinks the default surface to overview,
+sessions, search, messages, memories, summaries and sql, demotes `context`,
+`thread`, `trace`, `recent`, `workflows` and `workflowTree` to compatibility,
+and moves memory and workflow guidance into `memory-workflow.md` and
+`advanced-helpers.md`. `e883398` (obelisk@f5d2cd3, after 0.3.0) documents an
+OpenCode provider. Installed 0.3.0 by moving the twin pin and running
+`twin tools install obelisk` on the laptop; the mini stays on 0.2.6 until
+the same command runs there. 0.3.0's engine delta beyond `messages()` is the
+Kiro provider, Copilot Insiders discovery and two session indexes; no column
+changed.
+
+Verdicts:
+
+- **`messages()` — adopted.** Round 2 expands a hit with a parents window,
+  a temporal window or a session page instead of `context()`, which returns
+  the whole chain. That is #3's budget applied at the helper. The helper
+  list names the compatibility trio as unbounded.
+- **EPERM in the sandbox rule — adopted** into the readonly-error list (#14).
+- **Literal search nonce, script-content identity fallback — covered.** The
+  body already says both (2026-09-09, 2026-10-06 entries).
+- **Memory workflow, approval contract — covered** by the body's Memory
+  layer; the new reference stays escalation-only.
+- **Advanced helpers — left upstream,** routed from the escalation table.
+- **OpenCode — deferred.** 0.3.0's provider registry is claude, codex,
+  copilot, deepseek, hermes, kimi, kiro, omp, pi and zcode. The escalation
+  boundary now names that set; host scope stays narrow (#9). The live mac
+  index holds claude 1,813, codex 1,070 and pi 4 sessions.
+
+Rechecked against 0.3.0 with the CLI under a temporary HOME holding a
+two-session Claude fixture (real indexer, no live state):
+
+- All six hot-schema column sets match the skill (#1); `messages` and
+  `tool_calls` list them in a new order.
+- Scalar `replace()` and keyword literals succeed; writes and multiple
+  statements are rejected; named parameters work, positional arrays fail
+  with `Unknown named parameter '0'` (08-29).
+- `search` honours `sessionId`, drops meta rows, and ignores
+  `sessions: [...]` (09-15). `fallback: 'or'` widens only an empty AND
+  result and leaves a non-empty one unchanged.
+- The memory guard rejects CJK; a negative `limit` throws; `forget()` of an
+  unknown id fails with `memory not found` (#21).
+- `context()`, `raw()`, `messages(uuid)` and `messages({ around })` return
+  `null`, `thread()` `[]`, and `messages({ sessionId })` an empty page for
+  an unknown id (#20, now stated for `messages()`). The parents window skips
+  meta rows before counting, rejects `afterCount`, and a session page
+  returns `hasMore` with a cursor.
+- The typed query path in an indexed tool record marks the session
+  `is_invoking` and `overview().current`; a path absent from the transcript
+  waited 4.3 s (#11–12, #17 hold; obelisk@e5c3b77, which bounds the
+  invoker lookup, is not in 0.3.0).
+
+Through `obq --on mac` against the live index (incremental refresh, no
+rebuild): the typed per-session path resolved this session, 1.9 s on the
+first query after the upgrade and 0.1 s on the next; `messages({ sessionId })`
+paged it; a throwing script exited 1 with `{error}`. `tests/test-obq.sh`:
+47 passed, 0 failed.
+
+#3–5, #7–8, #10, #13, #15–16 and #18–19 concern budgets, batching,
+persistence, project fragments, self-exclusion, FTS conjunctions and
+wrapper output; nothing in this delta changes them. #2 stays retired, #6
+withdrawn.
+
+Not verified: the mini on 0.3.0 (not upgraded from here), inactive-branch
+filtering in `messages()` (needs Pi or OMP rows; the Claude fixture has
+none), and whether agents reach for `messages()` over `context()` in real
+use.

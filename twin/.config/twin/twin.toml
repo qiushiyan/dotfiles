@@ -242,7 +242,7 @@ repo = "twin"
 [tools.obelisk]
 method = "pnpm-global"
 package = "@obelisk-apps/cli"
-version = "0.2.6"
+version = "0.3.0"
 
 [tools.tabtype]
 method = "release-installer"
