@@ -131,10 +131,15 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
 - **Long help**: `Help() string` on a command holds the prose an agent needs
   to use it (what it does, side effects, output shape); `HelpSections()`
   adds titled blocks such as Examples, with `Shared: true` for one that
-  belongs on every page below. Both print verbatim.
-- **Less common forms**: a default subcommand (`default:"withargs"`, whose
-  arguments and flags help lists on its parent's page), passthrough to a child
-  program (`arg:"" passthrough:""`, which keeps `--`), hidden internal
+  belongs on every page below. Both print verbatim, and a default command's
+  stay on its own page: when the default is what the tool is for and the
+  root page must explain it, return one value (a `const`, a
+  `[]clikit.Section` var) from the root's methods and the command's,
+  sections without `Shared`, which would carry them onto every page below.
+- **Less common forms**: a default subcommand (`default:"withargs"`, visible
+  and without subcommands of its own, whose arguments, flags and constraints
+  help lists on its parent's page), passthrough to a child program
+  (`arg:"" passthrough:""`, which keeps `--`), hidden internal
   commands (`hidden:""`), and a flag that takes values up to the next flag,
   which Kong's slices do not: a custom mapper using `ctx.Scan.PopWhile`
   (`--paths` in `~/dev/brief/cmd/brief/main.go`). `help [command…]` works in
