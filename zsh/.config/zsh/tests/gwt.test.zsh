@@ -21,8 +21,9 @@ source "$module"
 _arguments() { print -rl -- "$@"; }
 # The command words _gwt offers in the first position, ahead of the branches.
 offered() { local line="${(@M)${(@f)"$(_gwt)"}:#1:*}"; line="${line#1:*:\(}"; print -r -- "${line%%\$\(*}"; }
-# _gwt_commands is the binary's subcommand list: gwt offers exactly it, gwtcd none.
-binary_commands=(${(f)"$(command gwt --help | sed -nE '/^Usage:/,/^$/s/^(Usage:)? +gwt \[?([a-z]+)\]? .*/\2/p')"})
+# _gwt_commands is the binary's command list, the first words of the Commands
+# block in gwt --help: gwt offers exactly it, gwtcd none.
+binary_commands=(${(fu)"$(command gwt --help | sed -nE '/^Commands:/,/^$/s/^  ([a-z]+).*/\1/p')"})
 [[ "${(o)binary_commands}" == "${(o)_gwt_commands}" ]] || {
   print -u2 "_gwt_commands ($_gwt_commands) differs from gwt --help ($binary_commands)"; exit 1
 }
