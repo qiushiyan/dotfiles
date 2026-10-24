@@ -60,7 +60,9 @@ Where a hand-written parser and Kong disagree:
   `default:"withargs"` on that command.
 - **Top-level modes** (`--json`, `--all`) that subcommands also accept: a root
   flag cannot share a name with a subcommand's, so the modes live on the
-  default command.
+  default command and on each subcommand that takes them. A caller that typed
+  the mode before a subcommand (`tool --json sub`) gets a usage error naming
+  where it goes, and has to write `tool sub --json`.
 - **Free text that starts with a dash** needs `--` before it. clikit's error
   says so, but a caller that relied on the old parser letting it through has
   to change.

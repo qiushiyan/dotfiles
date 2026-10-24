@@ -106,7 +106,9 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
   (`kong.Bind(&cli.Globals)` carries one run's values into the next). A root
   flag's name is taken for every command below it: Kong refuses a grammar
   where a subcommand declares `--json` too, so a mode that only some commands
-  accept lives on those commands, or on a `default:"withargs"` command.
+  accept lives on those commands, or on a `default:"withargs"` command, whose
+  flags work before a command name only while that default runs: clikit
+  refuses `tool --json sub`, and sub's own `--json` goes after `sub`.
 - **Dependencies load lazily** through `kong.BindToProvider`, called only when
   a Run method asks for the value (`kong.BindSingletonProvider` for one that
   several providers share). Config, tokens and stores loaded anywhere earlier
