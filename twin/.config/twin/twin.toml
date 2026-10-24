@@ -131,6 +131,11 @@ url = "https://github.com/qiushiyan/cout.git"
 path = "~/dev/degit"
 url = "https://github.com/qiushiyan/degit.git"
 
+[repos.drive]
+path = "~/dev/drive"
+url = "https://github.com/qiushiyan/drive.git"
+branch = "main"
+
 [repos.envoy]
 path = "~/dev/envoy"
 url = "https://github.com/qiushiyan/envoy.git"
@@ -203,6 +208,10 @@ repo = "claude-steps"
 [tools.cout]
 method = "make-install"
 repo = "cout"
+
+[tools.drive]
+method = "make-install"
+repo = "drive"
 
 [tools.envoy]
 method = "make-install"
