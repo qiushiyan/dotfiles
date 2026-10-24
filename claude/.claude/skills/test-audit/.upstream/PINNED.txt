@@ -2,9 +2,22 @@ Before upgrading, read docs/skill-customizations.md in the dotfiles repo
 (the test-audit entry). It owns the customization intent and what an update
 must preserve.
 
-Pinned from openclaw/openclaw .agents/skills/test-audit/ @ 80930af448ebabc84174146b56bc106d37fab3b4
-(2026-09-23). Installed 2026-10-01 through the Skills CLI; on 2026-10-09 both
-files here were verified byte-identical to that commit, and the skill left the
-CLI lockfile to become a local adaptation. SKILL.md and CAMPAIGN.md in this
-directory are that pristine upstream copy, kept to diff a future upstream
-against.
+Pinned from openclaw/openclaw .agents/skills/test-audit/ @ 3195fba90643c3897c538f2f6891c405331bee9c
+(2026-10-19). SKILL.md, CAMPAIGN.md and references/audit.md in this directory
+are that pristine upstream copy, fetched 2026-10-24, kept to diff a future
+upstream against.
+
+Review of 80930af -> 3195fba (2026-10-24):
+- Adopted: run the full dead-code checks before landing a removal batch
+  (upstream: CI's pnpm deadcode:* scans), written generically into Validation.
+- Adopted: a campaign's merged head gets its broad rerun through PR CI where
+  CI runs it, with only touched or CI-failed tests rerun locally (CAMPAIGN.md
+  section 8).
+- Leave upstream: the rest is a compression of the same rules into terse
+  bullets, with the junk list, retention bar and candidate evidence moved to
+  references/audit.md. Every junk pattern and evidence field was already in
+  80930af and is carried by the lesson or this skill; the openclaw-testing
+  proof-policy and docs/help links are OpenClaw's.
+
+History: 80930af (2026-09-23), installed 2026-10-01 through the Skills CLI;
+it left the CLI lockfile on 2026-10-09 to become a local adaptation.

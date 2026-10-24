@@ -122,6 +122,10 @@ as cleanup.
    scratch checkout, and confirm the guard still goes red.
 3. Where a removed test claimed a script, plan or generated output, run the
    thing that owns that contract.
+4. Before landing a batch that deletes tests, run the project's full
+   dead-code checks, such as unused files, exports and dependencies: a
+   deleted test orphans the fixtures and exports only it used, and a gate
+   scoped to changed files does not look at them.
 
 Commit, push or open a PR only as the project's rules and the user allow.
 
