@@ -105,18 +105,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/tt-a1i/archify.git",
       "skillPath": "archify/SKILL.md",
-      "skillFolderHash": "a38bc1bc9e97804aa5d23f09c357ac23e096eb54",
+      "skillFolderHash": "39069dd190f574064fe410aa3af1b6dfd98a522c",
       "installedAt": "2026-09-04T13:51:01.199Z",
-      "updatedAt": "2026-10-09T15:30:32.326Z"
+      "updatedAt": "2026-10-24T09:21:21.416Z"
     },
     "find-docs": {
       "source": "upstash/context7",
       "sourceType": "github",
       "sourceUrl": "https://github.com/upstash/context7.git",
       "skillPath": "skills/find-docs/SKILL.md",
-      "skillFolderHash": "b635cd66f1414befd36d18646561398de2ddab54",
+      "skillFolderHash": "9bd51dc72e6807bb88171b59ca2ed8dc117361e2",
       "installedAt": "2026-09-09T08:53:17.063Z",
-      "updatedAt": "2026-09-09T08:53:17.063Z"
+      "updatedAt": "2026-10-24T09:21:23.537Z"
     },
     "skill-creator": {
       "source": "anthropics/skills",
@@ -142,9 +142,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/antfu/skills.git",
       "skillPath": "skills/vitest/SKILL.md",
-      "skillFolderHash": "0ed74afc98af8324843b8514184c43cd6d6411ef",
+      "skillFolderHash": "be4e34bc66369fd35b4de2ed50d9f3e8af5b133a",
       "installedAt": "2026-09-09T08:53:21.430Z",
-      "updatedAt": "2026-10-09T15:30:33.614Z"
+      "updatedAt": "2026-10-24T09:21:24.795Z"
     },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
@@ -187,9 +187,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/cli/cli.git",
       "skillPath": "skills/gh/SKILL.md",
-      "skillFolderHash": "ee625910e1ab673d09e53965be5b9c86dc75d314",
+      "skillFolderHash": "8b5983f05b6502d3cdce2146383429b8ea59e8fc",
       "installedAt": "2026-09-09T09:20:26.487Z",
-      "updatedAt": "2026-10-09T15:30:35.563Z"
+      "updatedAt": "2026-10-24T09:21:27.381Z"
     },
     "prototype": {
       "source": "mattpocock/skills",
@@ -206,9 +206,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/typesafe-ai/skills.git",
       "skillPath": "skills/typesafe-ai/SKILL.md",
-      "skillFolderHash": "678c375b883794bf4292715a43acbba5c84681aa",
+      "skillFolderHash": "1d7aa7574f194619b5189d96c6f79bdd4cc452f2",
       "installedAt": "2026-09-18T21:44:13.077Z",
-      "updatedAt": "2026-09-18T21:44:13.077Z"
+      "updatedAt": "2026-10-24T09:21:28.491Z"
     },
     "show-me": {
       "source": "humanlayer/skills",
