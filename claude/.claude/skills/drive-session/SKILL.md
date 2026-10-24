@@ -173,10 +173,16 @@ drive send T1@… --file /tmp/t1-fixups.md                     # your own reques
 drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to look hardest'
 ```
 
-- A session's first step carries its task: setup sent first, such as
-  `/enter-worktree`, has nothing to set up for, and the session waits for a
-  task instead. Setup goes once the session stops for it or reaches the
-  build.
+- A session's first step carries its task and says where it stops: a
+  session told its finish goes straight there, past review and any hold (on
+  10-23 three merged themselves in their first turn). One that builds in
+  that turn asks for a worktree in its text, and the session enters one
+  itself; `/enter-worktree` sent alone has nothing to set up for, so it goes
+  only to a session that stopped before building:
+
+  ```bash
+  drive open T1 --dir ~/dev/tool --file /tmp/t1-start.md   # "Add --shout to greet.py with a test, in a worktree of your own. Commit and stop there."
+  ```
 - A key that resolves to another project's file is a stop, not a fallback.
 - Your own words only answer the session's question, with its own
   recommendation or by naming what waits for the user.
@@ -194,9 +200,8 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
   no session to review or report it, and lands in checkouts others use (on
   10-22 a driver fast-forwarded the mini's main checkout and reinstalled its
   packages to run a CLI itself). Other sessions share that checkout, so the
-  first step ends `This checkout is shared: install nothing here. If the
-  work needs an install, stop and say so.`, and `/enter-worktree` follows
-  as above.
+  first step ends `This checkout is shared: work in a worktree of your own,
+  and install nothing in this one.`
 
 ## Shared worktrees and checkouts
 
@@ -222,7 +227,8 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
 
 The user did not watch the night. When a session reaches its finish, or
 stops on something only the user can give, send it `recap` and wait for that
-turn, then park it: any send ends a park, so the recap goes first. A
+turn, then park it, or close it when its cleanup follows at once: any send
+ends a park, so the recap goes first. A
 session parked only to wait for another session's hold gets its recap at
 its own finish. The session knows what it built and why, and reads its own
 diff for the facts.
@@ -253,7 +259,8 @@ decide from costs a round trip, so each item stands alone:
   with the PR and how its code review ended, the merge and install, or the
   recap alone; parked, with what it needs; halted, with what happened and
   what still runs), its recap quoted rather than retold and trimmed only of
-  what the needs-you list already says, and how the night went: the stages
+  what the needs-you list already says and what you have since done, such
+  as the cleanup it leaves to the user, and how the night went: the stages
   sent, the defaults taken, anything a step did that reached into what is
   the user's.
 

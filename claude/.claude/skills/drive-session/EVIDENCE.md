@@ -3,6 +3,42 @@
 Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares.
 
+## 2026-10-24 — second dogfood (drive-session-test, dogfood-2-2026-10-23)
+
+**Corpus.** The batch's record (`drive log`, `drive metrics`, its 16
+friction notes), the three Sonnet sessions' transcripts, and `claude-steps`
+on each. The bot's chat after the brief had not synced to the mini.
+
+**Findings.** Wakes reached the bot: 7 for sessions and 1 timer posted, none
+failed, none unhandled. A turn that ended on its own background job (T1's
+`sleep 90 && pytest`) went on when the job ended, and one watch waited
+through both. Not reached: closeouts taking turns on a hold, since all three
+sessions merged themselves in their first turn after a step that named the
+finish; `--due` re-arming anything. Real: `--batch` after the command was
+refused on every watchdog run; a closed session could not be read for the
+report; a stale-view refusal did not say a parallel run had sent the step;
+metrics counted no local merge. The step-named-finish and the worktree
+timing ("setup goes once it reaches the build", which a small task does in
+its first turn) were the body's. Rejected: disarming the veto timer on a
+grant (the run read the record, as designed). Test setup: after-wake
+`grokbot-transcript --archive` exists only in this branch's script.
+**Blind spot, kept:** a job a session detaches itself (`nohup … &`) is
+invisible to Claude Code's registry and to `drive`: no terminal, its group's
+leader gone, its environment unreadable. The bot wrote the stop step by
+hand, as the job rule wants.
+
+**Changes.** `drive` ea3ab20: read a closed or gone session from its
+transcript; `--batch` anywhere; a stale view names the step drive sent;
+a branch merged with no pull request counts, recorded at close. This body:
+the first step says where it stops and asks for its worktree when it builds
+at once (`/enter-worktree` alone only after a stop); a finish whose cleanup
+follows closes instead of parking; the report trims what the driver has
+since done from a recap.
+
+**Next pass compares** a third run: two closeouts that take turns on one
+hold, each told after its snippet key to stop at the local merge; a session
+`--due` re-arms; after-wake on this branch's script.
+
 ## 2026-10-23 — dogfood by a test bot (drive-session-test)
 
 **Corpus.** The Grok bot "drive-session-test" drove four Sonnet sessions in a
