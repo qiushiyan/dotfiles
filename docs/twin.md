@@ -379,8 +379,13 @@ carry = ["node_modules"]       # refused: build output, at any depth
 [home]
 carry = [".config/slack"]      # ok: paths under $HOME, outside any repository
 carry = [".ssh/config"]        # refused: ~/.ssh, ~/.gnupg, ~/.secrets, gh's config, ~/.claude, ~/.codex
+carry = [".config"]            # refused: it holds gh's config; so is a path reaching one through a link
+carry = ["dev"]                # refused: it holds registered repositories
 ```
 
+- **What moves is what both manifests declare now.** A path dropped from
+  the manifest stays on disk on both machines, and no run moves it again,
+  a resolution included.
 - **A pull is refused when the incoming commits add a file where a carried
   one sits.** Git treats an ignored file as expendable and would replace it.
   Move the carried file aside or drop it from the manifest, then pull.
