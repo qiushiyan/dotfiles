@@ -74,16 +74,18 @@ then skips the merge.
    verified and what waits, for a user who did not watch; `/show-me`
    answers a narrower question about it later.
 
-After the merge and deploy, which are the user's, planlab's `closeout` key
-runs `/pl-loopy-handoff-distill merged and deployed`; elsewhere
-`/distill-handoffs` retires the spent brief.
+After the merge and deploy, which are the user's (in a planlab batch
+`drive-session` drives, the driver's: `PLANLAB.md` § After the PR),
+planlab's `closeout` key runs `/pl-loopy-handoff-distill merged and
+deployed`; elsewhere `/distill-handoffs` retires the spent brief.
 
 A brief one session writes to start another lists, by the names above, every
 stage from its entry to its finish, so the new session runs them all: a
 planlab finish of "open the PR, then handle code review" has dropped review
-and verification. A strategic review in a fresh session runs only on a PR
-the user names: `strategic-review-brief` has the build session write that
-session's `/strategic-review <PR>` prompt.
+and verification. A strategic review in a fresh session runs on a PR the
+user names, or in a planlab batch on the driver's judgment:
+`strategic-review-brief` has the build session write that session's
+`/strategic-review <PR>` prompt.
 
 Every stage that judges — a consult, a spike, a review — buys a judgment the
 authoring session cannot make about itself, so an artifact's author is never
@@ -126,7 +128,9 @@ afterwards; planlab's `consult-then-build` says so.
   have run, the PR is open against `develop` with the required checks green,
   and at least one round of `/pl-handle-code-review` has been handled; its
   outcome, caught up or stopped on churn, is reported. The bots help but are
-  not relied on. The merge and the deploy are the user's; the post-merge
+  not relied on. The merge and the deploy are the user's, except in a
+  planlab batch `drive-session` drives, where they are the driver's unless
+  the user holds them (`PLANLAB.md` § After the PR); the post-merge
   closeout follows once the deploy serves.
 - **Personal tools** (`~/dotfiles` and the tools under `~/dev` that `twin`
   installs): `closeout` merges to `main` locally, with no PR, installs on
@@ -182,7 +186,8 @@ TabType's between the machines (`twin/.config/twin/twin.toml`).
 
 ```text
 a new key      → planlab's loopy-review-verify (the review with the pl-loopy-verify rig),
-                 land-pr (stage 7 without the review)
+                 land-pr (stage 7 without the review),
+                 merge-when-ready (merge, release and confirm, when a driver holds the merge)
 a global key   → planlab's consult-then-build (its spike toolkit), review-then-closeout
                  (ends at a ready PR) and closeout (the post-merge distill);
                  TabType's closeout and review-then-closeout (a release)

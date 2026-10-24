@@ -89,6 +89,10 @@ Read the owning docs before changing a feature that spans packages:
 - **Rex lab** (`rex/`, `claude/`, `zsh/`, `nvim/`, `scripts/`): `docs/rex.md`.
   Rex's own `/llms.txt` is the API reference; each hook into another package
   does nothing outside Rex.
+- **Session driving** (`claude/` the drive-session skill, `rex/` rex-agent,
+  `scripts/` grokbot-transcript, `~/dev/drive`): `~/dev/drive/CLAUDE.md`. The
+  skill teaches the judgment and relies on drive's messages for the commands,
+  so a change to either lands with the other.
 - **Claude accounts:** `docs/claude-accounts.md`. The `x*` launchers in
   `zsh/.config/zsh/claude.zsh` delegate routing and validation to headroom
   (`~/dev/headroom`); engine fixes belong in that project.

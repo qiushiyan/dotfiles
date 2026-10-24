@@ -5,31 +5,39 @@ The Grok Bot app keeps a replica of each bot's recent chat on this machine,
 under sand-client-persistence/ as files whose names are base32 slice keys
 ("…transcript.replicas.<bot id>"), next to a roster of the bots. A replica is
 a window: the most recent entries the app holds (about 200), with what each
-side said, the bot's widgets, Slack drafts, routine changes and notices. The
-bot's tool calls, its memory journal and anything older than the window stay
-in Grok's own store for that bot (the roster's `path`, on its box); ask a bot
-to export those.
+side said, the bot's widgets, Slack drafts, routine changes and notices; a
+busy day rolls entries out of it. --archive keeps them: it merges the window
+into ~/.local/state/grokbot/<bot id>.jsonl by seq, and every read merges that
+archive with the window. The bot's tool calls and its memory journal are never
+in the local copy; ask the bot to export those.
 
 Usage:
-  grokbot-transcript --list                 # bots: id, name, local window
-  grokbot-transcript BOT [--jsonl|--profile]
+  grokbot-transcript --list                 # bots: id, name, local window, archive
+  grokbot-transcript BOT [--jsonl|--profile] [--since WHEN] [--tz ZONE]
+  grokbot-transcript BOT --archive          # save the window; says what is new and any gap
     BOT is a name ("Session Driver", case-insensitive) or an id prefix.
-    Default prints the window as text, local time; --jsonl the raw entries;
-    --profile the bot's instructions.
+    Default prints the chat as text; --jsonl the raw entries; --profile the
+    bot's instructions. WHEN is a date or time in ZONE ("2026-10-21",
+    "2026-10-21 16:00") or a seq ("seq:473"). ZONE is an IANA name
+    ("Asia/Shanghai"); default this machine's zone.
 
-GROKBOT_DATA_DIR overrides the app's data directory.
-Exit codes: 0 printed; 1 no such bot or no local window; 2 usage or no data.
+GROKBOT_DATA_DIR overrides the app's data directory, GROKBOT_ARCHIVE_DIR the archive's.
+Exit codes: 0 printed; 1 no such bot or nothing local for it; 2 usage or no data.
 """
 
 import base64
 import datetime
+import fcntl
 import glob
 import json
 import os
 import sys
+import tempfile
+import zoneinfo
 
 DATA = os.environ.get("GROKBOT_DATA_DIR") or os.path.expanduser(
     "~/Library/Application Support/Grok Bot")
+ARCHIVE = os.environ.get("GROKBOT_ARCHIVE_DIR") or os.path.expanduser("~/.local/state/grokbot")
 
 
 def slices():
@@ -50,8 +58,43 @@ def load(path):
         return json.load(f).get("value") or {}
 
 
-def when(ms):
-    return datetime.datetime.fromtimestamp(ms / 1000).strftime("%m-%d %H:%M")
+def when(ms, tz=None):
+    return datetime.datetime.fromtimestamp(ms / 1000, tz).strftime("%m-%d %H:%M")
+
+
+def archive_path(bot_id):
+    return os.path.join(ARCHIVE, f"{bot_id}.jsonl")
+
+
+def archived(bot_id):
+    """The archive's entries by seq; empty when there is none."""
+    out = {}
+    try:
+        with open(archive_path(bot_id)) as f:
+            for line in f:
+                if line.strip():
+                    e = json.loads(line)
+                    out[e["seq"]] = e
+    except FileNotFoundError:
+        pass
+    return out
+
+
+def since_filter(spec, tz):
+    """A predicate over entries from a --since value: "seq:N", a date, or a date and time in tz."""
+    if spec.startswith("seq:"):
+        n = int(spec[4:])
+        return lambda e: e.get("seq", 0) >= n
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M", "%Y-%m-%d"):
+        try:
+            start = datetime.datetime.strptime(spec, fmt).replace(tzinfo=tz or datetime.datetime.now().astimezone().tzinfo)
+            break
+        except ValueError:
+            continue
+    else:
+        raise ValueError(f"--since {spec!r}: give a date, a date and time (\"2026-10-21 16:00\"), or seq:N")
+    ms = start.timestamp() * 1000
+    return lambda e: e.get("timestampMs", 0) >= ms
 
 
 def render(e):
@@ -93,6 +136,11 @@ def render(e):
     return f"· {kind}"
 
 
+def usage():
+    print("usage:" + __doc__.split("Usage:")[1].split("GROKBOT_DATA_DIR")[0].rstrip(), file=sys.stderr)
+    return 2
+
+
 def main(argv):
     keys = slices()
     if not keys:
@@ -107,45 +155,107 @@ def main(argv):
             p = replicas.get(r["id"])
             ents = load(p).get("entries", []) if p else []
             window = f"{len(ents)} entries, {when(ents[0]['timestampMs'])} → {when(ents[-1]['timestampMs'])}" if ents else "no local window"
-            print(f"{r['id']}  {r['name']:<16} {window}")
+            kept = archived(r["id"])
+            store = f"; archive from seq {min(kept)}" if kept else ""
+            print(f"{r['id']}  {r['name']:<16} {window}{store}")
         return 0
 
-    if not argv or argv[0].startswith("-") or len(argv) > 2 or (
-            len(argv) == 2 and argv[1] not in ("--jsonl", "--profile")):
-        print("usage:" + __doc__.split("Usage:")[1].split("GROKBOT_DATA_DIR")[0].rstrip(), file=sys.stderr)
-        return 2
+    if not argv or argv[0].startswith("-"):
+        return usage()
+    name, rest, mode, since, tz = argv[0], argv[1:], "text", None, None
+    while rest:
+        flag = rest.pop(0)
+        if flag in ("--jsonl", "--profile", "--archive") and mode == "text":
+            mode = flag[2:]
+        elif flag in ("--since", "--tz") and rest:
+            value = rest.pop(0)
+            if flag == "--tz":
+                try:
+                    tz = zoneinfo.ZoneInfo(value)
+                except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+                    print(f"grokbot-transcript: --tz {value!r} is not a time zone name such as Asia/Shanghai", file=sys.stderr)
+                    return 2
+            else:
+                since = value
+        else:
+            return usage()
 
-    want = argv[0].lower()
+    want = name.lower()
     bot = next((r for r in rows if r["name"].lower() == want), None) or next(
         (r for r in rows if r["id"].startswith(want)), None)
     if not bot:
-        print(f"grokbot-transcript: no bot named {argv[0]!r}; try --list", file=sys.stderr)
+        print(f"grokbot-transcript: no bot named {name!r}; try --list", file=sys.stderr)
         return 1
-    if argv[1:] == ["--profile"]:
+    if mode == "profile":
         print(bot.get("description", ""))
         return 0
-    if bot["id"] not in replicas:
-        print(f"grokbot-transcript: the app keeps no local copy of {bot['name']}'s chat; ask the bot to export it", file=sys.stderr)
+
+    def read():
+        window = load(replicas[bot["id"]]).get("entries", []) if bot["id"] in replicas else []
+        kept = archived(bot["id"])
+        merged = dict(kept)
+        merged.update((e["seq"], e) for e in window)   # the window holds each entry's latest state
+        return window, kept, [merged[k] for k in sorted(merged)]
+
+    if mode == "archive":
+        os.makedirs(ARCHIVE, exist_ok=True)
+        # One archiver at a time, reading inside the lock: each replaces the
+        # archive with what it read, so an overlapping one would drop the
+        # entries the other added.
+        with open(os.path.join(ARCHIVE, f".{bot['id']}.lock"), "w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            window, kept, entries = read()
+            if not entries:
+                print(f"grokbot-transcript: the app keeps no local copy of {bot['name']}'s chat; nothing to archive",
+                      file=sys.stderr)
+                return 1
+            new = [e for e in window if e["seq"] not in kept]
+            fd, tmp = tempfile.mkstemp(dir=ARCHIVE, prefix=".archive.")
+            with os.fdopen(fd, "w") as f:
+                for e in entries:
+                    f.write(json.dumps(e, ensure_ascii=False) + "\n")
+            os.replace(tmp, archive_path(bot["id"]))
+        print(f"{bot['name']}: {len(new)} new entries archived; {archive_path(bot['id'])} holds "
+              f"seq {entries[0]['seq']}–{entries[-1]['seq']} ({len(entries)} entries)")
+        if kept and window and window[0]["seq"] > max(kept) + 1:
+            print(f"gap: seq {max(kept) + 1}–{window[0]['seq'] - 1} rolled out of the window before they were "
+                  "archived; archive more often", file=sys.stderr)
+        return 0
+
+    window, kept, entries = read()
+    if not entries:
+        print(f"grokbot-transcript: the app keeps no local copy of {bot['name']}'s chat and nothing is archived; "
+              "ask the bot to export it", file=sys.stderr)
         return 1
 
-    entries = load(replicas[bot["id"]]).get("entries", [])
-    if argv[1:] == ["--jsonl"]:
+    if since:
+        try:
+            keep = since_filter(since, tz)
+        except ValueError as err:
+            print(f"grokbot-transcript: {err}", file=sys.stderr)
+            return 2
+        entries = [e for e in entries if keep(e)]
+    if mode == "jsonl":
         for e in entries:
             print(json.dumps(e, ensure_ascii=False))
         return 0
     if entries:
-        print(f"# {bot['name']} — local window from seq {entries[0].get('seq')}; "
-              f"older entries and tool calls are in Grok's store", file=sys.stderr)
+        zone = getattr(tz, "key", None) or datetime.datetime.now().astimezone().tzname()
+        source = "archive and local window" if kept else "local window"
+        print(f"# {bot['name']} — {source} from seq {entries[0].get('seq')}, times in {zone}; "
+              f"the bot's tool calls are not in the local copy", file=sys.stderr)
     for e in entries:
         line = render(e)
         if line is not None:
-            print(f"[{when(e['timestampMs'])}] {line}")
+            print(f"[{when(e['timestampMs'], tz)}] {line}")
     return 0
 
 
 if __name__ == "__main__":
     try:
-        sys.exit(main(sys.argv[1:]))
+        code = main(sys.argv[1:])
+        sys.stdout.flush()   # a reader that closed early fails here, not at exit
+        sys.exit(code)
     except BrokenPipeError:
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
         sys.exit(0)

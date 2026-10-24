@@ -523,13 +523,15 @@ an older binary files a brief where the new one reads another slug.
 - **Session Driver** — the Grok Bot that drives this machine's Rex
   sessions by the `drive-session` skill
   (`claude/.claude/skills/drive-session/BOT.md`), through the Grok Bot app's
-  local-exec daemon here (`~/.grokbot`). Its waits run
-  `scripts/.local/bin/notify-driver` under tmux, which posts each wake to
-  the bot's webhook with the key in `~/.config/drive-session/webhook`
-  (0600, this machine's own; `twin` does not carry it). Each batch's
-  checklist, send files and recaps live in
-  `~/.local/state/drive-session/`, beside `notify.log`. Its chat is read
-  from the laptop's Grok Bot app with `grokbot-transcript`.
+  local-exec daemon here (`~/.grokbot`). Its hands are `drive`
+  (`~/dev/drive`, built here by `twin`): each wake is a detached `drive`
+  watch that posts to the webhook its batch names, each bot's URL and key in
+  its own `~/.config/drive/webhooks/<bot>` (0600, this machine's own; `twin`
+  does not carry it), and each batch's record — its event log, the files sent and what each
+  watch printed — lives in `~/.local/state/drive/batches/<name>/`. Each
+  wake's after-wake command archives the bot's chat past the app's window
+  (`~/.local/state/grokbot/`); `grokbot-transcript "Session Driver"` reads
+  it.
 - **The hourly `twin tick`, the daily snapshot, the tmux exit watcher,
   asimov's Time Machine exclusions and planlab's git upkeep** — this
   repository's `launchd-mini/` package (`docs/twin.md` § The hourly tick;

@@ -1,7 +1,294 @@
 # drive-session — evidence
 
 Usage passes over the sessions that ran this skill, newest first. Each names
-its corpus, what it found, what changed, and what the next pass compares.
+its corpus, what it found, what changed, and what the next pass compares. A
+run by a real bot follows `DOGFOOD.md`.
+
+## 2026-10-24 — third dogfood (drive-session-test, dogfood-3-2026-10-24)
+
+**Corpus.** The batch's record and notes, the three sessions' transcripts
+and `claude-steps`, read as `DOGFOOD.md` says; the bot's chat after the
+brief had not synced. It first finished dogfood-2 as asked (A1 moot, T3
+closed).
+
+**Findings.** Holds took turns: three closeouts into one main checkout, T2
+refused while T3 held it, parked, sent once T3 closed. Wakes: 8 for sessions
+and the veto timer, none failed. A wake that came while a job ran (T2's 11
+minutes) said to watch again, and the session went on. Every first step
+stopped where it should and asked for its worktree. Real: metrics counted
+no merge, since each closeout removed its own branch before the close that
+judged it; the unanswered-wake test never saw its repost, because `--due`
+waits ten minutes and said nothing of it at eight; a parked waiter's line
+kept naming its holder after the hold was free; the cleanup list assumed
+the driver removes the branch. Rejected: freeing a hold at the merge, before
+the holder's recap turn ends (a later step may still be closeout work, and
+the cost is one recap turn); disarming the veto timer (second time). Outside
+this skill: envoy names jobs per repository, so two sessions there that both
+call a job `review-r1` collect each other's review (`~/dev/envoy`).
+
+**Changes.** `drive` 7dcf4d9: a change merged without a pull request is
+judged by the session's newest commit, by id; status and `--due` say when
+an unanswered wake comes again, and the repost says it is one; a parked
+waiter's line says its hold is free. This body: the cleanup is what the
+last step left; BOT's veto timer brings nothing once the user answered.
+`DOGFOOD.md`: the chat's sync, and timing in a pattern.
+
+**Next pass compares** a run with the Session Driver itself once this branch
+merges: the repost seen and acted on, metrics' merged changes against the
+closeouts' reports, a report built from closed sessions' reads.
+
+## 2026-10-24 — second dogfood (drive-session-test, dogfood-2-2026-10-23)
+
+**Corpus.** The batch's record (`drive log`, `drive metrics`, its 16
+friction notes), the three Sonnet sessions' transcripts, and `claude-steps`
+on each. The bot's chat after the brief had not synced to the mini.
+
+**Findings.** Wakes reached the bot: 7 for sessions and 1 timer posted, none
+failed, none unhandled. A turn that ended on its own background job (T1's
+`sleep 90 && pytest`) went on when the job ended, and one watch waited
+through both. Not reached: closeouts taking turns on a hold, since all three
+sessions merged themselves in their first turn after a step that named the
+finish; `--due` re-arming anything. Real: `--batch` after the command was
+refused on every watchdog run; a closed session could not be read for the
+report; a stale-view refusal did not say a parallel run had sent the step;
+metrics counted no local merge. The step-named-finish and the worktree
+timing ("setup goes once it reaches the build", which a small task does in
+its first turn) were the body's. Rejected: disarming the veto timer on a
+grant (the run read the record, as designed). Test setup: after-wake
+`grokbot-transcript --archive` exists only in this branch's script.
+**Blind spot, kept:** a job a session detaches itself (`nohup … &`) is
+invisible to Claude Code's registry and to `drive`: no terminal, its group's
+leader gone, its environment unreadable. The bot wrote the stop step by
+hand, as the job rule wants.
+
+**Changes.** `drive` ea3ab20: read a closed or gone session from its
+transcript; `--batch` anywhere; a stale view names the step drive sent;
+a branch merged with no pull request counts, recorded at close. This body:
+the first step says where it stops and asks for its worktree when it builds
+at once (`/enter-worktree` alone only after a stop); a finish whose cleanup
+follows closes instead of parking; the report trims what the driver has
+since done from a recap.
+
+**Next pass compares** a third run: two closeouts that take turns on one
+hold, each told after its snippet key to stop at the local merge; a session
+`--due` re-arms; after-wake on this branch's script.
+
+## 2026-10-23 — dogfood by a test bot (drive-session-test)
+
+**Corpus.** The Grok bot "drive-session-test" drove four Sonnet sessions in a
+scratch repository through the personal-tool path by this branch's body
+(`grokbot-transcript drive-session-test`), its report checked against the
+batch's `drive log` and `drive metrics`.
+
+**Findings.** Plan and veto, a file first step, `/compact`, two closeouts
+taking turns on one hold, a park with an ask, recap, close and the report
+went as written. Every one of the 14 wakes failed: the machine's one webhook
+was the live bot's, `drive` armed watches it could not post, and metrics
+counted the failed posts as watched turns. A background job (`find ~ -name
+twin.toml`, from a closeout in a repository `twin` does not know) kept a hold
+behind a turn `drive` read as done; no command stopped it, so the bot killed
+it from its own shell. The bot sent `/enter-worktree` as a first step, and
+the session waited for a task. Its proposals were mostly rules working
+around `drive`: the fixes went where each wrong fact starts. The one it
+made on holds (a send without `--hold` frees one) would have let a second
+closeout land on a first one's follow-up, so the rule stands and its wording
+changed.
+
+**Changes.** `drive` 7191bd5 and 361964c: a batch names its own webhook and
+refuses to start or arm a wake or timer without one; `batch new` starts its Rex session; a background
+job is shown, says it keeps a hold, and is stopped through its session; a
+compaction's output is its answer; a failed post leaves its turn unwatched.
+This body: the first step carries the task, a job is the session's to stop,
+the hold wording, BOT's `--webhook` and its premise (a command holds for
+minutes, not a turn's hour).
+
+**Revision pass (10-23, prompt-engineering).** drive 323fd10: a hold's
+`next:` says what frees it from where the holder stands (answer its prompt,
+or its job ends), and a wake or read with a job gives the stop step this
+body points at; `--webhook` alone starts a webhook batch, so BOT's example
+lost `--wake webhook`. This body: the hold bullet points at the refusal
+instead of restating how long a hold lasts, a wording that had already
+drifted once; the cleanup's `drive close` comment follows `next:` instead of
+"leave it", which contradicted stopping a stale job; the first-step rule
+holds the timing once. A Sonnet cold reader on the new hold and wake texts
+routed them as meant. Kept: BOT's example names the Session Driver (its
+reader); a test bot's owner gives it its own name.
+
+**Next pass compares** a rerun with the test bot's webhook on its batch and a
+task whose closeout is a local merge: wakes posted, wakes re-posted by
+`--due`, a session that continued on its own, work the bot ran from its own
+shell (target none).
+
+## 2026-10-22 — strategic review of `drive` and this body (fold-in)
+
+**Corpus.** `~/dev/drive` 05bbfd4..973e787 and this branch, read by area;
+728 transcripts under `~/.claude/projects` (denies, `/compact`, queued input,
+expired logins, resumes, held peer messages); the Session Driver's chat
+10-21 11:04 → 10-22 15:58 (`grokbot-transcript`); three probe sessions on
+Claude Code 2.1.308 (Haiku, isolated tmux, scratch directory, no Rex) with
+every hook logged and the registry polled; read-only `drive read`/`status`
+on the live blocks; two Sonnet cold readers playing the bot.
+
+**Findings.**
+- **Rex misses what drives need.** No hook reports a held peer message (Rex
+  blocked, the session idle: live on e8fec0 since 15:46, every send
+  refused), a permission prompt's first six seconds, an approved command
+  until its PostToolUse, a queued turn, a `/compact`, a deny or an
+  interrupt, or an API error (a0c02b read `working` after a weekly rate
+  limit ended its turn). Claude Code's registry (`sessions/<pid>.json`
+  `status`) says where the session itself stands and changed within 160 ms
+  of each transition in the probes: `drive` now reads it first.
+- **Wakes went missing:** `respond` armed none and status read the old wake
+  as handled; the watchdog rule keyed on status words could not see it.
+- **A first step with the notice** shared the step's intent, so a hold went
+  free in the gap and a run killed mid-notice lost the step silently.
+- **Text that did not run as written:** `drive wait` told to a bot, a
+  literal `approve|deny` and `VIEW`, a relaunch on a view already moved and
+  with `'<the step>'`.
+- **Chat:** about a third of the bot's 148 messages were "I'll tell you
+  once…"/"Checking…"; on 10-22 10:33 it fast-forwarded the mini's main
+  checkout and reinstalled packages to run a CLI itself. Both rules were
+  already in the body as bare rules.
+
+**Changes.** `drive`: 30 commits (`git log 973e787..c5f2385`), each fix
+pinned by a test that goes red with the line put back. This body: rewritten
+shorter around command examples; the watchdog is `drive watch --due`; a
+refused command arms nothing, so the bot parks; a window joins with `send
+--as`; the plan is recorded for the veto run; recap before park; a cut-short
+command is settled from the transcript; the two failed rules carry their
+cited cost.
+
+**Validation.** `make check`; installed. A cold reader on the new body with
+real message texts generated from the fake. Not run: a live batch on this
+`drive`, the bot itself on this body, metrics on a real night.
+
+**Revision pass (10-23, prompt-engineering).** The body and drive's text now
+divide the work: drive's `next:` carries the command for the session as it
+stands, `--help` the words, this body the judgment; mechanics a message
+states were cut here. A Sonnet cold reader on four routes that lean on
+`next:` routed them all; the five lines it guessed at were fixed in drive.
+Kept on purpose: the plan and report examples (patterns), the two rules with
+their cited cost (no mechanism can stop a chat message or a shell command
+the bot runs itself), PLANLAB unchanged (already example-led, its checkpoint
+states its own precedence), NOTICE unchanged (the owner's voice to the
+driven session, matching drive's notice-first delivery).
+
+**Next pass compares** the first bot batches on this body against 10-21/22:
+turns left unwatched (`drive metrics`, target none), wakes re-posted by
+`--due`, acknowledgement messages in the chat (target none), work the
+driver ran from its own shell (target none).
+
+## 2026-10-22 — the driver's scripts become `drive` (improve-tool pass)
+
+**Corpus.** On the mini, read-only: the 10-21/22 batch
+(`~/.local/state/drive-session/2026-10-21/`: checklist, `open.sh`,
+`open.log`, `send-decisions.log`, ~110 send files), the 10-15 batch's
+checklist and the notes `2026-10-17/18/19/21.md`, which the brief's
+analysis had not used; Claude transcripts under `~/.claude/projects/`;
+`~/.claude-accounts/launches.jsonl`; the chat window the planlab session
+pulled (`~/dev/.handoffs/dotfiles/drive-session-driver-hardening.evidence/`);
+obelisk user turns in `a1d22ac5` and `bec61294` (mac); one `gh` run. Failure
+signatures were counted with `grep -ciE` per log (session scratchpad
+`consult/data/signature-counts.txt`): login 0/0/0/0/0/57, lock
+206/57/39/4/10/87, deny-held 74/5/28/4/2/48, fresh-session rc=2
+12/2/0/0/2/16 across 10-15, 10-17, 10-18, 10-19, 10-21.md and 10-21.
+
+**Findings.** Verified at their sources unless marked.
+
+- **`send-turn` failed every opening:** exit 2 on a fresh session, which has
+  no transcript until its first prompt (`open.log` 8 of 8; the 10-15 and
+  10-17 batches the same). The bot's `open.sh` sent with raw `rex send` and
+  logged "arrived" when the prompt text appeared.
+- **Rejected logins were invisible.** Claude Code 2.1.308 fires
+  `StopFailure` with `error: authentication_failed` and no `Stop` (sandboxed
+  spike, invalid key); `rex-agent` ignored it, so Rex read `working` and
+  `wait-turn` never returned: T4 and R0 sat 53 minutes with their waits
+  "alive". Headroom had placed both on `qiushi`, marked eligible with figures
+  9.5 h old and no use since 10-19: least-load routing prefers a dead login.
+- **Every queued slash command read "arrived differently"** (7 of 7): the
+  transcript enqueues it without its text.
+- **No wait died.** Of the four "dead waits", three fired and a concurrent
+  run handled the wake (checklist 177/181, 244–248, 396/398); one was never
+  armed (434). A successful post left no line in `notify.log`, so a
+  delivered wake and a lost one looked alike.
+- **Concurrent runs** (watchdog, per-session wakes, chat) acted on one
+  session in all three batches; on 10-17 a race sent a recap where another
+  run had chosen consult-design. The bot's `mkdir locks/` could not stop a
+  decision made on an old turn.
+- **Copy-forward memory.** "Prod still 394df272dc" was re-listed 05:43–07:56
+  after a teammate's release (`gh` run 39679768815, 05:33 CST); the header's
+  "merge + release when ready" was a note about #9259 in the previous batch.
+  Three sends ordered merges before the 02:08 grant (one more announced
+  one); #9495 merged at 22:59.
+- **Hand-written sends** after the PR: strategic-review fold-ins restated
+  the `strategic-review` skill's own procedure (6), merge and release orders
+  (5+), `/strategic-review` as a file pointer (refused 3 times).
+- **Asks.** The overnight waits were a known remedy (login), a duplicate
+  (R0's DB writes, answered at 20:27), moot (#9448, shipped by a teammate)
+  or handed to a fresh Fable (F2 spec, T1 gate pages; also #9251 on 10-17).
+  The design checkpoint's 23 minutes produced scope amendments in 4 of 10
+  sessions, 3 of them on items that read as technical.
+
+**Decisions.** The user chose merges and releases as the driver's default
+in a planlab batch (asked in this pass) and a Go tool in its own repository
+(`~/dev/drive`) over scripts in the skill, after a consult
+(`consult-r1b`, codex gpt-6-astra, no foundational objection). Adopted from
+it: a view token on every action, persist-before-act with reconciliation,
+idempotent open by label, holds for shared resources, respond as a
+command, wake posted versus handled, asks with their source. Rejected: a
+supervised worker with SQLite; a send takes seconds and the bot can hold a
+command for minutes, so recording before typing closes the crash gap
+without a daemon. Kept: the design checkpoint's hold (the user's 10-21
+choice); the report asks scope, product and people questions and lists
+technical choices as defaults. Deferred: timed defaults on silence; no
+overnight ask in the data needed one.
+
+**Changes.** `~/dev/drive` (new): `drive` replaces `find-session`,
+`read-turn`, `send-turn`, `wait-turn`, `snippet` and `notify-driver`
+(removed). `rex-agent` maps `StopFailure` to `blocked`/`auth` or `error`;
+settings register it. `grokbot-transcript --archive/--since/--tz`. The skill
+now carries intent and policy and points at `drive --help` for the tool;
+BOT.md: batch setup, waits armed by sends, a watchdog that sends nothing,
+memory as the batch record. PLANLAB.md: the merge default, strategic
+reviews on the driver's judgment, `fold these in`, `merge-when-ready`
+(new planlab snippet, `~/dev/planlab/main/.tabtype.local.toml`), release
+gates rechecked before asking. `session-pipeline.md`: the two sentences that
+contradicted the merge default and the strategic-review rule. Handoff:
+`~/dev/.handoffs/headroom/launch-avoids-rejected-login.md`.
+
+**Validation.** `drive`'s suite under `-race` (a fake world whose sessions
+write real transcripts; the Rex adapter against a private Rex server). Live
+on the mini, in the `work` Rex session with state in a scratch directory:
+`open` on a fresh session (notice first, then the typed step, confirmed in
+12 s), `read`, `wait`, a send on a view, the same view refused (exit 1),
+`close`; a webhook batch whose open armed its own watch and whose turn wake
+and a timer wake reached a local listener (http 204) with the view, and
+`status` read "woken 18:54 (nothing sent since)". The first watch run
+exposed tmux dropping the caller's environment (a silent wait), fixed and
+rerun. Not run: a rejected login on a real account (the spike and the fake
+cover it), a queued slash command on a real session (its transcript shape is
+from a real one), a hold across two live releases, the bot itself on this
+body. Cold readers took three routes — a chat driver's wake on a ready PR,
+a Claude driver at the design checkpoint with a rejected login, a watchdog
+run — and a reread took the watchdog and hold routes again. What they could
+not do changed the tool: the relaunch names `--dir`; a hold refusal routes
+back through the holder's wake, which names each waiter and its refused
+step; a stuck watch is flagged and restarted; `status` spells its columns
+out. And the text: the watchdog only re-arms, since its "sends nothing"
+contradicted handling an unhandled wake; the review session folds in and
+merges; a checkpoint session is parked, its design reply standing in for
+the recap; an open ask is rechecked and recorded moot when it stops
+holding. `skill-sync --check` on the skill: no metadata drift.
+
+**Next pass compares** the bot's first batches on `drive` with 10-21/22,
+from `drive metrics` and `drive log` rather than a hand-coded chat: sends
+that reach a session decided on a stale view (target none, now refusals);
+openings and logins that fail unseen (target none); wakes posted with no
+action before the next (the measure of the lost-wake suspicion); owner wait
+per merged change and asks answered "delegated" or "moot" (both should
+fall); refusals by kind, to see whether the bot routes around them with raw
+`rex`. Reverse the merge default if a driven merge or release reaches a
+customer in a way the user would have stopped.
 
 ## 2026-10-21 — the Grok Session Driver (improve-tool pass)
 
