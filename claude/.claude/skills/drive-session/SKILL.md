@@ -126,7 +126,9 @@ without asking** so they can reverse it:
   comparison or whether a gate's evidence holds: `drive open judge-1 --model
   fable '…'`, then act on its verdict;
 - the cleanup once a session's last step has run (its closeout, or its
-  recap where no PR follows):
+  recap where no PR follows), as far as that step left it: a closeout that
+  removed its own worktree leaves only the close, and its report says what
+  landed, where `gwt merged` finds no branch to judge:
 
   ```bash
   gwt merged BRANCH       # landed? gwt owns the verdict; a PR still waiting keeps everything

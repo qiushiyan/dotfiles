@@ -33,7 +33,7 @@ is to park it, stopping its wakes until a step is sent to it:
 
 ```bash
 drive park T3@… "waits for the release hold"
-drive watch --sleep 300 veto                     # the plan's veto, as a timer wake
+drive watch --sleep 300 veto                     # the plan's veto, as a timer wake; once the user answers, it brings nothing to do
 ```
 
 Any wake may act on any session, from what `drive status` and `drive read`

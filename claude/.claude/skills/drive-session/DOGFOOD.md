@@ -87,12 +87,17 @@ Each fixed part of the brief guards a way a run went wrong:
   `DRIVE_CONFIG_DIR`, holds settings that only the commands setting it read.
 - **Patterns, not a script.** A listed case the files cannot reach shows up
   as the bot's guess, which is the finding; a script hides it.
+- **A pattern that waits on drive's timing says how long.** A wake left
+  unanswered is posted again only ten minutes on; a bot that acts sooner
+  never sees the repost it was sent to test.
 
 ## Reading the result
 
-The batch's record is the primary evidence: the bot's chat can lag the
-Grok Bot app's local store, and the bot's diagnosis of a friction can be
-wrong.
+The batch's record is the primary evidence: the bot's diagnosis of a
+friction can be wrong, and its chat reaches the mini only as the Grok Bot
+app syncs it, so its messages from an unattended run, the final report
+among them, can be missing from `grokbot-transcript` and from the archive
+alike.
 
 ```bash
 B=dogfood-<today>

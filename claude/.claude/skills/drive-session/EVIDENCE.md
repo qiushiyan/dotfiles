@@ -4,6 +4,39 @@ Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares. A
 run by a real bot follows `DOGFOOD.md`.
 
+## 2026-10-24 — third dogfood (drive-session-test, dogfood-3-2026-10-24)
+
+**Corpus.** The batch's record and notes, the three sessions' transcripts
+and `claude-steps`, read as `DOGFOOD.md` says; the bot's chat after the
+brief had not synced. It first finished dogfood-2 as asked (A1 moot, T3
+closed).
+
+**Findings.** Holds took turns: three closeouts into one main checkout, T2
+refused while T3 held it, parked, sent once T3 closed. Wakes: 8 for sessions
+and the veto timer, none failed. A wake that came while a job ran (T2's 11
+minutes) said to watch again, and the session went on. Every first step
+stopped where it should and asked for its worktree. Real: metrics counted
+no merge, since each closeout removed its own branch before the close that
+judged it; the unanswered-wake test never saw its repost, because `--due`
+waits ten minutes and said nothing of it at eight; a parked waiter's line
+kept naming its holder after the hold was free; the cleanup list assumed
+the driver removes the branch. Rejected: freeing a hold at the merge, before
+the holder's recap turn ends (a later step may still be closeout work, and
+the cost is one recap turn); disarming the veto timer (second time). Outside
+this skill: envoy names jobs per repository, so two sessions there that both
+call a job `review-r1` collect each other's review (`~/dev/envoy`).
+
+**Changes.** `drive` 7dcf4d9: a change merged without a pull request is
+judged by the session's newest commit, by id; status and `--due` say when
+an unanswered wake comes again, and the repost says it is one; a parked
+waiter's line says its hold is free. This body: the cleanup is what the
+last step left; BOT's veto timer brings nothing once the user answered.
+`DOGFOOD.md`: the chat's sync, and timing in a pattern.
+
+**Next pass compares** a run with the Session Driver itself once this branch
+merges: the repost seen and acted on, metrics' merged changes against the
+closeouts' reports, a report built from closed sessions' reads.
+
 ## 2026-10-24 — second dogfood (drive-session-test, dogfood-2-2026-10-23)
 
 **Corpus.** The batch's record (`drive log`, `drive metrics`, its 16
