@@ -36,6 +36,7 @@ local panes = {
   { "escape", "client.mode.exit" }, { "enter", "client.mode.exit" }, { "q", "client.mode.exit" },
   { "g", "pane_hold" }, { "p", "pane_put" }, { "shift+g", "pane_release" },
   { "b", "pane.move_to_new_tab" }, { "e", "pane.balance" }, { "z", "pane.zoom" },
+  { "space", "layout_toggle" },
 }
 for _, dir in ipairs(DIRECTIONS) do
   panes[#panes + 1] = { HJKL[dir], "pane_push", { direction = dir } }
@@ -69,7 +70,7 @@ local prefix = {
   -- panes
   { "shift+\\", "pane.split.right" }, { "\\", "pane.split.right" }, { "-", "pane.split.down" },
   { "h", "pane.focus.left" }, { "j", "pane.focus.down" }, { "k", "pane.focus.up" }, { "l", "pane.focus.right" },
-  { "z", "pane.zoom" }, { "shift+x", "pane.close" }, { "space", "pane.balance" },
+  { "z", "pane.zoom" }, { "shift+x", "pane.close" }, { "space", "layout_toggle" },
   { "b", "pane.move_to_new_tab" }, { "p", "client.mode.enter", { name = "panes" } },
   { "shift+z", "scratch" }, { "shift+m", "label_pane" }, { "ctrl+k", "clear_all" },
   -- tabs (tmux windows) and sessions; ctrl+shift+up/down also step through

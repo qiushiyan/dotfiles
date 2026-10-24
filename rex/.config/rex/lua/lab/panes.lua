@@ -1,6 +1,6 @@
 -- lab.panes: tmux's pane keys that Rex's own pane.* actions do not cover:
--- vim-aware focus, pane mode's push, hold and put, a scratch shell, clear
--- with scrollback, and renaming.
+-- vim-aware focus, the side-by-side or stacked toggle, pane mode's push,
+-- hold and put, a scratch shell, clear with scrollback, and renaming.
 
 local action = require("lab.action")
 local api = require("rexkit.api")
@@ -73,6 +73,34 @@ define{
       direction = MOVE[dir].direction, side = MOVE[dir].side })
     api.try("session.focus_block", { session_id = sid, block_id = bid })
     return { walled = dir }
+  end,
+}
+
+-- prefix Space (and Space in pane mode), as tmux's: panes all side by side
+-- become stacked, any other layout becomes side by side, evenly sized and in
+-- layout order. Rex has no layout presets, so each pane after the first is
+-- moved beside the one before it, taking its share of what is left.
+define{
+  name = "layout_toggle",
+  title = "Toggle Side by Side / Stacked",
+  args = action.schema({}),
+  run = function(ctx, args)
+    local sid, bid = action.block(ctx, args)
+    if not (sid and bid) then return { toggled = false } end
+    local blocks = layout.ordered(layout.window_of(api.call("session.view", { session_id = sid }), bid))
+    if #blocks < 2 then return { toggled = false, reason = "one pane" } end
+    local one_row = true
+    for _, b in ipairs(blocks) do
+      if math.abs(b.rect.y - blocks[1].rect.y) > 1e-3 then one_row = false end
+    end
+    local direction = one_row and "vertical" or "horizontal"
+    for i = 2, #blocks do
+      api.call("session.move_block", { session_id = sid, block_id = blocks[i].block_id,
+        anchor_block_id = blocks[i - 1].block_id, direction = direction, side = "after",
+        ratio = 1 / (#blocks - i + 2) })
+    end
+    api.try("session.focus_block", { session_id = sid, block_id = bid })
+    return { layout = one_row and "stacked" or "side by side" }
   end,
 }
 

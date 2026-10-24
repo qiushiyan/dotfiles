@@ -15,6 +15,25 @@ function M.tiled(window)
   return out
 end
 
+-- The blocks of a window's tiled layer in layout order, before then after
+-- down each split: the order tmux numbers panes in.
+function M.ordered(window)
+  local out = {}
+  local function walk(node)
+    if not node then return end
+    if node.split then
+      walk(node.split.before)
+      walk(node.split.after)
+    elseif node.block_id then
+      out[#out + 1] = node
+    end
+  end
+  for _, layer in ipairs((window and window.layers) or {}) do
+    if layer.kind == "tiled" then walk(layer.layout) end
+  end
+  return out
+end
+
 -- Every block of a window, floating layers too.
 function M.blocks(window)
   local out = {}
