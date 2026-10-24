@@ -443,9 +443,10 @@ every binding. The shape:
 - **`ctrl+a`** enters the `prefix` mode for one key, as tmux's prefix does;
   `escape` leaves it, and `ctrl+a` again sends a literal `ctrl+a`.
 - **Panes after the prefix** follow tmux: `|` `-` split, `hjkl` focus, `HJKL`
-  resize, `z` zoom, `X` close, `space` balance, `b` to a new tab, `Z` a
-  scratch shell below, `M` rename, `C-k` clear with scrollback, `p` pane mode
-  (`hjkl` push, `HJKL` resize, `g` hold, `p` put, `G` release, `Esc` leave).
+  resize, `z` zoom, `X` close, `space` side by side or stacked, `b` to a new
+  tab, `Z` a scratch shell below, `M` rename, `C-k` clear with scrollback, `p`
+  pane mode (`hjkl` push, `HJKL` resize, `space` as above, `e` balance, `g`
+  hold, `p` put, `G` release, `Esc` leave).
 - **Tabs and sessions after the prefix:** `1`–`9` this session's tab N, `C-h`
   `C-l` (`C-p` `C-n`) previous and next, `Tab` the last tab, `S-Tab` the last
   session on this host, `c` new tab, `N` new tab here, `x` close after asking
