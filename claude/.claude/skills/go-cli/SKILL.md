@@ -80,6 +80,12 @@ type AddCmd struct {
 
 func (c *AddCmd) Run(ctx *kong.Context, cli *CLI, s *Store, stdin io.Reader) error { ... }
 
+// Exactly one of --file, --stdout: help states it from the tags.
+type ExportCmd struct {
+	File   string `xor:"to" required:"" type:"path" help:"Write the notes to this file."`
+	Stdout bool   `xor:"to" required:"" help:"Write the notes to stdout."`
+}
+
 var app = clikit.App{
 	Name:        "jot",
 	Description: "jot keeps short notes in one JSON file.",
@@ -117,12 +123,11 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
   the tags cannot express (one flag only valid with another's value) is
   `clikit.Usage(err)`, returned before anything changed.
 - **Constraints belong in tags**, where help states them: `enum:""` with a
-  `default:""` among its values, `xor:"g"` (mark every member `required:""`
-  for exactly one), `and:"g"`, `env:""`, `type:"existingdir"`. Keep a
-  group's flags on one command and give a required group more than one flag
-  of its own: Kong checks groups one command at a time and reads a flag's
-  requirement from its last group, and clikit rejects the shapes it would
-  check differently from the tags, naming the flag.
+  `default:""` among its values, `xor:"g"` (every member `required:""` for
+  exactly one, as in `ExportCmd`), `and:"g"`, `env:""`, `type:"existingdir"`.
+  Keep a group's flags on one command and a required group's flags out of
+  other groups: Kong checks a group among one command's flags only, and a
+  shared flag can make its checks depart from the tags.
 - **Long help**: `Help() string` on a command holds the prose an agent needs
   to use it (what it does, side effects, output shape); `HelpSections()`
   adds titled blocks such as Examples, with `Shared: true` for one that
