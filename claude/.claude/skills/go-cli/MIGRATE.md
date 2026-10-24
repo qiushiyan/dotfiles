@@ -39,6 +39,13 @@ checkable.
    refuses, or the reverse. Record them wherever the project keeps
    compatibility decisions, and update each caller that read the old format
    (brief's zsh completer stripped `brief: ` from error lines).
+7. **Say where command-line changes belong.** The doc that owns `cmd/<tool>`
+   gains the line both migrated tools carry (`~/dev/brief/docs/README.md`,
+   `~/dev/claude-steps/docs/design.md`): how help renders, how an argv error
+   reads and which errors are usage errors belong to clikit, and a change
+   there is a clikit release plus a `go.mod` bump reviewed through the help
+   pages. A session iterating on the tool then knows which fixes are the
+   engine's.
 
 Where a hand-written parser and Kong disagree:
 
