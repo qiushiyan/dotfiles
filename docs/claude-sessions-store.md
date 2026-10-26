@@ -1,7 +1,8 @@
 # The shared session store
 
 Where Claude Code transcripts live, which directory a session resumes in, why
-every account shares one copy, and who is allowed to delete them. Satellite of `docs/claude-accounts.md` — read that
+every account shares one copy, who is allowed to delete them, and what keeps
+them when the store loses them. Satellite of `docs/claude-accounts.md` — read that
 first for the account model this rests on.
 
 ## One store, many accounts
@@ -55,43 +56,74 @@ asks the user first.
 
 ## Retention belongs to ccclean
 
-`cleanupPeriodDays` is pinned to 365 in the shared `settings.json`. Every
-account's cleanup sweep prunes the shared store with its own settings, so the
-store keeps the shortest period any account names; linking one `settings.json`
+**Claude Code's retention sweep is not trusted to keep history.** It has
+deleted transcripts far younger than `cleanupPeriodDays`: one pass took 961
+laptop sessions with the setting at 365, and upstream reports the same with
+it at decades (`anthropics/claude-code#41458`, the issue whose fix would
+retire the mirror below). Nothing in this setup relies on the setting to
+keep a transcript.
+
+**The mirror is the record.** `ccclean mirror` copies `~/.claude/projects`
+and `history.jsonl` into `~/.ccclean/mirror` and never deletes from it. The
+`com.qiushi.ccclean-mirror` agent (`launchd-mac/`, `launchd-mini/`) runs it
+hourly on each machine, logging every run to
+`~/Library/Logs/ccclean-mirror.log`. Each machine mirrors only its own store,
+for the reason the next section gives for obelisk. On the mini, Time Machine
+backs the mirror up as well. On the laptop, which has no backup destination,
+the mirror guards against the sweep but not against the disk failing. How
+the mirror decides what to copy, set aside and report is in
+`~/dev/ccclean/DESIGN.md` § The mirror.
+
+**A notification titled "Claude transcripts vanished"** means one run found
+ten or more transcripts gone from the store with no cause it recognizes,
+neither a `/cd` move nor `ccclean archive`. The files are already in the
+mirror. Their paths and the Claude Code version are in the log, and the
+version is the evidence the upstream issue needs.
+
+**The setting is a floor.** `cleanupPeriodDays` is pinned to 36500 in the
+shared `settings.json`, so a sweep that honours it never fires. Every
+account's sweep prunes the shared store with its own settings, so the store
+keeps the shortest period any account names; linking one `settings.json`
 into every account makes retention one policy by construction. `headroom
 check` guards both halves: its `settings:` line fails unless every account
 sharing the store, the primary included, reads one `settings.json`, and its
-`retention:` line prints the period and fails when accounts disagree or leave
-`cleanupPeriodDays` unset, since Claude Code's 30-day default would then prune
-the shared store. That setting is only the floor, and deliberately generous.
+`retention:` line prints the period and fails when accounts disagree or
+leave `cleanupPeriodDays` unset, since Claude Code's 30-day default would
+then prune the shared store.
 
-The actual policy is **ccclean**'s, a Python CLI in `~/dev/ccclean` (installed
-by `uv tool install`). It is not in this repo and nothing here wraps it; its
-rules and their evidence live in `~/dev/ccclean/DESIGN.md`. It judges sessions by
-human turns rather than age, refuses to prune anything obelisk has not fully
-indexed, and its `gc` sweep collects the account-local per-session state that
-deleting a shared transcript would otherwise strand in every account that
-recorded any.
+**What leaves the store on purpose is ccclean's policy**, a Python CLI in
+`~/dev/ccclean` that `twin tools install ccclean` installs on each machine.
+Nothing in this repo wraps it; its rules and their evidence live in
+`~/dev/ccclean/DESIGN.md`. It judges sessions by human turns rather than
+age, refuses to prune anything obelisk has not fully indexed, and its `gc`
+sweep collects the account-local per-session state that deleting a shared
+transcript would otherwise strand in every account that recorded any. A
+transcript it prunes stays in the mirror.
 
 ## obelisk is a search index, never an archive
 
 obelisk (session-history search) indexes `~/.claude/projects` and therefore sees
 every account's sessions.
 
-**Index incrementally; never `obelisk --build`.** A force rebuild mirrors only
-files still on disk, so for transcripts retention already pruned, the index row
-is the last record in existence — and a lossy one: obelisk truncates every
-message at 10,000 characters (`TEXT_LIMIT` in its `parsing.js`) and keeps
-`toolUseResult` only for its `filePath`. That is why ccclean archives rather
-than deletes anything worth keeping, and says so in the prune preview instead of
-implying a backup exists.
+**Index incrementally; never `obelisk --build`.** A force rebuild keeps only
+sessions whose files are still on disk. The index also holds sessions that
+left the store before that machine's mirror began, and for those the index
+row is the last record in existence. It is a lossy one: obelisk truncates
+every message at 10,000 characters (`TEXT_LIMIT` in its `parsing.js`) and
+keeps `toolUseResult` only for its `filePath`.
+
+**Full fidelity comes from the mirror.** The mirror is laid out as a Claude
+root, so an index of everything it holds, byte-exact, is a build under a
+scratch `HOME` whose `.obelisk/settings.json` sets `providerRoots.claude` to
+`~/.ccclean/mirror`. That index lacks the sessions only the live index
+remembers, so it sits beside the live index and never replaces it.
 
 **Each machine indexes its own store, and the skill asks both.** The laptop's
 index holds the laptop's sessions and the mini's holds the mini's. The obelisk
 skill's `scripts/obq` runs one query on both over ssh and returns one result
 keyed by machine; a machine it cannot reach is a warning, and the answer
-covers the one that answered. Transcripts and index rows stay where they were
-written. Mirroring them would need a transport for what `twin` refuses to
+covers the one that answered. Transcripts, their mirror and index rows stay
+where they were written. Carrying them would need a transport for what `twin` refuses to
 carry (`~/.claude`, `~/.codex`), would be stale between runs, and would leave
 the laptop's whole history at rest on the mini, which is not a trust boundary
 (`docs/qiushi-mini.md` § Reaching the laptop). A session moved with

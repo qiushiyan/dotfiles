@@ -25,9 +25,15 @@ cost, and after a loss to know where each piece comes back from.
 - **Rebuildable state:** the tool that writes it — `prefix I` for tmux
   plugins, `skill-sync` for synced skills, `theme-set` for Ghostty's generated
   theme, `pnpm install` for `node_modules`.
+- **Claude session transcripts:** ccclean's mirror on each machine,
+  `~/.ccclean/mirror/projects`, copied hourly and never pruned; a transcript
+  the store lost is copied back from there (`docs/claude-sessions-store.md`
+  § Retention belongs to ccclean). On the mini, Time Machine backs up the
+  mirror too.
 - **Files an agent session wrote or edited:** as a last resort, agent session
-  history. The tool calls carry the written content, and obelisk's index keeps
-  it after the transcript file is gone; the obelisk skill queries it.
+  history. The tool calls carry the written content, which the mirror keeps
+  byte-exact and obelisk's index keeps searchable; the obelisk skill queries
+  it.
 - **The tmux workspace:** continuum's snapshot, saved every 15 minutes, holds
   the windows, layout, each pane's folder and title; Claude's transcripts hold
   the conversations. Nothing holds the running processes (§ A dead tmux
