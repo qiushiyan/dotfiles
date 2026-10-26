@@ -201,6 +201,10 @@ carry = ["HANDOFF.md", "espanso-docs", "screenshots.local", ".tabtype.local.toml
 method = "make-install"
 repo = "brief"
 
+[tools.ccclean]
+method = "make-install"
+repo = "ccclean"
+
 [tools.claude-steps]
 method = "make-install"
 repo = "claude-steps"

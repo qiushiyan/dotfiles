@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.ccclean-mirror</string>
+
+  <!-- Copies ~/.claude/projects into ~/.ccclean/mirror, which never deletes,
+       so history survives Claude Code's retention sweep whatever
+       cleanupPeriodDays says. Posts a notification when many transcripts
+       leave the store at once. ~/dev/ccclean, src/ccclean/mirror.py. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushiyan/.local/bin/ccclean</string>
+    <string>mirror</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>3600</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/ccclean-mirror.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/ccclean-mirror.log</string>
+</dict>
+</plist>
