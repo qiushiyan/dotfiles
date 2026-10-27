@@ -199,9 +199,9 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
   summary of long chats keep the decisions it already settled, instead of
   dropping them each time it is redone (QIU-295)"). Give it on the open; a
   session that joined on a send, or one already in the batch without a
-  goal, gets one with `drive record goal T1 '…'`. Record it again only when
-  its purpose or scope changes, since where it stands is the page's to
-  show, read live.
+  goal (`drive status` names them), gets one with `drive record goal T1
+  '…'`. Record it again only when its purpose or scope changes, since
+  where it stands is the page's to show, read live.
 - A key that resolves to another project's file is a stop, not a fallback.
 - Your own words only answer the session's question, with its own
   recommendation or by naming what waits for the user.
