@@ -148,7 +148,7 @@ itell's `consult-then-build` says.
 - **No PR** — a session that only onboards, triages or reports: its recap,
   with no distill, since nothing merged.
 - **iTELL — a merged PR on staging.** The stages through review and
-  verification have run, the latter with a verdict certified at the PR
+  verification have run, the latter with a verdict that passed at the PR
   head, and the PR is open against `main` with its checks green; there are
   no review bots, so stage 8 is a person's comments when there are any.
   `merge-when-ready` merges it and follows it to staging. The production
