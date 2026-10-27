@@ -53,9 +53,10 @@ Then on through review to the finish.
 
 ## Who can be hurt decides what you ask
 
-Planlab's `AGENTS.md` sizes caution to who can be hurt: Eval, Steward,
-Bench and the internal workspaces have no customer behind them. Draw the
-same line. Do these, or let the session do them, and report them under
+The pipeline doc's § Who decides draws the lines; this section names
+planlab's spaces and gates. Planlab's `AGENTS.md` sizes caution to who can
+be hurt: Eval, Steward, Bench and the internal workspaces have no customer
+behind them. Do these, or let the session do them, and report them under
 **Done without asking**:
 
 - **Read production:** `planlab` backstage reads and read-only SQL
@@ -71,6 +72,15 @@ same line. Do these, or let the session do them, and report them under
   checkout once its PR has merged, beside SKILL.md's cleanup.
 - **Leave a Bench card's verifier unnamed:** the card closes itself after a
   quiet week. Say so under **Done without asking**.
+- **A release's migration gate**, overridden with the acknowledgement it
+  suggests when the release's session recommends it, having read what the
+  gate flagged, and the migration only adds or reshapes schema. First
+  check whether a teammate's release has already shipped what the gate holds
+  (`pl-check-deployed`, and who ran the last `release prod`): a gate that no
+  longer holds anything needs no override. Name the override, what it
+  covered and why it was safe under **Done without asking**.
+- **A `#loopy` announcement**, posted by `pl-loopy-handoff-distill` § The
+  announcement's rule for who it notifies, untagged where that rule says so.
 
 A workspace is internal when PlanLab's own organization owns it; the names
 above are the known ones. Some customer-looking workspaces are run by
@@ -80,18 +90,15 @@ Ask, holding only the work that depends on it:
 
 - **A write in a customer's workspace or data:** a replay or `case run`
   there, an `--as-user` support session, an `aperture` switch for a
-  customer, or a backfill's `--commit` across the fleet.
-- **A gate a release puts in front of a person:** a migration-gate
-  override or a forced check. First check whether a teammate's release has
-  already shipped what the gate holds (`pl-check-deployed`, and who ran the
-  last `release prod`): a gate that no longer holds anything is not asked.
-  Send the session's recommendation and its reasoning with the ask, and say
-  in plain words what the gate protects.
+  customer, or a backfill's `--commit` against the production database.
+- **A migration gate over customer data:** a migration that drops or
+  rewrites customer data or installs something that writes it, or a forced
+  check. Send the session's recommendation and
+  its reasoning with the ask, and say in plain words what the gate protects.
 - **Production infrastructure:** taking down or resizing a tier on
   `planlab-prod`.
-- **A message to a person:** Slack, a `backstage loopy announce` post. Draft
-  it for the user to send, and only once what it announces is live.
-- **Text the user owns,** such as a decision-ledger entry.
+- **A message addressed to a person** in Slack: draft it for the user to
+  send, and only once what it announces is live.
 
 ## After the PR: strategic review, merge, release
 
@@ -110,14 +117,14 @@ drive send sr-9531@… 'fold these in'                 # once the review reports
 
 Merging and releasing are yours in a planlab batch unless the user says
 "hold merges". Have the session that last worked on the PR merge it (its
-review session, where it had one) once a strategic review cleared it or its
-findings are folded in (or the change is docs-only), its required checks are
-green, and its code review is handled; merge PRs that touch the same code
-one after another. A finding the review calls
-foundational, or a design objection the session rebutted, goes to the user
-first. `merge-when-ready` has the session merge, release (or confirm that a
+review session, where it had one) once its stages have run (the pipeline
+doc's § Who decides) and, where it had a strategic review, that review
+cleared it or its findings are folded in; merge PRs that touch the same code
+one after another. A finding the session judges foundational, or a design
+objection it rebutted, goes to the user first. `merge-when-ready` has the session merge, release (or confirm that a
 release already in flight shipped it), check what production serves and
-write the changelog, stopping at a migration gate; one session at a time:
+write the changelog, taking a migration gate as § Who can be hurt says; one
+session at a time:
 
 ```bash
 drive send sr-9531@… --snippet merge-when-ready --hold release

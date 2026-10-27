@@ -95,7 +95,7 @@ ready to build.
   drive send T1@… --snippet implement-spec    # once the compaction ends
   ```
 - **Hold what is the user's at the step that needs it.** Something the
-  pipeline doc keeps for the user stops only the work that depends on it,
+  pipeline doc's § Who decides asks the user stops only the work that depends on it,
   so the step names what waits: `--snippet implement-spec "D3 and phase 4's
   EC2 run wait for me: build the rest, commit, and stop before them."` Park
   a session whose next step cannot go on without it (`drive park T1@…
@@ -106,19 +106,21 @@ ready to build.
 - **Halt the drive** when a secret was exposed or shared state damaged:
   send nothing more, note what still runs, and lead the report with it.
 
-A prompt is a step too, judged by what it touches: approve what the
-pipeline doc does not keep for the user, such as an edit in the session's
+A prompt is a step too, judged by what it touches: approve what § Who
+decides does not ask the user and puts within reach, such as an edit in the session's
 own change or a read of production, and deny the rest. Its `next:` shows how
 to see the call or the options and how to answer. A deny ends the turn; the
 session takes its next step as usual.
 
 ## What you do without asking
 
-The user wants to be stopped only for what the pipeline doc keeps theirs:
-what reaches a customer or another person, or cannot easily be undone. An
-ask they did not need holds its work until they next look, often hours
-later. Do the rest, or have a session do it, and list it under **Done
-without asking** so they can reverse it:
+The user wants to be stopped only for the two kinds of moment the pipeline
+doc's § Who decides asks them: design questions at the checkpoint, and
+mutations of production data. Its other lists
+stand for every batch: what it handles without asking is yours to do, and
+what is out of reach stays so. An ask they did not need holds its work
+until they next look, often hours later. Do the rest, or have a session do
+it, and list it under **Done without asking** so they can reverse it:
 
 - the closeout once the merge or deploy it waits on has happened, the
   follow-up cards sessions recommend, your own waits;
@@ -127,6 +129,8 @@ without asking** so they can reverse it:
 - a judgment the user would hand to a model, such as a spec review, a blind
   comparison or whether a gate's evidence holds: `drive open judge-1 --model
   fable '…'`, then act on its verdict;
+- the merge and release § Who decides hands over, through
+  `PLANLAB.md` § After the PR in a planlab batch;
 - the cleanup once a session's last step has run (its closeout, or its
   recap where no PR follows), as far as that step left it: a closeout that
   removed its own worktree leaves only the close, and its report says what
@@ -138,13 +142,13 @@ without asking** so they can reverse it:
   gwt remove BRANCH       # refuses uncommitted work and an unmerged branch: leave those, name them
   ```
 
-Authority the user hands over in conversation ("merge and release when
-ready") holds for the batch it was given in. Record it in their words with
+Authority the user hands over in conversation beyond § Who decides
+("run the backfill on Count Cooper's workspace") holds for the batch it was given in. Record it in their words with
 what it covers, act on it while `drive status` lists it, and name it when
 you do. A one-off "go ahead" covers the one thing it named:
 
 ```bash
-drive record grant --source '"you can merge on my behalf" (02:08)' --scope "merge and release this batch's PRs"
+drive record grant --source '"run the backfill on Count Cooper" (02:08)' --scope "the backfill's --commit on Count Cooper's workspace"
 ```
 
 ## Asking
@@ -254,7 +258,7 @@ decide from costs a round trip, so each item stands alone:
 </example>
 
 - **Needs you:** what waits for the user across every session, a decision
-  or a merge that is theirs: what it is, why now, the recommendation, and
+  or a merge the user held: what it is, why now, the recommendation, and
   what happens unanswered. If nothing, say so.
 - **Done without asking:** what you did on your own authority, and what you
   left in place and why.

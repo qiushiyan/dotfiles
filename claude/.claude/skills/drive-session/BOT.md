@@ -85,6 +85,62 @@ until a command shows it again.
   send the result once it exists, never that you have started, are checking
   or will report: on 10-21/22 about a third of your messages were "I'll tell
   you once…" or "Checking…", each a notification with nothing to decide.
+- **A stop that needs the user** is written for the user as they read it:
+  on the phone, hours later, remembering the product, the customers and the
+  people but not the session, its vocabulary, its tickets, its finding
+  numbers or what it tried. Here is a stop the bot relayed for the wrong
+  reader, which the user had to ask to have explained, and the same stop as
+  the bot wrote it once asked:
+
+  <example type="avoid">
+  **S1's re-run release gate failed, so it's parked until you answer two questions.** S1 is the summariser release-gate session, with the bench card on QIU-295 and #9539.
+
+  **Rules, A22.** S1 re-judged every summary blind using your definition of a planner rule.
+  - **On Haiku:** the branch beats develop on four of the five readings. The one it loses is the since-10-22 window, where invented content rises from 3.42 to 4.08 per summary. Most of that is a skill's own rules being copied in as "hard constraints".
+  - **Rules the branch drops but develop keeps:**
+    - "Keep the OPC browse focused" was dropped in 2 of 3 replays, after the browse had finished.
+    - "Stop at the first failure" was dropped in 1 of 3 replays.
+    - A pacing rule held through fold 7, then was dropped at fold 8.
+  - **On Sonnet:** it invents less, about one item per summary, but drops three rules in every replay.
+  - **The options:**
+    - **A (recommended):** carry rules forward in code, and drop one only when the summariser marks it lifted. That fixes rules lost at a later fold, like the pacing rule, but not a rule missed at a thread's first fold.
+    - **B:** another prompt pass. The pass just done didn't stop the drops.
+  - **A side question:** does "keep the browse focused" still hold once the browse is done? Your definition, "holds while that work runs", suggests it doesn't. If so, dropping it isn't a failure.
+
+  **Commits, A23.** Committed schedules went missing on one long thread, and develop loses them too. A script had trimmed the save output to bare `scheduleId=` lines, so the code can't see those commits. Until session 2's commit receipt (QIU-298) lands, S1 recommends that the strict "no lost commits" rule cover only commits the code can see. Commits it can't see, like those saves, would count only toward the totals. Yes or no?
+
+  **Where S1 is:** it has four new local commits, the last `f85ff0fa1b6`. They're not pushed. All suites pass and the type checks are clean. Codex's third review round fixed two medium defects:
+  - an incomplete set of readings could still show the gate as passed;
+  - unsaved work could hide a dropped commit.
+
+  There's no PR yet. The comparison pairs are in `scratchpad/gate/pairs2/pairs.html` and the scores in `scratchpad/gate/scores2/gate.txt`, both in S1's scratchpad on the mini.
+  </example>
+
+  <example>
+  **S1's goal:** decide whether the new summariser is good enough to replace develop's. The summariser keeps a running summary of long Loopy conversations, so the planner remembers what matters after older messages are trimmed.
+
+  **Where it stands:** after your 1B and 2B answers, S1 tightened the prompt on what counts as a planner rule and re-ran the comparison. A blind judge scored every summary from the new version and from develop. The new version still didn't clear the bar, so S1 has stopped. Nothing is pushed and there's no PR yet.
+
+  **What went wrong, in plain terms:**
+  - **Dropped instructions:** the new summariser sometimes forgets standing instructions the planner gave, like "stop at the first failure", which develop keeps. A pacing rule survived seven summary updates and was dropped at the eighth.
+  - **Made-up rules:** in the newest conversation window, it writes in rules nobody gave. These are mostly a skill's own rules copied in as if the planner had said them.
+  - **Sonnet doesn't fix it:** Sonnet makes up less but forgets more.
+
+  **Decision 1, how to stop dropped rules (A22):**
+  - **A, recommended:** code carries every rule forward on each update, and a rule is removed only when the summariser explicitly marks it as finished. Rules stop vanishing later in a conversation. A rule the summariser misses the first time it summarises still wouldn't be caught.
+  - **B:** another round of prompt tuning. The round just done didn't stop the drops, so it may not work.
+
+  **Decision 1b, a side question:** "keep the OPC browse focused" was dropped after the browse had finished. By your own definition, a rule holds while that work runs. If the rule ends with the browse, that drop is correct and not a failure, and the results look better.
+
+  **Decision 2, lost commits (A23):** the gate has a hard rule that no saved schedule may be lost from the summary. On one long thread, saves went missing in develop too, because a script had trimmed the save output so the code can't see those saves at all. S1 suggests that until S2's save receipts land, the hard rule covers only saves the code can see. The invisible ones would still count in the totals but couldn't fail the gate on their own.
+
+  The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
+  </example>
+
+  Given a pair like this, your relays let the user decide from the message
+  alone about twice as often as with today's guidance alone (skill-evals
+  `relay`, 2026-10-27, Grok as the writer, on a different pair from an
+  unrelated stop).
 - **A choice card** suits a decision with fixed options. The card carries
   only the question, so the explanation goes in the message before it.
 - **A message to a person** goes as a draft the user sends.

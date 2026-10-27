@@ -4,6 +4,60 @@ Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares. A
 run by a real bot follows `DOGFOOD.md`.
 
+## 2026-10-27 — who decides, in one place, and how a stop reaches the phone (improve-tool pass)
+
+**Ask.** Borrow from tstack and pstack where it helps the pipeline; run the
+experiments on the subscriptions (laptop session `f136bb24`). Receipts and
+every run: that session's scratchpad (`experiments.md`,
+`pipeline-borrow-ledger.md`, `pipeline-frictions.md`) and `~/dev/skill-evals`
+runs on the mini (`relay-*`, `sizing-1026`, `cue-1026`, `recog-1026`).
+
+**Observed.**
+- The Session Driver's chat (10-21 → 10-26): the user asked for a status
+  outline at least six times; 6 of 19 question cards were skipped, all
+  jargon or housekeeping; the migration-gate override was asked three times
+  and granted each time; standing grants (doc pass, merge after a clean
+  strategic review, cleanup) were re-given per batch.
+- On 10-25 the six design-checkpoint reports reached the user as one-line
+  labels; the user asked for plain rewrites. A cold reader recovered the
+  decisions from the originals, which were heavier (more "unclear", technical
+  approvals mixed in), not undecidable.
+- `relay` replays (7 real stops): Grok as the writer, judged by kimi,
+  today's guidance 23.4 checks per message; a shown avoid/target pair 39.9
+  (jargon explained 1.00 against 0.07, faithful 0.95); a field contract 39.6
+  but faithful 0.67, since its fields make the writer supply missing
+  recommendations. Opus ties the two forms; Haiku needs the contract.
+- `checkpoint-sizing` (four 10-24 sessions forked at their reports): a
+  sizing pass, a first-principles pass and the user's own earlier
+  preferences each reached none of the user's 10-25 steering (0.00-0.67
+  checks per run against the control's 7.00). The checkpoint stays a human
+  stop.
+
+**Changed.**
+- `docs/session-pipeline.md` § Who decides replaces § What stays the user's:
+  ask the user for design questions at the checkpoint and for mutations of
+  production data; merge and release, a schema-only migration gate, docs
+  passes, cleanup, internal channel posts and judgments handed to a fresh
+  model go ahead; logins, shared machine state, unrecoverable deletes and
+  the user's own text stay out of reach. The user asked for one place.
+- `NOTICE.md`, `SKILL.md` and `PLANLAB.md` follow it instead of keeping
+  lists of their own; `merge-when-ready` (planlab's `.tabtype.local.toml`)
+  overrides a schema-only gate.
+- `BOT.md`: a stop that needs the user is written for the user's state, with
+  a real avoid/target pair (the 10-25 S1 card and the plain version the
+  user asked for).
+
+**Validation.** One cold reader, five files, ten scenarios: 15 defects, all
+fixed (a destructive migration inside a release fell through both asks;
+"who is told what" clashed with channel posts; PLANLAB's merge conditions
+differed from the pipeline's; the example asked about a gate now handed to
+the bot).
+
+**Next pass compares** the next batch's chat against this one: status
+asks, skipped cards, re-asks of a relayed stop, and any override the user
+reverses. Revise if a schema-only override breaks a running release or a
+relayed stop draws a plain-terms re-ask.
+
 ## 2026-10-24 — third dogfood (drive-session-test, dogfood-3-2026-10-24)
 
 **Corpus.** The batch's record and notes, the three sessions' transcripts

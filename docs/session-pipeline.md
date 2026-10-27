@@ -75,9 +75,8 @@ then skips the merge.
    verified and what waits, for a user who did not watch; `/show-me`
    answers a narrower question about it later.
 
-After the merge and deploy, which are the user's (in a planlab batch
-`drive-session` drives, the driver's: `PLANLAB.md` § After the PR),
-planlab's `closeout` key runs `/pl-loopy-handoff-distill merged and
+After the merge and deploy (§ Who decides; in a planlab batch,
+`PLANLAB.md` § After the PR says who runs them), planlab's `closeout` key runs `/pl-loopy-handoff-distill merged and
 deployed`; elsewhere `/distill-handoffs` retires the spent brief.
 
 A brief one session writes to start another lists, by the names above, every
@@ -129,9 +128,10 @@ afterwards; planlab's `consult-then-build` says so.
   have run, the PR is open against `develop` with the required checks green,
   and at least one round of `/pl-handle-code-review` has been handled; its
   outcome, caught up or stopped on churn, is reported. The bots help but are
-  not relied on. The merge and the deploy are the user's, except in a
-  planlab batch `drive-session` drives, where they are the driver's unless
-  the user holds them (`PLANLAB.md` § After the PR); the post-merge
+  not relied on. The merge and the release follow without the user once the
+  stages § Who decides lists have run,
+  unless the user holds them: `merge-when-ready` runs them, and in a batch
+  the driver sends it (`PLANLAB.md` § After the PR). The post-merge
   closeout follows once the deploy serves.
 - **Personal tools** (`~/dotfiles` and the tools under `~/dev` that `twin`
   installs): `closeout` merges to `main` locally, with no PR, installs on
@@ -146,36 +146,68 @@ afterwards; planlab's `consult-then-build` says so.
 A session's Rex tab is closed once its last step has run: the closeout, or
 the recap where no PR follows.
 
-## What stays the user's
+## Who decides
 
-A session ends most stages with decisions; its recommendation is the
-default, and the user takes it in most sessions. These stay the user's:
+The one home for who decides what, whether the user drives a session by
+hand or `drive-session` drives a batch; the snippets, the driver and its send
+preamble (`claude/.claude/skills/drive-session/NOTICE.md`) follow it. The
+user steps in at two kinds of moment. Everything else the session or the
+driver does on its own judgment and reports.
 
-- **Shared bases and releases** — a merge or deploy outside the finishes
-  above.
-- **Effects beyond the branch** — writes that reach a customer (their
-  workspaces, their data, or what they run), messages to people (Slack,
-  announcements, PR comments addressed to a person), and anything that
-  reaches shared machine state: another checkout's database, lanes or
-  working tree. Reads of production, and writes to the user's own, internal
-  or demo workspaces and to internal systems, are not such effects: they go
-  ahead and are reported. A project says which of its spaces are internal
-  (planlab: AGENTS.md, "Size caution to who can be hurt"). The merge a
-  personal tool's `closeout` makes in its main checkout is that finish, not
-  such an effect. Judge an action by what it touches, not by the directory
-  it runs in: a cleanup inside an isolated clone has deleted other
-  checkouts' lanes.
-- **What only the user can do** — creating a workspace, logging in to an AWS
+**Ask the user**, holding only the work that depends on the answer:
+
+- **Design questions, at the design checkpoint**: scope, what the product
+  does for the person using it, and what a customer is told, asked together before
+  the build, with every technical choice listed as the default the session
+  will take. A design question that reopens later comes back the same way: a
+  review finding the session judges foundational, a design objection it
+  rebutted, or a decision that is hard to undo and has no recommendation.
+- **Mutations of production data outside a reviewed release**: SQL, a script
+  or a backfill run against a production database, a write in a customer's
+  workspace or data, and changes to production infrastructure such as taking
+  down or resizing a tier, and a release whose migration drops or rewrites
+  customer data or installs something that writes it. Any other migration a
+  release of `develop` carries is part of that release, below.
+
+**Handled without asking**, and reported:
+
+- **Every choice inside the change** once its design is settled:
+  implementation, technical defaults, follow-up cards for work outside it.
+- **Merge and release**, once the stages have run: review and verification,
+  the prompt check where it applies, the PR's code review handled, a
+  strategic review where the change earned one with its findings folded in,
+  and required checks green. A release's migration gate is overridden with
+  the acknowledgement it suggests when the release's session recommends it,
+  having read what the gate flagged, and the migration only adds or reshapes
+  schema; one that touches customer data is the second ask above. A personal
+  tool's `closeout` merge is the same.
+- **Docs passes, handoffs, closeouts and cleanup**: the doc pass when a
+  session is ready for one, and removing the branches, worktrees, review
+  checkouts and scratch files the sessions recommend; a spent brief is
+  retired by the project's distill (planlab's `closeout` key), never by hand.
+- **Reads of production, and writes to the user's own, internal or demo
+  workspaces and to internal systems** such as an issue tracker or the
+  handoffs repository. A project says which of its spaces are internal
+  (planlab: AGENTS.md, "Size caution to who can be hurt").
+- **Announcements in a channel**, by the project's own rule for who they
+  notify (planlab: `pl-loopy-handoff-distill` § The announcement). A message
+  addressed to a person goes as a draft the user sends.
+- **A judgment the user would hand to a model**: a spec review, a blind
+  comparison, whether a gate's evidence holds. A fresh session decides it.
+
+**Out of reach for any session**, whatever the lists say:
+
+- **What only the user can do**: creating a workspace, logging in to an AWS
   profile, credentials, money, an account beyond the ones named.
-- **Deleting data the session did not create and cannot restore.**
-- **Text the user owns**, such as a decision-ledger entry.
-- **A decision that is hard to undo and comes with no recommendation**, a
-  review finding the session judges foundational, or a design objection it
-  rebutted.
+- **Shared machine state**: another checkout's database, lanes or working
+  tree. Judge an action by what it touches, not by the directory it runs
+  in: a cleanup inside an isolated clone has deleted other checkouts' lanes.
+- **Deleting data the session did not create and cannot restore**, and
+  **text the user owns**, such as a decision-ledger entry.
 
-Each of these holds the work at the step that would act on it, not before:
-the session builds what does not depend on it and stops there, so the user
-comes back to everything else done.
+An ask holds the work at the step that would act on it, not before: the
+session builds what does not depend on it and stops there, so the user comes
+back to everything else done.
 
 ## Project snippets
 
