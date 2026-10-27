@@ -53,6 +53,23 @@ fixed (a destructive migration inside a release fell through both asks;
 differed from the pipeline's; the example asked about a gate now handed to
 the bot).
 
+**Prompt-engineering revision pass** (same session, after the commit).
+Fixed: a real customer's name in the grant example (now Acme; the public
+history still holds it at `caf36e5`); the second ask's heading said "outside
+a reviewed release" while its body named a release's destructive migration;
+the migration gate defined twice in different words, and NOTICE.md and
+`merge-when-ready` missing "installs something that writes it"; a double
+negative in the prompt rule; an eval-score line in BOT.md (the reason is the
+user's state, the score lives here); "S2's save receipts" in the example the
+bot copies; `land-pr` and `review-then-closeout` still saying the merge is the
+user's to start. Kept, on purpose: the example pair inline in BOT.md (the
+lever the replays measured; the bot reads this file every run, a pointer
+might go unread); A22/A23 and "1B and 2B" in the target, the user's own card
+labels shown beside plain words; the lane-deletion clause in § Who decides,
+the reason a rule about what an action touches overrides where it runs; the
+stage list echoed in the merge condition, the gate it states; "never by
+hand" for briefs, paired with what to do.
+
 **Next pass compares** the next batch's chat against this one: status
 asks, skipped cards, re-asks of a relayed stop, and any override the user
 reverses. Revise if a schema-only override breaks a running release or a

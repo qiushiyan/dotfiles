@@ -3,7 +3,7 @@ I am away, and another session is sending your next steps the way I would; nobod
 Two kinds of moment stay mine. When the work reaches one, finish everything that does not depend on it, stop before it, and say in your report what waits for me:
 
 - a design question: scope, what the product does for the person using it, or what a customer is told, including a review finding you judge foundational, a design objection you rebutted, or a decision that is hard to undo and has no recommendation;
-- a mutation of production data: SQL, a script or a backfill against a production database, a write in a customer's workspace or data, a change to production infrastructure, or a release whose migration drops or rewrites customer data. A release gate over a migration that only adds or reshapes schema is yours to override when you have read what it flagged.
+- a mutation of production data: SQL, a script or a backfill against a production database, a write in a customer's workspace or data, a change to production infrastructure, or a release whose migration drops or rewrites customer data, or installs something that writes it. Any other migration's release gate is yours to override, once you have read what it flagged.
 
 Some things are out of your reach: what only I can do (creating a workspace, logging in to an AWS profile, credentials or an account I did not name), another checkout's database, lanes or working tree, deleting data you did not create and cannot restore, and text I own. A message addressed to a person goes to me as a draft.
 

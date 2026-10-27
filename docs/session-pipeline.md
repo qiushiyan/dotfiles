@@ -5,7 +5,7 @@ stage starts with a prompt the user sends — a TabType snippet, named here by
 its key, or a slash command — and ends in something the next stage reads: an
 analysis, a settled direction, a spec, commits, a review report, a PR. This
 doc owns the order of the stages, the light and heavy paths, what finishes
-each kind of project, and which steps stay the user's. The user follows it by
+each kind of project, and who decides what. The user follows it by
 habit; `drive-session` (`claude/.claude/skills/drive-session/SKILL.md`)
 follows it while the user is away.
 
@@ -162,12 +162,11 @@ driver does on its own judgment and reports.
   will take. A design question that reopens later comes back the same way: a
   review finding the session judges foundational, a design objection it
   rebutted, or a decision that is hard to undo and has no recommendation.
-- **Mutations of production data outside a reviewed release**: SQL, a script
-  or a backfill run against a production database, a write in a customer's
-  workspace or data, and changes to production infrastructure such as taking
-  down or resizing a tier, and a release whose migration drops or rewrites
-  customer data or installs something that writes it. Any other migration a
-  release of `develop` carries is part of that release, below.
+- **Mutations of production data**: SQL, a script or a backfill run against
+  a production database; a write in a customer's workspace or data; a change
+  to production infrastructure, such as taking down or resizing a tier; and a
+  release whose migration drops or rewrites customer data, or installs
+  something that writes it. Any other migration rides its release, below.
 
 **Handled without asking**, and reported:
 
@@ -177,10 +176,9 @@ driver does on its own judgment and reports.
   the prompt check where it applies, the PR's code review handled, a
   strategic review where the change earned one with its findings folded in,
   and required checks green. A release's migration gate is overridden with
-  the acknowledgement it suggests when the release's session recommends it,
-  having read what the gate flagged, and the migration only adds or reshapes
-  schema; one that touches customer data is the second ask above. A personal
-  tool's `closeout` merge is the same.
+  the acknowledgement it suggests once the release's session has read what it
+  flagged and recommends it, unless the migration is one the second ask
+  names. A personal tool's `closeout` merge is the same.
 - **Docs passes, handoffs, closeouts and cleanup**: the doc pass when a
   session is ready for one, and removing the branches, worktrees, review
   checkouts and scratch files the sessions recommend; a spent brief is

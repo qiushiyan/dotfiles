@@ -13,7 +13,7 @@ session finishes a stage, send it the next one the way the user would, until
 each reaches its finish or needs something only the user can give. What the
 user said for a session decides what it runs; what they left unsaid follows
 `~/dotfiles/docs/session-pipeline.md`, which owns the stages, the paths,
-each project's finish and what stays the user's. Read it before planning,
+each project's finish and who decides what. Read it before planning,
 and [`PLANLAB.md`](PLANLAB.md) for planlab sessions. A chat bot reads
 [`BOT.md`](BOT.md) for how it waits, remembers and reports.
 
@@ -107,7 +107,7 @@ ready to build.
   send nothing more, note what still runs, and lead the report with it.
 
 A prompt is a step too, judged by what it touches: approve what § Who
-decides does not ask the user and puts within reach, such as an edit in the session's
+decides hands to sessions, such as an edit in the session's
 own change or a read of production, and deny the rest. Its `next:` shows how
 to see the call or the options and how to answer. A deny ends the turn; the
 session takes its next step as usual.
@@ -143,12 +143,12 @@ it, and list it under **Done without asking** so they can reverse it:
   ```
 
 Authority the user hands over in conversation beyond § Who decides
-("run the backfill on Count Cooper's workspace") holds for the batch it was given in. Record it in their words with
+("run the backfill on Acme's workspace") holds for the batch it was given in. Record it in their words with
 what it covers, act on it while `drive status` lists it, and name it when
 you do. A one-off "go ahead" covers the one thing it named:
 
 ```bash
-drive record grant --source '"run the backfill on Count Cooper" (02:08)' --scope "the backfill's --commit on Count Cooper's workspace"
+drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the backfill's --commit on Acme's workspace"
 ```
 
 ## Asking

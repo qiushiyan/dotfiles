@@ -132,15 +132,10 @@ until a command shows it again.
 
   **Decision 1b, a side question:** "keep the OPC browse focused" was dropped after the browse had finished. By your own definition, a rule holds while that work runs. If the rule ends with the browse, that drop is correct and not a failure, and the results look better.
 
-  **Decision 2, lost commits (A23):** the gate has a hard rule that no saved schedule may be lost from the summary. On one long thread, saves went missing in develop too, because a script had trimmed the save output so the code can't see those saves at all. S1 suggests that until S2's save receipts land, the hard rule covers only saves the code can see. The invisible ones would still count in the totals but couldn't fail the gate on their own.
+  **Decision 2, lost commits (A23):** the gate has a hard rule that no saved schedule may be lost from the summary. On one long thread, saves went missing in develop too, because a script had trimmed the save output so the code can't see those saves at all. S1 suggests that until the save receipts another session is building land, the hard rule covers only saves the code can see. The invisible ones would still count in the totals but couldn't fail the gate on their own.
 
   The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
   </example>
-
-  Given a pair like this, your relays let the user decide from the message
-  alone about twice as often as with today's guidance alone (skill-evals
-  `relay`, 2026-10-27, Grok as the writer, on a different pair from an
-  unrelated stop).
 - **A choice card** suits a decision with fixed options. The card carries
   only the question, so the explanation goes in the message before it.
 - **A message to a person** goes as a draft the user sends.
