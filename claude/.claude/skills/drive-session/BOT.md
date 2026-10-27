@@ -36,6 +36,9 @@ drive park T3@… "waits for the release hold"
 drive timer 300 veto                             # the plan's veto, as a timer wake; once the user answers, it brings nothing to do
 ```
 
+A park's reason shows on the user's page beside the session, so write it
+for them: what the session waits on, in their terms.
+
 Any wake may act on any session, from what `drive status` and `drive read`
 show now: drive keeps two runs off one session, and refuses a step decided
 on a view another run has moved past.
@@ -139,6 +142,9 @@ until a command shows it again.
 - **A choice card** suits a decision with fixed options. The card carries
   only the question, so the explanation goes in the message before it.
 - **A message to a person** goes as a draft the user sends.
-- **When the user asks for an outline** of where things stand, answer from
-  `drive status`: a line per session with its stage and PR, then what waits
-  for them.
+- **When the user asks for an outline** of where things stand, send the
+  page, https://qiushi-mini.tailf7adf1.ts.net:8444, which reads every
+  session live with its goal, its PRs and what waits on the user. Add what
+  the page cannot show, from `drive status`, the record and the sessions:
+  what comes next for each, and anything holding the batch that drive does
+  not track, such as a release pause.

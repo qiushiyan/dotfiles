@@ -531,7 +531,12 @@ an older binary files a brief where the new one reads another slug.
   watch printed — lives in `~/.local/state/drive/batches/<name>/`. Each
   wake's after-wake command archives the bot's chat past the app's window
   (`~/.local/state/grokbot/`); `grokbot-transcript "Session Driver"` reads
-  it.
+  it. The owner reads the current batch on its page,
+  `https://qiushi-mini.tailf7adf1.ts.net:8444`, which `drive page` serves
+  on `127.0.0.1:8792` under `launchd-mini/`'s `com.qiushi.drive-page` and
+  `tailscale serve --bg --https=8444 http://127.0.0.1:8792` publishes, a
+  setting `tailscaled` keeps; `~/dev/drive/docs/batches.md` § The owner's
+  page has the rest.
 - **The hourly `twin tick`, the daily snapshot, the tmux exit watcher,
   asimov's Time Machine exclusions and planlab's git upkeep** — this
   repository's `launchd-mini/` package (`docs/twin.md` § The hourly tick;

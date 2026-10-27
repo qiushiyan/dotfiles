@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.drive-page</string>
+
+  <!-- Always: the page of the current drive batch, each session's goal,
+       where it stands, its pull requests and what waits on Qiushi, read
+       live on each request (`drive page --help`). It listens on
+       127.0.0.1:8792, which `tailscale serve` publishes on the tailnet at
+       https://qiushi-mini.tailf7adf1.ts.net:8444, set once with
+       `tailscale serve --bg --https=8444 http://127.0.0.1:8792`. Anyone on
+       the tailnet can open it; the page only reads. It exits when an
+       install replaces ~/.local/bin/drive, and KeepAlive starts the new
+       one. PATH reaches rex, claude-steps and gh, without which it cannot
+       read a session. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushiyan/.local/bin/drive</string>
+    <string>page</string>
+    <string>--listen</string>
+    <string>127.0.0.1:8792</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/qiushiyan/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>WorkingDirectory</key>
+  <string>/tmp</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/drive-page.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/drive-page.log</string>
+</dict>
+</plist>
