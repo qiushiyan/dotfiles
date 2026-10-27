@@ -111,7 +111,7 @@ holds the fixes.
 
 ```bash
 drive send T1@… --snippet strategic-review-brief    # the builder writes the reviewer's prompt
-drive open sr-9531 --dir ~/dev/planlab/main '/strategic-review 9531 Read <the prompt file> for where to look hardest'
+drive open sr-9531 --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 Read <the prompt file> for where to look hardest'
 drive send sr-9531@… 'fold these in'                 # once the review reports; the skill says how
 ```
 

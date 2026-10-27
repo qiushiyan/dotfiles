@@ -15,8 +15,8 @@ edit load only from `apps/platform`, so a session opened at the root runs
 without them.
 
 ```bash
-drive open T1 --dir ~/dev/itell/apps/platform --file /tmp/t1-start.md   # "… in a worktree of your own"
-drive open T2 --dir ~/dev/itell/apps/platform '/bug-report-triage <reportId>'
+drive open T1 --dir ~/dev/itell/apps/platform --goal '…' --file /tmp/t1-start.md   # "… in a worktree of your own"
+drive open T2 --dir ~/dev/itell/apps/platform --goal 'Find what causes <the reported bug>, and whether it needs a fix.' '/bug-report-triage <reportId>'
 ```
 
 A learner's bug report enters at `/bug-report-triage`; a fix it recommends
