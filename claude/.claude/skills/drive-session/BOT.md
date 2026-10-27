@@ -139,6 +139,10 @@ until a command shows it again.
 
   The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
   </example>
+- **A message about one session** takes its goal from `drive read`, which
+  prints the one recorded, so the chat and the user's page agree on what
+  the session is for, and links its card on the page,
+  `https://qiushi-mini.tailf7adf1.ts.net:8444/#S1`, by its label.
 - **A choice card** suits a decision with fixed options. The card carries
   only the question, so the explanation goes in the message before it.
 - **A message to a person** goes as a draft the user sends.
