@@ -4,6 +4,8 @@
 
 # Project-local config that varies per machine
 **/.claude/settings.local.json
+# TabType stage bindings a project keeps for itself (docs/session-pipeline.md § Finishes)
+.tabtype.local.toml
 .secrets
 secrets-manifest.txt
 
