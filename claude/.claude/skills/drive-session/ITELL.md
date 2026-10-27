@@ -30,8 +30,8 @@ Stage 5 is `itell-review-verify`: the session drives its change in a
 verification lane, its own world on the running platform, and ends its
 report with the `verify:` line the run printed, e.g.
 `verify: <verdict.json> — target 3 verified; risk 5 verified — certified at 94a17a8219`.
-That line is the claim; the verdict file is the evidence, and reading it is a
-read like `claude-steps show`:
+That line is the claim and the verdict file the evidence. Check the file
+yourself; it is a read, like `claude-steps show`:
 
 ```bash
 cd <worktree>/apps/platform && pnpm --silent verify verdict --json   # works after the lane is down
@@ -64,8 +64,9 @@ A blocked story is not a pass; one blocked on what lanes cannot supply
   Send the owning session `pnpm verify down` instead, as you would for a
   session you park overnight with its lane up.
 - A session's stage 5 ends with its lane down. Before you close a session,
-  `pnpm verify status` in its worktree reports no lane, or the session
-  brings it down.
+  check in its worktree: `pnpm verify status` answering "this worktree has
+  no lane" (exit 2, its suggestion to `up` aside) is the state you want;
+  a lane it still reports, the session brings down.
 
 ## Who can be hurt decides what you ask
 
