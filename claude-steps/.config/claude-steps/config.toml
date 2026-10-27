@@ -51,15 +51,15 @@ color = "blue"
 [[label]]
 name = "review"
 skills = ["review"]
-snippets = ["review-verify", "loopy-review-verify", "review-then-closeout", "strategic-review-brief"]
+snippets = ["review-verify", "loopy-review-verify", "itell-review-verify", "review-then-closeout", "strategic-review-brief"]
 jobs = ["review-"]
 count_commits = true
 color = "magenta"
 
 [[label]]
 name = "verify"
-skills = ["pl-loopy-verify"]
-snippets = ["loopy-review-verify"]
+skills = ["pl-loopy-verify", "verify"]
+snippets = ["loopy-review-verify", "itell-review-verify"]
 count_commits = true
 color = "cyan"
 

@@ -96,6 +96,7 @@ carry = [
   "apps/platform/.env",
   "apps/platform/.env.local",
   "apps/platform/.env.production",
+  ".tabtype.local.toml",
   "apps/platform/examples.local/dashboard/.env.local",
   "legacy/demo/.env",
   "legacy/demo/.env.production",

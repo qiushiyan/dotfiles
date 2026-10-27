@@ -54,7 +54,8 @@ then skips the merge.
 4. **Build.** Heavy: `/compact`, then `implement-spec`, which rebuilds the
    model from the committed spec. `implement-now` builds from decisions
    settled in the conversation. Commits land at milestones.
-5. **Review and verify.** `loopy-review-verify` in planlab, `review-verify`
+5. **Review and verify.** `loopy-review-verify` in planlab,
+   `itell-review-verify` in itell (its `verify` skill's lane), `review-verify`
    elsewhere: a `/review` round while the session proves the intended
    behaviour on the running stack. Confirmed findings are folded in ("fold
    it in"); substantive fixes get a second round.
@@ -186,6 +187,7 @@ TabType's between the machines (`twin/.config/twin/twin.toml`).
 
 ```text
 a new key      → planlab's loopy-review-verify (the review with the pl-loopy-verify rig),
+                 itell's itell-review-verify (the review with a verify lane),
                  land-pr (stage 7 without the review),
                  merge-when-ready (merge, release and confirm, when a driver holds the merge)
 a global key   → planlab's consult-then-build (its spike toolkit), review-then-closeout
