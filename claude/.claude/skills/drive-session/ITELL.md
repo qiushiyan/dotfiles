@@ -81,7 +81,7 @@ Do these, or let the session do them, and report them:
 - staging, a copy of iTELL that emails only the team: reads, and writes
   through the app;
 - reads of production through the read-only role
-  (`PROD_READONLY_DATABASE_URL`).
+  (`ITELL_PROD_READONLY_DATABASE_URL`).
 
 Ask, holding only the work that depends on it:
 
