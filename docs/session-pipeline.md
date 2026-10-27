@@ -39,6 +39,8 @@ then skips the merge.
    the words alone. A Loopy incident (an id, a window, a Bench card) enters
    at `/pl-loopy-debug` instead; its dossier recommends whether to build a
    fix, and a fix goes on with `/pl-loopy-onboarding <the dossier's route>`.
+   An iTELL learner's bug report enters at `/bug-report-triage <reportId>`,
+   and a fix it recommends goes on with `/onboarding`.
 2. **Design.** The path decides the prompt (§ Choosing the path):
    - **Light:** `consult-then-build` — one consult round with the user's
      open questions on trial, a spike where the direction rests on an
@@ -63,7 +65,8 @@ then skips the merge.
    prompts, skill bodies, snippets, tool descriptions and results, a
    `CLAUDE.md`: `loopy-prompt-check` in planlab, `prompt-check` elsewhere.
 7. **Land.** By project (§ Finishes): planlab `land-pr`, whose PR body is
-   the one `pl-pr`'s step 6 lays out; a personal tool `closeout`.
+   the one `pl-pr`'s step 6 lays out; itell `land-pr`, against `main`, its
+   verdicts in the PR body; a personal tool `closeout`.
    `review-then-closeout` is stages 5 and 7 in one prompt, for a branch
    nothing has reviewed yet; sent after a review, it would start another.
 8. **Code review on the PR** (planlab). `/pl-handle-code-review` loops over
@@ -76,8 +79,10 @@ then skips the merge.
    answers a narrower question about it later.
 
 After the merge and deploy (§ Who decides; in a planlab batch,
-`PLANLAB.md` § After the PR says who runs them), planlab's `closeout` key runs `/pl-loopy-handoff-distill merged and
-deployed`; elsewhere `/distill-handoffs` retires the spent brief.
+`PLANLAB.md` § After the PR says who runs them, in an itell one `ITELL.md`
+§ After the PR), planlab's `closeout` key runs `/pl-loopy-handoff-distill merged and
+deployed`; elsewhere, itell's `closeout` key included, `/distill-handoffs`
+retires the spent brief.
 
 A brief one session writes to start another lists, by the names above, every
 stage from its entry to its finish, so the new session runs them all: a
@@ -120,7 +125,9 @@ and `spike-check` asks for them on their own, the build waiting for the user
 to read the verdicts. In planlab they run on the real stack:
 `pl-loopy-verify`'s rungs where they hold the question, otherwise an
 OrbStack container or EC2 on the `planlab-personal` AWS profile, cleaned up
-afterwards; planlab's `consult-then-build` says so.
+afterwards; planlab's `consult-then-build` says so. In itell they run in the
+worktree's verification lane (`pnpm verify`) where it holds the question, as
+itell's `consult-then-build` says.
 
 ## Finishes
 
@@ -140,8 +147,15 @@ afterwards; planlab's `consult-then-build` says so.
   every user.
 - **No PR** — a session that only onboards, triages or reports: its recap,
   with no distill, since nothing merged.
-- **Any other project** (itell, a new repository): no default; the user
-  names the finish.
+- **iTELL — a merged PR on staging.** The stages through review and
+  verification have run, the latter with a verdict certified at the PR
+  head, and the PR is open against `main` with its checks green; there are
+  no review bots, so stage 8 is a person's comments when there are any.
+  `merge-when-ready` merges it and follows it to staging. The production
+  deploy waits for the user: the staging check before it needs a sign-in
+  only the user can make (`ITELL.md` § After the PR).
+- **Any other project** (a new repository): no default; the user names the
+  finish.
 
 A session's Rex tab is closed once its last step has run: the closeout, or
 the recap where no PR follows.
@@ -212,15 +226,15 @@ back to everything else done.
 A project's `.tabtype.local.toml` binds stages to its own skills, under a new
 key or by replacing a global one. TabType reads it from the worktree and from
 the main checkout beneath it, so a worktree sees the main checkout's file.
-The file is gitignored in its project; `twin` carries planlab's and
+The file is gitignored in its project; `twin` carries planlab's, itell's and
 TabType's between the machines (`twin/.config/twin/twin.toml`).
 
 ```text
 a new key      → planlab's loopy-review-verify (the review with the pl-loopy-verify rig),
-                 itell's itell-review-verify (the review with a verify lane),
-                 land-pr (stage 7 without the review),
-                 merge-when-ready (merge, release and confirm, when a driver holds the merge)
-a global key   → planlab's consult-then-build (its spike toolkit), review-then-closeout
-                 (ends at a ready PR) and closeout (the post-merge distill);
+                 itell's itell-review-verify (the review with a verify lane);
+                 in both, land-pr (stage 7 without the review) and merge-when-ready
+                 (planlab: merge, release and confirm; itell: merge and follow it to staging)
+a global key   → planlab's and itell's consult-then-build (each one's spike rig),
+                 review-then-closeout (ends at a ready PR) and closeout (the post-merge distill);
                  TabType's closeout and review-then-closeout (a release)
 ```

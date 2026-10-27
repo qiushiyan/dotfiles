@@ -16,6 +16,7 @@
 snippets = [
   "~/.config/tabtype/config.toml",
   "~/dev/planlab/main/.tabtype.local.toml",
+  "~/dev/itell/.tabtype.local.toml",
   "~/dev/tabtype/.tabtype.local.toml",
 ]
 

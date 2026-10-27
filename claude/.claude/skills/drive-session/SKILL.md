@@ -14,7 +14,8 @@ each reaches its finish or needs something only the user can give. What the
 user said for a session decides what it runs; what they left unsaid follows
 `~/dotfiles/docs/session-pipeline.md`, which owns the stages, the paths,
 each project's finish and who decides what. Read it before planning,
-and [`PLANLAB.md`](PLANLAB.md) for planlab sessions. A chat bot reads
+[`PLANLAB.md`](PLANLAB.md) for planlab sessions and
+[`ITELL.md`](ITELL.md) for itell ones. A chat bot reads
 [`BOT.md`](BOT.md) for how it waits, remembers and reports.
 
 Done is every named session at its finish or parked on something only the
