@@ -17,7 +17,8 @@ only the brief and the files it names.
 On the mini:
 
 1. **No real batch is in flight.** One batch is current per machine, and the
-   dogfood's `drive batch new` stops the current batch's wakes. `drive status`
+   dogfood's `drive batch new` stops the current batch's wakes and moves the
+   owner's page (`BOT.md` § The chat) to the dogfood batch. `drive status`
    shows what the current batch still has open; run when it has nothing the
    owner is waiting on.
 2. **The drive under test is installed** (`make install` in `~/dev/drive`):

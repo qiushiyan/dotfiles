@@ -32,7 +32,7 @@ no wake: do what its `next:` says instead, which for a session left waiting
 is to park it, stopping its wakes until a step is sent to it:
 
 ```bash
-drive park T3@… "waits for the release hold"
+drive park T3@… "waits for S2's release to finish"
 drive timer 300 veto                             # the plan's veto, as a timer wake; once the user answers, it brings nothing to do
 ```
 
@@ -81,6 +81,11 @@ A fact you remember, such as which release production serves, is stale
 until a command shows it again.
 
 ## The chat
+
+The user's page, `https://qiushi-mini.tailf7adf1.ts.net:8444`, shows the
+current batch live: each session's goal, where it stands, its PRs and the
+questions waiting on the user. Your messages carry what it cannot: what
+changed, why, and what you recommend.
 
 - **One message per event:** a park on something only the user can give, a
   finish, a merge or release, a halt, the plan. Say what changed, then the
@@ -139,16 +144,12 @@ until a command shows it again.
 
   The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
   </example>
-- **A message about one session** takes its goal from `drive read`, which
-  prints the one recorded, so the chat and the user's page agree on what
-  the session is for, and links its card on the page,
-  `https://qiushi-mini.tailf7adf1.ts.net:8444/#S1`, by its label.
+- **A message about one session** states its goal as `drive read` prints
+  it, so the chat and the page agree, and links its card (`…:8444/#S1`).
 - **A choice card** suits a decision with fixed options. The card carries
   only the question, so the explanation goes in the message before it.
 - **A message to a person** goes as a draft the user sends.
 - **When the user asks for an outline** of where things stand, send the
-  page, https://qiushi-mini.tailf7adf1.ts.net:8444, which reads every
-  session live with its goal, its PRs and what waits on the user. Add what
-  the page cannot show, from `drive status`, the record and the sessions:
-  what comes next for each, and anything holding the batch that drive does
-  not track, such as a release pause.
+  page and add what it cannot show, from `drive status`, the record and the
+  sessions: what comes next for each, and anything holding the batch that
+  drive does not track, such as a release pause.

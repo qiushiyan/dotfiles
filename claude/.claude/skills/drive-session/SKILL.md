@@ -192,16 +192,16 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
   ```bash
   drive open T1 --dir ~/dev/tool --goal 'Let greet.py print its greeting in capitals when asked to shout.' --file /tmp/t1-start.md   # "Add --shout to greet.py with a test, in a worktree of your own. Commit and stop there."
   ```
-- Every session carries a goal, which the user reads on their page each
-  time they come back to it, often to answer something it asked: what it
-  sets out to solve, in plain terms for someone who remembers the product
-  but not the session, its tickets or its stages ("Make Loopy's running
-  summary of long chats keep the decisions it already settled, instead of
-  dropping them each time it is redone (QIU-295)"). Give it on the open; a
-  session that joined on a send, or one already in the batch without a
-  goal (`drive status` names them), gets one with `drive record goal T1
-  '…'`. Record it again only when its purpose or scope changes, since
-  where it stands is the page's to show, read live.
+- Every session carries a goal: what it sets out to solve, for a user who
+  remembers the product but not the session. They read it on their page
+  whenever they come back to the session, often to answer its question.
+  Record it again only when its purpose or scope changes; where the
+  session stands, the page reads live.
+
+  ```bash
+  drive open S1 --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/s1-start.md
+  drive record goal P0 '…'   # a session that joined on a send, or one drive status names as having none
+  ```
 - A key that resolves to another project's file is a stop, not a fallback.
 - Your own words only answer the session's question, with its own
   recommendation or by naming what waits for the user.
