@@ -1,20 +1,39 @@
-# Size budget for the skills this repository owns: those neither in the Skills
-# CLI lock nor linked from another project. The prompt-engineering rulebook's
-# "Write short" says why; skill-sync enforces it.
-body_words: 1500
+# Size records for the skills this repository owns: those neither in the
+# Skills CLI lock nor linked from another project. The prompt-engineering
+# rulebook's "Write short" says why; skill-sync enforces them.
+body_words: 1500  # a new skill's SKILL.md body must fit this to be recorded
 description_words:
   model: 30   # model-invoked: in context every turn
   manual: 10  # disable-model-invocation or user-invocable-only: a menu label
-# Skills already over body_words, each with the most words it may hold.
-# skill-sync lowers an entry when its skill shrinks and drops it once the
-# skill fits. Nothing raises one: past it, an addition replaces something.
-over:
-  distill-docs: 2236
-  distill-handoffs: 3044
-  drive-session: 2718
-  go-cli: 1963
-  handoff: 3209
-  obelisk: 2638
-  review: 4010
-  strategic-review: 2039
-  thermo-nuclear-code-quality-review: 1883
+# Every owned skill at its size: body is SKILL.md after the frontmatter, total
+# adds the Markdown files beside it except EVIDENCE.md and LESSONS.md.
+# skill-sync lowers a record as its skill shrinks and never raises one, so
+# growth fails the check: an addition replaces something, or the record is
+# raised here by hand with a comment saying why.
+skills:
+  check-memory: {body: 630, total: 630}
+  claude-accounts: {body: 301, total: 301}
+  clean-worktrees: {body: 467, total: 467}
+  consult: {body: 1498, total: 3908}
+  delegate: {body: 742, total: 1432}
+  distill-docs: {body: 2236, total: 2236}
+  distill-handoffs: {body: 3044, total: 3044}
+  drive-session: {body: 2718, total: 8412}
+  enter-worktree: {body: 154, total: 154}
+  go-cli: {body: 1963, total: 3977}
+  handoff: {body: 3209, total: 3846}
+  improve-tool: {body: 1414, total: 5770}
+  obelisk: {body: 2638, total: 2638}
+  prompt-engineering: {body: 1422, total: 3082}
+  refactoring: {body: 643, total: 643}
+  resolving-merge-conflicts: {body: 117, total: 117}
+  review: {body: 4010, total: 8128}
+  spike: {body: 722, total: 722}
+  strategic-review: {body: 2039, total: 2039}
+  tailwind-best-practices: {body: 699, total: 699}
+  test-audit: {body: 1129, total: 1974}
+  thermo-nuclear-code-quality-review: {body: 1883, total: 1883}
+  update-docs: {body: 898, total: 898}
+  wiki: {body: 324, total: 324}
+  write-spec: {body: 1207, total: 6163}
+  add-theme: {body: 1437, total: 2035}

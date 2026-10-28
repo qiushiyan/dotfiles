@@ -42,7 +42,9 @@ against are in [SKILL.md](SKILL.md).
      you built, or asks what the reader's input cannot show.
    - *no checkable done:* a step without a done condition, or parsed output
      without an exact contract.
-   - *bare rule:* a rule with no reason or no skip condition.
+   - *bare rule:* a rule whose missing reason or exception would change
+     what the reader does; a rule a capable model reads correctly is not
+     one.
    - *sprawl:* a body past its budget, a sentence carrying stacked
      qualifications, or a description doing the body's work.
    - *flat hierarchy:* layers rendered as one paragraph, bullets that run to

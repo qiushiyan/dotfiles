@@ -10,6 +10,7 @@ regressed; the skills-only cases assert it stays empty.
 from pathlib import Path
 import json
 import os
+import re
 import subprocess
 import tempfile
 import tomllib
@@ -131,32 +132,41 @@ class SkillSyncTest(unittest.TestCase):
         )
         return folder / "SKILL.md"
 
-    def budget(self, over=None):
+    def budget(self, skills=None):
         path = self.repo / "budget.yaml"
         path.write_text(json.dumps({"body_words": 10, "description_words": {"model": 5, "manual": 3},
-                                    "over": over or {}}))
+                                    "skills": skills or {}}))
         return path
 
-    def test_budget_ratchets_overruns_down_and_never_up(self):
+    def test_budget_records_new_skills_and_ratchets_down_never_up(self):
         self.budgeted_skill("fits", 10)
         skill = self.budgeted_skill("big", 30)
-        budget = self.budget({"big": 30, "gone": 50})
+        budget = self.budget({"big": {"body": 30, "total": 30}, "gone": {"body": 5, "total": 5}})
         self.run_sync("--budget", str(budget), "--check", expected=1)
         self.run_sync("--budget", str(budget))
-        self.assertEqual(self.read_yaml(budget)["over"], {"big": 30})
+        self.assertEqual(self.read_records(budget),
+                         {"big": {"body": 30, "total": 30}, "fits": {"body": 10, "total": 10}})
         skill.write_text(skill.read_text().replace("word ", "", 5))
         self.run_sync("--budget", str(budget))
-        self.assertEqual(self.read_yaml(budget)["over"], {"big": 25})
+        self.assertEqual(self.read_records(budget)["big"], {"body": 25, "total": 25})
         skill.write_text(skill.read_text() + " word")
         result = self.run_sync("--budget", str(budget), expected=1)
-        self.assertIn("over its recorded 25", result.stdout)
-        self.assertEqual(self.read_yaml(budget)["over"], {"big": 25})
-        self.budgeted_skill("big", 8)
-        self.run_sync("--budget", str(budget))
-        self.assertEqual(self.read_yaml(budget)["over"], {})
-        self.run_sync("--budget", str(budget), "--check")
+        self.assertIn("body 26 words, over its recorded 25", result.stdout)
+        self.assertEqual(self.read_records(budget)["big"], {"body": 25, "total": 25})
+        self.budgeted_skill("fits", 11)
+        result = self.run_sync("--budget", str(budget), expected=1)
+        self.assertIn("over its recorded 10", result.stdout, "a skill under the ceiling is held to its record too")
 
-    def test_budget_limits_descriptions_by_invocation_and_skips_unowned(self):
+    def test_budget_counts_companions_so_moving_text_is_not_a_cut(self):
+        skill = self.budgeted_skill("moved", 20)
+        budget = self.budget({"moved": {"body": 20, "total": 20}})
+        skill.write_text(skill.read_text().replace("word ", "", 10))
+        (skill.parent / "MORE.md").write_text("word " * 11)
+        (skill.parent / "EVIDENCE.md").write_text("word " * 500)
+        result = self.run_sync("--budget", str(budget), expected=1)
+        self.assertIn("body and companions 21 words, over its recorded 20", result.stdout)
+
+    def test_budget_limits_descriptions_and_audits_what_it_does_not_own(self):
         self.budgeted_skill("auto", 1, "five words are fine here")
         self.budgeted_skill("label", 1, "four is too many", "disable-model-invocation: true")
         self.budgeted_skill("long", 11)
@@ -165,17 +175,23 @@ class SkillSyncTest(unittest.TestCase):
         (self.repo / "claude/.agents/.skill-lock.json").write_text(json.dumps({"skills": {"managed": {}}}))
         linked = self.base / "elsewhere/linked"
         linked.mkdir(parents=True)
-        (linked / "SKILL.md").write_text("---\nname: linked\n---\n" + "word " * 99)
+        (linked / "SKILL.md").write_text("---\nname: linked\ndescription: one two three four five six\n---\n"
+                                         + "word " * 99)
         (self.root / "linked").symlink_to(linked)
         result = self.run_sync("--budget", str(self.budget()), expected=1)
         problems = [line for line in result.stdout.splitlines() if line.startswith("over budget:")]
         self.assertEqual(len(problems), 2, result.stdout)
         self.assertIn("label/SKILL.md: description is 4 words; a manual-invoked skill's limit is 3", result.stdout)
-        self.assertIn("long/SKILL.md: body is 11 words, over the 10-word budget", result.stdout)
+        self.assertIn("long/SKILL.md: a new skill's body is 11 words, over the 10-word budget", result.stdout)
+        self.assertIn("audit: managed (managed upstream): description is 7 words", result.stdout)
+        self.assertIn("audit: linked (linked from its project): description is 6 words", result.stdout)
+        self.assertIn("audit: descriptions the model sees each turn: 20 words", result.stdout)
 
-    def read_yaml(self, path):
-        # The fixture is written as JSON, and a round-trip keeps its flow style.
-        return json.loads(path.read_text())
+    def read_records(self, path):
+        # Records stay in flow style, quoted or not; no YAML parser outside uv.
+        pattern = r'"?([\w-]+)"?:\s*\{\s*"?body"?:\s*(\d+),\s*"?total"?:\s*(\d+)\s*\}'
+        return {name: {"body": int(body), "total": int(total)}
+                for name, body, total in re.findall(pattern, path.read_text())}
 
     def test_cloud_exclusions_preserve_namesakes_and_refresh_inventory(self):
         personal = self.skill("creator", "")

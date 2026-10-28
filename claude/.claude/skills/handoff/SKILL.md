@@ -3,7 +3,6 @@ name: handoff
 description: Wrap up the session into a brief for the next.
 disable-model-invocation: true
 argument-hint: "optional: the next session's goal, e.g. 'next: wire the retry path', 'review posture: not merging yet' — or 'nothing queued'"
-allowed-tools: Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git branch:*), Bash(git merge-base:*), Bash(git worktree list:*), Bash(brief:*), Read, Write, Edit, Glob, Grep, Agent
 ---
 
 # Hand off the session

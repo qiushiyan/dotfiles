@@ -4,7 +4,6 @@ description: Periodic whole-tree pass over a project's docs.
 user-invocable: true
 disable-model-invocation: true
 argument-hint: [optional scope, e.g. "docs/agents" — default the whole docs tree]
-allowed-tools: Bash(wc:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Read, Write, Edit, Glob, Grep, Agent
 ---
 
 # Distill the doc tree

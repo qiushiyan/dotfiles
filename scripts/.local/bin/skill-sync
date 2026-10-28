@@ -310,63 +310,90 @@ def plan_documents(manifest, repo, reserved):
     return changes, len(sources), skipped
 
 
+LOGS = {"EVIDENCE.md", "LESSONS.md"}  # a skill's records, not text a session reads to act
+
+
+def skill_total(folder, body):
+    """Words a session reads from a skill: its SKILL.md body plus every other
+    top-level Markdown file beside it, the evidence logs excepted. Text moved
+    into a companion is still counted, so a move is not a cut."""
+    companions = (p for p in sorted(folder.glob("*.md")) if p.name != "SKILL.md" and p.name not in LOGS)
+    return len(body.split()) + sum(len(p.read_text().split()) for p in companions)
+
+
 def plan_budget(manifest, roots, repo, overrides):
-    """Hold owned skills to the budget, ratcheting recorded overruns down.
+    """Hold every owned skill to its recorded size, which only moves down.
 
     Owned means neither in the Skills CLI lock nor a folder linked from another
-    project. Returns the budget file's planned change and the violations."""
+    project. A new owned skill is recorded on its first sync if its body fits
+    body_words; after that its body and total may shrink, never grow. Skills
+    owned elsewhere that the model sees are audited, not failed. Returns the
+    budget file's planned change, the violations, the audit lines, and the
+    count of owned skills."""
     data = mapping(manifest.read_text(), manifest)
-    if set(data) != {"body_words", "description_words", "over"}:
-        raise ValueError(f"{manifest}: expected exactly body_words, description_words, over")
-    limits = data["description_words"]
-    over = data["over"]
+    if set(data) != {"body_words", "description_words", "skills"}:
+        raise ValueError(f"{manifest}: expected exactly body_words, description_words, skills")
+    limits, records = data["description_words"], data["skills"]
     if (not isinstance(limits, CommentedMap) or set(limits) != {"model", "manual"}
-            or not isinstance(over, CommentedMap)
-            or any(type(v) is not int for v in [data["body_words"], *limits.values(), *over.values()])):
+            or not isinstance(records, CommentedMap)
+            or any(type(v) is not int for v in [data["body_words"], *limits.values()])
+            or any(not isinstance(r, CommentedMap) or set(r) != {"body", "total"}
+                   or any(type(v) is not int for v in r.values()) for r in records.values())):
         raise ValueError(f"{manifest}: body_words and description_words.model/manual are integers; "
-                         "over maps skill names to integers")
+                         "skills maps each skill name to {body, total} integers")
     lock = repo / SKILL_LOCK
     managed = set(json.loads(lock.read_text()).get("skills", {})) if lock.exists() else set()
     budget = data["body_words"]
-    violations = []
-    seen = set()
+    violations, audit = [], []
+    seen, visible = set(), 0
     for root in roots:
         for entry in sorted(root.expanduser().resolve(strict=True).iterdir()):
             skill = entry / "SKILL.md"
-            if entry.name.startswith(".") or entry.is_symlink() or entry.name in managed or not skill.is_file():
+            if entry.name.startswith(".") or not skill.is_file():
                 continue
             header, body = split_skill(skill)
             name = header.get("name", entry.name)
-            seen.add(name)
-            where = skill.relative_to(repo) if skill.is_relative_to(repo) else skill
             manual = header.get("disable-model-invocation", False) or overrides.get(name) in (
                 "user-invocable-only", "off")
             kind = "manual" if manual else "model"
             described = len(str(header.get("description", "")).split())
+            if not manual:
+                visible += described
+            if entry.is_symlink() or entry.name in managed:
+                if not manual and described > limits["model"]:
+                    owner = "linked from its project" if entry.is_symlink() else "managed upstream"
+                    audit.append(f"{name} ({owner}): description is {described} words")
+                continue
+            seen.add(name)
+            where = skill.relative_to(repo) if skill.is_relative_to(repo) else skill
             if described > limits[kind]:
                 violations.append(f"{where}: description is {described} words; "
                                   f"a {kind}-invoked skill's limit is {limits[kind]}")
-            words = len(body.split())
-            allowed = over.get(name)
-            if allowed is None:
-                if words > budget:
-                    violations.append(f"{where}: body is {words} words, over the {budget}-word budget; "
-                                      "disclose reference behind a pointer, or cut")
-            elif words > allowed:
-                violations.append(f"{where}: body is {words} words, over its recorded {allowed}; "
-                                  "cut before adding")
-            elif words <= budget:
-                del over[name]
-            elif words < allowed:
-                over[name] = words
-    for name in [name for name in over if name not in seen]:
-        del over[name]
+            size = {"body": len(body.split()), "total": skill_total(entry.resolve(), body)}
+            record = records.get(name)
+            if record is None:
+                if size["body"] > budget:
+                    violations.append(f"{where}: a new skill's body is {size['body']} words, over the "
+                                      f"{budget}-word budget; disclose reference behind a pointer, or cut")
+                else:
+                    records[name] = CommentedMap(size)
+                    records[name].fa.set_flow_style()
+                continue
+            for key, label in (("body", "body"), ("total", "body and companions")):
+                if size[key] > record[key]:
+                    violations.append(f"{where}: {label} {size[key]} words, over its recorded {record[key]}; "
+                                      "cut to make room, or raise the record by hand with its reason")
+                elif size[key] < record[key]:
+                    record[key] = size[key]
+    for name in [name for name in records if name not in seen]:
+        del records[name]
+    audit.append(f"descriptions the model sees each turn: {visible} words")
     output = StringIO()
     yaml_parser().dump(data, output)
     before = manifest.read_bytes()
     after = output.getvalue().encode()
     changes = {manifest: Change(before, after, False)} if after != before else {}
-    return changes, violations, len(seen)
+    return changes, violations, audit, len(seen)
 
 
 def write_atomic(path, content):
@@ -406,7 +433,7 @@ def main():
         f"defaults to {SKILL_POLICY} on an unscoped run."
     ))
     parser.add_argument("--budget", type=Path, metavar="MANIFEST", help=(
-        "check owned skills against this size budget and lower recorded overruns; "
+        "hold owned skills to their recorded sizes, lowering a record as its skill shrinks; "
         f"defaults to {SKILL_BUDGET} on an unscoped run."
     ))
     args = parser.parse_args()
@@ -442,13 +469,13 @@ def main():
             config_changes = plan_exclusions(config, disabled, repo)
             changes.update(config_changes)
             summaries.append((len(disabled), "exclusions checked", len(config_changes), "config files"))
-        violations = []
+        violations, audit = [], []
         if budget is not None:
             budget = budget.expanduser().resolve(strict=True)
             if budget in outputs:
                 raise ValueError(f"{budget}: budget may not overwrite another job's output")
             outputs.add(budget)
-            budget_changes, violations, count = plan_budget(
+            budget_changes, violations, audit, count = plan_budget(
                 budget, args.skills_dir or default_roots, repo, overrides)
             changes.update(budget_changes)
             summaries.append((count, "owned skills budgeted", len(budget_changes), "budget files"))
@@ -474,6 +501,8 @@ def main():
         status = "need synchronization" if args.check else "updated"
         for count, checked, changed, noun in summaries:
             print(f"{count} {checked}; {changed} {noun} {status}.")
+        for line in audit:
+            print(f"audit: {line}")
         for violation in violations:
             print(f"over budget: {violation}")
         return 1 if violations or (args.check and changes) else 0

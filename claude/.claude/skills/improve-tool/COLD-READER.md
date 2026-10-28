@@ -45,6 +45,7 @@ old one from `git show <commit>:<path>`) and ask it to enumerate every
 instruction in the old file that changes an action, mark each kept,
 weakened, lost, or changed in the new one with lines from both, and walk
 one concrete scenario through each version. Wording, merged sentences, and
-dropped rhetoric are not findings. Restore each loss that matters, paying
-for it with a cut elsewhere if the budget is tight.
+dropped rhetoric are not findings. Restore a loss only when it names what
+it prevents, a failure seen in use or a default the model gets wrong, and
+log the rest in the evidence log as deletions to watch.
 

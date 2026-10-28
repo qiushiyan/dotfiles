@@ -84,7 +84,8 @@
     "find-animation-opportunities": "user-invocable-only",
     "apple-design": "user-invocable-only",
     "skill-creator": "user-invocable-only",
-    "emil-design-engineering": "user-invocable-only"
+    "emil-design-engineering": "user-invocable-only",
+    "writing-for-agents": "user-invocable-only"
   },
   "disableBundledSkills": false,
   "hooks": {

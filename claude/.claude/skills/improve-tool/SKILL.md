@@ -105,20 +105,22 @@ concrete design and a check of its consumers first; ask when it exceeds the
 scope. Use `/consult` when an independent design judgment would
 settle an open choice, carrying the ledger and predicates.
 
-## Size is behavior
+## Every line earns its place
 
-When the request is about a tool's size (`skill-sync --check` names owned
-skills past the budget), cut on evidence, not by squeezing prose. Most of a
-long skill's length is behavior; plainer sentences buy about a third. The
-rest comes from rules the model no longer needs: a rule its cases pass
-without, which the live history also shows unbroken. A guardrail that works
-leaves no failures in the history, so silence alone is no reason to delete.
-Test each deletion as `EVALS.md` says; with no fixture, report it untested.
-A rule that still saves work stays, named as a keep with its reason.
+A line stays, or comes back after a rewrite, when it names what it prevents:
+a failure seen in use, or a default the model gets wrong. Keeping a line and
+adding one meet the same bar, because text piles up when adding feels safe
+and removing feels risky. Most of a long skill's length is behavior, so
+plainer sentences buy about a third; the rest comes from rules that name
+nothing. Cut those, and log each in the evidence log as a deletion to watch:
+what it guarded, and the sign in later use that would bring it back. Where
+a rule has an eval case, run the case against a copy without the rule
+first; a rule whose case then fails stays, and so does one that saves a
+round, named as a keep.
 
-Fold a finding in by rewriting the sentence it corrects. A skill recorded
-over budget fails `skill-sync --check` when it grows, so a finding that adds
-words there pays with an evidenced cut.
+Fold a finding in by rewriting the sentence it corrects. Every owned skill
+is recorded at its size, so `skill-sync --check` fails growth: an addition
+pays with a cut, or the record is raised by hand with its reason.
 
 ## Deliver and learn from the result
 
@@ -140,13 +142,13 @@ mechanics are in `../writing-for-agents/SKILL-MECHANICS.md` when they change.
 
 Verify at the level of the claim. For changed routes or substantial
 instruction changes, use independent cold readers with concrete scenarios
-from `COLD-READER.md`; after rewriting a surface wholesale, rather than a
-focused repair, add its parity read. For a runtime claim, replay a
-representative case (through `EVALS.md`, or by hand within authorized
-scope), keeping the original quality requirement, or say it is untested.
-Fix what verification reveals, and add a broader review when a material
-question remains. Another review does not substitute for testing the
-behavior.
+from `COLD-READER.md`. A wholesale rewrite, rather than a focused repair,
+starts from the goal; its parity read comes after, as a risk check, not a
+list to restore. For a runtime claim, replay a representative case (through
+`EVALS.md`, or by hand within authorized scope), keeping the original
+quality requirement, or say it is untested. Fix what verification reveals,
+and add a broader review when a material question remains. Another review
+does not substitute for testing the behavior.
 
 Record the pass in the tool's evidence log, beside the instructions if there
 is no engine: predicates, receipts, decisions, changes, validation limits,

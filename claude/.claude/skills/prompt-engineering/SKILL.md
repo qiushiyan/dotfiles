@@ -67,8 +67,9 @@ from squeezing sentences.
   document uses it often, and define it in one line where it first appears.
 - **A budget.** A skill body past 1,500 words has stopped being a brief, and
   most need far fewer. Disclose what only some runs need behind a pointer,
-  or cut. In the dotfiles repo, `skill-sync --check` flags an owned skill
-  that passes it. Past the line, an addition replaces something.
+  or cut; moving text into a companion file is not a cut. In the dotfiles
+  repo every owned skill is recorded at its size and `skill-sync --check`
+  fails growth, so an addition replaces something.
 
 ## Write in layers
 
@@ -103,13 +104,16 @@ input, and done.
 **2. What shapes the judgment.** The constraints and the heuristics an expert
 brings.
 
-- **Give the reason.** A rule with its why is applied to cases it never
-  named. The reason that lands best is a consequence in the reader's world.
+- **Give the reason** where the reader would otherwise misapply the rule.
+  A rule with its why reaches cases it never named; the reason that lands
+  best is a consequence in the reader's world. A rule a capable model reads
+  correctly needs none.
 - **Right altitude.** Give strong heuristics, not a decision tree. Number
   steps only where order matters. Ask for conclusions with their evidence;
   "show your thinking" can trigger a refusal.
-- **Trigger and skip.** A rule says when it fires and when it does not. A
-  required output section says "if none, say none", so nothing is invented.
+- **Trigger and skip.** Name when a rule does not apply only where it would
+  otherwise over-fire. A required output section says "if none, say none",
+  so nothing is invented.
 - **Earned emphasis.** `CRITICAL`, `MUST`, and all-caps make current models
   over-trigger. Keep strong language for a hard boundary or a failure you
   can cite.
@@ -118,9 +122,9 @@ brings.
 looks right and is wrong, each under the concept it belongs to.
 Cross-cutting ones go at the end, where attention is strong again.
 
-Let the formatting show the layers: a list for parallel items, a bold label
-per entry for lookups, a table only for comparing across rows, and no more
-structure than the content has. Prompt style shapes output style.
+Let the formatting show the layers: lists for parallel items and lookups, a
+table only for comparing across rows, no more structure than the content
+has. Prompt style shapes output style.
 
 ## Every sentence
 
@@ -143,6 +147,9 @@ structure than the content has. Prompt style shapes output style.
   assembles it, not in the prose.
 - **No-ops.** Delete a sentence the model would follow anyway. Settle doubt
   by running the document, since a terse line may be holding a behavior.
+  Text piles up because adding feels safe and removing feels risky, so hold
+  a kept line to the same proof as an added one: it names a failure seen or
+  a default the model gets wrong.
 - **Prove what you prescribe.** Verify each claim about a mechanism at its
   source, and pin the load-bearing ones with a test where the surface has
   one. A claim you cannot check becomes a pointer to where the reader
@@ -154,7 +161,7 @@ structure than the content has. Prompt style shapes output style.
 - `~/.config/lessons/agent-tooling/usage-lessons.md`: lessons from how
   agents used past tools.
 - `~/dotfiles/references/fable-prompting-guide.md`: the vendor's guide for
-  current models, including which old instructions they no longer need.
+  current models.
 - `case-studies/classifier-judge-questions-jev-steward.md`: a question a
   classifier or judge answers. `case-studies/README.md` says when to add
   one.

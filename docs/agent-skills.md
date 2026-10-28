@@ -201,16 +201,28 @@ destinations are reported for review and commit in their owning repositories.
 ## The size budget
 
 `skill-sync` also holds every skill owned here (neither in the lockfile nor a
-folder linked from another project) to the budget in
-`scripts/.local/share/dotfiles/skill-budget.yaml`: a description fits its
-invocation (a model-invoked one sits in context every turn, a manual one is a
-menu label), and a body stays a brief. Skills grow one review finding at a
-time, and every addition looks cheap where it lands; the rulebook's
-**Write short** says why that costs. A skill already past the body budget is
-recorded at its size, and the record only moves down: `skill-sync` lowers
-it when the skill shrinks and drops it once the skill fits, so `--check`
-fails on growth. Past the line, an addition replaces something. Raising a
-record is a hand edit to that file, visible in review.
+folder linked from another project) to its size, recorded in
+`scripts/.local/share/dotfiles/skill-budget.yaml`. Skills grow one review
+finding at a time, each addition looking cheap where it lands, so the
+records only move down: `skill-sync` lowers one as its skill shrinks, and
+`--check` fails growth. An addition replaces something, or its record is
+raised by hand with a comment saying why, where review sees it.
+
+- **Two sizes per skill:** the `SKILL.md` body, and a total that adds the
+  Markdown files beside it, its `EVIDENCE.md` and `LESSONS.md` excepted. A
+  brief template another model is sent counts like the body, and text moved
+  into a companion is not a cut.
+- **A new skill** is recorded on its first sync once its body fits
+  `body_words`.
+- **Descriptions** fit their invocation: a model-invoked one sits in context
+  every turn, a manual one is a menu label
+  (`claude/.claude/skills/prompt-engineering/AGENT-DOCS.md` § Skill
+  descriptions).
+- **Skills owned elsewhere** are audited, not failed: `skill-sync` prints a
+  linked or managed skill whose visible description passes the limit, and
+  the words of every description the model sees each turn. A linked skill
+  is shortened in its owning project; a managed one through
+  `skillOverrides`.
 
 ## Ownership tiers — who may edit a skill, and where a lesson goes
 

@@ -553,3 +553,50 @@ the rewritten descriptions over the next month (a description that stops
 firing on "run a consult" or "remember this" is the reversal signal; obelisk
 dropped its "about to edit a file with tangled history" branch), and the
 over-budget list in `skill-budget.yaml`, which should only shrink.
+
+## 2026-10-28 — two cold reviewers on the philosophy, and what changed
+
+Envoy job `philosophy-r1`: codex `gpt-6.1-sol` (xhigh) and Claude Opus 5.5,
+each given only the goal (a skill reads like a brief to a senior colleague;
+a description says when to use it; fix verbosity at the source without
+losing what skills do) and the files, told to judge before reading this log.
+Verdicts: "partly", and "shorter, but not rethought". Neither found a lost
+behavior a capable model needed in the rewritten bodies.
+
+Both, independently:
+- The rulebook still rewarded completeness: *bare rule* made a missing
+  reason or skip condition a defect by itself, which adds qualifications a
+  capable model does not need.
+- Retention beat deletion: every parity loss was restored, and improve-tool
+  made deleting need cases and history while adding needed one finding.
+- The budget counted one file, so text moved into companions (the rulebook's
+  own split; consult's 1,649-word `BRIEF.md`) escaped it, and a skill under
+  1,500 words grew for free.
+- Procedure that could live in the engine (consult's which-items-to-delete
+  prose) still lives in text.
+Opus alone: two rulebooks fired on "editing a skill" (`writing-for-agents`
+model-invocable); the stance "adding feels safe, removing feels risky" was
+cut; `handoff` and `distill-docs` kept `allowed-tools`; four-fifths of the
+description words the model sees came from skills the check exempted.
+
+**Changed, the user's decisions 1 and 2:**
+- A reason or exception is owed only where its absence would change what
+  the reader does (*bare rule* and layer two rewritten); the stance is back
+  under **No-ops**, with the bar it implies: a kept line, like an added one,
+  names a failure seen or a default the model gets wrong.
+- improve-tool: **Every line earns its place** replaces **Size is
+  behavior**; a rewrite starts from the goal and its parity read is a risk
+  check; a loss comes back only if it names what it prevents, the rest
+  logged as deletions to watch.
+- skill-sync records every owned skill at two sizes, body and body plus
+  companions, and fails growth in either; a new skill is recorded once its
+  body fits 1,500. Linked and managed skills are audited: 764 description
+  words reached the model each turn before `slack` (76 → 27, slackkit
+  137f00f) and `read-email` (48 → 30, mailkit 5a6dc98) were shortened in
+  their projects; `agent-browser` (134) and `find-docs` (131) remain.
+- `writing-for-agents` is user-invocable only; `allowed-tools` left
+  `handoff` and `distill-docs`.
+
+Not done, the user's to decide: building consult's and review's briefs in
+envoy (point 3), and re-cutting this rulebook toward a stance plus house
+facts with fewer named defects (point 4).
