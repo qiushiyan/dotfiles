@@ -5,23 +5,31 @@ The Grok Bot app keeps a replica of each bot's recent chat on this machine,
 under sand-client-persistence/ as files whose names are base32 slice keys
 ("…transcript.replicas.<bot id>"), next to a roster of the bots. A replica is
 a window: the most recent entries the app holds (about 200), with what each
-side said, the bot's widgets, Slack drafts, routine changes and notices; a
-busy day rolls entries out of it. --archive keeps them: it merges the window
-into ~/.local/state/grokbot/<bot id>.jsonl by seq, and every read merges that
-archive with the window. The bot's tool calls and its memory journal are never
-in the local copy; ask the bot to export those.
+side said, the bot's widgets, approvals, Slack drafts, routine changes and
+notices; a busy day rolls entries out of it. --archive keeps them: it merges
+the window into ~/.local/state/grokbot/<bot id>.jsonl by seq, and every read
+merges that archive with the window.
+
+The text view groups the chat into turns (the entries one request produced)
+and adds what the bot did on this machine: each command it ran here, from
+host-commands.jsonl in the same directory (zsh's grokbot.zsh writes it,
+joined by request id), and the events of the drive batches whose webhook is
+named for the bot. What it did on Grok's servers (web, memory, its own
+files) is never in the local copy; ask the bot to export that.
 
 Usage:
   grokbot-transcript --list                 # bots: id, name, local window, archive
-  grokbot-transcript BOT [--jsonl|--profile] [--since WHEN] [--tz ZONE]
+  grokbot-transcript BOT [--jsonl|--chat|--profile] [--since WHEN] [--tz ZONE]
   grokbot-transcript BOT --archive          # save the window; says what is new and any gap
     BOT is a name ("Session Driver", case-insensitive) or an id prefix.
-    Default prints the chat as text; --jsonl the raw entries; --profile the
-    bot's instructions. WHEN is a date or time in ZONE ("2026-10-21",
-    "2026-10-21 16:00") or a seq ("seq:473"). ZONE is an IANA name
-    ("Asia/Shanghai"); default this machine's zone.
+    Default prints the turns as text with the bot's commands and drive
+    events; --chat only what each side said; --jsonl the raw entries;
+    --profile the bot's instructions. WHEN is a date or time in ZONE
+    ("2026-10-21", "2026-10-21 16:00") or a seq ("seq:473"). ZONE is an IANA
+    name ("Asia/Shanghai"); default this machine's zone.
 
-GROKBOT_DATA_DIR overrides the app's data directory, GROKBOT_ARCHIVE_DIR the archive's.
+GROKBOT_DATA_DIR overrides the app's data directory, GROKBOT_ARCHIVE_DIR the
+archive's (and the command log's); DRIVE_STATE_DIR is drive's own.
 Exit codes: 0 printed; 1 no such bot or nothing local for it; 2 usage or no data.
 """
 
@@ -31,6 +39,8 @@ import fcntl
 import glob
 import json
 import os
+import re
+import subprocess
 import sys
 import tempfile
 import zoneinfo
@@ -38,6 +48,10 @@ import zoneinfo
 DATA = os.environ.get("GROKBOT_DATA_DIR") or os.path.expanduser(
     "~/Library/Application Support/Grok Bot")
 ARCHIVE = os.environ.get("GROKBOT_ARCHIVE_DIR") or os.path.expanduser("~/.local/state/grokbot")
+DRIVE_STATE = os.environ.get("DRIVE_STATE_DIR") or os.path.expanduser("~/.local/state/drive")
+# drive events that only restate the bot's own command (the intents) or the
+# plumbing of a wake (watch, posting); the rest say what came of it.
+DRIVE_QUIET = {"watch", "posting", "send-intent", "open-intent"}
 
 
 def slices():
@@ -58,8 +72,103 @@ def load(path):
         return json.load(f).get("value") or {}
 
 
-def when(ms, tz=None):
-    return datetime.datetime.fromtimestamp(ms / 1000, tz).strftime("%m-%d %H:%M")
+def when(ms, tz=None, fmt="%m-%d %H:%M"):
+    return datetime.datetime.fromtimestamp(ms / 1000, tz).strftime(fmt)
+
+
+def took(ms):
+    """A duration as 6s, 1m57s or 2h05m."""
+    s = round(ms / 1000)
+    if s < 60:
+        return f"{s}s"
+    if s < 3600:
+        return f"{s // 60}m{s % 60:02d}s"
+    return f"{s // 3600}h{s % 3600 // 60:02d}m"
+
+
+def clip(text, n=160):
+    text = " ".join(str(text).split())
+    return text if len(text) <= n else text[:n - 1] + "…"
+
+
+def host_commands(request_ids):
+    """The commands the bot ran on this machine, from grokbot.zsh's log: one
+    dict per command whose request id is one of this chat's."""
+    runs = {}
+    try:
+        with open(os.path.join(ARCHIVE, "host-commands.jsonl"), encoding="utf-8", errors="replace") as f:
+            for line in f:
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue   # a line cut short by a full disk or a kill
+                if r.get("t") == "start" and r.get("request_id") in request_ids:
+                    runs[r["id"]] = r
+                elif r.get("t") == "end" and r.get("id") in runs:
+                    runs[r["id"]]["end"] = r
+    except FileNotFoundError:
+        pass
+    return list(runs.values())
+
+
+def drive_batches(bot_name):
+    """The drive batches this bot drives: those whose webhook drive names for it."""
+    slug = re.sub(r"[^a-z0-9]+", "-", bot_name.lower()).strip("-")
+    out = []
+    for path in glob.glob(os.path.join(DRIVE_STATE, "batches", "*", "batch.json")):
+        try:
+            with open(path) as f:
+                b = json.load(f)
+        except (OSError, ValueError):
+            continue
+        if b.get("webhook") == slug:
+            out.append(b["name"])
+    return sorted(out)
+
+
+def drive_events(batches):
+    """Each batch's events, as `drive log --json` prints them, with the batch named."""
+    out = []
+    for name in batches:
+        try:
+            r = subprocess.run(["drive", "log", "--batch", name, "--json"],
+                               capture_output=True, text=True, timeout=30)
+            events = json.loads(r.stdout) if r.returncode == 0 else []
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            continue
+        for ev in events:
+            if ev.get("kind") in DRIVE_QUIET:
+                continue
+            try:
+                at = datetime.datetime.fromisoformat(ev["at"].replace("Z", "+00:00"))
+            except (KeyError, ValueError):
+                continue
+            out.append({**ev, "batch": name, "at_ms": at.timestamp() * 1000})
+    return out
+
+
+def render_command(c, tz):
+    end = c.get("end")
+    if end is None:
+        result = "no exit recorded"
+    else:
+        result = f"exit {end.get('status')} · {took(end['at_ms'] - c['at_ms'])}"
+    return f"  $ {when(c['at_ms'], tz, '%H:%M:%S')} {clip(c.get('cmd', ''))}  ({result})"
+
+
+def render_drive(ev, tz):
+    kind = ev["kind"]
+    detail = {
+        "wake": lambda: ev.get("outcome", "") + ("" if ev.get("http") in (None, 200) else f", http {ev.get('http')}"),
+        "send": lambda: f"{ev.get('outcome', '')}: {ev.get('text', '')}",
+        "open": lambda: f"{ev.get('outcome', '')} in {ev.get('dir', '')}",
+        "respond": lambda: f"{ev.get('action', '')} → {ev.get('outcome', '')}: {ev.get('call', '')}",
+        "ask": lambda: f"{ev.get('id', '')} {ev.get('question', '')}",
+        "answer": lambda: f"{ev.get('ref', '')} {ev.get('took', '')}: {ev.get('source', '')}",
+        "grant": lambda: f"{ev.get('id', '')} {ev.get('scope', '')}",
+    }.get(kind, lambda: ev.get("reason") or ev.get("note") or "")()
+    who = f" {ev['session']}" if ev.get("session") else ""
+    return f"  ⚙ {when(ev['at_ms'], tz, '%H:%M:%S')} drive {kind}{who}: {clip(detail)}"
 
 
 def archive_path(bot_id):
@@ -98,7 +207,7 @@ def since_filter(spec, tz):
 
 
 def render(e):
-    """One entry as text, or None for an entry with nothing to read."""
+    """One entry as text."""
     kind, msg = e.get("kind"), e.get("message") or {}
     if kind == "message":
         who = ((e.get("fromAgent") or {}).get("name")
@@ -113,9 +222,19 @@ def render(e):
             return f"bot: {msg.get('content', '')}"
         if t == "widget":
             w = msg.get("widget") or {}
-            opts = " | ".join(o.get("label", "") for o in w.get("options", []))
             answer = e.get("respondedValue") or ("skipped" if e.get("widgetSkipped") else "unanswered")
-            return f"bot asks: {w.get('prompt', '')} [{opts}] → {answer}"
+            lines = [f"bot asks: {w.get('prompt', '')}"]
+            # A card asks one question or several (steps); ★ marks the option
+            # the bot recommends, "own answer" a free-text reply it allows.
+            for i, q in enumerate(w.get("steps") or [w]):
+                opts = [("★ " if o.get("style") == "primary" else "") + o.get("label", "")
+                        for o in q.get("options", [])]
+                if q.get("allowCustom"):
+                    opts.append("own answer")
+                head = f"  {i + 1}. {q.get('prompt', '')} " if w.get("steps") else "  "
+                lines.append(f"{head}[{' | '.join(opts)}]")
+            lines.append("  → " + answer.replace("\n", "\n    "))
+            return "\n".join(lines)
         if t == "slack-draft":
             d = msg.get("draft") or {}
             return (f"bot drafts Slack to {d.get('target')} ({e.get('draftSendState', 'unsent')}):\n"
@@ -123,6 +242,24 @@ def render(e):
         if t == "local-tool-permission":
             a = msg.get("ask") or {}
             return f"· permission {a.get('action')} ({a.get('status')}): {a.get('target', '')}"
+        if t == "auto-review-approval":
+            a = msg.get("approval") or {}
+            lines = [f"· approval {a.get('surface', '')} ({a.get('status', '')}): {a.get('summary', '')}"]
+            if a.get("command"):
+                lines.append(f"  $ {a['command']}")
+            if a.get("reason"):
+                lines.append(f"  why asked: {a['reason']}")
+            if a.get("proposedRule"):
+                lines.append(f"  rule: {a['proposedRule']}")
+            return "\n".join(lines)
+        if t == "user-form":
+            f = msg.get("formRequest") or {}
+            fields = ", ".join(x.get("label", "") for x in f.get("fields", []))
+            return f"bot asks for a form: {f.get('title', '')} ({fields}) → {e.get('formResolution', 'unanswered')}"
+        if t == "connector":
+            return f"· connector {msg.get('connector')} ({msg.get('variant')})"
+        if t == "attachment":
+            return f"bot sends file: {msg.get('file_name')}"
         return f"· {t}: {json.dumps(msg, ensure_ascii=False)[:300]}"
     if kind == "event":
         ev = e.get("event") or {}
@@ -133,7 +270,49 @@ def render(e):
         return f"· notice: {e.get('text', '')}"
     if kind == "user-attachment":
         return f"you attach: {e.get('file_name')}"
+    if kind == "voice-call":
+        c, conv = e.get("call") or {}, e.get("conversation") or {}
+        lines = [f"you call ({took(c.get('durationMs', 0))}, {c.get('ending', '')}): {c.get('description', '')}"]
+        for t in conv.get("turns", []):
+            lines.append(f"  {'you' if t.get('speaker') == 'user' else 'bot'}: {t.get('text', '')}")
+        return "\n".join(lines)
     return f"· {kind}"
+
+
+def turns(entries):
+    """Facts about each request: who started it, when it started and settled,
+    how soon the bot first answered, and how many messages it sent."""
+    out = {}
+    for e in entries:
+        rid = e.get("requestId")
+        if not rid:
+            continue
+        t = out.setdefault(rid, {"start": e["timestampMs"], "end": e["timestampMs"], "sent": 0,
+                                 "first_reply": None, "by": None})
+        t["end"] = max(t["end"], e["timestampMs"])
+        if t["by"] is None:
+            if e.get("kind") == "message" and e.get("role") == "user":
+                t["by"] = (e.get("fromAgent") or {}).get("name") or (e.get("fromUser") or {}).get("name") or "you"
+            else:
+                t["by"] = "woken"
+        if e.get("kind") == "send-message" or (e.get("kind") == "message" and e.get("role") != "user"):
+            t["sent"] += 1
+            if t["first_reply"] is None and t["by"] != "woken":
+                t["first_reply"] = e["timestampMs"] - t["start"]
+    return out
+
+
+def turn_header(rid, t, commands):
+    facts = [t["by"]]
+    if t["first_reply"] is not None:
+        facts.append(f"first reply {took(t['first_reply'])}")
+    facts.append(f"{t['sent']} message{'s' * (t['sent'] != 1)}")
+    if t["end"] > t["start"]:
+        facts.append(f"spans {took(t['end'] - t['start'])}")
+    if commands:
+        failed = sum(1 for c in commands if (c.get("end") or {}).get("status", 0) != 0)
+        facts.append(f"{len(commands)} command{'s' * (len(commands) != 1)} here" + (f", {failed} failed" if failed else ""))
+    return f"── turn {rid[:8]} · " + " · ".join(facts)
 
 
 def usage():
@@ -165,7 +344,7 @@ def main(argv):
     name, rest, mode, since, tz = argv[0], argv[1:], "text", None, None
     while rest:
         flag = rest.pop(0)
-        if flag in ("--jsonl", "--profile", "--archive") and mode == "text":
+        if flag in ("--jsonl", "--chat", "--profile", "--archive") and mode == "text":
             mode = flag[2:]
         elif flag in ("--since", "--tz") and rest:
             value = rest.pop(0)
@@ -227,6 +406,7 @@ def main(argv):
         print(f"grokbot-transcript: the app keeps no local copy of {bot['name']}'s chat and nothing is archived; "
               "ask the bot to export it", file=sys.stderr)
         return 1
+    facts = turns(entries)   # over every entry, so a --since cut leaves a turn's facts whole
 
     if since:
         try:
@@ -239,15 +419,47 @@ def main(argv):
         for e in entries:
             print(json.dumps(e, ensure_ascii=False))
         return 0
-    if entries:
-        zone = getattr(tz, "key", None) or datetime.datetime.now().astimezone().tzname()
-        source = "archive and local window" if kept else "local window"
-        print(f"# {bot['name']} — {source} from seq {entries[0].get('seq')}, times in {zone}; "
-              f"the bot's tool calls are not in the local copy", file=sys.stderr)
-    for e in entries:
-        line = render(e)
-        if line is not None:
-            print(f"[{when(e['timestampMs'], tz)}] {line}")
+    if not entries:
+        return 0
+    zone = getattr(tz, "key", None) or datetime.datetime.now().astimezone().tzname()
+    source = "archive and local window" if kept else "local window"
+    if mode == "chat":
+        print(f"# {bot['name']} — {source} from seq {entries[0].get('seq')}, times in {zone}", file=sys.stderr)
+        for e in entries:
+            print(f"[{when(e['timestampMs'], tz)}] {render(e)}")
+        return 0
+
+    commands = host_commands(facts)
+    by_turn = {}
+    for c in commands:
+        by_turn.setdefault(c["request_id"], []).append(c)
+    batches = drive_batches(bot["name"])
+    first = entries[0]["timestampMs"]
+    # Commands and drive events go in by time, from the first entry printed on;
+    # a command opens its turn, since a woken turn runs some before it says anything.
+    extra = sorted([(c["at_ms"], c["request_id"], render_command(c, tz)) for c in commands if c["at_ms"] >= first]
+                   + [(ev["at_ms"], None, render_drive(ev, tz)) for ev in drive_events(batches) if ev["at_ms"] >= first],
+                   key=lambda x: x[0])
+    print(f"# {bot['name']} — {source} from seq {entries[0].get('seq')}, times in {zone}; "
+          f"$ commands it ran on this machine ({len(commands)} logged), "
+          f"⚙ drive events of {', '.join(batches) if batches else 'no batch of its own'}; "
+          "what it did on Grok's servers is not in the local copy", file=sys.stderr)
+    current = None
+
+    def enter(rid):
+        nonlocal current
+        if rid and rid != current:
+            print(turn_header(rid, facts[rid], by_turn.get(rid)))
+            current = rid
+
+    i = 0
+    for e in entries + [None]:
+        while i < len(extra) and (e is None or extra[i][0] <= e["timestampMs"]):
+            enter(extra[i][1])
+            print(extra[i][2]); i += 1
+        if e is not None:
+            enter(e.get("requestId"))
+            print(f"[{when(e['timestampMs'], tz)}] {render(e)}")
     return 0
 
 
