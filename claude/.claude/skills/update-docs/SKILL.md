@@ -1,6 +1,6 @@
 ---
 name: update-docs
-description: Update a project's documentation after a change lands, so the docs still give a senior engineer the mental model of the system. Use when the user wants docs updated to reflect recent or shipped changes, or brought back in line with the code. Defers to a repo's own update-docs skill or documentation-standards.md when present; otherwise the global standards in ~/dotfiles/docs/documentation-standards.md.
+description: Use when the user wants docs updated to reflect recent or shipped changes, e.g. "sync docs".
 ---
 
 # Update documentation from the diff
