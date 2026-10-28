@@ -626,3 +626,47 @@ drop below the v2 yield, or if the lists grow past the findings.
   grant (AXIsProcessTrusted false), and the bot has no webhook. The message
   to send it is in this session's closing report.
 - OpenRouter's 403 blocks skill-eval judging on the mini.
+
+## 2026-10-28 — the fold-in gets read; a wholesale cut that did not hold
+
+**Mined** (obelisk, both machines, every use since the 10-23 change: 16
+completed, 12 PlanLab and 4 itell, 8 driver-sent; scratch scripts): reports
+followed the skill closely (`reaches:` and known limits 15/15, investigate
+14/15, no report before its areas returned 0/15, known limits never built
+0/16). Median 39 minutes, about 360 subagent tool calls, 4,088-word reports.
+What hurt was after the report:
+- Fold-ins went unread: CI, Codex, or CodeRabbit found faults in the fold's
+  own code in at least 5 of 11 pushed folds (`1716fb2f`, `75b67e11`,
+  `3dd27fb7`, `ab92c50e`, `8357d67c`), and every fold added more lines than
+  it removed (+23.3k/−14.0k over 11). On #9989 the fold built guards for the
+  bypasses its reviewers had planted; the second review filed that rule
+  (87 → 333 lines, 0 real occurrences) as unearned handling.
+- Only 6 of 15 reports stated CI; `936e3ba8` missed a red CI of 53 tests.
+- A known limit ("no per-story deadline") turned critical within hours
+  (`8ac288e1` → `3034da84`, 11 of 33 dogfood runs).
+- All 3 typed replies to held decisions deferred to the recommendation.
+
+**A wholesale cut did not hold.** A rewrite to 1,615 words (all four
+additions, the other lenses compressed; a parity read restored 8 losses
+first) was replayed against `2d96259` on two cases, n=3, judge Claude
+Sonnet 5.5 (`sr-1028-*`): pr-9567-earned cgroup left unbuilt 3/3 → 1/3 (the
+fold built page-cache accounting as a critical), limit recorded 2/3 → 3/3,
+settle bound 0/3 → 1/3; pr-8955 defects found 13 → 11 of 24 checks and
+prescribed fixes right 6/9 → 3/9. A case that passed started failing, so it
+was dropped; it is kept as scratch, not shipped. This skill was tuned
+against these cases, and its long lenses carry behavior a cut loses.
+
+**Changed instead, a focused repair:** step 1 reads CI status (a red check
+is a finding or a flake shown by evidence); the fold-in holds its own fixes
+to the earned-handling bar and, with push rights, gets one CI-and-bot round
+before reporting, or says it is unread. Replayed on pr-9567-earned (n=3,
+`sr-1028-pr-9567-earned-focused`): every check identical to `2d96259`
+(3/3, 3/3, 0/3, 2/3); all three runs asked for CI. The body grew 2,039 →
+2,161 words; its record was raised by hand with this reason.
+
+**Not added:** a bound on work that can stall is never a known limit (one
+incident; a reader predicted findings asking to bound every await), and
+making engineering calls instead of holding them (deferral was 3 of 3, but
+the cut version that carried it built more). **Next pass compares** live
+folds after this commit: faults CI or bots find after the fold's round,
+reports stating CI, and known limits that turn into incidents.

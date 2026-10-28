@@ -30,7 +30,9 @@ to build it once they do.
 ## How to work
 
 1. **Intent first.** Read the PR description, the spec or issue it links,
-   and its commits, then the project's map of the area the PR touches.
+   and its commits, and its CI status (`gh pr checks`): a red check is a
+   finding, or a flake shown by a rerun or the same failure on the base.
+   Then read the project's map of the area the PR touches.
    In PlanLab (`planlab-ai/main`), a PR touching Loopy or the steward has
    its map in `.agents/skills/pl-loopy-onboarding/`: read its `SKILL.md`,
    then the files under `routes/` that the PR's files and goal touch, and
@@ -218,3 +220,11 @@ text a model or user reads is pinned, if at all, by the token that
 carries its contract rather than the sentence; a finding about naming or
 structure gets no test of its own. Delete or rewrite the tests the lens
 marked.
+
+Your fixes meet the bar you held the PR to: handling a fix adds is earned by
+what reaches it, and a probe you built is not a real caller. The fold is
+code you wrote, and unread folds have shipped faults that CI and the bots
+then found. With push rights and network, push to the PR branch, wait with
+`gh pr checks --watch` rather than a wakeup, judge each bot finding by these
+lenses, and fix what stands, in one round. Without them, say the fold is
+unread and name its commits.

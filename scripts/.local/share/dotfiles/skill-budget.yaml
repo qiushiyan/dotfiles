@@ -29,7 +29,9 @@ skills:
   resolving-merge-conflicts: {body: 117, total: 117}
   review: {body: 3997, total: 7954}
   spike: {body: 722, total: 722}
-  strategic-review: {body: 2039, total: 2039}
+  # raised 2026-10-28: an unread fold-in shipped faults CI and bots then found in 5 of 11
+  # folds; a wholesale cut to 1,615 words regressed its eval cases (EVIDENCE.md)
+  strategic-review: {body: 2161, total: 2161}
   tailwind-best-practices: {body: 699, total: 699}
   test-audit: {body: 1129, total: 1974}
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}
