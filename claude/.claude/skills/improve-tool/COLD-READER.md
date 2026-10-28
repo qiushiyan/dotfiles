@@ -35,3 +35,16 @@ inspection. Preserve rules that carry a real decision even if they look
 redundant in isolation. After fixes, reread the affected route. Report what
 this evaluation established without treating a planned sequence as a completed
 execution or proof of improved runtime outcomes.
+
+## Parity read after a rewrite
+
+A rewrite for length or style loses behavior quietly: on 2026-10-28 one cut
+of `consult` lost 14 of 47 behaviors and a rulebook cut lost 12 rules, one a
+new bug, while reading fine. Give an independent reader both versions (the
+old one from `git show <commit>:<path>`) and ask it to enumerate every
+instruction in the old file that changes an action, mark each kept,
+weakened, lost, or changed in the new one with lines from both, and walk
+one concrete scenario through each version. Wording, merged sentences, and
+dropped rhetoric are not findings. Restore each loss that matters, paying
+for it with a cut elsewhere if the budget is tight.
+

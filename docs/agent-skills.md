@@ -331,10 +331,11 @@ cases, fixtures, commands and how to read a report.
   gets it as a provider: the run copies in an access token that cannot
   refresh, so the live login stays out of reach. The agent bills the Claude
   subscriptions by default, each session on an account headroom picks, and
-  the judge always goes through OpenRouter, so the fixture's content
-  (sessions, or a repository's code) reaches both Anthropic and OpenAI, and a
-  codex consult sends it to OpenAI directly. Why a
-  launcher such as `x -p` cannot stand in: the README's billing note.
+  the judge, from another model family, goes through `codex exec` or
+  OpenRouter. The fixture's content (sessions, or a repository's code)
+  reaches Anthropic and the judge's provider, and a codex consult sends it to
+  OpenAI directly. Why a launcher such as `x -p` cannot stand in: the
+  README's billing note.
 
 Two readings decide what a result means. A case the revision before a fix
 also passes shows only that the harness did not reproduce the mistake at

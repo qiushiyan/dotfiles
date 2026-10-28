@@ -290,3 +290,53 @@ reader is the only check of the route. Next pass on a tool
 with cases: did it write the case before editing, run red and `WORKTREE`, and
 report per-case counts; and did it name a saturated rule rather than claim it
 as an improvement.
+
+## 2026-10-28 — under budget, cut on evidence, and the case before the edit (first eval cases)
+
+The tstack case study (`../prompt-engineering/EVIDENCE.md`, same date) set a
+1,500-word body budget; this skill was recorded at 1,938. The same pass
+learned that a skill's length is mostly behavior (rewrites for length lost
+14 of 47 behaviors in consult and 12 rules in the rulebook until a cold read
+caught them), so cutting has to run on evidence.
+
+**Changes.**
+- Body 1,938 → 1,362 words, about 15-word sentences. The skill-evals detail
+  moved to `EVALS.md`, routed from the opening.
+- New **Size is behavior**: an over-budget tool is cut where its cases and
+  the live history both show a rule unneeded; silence in the history alone is
+  no reason, since a working guardrail leaves no failures. A finding is
+  folded in by rewriting the sentence it corrects.
+- A finding one headless session reproduces becomes a case before any edit,
+  stated in the body rather than only behind the pointer.
+- `COLD-READER.md` gains the parity read for a wholesale rewrite.
+- `EVALS.md` names the `codex:<model>` judge route (skill-evals 9e166fb):
+  OpenRouter refused every OpenAI and Gemini model on the key this day.
+
+**Parity read** of the first cut: 63 old behaviors, 11 lost and 14 weakened
+(the trace-the-cause guard, fixing what verification reveals, how to ask,
+the maintenance bar for new mechanisms, hand replays, among them), and two
+additions that would have misled (history silence as a deletion basis; "the
+budget fails growth", true only for skills recorded over it). All restored
+or corrected before the eval runs.
+
+**Eval** (`~/dev/skill-evals/cases/improve-tool`, fixture
+`improve-tool-seeds`; red f59feda; judge `codex:gpt-6.1-terra`; agent Opus
+5.5). Runs `it-1028`, `it-1028-b`, `it-1028-c`.
+
+- **finding-to-case** (the 64cf9ef `path` finding): with the seed ending at
+  the user's question, both revisions failed 3/3; 1 of 6 runs found the zsh
+  cause, so the case measured diagnosis, not the method. Moving the case
+  ordering into the body did not change that (0/3, `it-1028-b`). With the
+  seed carrying the session's diagnosis: red 0/3, this revision 3/3. Case
+  written before the edit 0/3 → 3/3; cause, engine fix, instruction fix,
+  and an honest report equal at 3/3. The case discriminates.
+- **over-budget** (obelisk, 2,638 words): saturated, red 2/3 and this
+  revision 2/3. Both kept the still-needed rules 3/3, ran a parity check 3/3
+  and reached the budget 3/3; cuts justified by evidence 1/3 → 2/3, noise at
+  n=3. Red's passing runs reached the budget by moving text into side files.
+
+**Next pass compares:** live passes after this commit on whether a
+reproducible finding gets its case before the edit, and whether an
+over-budget pass cites the cases or history for each cut. The over-budget
+case wants more runs (n≥6) before its cut-on-evidence difference means
+anything.
