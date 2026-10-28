@@ -12,17 +12,28 @@ context does not carry over, and the files change.
 
 ## Your batch
 
+Other bots drive batches of their own on the mini, and nothing in your
+shell tells drive which bot runs a command. So you have a driver's name,
+your webhook's: `session-driver` for Session Driver, `itell` for the iTELL
+bot. Every drive command you write names you, `drive --driver NAME …`; the
+examples in these files leave it out. A command drive prints for you
+already names its batch: run it as written.
+
 ```bash
 drive batch new 2026-10-23 --webhook session-driver --rex-session work --tz Europe/London \
-  --after-wake 'grokbot-transcript "Session Driver" --archive'
+  --after-wake 'grokbot-transcript "Session Driver" --archive'                # Session Driver
+drive batch new itell-2026-10-23 --webhook itell --rex-session work --tz Europe/London \
+  --after-wake 'grokbot-transcript ITELL --archive'                           # the iTELL bot
 ```
 
 `--webhook` names your own routine's webhook, a file the owner writes, and
-wakes it when a session's turn ends; another bot's file wakes that bot.
-`--after-wake` keeps your chat beyond the app's local window. Start a batch
-once per drive, never after a reset (`drive batch` names the current one):
-a new batch starts with no grants, however recently one was given, and
-stops the last batch's wakes.
+wakes it when a session's turn ends; another bot's file wakes that bot, and
+a batch started with it is that bot's. `--after-wake` keeps your chat beyond
+the app's local window. Start a batch once per drive, never after a reset
+(`drive --driver NAME batch` names yours): a new batch starts with no
+grants, however recently one was given, and stops the wakes of your last
+one. Leave it running when the drive ends, since the user reads it on the
+page until your next batch replaces it.
 
 ## Waiting
 
@@ -59,10 +70,10 @@ drive status         # the open asks: recheck each, as SKILL.md § Asking says
 ```
 
 When `--due` says a watch has ended without a wake twice, tell the user
-once, with the lines `watches.log` in the batch's directory (`drive batch`
-prints it) has for that session, and record that you did (`drive record
-note --session T4 'told the user: …'`). Pause the watchdog when the drive
-ends.
+once, with the lines `watches.log` in the batch's directory (`drive
+--driver NAME batch` prints it) has for that session, and record that you
+did (`drive record note --session T4 'told the user: …'`). Pause the
+watchdog when the drive ends.
 
 ## Your memory
 
@@ -82,8 +93,8 @@ until a command shows it again.
 
 ## The chat
 
-The user's page, `https://qiushi-mini.tailf7adf1.ts.net:8444`, shows the
-current batch live: each session's goal, where it stands, its PRs and the
+The user's page, `https://qiushi-mini.tailf7adf1.ts.net:8444`, shows every
+driver's batch live: each session's goal, where it stands, its PRs and the
 questions waiting on the user. Your messages carry what it cannot: what
 changed, why, and what you recommend.
 
@@ -145,7 +156,8 @@ changed, why, and what you recommend.
   The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
   </example>
 - **A message about one session** states its goal as `drive read` prints
-  it, so the chat and the page agree, and links its card (`…:8444/#S1`).
+  it, so the chat and the page agree, and links its card by its batch and
+  label (`…:8444/#2026-10-23/S1`).
 - **A choice card** suits a decision with fixed options. The card carries
   only the question, so the explanation goes in the message before it.
 - **A message to a person** goes as a draft the user sends.

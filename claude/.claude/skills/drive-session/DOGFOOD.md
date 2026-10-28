@@ -16,11 +16,13 @@ only the brief and the files it names.
 
 On the mini:
 
-1. **No real batch is in flight.** One batch is current per machine, and the
-   dogfood's `drive batch new` stops the current batch's wakes and moves the
-   owner's page (`BOT.md` § The chat) to the dogfood batch. `drive status`
-   shows what the current batch still has open; run when it has nothing the
-   owner is waiting on.
+1. **The bot's own batch has nothing in flight.** A batch replaces only its
+   own driver's last one, stopping that one's wakes: the Session Driver's
+   dogfood replaces its real batch, while a test bot with a webhook of its
+   own (`drive-session-test`) leaves every other driver's alone. `drive
+   --driver session-driver status` shows what the Session Driver's batch
+   still has open; run when it has nothing the owner is waiting on. The
+   dogfood batch shows on the owner's page beside the others while it runs.
 2. **The drive under test is installed** (`make install` in `~/dev/drive`):
    the bot runs `~/.local/bin/drive`.
 3. **The bot's webhook file exists:** `~/.config/drive/webhooks/<webhook>`
@@ -133,6 +135,7 @@ changes, and what the next run compares.
 
 The bot pauses its watchdog when the batch ends; an ask left open keeps it
 running, since the watchdog rechecks open asks, so answer or moot it to end
-the batch. The bot's next real `drive batch new` stops the dogfood's wakes.
+the batch. Once its record is read, `drive --batch $B batch end` stops the
+dogfood's wakes and takes it off the owner's page.
 Worktrees a run leaves in the scratch repository stay until a brief names
 them for cleanup.
