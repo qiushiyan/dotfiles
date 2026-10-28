@@ -135,9 +135,9 @@ in another session, leave a handoff, mark the dependent instructions
 pending, and continue the independent fixes.
 
 Make the smallest coherent change the evidence supports. When accumulated
-rules hide the purpose, reorganize around the goal. Run the revision pass
-(`../prompt-engineering/REVISION.md`) on every touched model-facing surface,
-its callers and examples included, then read each file whole. Invocation
+rules hide the purpose, reorganize around the goal. Run the rulebook's
+revision pass (`../prompt-engineering/SKILL.md`) on every touched
+model-facing surface, its callers and examples included. Invocation
 mechanics are in `../writing-for-agents/SKILL-MECHANICS.md` when they change.
 
 Verify at the level of the claim. For changed routes or substantial

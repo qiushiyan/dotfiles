@@ -600,3 +600,49 @@ description words the model sees came from skills the check exempted.
 Not done, the user's to decide: building consult's and review's briefs in
 envoy (point 3), and re-cutting this rulebook toward a stance plus house
 facts with fewer named defects (point 4).
+
+## 2026-10-28 — the stance rulebook adopted, and which examples earn their place
+
+The user, after the philosophy review, agreed to re-cut the rulebook toward
+a stance plus what our sessions measured. `SKILL.md` is the stance (every
+line names what it prevents; authority, facts, judgment the model gets
+wrong; code before prose; open on the task; write short; show what you
+want back), the calibrations, and a four-question revision pass under the
+old heading, so outside references to "its revision pass" still resolve.
+`REVISION.md` and its eighteen defect names are gone: outside the rulebook
+only four names recur in any file. `AGENT-DOCS.md` gained the measured
+disclosure cost. Rulebook total 3,085 → about 1,620 words.
+
+**Examples, measured** (case `revise-mechanism-first`: revise a skill that
+opens on a pipeline tour; n=5 each; judge `codex:gpt-6.1-terra`):
+
+| rulebook | opens on the task | cuts the tour, keeps the facts |
+|---|---|---|
+| e8be8cc, three example pairs inline | 5/5 | 5/5 |
+| HEAD 93be78c, plumbing pair in `REVISION.md` (read in 1 of 5 runs) | 5/5 | 3/5 |
+| stance draft, no example blocks | 5/5 | 0/5 |
+| stance draft, plumbing pair inline | 5/5 | 5/5 |
+
+Opening on the task needs no example; cutting a mechanism tour does, since
+"keep everything the skill does" pulls writers to keep it "for telling
+where it stalled". An example disclosed behind a closing pointer lost most
+of its effect. The plumbing pair is inline; the Loopy pair is gone.
+
+**Adopted vs HEAD, n=5 each** (HEAD numbers from runs `pe-stance-head`,
+`pe-judge-head`, `pe-mech-HEAD`; adopted from `pe-adopted`,
+`pe-adopted-judge2`, `pe-mech-stance-ex`, `pe-stance-draft2`):
+new-skill traps 30/30 both, label 5/5 both, no-background 2/5 both;
+revise-delegate B1–B11 all pass both (B12 unresolved where the judge's
+transcript was clipped); fold-finding fixed and intact 5/5 both, reason
+4/5 at HEAD and 5/5 adopted after the draft first dropped to 2/5 ("a fix
+that adds words pays with a cut" pushed silent renames; it now keeps a
+finding's reason); judge-prompt input-only 5/5 both, no-stakes 5/5 at HEAD
+and 2/5 in the first adopted run, contract 2/4 → 3/5, no-transcription 1/5
+→ 2/5. Two calibrations from the judge case study fixed the judge case to
+5/5 on every check: a judge is not told what its verdict leads to, and
+"show your thinking" is refused even when the requester asks for it.
+
+**Next pass compares** live skill writing and revisions after this commit:
+mechanism tours kept, judge prompts told their stakes, and whether a skill
+written under this rulebook still names its done condition. The judge for
+future runs is skill-evals' default (Claude Sonnet 5.5), the user's call.

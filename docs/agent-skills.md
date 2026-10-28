@@ -244,8 +244,8 @@ file:
 
 ```
 claude/.claude/skills/prompt-engineering/   original — the one rulebook: SKILL.md for any
-                                            model-facing text; AGENT-DOCS.md, TOOLS.md and
-                                            REVISION.md for skills, tools, the revision pass
+                                            model-facing text and its revision pass;
+                                            AGENT-DOCS.md for skills, TOOLS.md for tools
 claude/.claude/skills/writing-for-agents/   managed — reached only for SKILL-MECHANICS.md
                                             (frontmatter, invocation, routers); its
                                             general rules are folded into the rulebook
@@ -320,7 +320,7 @@ cases, fixtures, commands and how to read a report.
 
 - **What a case is:** a prose file per lesson or correction, holding the
   request, the session it came from, and what passes and fails in terms a
-  transcript shows. A judge from another model family grades each run.
+  transcript shows. A judge model grades each run against it.
 - **When it applies:** a finding that one headless session reproduces, from
   the request alone or with one scripted reply. That includes a tool whose
   value shows only on real work, replayed on a merged PR frozen at the head
@@ -342,11 +342,12 @@ cases, fixtures, commands and how to read a report.
   the `CLAUDE.md` rule on isolating live state. A skill that consults codex
   gets it as a provider: the run copies in an access token that cannot
   refresh, so the live login stays out of reach. The agent bills the Claude
-  subscriptions by default, each session on an account headroom picks, and
-  the judge, from another model family, goes through `codex exec` or
-  OpenRouter. The fixture's content (sessions, or a repository's code)
-  reaches Anthropic and the judge's provider, and a codex consult sends it to
-  OpenAI directly. Why a launcher such as `x -p` cannot stand in: the
+  subscriptions by default, each session on an account headroom picks. The
+  judge is Claude Sonnet 5.5 through `claude -p` unless `--judge` names
+  another (`codex:<model>` through `codex exec`, or an OpenRouter model); the
+  README's judge note says what a same-family judge does not yet show. The
+  fixture's content (sessions, or a repository's code) reaches Anthropic, the
+  judge's provider when it is another, and OpenAI through a codex consult. Why a launcher such as `x -p` cannot stand in: the
   README's billing note.
 
 Two readings decide what a result means. A case the revision before a fix

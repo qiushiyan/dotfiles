@@ -2,11 +2,11 @@
 
 `~/dev/skill-evals` (private, on both machines through twin) replays a skill
 headless against chosen revisions; its README covers cases, fixtures, and
-commands. Use it when a finding reproduces within one headless session, from
-the request alone or with one scripted reply. Rollouts send the fixture's
-content to Anthropic for the agent, to the judge's provider (OpenRouter, or
-OpenAI for a `codex:<model>` judge), and to OpenAI when the tool consults
-codex. Name them in the pass's disclosure.
+commands, including which judge grades by default. Use it when a finding
+reproduces within one headless session, from the request alone or with one
+scripted reply. Rollouts send the fixture's content to Anthropic for the
+agent and the default judge, and to OpenAI for a `codex:<model>` judge or a
+tool that consults codex. Name them in the pass's disclosure.
 
 ## A finding becomes a case first
 

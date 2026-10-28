@@ -22,9 +22,9 @@ skills:
   enter-worktree: {body: 154, total: 154}
   go-cli: {body: 1963, total: 3977}
   handoff: {body: 3209, total: 3846}
-  improve-tool: {body: 1414, total: 5770}
+  improve-tool: {body: 1410, total: 5770}
   obelisk: {body: 2638, total: 2638}
-  prompt-engineering: {body: 1422, total: 3082}
+  prompt-engineering: {body: 762, total: 1607}
   refactoring: {body: 643, total: 643}
   resolving-merge-conflicts: {body: 117, total: 117}
   review: {body: 3997, total: 7954}
@@ -33,7 +33,7 @@ skills:
   tailwind-best-practices: {body: 699, total: 699}
   test-audit: {body: 1129, total: 1974}
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}
-  update-docs: {body: 898, total: 898}
+  update-docs: {body: 456, total: 456}
   wiki: {body: 324, total: 324}
   write-spec: {body: 1207, total: 6163}
   add-theme: {body: 1437, total: 2035}
