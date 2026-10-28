@@ -12,12 +12,17 @@ context does not carry over, and the files change.
 
 ## Your batch
 
-Other bots drive batches of their own on the mini, and nothing in your
-shell tells drive which bot runs a command. So you have a driver's name,
-your webhook's: `session-driver` for Session Driver, `itell` for the iTELL
-bot. Every drive command you write names you, `drive --driver NAME …`; the
-examples in these files leave it out. A command drive prints for you
-already names its batch: run it as written.
+Every drive command you write names you as its driver, by your webhook's
+name: `session-driver` for Session Driver, `itell` for the iTELL bot. Other
+bots drive batches of their own on the mini, and nothing in your shell tells
+drive which bot is asking. The examples in these files leave it out, so
+add it as you write each one:
+
+```bash
+drive --driver itell status     # as the iTELL bot writes `drive status`
+```
+
+A command drive prints for you already names its batch: run it as written.
 
 ```bash
 drive batch new 2026-10-23 --webhook session-driver --rex-session work --tz Europe/London \

@@ -16,13 +16,12 @@ only the brief and the files it names.
 
 On the mini:
 
-1. **The bot's own batch has nothing in flight.** A batch replaces only its
-   own driver's last one, stopping that one's wakes: the Session Driver's
-   dogfood replaces its real batch, while a test bot with a webhook of its
-   own (`drive-session-test`) leaves every other driver's alone. `drive
-   --driver session-driver status` shows what the Session Driver's batch
-   still has open; run when it has nothing the owner is waiting on. The
-   dogfood batch shows on the owner's page beside the others while it runs.
+1. **The bot's own batch has nothing in flight.** A dogfood batch replaces
+   its bot's last batch and stops that one's wakes, so the Session Driver's
+   replaces its real one; a test bot with its own webhook
+   (`drive-session-test`) touches no other driver's. Run when `drive
+   --driver session-driver status` shows nothing the owner waits on. The
+   owner's page shows the dogfood batch beside the others while it runs.
 2. **The drive under test is installed** (`make install` in `~/dev/drive`):
    the bot runs `~/.local/bin/drive`.
 3. **The bot's webhook file exists:** `~/.config/drive/webhooks/<webhook>`
