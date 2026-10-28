@@ -1,6 +1,6 @@
 ---
 name: drive-session
-description: Drive the named Claude Code sessions in Rex while the user is away — take each through their stage pipeline, or the steps they queued, to its finish, sending their own prompts and starting sessions as needed.
+description: Drive named Rex sessions to their finish while you're away.
 disable-model-invocation: true
 argument-hint: "[which sessions, e.g. windows 1-4] [what each should do; unsaid, it runs the pipeline to its finish]"
 ---

@@ -326,3 +326,28 @@ the rulebook rule on purpose, since a host adapting a template reads the
 template; `../write-spec/COLD-READ.md` untouched as above. The final text of
 `BRIEF.md` differs from the replayed text by the one cut clause;
 `GOAL-BRIEF.md`'s wording has not been run.
+
+## 2026-10-28 — rewritten under "Write short"
+
+The tstack case study (`../prompt-engineering/EVIDENCE.md`, same date) made
+consult the measured test of the new style: the most invoked model-reached
+workflow (182 typed, 229 from a sentence naming it).
+
+- Body 2,309 → 1,498 words, 29.6 → about 21-word sentences, 51 em-dashes →
+  none. Description 35 → 26 words, now the "user names its job" shape.
+- A cold read (fresh subagent, old against new) listed 47 behaviors and
+  found 14 lost or weakened in the first cut. One was a bug the rewrite
+  introduced: the cause-only brief kept the read's "The shape" item. Also:
+  the design bar's default had flipped to opt-in, `--prompt-file` beside
+  per-voice files, a changed count revising the position, escalating with
+  both positions, adding *or sharpening* a planned case, tenets revised in
+  place and recorded beside the test-plan edits, the tenet trigger words,
+  naming the latest round. All restored, paid for with cuts elsewhere.
+- What did not shrink: the voice table, the three envoy commands, the done
+  criteria, and the brief's per-voice exclusions are behavior, which is why
+  the cut stopped at a third rather than tstack's size.
+
+No eval case covers consult yet: a round needs a worked conversation and a
+dispatched voice. The next pass compares rounds after this commit with
+earlier ones on the brief's observed/inferred marking and the synthesis
+leading with decisions, which is where a lost behavior would show.

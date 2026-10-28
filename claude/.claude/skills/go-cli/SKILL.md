@@ -1,6 +1,6 @@
 ---
 name: go-cli
-description: Conventions for building or changing a personal Go CLI in ~/dev — project shape, clikit commands and help, tests, Go 1.27, module design, performance traps.
+description: Conventions for building or changing a personal Go CLI.
 disable-model-invocation: true
 argument-hint: "[the tool or change to build]"
 ---

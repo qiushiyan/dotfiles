@@ -1,6 +1,6 @@
 ---
 name: claude-accounts
-description: This machine's multi-account Claude Code setup — usage/quota via headroom, switching via launchers, machine-global sessions, onboarding a subscription.
+description: "This machine's multi-account Claude Code setup: quota, switching, onboarding."
 disable-model-invocation: true
 ---
 

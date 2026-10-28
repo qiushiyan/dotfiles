@@ -78,7 +78,13 @@
     "vitest": "user-invocable-only",
     "vercel-react-best-practices": "user-invocable-only",
     "typesafe-ai": "user-invocable-only",
-    "test-audit": "user-invocable-only"
+    "test-audit": "user-invocable-only",
+    "archify": "user-invocable-only",
+    "keep-codex-fast": "user-invocable-only",
+    "find-animation-opportunities": "user-invocable-only",
+    "apple-design": "user-invocable-only",
+    "skill-creator": "user-invocable-only",
+    "emil-design-engineering": "user-invocable-only"
   },
   "disableBundledSkills": false,
   "hooks": {

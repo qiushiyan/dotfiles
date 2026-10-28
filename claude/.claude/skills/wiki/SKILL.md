@@ -1,11 +1,6 @@
 ---
 name: wiki
-description: >
-  Personal wiki at ~/wiki, the canonical home for durable personal context.
-  Context: a session needs facts about the user (employment, visa, money, health, preferences),
-  a preamble about who they are, or "which of my projects does this affect?".
-  Ingest: "记到 wiki" / "add this to the wiki", or a durable decision lands mid-session.
-  Maintain: lint/sync the wiki, or a session starts inside ~/wiki.
+description: "The user's personal wiki: facts about their life, work, visa, money, health, preferences. Use when a task needs those facts, or the user asks to record something there (记到 wiki)."
 ---
 
 # wiki

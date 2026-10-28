@@ -1,6 +1,6 @@
 ---
 name: add-theme
-description: Port a color theme into the terminal theme system — one palette per tool, proven with theme-set, switched on, committed.
+description: Port a color theme into the terminal theme system.
 disable-model-invocation: true
 ---
 

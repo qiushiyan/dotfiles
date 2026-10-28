@@ -122,6 +122,61 @@ class SkillSyncTest(unittest.TestCase):
             self.assertIn("allow_implicit_invocation: true", path.read_text())
         self.assertIn("allow_implicit_invocation: false", by_header.read_text())
 
+    def budgeted_skill(self, name, words, description="A fixture", header=""):
+        folder = self.root / name
+        folder.mkdir(exist_ok=True)
+        body = " ".join(["word"] * words)
+        (folder / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: {description}\n{header}\n---\n{body}\n"
+        )
+        return folder / "SKILL.md"
+
+    def budget(self, over=None):
+        path = self.repo / "budget.yaml"
+        path.write_text(json.dumps({"body_words": 10, "description_words": {"model": 5, "manual": 3},
+                                    "over": over or {}}))
+        return path
+
+    def test_budget_ratchets_overruns_down_and_never_up(self):
+        self.budgeted_skill("fits", 10)
+        skill = self.budgeted_skill("big", 30)
+        budget = self.budget({"big": 30, "gone": 50})
+        self.run_sync("--budget", str(budget), "--check", expected=1)
+        self.run_sync("--budget", str(budget))
+        self.assertEqual(self.read_yaml(budget)["over"], {"big": 30})
+        skill.write_text(skill.read_text().replace("word ", "", 5))
+        self.run_sync("--budget", str(budget))
+        self.assertEqual(self.read_yaml(budget)["over"], {"big": 25})
+        skill.write_text(skill.read_text() + " word")
+        result = self.run_sync("--budget", str(budget), expected=1)
+        self.assertIn("over its recorded 25", result.stdout)
+        self.assertEqual(self.read_yaml(budget)["over"], {"big": 25})
+        self.budgeted_skill("big", 8)
+        self.run_sync("--budget", str(budget))
+        self.assertEqual(self.read_yaml(budget)["over"], {})
+        self.run_sync("--budget", str(budget), "--check")
+
+    def test_budget_limits_descriptions_by_invocation_and_skips_unowned(self):
+        self.budgeted_skill("auto", 1, "five words are fine here")
+        self.budgeted_skill("label", 1, "four is too many", "disable-model-invocation: true")
+        self.budgeted_skill("long", 11)
+        self.budgeted_skill("managed", 99, "a description far past every limit set")
+        (self.repo / "claude/.agents").mkdir(parents=True)
+        (self.repo / "claude/.agents/.skill-lock.json").write_text(json.dumps({"skills": {"managed": {}}}))
+        linked = self.base / "elsewhere/linked"
+        linked.mkdir(parents=True)
+        (linked / "SKILL.md").write_text("---\nname: linked\n---\n" + "word " * 99)
+        (self.root / "linked").symlink_to(linked)
+        result = self.run_sync("--budget", str(self.budget()), expected=1)
+        problems = [line for line in result.stdout.splitlines() if line.startswith("over budget:")]
+        self.assertEqual(len(problems), 2, result.stdout)
+        self.assertIn("label/SKILL.md: description is 4 words; a manual-invoked skill's limit is 3", result.stdout)
+        self.assertIn("long/SKILL.md: body is 11 words, over the 10-word budget", result.stdout)
+
+    def read_yaml(self, path):
+        # The fixture is written as JSON, and a round-trip keeps its flow style.
+        return json.loads(path.read_text())
+
     def test_cloud_exclusions_preserve_namesakes_and_refresh_inventory(self):
         personal = self.skill("creator", "")
         cache = self.base / "synced"

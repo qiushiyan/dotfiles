@@ -1,6 +1,6 @@
 ---
 name: test-audit
-description: "Audit tests against the test-quality lesson: find the fragile behaviour no test guards and the tests that cost upkeep without guarding anything, then repair both at their owners. Scales from the tests one change added to a whole subsystem's suite."
+description: Audit tests for unguarded behavior and tests guarding nothing.
 requires:
   - lessons:testing/test-quality.md
 ---

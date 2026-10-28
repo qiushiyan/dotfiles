@@ -1,6 +1,6 @@
 ---
 name: spike
-description: "Settle a question by building throwaway code on a simplified foundation — a design assumption before the build commits to it, or proof that a change's intended behavior actually holds."
+description: Settle a design question with throwaway code.
 disable-model-invocation: true
 ---
 

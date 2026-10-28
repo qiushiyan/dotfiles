@@ -465,3 +465,91 @@ for prompting any model, so they are generalized. The reasoning-extraction
 note in right altitude drops "on the Fable generation", and the pointer
 describes the vendor guide as the guide for current models. The file keeps
 its name, `references/fable-prompting-guide.md`.
+
+## 2026-10-28 — write short: the tstack case study, the description shapes, and a size ratchet
+
+**Question**, the user's: tstack (`t3dotgg/tstack`) writes skills a senior
+model can read in a minute and one-line "use when" descriptions; ours are
+several times longer. Borrow the style, decide what a manual-only skill's
+description is for, and fix it at the source, in this rulebook.
+
+**Measured gap.** tstack's 9 bodies: median 316 words, 14-word sentences, no
+em-dashes, 115 description words in all. Ours, 14 sampled: median 1,973
+words, 30-word sentences, 26% over 35 words, 1.4 dashes per 100 words. The 24
+model-invoked descriptions held 1,285 words every turn. Growth is one-way:
+`review` 1,354 → 4,079 words in three months, `consult` 584 → 2,354,
+`handoff` 976 → 3,310; 83 of 366 skill commits came from review findings. The
+rulebook itself averaged 44-word sentences, and its rules for reasons, skip
+conditions and paired negations each lengthened every rule they touched.
+
+**Invocation history** (obelisk on both machines; laptop 07-30 → 10-28, mini
+09-22 → 10-28): three ways a skill is reached. The model reaches `obelisk`,
+`wiki`, `slack`, `prompt-engineering`, `find-docs` and `codebase-design` from
+the situation; the user names `consult` (229 model invocations from "run a
+consult with codex"), `review` and `update-docs` in a sentence; the user
+types `write-spec`, `strategic-review`, `handoff` and `improve-tool`. Never
+reached and model-invocable: `archify`, `keep-codex-fast`,
+`find-animation-opportunities`; one use each: `apple-design`,
+`skill-creator`; six: `emil-design-engineering`. Codex requires a
+`description`; Claude Code falls back to the first body line without one;
+both hide a manual-only skill's description from the model.
+
+**Changes.**
+- SKILL.md rewritten in its own style: 3,897 → 1,372 words, 38.7 → 20.8-word
+  sentences, no dashes. New: what to spend words on (authority, facts the
+  model cannot find, judgment it gets wrong by default), **Write short**
+  (one instruction per sentence; terse, not encoded; a reason in a clause; a
+  1,500-word budget). The fragments rule became "terse, not encoded".
+- Split by branch: `AGENT-DOCS.md` (skills, the three description shapes,
+  long-running agents), `TOOLS.md` (tools, large prompts, the window),
+  `REVISION.md` (the pass, now folding a finding in by rewriting the
+  sentence it corrects, plus *sprawl* and *buried instruction*).
+- `skill-sync --check` enforces the budget on owned skills
+  (`scripts/.local/share/dotfiles/skill-budget.yaml`): descriptions at 30
+  words model-invoked and 10 manual, bodies at 1,500, with recorded overruns
+  that only ratchet down. Pinned by two cases in `test_skill_sync.py`.
+- Every owned description rewritten to its shape; the six unused managed
+  skills set `user-invocable-only`.
+
+**Cold read** (a fresh subagent, old file against new): the first rewrite
+lost 12 rules: long-input ordering and the data fence, the full pause rule,
+the code-first limits, the reasoning-extraction trap, the limits on
+examples, "simplify, never invent", half of re-grounding and of the cold
+reader, pinning claims, template hedges, and the fixes behind two defect
+names. It also flagged its own "Agree: smallest fix." example as encoded. All
+were restored, which is what pushed the agent material into `AGENT-DOCS.md`.
+
+**Eval** (`~/dev/skill-evals/cases/prompt-engineering`, fixture
+`skill-writing`; red e8be8cc; n=5 per revision; agent Opus 5.5). The
+harness's OpenRouter judge refused every OpenAI and Gemini model on the key
+("violation of provider Terms Of Service"), so each kept file was graded
+blind by `codex exec` on gpt-6.1-sol against the case's checks
+(`scratchpad/grade/grade.py`); lengths were measured from the files.
+
+| case | rev | body (median) | sentence | label | checks |
+|---|---|---|---|---|---|
+| new-skill | red | 421 | 19.1 | 18 | traps 25/25, label 0/5, no background 0/5 |
+| new-skill | v3 (shipped) | 312 | 14.3 | 9 | traps 25/25, label 4/5, no background 2/5 |
+| revise-delegate (fixture 742, 30.6) | red | 887 | 20.8 | 21 | 60/60 |
+| revise-delegate | v2 | 737 | 14.9 | 10 | 58/60 |
+| fold-finding (fixture 123) | red | 155 | 16.1 | 8 | 15/15 |
+| fold-finding | v2 | 146 | 14.0 | 8 | 15/15 |
+
+- The old rulebook made a revision grow (+20%); the new one keeps the
+  length and halves the sentences. Shorter in words needs cutting behavior,
+  which a "keep everything" revision does not do.
+- v2's two B5 misses point at `PROMPT-TEMPLATE.md` instead of listing what
+  it holds: one home, not a loss.
+- Disclosure cost: v2 put the description shapes in `AGENT-DOCS.md` behind a
+  closing pointer, and 3 of 5 writers never opened it (labels 12, 12 and 14
+  words). v3 routes to the companions from the opening paragraph; the rerun
+  read it in all five, with labels 9, 9, 9, 10 and 12. revise-delegate and
+  fold-finding ran on v2, which differs from v3 only in that routing.
+- *no background* is a strict check: "one short line per change" counts as
+  teaching changelog writing. It reads as noise beyond red's 0/5.
+
+**Next pass compares** description lengths and model-invocation counts for
+the rewritten descriptions over the next month (a description that stops
+firing on "run a consult" or "remember this" is the reversal signal; obelisk
+dropped its "about to edit a file with tangled history" branch), and the
+over-budget list in `skill-budget.yaml`, which should only shrink.

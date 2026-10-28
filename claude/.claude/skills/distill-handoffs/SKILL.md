@@ -1,6 +1,6 @@
 ---
 name: distill-handoffs
-description: Reconcile this project's handoff briefs against what the repo has done since they were written — close out one landed branch's briefs, sweep the whole folder, or settle a question about which work moves next.
+description: Reconcile handoff briefs with what the repo has since done.
 disable-model-invocation: true
 argument-hint: [nothing on a feature branch → close out this branch; `folder` → the whole folder; a question, e.g. "can the cutover work move up?" → answer it]
 ---

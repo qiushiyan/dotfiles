@@ -1,6 +1,6 @@
 ---
 name: strategic-review
-description: "Review one PR the user judged big enough for a strategic read, from a fresh session with no stake in the build: what it is meant to do, then the whole change against correctness, tests, what the model is told, code quality and design, which handling the code has earned, and how to fold the findings in once the user says so. Explore only until then."
+description: Strategic review of one PR from a fresh session.
 disable-model-invocation: true
 argument-hint: "[PR number or URL] [optional: a question this PR raises]"
 requires:

@@ -1,10 +1,6 @@
 ---
 name: obelisk
-description: >
-  Search past Claude Code and Codex session history, on the laptop and the mini at once, and persist conclusions worth keeping.
-  Retrieve on request: "how did I fix X", "上次怎么修的", "find the session where".
-  Retrieve unprompted: the user assumes context you lack, says "继续之前的", or you are about to edit a file with tangled history.
-  Persist: "记住这个", "remember this", or a retrieval that yields a durable conclusion.
+description: Search past Claude Code and Codex sessions and save conclusions. Use when the user asks how something was done before (上次怎么修的), mentions past work you lack, or says remember this.
 ---
 
 # obelisk — personal edition

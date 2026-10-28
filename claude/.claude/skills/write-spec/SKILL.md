@@ -1,6 +1,6 @@
 ---
 name: write-spec
-description: Promote the settled direction into a committed spec — unknowns run down, the spec committed, read cold by a fresh model, validated by consult. Defaults — commit + cold read + validation consult; override by argument ("don't commit", "skip validation", "skip the checks").
+description: Turn the settled direction into a committed, validated spec.
 disable-model-invocation: true
 requires:
   - user:consult

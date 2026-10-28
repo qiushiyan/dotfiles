@@ -3,8 +3,9 @@
 # requires-python = ">=3.11"
 # dependencies = ["ruamel.yaml==0.18.16"]
 # ///
-"""Synchronize Codex skill visibility and invocation policies,
-and copy broadcast documents from this repository into other checkouts."""
+"""Synchronize Codex skill visibility and invocation policies, hold the skills
+this repository owns to their size budget, and copy broadcast documents from
+this repository into other checkouts."""
 
 import argparse
 from copy import deepcopy
@@ -26,6 +27,8 @@ from ruamel.yaml.error import YAMLError
 FIELD = "allow_implicit_invocation"
 MANIFEST = "scripts/.local/share/dotfiles/documents.yaml"
 SKILL_POLICY = "scripts/.local/share/dotfiles/skill-policy.yaml"
+SKILL_BUDGET = "scripts/.local/share/dotfiles/skill-budget.yaml"
+SKILL_LOCK = "claude/.agents/.skill-lock.json"
 BLOCK_START = "# BEGIN skill-sync generated exclusions"
 BLOCK_END = "# END skill-sync generated exclusions"
 
@@ -50,7 +53,8 @@ def mapping(text, source):
     return value
 
 
-def skill_header(skill):
+def split_skill(skill):
+    """Return a SKILL.md's frontmatter mapping and the body after it."""
     lines = skill.read_text().splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
         raise ValueError(f"{skill}: missing YAML frontmatter")
@@ -61,7 +65,11 @@ def skill_header(skill):
     disabled = data.get("disable-model-invocation", False)
     if type(disabled) is not bool:
         raise ValueError(f"{skill}: disable-model-invocation must be a YAML boolean")
-    return data
+    return data, "".join(lines[end + 1:])
+
+
+def skill_header(skill):
+    return split_skill(skill)[0]
 
 
 def render_metadata(before, desired, path):
@@ -302,6 +310,65 @@ def plan_documents(manifest, repo, reserved):
     return changes, len(sources), skipped
 
 
+def plan_budget(manifest, roots, repo, overrides):
+    """Hold owned skills to the budget, ratcheting recorded overruns down.
+
+    Owned means neither in the Skills CLI lock nor a folder linked from another
+    project. Returns the budget file's planned change and the violations."""
+    data = mapping(manifest.read_text(), manifest)
+    if set(data) != {"body_words", "description_words", "over"}:
+        raise ValueError(f"{manifest}: expected exactly body_words, description_words, over")
+    limits = data["description_words"]
+    over = data["over"]
+    if (not isinstance(limits, CommentedMap) or set(limits) != {"model", "manual"}
+            or not isinstance(over, CommentedMap)
+            or any(type(v) is not int for v in [data["body_words"], *limits.values(), *over.values()])):
+        raise ValueError(f"{manifest}: body_words and description_words.model/manual are integers; "
+                         "over maps skill names to integers")
+    lock = repo / SKILL_LOCK
+    managed = set(json.loads(lock.read_text()).get("skills", {})) if lock.exists() else set()
+    budget = data["body_words"]
+    violations = []
+    seen = set()
+    for root in roots:
+        for entry in sorted(root.expanduser().resolve(strict=True).iterdir()):
+            skill = entry / "SKILL.md"
+            if entry.name.startswith(".") or entry.is_symlink() or entry.name in managed or not skill.is_file():
+                continue
+            header, body = split_skill(skill)
+            name = header.get("name", entry.name)
+            seen.add(name)
+            where = skill.relative_to(repo) if skill.is_relative_to(repo) else skill
+            manual = header.get("disable-model-invocation", False) or overrides.get(name) in (
+                "user-invocable-only", "off")
+            kind = "manual" if manual else "model"
+            described = len(str(header.get("description", "")).split())
+            if described > limits[kind]:
+                violations.append(f"{where}: description is {described} words; "
+                                  f"a {kind}-invoked skill's limit is {limits[kind]}")
+            words = len(body.split())
+            allowed = over.get(name)
+            if allowed is None:
+                if words > budget:
+                    violations.append(f"{where}: body is {words} words, over the {budget}-word budget; "
+                                      "disclose reference behind a pointer, or cut")
+            elif words > allowed:
+                violations.append(f"{where}: body is {words} words, over its recorded {allowed}; "
+                                  "cut before adding")
+            elif words <= budget:
+                del over[name]
+            elif words < allowed:
+                over[name] = words
+    for name in [name for name in over if name not in seen]:
+        del over[name]
+    output = StringIO()
+    yaml_parser().dump(data, output)
+    before = manifest.read_bytes()
+    after = output.getvalue().encode()
+    changes = {manifest: Change(before, after, False)} if after != before else {}
+    return changes, violations, len(seen)
+
+
 def write_atomic(path, content):
     path.parent.mkdir(parents=True, exist_ok=True)
     mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o644
@@ -319,7 +386,8 @@ def write_atomic(path, content):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         "Requires uv (dependencies are cached). Exit: 0 synchronized, "
-        "1 drift with --check, 2 invalid input or write failure. With no scope "
+        "1 drift with --check or a skill over its budget, 2 invalid input or "
+        "write failure. With no scope "
         "flag all jobs run on this repository's skill trees and manifests; "
         "a scope flag runs only the jobs it names. Destinations outside this "
         "repository are reported for review and commit there."
@@ -337,15 +405,23 @@ def main():
         "apply Claude global overrides and Codex exclusions/manual policies; "
         f"defaults to {SKILL_POLICY} on an unscoped run."
     ))
+    parser.add_argument("--budget", type=Path, metavar="MANIFEST", help=(
+        "check owned skills against this size budget and lower recorded overruns; "
+        f"defaults to {SKILL_BUDGET} on an unscoped run."
+    ))
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[3]
-    scoped = args.skills_dir is not None or args.documents is not None or args.policy is not None
-    roots = args.skills_dir or ([] if scoped and args.policy is None else
-                               [repo / "claude/.claude/skills", repo / ".claude/skills"])
+    scoped = (args.skills_dir is not None or args.documents is not None
+              or args.policy is not None or args.budget is not None)
+    default_roots = [repo / "claude/.claude/skills", repo / ".claude/skills"]
+    roots = args.skills_dir or ([] if scoped and args.policy is None else default_roots)
     manifest = args.documents or (None if scoped else repo / MANIFEST)
     policy = args.policy or (None if scoped else repo / SKILL_POLICY)
     if policy is not None and args.policy is None and not policy.exists():
         policy = None
+    budget = args.budget or (None if scoped else repo / SKILL_BUDGET)
+    if budget is not None and args.budget is None and not budget.exists():
+        budget = None
     try:
         # Validate every job before writing anything.
         changes = {}
@@ -366,6 +442,16 @@ def main():
             config_changes = plan_exclusions(config, disabled, repo)
             changes.update(config_changes)
             summaries.append((len(disabled), "exclusions checked", len(config_changes), "config files"))
+        violations = []
+        if budget is not None:
+            budget = budget.expanduser().resolve(strict=True)
+            if budget in outputs:
+                raise ValueError(f"{budget}: budget may not overwrite another job's output")
+            outputs.add(budget)
+            budget_changes, violations, count = plan_budget(
+                budget, args.skills_dir or default_roots, repo, overrides)
+            changes.update(budget_changes)
+            summaries.append((count, "owned skills budgeted", len(budget_changes), "budget files"))
         if manifest is not None:
             doc_changes, count, skipped = plan_documents(manifest.expanduser().resolve(strict=True), repo, outputs)
             changes.update(doc_changes)
@@ -388,7 +474,9 @@ def main():
         status = "need synchronization" if args.check else "updated"
         for count, checked, changed, noun in summaries:
             print(f"{count} {checked}; {changed} {noun} {status}.")
-        return 1 if args.check and changes else 0
+        for violation in violations:
+            print(f"over budget: {violation}")
+        return 1 if violations or (args.check and changes) else 0
     except (OSError, ValueError, YAMLError) as error:
         print(f"skill-sync: {error}", file=sys.stderr)
         return 2

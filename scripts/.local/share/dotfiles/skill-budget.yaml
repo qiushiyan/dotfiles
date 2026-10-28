@@ -1,0 +1,21 @@
+# Size budget for the skills this repository owns: those neither in the Skills
+# CLI lock nor linked from another project. The prompt-engineering rulebook's
+# "Write short" says why; skill-sync enforces it.
+body_words: 1500
+description_words:
+  model: 30   # model-invoked: in context every turn
+  manual: 10  # disable-model-invocation or user-invocable-only: a menu label
+# Skills already over body_words, each with the most words it may hold.
+# skill-sync lowers an entry when its skill shrinks and drops it once the
+# skill fits. Nothing raises one: past it, an addition replaces something.
+over:
+  distill-docs: 2236
+  distill-handoffs: 3044
+  drive-session: 2718
+  go-cli: 1963
+  handoff: 3209
+  improve-tool: 1938
+  obelisk: 2638
+  review: 4010
+  strategic-review: 2039
+  thermo-nuclear-code-quality-review: 1883

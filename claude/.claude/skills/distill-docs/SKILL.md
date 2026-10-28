@@ -1,6 +1,6 @@
 ---
 name: distill-docs
-description: The periodic whole-tree pass over a project's docs — trim the hot path, prune rot, split what remains into spine and satellites.
+description: Periodic whole-tree pass over a project's docs.
 user-invocable: true
 disable-model-invocation: true
 argument-hint: [optional scope, e.g. "docs/agents" — default the whole docs tree]

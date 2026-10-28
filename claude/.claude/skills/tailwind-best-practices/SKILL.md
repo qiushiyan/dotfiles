@@ -1,7 +1,7 @@
 ---
 name: tailwind-best-practices
 disable-model-invocation: true
-description: Tailwind CSS v4.1+ rules and best practices. Use when writing, reviewing, or refactoring Tailwind CSS code to ensure correct v4 utility usage and avoid deprecated patterns. Triggers on tasks involving Tailwind CSS classes, responsive design with Tailwind, or any HTML/JSX with Tailwind utility classes. Also use when reviewing PRs or code that contains Tailwind classes to catch deprecated v3 patterns.
+description: Tailwind CSS v4 rules and the v3 patterns it deprecates.
 ---
 
 # Tailwind CSS v4.1+ Best Practices

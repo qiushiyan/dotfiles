@@ -1,6 +1,6 @@
 ---
 name: check-memory
-description: Check RAM on the laptop or the mini — memory pressure, swap, what is using it, and dangling processes or VMs that can be freed. Use when the user asks about memory or RAM, a machine feels sluggish, swap or OOM worries come up, or they ask to "check again" after freeing something.
+description: Check RAM and memory pressure on the laptop or mini.
 disable-model-invocation: true
 ---
 
