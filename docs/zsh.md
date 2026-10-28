@@ -84,6 +84,7 @@ zsh/.config/zsh/
   tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep
   rex.zsh          # inside Rex: starts rexd, reports long commands as status (docs/rex.md)
   cout.zsh        # execution boundaries for the cout recorder (~/dev/cout)
+  grokbot.zsh      # in the Grok Bot app's shells only: logs each command, an EXIT trap, for grokbot-transcript
   proxy.zsh
   hosts/<machine>.zsh  # one machine's identity (§ Machines); outside the glob
   tests/           # suites (docs/testing.md); outside the glob

@@ -530,8 +530,9 @@ an older binary files a brief where the new one reads another slug.
   does not carry it), and each batch's record — its event log, the files sent and what each
   watch printed — lives in `~/.local/state/drive/batches/<name>/`. Each
   wake's after-wake command archives the bot's chat past the app's window
-  (`~/.local/state/grokbot/`); `grokbot-transcript "Session Driver"` reads
-  it. The owner reads the current batch on its page,
+  (`~/.local/state/grokbot/`), where `zsh/.config/zsh/grokbot.zsh` also logs
+  each command the bot runs here; `grokbot-transcript "Session Driver"`
+  reads both, with the bot's batches. The owner reads the current batch on its page,
   `https://qiushi-mini.tailf7adf1.ts.net:8444`, which `drive page` serves
   on `127.0.0.1:8792` under `launchd-mini/`'s `com.qiushi.drive-page` and
   `tailscale serve --bg --https=8444 http://127.0.0.1:8792` publishes, a
