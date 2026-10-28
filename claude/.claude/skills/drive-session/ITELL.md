@@ -40,9 +40,8 @@ git -C <worktree> rev-parse HEAD
 ```
 
 The stage is done when the report's `passed` is true, its `branch` is the
-session's and its `head` is the worktree's HEAD. `passed` means every run in
-it is certified (it ran the committed code and every story proved something
-either way), no story failed, and some target story was verified. A lane
+session's and its `head` is the worktree's HEAD. What `passed` requires is
+`apps/platform/docs/verification.md` § Scenarios and verdicts. A lane
 belongs to the checkout a command runs in, so a report naming the main
 checkout verified `main`, not the branch. Send the stage back with what is
 missing:
@@ -50,12 +49,16 @@ missing:
 - no runs, or `fronts.target.verified` 0: nothing drove what the change is
   for;
 - a run not certified: its `problems` say why, most often "commit, then
-  rerun", or a story that errored or asserted nothing;
+  rerun", a story that errored or asserted nothing, or a `--keep-world` run;
 - a failed story: a finding the session fixes. One it reports instead as
-  out of the change's reach is a decision for the user, and holds the merge.
+  out of the change's reach is a decision for the user, and holds the merge;
+- a blocked target story: what the change is for went undriven. One
+  blocked on what lanes cannot supply (scoring outside the seed's pages,
+  Stripe) is a decision for the user, and holds the merge;
+- a `leftOut` scenario with a failed story: the session ran it on the
+  branch and it is not in the claim. Ask why before you accept the stage.
 
-A blocked story is not a pass; one blocked on what lanes cannot supply
-(scoring outside the seed's pages, Stripe) goes to the report as a limit.
+A blocked risk story is a limit for the report.
 
 ## Lanes are shared machine state
 
