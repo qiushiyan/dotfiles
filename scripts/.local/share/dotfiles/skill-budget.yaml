@@ -14,7 +14,7 @@ skills:
   check-memory: {body: 630, total: 630}
   claude-accounts: {body: 301, total: 301}
   clean-worktrees: {body: 467, total: 467}
-  consult: {body: 1498, total: 3908}
+  consult: {body: 1484, total: 3905}
   delegate: {body: 742, total: 1432}
   distill-docs: {body: 2236, total: 2236}
   distill-handoffs: {body: 3044, total: 3044}
@@ -27,7 +27,7 @@ skills:
   prompt-engineering: {body: 1422, total: 3082}
   refactoring: {body: 643, total: 643}
   resolving-merge-conflicts: {body: 117, total: 117}
-  review: {body: 4010, total: 8128}
+  review: {body: 3997, total: 7954}
   spike: {body: 722, total: 722}
   strategic-review: {body: 2039, total: 2039}
   tailwind-best-practices: {body: 699, total: 699}

@@ -391,3 +391,10 @@ Claude-consult scenarios.
   - a test that never runs in CI is `unpinned`;
   - the prompting-guide clause is deleted when a project has none;
   - commits name the reviewer by its member name.
+
+## 2026-10-28 — standing instructions shared with consult
+
+See `../consult/EVIDENCE.md`, same date: `../consult/VOICE.md` rides every
+review dispatch as `--instructions-file`; the templates lost the review-lens
+paragraph and the ideas boilerplate it now carries (review total 8,128 →
+7,954 words).

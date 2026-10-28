@@ -61,7 +61,7 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
 
 3. **Write the brief** — one self-contained file in the session scratchpad, named for the round (`review-r1.md`), from the template step 2 chose. Full fills orientation, where the authority on WHAT lives (spec/plan paths, or an inline goal statement when no spec exists), the settled decisions it must not relitigate (or the line that nothing is settled), the commit range, the reading order, the deliberately-deferred work it must not flag, the standards step 2 assembled (in the reading list) and its data section, and the report last. Goal fills much less — the goal paragraph, the range, the facts block, already judged, the do-not-flag list, who the ideas are for. Two slots leak, in opposite directions: the **goal paragraph** is what the feature is *for* in the user's own terms, carrying none of the vocabulary this change invented — the rule the ideas slot's person and moment follow too; and an **already judged** line that explains *why* a decision was made hands back the design the round exists to judge, so each line says what was looked at and what came of it, never the reasoning behind it.
 
-   The lesson pointers go out with it, copied from the template as written — they are for the reviewer. The posture section rides every dispatch: under `full` its whole stance governs; `goal` names the subset that governs it — the dispatching prompt carries the run's contract. The template's design-bar lines are scoped by what the range decided:
+   Every voice's standing rules ride beside the brief as `--instructions-file ~/.agents/skills/consult/VOICE.md`, which consult's voices start with too. If envoy refuses it beside a warm voice that started without it, drop the flag and open the brief with that path. The template's design-bar lines are scoped by what the range decided:
 
    - **full** → keep **Structural quality** whenever the range decides structure: new modules, reshaped interfaces, any real refactor. Trim it when the work is structurally inert — a version bump, a mechanical syntax migration — however large the diff; a schema or data migration decides structure and keeps it. **Composition** survives that trim on a **small contained fix**: a patch bolted onto an existing call path is exactly the shape it exists to catch, and exactly the range a reviewer waves through. Drop it only where the range adds no hop and rewires nothing.
    - **goal** → the structural block follows the same rule; the concept-count question its brief always carries is the altitude composition reaches without it.
@@ -75,7 +75,7 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
 4. **Dispatch**, anchored to the range, as one background Bash task, the job named for the round — `review-r1`, then `review-r2` — and return: the task completing is the completion signal, and nothing the dispatch prints needs relaying. `goal` is **one cold voice, single turn**, 45-minute cap, never a fan-out on its own. A warm voice there is not merely spare but wrong: it holds the design, which is the thing `goal` must judge without.
 
    ```sh
-   envoy run review-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --baseline <base-sha> --timeout-min 45
+   envoy run review-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 45
    ```
 
    For `full`, the cap is 60 minutes and the shape follows one question: did a consult in this session weigh the design this range implements?
@@ -83,25 +83,25 @@ A model ID the user spells out goes through as written, a codex one on `xhigh` u
    No consult — one cold reviewer:
 
    ```sh
-   envoy run review-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --baseline <base-sha> --timeout-min 60
+   envoy run review-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
    ```
 
    A consult exists — both voices as one fan-out, the consult session continued beside a cold one:
 
    ```sh
-   envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-opus-5-5 --prompt-file <brief> --baseline <base-sha> --timeout-min 60
+   envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-opus-5-5 --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
    ```
 
    `@consult-r1/codex-gpt-6-astra` names the *member* whose position the implementation followed, as the consult's synthesis recorded it. A consult that ran as one voice is `@consult-r1` alone. A consult that ran as a fan-out holds one session per member, named `<provider>` or `<provider>-<model>` as its collect block prints them — the voice `codex:gpt-6-astra:high` is member `codex-gpt-6-astra`, the voice `claude:claude-opus-5-5` is member `claude-claude-opus-5-5` — and there `@consult-r1` alone would continue every member and seat no cold voice. Name the consult's latest round: after a round 2, `@consult-r2/codex-gpt-6-astra`. Seating every member warm is the user's call, one `--with @<member>` each.
 
-   Warm judges follow-through — did the implementation integrate what was agreed, did it dodge the traps its rounds discussed — and, having committed to the design in its own context, is a poor judge of the design itself; cold buys the unanchored, strategic read this skill exists for. Both get the complete brief; the warm voice re-reads cheaply what it already holds.
+   Warm judges follow-through — did the implementation integrate what was agreed, did it dodge the traps its rounds discussed — and, having committed to the design in its own context, is a poor judge of the design itself; cold buys the unanchored, strategic read this skill exists for.
 
    The cold voice comes from the other model family than the warm one: two voices of one model read the same areas and mostly find the same things, while a second family samples the range differently. A codex consult, whether one voice or a member, takes `claude:claude-opus-5-5` cold, as above; a Claude one takes `codex:gpt-6-astra:high`. This settles the default, which the stock words "codex" and "astra" name too; a voice the user picks beyond them ("opus", "sol", a model ID) is the cold voice as typed.
 
    A warm voice takes only a full brief — it already holds the design, so there is nothing left to withhold from it. When the user wants the design re-judged as well as its execution checked, the goal read joins the same fan-out as a cold voice on its own brief, each brief attached to its voice:
 
    ```sh
-   envoy run review-r1 --with @consult-r1/codex-gpt-6-astra=<full-brief> --with claude:claude-opus-5-5=<goal-brief> --baseline <base-sha> --timeout-min 60
+   envoy run review-r1 --with @consult-r1/codex-gpt-6-astra=<full-brief> --with claude:claude-opus-5-5=<goal-brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
    ```
 
    Two briefs, one job: the warm voice checks follow-through against the spec, the cold one derives what the feature should do with the design withheld, and one collect returns both. The withholding is what the separate file buys — a goal section inside the full brief would hand the cold voice the design on the next page.

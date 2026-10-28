@@ -1,6 +1,8 @@
 <!--
 Brief template for /review in full mode: the deep read. The reviewer is handed
-the implementation's own map and hunts defects in the execution. Copy the body
+the implementation's own map and hunts defects in the execution. The rules
+every voice works by (grounding, stance, the review lens, the design bar, how
+to offer ideas) ride beside it in ../consult/VOICE.md. Copy the body
 below into a scratchpad file and fill every «slot», deleting these comments —
 the reviewer reads a single coherent brief. A section with nothing real to say
 gets deleted, not filled: an empty heading invites invented content, and the
@@ -22,14 +24,6 @@ conclusion nobody has judged.
 plain terms, and what this change set out to accomplish. The reviewer has none
 of the implementer's conversation — this paragraph and the reading list are
 all the orientation it gets.»
-
-## Posture — the review lens
-
-Read `~/.config/lessons/collaboration/review-lens.md` before reviewing — its
-stance governs every finding: step back before endorsing any local fix, hold a
-test you request to its additive-bias bar, treat over-building as the likelier
-failure. The stance applies to the shape of the code, never to the settled
-decisions fenced below.
 
 ## The work under review
 
@@ -104,14 +98,7 @@ this better for «who uses it, and when — "its author, from the terminal,
 several times a day"»: «smoother to use — a step removed, clearer output, a
 better default, an error that says what to run next» «harder to break, or
 louder when it does — a check at a boundary, a guard a later change would
-trip, a failure that names its cause». Small means it adds no mode, flag or
-option someone has to learn.
-
-The lens's additive-bias and over-building bars govern findings, not this
-section: here you are invited to add. An idea earns its place by naming
-the moment it improves — who, doing what — the change, and roughly what it
-costs. A reshape, or missing handling for a state that can actually happen,
-is a finding above. Ideas never raise a finding's severity or block merge.
+trip, a failure that names its cause». Ideas never block merge.
 
 ## Output
 
@@ -135,7 +122,7 @@ test that pins nothing, or "none". «When the range is a milestone: then
 Then a **Foundational objections** section. «When the ideas section is kept:»
 End with **Where this can be better**: each idea as the moment, the change,
 the cost, or "none worth it". Say "none" explicitly for any
-empty severity tier and for any section that is empty. Be specific and terse; no praise padding.
+empty severity tier and for any section that is empty.
 
 ## Implementation report
 

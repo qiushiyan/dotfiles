@@ -1,22 +1,14 @@
 <!--
-The brief a /consult voice reads. Copy the body below into a scratchpad file,
-fill every «slot», delete these comments. A section with nothing real to say
-is deleted, not filled: an empty heading invites invented content. The fixed
-lines are distilled from briefs that worked; keep them unless this run
-genuinely contradicts them.
+The brief a /consult voice reads: copy the body into a scratchpad file, fill
+every «slot», delete these comments. A section with nothing real to say is
+deleted, not filled. The rules every voice works by ride beside it in
+VOICE.md, so this file carries only the problem and the ask.
 
-The order is the instrument. The voice reads the goal and what was observed,
-commits its own reading of the problem and the shape before it reads the code
-or our position, then judges ours. Where the two readings differ is the
-round's product; a voice that starts from our position critiques inside its
-frame. Same-file order is a nudge, not blinding — SKILL.md step 6 says when
-our position is withheld for a second turn instead.
-
-The read is asked for as output: the opening section of the answer. Keep that
-shape when you adapt the section. A note to write down first and repeat word
-for word asks the voice to transcribe its reasoning, which Anthropic's
-classifier can refuse on a Claude voice (the rulebook's Right altitude rule,
-`../prompt-engineering/SKILL.md`).
+The order is the instrument: the voice commits its own read of the problem
+and the shape before it reads the code or our position, and where the two
+readings differ is the round's product. Ask for the read as the answer's
+opening section, never as a note to transcribe, which a Claude voice's
+classifier can refuse.
 -->
 
 # Consult: «the question in one line — the outcome to reach or the symptom as seen, never the answer»
@@ -72,38 +64,12 @@ This is a quick commitment, not the analysis — the code-grounded comparison
 comes later in your answer. Leave the section as first written: where it
 differs from what follows is the most valuable thing this round produces.
 
-## Posture — first principles, grounded
-
-Reason from first principles, grounded in the code you read — an analysis that
-doesn't cite the files it stands on is guessing. Judge any direction by how
-fully it solves the real problem on a clean structural footing, not by how
-little it disturbs or how soon it ships: prefer the shape that makes the
-problem disappear over the patch that quiets it. A structural claim needs the
-code that proves it and the cost it carries.
-
-## The design bar
-
-Read `~/.config/lessons/codebase-design/deep-modules.md` closely — the shape
-under discussion is judged in its vocabulary: depth, seams, the deletion test,
-illegal states. Where an interface is being committed, design it twice
-(`~/.config/lessons/codebase-design/design-it-twice.md`): sketch two or three
-shapes different in kind — write each one's constraint down first and hold the
-others out of view — compare on depth, locality, and seam placement, and land
-on the winner plus a line per discard, never a menu. When the change
-restructures an existing cluster, `~/.config/lessons/codebase-design/deepening.md`
-decides whether a seam earns a port. Where the proposal joins an existing call
-path, `~/.config/lessons/codebase-design/composition.md` decides whether it was
-absorbed or bolted on.
-
 ## Read these, in this order
 
-«Ordered reading list with absolute paths: the code the observations and the
-goal touch, in the order a reader would trace it — not the order of our causal
-chain — then the docs that carry the invariants, then any rulebook this session
-is working under, so the voice works to that bar rather than its own defaults.
-The voice reads them itself — never restate their content here. An artifact
-that *is* our proposal — a spec, a design doc — is named under "What we
-believe", after the voice's read.»
+«Absolute paths: the code the observations and the goal touch, in the order
+a reader would trace it, then the docs carrying the invariants, then any
+rulebook this session works under. Never restate their content. A spec or
+design doc that is our proposal goes under "What we believe" instead.»
 
 ## What we believe
 
@@ -113,28 +79,23 @@ attack, not a design document.
 **The problem.** What we think is wrong or needed and why, as a chain —
 X, which causes Y, which is why we see Z — with every link marked observed
 (and where) or inferred, then what we never checked: the links believed rather
-than seen, the alternatives dropped early, the tools we lacked. A belief with
-its grounds, not a finding.
+than seen, the alternatives dropped early, the tools we lacked.
 
-**What we propose.** The shape we would build and the vocabulary it
-introduces, the alternative we discarded and why, and where it aims — at the
-cause, at a link in the chain, or at the symptom. When the proposal is a file,
-its absolute path and one line on what it decides; the voice opens it only
-now.
+**What we propose.** The shape we would build, the alternative we discarded
+and why, and where it aims — at the cause, at a link in the chain, or at the
+symptom. When the proposal is a file,
+its path and one line on what it decides.
 
 Delete this section and "Where we doubt it" when SKILL.md step 6 withholds
 our position for round 2.»
 
 ## Where we doubt it
 
-«Prose, not a questionnaire. Name the areas of our position you already
-suspect are weakest, and the few observations or counterexamples that could
-change the decision — a path traced at three points in time, a caller that
-would pay, a state the shape cannot represent. A probe earns its place by
-being able to defeat a load-bearing claim; a question that enumerates the
-proposal or carries its own answer ("is the real problem X, e.g. …") hands the
-voice the conclusion and leaves only the picking. Name the area you doubt; let
-the voice name what is wrong in it.»
+«Prose, not a questionnaire: the areas of our position you suspect are
+weakest, and the few observations that could change the decision (a path
+traced at three points in time, a caller that would pay, a state the shape
+cannot represent). Name the area you doubt, never the answer; a question
+that carries its own answer hands the voice the conclusion.»
 
 ## Output
 
@@ -174,7 +135,3 @@ the voice name what is wrong in it.»
    out.
 7. **Foundational objections** — a separate section, "none" said explicitly
    when it is empty.
-
-Be specific and terse; no praise padding.
-
-Design analysis only — do not change any code.

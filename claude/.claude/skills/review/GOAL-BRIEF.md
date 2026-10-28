@@ -33,8 +33,7 @@ review judges against, so it states the goal and never the solution.»
 
 ## Posture — the read at altitude
 
-Read `~/.config/lessons/collaboration/review-lens.md` before reviewing. The
-bars that govern this round are its strategic ones: step back before judging
+Of the review lens, the bars that govern this round are the strategic ones: step back before judging
 locally, over-building as the likelier failure, Chesterton's fence, and above
 all **grade the artifact, not the account of it**. Seam-level and line-level
 bars are the full review's work, not this round's — except where the
@@ -178,13 +177,8 @@ several times a day"»: «smoother to use — a step removed, clearer output, a
 better default, an error that says what to run next» «harder to break, or
 louder when it does — a check at a boundary, a guard a later change would
 trip, a failure that names its cause». Small means it adds no concept to the
-count you made above.
-
-The lens's additive-bias and over-building bars govern findings, not this
-section: here you are invited to add. An idea earns its place by naming
-the moment it improves — who, doing what — the change, and roughly what it
-costs. A case the goal implies and nothing handles is an obvious mistake,
-not an idea. Ideas never change the verdict.
+count you made above. A case the goal implies and nothing handles is an
+obvious mistake, not an idea. Ideas never change the verdict.
 
 ## Output
 
@@ -213,5 +207,5 @@ not an idea. Ideas never change the verdict.
 9. **Where this can be better** «only when the ideas section was kept» — each
    idea as the moment, the change, the cost, or "none worth it".
 
-Be specific and terse; no praise padding, and no severity ladder — this round's
-findings are either worth handling before merge or are decisions for the user.
+No severity ladder: this round's findings are either worth handling before
+merge or are decisions for the user.

@@ -351,3 +351,44 @@ No eval case covers consult yet: a round needs a worked conversation and a
 dispatched voice. The next pass compares rounds after this commit with
 earlier ones on the brief's observed/inferred marking and the synthesis
 leading with decisions, which is where a lost behavior would show.
+
+## 2026-10-28 — the voice's standing rules ride as instructions, the brief carries the problem
+
+**Question**, the user's: the agent asking for a consult or review should
+spend its effort passing the problem, with a straightforward, flexible way
+to ask. Is preparation a real cost?
+
+**Measured** (obelisk, both machines, 2026-09-14 → 10-28, every round: 190
+consult and 210 review, Session Driver rounds excluded; scripts and
+per-round data were scratch): invocation to dispatch, median 2.9 min
+(consult) and 1.9 (review); 2 template reads; one write of the brief; 17 and
+6 rounds edited the brief after writing it; 0 of 400 had the user correct
+the brief or dispatch; no template-surgery mistakes found in any sent
+brief. Briefs median 2,770 words, of which 27–35% instructed the voice and
+19–28% was copied verbatim from a template. 44% of rounds checked that the
+lesson paths exist; the user judged that cheap enough to keep. Preparation
+is not a real cost; building briefs in code was not worth an engine.
+
+**Changed:** `VOICE.md` holds the rules every voice works by (role,
+read-only, grounding, stance, the design bar, how to offer ideas), sent as
+`--instructions-file`, which envoy delivers as system-level text (codex
+`developer_instructions`) and keeps for the conversation's life. consult and
+review both start voices with it, so a consult voice seated warm in review
+carries the same text and envoy accepts the flag again. `BRIEF.md` lost its
+posture and design-bar sections and its author notes shrank; review's two
+templates lost the review-lens paragraph and the ideas boilerplate.
+Body+companions: consult 3,908 → 3,905 (with `VOICE.md` counted), review
+8,128 → 7,954. A warm voice that started before this change makes envoy
+refuse the flag; the round then goes without it and the brief opens with
+the path.
+
+**Verified:** a two-voice dispatch (codex `gpt-6.1-sol`, Claude Opus 5.5)
+with the flag: both answered from the file (read-only; `deep-modules.md`
+for a shape at stake), codex citing its developer instructions. envoy's
+roster code refuses a differing or added instructions file on a continued
+conversation (`internal/dispatch/roster.go` shareRoster).
+
+**Not verified:** no consult or review round has run end to end since; the
+next pass compares briefs after this commit for size (expect about two
+thirds of today's) and for voices still producing the asked-for output
+sections with the design bar applied where shape was at stake.

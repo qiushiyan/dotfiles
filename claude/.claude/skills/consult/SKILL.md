@@ -65,12 +65,6 @@ model it started on.
      platform constraint. This session's own analysis is not settled, even
      when the user agreed with it; it goes under "What we believe", where a
      voice can attack it. A fence over it gets the wrong problem approved.
-   - **Optional items.** Keep the tenets item only when the turn asks how
-     the build should proceed (guidelines, principles, guardrails, a
-     milestone or phase plan); its form is in
-     `~/.config/lessons/collaboration/tenets.md`. Send the design bar as
-     written unless the question is not about code structure at all. Send any
-     rulebook this session works under by path.
    - **A measured number.** When the position rests on a count this session
      measured, put [DATA-BLOCK.md](DATA-BLOCK.md)'s bullets in "What we
      observe", keep the output's method item, and save the queries and raw
@@ -87,8 +81,13 @@ model it started on.
    default:
 
    ```sh
-   envoy run consult-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --timeout-min 30
+   envoy run consult-r1 --with codex:gpt-6-astra:high --prompt-file <brief> \
+     --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
    ```
+
+   [VOICE.md](VOICE.md) holds every voice's standing rules, so the brief
+   carries only the problem. If envoy refuses it beside a warm voice that
+   started without it, drop the flag and open the brief with that path.
 
    Take the voices the user names, one `--with` each. Voices
    with different jobs each take their own file as `<voice>=<brief>`, still
@@ -96,7 +95,8 @@ model it started on.
    inside a shared brief. A voice without its own file takes `--prompt-file`:
 
    ```sh
-   envoy run consult-r1 --with claude:claude-fable-5-1=<critique-brief> --with codex:gpt-6-astra:high=<survey-brief> --timeout-min 30
+   envoy run consult-r1 --with claude:claude-fable-5-1=<critique-brief> --with codex:gpt-6-astra:high=<survey-brief> \
+     --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
    ```
 
    If the completion notice is lost to a compaction or restart, `envoy
