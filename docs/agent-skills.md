@@ -128,7 +128,10 @@ Which control to use depends on **who owns the file**:
 
 - **Skills owned here:** frontmatter. `disable-model-invocation: true` makes a
   skill user-invoked only and removes its description from Claude's model
-  context; `user-invocable: false` is the inverse (Claude-only).
+  context; `user-invocable: false` is the inverse (Claude-only). The
+  description takes the shape of how the skill is reached, a menu label for a
+  typed one:
+  `claude/.claude/skills/prompt-engineering/AGENT-DOCS.md` § Skill descriptions.
 - **Skills you don't own:** `skillOverrides` in `settings.json`. Editing the
   frontmatter of a **CLI-managed** skill (anything in the lockfile) is a fork
   that `skills update` silently reverts; an override sits outside the file.
@@ -195,6 +198,20 @@ for personal-skill maintenance. Runtime metadata stays outside Git; external
 destinations are reported for review and commit in their owning repositories.
 `docs/bundled-skills.md` owns the visibility checks and measurement method.
 
+## The size budget
+
+`skill-sync` also holds every skill owned here (neither in the lockfile nor a
+folder linked from another project) to the budget in
+`scripts/.local/share/dotfiles/skill-budget.yaml`: a description fits its
+invocation (a model-invoked one sits in context every turn, a manual one is a
+menu label), and a body stays a brief. Skills grow one review finding at a
+time, and every addition looks cheap where it lands; the rulebook's
+**Write short** says why that costs. A skill already past the body budget is
+recorded at its size, and the record only moves down: `skill-sync` lowers
+it when the skill shrinks and drops it once the skill fits, so `--check`
+fails on growth. Past the line, an addition replaces something. Raising a
+record is a hand edit to that file, visible in review.
+
 ## Ownership tiers — who may edit a skill, and where a lesson goes
 
 Each directory under `claude/.claude/skills/` has an ownership tier that
@@ -214,8 +231,9 @@ Guidance for writing agent-facing text is layered, and the layer decides the
 file:
 
 ```
-claude/.claude/skills/prompt-engineering/   original — the one rulebook: model-facing text,
-                                            structure, pointers, the revision pass
+claude/.claude/skills/prompt-engineering/   original — the one rulebook: SKILL.md for any
+                                            model-facing text; AGENT-DOCS.md, TOOLS.md and
+                                            REVISION.md for skills, tools, the revision pass
 claude/.claude/skills/writing-for-agents/   managed — reached only for SKILL-MECHANICS.md
                                             (frontmatter, invocation, routers); its
                                             general rules are folded into the rulebook
@@ -259,7 +277,7 @@ Triage every hunk into one bin and write the verdicts into
 
 1. **Graduate** — a general writing rule new or sharper than the rulebook's.
    Rewrite it into the rulebook section it belongs to (a layer, every
-   sentence, a surface, the revision pass), never pasted, then run the
+   sentence, write short, or a companion file), never pasted, then run the
    rulebook's revision pass on the rulebook: an upstream addition is a reason
    to be better, not longer.
 2. **Mechanics** — frontmatter, invocation, or routers. Nothing to do;
