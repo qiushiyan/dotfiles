@@ -102,9 +102,11 @@ until a command shows it again.
 ## The chat
 
 The user's page, `https://qiushi-mini.tailf7adf1.ts.net:8444`, shows every
-driver's batch live: each session's goal, where it stands, its PRs and the
-questions waiting on the user. Your messages carry what it cannot: what
-changed, why, and what you recommend.
+driver's batch live, each under a tab named for its project: each session's
+goal, where it stands, its PRs, the questions waiting on the user and those
+they answered, and each session's history in the record, your notes on it
+as you wrote them. Your messages carry what it cannot: what changed, why,
+and what you recommend.
 
 - **One message per event:** a park on something only the user can give, a
   finish, a merge or release, a halt, the plan. Say what changed, then the
