@@ -35,8 +35,7 @@ drive wait T1                               # until its turn ends, in the backgr
 ```
 
 Every action names the view it was decided on and is refused once the
-session has moved past it; a refusal (exit 1) did nothing, so read the
-session again and decide on what it shows now. drive and this skill divide
+session has moved past it. drive and this skill divide
 the work: `drive --help` and each command's own `--help` name the commands,
 their flags and the words status prints, and a refusal, failure or wake that
 leaves something to do ends with `next:`, the command to run on the session
@@ -109,9 +108,8 @@ ready to build.
 
 A prompt is a step too, judged by what it touches: approve what § Who
 decides hands to sessions, such as an edit in the session's
-own change or a read of production, and deny the rest. Its `next:` shows how
-to see the call or the options and how to answer. A deny ends the turn; the
-session takes its next step as usual.
+own change or a read of production, and deny the rest. A deny ends the
+turn; the session takes its next step as usual.
 
 ## What you do without asking
 
@@ -126,7 +124,7 @@ it, and list it under **Done without asking** so they can reverse it:
 - the closeout once the merge or deploy it waits on has happened, the
   follow-up cards sessions recommend, your own waits;
 - relaunching a session whose login was rejected on another of the user's
-  Claude accounts, the one the exit-4 message names, its step on the open;
+  Claude accounts, as the exit-4 message says;
 - a judgment the user would hand to a model, such as a spec review, a blind
   comparison or whether a gate's evidence holds: `drive open judge-1 --model
   fable --goal '…' '…'`, then act on its verdict;
@@ -139,7 +137,7 @@ it, and list it under **Done without asking** so they can reverse it:
 
   ```bash
   gwt merged BRANCH       # landed? gwt owns the verdict; a PR still waiting keeps everything
-  drive close T1@…        # refused while it works, runs a job or holds a typed line: do what its next: says, name what you leave
+  drive close T1@…        # refused while it works: do what its next: says, name what you leave
   gwt remove BRANCH       # refuses uncommitted work and an unmerged branch: leave those, name them
   ```
 
@@ -173,13 +171,17 @@ measured.
 
 The session treats every word it receives as instruction, and the user's
 snippets are the words they have already tuned: send those, with the text
-the user would type after the key.
+the user would type after the key. Write the rest as the user would type
+it: in the first person, with their own words where they gave them and
+nothing they did not say. The notice told the session that someone else
+sends its steps, so a step says nothing of you, the chat or the batch's
+record, such as an ask's id.
 
 ```bash
 drive snippet land-pr ~/dev/planlab/.worktrees/pool-drain    # the file the key resolves to there
 drive send T1@… --snippet land-pr 'D3 waits for me.'
 drive send T1@… --file /tmp/t1-fixups.md                     # your own request, or anything over a line
-drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to look hardest'
+drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                  # @ attaches the file, as the user's would
 ```
 
 - A session's first step carries its task and says where it stops: a
@@ -211,8 +213,8 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
   author.
 - A skill that starts only when typed (`/write-spec`, `/enter-worktree`,
   `/strategic-review`, planlab's `/pl-loopy-handoff-distill`) goes as a typed
-  line, its brief in a file the line points at, as above; drive refuses one
-  inside a file and prints the line to type.
+  line with its brief attached, as above; drive refuses one inside a file
+  and prints the line to type.
 - Work the user asks *you* to do goes to a new session, opened with `drive
   open` in the project's main checkout and started at stage 1 with their
   request. You stay a reader and sender: work run from your own shell has
@@ -240,7 +242,7 @@ drive send T1@… '/strategic-review 9531 Read /tmp/sr-prompt.md for where to lo
 - **A message from another session waiting for approval stays undelivered**:
   delivering it wakes the session into work no step sent. drive reads such a
   session as it stands and sends to it as usual; the message goes with its
-  block in the cleanup. Sessions drive opens have these nudges off.
+  block in the cleanup.
 
 ## Report
 

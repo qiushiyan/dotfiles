@@ -4,6 +4,82 @@ Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares. A
 run by a real bot follows `DOGFOOD.md`.
 
+## 2026-10-29 — steps as the user would type them (improve-tool pass)
+
+**Ask.** The user saw the bots write each step to a file and send "read
+<path> and do what it asks"; Claude Code's `@path` attaches a file, and they
+want a driven session's prompts closer to what they would type themselves,
+the notice aside. Mini session `9fb41991`; ledger and receipts in its
+scratchpad (`drive-session-frictions.md`, `chat-findings.md`).
+
+**Corpus.** Batches 2026-10-24, 2026-10-27, 2026-10-28 (Session Driver)
+and itell-2026-10-28 (ITELL): 34 driven sessions and their transcripts; both
+chats from 10-27 on, read in full by a delegated reader.
+
+**Observed.**
+- 157 of 157 bare pointers were read by the session's first tool call (141
+  `cat`, 16 Read): the pointer worked and cost a tool call each.
+- All 13 notice-only turns, ahead of a typed first step, ended "the step
+  isn't here"; in 12 the session listed `sends/` or read `batch.json` or
+  `events.jsonl`, and sr-9786 found its queued line there. A Sonnet replay
+  in a bare repository did not dig (0 of 6) but wasted the turn (6 of 6).
+- Claude Code 2.1.312: `@/abs/path` attaches the file, outside the project
+  too, after a typed skill's arguments too, with no tool call. Typed through
+  Rex, Enter on a line ending in a mention takes the file completion and
+  sends nothing; a space after the path closes it. A mention queued mid-turn
+  is not attached: the model Reads it, and on one account met a "read
+  outside the working directories?" prompt.
+- Bot voice: 23 of the Session Driver's 30 self-written steps open "Qiushi
+  …" or "From Qiushi", five name ask ids the session never saw, all nine
+  start files say "the driver then sends", and the six `/write-spec` lines
+  type "for my answers" over files saying "he agrees". ITELL's add-ons are in
+  the user's voice; 4 of its 5 briefs say "the owner".
+- Chats (fewer than three each, recorded, not acted on): a stray `?25h` kept
+  an ITELL session parked 16.4 h because `respond clear` fails in vim
+  insert mode; a "you can send the note to Max" grant became a draft;
+  plain-terms re-asks on 3 of the Session Driver's 11 stops (the 10-27
+  revise trigger), and its 6 multi-question cards all skipped.
+
+**Changed.**
+- drive `7485faa`: a file step is typed as `@<copy>` with a trailing space;
+  a queued one keeps "Read <copy> and do what it asks."; the notice rides a
+  typed first step as an `@` mention, keeping its own turn only for a
+  command no skill file backs, a queued send, or a line past 500 bytes;
+  typed lines ending in a mention get the space; help and the typed-only
+  refusal teach `@<file>`.
+- claude-steps `5dcaec6`: a prompt that is one `@/path` mention is a
+  pointer, answered by its file attachment.
+- SKILL.md § Sending: write the rest as the user would type it, first
+  person, their words and nothing they did not say, nothing of the driver,
+  chat or record; typed skills take their brief as `@path` (PLANLAB.md too).
+- Deletions to watch, each a mechanism drive's own messages state: "a
+  refusal did nothing, read again"; how a prompt's `next:` shows the call;
+  `close`'s refusal causes; the exit-4 message's details; "sessions drive
+  opens have these nudges off". Bring one back if a bot misreads that
+  message.
+
+**Validation.**
+- drive and claude-steps `make check`; a fake that takes Enter as the
+  completion on a trailing mention; a live batch through real Rex and Claude
+  Code (Haiku): `/echo-args 9786 @brief` arrived in one turn with the brief
+  and the notice attached, a file step as `@copy`, zero tool calls.
+- `~/dev/skill-evals` case `drive-step` (s4-amend, s2-agree, s1-followup:
+  the 10-28/29 answers), Opus writer, Sonnet judge, subscription route, n=3
+  per arm (`runs/drive-step-1029`, `-r2`). Voice and no-driver checks per
+  run: current 1.67 of 6, revised 6.00, revised2 6.00. Faithful, after
+  correcting the check to allow a hold the skill requires: current 2.00 of
+  3, revised 0.67 (first person invited views the user never gave), revised2
+  2.33. revised2 ("nothing they did not say") shipped. Not run: Grok as the
+  writer, which is what the bots run; a calibration's s1-followup rollouts
+  reached OpenRouter (Grok, kimi) before the user stopped that route.
+
+**Next pass compares** the next batches' step files against these counts:
+third-person openings, record ids and driver talk in steps; notice-only
+turns (expected none outside built-ins and queued sends); `unknown` sends on
+a line ending in a mention; claude-steps' file-pointer misses (59 of 261
+before). Revise if a bot's first-person step states a view the user did not
+give, or a queued `@` step stalls on a read prompt.
+
 ## 2026-10-27 — who decides, in one place, and how a stop reaches the phone (improve-tool pass)
 
 **Ask.** Borrow from tstack and pstack where it helps the pipeline; run the
