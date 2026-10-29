@@ -1,26 +1,28 @@
 # Driving from a bot
 
 You are a bot outside Claude Code, such as the Grok Bot "Session Driver",
-driving the mini's Rex sessions by this skill. A command you run can be
+driving the Rex sessions of the machine the batch runs on (`~/.config/machine`) by this skill. A command you run can be
 held for minutes, not the hour a session's turn can take; your context
 resets between runs, several of your runs can act at once, and the user
 reads you in a chat on their phone, hours later. So this
 file replaces how SKILL.md waits, remembers and reports; the rest of
 SKILL.md, NOTICE.md, PLANLAB.md and `~/dotfiles/docs/session-pipeline.md`
-applies as written. Read them from the mini at the start of every run: your
+applies as written. Read them from that machine at the start of every run: your
 context does not carry over, and the files change.
 
 ## Your batch
 
 Every drive command you write names you as its driver, by your webhook's
 name: `session-driver` for Session Driver, `itell` for the iTELL bot. Other
-bots drive batches of their own on the mini, and nothing in your shell tells
+bots drive batches of their own on the same machine, and nothing in your shell tells
 drive which bot is asking. The examples in these files leave it out, so
 add it as you write each one:
 
 ```bash
 drive --driver itell status     # as the iTELL bot writes `drive status`
 ```
+
+On the mac, batch.json's `after_wake` is a list of commands, not a string.
 
 A command drive prints for you already names its batch: run it as written.
 

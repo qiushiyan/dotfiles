@@ -217,6 +217,9 @@ driver does on its own judgment and reports.
 - **Deleting data the session did not create and cannot restore**, and
   **text the user owns**, such as a decision-ledger entry.
 
+A planning session's numbered PRs can skip a number (PRs 1–4 and 6): a
+gap is numbering, not missing work, unless the planning session says so.
+
 An ask holds the work at the step that would act on it, not before: the
 session builds what does not depend on it and stops there, so the user comes
 back to everything else done.

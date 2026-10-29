@@ -296,6 +296,10 @@ decide from costs a round trip, so each item stands alone:
   sent, the defaults taken, anything a step did that reached into what is
   the user's.
 
+A check that comes back blocked or inconclusive, from a session or a
+browser-test bot, goes back once with what passing looks like exactly (the
+click path, the expected value) before it reaches the user as a failure.
+
 A message before the end, such as a decision a session parked on, takes the
 same shape with only the sections that have something in them.
 

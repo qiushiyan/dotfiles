@@ -14,6 +14,9 @@ Open sessions in the platform, not the repository root: the platform's
 edit load only from `apps/platform`, so a session opened at the root runs
 without them.
 
+Sessions leave the untracked `apps/platform/supabase/` folder in the main
+checkout alone: it links to production and is never committed.
+
 ```bash
 drive open T1 --dir ~/dev/itell/apps/platform --goal '…' --file /tmp/t1-start.md   # "… in a worktree of your own"
 drive open T2 --dir ~/dev/itell/apps/platform --goal 'Find what causes <the reported bug>, and whether it needs a fix.' '/bug-report-triage <reportId>'
@@ -69,10 +72,22 @@ A blocked risk story is a limit for the report.
 - A lane is its session's: no session stops another's, and neither do you.
   Send the owning session `pnpm verify down` instead, as you would for a
   session you park overnight with its lane up.
+- `verify/admission.test.ts` fails whenever fewer than two lanes are free:
+  machine headroom, not a regression.
 - A session's stage 5 ends with its lane down. Before you close a session,
   check in its worktree: `pnpm verify status` answering "this worktree has
   no lane" (exit 2, its suggestion to `up` aside) is the state you want;
   a lane it still reports, the session brings down.
+
+## The staging test account
+
+A signed-in check needs an account that is a platform admin
+(`users.role='admin'`) for `/admin/*`, a member of a sequential cohort with
+seats free (org `sustainability-institute`; the iTELL Demo org has none) for
+lesson progress, and in an org for `/welcome` and the org pages.
+`qiushi.yan@itell.ai` is the default; its mail forwards to the user's Gmail,
+so the Browser Test bot reads its magic links itself. Set the account up
+before you send the check, not after it comes back blocked.
 
 ## Who can be hurt decides what you ask
 
@@ -81,8 +96,12 @@ The pipeline doc's § Who decides draws the lines; these are iTELL's spaces.
 Do these, or let the session do them, and report them:
 
 - anything inside a lane: its databases, servers and CMS are the session's;
-- staging, a copy of iTELL that emails only the team: reads, and writes
-  through the app;
+- staging, a copy of iTELL that emails only the team: reads, writes
+  through the app, and direct writes to its database within fair use:
+  small, for a purpose, and labelled. Pull its URL with
+  `vercel env pull --environment=staging` and name each row you add
+  `test-<pr>-*`. A "Refresh staging from production" run wipes them, so
+  check they are still there before a check relies on them;
 - reads of production through the read-only role
   (`ITELL_PROD_READONLY_DATABASE_URL`).
 
@@ -109,8 +128,25 @@ time:
 drive send T1@… --snippet merge-when-ready --hold itell-main
 ```
 
-The production deploy follows a signed-in check on staging, and signing in
-there needs an `@itell.ai` inbox, which only the user has: list it under
-**Needs you** with the merge, what the session checked on staging, and the
-deploy commands its report names. Then send the session `recap`, and its
-`closeout` (the handoff distill), one session at a time.
+Every browser-based check, on staging or production, goes to the Browser
+Test bot without asking the user, naming the account it signs in as. The
+check lists what passing looks like exactly: the click path to the end
+state (a lesson with only reading counts as done after "Mark as complete")
+and computed-style values for a subtle visual change. Its writes on staging
+are fine. The production deploy follows a signed-in staging check and is
+the user's grant; "fix X, then deploy" is one grant, recorded with `drive
+record grant`. Then send the session `recap`, and its `closeout` (the
+handoff distill), one session at a time.
+
+## The production deploy
+
+```bash
+gh workflow run deploy-platform.yml --ref main -R learlab/itell   # migrations run in the Vercel build
+cd apps/platform && psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/agent-readonly-role.sql   # after a migration; URL from .env.production
+```
+
+`DEPLOYMENT.md` is at the repository root. Check that every new table is
+classified in `scripts/agent-readonly-grants.sql`: the DB test meant to catch
+an unlisted one does not run on PRs, which run lint only. The report names
+every PR the deploy ships and flags any gate a user meets, such as a new
+terms version every account accepts again.
