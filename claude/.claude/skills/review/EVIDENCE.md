@@ -398,3 +398,46 @@ See `../consult/EVIDENCE.md`, same date: `../consult/VOICE.md` rides every
 review dispatch as `--instructions-file`; the templates lost the review-lens
 paragraph and the ideas boilerplate it now carries (review total 8,128 →
 7,954 words).
+
+## 2026-10-29 — the body read as a brief, guarded by three asking-side cases
+
+**Why.** The tstack pass (`../prompt-engineering/EVIDENCE.md`, 10-28) named
+review as the largest and most-used owned skill: 3,997 body words,
+30.5-word sentences, 80 dashes; 409 typed and 263 model invocations in 90
+days. Live use since 10-01 on both machines: of 133 sessions that collected
+a `review-r1`, 120 ran tests afterwards and 79 sent a round 2; the user's
+next turn was most often "build the ideas you recommend" or a decision
+taken from the report's recommendation.
+
+**Cases first** (`~/dev/skill-evals/cases/review`, red bf59df1, fixture
+`review-jobq` with an envoy stand-in that records the brief and returns a
+canned reply):
+- `goal-withholds`: the goal brief withholds the design, compiles
+  **already judged** honestly, and seats one cold voice with the cap.
+- `warm-beside-cold`: a warm member beside a cold one; the cold voice gets
+  the full brief.
+- `judge-fix-report`: a real critical, a real moderate, a false finding a
+  green test rebuts, and an unpinned minor. Verify, pin, fix with round
+  coordinates, run round 2, and the report's shape and order.
+
+**Change.** SKILL.md 3,997 → 2,967 words, 30.5 → 22.9-word sentences, no
+dashes. Rationale-only lines went; list content the templates already carry
+(the agent surfaces, which slots each mode fills) lives only there.
+Description unchanged.
+
+**Parity read** (fresh session, old against new, three scenarios): no lost
+behavior and no divergence. Two small weakenings, kept as deletions to
+watch: tenets that pass the bar are "not findings" and a failing one "joins
+the findings" (the word *tip* and step 6 still route them); and the suite
+indictment's "add, strengthen, or delete accordingly". The renamed heading
+went back to **Resolving the voice**, which `../envoy/DESIGN.md` cites and
+consult and delegate share.
+
+**Eval** (run `review-1029`, n=3, agent Opus 5.5, judge Sonnet 5.5,
+subscription): red 9/9 and new 9/9 on every check. The cases guard against
+regression; red passing means they cannot show a gain. Agent cost estimate
+$16.76 for 21 rollouts.
+
+**Next pass compares** live rounds after this commit: test runs after a
+collect, round-2 rate, and whether a tenet is filed as a finding or a
+report opens without the "nothing needs you" line.
