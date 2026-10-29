@@ -7,6 +7,14 @@ runs beside tmux as a trial, on both machines, while the two are compared;
 tmux is not being replaced. The `rex/` package carries the tmux muscle memory
 into Rex and tries what Rex makes possible for agent work.
 
+**Superlogical's docs are the reference:**
+`https://www.superlogical.com/rex/docs.md`, every page also as `.md`, all of
+them in one file at `https://www.superlogical.com/rex/docs/llms-full.txt`.
+Read them before guessing at Rex, and above all
+`https://www.superlogical.com/rex/docs/reference/lua.md`, which says what
+each `rex.*` function does and where it works (init.lua at load, inside an
+action, a `rex do` script).
+
 This doc carries what the trial learned, so the next agent builds on it
 instead of re-deriving it: how Rex is shaped, where its truth lives, which of
 its protocols carry agent work, how the two machines meet in it, and the
@@ -18,7 +26,7 @@ re-probe what matters (§ Lessons).
 
 ## Where Rex's truth lives
 
-There are no published docs, but the server describes itself, and that beats
+Beside the official docs (above), the server describes itself, and both beat
 any notes kept here:
 
 - **The wire API:** the server serves a full reference for agents at
@@ -34,11 +42,8 @@ any notes kept here:
   actions` (init.lua's and the blocks'); `rex -C <app client> actions --json`
   (the app's own actions with argument schemas, and which ones `repeats`);
   `rex keymap` (the resolved key map, modes included); `rex block inspect`.
-- **The Lua API** (init.lua, `rex do` scripts) is documented only in passing:
-  llms.txt names `rex.session.*`, `rex.block.call`, `rex.server`,
-  `rex.invoke`, `rex.host` and `rex.unbind` where its methods use them, and
-  `rex do --help` describes the script runtime. Learn the rest by probing:
-  `rex do -e '<lua>'` prints what the chunk returns, and `rex config check
+- **Probing the Lua** confirms what the reference says on the installed
+  build: `rex do -e '<lua>'` prints what the chunk returns, and `rex config check
   FILE` loads a scratch file and names the field or option a call does not
   take. An action runs with less than a script (§ Lessons). What the probes
   found is under § The model and § Lessons.
@@ -122,7 +127,7 @@ agents; a new integration should reach for them first.
   silently):
 
   ```text
-  ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=0-255][:title=BASE64][:msg=BASE64] ESC \
+  ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=0-100][:title=BASE64][:msg=BASE64] ESC \
   S: idle working done blocked error clear      K: permission question auth
   ```
 
@@ -132,7 +137,8 @@ agents; a new integration should reach for them first.
 - **The clipboard, OSC 52.** Written to a terminal, it becomes a
   `clipboard_written` event and the app showing that session copies it: the
   clipboard of the machine you are looking from, with no ssh-aware routing.
-  rexd puts the event's text on the host's pasteboard too, because Neovim's
+  rexd puts the event's text on the host's pasteboard too (a copy too large
+  for the event is read back with `clipboard_read`), because Neovim's
   `p` in a Rex pane reads `pbpaste` there: without it, a selection copied
   from the laptop's app never reaches nvim on the mini. Since a pane cannot
   say where you are, the shared copy tools send it this way in every Rex
@@ -144,7 +150,7 @@ agents; a new integration should reach for them first.
   `process` block method, right while nvim or Claude runs: tmux's
   `pane_current_path`.
 - **A terminal's whole scrollback** comes back as text, HTML (palette slots as
-  CSS variables) or VT from the `format` block method, as long as it fits one
+  CSS variables) or VT from the `format` block method, in parts past one
   control reply (§ Lessons); `plain` returns nothing. The URL picker and the
   pane export read it.
 - **A block's raw bytes** come from the data protocol (`/api/data`,
@@ -281,7 +287,8 @@ one exists.
   `rex do` is not checked at all.
 - **Actions, and panes the server starts, get the server's bare system
   PATH.** Homebrew and `~/.local/bin` tools are missing unless the action or
-  script sets PATH itself (`rexkit.shell`'s `PATH`).
+  script sets PATH itself (`rexkit.shell`'s `PATH`, or `rex.exec`'s `env`,
+  which also finds the program on it).
 - **The `rex` CLI probes any terminal its stderr is attached to,** and the
   terminal's reply arrives on stdin as phantom input. A script that reads keys
   and calls `rex` sends rex's stderr elsewhere.
@@ -296,37 +303,33 @@ one exists.
   Per-session numbers, as tmux keeps them, step from the current tab with
   `client.tab.next` / `previous`; `session.focus_next_window` does not wrap.
 - **A mode shows a panel of its keys while it is active, and so does a key
-  sequence (`ctrl+a>x`).** Both swallow a key nothing binds; `rex.mode` takes
-  only `exclusive` and `blocked`. The prefix is a mode, with `escape` to
-  leave it.
+  sequence (`ctrl+a>x`).** Both swallow a key nothing binds; `exclusive` is
+  `rex.mode`'s one option, and `rex.unbind("mode/key")` blocks a key in a
+  mode. The prefix is a mode, with `escape` to leave it.
 - **The app evens out a new split when "Balance splits on creation" is on,**
   after the action that made it returns, and no pane is shorter than two rows.
   A pane meant to be small sizes itself once it has started.
 - **Events reach a `rex do` script only once its top level has returned.** A
-  loop that also polls is `rex.wait(name, seconds)`, which hands over the
+  loop that also polls is `rex.wait(event, timeout)`, which hands over the
   events that arrive meanwhile (the agents board).
-- **Rex's Lua forks only through `rex.exec(argv[, opts])`** from app build
-  1497: `os.execute` and `io.popen` raise. Its options (`cwd`, `env`,
-  `stdin`, `timeout`) are in the official Lua reference
-  (`superlogical.com/rex/docs/reference/lua.md`); argv itself is a plain
-  list. A module that raises while init.lua loads
-  leaves the server with no key bound, so `ctrl+a` reaches the shell as `^A`;
-  `rex config check ~/.config/rex/init.lua` names the line. Guard:
-  `rexkit.shell` is the one place that forks, falling back to the old calls
-  on an older Rex. The Lua also crashes the whole script on `for … in
-  (s:gsub(…) .. x):gmatch(…)`; the same through a local works.
-- **A control reply carries at most 1 MiB, and Rex never splits one.** A
-  larger result, such as `format` on a long scrollback, is a `too_large`
-  error, reached by the HTML long before the text; a full scrollback can be
-  several times the limit even as text. `rex block stream` is not
-  implemented in the CLI, and the data protocol carries the scrollback only
-  inside its binary snapshot (§ Protocols that carry agent work), so a
-  script has no other way to read it as text. Guard:
-  `rex-urls` and `rex-export` keep the call's error and say why a pane gave
-  nothing, the export falling back to plain text first, and the
-  `export_pane` action raises the reason; clearing the pane (prefix `C-k`)
-  makes it readable again. Pulling a reply near the limit briefly inflates
-  the server by a few hundred MB.
+- **Rex's Lua forks only through `rex.exec`** from app build 1497:
+  `os.execute` and `io.popen` raise. A module that raises while init.lua
+  loads leaves the server with no key bound, so `ctrl+a` reaches the shell as
+  `^A`; `rex config check ~/.config/rex/init.lua` names the line. A command
+  is stopped when the action or script that started it returns, unless
+  `rex.exec.start` started it detached. Guard: `rexkit.shell` is the one
+  place that forks, falling back to the old calls on an older Rex. The Lua
+  also crashes the whole script on `for … in (s:gsub(…) .. x):gmatch(…)`; the
+  same through a local works.
+- **A control reply carries at most 1 MiB.** `format` returns more only in
+  parts: with `max_bytes` set, its reply carries an `id` that `blob_read`
+  pages through; without it, a long scrollback is a `too_large` error,
+  reached by the HTML long before the text. `rex-urls` and `rex-export` still
+  make the one call, so on a long scrollback they say why the pane gave
+  nothing, the export falling back to plain text first, and the `export_pane`
+  action raises the reason; clearing the pane (prefix `C-k`) makes it
+  readable again. Pulling a reply near the limit briefly inflates the server
+  by a few hundred MB.
 - **A data stream lasts only as long as the control connection that asked
   for its ticket:** closing that connection cancels the stream (close code
   1001). A reader keeps both open and drains the control side's session

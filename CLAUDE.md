@@ -87,8 +87,9 @@ Read the owning docs before changing a feature that spans packages:
   `tmux/.config/tmux/scripts/steps.md`. Neither the `claude-steps` binary nor
   the `prefix S` popup sends anything to a session.
 - **Rex lab** (`rex/`, `claude/`, `zsh/`, `nvim/`, `scripts/`): `docs/rex.md`.
-  Rex's own `/llms.txt` is the API reference; each hook into another package
-  does nothing outside Rex.
+  Superlogical's docs (`superlogical.com/rex/docs.md`) and the server's own
+  `/llms.txt` are the reference; each hook into another package does nothing
+  outside Rex.
 - **Session driving** (`claude/` the drive-session skill, `rex/` rex-agent,
   `scripts/` grokbot-transcript, `~/dev/drive`): `~/dev/drive/CLAUDE.md`. The
   skill teaches the judgment and relies on drive's messages for the commands,
