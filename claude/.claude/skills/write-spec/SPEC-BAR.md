@@ -21,8 +21,9 @@ decision.
 Done when the summary alone re-grounds a cold reader, every design-changing
 premise carries evidence or a fallback that preserves the design, every
 rule has one home, every cited path and heading resolves, and the spec is
-under 6,000 words or the report names the decisions that earned the rest. The examples are adapted from shipped specs: they show a form, not
-the project at hand.
+under 6,000 words or the report names the decisions that earned the rest.
+The examples are adapted from shipped specs: they show a form, not the
+project at hand.
 
 ## Read first
 

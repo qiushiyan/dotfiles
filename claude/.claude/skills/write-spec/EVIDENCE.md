@@ -1160,7 +1160,14 @@ from `git show HEAD`; report in the fork's scratchpad `f3/parity-report.md`).
   3,200 words at both revisions, under the 4,000 bar.
 - A case that tests the cut needs a design that drafts past 6,000 words.
   None exists yet.
-- `green` is unset until the commit.
+- `green` is 31a662c, the commit that shipped this pass.
+
+**Decided by the user** (10-29, on the recommendation): 4,000 and 6,000
+stay fixed numbers for a one-PR change. A larger change leaves by the
+report naming the decisions that earned the length, so the bar scales
+without the writer guessing a change's size up front. Reports that name
+"earned" past 6,000 as a routine (the reversal signal below) are the cue to
+scale the numbers instead.
 
 **Next pass compares** the user's specs written after this commit against
 the October median of 7,827 words before As built:
