@@ -12,9 +12,9 @@ instead of re-deriving it: how Rex is shaped, where its truth lives, which of
 its protocols carry agent work, how the two machines meet in it, and the
 traps. Each tool under `rex/` explains itself in its header. Everything here
 was established against CLI build `c50b257` and app build 1026; app build
-1069 (CLI `7b5bf3e`) added to the API and loads the config without a warning.
-Rex moves fast: re-probe what matters after an update, and restart the server
-first (§ Lessons).
+1069 (CLI `7b5bf3e`) added to the API, and 1497 took the shell out of its Lua.
+Rex moves fast: after an update, restart the server, check the config, and
+re-probe what matters (§ Lessons).
 
 ## Where Rex's truth lives
 
@@ -305,10 +305,15 @@ one exists.
 - **Events reach a `rex do` script only once its top level has returned.** A
   loop that also polls is `rex.wait(name, seconds)`, which hands over the
   events that arrive meanwhile (the agents board).
-- **Rex's Lua 5.1 never closes an `io.popen(…, "w")` pipe,** so a reader such
-  as `pbcopy` waits forever; pipe through the shell. It also crashes the whole
-  script on `for … in (s:gsub(…) .. x):gmatch(…)`; the same through a local
-  works.
+- **Rex's Lua forks only through `rex.exec{ argv }`** from app build 1497:
+  `os.execute` and `io.popen` raise. It returns `ok`, `code`, `stdout` and
+  `stderr`, takes no input and no named options, and returns `nil, message`
+  when the program cannot start. A module that raises while init.lua loads
+  leaves the server with no key bound, so `ctrl+a` reaches the shell as `^A`;
+  `rex config check ~/.config/rex/init.lua` names the line. Guard:
+  `rexkit.shell` is the one place that forks, falling back to the old calls
+  on an older Rex. The Lua also crashes the whole script on `for … in
+  (s:gsub(…) .. x):gmatch(…)`; the same through a local works.
 - **A control reply carries at most 1 MiB, and Rex never splits one.** A
   larger result, such as `format` on a long scrollback, is a `too_large`
   error, reached by the HTML long before the text; a full scrollback can be
