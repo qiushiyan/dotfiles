@@ -19,20 +19,35 @@ function M.bin(name, ...)
   return { "/bin/sh", "-c", 'exec "$HOME/.local/bin/' .. name .. '" "$@"', name, ... }
 end
 
+-- Rex from app build 1497 forks only through rex.exec, an argv with no
+-- shell; before it (the mini until it updates), io.popen and os.execute.
+-- rex.exec returns nil only when it cannot start the program.
+local function sh(cmd)
+  return rex.exec{ "/bin/sh", "-c", cmd } or { ok = false, stdout = "" }
+end
+
 -- A shell command's output with trailing white space removed, or nil when
 -- it printed nothing.
 function M.capture(cmd)
-  local p = io.popen(cmd)
-  local out = p and p:read("*a") or ""
-  if p then p:close() end
+  local out
+  if rex.exec then
+    out = sh(cmd).stdout
+  else
+    local p = io.popen(cmd)
+    out = p and p:read("*a") or ""
+    if p then p:close() end
+  end
   out = out:gsub("%s+$", "")
   return out ~= "" and out or nil
 end
 
-function M.run(cmd) return os.execute(cmd) == 0 end
+function M.run(cmd)
+  if rex.exec then return sh(cmd).ok end
+  return os.execute(cmd) == 0
+end
 
 -- CMD in the background, its output discarded.
-function M.spawn(cmd) os.execute("(" .. cmd .. ") >/dev/null 2>&1 &") end
+function M.spawn(cmd) M.run("(" .. cmd .. ") >/dev/null 2>&1 &") end
 
 -- Open a URL or file with macOS `open`, on this machine.
 function M.open(target) M.spawn("open " .. M.quote(target)) end
@@ -41,7 +56,7 @@ function M.open(target) M.spawn("open " .. M.quote(target)) end
 -- rex.wait), so there it is a shell sleep.
 function M.pause(seconds)
   if rex.sleep then return rex.sleep(seconds) end
-  os.execute("sleep " .. tonumber(seconds))
+  M.run("sleep " .. tonumber(seconds))
 end
 
 -- Replace the home directory at the start of PATH with ~.

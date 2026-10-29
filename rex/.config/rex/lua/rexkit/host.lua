@@ -34,8 +34,8 @@ end
 -- front process when the caller has it.
 function M.copy(ctx, session_id, block_id, text, fg)
   if ctx.server then
-    -- Not io.popen(…, "w"): Rex's Lua never closes that pipe, so pbcopy
-    -- waits for the end of its input forever.
+    -- Through the shell: rex.exec takes no input, and Rex's io.popen(…, "w")
+    -- never closed its pipe, so pbcopy waited for its input forever.
     return shell.run("printf %s " .. shell.quote(text) .. " | pbcopy")
   end
   return feedback.osc52(session_id, block_id, text, fg)

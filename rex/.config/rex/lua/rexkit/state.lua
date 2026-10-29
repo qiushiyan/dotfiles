@@ -6,11 +6,13 @@
 -- made once, when this module loads, and again only when a write finds it
 -- gone. A key press forks nothing.
 
+local shell = require("rexkit.shell")
+
 local M = {}
 
 M.DIR = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/rex-lab"
 
-local function mkdir() os.execute("mkdir -p '" .. M.DIR:gsub("'", "'\\''") .. "'") end
+local function mkdir() shell.run("mkdir -p " .. shell.quote(M.DIR)) end
 mkdir()
 
 local function open(rel, mode)

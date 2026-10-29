@@ -161,7 +161,7 @@ local function to_pasteboard(text)
   if not f then return end
   f:write(text)
   f:close()
-  os.execute("pbcopy <" .. shell.quote(path))
+  shell.run("pbcopy <" .. shell.quote(path))
   os.remove(path)
 end
 

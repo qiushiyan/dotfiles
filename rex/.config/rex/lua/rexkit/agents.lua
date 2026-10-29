@@ -3,6 +3,7 @@
 -- Claude session behind a block.
 
 local api = require("rexkit.api")
+local shell = require("rexkit.shell")
 
 local M = {}
 
@@ -109,11 +110,8 @@ local function config_dirs()
   dirs = { home .. "/.claude" }
   -- Not in the constructor: a nil there would end ipairs before ~/.claude.
   if os.getenv("CLAUDE_CONFIG_DIR") then table.insert(dirs, 1, os.getenv("CLAUDE_CONFIG_DIR")) end
-  local p = io.popen("ls -d " .. home .. "/.claude-accounts/*/ 2>/dev/null")
-  if p then
-    for d in p:lines() do dirs[#dirs + 1] = (d:gsub("/$", "")) end
-    p:close()
-  end
+  local listed = shell.capture("ls -d " .. shell.quote(home) .. "/.claude-accounts/*/ 2>/dev/null") or ""
+  for d in listed:gmatch("[^\n]+") do dirs[#dirs + 1] = (d:gsub("/$", "")) end
   dirs_at = os.time()
   return dirs
 end
