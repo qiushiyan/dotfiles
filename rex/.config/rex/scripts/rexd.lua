@@ -154,21 +154,27 @@ local function in_view(session_id, block_id)
   return w ~= nil and w.window_id == view.active_window_id
 end
 
--- Through a file, not printf's argument: a copy can outgrow ARG_MAX.
-local function to_pasteboard(text)
-  local path = os.tmpname()
-  local f = io.open(path, "w")
-  if not f then return end
-  f:write(text)
-  f:close()
-  shell.run("pbcopy <" .. shell.quote(path))
-  os.remove(path)
+-- A copy too large for its event arrives without text; the server keeps it
+-- for about a minute under the event's id, read back in parts.
+local function copied_text(target, ev)
+  if type(ev.text) == "string" then return ev.text end
+  if not ev.id or (ev.bytes or 0) == 0 then return nil end
+  local parts, offset = {}, 0
+  repeat
+    local r = api.block(target.session_id, target.block_id, "clipboard_read",
+      { id = ev.id, offset = offset, max_bytes = 983040 })
+    if not r then return nil end
+    parts[#parts + 1] = r.data
+    offset = offset + #r.data
+  until r.eof or r.data == ""
+  return table.concat(parts)
 end
 
 rex.on("block_event", function(target, ev)
   if ev.name == "process_changed" then return on_process(target, ev) end
   if ev.name == "clipboard_written" then
-    if type(ev.text) == "string" and ev.text ~= "" then to_pasteboard(ev.text) end
+    local text = copied_text(target, ev)
+    if text and text ~= "" then shell.pbcopy(text) end
     return
   end
   if ev.name ~= "program_status_changed" or not ev.record then return end

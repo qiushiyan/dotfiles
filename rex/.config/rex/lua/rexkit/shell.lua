@@ -46,8 +46,33 @@ function M.run(cmd)
   return os.execute(cmd) == 0
 end
 
--- CMD in the background, its output discarded.
-function M.spawn(cmd) M.run("(" .. cmd .. ") >/dev/null 2>&1 &") end
+-- CMD in the background, its output discarded. Rex stops what an action
+-- or script started once it returns, unless it was started detached.
+function M.spawn(cmd)
+  if rex.exec then
+    rex.exec.start({ "/bin/sh", "-c", cmd }, { detach = true, stdout = false, stderr = false })
+    return
+  end
+  os.execute("(" .. cmd .. ") >/dev/null 2>&1 &")
+end
+
+-- Put TEXT on this machine's pasteboard. On an older Rex it goes through a
+-- file, not printf's argument, since a copy can outgrow ARG_MAX, and not
+-- io.popen(…, "w"), whose pipe that Lua never closes.
+function M.pbcopy(text)
+  if rex.exec then
+    local r = rex.exec({ "/usr/bin/pbcopy" }, { stdin = text })
+    return r ~= nil and r.ok
+  end
+  local path = os.tmpname()
+  local f = io.open(path, "w")
+  if not f then return false end
+  f:write(text)
+  f:close()
+  local ok = M.run("/usr/bin/pbcopy <" .. M.quote(path))
+  os.remove(path)
+  return ok
+end
 
 -- Open a URL or file with macOS `open`, on this machine.
 function M.open(target) M.spawn("open " .. M.quote(target)) end

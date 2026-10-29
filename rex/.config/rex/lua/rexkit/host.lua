@@ -34,9 +34,7 @@ end
 -- front process when the caller has it.
 function M.copy(ctx, session_id, block_id, text, fg)
   if ctx.server then
-    -- Through the shell: rex.exec takes no input, and Rex's io.popen(…, "w")
-    -- never closed its pipe, so pbcopy waited for its input forever.
-    return shell.run("printf %s " .. shell.quote(text) .. " | pbcopy")
+    return shell.pbcopy(text)
   end
   return feedback.osc52(session_id, block_id, text, fg)
 end
