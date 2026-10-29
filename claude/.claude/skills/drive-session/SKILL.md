@@ -35,11 +35,11 @@ drive wait T1                               # until its turn ends, in the backgr
 ```
 
 Every action names the view it was decided on and is refused once the
-session has moved past it. drive and this skill divide
-the work: `drive --help` and each command's own `--help` name the commands,
-their flags and the words status prints, and a refusal, failure or wake that
-leaves something to do ends with `next:`, the command to run on the session
-as it stands. That command is drive's part; whether the step still makes
+session has moved past it. drive and this skill divide the work: `drive
+--help` and each command's own `--help` name the commands, their flags and
+the words status prints, and a refusal, failure or wake that leaves
+something to do ends with `next:`, the command to run on the session as it
+stands. That command is drive's part; whether the step still makes
 sense is yours.
 
 ## How a drive runs
@@ -109,7 +109,7 @@ ready to build.
 A prompt is a step too, judged by what it touches: approve what § Who
 decides hands to sessions, such as an edit in the session's
 own change or a read of production, and deny the rest. A deny ends the
-turn; the session takes its next step as usual.
+turn, so its next step is yours to send.
 
 ## What you do without asking
 
@@ -169,19 +169,27 @@ measured.
 
 ## Sending
 
-The session treats every word it receives as instruction, and the user's
-snippets are the words they have already tuned: send those, with the text
-the user would type after the key. Write the rest as the user would type
-it: in the first person, with their own words where they gave them and
-nothing they did not say. The notice told the session that someone else
-sends its steps, so a step says nothing of you, the chat or the batch's
-record, such as an ask's id.
+The session treats every word it receives as instruction. Send the user's
+snippets, the words they have tuned, with what they would type after the
+key. Write anything else as the user would type it: first person, their
+words where they gave them and nothing they did not say, beyond the
+session's own recommendation or what waits for the user. The notice told
+the session that someone else sends its steps, so a step names nothing
+of you, the chat or the batch's record:
+
+<example type="avoid">
+Qiushi's answers to the design checkpoint (A2): he agrees with all your recommendations.
+</example>
+
+<example>
+I agree with your recommendations. I don't understand this area deeply, but it reads as a valid proposal. Write the spec.
+</example>
 
 ```bash
 drive snippet land-pr ~/dev/planlab/.worktrees/pool-drain    # the file the key resolves to there
 drive send T1@… --snippet land-pr 'D3 waits for me.'
 drive send T1@… --file /tmp/t1-fixups.md                     # your own request, or anything over a line
-drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                  # @ attaches the file, as the user's would
+drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # @ attaches the file, as the user's would
 ```
 
 - A session's first step carries its task and says where it stops: a
@@ -196,7 +204,7 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                  #
   ```
 - Every session carries a goal: what it sets out to solve, for a user who
   remembers the product but not the session. They read it on their page
-  whenever they come back to the session, often to answer its question.
+  when they come back, often to answer its question.
   Record it again only when its purpose or scope changes; where the
   session stands, the page reads live.
 
@@ -205,16 +213,13 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                  #
   drive record goal P0 '…'   # a session that joined on a send, or one drive status names as having none
   ```
 - A key that resolves to another project's file is a stop, not a fallback.
-- Your own words only answer the session's question, with its own
-  recommendation or by naming what waits for the user.
 - A brief one session wrote to start another is acted on before you get a
   turn, so return one that breaks the pipeline doc's rule for briefs ("open
   the PR, then handle code review" drops review and verification) to its
   author.
 - A skill that starts only when typed (`/write-spec`, `/enter-worktree`,
   `/strategic-review`, planlab's `/pl-loopy-handoff-distill`) goes as a typed
-  line with its brief attached, as above; drive refuses one inside a file
-  and prints the line to type.
+  line with its brief attached, as above.
 - Work the user asks *you* to do goes to a new session, opened with `drive
   open` in the project's main checkout and started at stage 1 with their
   request. You stay a reader and sender: work run from your own shell has

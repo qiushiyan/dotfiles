@@ -9,5 +9,5 @@ Some things are out of your reach: what only I can do (creating a workspace, log
 
 Work outside this change, such as a separate fix a review would cut as its own branch, goes in your report as a follow-up.
 
-The step follows, here or as my next message:
+The step is in this message or my next.
 

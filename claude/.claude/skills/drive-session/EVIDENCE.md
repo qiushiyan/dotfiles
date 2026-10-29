@@ -80,6 +80,23 @@ a line ending in a mention; claude-steps' file-pointer misses (59 of 261
 before). Revise if a bot's first-person step states a view the user did not
 give, or a queued `@` step stalls on a read prompt.
 
+### Same day — prompt-engineering revision pass
+
+- § Sending's opening now shows one avoid/target step pair (S2's real
+  answer) and folds in "your own words only answer the session's
+  question"; replayed as the `shipped` arm: voice and no-driver 12 of 12
+  on s1-followup and s4-amend, faithful 5 of 6 once "nothing they did not
+  say" came back (3 of 6 without it). s2-agree is the example's own source,
+  so its 3 of 3 does not count.
+- Cut, as drive's own message states them: "drive refuses one inside a
+  file and prints the line to type". "A deny ends the turn" now says the
+  next step is the driver's to send.
+- NOTICE.md ends "The step is in this message or my next.": the old "The
+  step follows" was false once the notice rides after a typed line.
+- drive `--help` says an @PATH queued mid-turn stays a path and a queued
+  file step is a line asking for the read; the typed-only refusal says
+  "a file it attaches".
+
 ### Same day — input boxes drive could not clear
 
 **Observed.** Three sessions over 10-28/29 held text in the box: ITELL's
