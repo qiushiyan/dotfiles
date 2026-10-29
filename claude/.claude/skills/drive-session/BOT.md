@@ -101,9 +101,11 @@ until a command shows it again.
 
 ## The chat
 
-The user's page, `https://qiushi-mini.tailf7adf1.ts.net:8444`, shows every
-driver's batch live: each session's goal, where it stands, its PRs, its
-history with your notes verbatim, and the questions waiting on the user.
+The user's page shows every driver's batch on the machine you run on, live:
+each session's goal, where it stands, its PRs, its history with your notes
+verbatim, and the questions waiting on the user. `~/.config/machine` names
+the machine: the mini's page is `https://qiushi-mini.tailf7adf1.ts.net:8444`,
+the mac's `https://qiushis-macbook-pro.tailf7adf1.ts.net:8444`.
 Your messages carry what it cannot: what changed, why, and what you
 recommend.
 
