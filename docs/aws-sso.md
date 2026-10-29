@@ -69,6 +69,23 @@ which `--status` reads back; the script's header has the details.
   browser and approve. The mini keeps its own token cache and stamp, since
   refresh tokens rotate and two machines cannot share one.
 
+## Console links
+
+`sso_start_url` in `~/.aws/config` is the Identity Center issuer URL
+(`https://identitycenter.amazonaws.com/ssoins-7223ebd098f80c49`). The CLI
+accepts it, but a browser gets 404 there. The access portal is
+`https://ssoins-7223ebd098f80c49.portal.us-east-1.app.aws/`, and a link that
+signs in to an account and role and then opens a console page is
+
+```
+<portal>/#/console?account_id=<id>&role_name=<role>&destination=<url-encoded console URL>
+```
+
+Account ids and role names are the profiles' `sso_account_id` and
+`sso_role_name`. The Health API (`aws health describe-events`) answers
+`SubscriptionRequiredException` on these accounts, which have no Business or
+Enterprise support, so open issues are read in the console.
+
 ## Checking that a run started a new session
 
 The access portal lists the user's own active sessions with their start
