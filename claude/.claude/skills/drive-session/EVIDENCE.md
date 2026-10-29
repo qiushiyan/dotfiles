@@ -4,6 +4,30 @@ Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares. A
 run by a real bot follows `DOGFOOD.md`.
 
+## 2026-10-29 — a Rex restart (drive `f847a7b`)
+
+**Observed.** The mini's Rex server restarted three times for an app update.
+Every watch woke its bot "gone" at 10:41; the Session Driver wrote notes
+N20–N27 ("drive has no resume command", "asked Qiushi whether to relaunch
+them") and parked, and the iTELL bot's own reopen of P1F failed on the
+batch's missing Rex session. A watch's poll had started the new server with
+the bot's `NO_COLOR=1`, so no pane drew dim text: P1F's unexplained typed
+line (§ input boxes below) was its suggestion, read as typed until the
+server ran clean.
+
+**Changed.** drive never starts a server, and every report of a gone
+session names the open that brings it back, which keeps the label's park
+and starts the Rex session; a resumed cut-short turn wakes `interrupted`;
+`drive watch --stop-all` stops the wakes before a planned restart
+(`~/dotfiles/docs/rex-restart.md`). SKILL.md lets the driver reopen without
+asking and says what the reopened session's step carries; BOT.md has the
+watchdog reopen a gone session `--due` names, since a parked one gets no
+wake.
+
+**Next pass compares** the next restart's gone sessions: reopened by the
+driver without asking (target all), and interrupted ones sent the
+restart line rather than a bare continue.
+
 ## 2026-10-29 — steps as the user would type them (improve-tool pass)
 
 **Ask.** The user saw the bots write each step to a file and send "read

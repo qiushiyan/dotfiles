@@ -74,6 +74,9 @@ drive watch --due    # arms every session whose wakes stopped coming, and says w
 drive status         # the open asks: recheck each, as SKILL.md § Asking says
 ```
 
+When `--due` names a session that is gone, run the open it gives: no wake
+reports a parked one, and the open sends nothing and keeps its park.
+
 When `--due` says a watch has ended without a wake twice, tell the user
 once, with the lines `watches.log` in the batch's directory (`drive
 --driver NAME batch` prints it) has for that session, and record that you
