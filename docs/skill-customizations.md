@@ -135,6 +135,23 @@ OpenClaw scripts, lanes and PR tooling.
 
 Sources: [pin](../claude/.claude/skills/test-audit/.upstream/PINNED.txt).
 
+## Lessons
+
+**Purpose:** `lessons/.config/lessons/` holds the owner's methodology docs that
+consult, review and design-stage snippets hand to an agent. `codebase-design/`
+and `testing/` are forked from mattpocock/skills (codebase-design, tdd,
+improve-codebase-architecture) and consolidated, one home per concept, for
+headless readers.
+
+**Preserve:** the named terms consumers cite (the deletion test, the
+two-adapter rule, the five test shapes), each lesson's bar, and the local
+choices upstream does not share, such as the refactor step inside a slice.
+
+**Adopt:** methodology corrections and new criteria. **Leave upstream:**
+interaction model, tool wording and report formats. The pin, the refresh
+steps and each reviewed delta's verdicts are in
+[`.upstream/PINNED.txt`](../lessons/.config/lessons/.upstream/PINNED.txt).
+
 ## Adding another customization
 
 Before treating another skill as a maintained fork, record its purpose, what

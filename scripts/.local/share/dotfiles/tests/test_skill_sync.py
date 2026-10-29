@@ -187,6 +187,45 @@ class SkillSyncTest(unittest.TestCase):
         self.assertIn("audit: linked (linked from its project): description is 6 words", result.stdout)
         self.assertIn("audit: descriptions the model sees each turn: 20 words", result.stdout)
 
+    def lessons_budget(self, files=None):
+        self.budgeted_skill("fits", 1)
+        root = self.repo / "lessons/.config/lessons"
+        (root / "design").mkdir(parents=True, exist_ok=True)
+        (root / ".upstream").mkdir(exist_ok=True)
+        path = self.repo / "budget.yaml"
+        path.write_text(json.dumps({"body_words": 10, "description_words": {"model": 5, "manual": 3},
+                                    "skills": {}, "lessons": {"root": "lessons/.config/lessons",
+                                                              "files": files or {}}}))
+        return root, path
+
+    def test_lessons_record_new_files_and_ratchet_down_never_up(self):
+        root, budget = self.lessons_budget({"design/lens.md": 20, "gone.md": 4})
+        (root / "design/lens.md").write_text("word " * 20)
+        (root / "README.md").write_text("word " * 7)
+        (root / ".upstream/SKILL.md").write_text("word " * 900)
+        result = self.run_sync("--budget", str(budget))
+        self.assertIn("owned skills and 2 lessons budgeted", result.stdout)
+        self.assertEqual(self.read_lessons(budget), {"design/lens.md": 20, "README.md": 7})
+        (root / "design/lens.md").write_text("word " * 15)
+        self.run_sync("--budget", str(budget))
+        self.assertEqual(self.read_lessons(budget)["design/lens.md"], 15)
+        (root / "design/lens.md").write_text("word " * 16)
+        result = self.run_sync("--budget", str(budget), expected=1)
+        self.assertIn("lessons/.config/lessons/design/lens.md: 16 words, over its recorded 15", result.stdout)
+        self.assertEqual(self.read_lessons(budget)["design/lens.md"], 15, "growth never raises a record")
+
+    def test_lessons_section_is_validated_before_any_write(self):
+        root, budget = self.lessons_budget()
+        budget.write_text(budget.read_text().replace('"files": {}', '"files": {"a.md": "ten"}'))
+        before = budget.read_bytes()
+        result = self.run_sync("--budget", str(budget), expected=2)
+        self.assertIn("lessons is {root:", result.stderr)
+        self.assertEqual(budget.read_bytes(), before)
+
+    def read_lessons(self, path):
+        section = re.split(r'"?lessons"?:', path.read_text(), maxsplit=1)[1]
+        return {name: int(words) for name, words in re.findall(r'"?([\w./-]+\.md)"?:\s*(\d+)', section)}
+
     def read_records(self, path):
         # Records stay in flow style, quoted or not; no YAML parser outside uv.
         pattern = r'"?([\w-]+)"?:\s*\{\s*"?body"?:\s*(\d+),\s*"?total"?:\s*(\d+)\s*\}'

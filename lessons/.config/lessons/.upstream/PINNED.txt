@@ -1,1 +1,28 @@
-Pinned from mattpocock/skills @ 5d78bd0 (2026-06-25)
+Pinned from mattpocock/skills @ 59db609 (2026-10-27), reviewed 2026-10-29.
+Previous pin: 5d78bd0 (2026-06-25).
+
+Mirrored: skills/engineering/codebase-design/{SKILL,DEEPENING,DESIGN-IT-TWICE}.md,
+tdd/{SKILL,mocking,tests}.md, improve-codebase-architecture/SKILL.md.
+Refresh: clone the repo into an empty scratch directory, diff each mirrored file
+against this copy, judge the delta (docs/skill-customizations.md § Lessons),
+copy the files over, and rewrite this record.
+
+Verdicts for 5d78bd0 → 59db609:
+- Adopt, tdd-loop.md: each planned behaviour notes what its test catches and
+  what it misses (upstream 3f59913).
+- Adopt, test-quality.md § Tautology: an expected value recomputed the way the
+  code computes it; expected values come from an independent source (43ea088).
+- Adopt, deepening.md: weight the clusters that keep changing when choosing
+  what to deepen (improve-codebase-architecture "Scope before you scan").
+- Decline, tdd-loop.md keeps its refactor step. Upstream moved refactoring out
+  of the loop into review (80e9dcc); here a deferred reshape is the lava layer's
+  first step (composition.md § Rejected framings), so the build slice cleans up
+  after itself and review judges the result.
+- Leave upstream: em-dash removal and other punctuation, harness-neutral
+  sub-agent wording, and CONTEXT.md → GLOSSARY.md (the lessons already say
+  GLOSSARY.md and name no tool); the architecture skill's HTML report, ADR
+  offer and grilling hand-off (interaction model, not methodology); the
+  deleted tdd/refactoring.md (its list stays in tdd-loop.md).
+- Not mirrored, noted: the new code-review skill (standards and spec as two
+  separate axes, a Fowler smell baseline). composition.md already carries the
+  cross-module smells; the review skill's owner may compare the two axes.

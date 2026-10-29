@@ -17,17 +17,17 @@ skills:
   consult: {body: 1484, total: 3905}
   delegate: {body: 742, total: 1432}
   distill-docs: {body: 2236, total: 2236}
-  distill-handoffs: {body: 3044, total: 3044}
+  distill-handoffs: {body: 2766, total: 2766}
   drive-session: {body: 2718, total: 8412}
   enter-worktree: {body: 154, total: 154}
   go-cli: {body: 1963, total: 3977}
-  handoff: {body: 3209, total: 3846}
+  handoff: {body: 2413, total: 3050}
   improve-tool: {body: 1410, total: 5770}
   obelisk: {body: 2638, total: 2638}
   prompt-engineering: {body: 762, total: 1607}
   refactoring: {body: 643, total: 643}
   resolving-merge-conflicts: {body: 117, total: 117}
-  review: {body: 3997, total: 7954}
+  review: {body: 2922, total: 6879}
   spike: {body: 722, total: 722}
   # raised 2026-10-28: an unread fold-in shipped faults CI and bots then found in 5 of 11
   # folds; a wholesale cut to 1,615 words regressed its eval cases (EVIDENCE.md)
@@ -39,3 +39,30 @@ skills:
   wiki: {body: 324, total: 324}
   write-spec: {body: 1207, total: 6163}
   add-theme: {body: 1437, total: 2035}
+# Every lesson file at its word count, under the same ratchet: the consult and
+# review voices read these each round. Dot-directories (the pinned upstream
+# copies) are skipped; skill-sync records a new file and drops a removed one.
+lessons:
+  root: lessons/.config/lessons
+  files:
+    CLAUDE.md: 803
+    README.md: 455
+    SYNTHESIS.md: 1369
+    agent-tooling/README.md: 148
+    agent-tooling/onboarding-auto-routing.md: 2295
+    agent-tooling/usage-lessons.md: 3697
+    codebase-design/README.md: 210
+    codebase-design/composition.md: 1769
+    codebase-design/deep-modules.md: 1058
+    codebase-design/deepening.md: 522
+    codebase-design/design-it-twice.md: 436
+    collaboration/README.md: 180
+    collaboration/finding-classes.md: 603
+    collaboration/pr-boundaries.md: 472
+    collaboration/review-lens.md: 969
+    collaboration/tenets.md: 570
+    testing/README.md: 189
+    testing/mocking-and-fixtures.md: 1740
+    testing/tdd-loop.md: 923
+    testing/test-quality.md: 1961
+    testing/vitest.md: 2867

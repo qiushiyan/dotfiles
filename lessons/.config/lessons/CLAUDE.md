@@ -1,105 +1,100 @@
 # Lessons — and how they relate to Claude Code skills
 
-This directory holds **lessons**: personally adapted, consolidated reference docs
-on engineering methodology (module design, test discipline, cross-agent review). They were derived
-from Claude Code skills but are **not** skills themselves. This file explains the
-distinction and how to keep it; `README.md` is the consumption contract and
-reading roadmap.
+This directory holds **lessons**: owned reference docs on engineering method
+(module design, test discipline, cross-agent review). They are not skills.
+This file says how to write and keep them; `README.md` is the consumption
+contract and reading roadmap.
 
 ## Skill vs lesson
 
-- **Claude Code skills** (`~/.claude/skills/…`) are *invokable*: Claude loads a
-  `SKILL.md` on its own judgment to do a task. Third-party skills (e.g. the
-  mattpocock methodology skills) install here as-is.
-- **Lessons** (here) are *not* invokable and carry no `SKILL.md`. They are plain
-  markdown my **prompt snippets** cite by path — pasted into a coding agent at
-  technical-design time, never auto-loaded.
+- **A skill** (`~/.claude/skills/…`) is invokable: Claude loads its
+  `SKILL.md` to do a task.
+- **A lesson** is plain markdown with no `SKILL.md`. Snippets and the
+  dispatch briefs cite it by path, and the agent they brief reads it. Nothing
+  loads it automatically.
 
-A lesson is the *consolidated, owned* form of a methodology I want a snippet to
-hand an agent: forked from the original skills, then merged into one home per
-concept so a snippet cites a short, stable reading arc instead of a sprawl of
-skill files. The snippets carry the arc; the lessons carry the depth.
+A lesson is one home per concept, so a snippet cites a short, stable reading
+arc instead of a sprawl of skill files. The snippets carry the arc; the
+lessons carry the depth.
 
-The `collaboration/` topic has a second origin: lessons distilled from the twin
-prompts of the two harness product lines (greenflag and the dispatch skills)
-rather than from upstream skills. `SYNTHESIS.md` (top-level, maintainer-only —
-never vendored, never read by an agent) records that comparison: the shared
-moves, their extraction queue, and the asymmetries between the two products
-that must never be "fixed" toward each other. Read it before editing either
-side's review/consult/delegate-shaped prompts.
+`collaboration/` has a second origin: the twin review prompts of greenflag and
+the dispatch skills, not upstream skills. `SYNTHESIS.md` records that
+comparison, including the asymmetries between the two products that must not
+be "fixed" toward each other. It is maintainer-only: never vendored, never
+read by an agent. Read it before editing either side's review, consult or
+delegate prompts.
 
-## Adapting a skill into a lesson
+## What a lesson carries
 
-A skill tells an agent what to **do now**; a lesson tells it what is **true
-durably**. Converting one strips everything belonging to a particular harness,
-session, or interlocutor — what remains is the idea and its reason, which is what
-generalizes to situations the original author never enumerated.
+A skill says what to **do now**; a lesson says what is **true durably**. When
+adapting a skill, strip what belongs to one harness, session or interlocutor:
 
-Five things a skill carries that a lesson must not:
+- **Borrowed interaction model** ("confirm with the user", "get approval on
+  the plan"). A lesson may reach a headless agent, or one forbidden to ask.
+  Say who owns the choice instead: a product call is surfaced and waited on; a
+  technical call is decided and recorded.
+- **Tool coupling** ("spawn three sub-agents with the Agent tool"). Name the
+  property the tool supplies, such as independent, unanchored exploration,
+  and keep the mechanics to a parenthetical.
+- **Procedure residue**: numbered steps whose order is the harness's. Keep a
+  sequence only where the order is intrinsic (write the new tests *before*
+  deleting the old ones); otherwise state the principle and let the reader
+  order it.
+- **Restatement**: one rule at the bar, again in its section, again in a
+  sibling. Give it a name that carries it in one token (the *two-adapter
+  rule*, the *deletion test*, a *change detector*) and cite the name after.
+- **Prohibition as the lever**: a stack of "don't". State the path to take;
+  keep a "never" for a hard rule a positive phrasing would blur (*never
+  refactor while RED*).
 
-- **Borrowed interaction model** — "confirm with the user", "get approval on the
-  plan", "show this, then proceed". A snippet may hand the lesson to a headless
-  agent with no user, and to one whose harness forbids asking. Replace with *who
-  owns the choice*: a product call gets surfaced and waited on; a technical call
-  gets decided and recorded.
-- **Tool coupling** — "spawn three sub-agents with the Agent tool". Name the
-  property the tool supplies (independent, unanchored exploration) and demote the
-  mechanics to a parenthetical.
-- **Procedure residue** — a `## Process` of numbered steps whose order is the
-  harness's rather than the idea's. Keep a sequence only where the order is
-  intrinsic (write the new tests *before* deleting the old ones); otherwise state
-  the principle and let the reader sequence it.
-- **Restatement** — the same rule at the bar, again in its section, again in a
-  sibling file. Collapse it into a named term that carries it in one token (the
-  *two-adapter rule*, the *deletion test*, a *change detector*) and reference the
-  name thereafter.
-- **Prohibition as the lever** — a stack of "don't". Prompt the positive path so
-  the banned move is never spoken; keep a "never" only where the rule is hard and
-  a positive phrasing would be vaguer (*never refactor while RED*).
-
-What a lesson keeps, and a skill often lacks: the **why** under each rule (a
-reason generalizes where a bare rule invites creative violation), the
-**vocabulary** of leading words the reader thinks with, **anti-examples**
-(`Rejected framings`, the glossary's `_Avoid_:` lists, good/bad pairs), and a
-skimmable `## The bar` on top with the depth beneath it.
+What stays is the idea in the reader's working vocabulary: named terms, a
+skimmable `## The bar` on top that holds each rule whole (reviewers read only
+the bar), and anti-examples (`Rejected framings`, `_Avoid_:` lists, good/bad
+pairs), which hold where a reader's habit would otherwise win. Give a reason
+where the reader would otherwise misapply the rule, as `composition.md` does
+for "refactor it later". A reason that only restates the rule is a no-op.
 
 ## Revising a lesson
 
-- **Provenance below the fold.** The `> _Lesson · …_` line is a maintainer's
-  upstream diff anchor, not what a working agent should read first.
-- **Verify before you "fix".** Check a factual API claim against current docs,
-  not memory — `vitest.md`'s `aroundEach` reads like a hallucination and is real
-  (Vitest 4.1). Deleting correct content is the costlier error.
-- **Hunt no-ops sentence by sentence.** A diagram or list restating the sentence
-  above it is load without signal; delete the sentence rather than trim its words.
-- Read `/prompt-engineering` — the one rulebook for model-facing text,
-  structure and pointers included — before a revision pass. A lesson is prompt
-  surface, but the rulebook never licenses turning a lesson into a manual. It
-  stays descriptive.
+- Read `/prompt-engineering` first. A lesson is prompt surface, but it stays
+  descriptive, never a manual.
+- **Every line names what it prevents.** Delete a sentence, list or diagram
+  that restates the one above it; do not trim its words.
+- **Verify before you "fix".** Check an API claim against current docs, not
+  memory: `vitest.md`'s `aroundEach` looks invented and is real (Vitest
+  4.1). Deleting correct content costs more than keeping a weak line.
+- **Keep every named term and heading consumers cite**, or rename it
+  everywhere: grep this tree, `~/dotfiles/claude/.claude/skills`, the tabtype
+  snippets, and `~/dev/greenflag/snippets`.
+- **Provenance stays below the fold.** The closing `> _Lesson · …_` line is the
+  maintainer's diff anchor, not the reader's opening.
+- **Size.** `skill-sync --check` records every lesson at its word count and
+  fails growth. An addition pays with a cut, or the record in
+  `skill-budget.yaml` is raised by hand with a comment saying why.
 
 ## Lineage
 
 Forked from [mattpocock/skills](https://github.com/mattpocock/skills) (the TDD
-and codebase-architecture skills), consolidated into two topics
-(`codebase-design/`, `testing/`), and headless-tuned. They supersede the
-standalone `tdd` and `improve-codebase-architecture` Claude Code skills, which
-are retired. The pristine upstream is pinned in `.upstream/` as the diff baseline
-— see `README.md` for the upstream-sync steps and each lesson's provenance line.
+and codebase-architecture skills), consolidated into `codebase-design/` and
+`testing/`, and tuned for headless agents. They replace the retired standalone
+`tdd` and `improve-codebase-architecture` skills. `.upstream/` mirrors the
+pinned upstream files; `.upstream/PINNED.txt` holds the pin, how to refresh
+it, and the verdicts on each reviewed delta. Each lesson's provenance line
+names its source files.
 
 ## Consumers
 
-- `~/dotfiles/tabtype` — snippets cite these paths **literally** (tabtype has no
-  token expansion).
-- `~/dev/greenflag` — vendors a frozen snapshot into `greenflag/lessons/` and cites it
-  through a `{{lessons_dir}}` token, so it ships self-contained in the package.
-- `~/dotfiles/claude` — the dispatch-skill briefs (`review`, `consult`,
-  `delegate`) cite these paths literally; the dispatched voice reads them live.
+- `~/dotfiles/tabtype` snippets cite these paths literally; tabtype has no
+  token expansion, so a snippet that quotes a lesson is re-pasted after an
+  edit.
+- `~/dev/greenflag` vendors a frozen snapshot into `greenflag/lessons/` and
+  cites it through a `{{lessons_dir}}` token. Refresh it with
+  `pnpm vendor-lessons` there.
+- The `review`, `consult` and `delegate` skills cite these paths; the
+  dispatched voice reads the live files.
 
-All are kept in sync by hand: edit a lesson here, then re-paste (tabtype) or
-`pnpm vendor-lessons` (greenflag); the skill briefs read the live files.
-
-**A new lesson needs a citation, not just a copy.** Vendoring ships the file;
-only a snippet citing its path makes an agent read it. Adding one means: the
-roadmap table in `README.md`, the topic `README.md`, and every snippet that
-should hand it over (greenflag: the `{{lessons_dir}}` lines across `snippets/*.toml`,
-where the makers read it deeply and the reviewers skim its bar as a lens).
+**A new lesson needs a citation, not just a copy.** Only a snippet citing its
+path makes an agent read it. Add it to the roadmap in `README.md`, the topic
+`README.md`, and every snippet that should hand it over (in greenflag, the
+`{{lessons_dir}}` lines in `snippets/*.toml`: makers read deeply, reviewers
+skim the bar).

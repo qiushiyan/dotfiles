@@ -4,7 +4,7 @@
 # dependencies = ["ruamel.yaml==0.18.16"]
 # ///
 """Synchronize Codex skill visibility and invocation policies, hold the skills
-this repository owns to their size budget, and copy broadcast documents from
+this repository owns and its lessons to their size budget, and copy broadcast documents from
 this repository into other checkouts."""
 
 import argparse
@@ -331,8 +331,9 @@ def plan_budget(manifest, roots, repo, overrides):
     budget file's planned change, the violations, the audit lines, and the
     count of owned skills."""
     data = mapping(manifest.read_text(), manifest)
-    if set(data) != {"body_words", "description_words", "skills"}:
-        raise ValueError(f"{manifest}: expected exactly body_words, description_words, skills")
+    if not {"body_words", "description_words", "skills"} <= set(data) <= {
+            "body_words", "description_words", "skills", "lessons"}:
+        raise ValueError(f"{manifest}: expected body_words, description_words, skills, and optionally lessons")
     limits, records = data["description_words"], data["skills"]
     if (not isinstance(limits, CommentedMap) or set(limits) != {"model", "manual"}
             or not isinstance(records, CommentedMap)
@@ -388,12 +389,44 @@ def plan_budget(manifest, roots, repo, overrides):
     for name in [name for name in records if name not in seen]:
         del records[name]
     audit.append(f"descriptions the model sees each turn: {visible} words")
+    lessons = plan_lessons(data["lessons"], repo, manifest, violations) if "lessons" in data else None
     output = StringIO()
     yaml_parser().dump(data, output)
     before = manifest.read_bytes()
     after = output.getvalue().encode()
     changes = {manifest: Change(before, after, False)} if after != before else {}
-    return changes, violations, audit, len(seen)
+    return changes, violations, audit, len(seen), lessons
+
+
+def plan_lessons(section, repo, manifest, violations):
+    """Hold every lesson file to its recorded word count, the same ratchet as a
+    skill's: a new file is recorded as it stands, a shrunk one lowers its
+    record, and growth is a violation. Lessons are every Markdown file under
+    root outside dot-directories (the pinned upstream copies). Returns the
+    count of lesson files."""
+    if (not isinstance(section, CommentedMap) or set(section) != {"root", "files"}
+            or not isinstance(section["root"], str) or not isinstance(section["files"], CommentedMap)
+            or any(type(v) is not int for v in section["files"].values())):
+        raise ValueError(f"{manifest}: lessons is {{root: a path in this repository, files: {{path: words}}}}")
+    root = (repo / section["root"]).resolve(strict=True)
+    records = section["files"]
+    found = {}
+    for path in sorted(root.rglob("*.md")):
+        relative = path.relative_to(root)
+        if not any(part.startswith(".") for part in relative.parts):
+            found[relative.as_posix()] = len(path.read_text().split())
+    for name, words in found.items():
+        record = records.get(name)
+        if record is None:
+            records[name] = words
+        elif words > record:
+            violations.append(f"{section['root']}/{name}: {words} words, over its recorded {record}; "
+                              "cut to make room, or raise the record by hand with its reason")
+        elif words < record:
+            records[name] = words
+    for name in [name for name in records if name not in found]:
+        del records[name]
+    return len(found)
 
 
 def write_atomic(path, content):
@@ -433,7 +466,7 @@ def main():
         f"defaults to {SKILL_POLICY} on an unscoped run."
     ))
     parser.add_argument("--budget", type=Path, metavar="MANIFEST", help=(
-        "hold owned skills to their recorded sizes, lowering a record as its skill shrinks; "
+        "hold owned skills and the lessons tree to their recorded sizes, lowering a record as it shrinks; "
         f"defaults to {SKILL_BUDGET} on an unscoped run."
     ))
     args = parser.parse_args()
@@ -475,10 +508,11 @@ def main():
             if budget in outputs:
                 raise ValueError(f"{budget}: budget may not overwrite another job's output")
             outputs.add(budget)
-            budget_changes, violations, audit, count = plan_budget(
+            budget_changes, violations, audit, count, lessons = plan_budget(
                 budget, args.skills_dir or default_roots, repo, overrides)
             changes.update(budget_changes)
-            summaries.append((count, "owned skills budgeted", len(budget_changes), "budget files"))
+            budgeted = "owned skills budgeted" if lessons is None else f"owned skills and {lessons} lessons budgeted"
+            summaries.append((count, budgeted, len(budget_changes), "budget files"))
         if manifest is not None:
             doc_changes, count, skipped = plan_documents(manifest.expanduser().resolve(strict=True), repo, outputs)
             changes.update(doc_changes)
