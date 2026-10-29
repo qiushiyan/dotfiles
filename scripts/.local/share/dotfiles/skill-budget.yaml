@@ -20,7 +20,9 @@ skills:
   distill-handoffs: {body: 2766, total: 2766}
   # raised 2026-10-29: after a Rex restart the bots parked asking whether to reopen
   # their gone sessions (batch 2026-10-28, N20–N27); reopening them and their next step
-  drive-session: {body: 2781, total: 8490}
+  # raised 2026-10-29: the owner's page now shows each session's history with the
+  # bot's notes verbatim, which a bot writing notes must know (drive 97c5961)
+  drive-session: {body: 2781, total: 8503}
   enter-worktree: {body: 154, total: 154}
   go-cli: {body: 1963, total: 3977}
   handoff: {body: 2413, total: 3050}

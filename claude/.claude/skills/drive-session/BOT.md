@@ -102,7 +102,8 @@ until a command shows it again.
 ## The chat
 
 The user's page, `https://qiushi-mini.tailf7adf1.ts.net:8444`, shows every
-driver's batch live, with each session's history and your notes verbatim.
+driver's batch live: each session's goal, where it stands, its PRs, its
+history with your notes verbatim, and the questions waiting on the user.
 Your messages carry what it cannot: what changed, why, and what you
 recommend.
 
