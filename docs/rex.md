@@ -305,10 +305,11 @@ one exists.
 - **Events reach a `rex do` script only once its top level has returned.** A
   loop that also polls is `rex.wait(name, seconds)`, which hands over the
   events that arrive meanwhile (the agents board).
-- **Rex's Lua forks only through `rex.exec{ argv }`** from app build 1497:
-  `os.execute` and `io.popen` raise. It returns `ok`, `code`, `stdout` and
-  `stderr`, takes no input and no named options, and returns `nil, message`
-  when the program cannot start. A module that raises while init.lua loads
+- **Rex's Lua forks only through `rex.exec(argv[, opts])`** from app build
+  1497: `os.execute` and `io.popen` raise. Its options (`cwd`, `env`,
+  `stdin`, `timeout`) are in the official Lua reference
+  (`superlogical.com/rex/docs/reference/lua.md`); argv itself is a plain
+  list. A module that raises while init.lua loads
   leaves the server with no key bound, so `ctrl+a` reaches the shell as `^A`;
   `rex config check ~/.config/rex/init.lua` names the line. Guard:
   `rexkit.shell` is the one place that forks, falling back to the old calls
