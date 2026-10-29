@@ -103,7 +103,9 @@ any notes kept here:
   nowhere) is the place to host one.
 - **Every terminal knows where it is, not who is looking at it:**
   `REX_SESSION`, `REX_BLOCK`, `REX_SERVER` and `TERM_PROGRAM=rex`, as
-  `$TMUX_PANE` does in tmux. Both machines' apps stay attached to both
+  `$TMUX_PANE` does in tmux. The CLI takes `REX_SESSION` and `REX_BLOCK` as
+  its scope, so a call from a pane reads a block in another session as not
+  found; a tool that acts across sessions drops them, as drive does. Both machines' apps stay attached to both
   servers' sessions and no client reports its input, so nothing in Rex says
   which screen the person is at; tmux's `client_activity` has no counterpart.
 
@@ -249,7 +251,7 @@ one exists.
   turns it off. A server started from a Claude Code tool shell gives every
   pane `NO_COLOR=1 FORCE_COLOR=0`, so nothing colours, and one started over
   ssh gives every pane that login's `SSH_CONNECTION` (below). A tool that only
-  looks passes `--autostart=false`. Check the environment of the server's pid
+  looks passes `--autostart=false`, as drive does on every call. Check the environment of the server's pid
   after any restart (`docs/rex-restart.md` § The sequence).
 
 - **`rex.call` returns `nil, message`; it never raises.** A call that is not
