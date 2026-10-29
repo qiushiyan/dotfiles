@@ -201,15 +201,17 @@ destinations are reported for review and commit in their owning repositories.
 ## The size budget
 
 `skill-sync` also holds every skill owned here (neither in the lockfile nor a
-folder linked from another project) to its size, recorded in
+folder linked from another project), and every lesson file, to its size,
+recorded in
 `scripts/.local/share/dotfiles/skill-budget.yaml`. Skills grow one review
 finding at a time, each addition looking cheap where it lands, so the
 records only move down: `skill-sync` lowers one as its skill shrinks, and
 `--check` fails growth. An addition replaces something, or its record is
 raised by hand with a comment saying why, where review sees it.
 
-- **Two sizes per skill:** the `SKILL.md` body, and a total that adds the
-  Markdown files beside it, its `EVIDENCE.md` and `LESSONS.md` excepted. A
+- **Two sizes per skill, one per lesson:** the `SKILL.md` body, and a total
+  that adds the Markdown files beside it, its `EVIDENCE.md` and `LESSONS.md`
+  excepted. A
   brief template another model is sent counts like the body, and text moved
   into a companion is not a cut.
 - **A new skill** is recorded on its first sync once its body fits

@@ -33,8 +33,9 @@ docs pass to `update-docs`, a conflict to `resolving-merge-conflicts`, the
 install to `twin sync`, the removal to `gwt remove`. They add what no owner
 can know:
 
-- **The docs plan's gated items are approved ahead**, where the project's doc
-  bindings allow them, so the pass does not stop a chain nobody is watching.
+- **What the docs pass would stop to ask is approved ahead**, where the
+  project's doc bindings allow it, so the pass does not stop a chain nobody
+  is watching.
 - **The checks run before the push**, because the push is what both machines
   build from.
 - **The removal is last and runs from the main checkout.** `gwt remove`

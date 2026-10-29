@@ -36,4 +36,4 @@ Each doc opens with a **"## The bar"** section (skimmable imperatives), then exp
 
 ## Staying in sync with upstream
 
-`.upstream/` holds the pinned pristine Matt Pocock skills these lessons were forked from (see `.upstream/PINNED.txt` for the commit). To pull genuine improvements: download a fresh copy, `diff` it against `.upstream/`, decide what to fold into the lessons, then refresh the pin. Each lesson's provenance line names its source files and baseline so the diff has an anchor.
+`.upstream/` holds the pinned pristine Matt Pocock skills these lessons were forked from. `.upstream/PINNED.txt` holds the commit, the refresh steps and the last review's verdicts. Each lesson's provenance line names its source files and baseline so the diff has an anchor.

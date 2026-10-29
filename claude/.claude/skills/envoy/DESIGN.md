@@ -40,8 +40,7 @@ duet instead. Don't grow the engine.
   That is what lets the engine stay judgment-free.
 - **The skills resolve the model; the engine never does.** Each dispatching
   skill carries the same **Resolving the voice** block — user words to exact
-  model IDs, with a per-provider default (`codex:gpt-6.1-sol`,
-  `claude:claude-opus-5-5`) — so every voice is dispatched with the model
+  model IDs, with that skill's own default — so every voice is dispatched with the model
   written out, and a job's record never depends on whatever the provider's
   config held that day. Effort follows the provider: a codex voice is
   dispatched on its block's effort (`xhigh` for sol, `high` for astra)
