@@ -80,6 +80,36 @@ a line ending in a mention; claude-steps' file-pointer misses (59 of 261
 before). Revise if a bot's first-person step states a view the user did not
 give, or a queued `@` step stalls on a read prompt.
 
+### Same day — input boxes drive could not clear
+
+**Observed.** Three sessions over 10-28/29 held text in the box: ITELL's
+P2 a `?25h` (16.4 h parked, two clears "failed"), ITELL's P1F "redeploy
+staging from main and confirm the build" (refused twice, cleared by
+nothing, the step never sent), the Session Driver's S1 "a stale typed line
+naming nonexistent sends/S1-5.md". Every account runs vim editor mode.
+Reproduced live (Haiku, Rex, 2.1.312): `ESC[` and `?25h` arriving apart
+leave `?25h` typed; ctrl+u deletes only before the cursor, so with the
+cursor at the line's start the installed drive's clear failed exactly as
+P2's did; in NORMAL mode (after any Escape on an idle box) ctrl+u leaves
+part of the line and a typed step loses its head up to the first letter
+that inserts ("Reply with the word ok." → "th the word ok."). Claude
+Code's suggestions copy the pointer form, "Read …/sends/S8-5.md and…" on a
+live S8, so S1's "stale line" was most likely a suggestion the bot read
+off the screen; drive reads those as suggestions. P1F's line, most likely
+a suggestion that drive read as typed, did not reproduce: focus-in and an
+attached client left the dim attribute in place.
+
+**Changed.** drive `76d0f53`: on a vim account a box not showing `--
+INSERT --` gets `i` before a step is typed or cleared; every clear presses
+End before ctrl+u. The fake models vim mode and the cursor. Verified live:
+the fixed clear empties the `?25h` the installed one could not, and a step
+typed into NORMAL mode arrives whole.
+
+**Next pass compares** "holds typed text" refusals and failed clears;
+revise if a box reads typed text drive cannot clear again (capture its
+`--format vt` screen: that is the evidence P1F lacked), or a step arrives
+with a stray leading `i`.
+
 ## 2026-10-27 — who decides, in one place, and how a stop reaches the phone (improve-tool pass)
 
 **Ask.** Borrow from tstack and pstack where it helps the pipeline; run the
