@@ -71,7 +71,8 @@ any notes kept here:
   focus, processes and every terminal's contents, and it outlives the app:
   quitting the app leaves every session running. Stopping the server ends
   every session on it, agents included; their Claude conversations come back
-  with `claude --resume`.
+  with `claude --resume`, and `docs/rex-restart.md` brings a whole server's
+  sessions, tabs and drive batches back after a restart.
 - **The app owns the experience:** what is painted, the colours, key handling
   and modes, the sidebar's order, and its own settings, which `twin` does not
   carry (§ Two machines). The server only checks a key map; the client
@@ -238,9 +239,18 @@ one exists.
   bundle is replaced each split and new tab fails (`posix_spawn … no such
   file or directory` in the server log) while the keys still resolve.
   `rex server status` shows the old version. Restarting the server fixes it
-  and ends its sessions (§ The model), so do it from outside Rex and on each
-  machine as its app updates. Updates also move the CLI inside the bundle:
-  `rex/.local/bin/rex` puts it on PATH and tries each layout it knows.
+  and ends its sessions (§ The model), so do it on each machine as its app
+  updates, after the new app has launched, with `docs/rex-restart.md`. A
+  server started while the old app quits runs the old build from Sparkle's
+  cache. Updates also move the CLI inside the bundle: `rex/.local/bin/rex`
+  puts it on PATH and tries each layout it knows.
+- **Any `rex` call with no server running starts one, and every pane inherits
+  that caller's environment.** `--autostart` defaults to true and no setting
+  turns it off. A server started from a Claude Code tool shell gives every
+  pane `NO_COLOR=1 FORCE_COLOR=0`, so nothing colours, and one started over
+  ssh gives every pane that login's `SSH_CONNECTION` (below). A tool that only
+  looks passes `--autostart=false`. Check the environment of the server's pid
+  after any restart (`docs/rex-restart.md` § The sequence).
 
 - **`rex.call` returns `nil, message`; it never raises.** A call that is not
   checked fails later and elsewhere. `rexkit.api`'s `call` raises on the paths
