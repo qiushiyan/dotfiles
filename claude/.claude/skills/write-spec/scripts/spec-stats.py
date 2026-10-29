@@ -1,27 +1,59 @@
 #!/usr/bin/env python3
-"""spec-stats.py <spec.md> — approximate prose statistics for a spec, with code,
-indented blocks and table rows excluded: words per section, sentence and paragraph
-lengths, and the summary block's labelled lines and groups. Run before the
-final reread."""
-import re, sys
+"""spec-stats.py <spec.md> [--against <rev>] — approximate prose statistics for a
+spec, with code, indented blocks and table rows excluded: words per section,
+sentence and paragraph lengths, and the summary block's labelled lines and
+groups. The size line counts every word outside code blocks, tables and
+indented lines included, which is what SPEC-BAR's size means. With --against, each section's words are compared with the spec at that
+git revision (the commit of step 3, say), so growth through the checks shows by
+section. Run before the final reread."""
+import re, subprocess, sys
+from pathlib import Path
 
-def main(path):
-    text = open(path, encoding="utf-8").read()
+def prose(text):
     text = re.sub(r"^---\n.*?\n---\n", "", text, count=1, flags=re.S)   # front matter
     body = re.sub(r"```.*?```", "", text, flags=re.S)                    # code blocks
     body = re.sub(r"^(?: {4,}|\t).*$", "", body, flags=re.M)             # indented blocks
     tables = len(re.findall(r"^\s*\|\s*-{3,}", body, flags=re.M))         # header separators
     body = re.sub(r"^\s*\|.*$", "", body, flags=re.M)                     # table rows
+    return text, body, tables
 
-    # words per section
-    print("words per section")
-    sec, n = "(before the first heading)", 0
+def sections(body):
+    out, sec = {}, "(before the first heading)"
+    out[sec] = 0
     for line in body.splitlines():
         if line.startswith("## "):
-            print(f"  {n:6}  {sec}"); sec, n = line[3:], 0
+            sec = line[3:]; out[sec] = 0
         else:
-            n += len(line.split())
-    print(f"  {n:6}  {sec}")
+            out[sec] += len(line.split())
+    return out
+
+def at_revision(path, rev):
+    p = Path(path).resolve()
+    root = subprocess.run(["git", "-C", str(p.parent), "rev-parse", "--show-toplevel"],
+                          capture_output=True, text=True).stdout.strip()
+    r = subprocess.run(["git", "-C", root, "show", f"{rev}:{p.relative_to(root)}"],
+                       capture_output=True, text=True)
+    if r.returncode:
+        sys.exit(f"spec-stats: the spec is not at {rev}: {r.stderr.strip()}")
+    return r.stdout
+
+def main(path, against=None):
+    text, body, tables = prose(open(path, encoding="utf-8").read())
+
+    print(f"size {len(re.sub(r'```.*?```', '', text, flags=re.S).split())} words outside code blocks")
+    now = sections(body)
+    if against:
+        before = sections(prose(at_revision(path, against))[1])
+        print(f"words per section, now against {against}")
+        for sec in list(before) + [s for s in now if s not in before]:
+            a, b = before.get(sec, 0), now.get(sec, 0)
+            print(f"  {b:6}  {b - a:+6}  {sec}{'' if sec in now else '  (gone)'}")
+        ta, tb = sum(before.values()), sum(now.values())
+        print(f"  {tb:6}  {tb - ta:+6}  total ({100 * (tb - ta) / ta if ta else 0:+.0f}%)")
+    else:
+        print("words per section")
+        for sec, n in now.items():
+            print(f"  {n:6}  {sec}")
 
     # sentences
     sents = []
@@ -52,7 +84,10 @@ def main(path):
     groups = len([g for g in re.split(r"\n\s*\n", block.strip()) if g.strip()])
     print(f"\nsummary: {len(labelled)} labelled lines of {len(lines)}, {groups} groups, {len(block.split())} words")
     if len(labelled) < len(lines) * 0.8:
-        print("  the summary is not a labelled block; SPEC-BAR § The summary, first")
+        print("  the summary is not a labelled block; SPEC-BAR § Summary, first")
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else sys.exit("usage: spec-stats.py <spec.md>"))
+    args = sys.argv[1:]
+    if not args or args[0].startswith("-") or (len(args) not in (1, 3)) or (len(args) == 3 and args[1] != "--against"):
+        sys.exit("usage: spec-stats.py <spec.md> [--against <rev>]")
+    main(args[0], args[2] if len(args) == 3 else None)

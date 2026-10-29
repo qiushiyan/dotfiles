@@ -42,6 +42,15 @@ wants the shape of the skill's history before the receipts.
   a missing state or an unheld invariant is made visible by an empty cell
   or an empty line rather than forbidden by a rule.
 
+- **2026-10-29 — a size bar, and the checks pay for what they add.** The
+  09-18 reversal signal fired: specs grew past the medians it recorded.
+  The bar now aims at about 4,000 words for a one-PR change. Past 6,000,
+  the report names the decisions that earned the rest. A fold pays for
+  its words with a cut from what the build owns. A later phase keeps its
+  goals, not its design. The report states the size and the growth since
+  the step-3 commit (`spec-stats.py --against`). Principle: a spec the
+  build no longer reads whole hides its rules in the ranges it skips.
+
 - **2026-10-02 — a name points at one thing; a bound says what it covers.**
   Asked whether to adopt ASD-STE100. Taken from it: one meaning per word,
   one name per thing, no pronoun that leaves a choice. Added beyond it:
@@ -1047,3 +1056,122 @@ question about scoped re-reads: here they caught what the revision broke.
 
 No change made. Run 1 of the ten the 10-02 entry asks for; the pair is not
 the adjudicated, deduplicated baseline that entry names.
+
+## 2026-10-29 — the size bar (improve-tool pass, fork of mini `4404a72d`)
+
+**Corpus.** The user's October planlab specs: 51 files under
+`docs/**/specs/2026-10-*.md` whose adding commit is by qiushi.yann, read at
+`develop` a5184d2a1f9. Develop squash-merges, so a spec's revisions are not
+on it. Each was measured up to its first `## As built`, `## Owed` or
+`## Progress` heading, counting words outside code fences.
+
+- **Size.** Median 7,827 words (p25 2,239, p75 11,153, max 17,506). That is
+  against 3,885 at first commit in the 09-18 corpus and 5.7k–10.3k for the
+  five builds on the 09-21 bar. Design holds 49%, Verification 14%,
+  Behaviour 8%, Delivery 6%, and Summary, Intent and Tenets about 4% each.
+  Within Design, API, Premises, Wiring and Structure hold about 18% each.
+- **What the words are.** I read a sample of long paragraphs in
+  `changeability/specs/2026-10-21-m2-variation-decided-once.md` and
+  `specs/2026-10-25-instruction-pages-loopy-follows.md`.
+  - Most of it is binding design: rules, owners, paths, and premises with
+    evidence. No drafting journey.
+  - The build's own work also appears: a Verification obligation
+    enumerating six test cases, and numbered Design items of 500–990 words
+    that walk transport and gate mechanics step by step.
+- **How builds read them** (obelisk, both machines, Read, Bash and Grep
+  calls on `/specs/2026-` paths since 10-01): 2,082 `sed -n` ranges, 926
+  heading greps, 533 Read calls with an offset or limit, against 150 whole
+  Reads. No Read on a spec failed for size. The counts include writers and
+  reviewers as well as builders.
+- **The user's words.**
+  - mini `683c9858` (10-24): "update the spec holistically with our
+    decisions, distill where discussion and other options is no longer
+    needed after the decision, and keep it high level without
+    implementation details".
+  - `a1d22ac5` (10-22), as /write-spec arguments: "more details (the level
+    this skill asks for) for pr1 and leave more empty room for pr2 (only
+    the high level design goals)".
+- **The 09-18 reversal condition.** It read: "specs grow past the current
+  medians with no fall in build-side discoveries". The growth half holds.
+  Build-side discoveries were not re-measured in this pass.
+
+**Changes.**
+- SPEC-BAR **Size**: about 4,000 words for a one-PR change. Past 6,000, cut
+  what the build owns and what restates a decision. The done condition
+  says under 6,000, or the report names the decisions that earned the
+  rest. "High level" is bound to § Before you finish, not to the
+  interfaces, states and wiring that bind.
+- Verification: an obligation names what is observed, not the cases.
+  "Leave the build" covers per-case lists inside an obligation.
+- SKILL step 4: a fold that adds words pays with a cut from what the build
+  owns or what restates a decision. A finding's reason stays, stated
+  without the round.
+- SKILL step 5: the report states the size and the growth since step 3's
+  commit, when there is one.
+- § Scope: a later phase gets its goals, boundary and binding decisions.
+  A premise that gates the whole change still settles now.
+- `scripts/spec-stats.py`:
+  - A `size` line counts every word outside code blocks. The old counts
+    dropped tables and indented lines, which are a median 3% and up to 35%
+    of a spec.
+  - `--against <rev>` prints each section's growth since that revision.
+  - Fixed the stale "§ The summary" in its summary hint.
+- Plainer sentences: SKILL 27.8 → 22.1 words per sentence, SPEC-BAR 28.8 →
+  25.9. Both sizes are held at their records (body 1,207, total 6,163). The
+  additions were paid for by compressions, and the "Strip the journey"
+  bullet was folded into the opening.
+
+**Parity read** (headless `claude -p --model opus`, read-only, old files
+from `git show HEAD`; report in the fork's scratchpad `f3/parity-report.md`).
+- Restored: "on the current branch" at step 3, "and numbers" for a
+  restated headline, the before/after flow as a permission, and the
+  journey staying out of a fold (as "stated without the round").
+- Six risky additions, each resolved:
+  - the undefined size condition;
+  - a fold cut with no target;
+  - an unbounded "high level";
+  - the counter missing indented lines and tables;
+  - `--against` with no commit under "don't commit";
+  - a later-phase rule that could defer a gate.
+- **Deletions to watch:**
+  - Re-running `check-refs.sh` after the fold is no longer named; the done
+    condition's "every cited path and heading resolves" carries it. Bring
+    it back if a build meets a dead `§` reference added by a fold.
+  - "adapt it to the change" is folded into "a bar, not a form".
+
+**Eval** (`~/dev/skill-evals/cases/write-spec/idempotency-spec.md`, new).
+- Fixture `jobq-plan`, with the spike case's settled premises handed over
+  and "skip the checks". Red bf59df1 against WORKTREE, n=3 each.
+- Agent Opus 5.5 on the subscription; judge Claude Sonnet 5.5 (default).
+  The fixture is a toy repository; nothing private left the machine beyond
+  the rollouts and the judge going to Anthropic.
+
+| check | red | new |
+|---|---|---|
+| schema, resend, header, workers, cli, open, committed | 3/3 each | 3/3 each |
+| build-owned (no function bodies or per-case lists) | 0/2 | 2/2 |
+| report-size | 0/3 | 3/3 |
+| size, words outside code (median; range) | 3,226 (2,817–3,303) | 3,193 (3,061–3,584) |
+| Verification words (median) | 550 | 386 |
+
+- The case shows the per-case rule and the size report working, with no
+  loss of a settled decision.
+- It cannot show the bar shortening a spec. A 225-word plan yields about
+  3,200 words at both revisions, under the 4,000 bar.
+- A case that tests the cut needs a design that drafts past 6,000 words.
+  None exists yet.
+- `green` is unset until the commit.
+
+**Next pass compares** the user's specs written after this commit against
+the October median of 7,827 words before As built:
+- size at first commit and at the final revision;
+- the growth the report states;
+- whether build sessions read whole (whole Reads against `sed -n` ranges
+  and heading greps);
+- build-side discoveries (departures, review findings a spec could have
+  prevented), the half of the 09-18 condition this pass did not measure.
+
+**Revise or reverse if:** a build misses a binding decision the shorter
+spec dropped; the cold read starts returning gaps in Design that earlier
+specs covered; or reports name "earned" past 6,000 as a routine.
+

@@ -2,36 +2,42 @@
 
 The standard [write-spec](SKILL.md) step 2 holds the document to. Two
 models read the spec with none of this conversation: a cold validator
-judging the design, and the implementing session rebuilding its whole
-mental model after compaction. Give them the problem, the intended outcome,
-each binding decision with its reason and its evidence, and the shape to
-build. A section earns its place by changing an implementation choice or
-making one judgeable. The journey that produced the spec, consult rounds,
-the scope cut's history, decision logs, stays out; each decision's reason
-and evidence stay in.
+judging the design, and the implementing session rebuilding its mental
+model after compaction. Give them the problem, the intended outcome, each
+binding decision with its reason and evidence, and the shape to build. A
+section earns its place by changing an implementation choice or making one
+judgeable. The journey that produced the spec (job names, consult rounds and
+their finding counts, the scope cut's history, decision logs) goes in the
+report, not the spec; each decision's reason and evidence stay in.
+
+**Size.** Aim for about 4,000 words outside code blocks for a one-PR change:
+specs that size built without a stall on a spec gap. Longer ones are read
+by heading and line range, so a rule in a skipped range is missed. The user
+asks for specs "high level, without implementation details": what § Before
+you finish leaves to the build, not the interfaces, states and wiring that
+bind. Past 6,000 words, cut what the build owns and what restates a
+decision.
 
 Done when the summary alone re-grounds a cold reader, every design-changing
 premise carries evidence or a fallback that preserves the design, every
-rule has one home, and every cited path and heading resolves. The examples
-are adapted from shipped specs: they show a form, not the project at hand.
+rule has one home, every cited path and heading resolves, and the spec is
+under 6,000 words or the report names the decisions that earned the rest. The examples are adapted from shipped specs: they show a form, not
+the project at hand.
 
 ## Read first
 
-The vocabulary the spec's decisions are made in; trim only for a genuinely
-contained change.
+The vocabulary the spec's decisions are made in, in `~/.config/lessons/`;
+trim only for a contained change:
 
-- `~/.config/lessons/codebase-design/deep-modules.md` — depth, seams, the
-  deletion test, illegal states.
-- `~/.config/lessons/codebase-design/design-it-twice.md` — before the
-  Design section.
-- `~/.config/lessons/codebase-design/deepening.md` — when the change
-  restructures a cluster or crosses a seam you don't own.
-- `~/.config/lessons/codebase-design/composition.md` — when the change
-  extends existing code.
-- `~/.config/lessons/testing/tdd-loop.md` and
-  `~/.config/lessons/testing/mocking-and-fixtures.md` — `## The bar` of
-  each.
-- `~/.config/lessons/collaboration/tenets.md` — the form a tenet takes.
+- `codebase-design/deep-modules.md`: depth, seams, the deletion test,
+  illegal states.
+- `codebase-design/design-it-twice.md`: before the Design section.
+- `codebase-design/deepening.md`: when the change restructures a cluster
+  or crosses a seam you don't own.
+- `codebase-design/composition.md`: when the change extends existing code.
+- `testing/tdd-loop.md` and `testing/mocking-and-fixtures.md`: `## The bar`
+  of each.
+- `collaboration/tenets.md`: the form a tenet takes.
 
 ## Shape
 
@@ -50,9 +56,9 @@ Verification, Delivery. Each is the one home for one kind of statement:
 A section a written project rule requires (a status header, an As built
 record) joins at the kind it belongs to; nothing else about the shape comes
 from the project. A rule and its reason live in one home. The summary, a
-sketch or a test may restate the headline, in the home's terms and with
-its numbers, pointing at the section that owns it; a rule stated in three
-places drifts until the build finds the contradiction.
+sketch or a test may restate the headline in the home's terms and numbers,
+pointing at the section that owns it. A rule stated in three places drifts until the
+build finds the contradiction.
 
 ## Summary
 
@@ -83,19 +89,18 @@ Where: § Behaviour describes the six situations; § Design carries the mechanis
 
 Goals say what is true once this lands. Non-goals name what is left out,
 each with its reason; deferred work lives here so it never reads as
-undecided. Where the change introduces something a person could mistake
-for an existing concept, say whether it extends that concept or stands
-apart, and why.
+undecided. Where something new could be mistaken for an existing concept,
+say whether it extends that concept or stands apart, and why.
 
 Tenets are the few invariants that hold when the sections run out of
-instructions, in the tenets lesson's form, each closing with what holds
-it: the mechanism in § Design that makes it hard to break, or the numbered
+instructions, in the tenets lesson's form. Each closes with what holds it:
+the mechanism in § Design that makes it hard to break, or the numbered
 obligation in § Verification that catches the break. An invariant with
 neither is a wish: strike it, or demote it to a sentence about today beside
 the seam it describes, with the observation that would show it broken. A
-rule binding one behaviour or one seam lives beside that behaviour or
-seam. A validation round revises the section in place; the reason a tenet
-was struck belongs to that round's synthesis.
+rule binding one behaviour or one seam lives beside it. A validation round
+revises the section in place; why a tenet was struck goes in that round's
+synthesis.
 
 <example>
 One resolution of the configuration serves every reader, over each reader
@@ -136,26 +141,24 @@ not become usable evidence because the command exited 0.
 ## Design
 
 Name the owner of each responsibility and how every affected caller
-reaches it, through an allowed import or interface, without dragging a
-layer across a boundary. Say whether the existing code is a base this
-extends or a structure that blocks the design, and scope the opening
-reshape when it blocks. Give the views that settle the design, and only
-those:
+reaches it through an allowed import or interface, without dragging a layer
+across a boundary. Say whether the existing code is a base this extends or
+a structure that blocks the design, and scope the opening reshape when it
+blocks. Give only the views that settle the design:
 
 - **Structure** — each changed responsibility, its owner, the invariant
   the owner protects, and what holds that invariant: the mechanism, or the
-  obligation by number, as a tenet's held-by line does, under the tenet
-  rule. Then the file it lives in today, and a proposed placement last, as
-  a sketch.
+  obligation by number, under the tenet rule. Then the file it lives in
+  today, and last a placement sketch.
 - **API** — what a caller writes, the distinctions callers rely on, and
-  the legal states in a table: one row per state with when it is entered,
-  when it is left, and who writes it. Walk the real inputs through the
+  the legal states in a table: one row per state, with when it is entered
+  and left and who writes it. Walk the real inputs through the
   table: an input that lands in no row is the state you missed.
 - **Wiring** — the changed paths: what each boundary knows, what survives
   a retry, where failure goes. `Today:` lines describe the path as it is,
   each read from the file it names while writing, since the build re-reads
-  every one at its path before building on it. `After:` lines describe the
-  proposed path.
+  each at its path before building on it. `After:` lines give the proposed
+  path.
 
 Behaviours, ownership, invariants and the distinctions callers rely on
 bind. Symbol names and file placement are sketches the build may change
@@ -215,9 +218,8 @@ Wiring — the changed path:
 
 **Design it twice.** Two or three shapes different in kind, each
 constraint written first, compared on depth, locality and seam placement.
-The document carries the winner and, for each rejected shape whose
-rejection still constrains the build, the constraint it optimised and the
-one line that lost it.
+The spec carries the winner and, for a rejected shape whose rejection
+still constrains the build, what it optimised and the line that lost it.
 
 **Premises.** Separate each decision from its basis and from what is still
 unverified. A decision is settled or proposed; its basis is measured,
@@ -254,23 +256,23 @@ above the cap means the bound cannot hold the fleet, and the premise becomes
 blocking.
 </example>
 
-A premise with no fallback that preserves the design is a gate: settled in
-this run, or reported as blocking with the person who can settle it. A
-spike that fails is recorded in the `/spike` skill's form, with the
-observation that decided it.
+A premise with no design-preserving fallback is a gate: settled in this
+run, or reported as blocking with the person who can settle it. A failed
+spike is recorded in the `/spike` skill's form, with the observation that
+decided it.
 
 ## Verification
 
-Open with the example's first line, as written, since the spec is the one
-document the build reads and that line defines the answers it gives. Then
-number the obligations. For
-each: the behaviour it verifies, the observation boundary, what stays real,
-what may be substituted and what the substitute can and cannot prove, and
-whether the fixtures and runners are reachable from a build session. The
-numbers are what a held-by line and the build's report point at; an
-obligation that vanishes without an answer is the failure the numbering
-makes visible. A regression the validation asked for is an obligation here,
-stated without the round that asked.
+Open with the example's first line as written, since it defines the
+answers the build gives. Then number the
+obligations. For each: the behaviour it verifies, the observation boundary,
+what stays real, what may be substituted and what the substitute can and
+cannot prove, and whether the fixtures and runners are reachable from a
+build session. An obligation names what is observed, not the cases; the
+build enumerates those. The numbers are what a held-by line and the build's
+report point at, so an obligation that vanishes unanswered shows. A
+regression the validation asked for is an obligation here, stated without
+the round that asked.
 
 <example>
 The build reports each obligation below by number: pinned, a test that
@@ -293,9 +295,9 @@ Limit: synthetic records do not establish the shape of historical production dat
 ## Delivery
 
 State the PR boundary always, and phases only where order matters
-([SKILL.md](SKILL.md) § Scope has the reasoning). A check whose failure
-would change the design belongs before the spec is ready, not in a first
-phase of the build. An open question names the choice, its consequence,
+([SKILL.md](SKILL.md) § Scope). A check whose failure would change the
+design belongs before the spec is ready, not in a first phase of the
+build. An open question names the choice, its consequence,
 the recommendation, the decider by name or by a role the project's docs
 resolve, and exactly which work waits on it. Where the writer knows no
 name and the docs resolve no role, the spec gives the role as the writer
@@ -320,16 +322,15 @@ notice proceed independently.
 - **One claim per sentence, one topic per paragraph.** A reader hunting a
   rule finds it by the sentence that states it.
 - **A name points at one thing.** Name the component, the state or the
-  operation rather than the shorthand the session coined. Where a phrase
-  could fit two things, say which: an existing thing by its identifier
-  and path, a proposed thing by the name the spec defines for it, a
-  person as § Delivery names a decider. A word the project's docs already
-  use keeps their meaning; where the spec needs a second meaning, qualify
-  both ("the delivery's hold", "the dock's hold"). When the code, the
-  screen and the docs call one thing by different names, give the mapping
-  once, use one name in prose, and keep the code and screen names exact
-  where they are quoted. Repeat the noun where "it", "the same" or "the
-  next one" would leave the reader to choose.
+  operation, not the session's shorthand. Where a phrase could fit two
+  things, say which: an existing thing by its identifier and path, a
+  proposed thing by the name the spec defines, a person as § Delivery names
+  a decider. A word the project's docs use keeps their meaning; a second
+  meaning qualifies both ("the delivery's hold", "the dock's hold"). When
+  the code, the screen and the docs name one thing differently, give the
+  mapping once and use one name in prose, keeping quoted names exact.
+  Repeat the noun where "it", "the same" or "the next one" would leave the
+  reader to choose.
 
   <example type="avoid">
   Ask the artifact leg first, fall to the cache path on any uncertain answer.
@@ -357,18 +358,17 @@ notice proceed independently.
   </example>
 
 - **Present and proposed stay distinct.** A sentence about what the code
-  does now is an observation and carries the path it was read at; a
-  sentence about what it will do is a design, labelled unbuilt.
+  does now carries the path it was read at; one about what it will do is
+  labelled unbuilt.
 - **A limit, a count or a set says what it covers.** A measurement keeps
   its date, window, population and limits, in the premise it supports.
-  Where a count, a window, a set or a limit binds the build: a count
-  gives the unit counted, the scope it is counted over and when it
-  resets; a window gives the timestamp it reads and both endpoints; a set
-  gives its members; a limit says which side the edge case falls on. Each
-  states its value or the rule that determines it. A value still open
-  follows § Design — Premises: proposed with its basis, and a fallback
-  where the basis is assumed; or a gate. A product choice goes to
-  § Delivery with its decider. A number with no basis settles neither.
+  Where one binds the build, a count gives its unit, its scope and when it
+  resets; a window, the timestamp it reads and both endpoints; a set, its
+  members; a limit, which side the edge case falls on. Each states its
+  value or the rule that determines it. An open value follows § Design —
+  Premises (proposed with its basis and, if assumed, a fallback; or a
+  gate), and a product choice goes to § Delivery with its decider. A
+  number with no basis settles neither.
 
   <example type="avoid">
   A failure is reported once per distinct failure, at most three times in
@@ -385,9 +385,8 @@ notice proceed independently.
   </example>
 
 - **References resolve.** Every cited path and `§ Heading` exists at the
-  revision the spec names; a proposed placement is labelled a sketch and
-  is not a citation. Introduce a proposed name once, where it is defined,
-  and use it unchanged afterwards.
+  revision the spec names; a proposed placement is a labelled sketch, not
+  a citation. Define a proposed name once and use it unchanged.
 - **Structure that reads in plain source.** A heading per reader question,
   a list for independent entries, numbered steps only where order matters,
   a table only where the reader compares the same attributes across rows.
@@ -397,27 +396,25 @@ notice proceed independently.
 - **Hunt the rabbit holes.** Walk the approach end to end for an unproven
   technical claim, a design problem the spec gestures at, or an
   interdependency that reads simpler than it is. Solve each where it
-  lives, cut it into non-goals with its reason, or open it in Delivery
-  with its decider. A named hazard is not closed by naming it, and a
-  proposed guard is not closed until its mechanism is shown to hold.
+  lives, make it a non-goal with its reason, or open it in Delivery with
+  its decider. Naming a hazard does not close it, and a proposed
+  guard stays open until its mechanism is shown to hold.
 - **Leave the build what is the build's:** code bodies, per-case test
-  enumeration, edit plans, rename inventories, doc update plans, commit
-  order, estimates. Domain and interface vocabulary is the spec's to fix.
+  enumeration (inside an obligation too), edit plans, rename inventories,
+  doc update plans, commit order, estimates. Domain and interface vocabulary is the spec's to fix.
   A sentence a model or a judge will read is described by what it must
   state and must not name; the build writes it under the prompt-engineering
   rulebook. A sentence written out verbatim here ships as written, so it is
   a premise, run against a real record first.
-- **Strip the journey**: job names, rounds, finding counts and
-  dispositions leave the spec and go in the report.
 - **Revise by replacement.** A correction rewrites the sentence at the
   rule's home and the old sentence goes; missing content is added at the
   section that owns it.
 - **Measure, then reread once as one whole.** In this skill's directory,
-  `scripts/spec-stats.py <spec>` prints words per section, sentence lengths and the summary
-  block's shape; `scripts/check-refs.sh <spec>` lists the cited paths and
-  `§ Heading` references it recognises that do not resolve, and a clean
-  run means no detected misses. Read a sentence past forty words for a
-  second claim, and a section that grew by half through the checks for a
+  `scripts/spec-stats.py <spec>` prints the size, words per section, sentence
+  lengths and the summary block's shape, and with `--against <sha>` each section's
+  growth since that commit. `scripts/check-refs.sh <spec>` lists the cited
+  paths and `§ Heading` references it recognises that do not resolve; a
+  clean run means no detected misses. Read a sentence past forty words for
+  a second claim, and a section that grew by half through the checks for a
   rule stated twice: the number is the cue, the reading is the judgment.
-- **Run the project's own checks**, the ones its documentation entry point
-  names.
+- **Run the project's own checks.**
