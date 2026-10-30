@@ -12,4 +12,6 @@ which the docs call the laptop.
 - **The mini is the office Mac mini** (`ssh mini`). This machine runs the
   reconciler: gitignored files the manifest lists move between the two only
   while it is awake, on its hourly `twin tick` or a `twin files sync`.
+- **mini2 is the second office Mac mini** (`ssh mini2`), the office
+  workstation, which `twin` does not know yet: `docs/qiushi-mini-2.md`.
 - **What to run when, across the laptop and the mini:** `docs/twin.md`.

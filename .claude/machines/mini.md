@@ -15,4 +15,6 @@ home `/Users/qiushiyan`).
   (`ssh mac`, when it is awake). It runs the reconciler: gitignored files
   the manifest lists move between the two only while it is awake, and a
   `twin files` command given here is handed to it.
+- **mini2 is the second office Mac mini** (`ssh mini2`), the office
+  workstation, which `twin` does not know yet: `docs/qiushi-mini-2.md`.
 - **What to run when, across the laptop and the mini:** `docs/twin.md`.

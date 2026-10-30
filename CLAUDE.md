@@ -31,12 +31,12 @@ them from the environment.
 
 ## Working here
 
-- **Know which machine this is: both hold a clone of this repository, and a
-  commit reaches the other only once it is pushed and pulled.**
-  `~/.config/machine` holds `mac` or `mini`, and `.claude/machines/<name>.md`
-  says what differs there. Claude Code gets that file at session start, with
-  `twin`'s state of this checkout (`.claude/hooks/machine-context.sh`); any
-  other agent reads it first.
+- **Know which machine this is: each holds a clone of this repository, and a
+  commit reaches another only once it is pushed and pulled there.**
+  `~/.config/machine` holds `mac`, `mini` or `mini2`, and
+  `.claude/machines/<name>.md` says what differs there. Claude Code gets that
+  file at session start, with `twin`'s state of this checkout
+  (`.claude/hooks/machine-context.sh`); any other agent reads it first.
 - Edits are live; no build. Use `make restow` after file additions or removals
   that require new links. `dotadd <path>` brings an unmanaged file under Stow.
 - Commit directly on the current branch without asking; push after milestone implementation has finished.
@@ -123,7 +123,9 @@ Additional routes beyond the feature docs above:
   `twin status` shows something to clear.
 - The office Mac mini as a machine (`ssh qiushi-mini`), "the mini" everywhere
   in this repository: reaching it over the company tailnet, its desk, its
-  toolchain and the jobs it hosts: `docs/qiushi-mini.md`.
+  toolchain and the jobs it hosts: `docs/qiushi-mini.md`. The second one,
+  mini2 (`ssh qiushi-mini-2`), is the office workstation, not yet set up:
+  `docs/qiushi-mini-2.md`.
 - Unbuilt tmux features: `tmux/.config/tmux/roadmap.md`.
 - The personal Slack toolkit: the `slack` skill is `~/dev/slackkit`'s,
   linked here; its design is that repo's `docs/`.

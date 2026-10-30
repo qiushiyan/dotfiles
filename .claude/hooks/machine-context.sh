@@ -42,5 +42,6 @@ This machine is not identified: $why.
 The marker picks this machine's launchd agents and Codex settings, and twin
 refuses to run without it, so nothing machine-specific is stowed or rendered
 until it exists. Ask the user which machine this is before running
-\`make restow\` or \`twin\` here; the marker holds one word, \`mac\` or \`mini\`.
+\`make restow\` or \`twin\` here; the marker holds one word: \`mac\`, \`mini\`
+or \`mini2\`.
 MSG

@@ -1,8 +1,10 @@
 # Office Mac mini (`ssh qiushi-mini`)
 
-My own Mac mini, kept in the office. At the desk it is the office desktop
-(§ At the desk); from the laptop it is reached over the company tailnet, in or
-out of the office. It is mine to configure. Facts below were collected
+My own Mac mini, kept in the office and reached over the company tailnet, in
+or out of the office. It is mine to configure. It runs headless as compute:
+Claude sessions, planlab lanes and § Personal jobs. The office workstation
+with the monitor is mini2 (`docs/qiushi-mini-2.md`); § At the desk is this
+mini's desk setup, the reference for mini2's. Facts below were collected
 2026-09-22.
 
 ## Connection
