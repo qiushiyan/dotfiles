@@ -65,10 +65,11 @@ Everything derives from that tree:
 - **Sessions** belong to the machine, not the account:
   `docs/claude-sessions-store.md` § One store, many accounts.
 - **Launchers** are generated from the dirs at shell init: `x-<email>` always,
-  and a short `x-<local-part>` only when it is unambiguous. The primary
-  answers to its login's local part too, and since `~/.claude` is logged in
-  to a different account on each machine, the machine's host file names it
-  (`_claude_primary`). The naming rules are `claude.zsh`'s header; headroom
+  and a short `x-<local-part>` only when it is unambiguous. Since
+  `~/.claude` is logged in to a different account on each machine, the
+  machine's host file names the primary by its login's email
+  (`_claude_primary`), and it answers to the local part too unless an extra
+  holds it; Codex's primary is `CODEX_PRIMARY_NAME` in `codex.zsh`. The naming rules are `claude.zsh`'s header; headroom
   revalidates every name, so a stale or ambiguous one fails by name instead
   of routing anywhere.
 
@@ -214,10 +215,9 @@ Everything derives from that tree:
   `claude.zsh` pins headroom's primary name to `CLAUDE_PRIMARY_NAME` through
   `HEADROOM_PRIMARY_NAME`, so both sides answer to the one name the host file
   gives, even while the primary is logged out. headroom records that name in
-  `.current` and in the session re-homes in `state.json`, so changing it
-  means moving those records to the new name under headroom's lock; left
-  behind, a re-home reads as one to a deleted account and `.current`
-  refuses. The other `HEADROOM_*` overrides exist for headroom's test
+  `.current`, the reservations and the session re-homes, and moves them
+  itself, under its lock, the first time it is given a new name: renaming
+  the primary is the host-file edit alone. The other `HEADROOM_*` overrides exist for headroom's test
   harnesses and re-point headroom only; under one, wrapper degradations are
   loud or absent, never a silent misroute, because headroom revalidates every
   name a wrapper passes.

@@ -140,10 +140,35 @@ test_host_names_the_primary() {
     export            qiushi.yann
 }
 
+# Named by its full email, the primary still answers to its local part when
+# no extra account claims it; one that does keeps it for the extra.
+test_primary_named_by_email() {
+  sandbox $ACCOUNTS || return 1
+  local B='-- --dangerously-skip-permissions' V='launch --vendor codex'
+  expect "$(probe '_claude_primary me@c.com
+    route x-me x-me@c.com x-qiushi
+    print -r -- "canonical => $(_claude_canonical me)"
+    _claude_primary qiushi@c.com
+    route x-qiushi@c.com
+    print -r -- "canonical-claimed => $(_claude_canonical qiushi)"')" \
+    x-me              "launch --account me@c.com $B" \
+    x-me@c.com        "launch --account me@c.com $B" \
+    x-qiushi          "launch --account qiushi@b.com $B" \
+    canonical         me@c.com \
+    x-qiushi@c.com    "launch --account qiushi@c.com $B" \
+    canonical-claimed qiushi@b.com || return 1
+  expect "$(probe 'CODEX_PRIMARY_NAME=me@c.com; _codex_gen_launchers
+    route cx-me cx-me@c.com')" \
+    cx-me             "$V --account me@c.com --" \
+    cx-me@c.com       "$V --account me@c.com --"
+}
+
 test_codex_launcher_names() {
   sandbox $ACCOUNTS || return 1
   local V='launch --vendor codex'
-  expect "$(probe 'route cx-yan cx-yan@a.com cx-dup cx-dup@a.com cx-dup@b.com cx-qiushi cx-qiushi@b.com cx-qiushi.yann cx-select cx-acc cx-acc@a.com cx-yan@a.com.lock')" \
+  # The primary named "qiushi", as the case is about, not codex.zsh's default.
+  expect "$(probe 'CODEX_PRIMARY_NAME=qiushi; _codex_gen_launchers
+    route cx-yan cx-yan@a.com cx-dup cx-dup@a.com cx-dup@b.com cx-qiushi cx-qiushi@b.com cx-qiushi.yann cx-select cx-acc cx-acc@a.com cx-yan@a.com.lock')" \
     cx-yan            "$V --account yan@a.com --" \
     cx-yan@a.com      "$V --account yan@a.com --" \
     cx-dup            absent \
@@ -203,6 +228,7 @@ EOS
 t "x-* launchers: names and the account each reaches"   test_claude_launcher_names
 t "cx-* launchers: names and the account each reaches"  test_codex_launcher_names
 t "a host file names the primary and moves its launcher" test_host_names_the_primary
+t "a primary named by its email keeps its local part"    test_primary_named_by_email
 t "adding a same-local-part account retires the alias"  test_add_retires_an_ambiguous_alias
 t "session launchers run workspace-trust first"         test_launchers_record_trust_first
 

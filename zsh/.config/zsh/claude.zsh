@@ -176,11 +176,17 @@ _account_launchers() {
     fi
   done
   functions[$prefix-$primary]="$launch ${(q)primary} \"\$@\""
+  # A primary named by its email answers to its local part too, unless an
+  # extra account or a reserved launcher already holds it.
+  name="${primary%%@*}"
+  if [[ "$name" != "$primary" ]] && (( ! ${count[$name]:-0} )) && (( ! ${argv[(Ie)$name]} )); then
+    functions[$prefix-$name]="$launch ${(q)primary} \"\$@\""
+  fi
 }
 
 # Expand a personal shorthand to the canonical name headroom knows: the
 # primary's name and full emails pass through, a unique local part becomes
-# its email. Convenience only — headroom revalidates whatever this prints,
+# its email, the primary's included. Convenience only — headroom revalidates whatever this prints,
 # so an ambiguous or stale shorthand fails there by name instead of routing
 # anywhere.
 _claude_canonical() {
@@ -196,6 +202,9 @@ _claude_canonical() {
     [[ "${${d:t}%%@*}" == "$q" ]] && hits+=("${d:t}")
   done
   (( ${#hits} == 1 )) && { print -r -- "${hits[1]}"; return 0 }
+  # No extra claims it: the local part of a primary named by its email.
+  (( ${#hits} == 0 )) && [[ "$q" == "${CLAUDE_PRIMARY_NAME%%@*}" && "$q" != "$CLAUDE_PRIMARY_NAME" ]] \
+    && { print -r -- "$CLAUDE_PRIMARY_NAME"; return 0 }
   print -r -- "$q"
 }
 

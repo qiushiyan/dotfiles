@@ -8,4 +8,4 @@
 
 # The login ~/.claude holds here; the primary answers to its local part
 # (claude.zsh, _claude_primary).
-(( $+functions[_claude_primary] )) && _claude_primary qiushi   # qiushi@planlab.ai
+(( $+functions[_claude_primary] )) && _claude_primary qiushi@planlab.ai   # x-qiushi too

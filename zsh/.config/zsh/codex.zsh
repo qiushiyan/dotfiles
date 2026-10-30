@@ -36,7 +36,8 @@
 #                          board's enter on the Codex page moves it)
 #   cx-<email> [args]      Codex on that account, this session only — bare
 #                          `cx`'s target is untouched. cx-<local-part> exists
-#                          when the local part is unique; cx-qiushi ≡ ~/.codex
+#                          when the local part is unique, the primary's
+#                          included; cx-qiushi ≡ ~/.codex
 #   cx-accounts / cx-acc   the account board, Codex page only. (`x-acc` shows
 #                          both vendors; tab switches pages.)
 #   cx-account-add <email> seed a new home (sessions/ link + shared config),
@@ -49,7 +50,7 @@
 # No bypass array here: approval_policy and sandbox_mode live in config.toml,
 # which every home shares (see cx-account-add), so one edit lands on all.
 typeset -g CODEX_ACCOUNTS_ROOT="$HOME/.codex-accounts"
-typeset -g CODEX_PRIMARY_NAME="qiushi"   # cx-qiushi ≡ default ~/.codex
+typeset -g CODEX_PRIMARY_NAME="qiushi@planlab.ai"   # cx-qiushi ≡ default ~/.codex
 # Pinned for the same reason as HEADROOM_PRIMARY_NAME: `.current` records the
 # name, and a derived one would change under a primary logout.
 export HEADROOM_CODEX_PRIMARY_NAME="$CODEX_PRIMARY_NAME"

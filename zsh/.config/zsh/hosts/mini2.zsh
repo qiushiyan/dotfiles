@@ -8,7 +8,7 @@ export PROMPT_MACHINE=mini2
 
 # The login ~/.claude holds here; the primary answers to its local part
 # (claude.zsh, _claude_primary).
-(( $+functions[_claude_primary] )) && _claude_primary qiushi   # qiushi@planlab.ai
+(( $+functions[_claude_primary] )) && _claude_primary qiushi@planlab.ai   # x-qiushi too
 
 # Reached from the laptop over ssh as the mini is, so the same two fixes
 # (hosts/mini.zsh says why): OSC 8 links over sshd, and URLs that follow the

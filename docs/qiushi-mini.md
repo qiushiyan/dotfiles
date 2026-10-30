@@ -100,8 +100,8 @@ The `zsh`, `tmux` and `ohmyposh` packages are stowed as on the laptop
 
 - **The primary Claude Code account:** `~/.claude` here is logged in to
   `qiushi.yann@gmail.com`, so the primary is `x-qiushi.yann` (headroom's
-  `qiushi.yann`) and `x-qiushi` is the `qiushi@planlab.ai` extra — the
-  reverse of the laptop, whose primary is `qiushi@planlab.ai`
+  `qiushi.yann@gmail.com`) and `x-qiushi` is the `qiushi@planlab.ai` extra —
+  the reverse of the laptop and mini2, whose primary is `qiushi@planlab.ai`
   (`docs/claude-accounts.md`).
 - **`aws sso login`:** `hosts/mini.zsh` adds `--use-device-code`, because the
   default flow redirects to a localhost listener on the mini that a laptop
