@@ -87,7 +87,7 @@ define{
   run = function(ctx, args)
     local sid, bid = action.block(ctx, args)
     if not (sid and bid) then return { toggled = false } end
-    local blocks = layout.ordered(layout.window_of(api.call("session.view", { session_id = sid }), bid))
+    local blocks = layout.tiled(layout.window_of(api.call("session.view", { session_id = sid }), bid))
     if #blocks < 2 then return { toggled = false, reason = "one pane" } end
     local one_row = true
     for _, b in ipairs(blocks) do

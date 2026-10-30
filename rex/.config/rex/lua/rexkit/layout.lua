@@ -1,37 +1,47 @@
 -- rexkit.layout: geometry from a session.view result, with no calls of its
 -- own. A view lists windows (the tabs) in tab order, each with layers; a
--- layer's blocks carry normalized rects (0..1 of the window).
+-- layer's layout tree carries the rects, as [x, y, w, h] fractions of the
+-- window, and its blocks list carries none.
 
 local M = {}
 
--- Every block of a window's tiled layer, with its rect.
-function M.tiled(window)
-  local out = {}
-  for _, layer in ipairs((window and window.layers) or {}) do
-    if layer.kind == "tiled" then
-      for _, b in ipairs(layer.blocks or {}) do out[#out + 1] = b end
-    end
-  end
-  return out
-end
-
--- The blocks of a window's tiled layer in layout order, before then after
--- down each split: the order tmux numbers panes in.
-function M.ordered(window)
-  local out = {}
+-- The leaves of LAYER's layout tree in layout order, before then after down
+-- each split (the order tmux numbers panes in), appended to OUT as
+-- { block_id, rect = { x, y, w, h } }.
+local function leaves(layer, out)
   local function walk(node)
     if not node then return end
     if node.split then
       walk(node.split.before)
       walk(node.split.after)
     elseif node.block_id then
-      out[#out + 1] = node
+      local r = node.rect or {}
+      out[#out + 1] = { block_id = node.block_id, rect = { x = r[1], y = r[2], w = r[3], h = r[4] } }
     end
   end
+  walk(layer.layout)
+  return out
+end
+
+-- Every block of a window's tiled layer, with its rect, in layout order.
+function M.tiled(window)
+  local out = {}
   for _, layer in ipairs((window and window.layers) or {}) do
-    if layer.kind == "tiled" then walk(layer.layout) end
+    if layer.kind == "tiled" then leaves(layer, out) end
   end
   return out
+end
+
+-- The window of a view that places BLOCK_ID in any layer, and the block's
+-- rect there; nil when no window does.
+function M.placement(view, block_id)
+  for _, w in ipairs((view and view.windows) or {}) do
+    for _, layer in ipairs(w.layers or {}) do
+      for _, b in ipairs(leaves(layer, {})) do
+        if b.block_id == block_id then return w, b.rect end
+      end
+    end
+  end
 end
 
 -- Every block of a window, floating layers too.

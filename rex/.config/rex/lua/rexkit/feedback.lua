@@ -5,6 +5,7 @@
 -- toast layer is off.
 
 local api = require("rexkit.api")
+local layout = require("rexkit.layout")
 local shell = require("rexkit.shell")
 
 local M = {}
@@ -54,14 +55,8 @@ M.LAYER_TOASTS = false
 
 -- The window a block is placed in, with the block's normalized rect there.
 local function placement(session_id, block_id)
-  local view = api.view(session_id)
-  for _, w in ipairs((view and view.windows) or {}) do
-    for _, layer in ipairs(w.layers or {}) do
-      for _, b in ipairs(layer.blocks or {}) do
-        if b.block_id == block_id then return w.window_id, b.rect end
-      end
-    end
-  end
+  local w, rect = layout.placement(api.view(session_id), block_id)
+  if w then return w.window_id, rect end
 end
 
 function M.toast(session_id, block_id, level, title, msg, seconds)
