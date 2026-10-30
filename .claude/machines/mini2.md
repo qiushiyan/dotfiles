@@ -6,8 +6,10 @@ monitor.
   made here is elsewhere only once it is pushed and pulled there; pull first
   when the `twin` lines below show this checkout behind
   (`twin repos pull dotfiles`).
-- **Activation is each machine's own.** A pull does not restow, render the
-  Codex config or load a launchd agent: `twin dotfiles apply` does, here.
+- **Activation is each machine's own.** A pull does not restow or render the
+  Codex config: `twin dotfiles apply` does, here, and `twin sync` does it on
+  every machine whose checkout it moved. A new launchd agent loads only with
+  `twin dotfiles apply --load-agents`, on the machine that runs it.
   This machine stows the Makefile's default set, as the laptop does, and
   builds its own CLIs (`twin tools install`).
 - **The mini** (`ssh mini`, `qiushi-mini`) is the first office Mac mini:

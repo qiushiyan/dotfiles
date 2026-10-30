@@ -5,9 +5,10 @@ which the docs call the laptop.
   of another. A commit made here is on another machine only once it is
   pushed and pulled there, and the same the other way; pull first when the
   `twin` lines below show this checkout behind (`twin repos pull dotfiles`).
-- **Activation is each machine's own.** A pull does not restow, render the
-  Codex config or load a launchd agent: `twin dotfiles apply` does, here, and
-  nothing runs it for another machine. The packages each machine stows and
+- **Activation is each machine's own.** A pull does not restow or render the
+  Codex config: `twin dotfiles apply` does, here, and `twin sync` does it on
+  every machine whose checkout it moved. A new launchd agent loads only with
+  `twin dotfiles apply --load-agents`, on the machine that runs it. The packages each machine stows and
   the files `twin` carries between them are listed in
   `twin/.config/twin/twin.toml`.
 - **The mini is the office Mac mini** (`ssh mini`), headless compute, and

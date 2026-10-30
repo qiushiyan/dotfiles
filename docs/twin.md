@@ -188,7 +188,9 @@ twin repos pull twin && twin tools install twin   # twin itself: on every machin
 Each machine calls the others' `twin` over ssh, so a `twin` change is
 installed on every machine. With more than two machines a pair whose other
 side runs a build from before that is blocked: `the twin on mini2 predates
-more than two machines; twin tools install twin there`.
+more than two machines; twin tools install twin there`. A build that old
+cannot read a manifest of more than two machines at all, so there it is
+`git -C ~/dev/twin pull && make -C ~/dev/twin install`.
 
 ### A branch continues on another machine
 
@@ -298,6 +300,11 @@ A machine that comes back is brought up to date by the next run, the hourly
 tick included.
 
 ### A new machine joins
+
+Every machine runs the current `twin` (`twin sync twin`) and `twin status`
+lists nothing to resolve before the manifest names the newcomer: enrolling
+starts each pair's record afresh, so a deletion still waiting for a
+resolution comes back.
 
 ```bash
 # twin.toml: [machines.<name>] with its ssh alias, and packages unless it takes the default set;

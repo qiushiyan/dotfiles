@@ -51,6 +51,9 @@ step_homebrew() {
     if [[ -x /opt/homebrew/bin/brew ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
+    # The stow step runs before the Brewfile, so stow comes first.
+    have stow || brew install stow
+    ok "stow"
 }
 
 step_clone() {

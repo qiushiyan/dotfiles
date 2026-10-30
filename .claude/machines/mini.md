@@ -6,8 +6,10 @@ home `/Users/qiushiyan`), headless compute.
   made here is on another machine only once it is pushed and pulled there,
   and the same the other way; pull first when the `twin` lines below show
   this checkout behind (`twin repos pull dotfiles`).
-- **Activation is each machine's own.** A pull does not restow, render the
-  Codex config or load a launchd agent: `twin dotfiles apply` does, here.
+- **Activation is each machine's own.** A pull does not restow or render the
+  Codex config: `twin dotfiles apply` does, here, and `twin sync` does it on
+  every machine whose checkout it moved. A new launchd agent loads only with
+  `twin dotfiles apply --load-agents`, on the machine that runs it.
   This machine stows the packages `twin/.config/twin/twin.toml` lists for
   it, which is not every package in the tree, and builds its own CLIs
   (`twin tools install`).

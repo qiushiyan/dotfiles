@@ -142,12 +142,42 @@ case_scripts_entry_points_stay_repo_local() {
   return $rc
 }
 
+# On a fresh home, where none of these exist yet, `make install` keeps the
+# directories installers write into real, linking only the tracked files
+# inside: folded, they put uv's Pythons, Claude Code's versions and brew
+# services' plists into the clone. The real Makefile, run into a scratch home
+# whose clone is a scratch tree.
+case_fresh_home_keeps_runtime_dirs_real() {
+  (( $+commands[stow] )) || { print "stow is not installed"; return 1 }
+  local tmp h d rc=0
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/sr-fresh.XXXXXX") || return 1
+  tmp=${tmp:A}   # TMPDIR sits under /var, a link to /private/var
+  h="$tmp/home"
+  # ~/Library exists in every macOS home; ~/.local need not.
+  mkdir -p "$h/.config" "$h/Library" "$h/dotfiles/scripts/.local/share/dotfiles" "$h/dotfiles/scripts/.local/bin" \
+    "$h/dotfiles/launchd-mini2/Library/LaunchAgents" "$h/dotfiles/claude/.claude"
+  print mini2 > "$h/.config/machine"
+  : > "$h/dotfiles/scripts/.local/share/dotfiles/data"
+  : > "$h/dotfiles/scripts/.local/bin/tool"
+  : > "$h/dotfiles/launchd-mini2/Library/LaunchAgents/agent.plist"
+  : > "$h/dotfiles/claude/.claude/settings.json"
+  HOME="$h" make -s -f "$DOT/Makefile" -C "$h/dotfiles" install >/dev/null 2>&1 || { print "make install failed"; rc=1 }
+  # Resolved, so a linked parent counts as a link too.
+  for d in .local/bin .local/share Library/LaunchAgents .claude; do
+    [[ -d "$h/$d" && "$h/$d" == "${${:-$h/$d}:A}" ]] || { print "~/$d is not a real directory"; rc=1 }
+  done
+  [[ -L "$h/Library/LaunchAgents/agent.plist" ]] || { print "the agent plist was not linked"; rc=1 }
+  [[ -n "$tmp" && -d "$tmp" ]] && rm -rf -- "$tmp"
+  return $rc
+}
+
 t "claude/.claude/CLAUDE.md is empty"                      case_global_memory_empty
 t "no <pkg>/CLAUDE.md stows to ~/CLAUDE.md"                case_no_package_claude_md_reaches_home
 t "tabtype package docs stay out of HOME"                  case_tabtype_docs_stay_repo_local
 t "make list names no non-package directory"              case_list_skips_non_packages
 t "make list names this machine's launchd package only"   case_list_names_this_machines_launchd_only
 t "scripts entry points stay out of HOME"                  case_scripts_entry_points_stay_repo_local
+t "a fresh home keeps runtime directories real"            case_fresh_home_keeps_runtime_dirs_real
 
 print -r -- "stow-reach.test: $PASS passed, $FAIL failed"
 (( FAIL == 0 ))
