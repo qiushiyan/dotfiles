@@ -2,7 +2,7 @@
 -- host's session runs the config of the app's own machine (ctx.server is
 -- set): its rex calls travel through the app to that host, but its files,
 -- processes, clipboard and `open` are this machine's. These helpers put each
--- piece of work on the right side (docs/rex.md, § Two machines).
+-- piece of work on the right side (docs/rex.md, § Several machines).
 
 local api = require("rexkit.api")
 local feedback = require("rexkit.feedback")

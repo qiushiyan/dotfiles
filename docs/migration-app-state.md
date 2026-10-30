@@ -47,7 +47,7 @@ checkbox. Just be aware of the categories:
   - Same panel, **Mission Control** → review the workspace shortcuts
     if you've remapped them via Karabiner.
 - **Input source shortcut**: Karabiner sends F18 for ctrl+space
-  (`docs/qiushi-mini.md` § At the desk says why), and the binding that
+  (`docs/qiushi-mini-2.md` § At the desk says why), and the binding that
   receives it is system state, set on each machine: "Select the previous
   input source" on F18, and "Select next source in Input menu" on ctrl+space
   for a keyboard Karabiner does not modify. The same panel's

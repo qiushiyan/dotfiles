@@ -13,15 +13,16 @@ folding — is the whole safety property, and it holds only while the target
 directory already exists.
 
 `PACKAGES` in the Makefile is `*/` minus `docs/`, `references/`,
-`node_modules/`, `vpn-private/` and the other machine's launchd package.
+`node_modules/`, `vpn-private/` and the other machines' launchd packages.
 Repo-only documentation and reading are never stowed, nor is the root
 `package.json`'s gitignored install, nor a credentials folder restored into
 the checkout from the password manager (`docs/recovery.md`). launchd agents
-live in one package per machine, `launchd-mac/` and `launchd-mini/`, because a
-plist carries its machine's home path and an agent stowed on the wrong machine
-is loaded there at login; the Makefile keeps only the one `~/.config/machine`
-names, and neither without a marker. The mini stows a named subset of the
-rest, listed in `twin`'s manifest (`docs/twin.md`). The rule is a deny list over what is on disk, so a new
+live in one package per machine, `launchd-<machine>/`, because a plist
+carries its machine's home path and an agent stowed on the wrong machine is
+loaded there at login; the Makefile keeps only the one `~/.config/machine`
+names, and none without a marker. The mini stows a named subset of the rest,
+listed in `twin`'s manifest (`docs/twin.md`), and `scripts/bootstrap.sh`
+stows that same list on a fresh machine. The rule is a deny list over what is on disk, so a new
 top-level dir, tracked or not, becomes a package (the gitignored `ssh/` is one
 on purpose). Inside a package, `.stow-local-ignore` keeps repo-only files
 unlinked: `scripts/` lists `bootstrap.sh` and `list-secrets.sh`, which run as
@@ -32,7 +33,10 @@ unlinked: `scripts/` lists `bootstrap.sh` and `list-secrets.sh`, which run as
 `~/.claude`, `~/.codex`, `~/.agents`, `~/.config/lazygit` and `~/.config/rex`
 are listed in `REAL_DIRS` in the Makefile. `make install` / `make restow` `mkdir -p` them *before* running
 `stow`. That ordering is the enforcement: Stow folds a package into an existing
-directory, but links the whole directory when it is absent.
+directory, but links the whole directory when it is absent. `~/.local/bin`,
+`~/.local/share` and `~/Library/LaunchAgents` are listed too: every lived-in
+Mac has them, so only a fresh home exposed them, where uv's Pythons, Claude
+Code's versions and a `brew services` plist landed in the clone.
 
 If one of them became a single symlink to its package, everything the app writes
 at runtime would start landing inside this repo:

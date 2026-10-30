@@ -92,8 +92,9 @@ zsh/.config/zsh/
 
 ## Machines
 
-The laptop and the office mini (`docs/qiushi-mini.md`) stow this same
-package, so both run one `.zshenv`, `.zshrc` and `.zlogin` and every module.
+The laptop and the two office minis (`docs/qiushi-mini.md`,
+`docs/qiushi-mini-2.md`) stow this same package, so all run one `.zshenv`,
+`.zshrc` and `.zlogin` and every module.
 A new module reaches every machine without a list to update. Two rules keep
 that working:
 
@@ -109,7 +110,7 @@ that working:
   machine, such as its prompt badge, its SSH client quirks or the account its
   `~/.claude` is logged in to, goes in `hosts/<name>.zsh`. `.zshenv` sources it last, in every shell, when the
   untracked one-word `~/.config/machine` names it, so it can override a
-  module. The laptop's marker is `mac` and the mini's is `mini`; a machine
+  module. The markers are `mac`, `mini` and `mini2`; a machine
   without a marker loads no host file. A marker naming a missing file warns
   in interactive shells only, since stderr in a non-interactive shell lands
   in tool output. The same marker tells a Claude Code session in this
@@ -130,7 +131,7 @@ that did not load, or a host file that did not load from its marker.
 - **Package manager** — pnpm preferred over npm.
 - **Editing** — `set -o vi`; vim keybindings everywhere.
 - **Secrets** — untracked, mode `600`, sourced by `.zshrc` from two files:
-  `~/.secrets.shared`, the keys both machines use, which `twin` carries
+  `~/.secrets.shared`, the keys every machine uses, which `twin` carries
   between them, then `~/.secrets`, this machine's own, which never leaves it.
   A key's reach is decided by the file it is written in.
 

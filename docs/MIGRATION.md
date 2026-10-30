@@ -1,7 +1,9 @@
 # Migrating to a new MacBook Pro
 
 The manual playbook that complements `scripts/bootstrap.sh` and
-`scripts/list-secrets.sh`. Walk through the sections in order.
+`scripts/list-secrets.sh`, for replacing the laptop. Walk through the sections
+in order. A new mini joining beside the others is
+`docs/twin.md` § A new machine joins: it gets no copy of the laptop's secrets.
 
 ## 1. Before you wipe the old Mac
 
@@ -37,8 +39,9 @@ The manual playbook that complements `scripts/bootstrap.sh` and
 
 ## 3. Restore secrets (BEFORE running bootstrap)
 
-The bootstrap script clones the dotfiles repo via SSH, which needs
-`~/.ssh/id_*` already in place.
+Bootstrap clones over HTTPS, but the GPG and SSH keys, cloud configs and
+`~/.gitconfig.personal` should be in place before the first git or cloud
+command.
 
 1. Transfer the files listed in `secrets-manifest.txt`. From the **old**
    Mac:
@@ -73,27 +76,28 @@ The bootstrap script clones the dotfiles repo via SSH, which needs
 ## 4. Run bootstrap
 
 ```
-git clone git@github.com:qiushiyan/dotfiles.git ~/dotfiles
+git clone https://github.com/qiushiyan/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-./scripts/bootstrap.sh
+BOOTSTRAP_MACHINE=mac ./scripts/bootstrap.sh
 ```
 
 Every step is **idempotent** — re-running the whole script (or a single
-step like `./scripts/bootstrap.sh brewfile`) is safe.
+step like `./scripts/bootstrap.sh brewfile`) is safe; later runs read the
+machine from `~/.config/machine`, which the first one writes.
 
-`step_thirdparty` git-clones the shell and tmux dependencies Homebrew does not
-carry and fetches the tmux plugins without opening tmux; `step_macos_defaults`
-turns natural scrolling off (applies after logout) and sets `pmset` sleep,
-prompting for sudo. What each installs or sets is in `scripts/bootstrap.sh`.
+The machine's name picks its stow list, the Brewfile's sections and its power
+settings. Bootstrap also creates the local tmux tap, trusts the Brewfile's
+third-party formulae, installs Python, the Claude Code and Codex CLIs and
+`twin`, git-clones the shell and tmux dependencies Homebrew does not carry,
+and turns natural scrolling off. What each step does is in
+`scripts/bootstrap.sh`.
 
 ### Things that will interrupt you
 
 | Prompt | Why | What to do |
 |---|---|---|
 | GUI install dialog (Xcode CLT) | First-time only | Click through, then re-run `bootstrap.sh` |
-| **sudo password** during `brew bundle` | `xquartz`, `font-sf-mono`, `font-sf-pro` install system-wide | Stay near the keyboard; if you fat-finger it 3×, the formula errors and `brew bundle` aborts. Re-run after. |
-| `mongodb-community` failure | Mongo's brew formula breaks on each new macOS major | Commented out in `Brewfile`. If you actually need a local Mongo server, run it via Docker. |
-| `qiushiyan/local` tap fails / `tmux-popupfix` not found | That tap is local-only (no remote) — it carries the patched tmux formula | `brew tap-new qiushiyan/local`, copy `docs/tmux-popupfix.rb` to the tap's `Formula/`, re-run → `docs/tmux-popup-patch.md` |
+| **sudo password** during `brew bundle` | casks that ship a `.pkg` (Karabiner, Teams, XQuartz, SF fonts and Symbols, the Tailscale app) install system-wide | Run bootstrap from a terminal, not over a non-interactive ssh, where each fails; `make brew` afterwards installs what failed. |
 | `font-sarasa-gothic` takes a while and lands **793 MB** | One bundle of every Sarasa face | Let it → `docs/ghostty-fonts.md` § Choosing a CJK fallback |
 
 ## 5. Post-bootstrap manual setup
@@ -102,12 +106,9 @@ prompting for sudo. What each installs or sets is in `scripts/bootstrap.sh`.
 
 ```
 mkdir -p ~/dev          # project checkouts live here; ~/dev/.worktrees beside them
-echo mac > ~/.config/machine   # which machine this is (docs/zsh.md § Machines)
 
-# Python — route user-level CPython through uv to dodge the multi-Python mess.
-# Brew installs python@3.14 transitively (apache-arrow, awscli, gdal, …);
-# we don't use it directly. Do NOT install python.org's .pkg.
-uv python install 3.14
+# Python: bootstrap installed CPython through uv; Homebrew's python@3.14
+# arrives only as a dependency. Do NOT install python.org's .pkg.
 uv python pin 3.14
 # Optional CLI tools:
 # uv tool install ipython black

@@ -51,8 +51,9 @@ around Claude's actual friction rather than equal coverage of every host.
 The customization earns its place through concrete query examples, a small
 working schema, bounded output, batched investigation, and safeguards against
 mistaking the current session for independent historical evidence. It also
-covers both machines: `scripts/obq` runs one query on the laptop's index and
-the mini's and returns one object keyed by machine, and the body's scoping,
+covers every machine: `scripts/obq` runs one query on the index of each
+machine in twin's manifest and returns one object keyed by machine, and the
+body's scoping,
 citation and memory rules are written for an index on each machine.
 Upstream's skill knows a single index. Keep those outcomes when changing the implementation or reorganizing the
 instructions.

@@ -77,10 +77,10 @@ directory), which fatals with `socketpair failed`.
 
 - **Formula + embedded patch**: `/opt/homebrew/Library/Taps/qiushiyan/homebrew-local/Formula/tmux-popupfix.rb`
   (the tap is a local git repo with no remote).
-- **Tracked copy**: `docs/tmux-popupfix.rb`. Recreate the tap from it
-  (`brew tap-new qiushiyan/local`, copy the file into its `Formula/`,
-  `brew install qiushiyan/local/tmux-popupfix`); on a new machine `make brew`
-  needs this first, since the tap has no remote.
+- **Tracked copy**: `docs/tmux-popupfix.rb`. A new machine's tap is made
+  from it by `scripts/bootstrap.sh local_tap` (`brew tap-new --no-git
+  qiushiyan/local`, the file copied into its `Formula/`), which `make brew`
+  needs first, since the tap has no remote.
 - **jemalloc stays in the formula**, as a dependency and at configure time,
   matching stock Homebrew `tmux`: without it, entering copy mode on macOS
   Tahoe / Apple Silicon can abort with an invalid-memory free

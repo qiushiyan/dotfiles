@@ -41,7 +41,7 @@ aws-login --status            # what the CLI has now; exit 1 when nothing works
 ```
 
 It signs out (ending the session on AWS's side and clearing every profile's
-cached credentials), signs in with the device-code flow on the mini, verifies
+cached credentials), signs in with the device-code flow on the minis, verifies
 with `aws sts get-caller-identity`, and only then stamps the sign-in time,
 which `--status` reads back; the script's header has the details.
 
@@ -63,11 +63,11 @@ which `--status` reads back; the script's header has the details.
   prompt must call `aws-login` rather than `aws sso login`, or the run
   refreshes the token on the old session whenever it fires while the portal
   is still signed in.
-- **Mini:** the `scripts` package is stowed there, so the script is on PATH
-  as on the laptop. Over SSH the device-code URL goes to
+- **Minis:** the `scripts` package is stowed on both, so the script is on
+  PATH as on the laptop. Over SSH the device-code URL goes to
   the laptop clipboard through `BROWSER=browser-clip`; paste it in any
-  browser and approve. The mini keeps its own token cache and stamp, since
-  refresh tokens rotate and two machines cannot share one.
+  browser and approve. Each machine keeps its own token cache and stamp,
+  since refresh tokens rotate and two machines cannot share one.
 
 ## Console links
 

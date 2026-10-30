@@ -68,15 +68,15 @@ name into a section and a field, and the upload lands as a stray file named
 
 ## A carried copy is not a backup
 
-`twin` reconciles the gitignored files its manifest lists between the laptop
-and the mini (`docs/twin.md` § Carried files), so each exists on both. That
-covers losing a machine. It does not cover a bad change: an edit, a
-truncation included, reaches the other machine at the laptop's next hourly
-run. Only a deletion stays put; the other machine keeps its copy and the path
+`twin` reconciles the gitignored files its manifest lists across the
+machines through the mini, its hub (`docs/twin.md` § Carried files), so each
+exists on every machine. That covers losing a machine. It does not cover a bad
+change: an edit, a truncation included, reaches the others at the mini's next
+hourly run. Only a deletion stays put; the others keep their copies and the path
 waits for a resolution, which is where a deleted carried file comes back from
 (`twin files resolve <target> <path> --keep <the machine that has it>`).
 
-After damage to a carried file, stop the reconciler on the laptop before
+After damage to a carried file, stop the reconciler on the mini before
 restoring, so the damaged copy is not carried over the good one, and resume
 it once one machine holds the file whole:
 

@@ -184,8 +184,10 @@ go "golang.org/x/pkgsite/cmd/pkgsite"
 go "google.golang.org/protobuf/cmd/protoc-gen-go"
 go "honnef.co/go/tools/cmd/staticcheck"
 
-# === Cargo binaries (installed via `cargo install`) ===
-cargo "cargo-wasi"
-cargo "deff"
-cargo "trunk"
-cargo "wasm-bindgen-cli"
+# === Cargo binaries (installed via `cargo install`; the desk has rust) ===
+if DESK
+  cargo "cargo-wasi"
+  cargo "deff"
+  cargo "trunk"
+  cargo "wasm-bindgen-cli"
+end

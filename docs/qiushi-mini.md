@@ -2,10 +2,9 @@
 
 My own Mac mini, kept in the office and reached over the company tailnet, in
 or out of the office. It is mine to configure. It runs headless as compute:
-Claude sessions, planlab lanes and § Personal jobs. The office workstation
-with the monitor is mini2 (`docs/qiushi-mini-2.md`); § At the desk is this
-mini's desk setup, the reference for mini2's. Facts below were collected
-2026-09-22.
+Claude sessions, planlab lanes and § Personal jobs, and it is `twin`'s hub
+(`docs/twin.md`). The office workstation with the monitor and the desk is
+mini2 (`docs/qiushi-mini-2.md`). Facts below were collected 2026-09-22.
 
 ## Connection
 
@@ -58,103 +57,14 @@ into it, because accepting a share needs the admin console.
 | FileVault | **on**, and not mine to turn off. After an unplanned restart the mini waits at the FileVault unlock screen, and `tailscaled` is down until someone unlocks it in person. For planned reboots, use `sudo fdesetup authrestart`. |
 | updates | macOS updates download on their own and install by hand ("Install macOS updates" is off): an unattended install restarts into the FileVault screen and leaves the mini unreachable until someone is at the desk. Security responses and system data files still install on their own, since they need no restart. |
 
-## At the desk
-
-The mini drives the office monitor (LG 32UN880K-B, 32" 4K over USB-C) at
-"looks like 3008 × 1692", the text size of the laptop's 27" at 2560 × 1440.
-The NuPhy keyboard and the MX Anywhere 3S are both paired to it over
-Bluetooth, the mouse on its own Easy-Switch channel. When the laptop is on the
-desk, Universal Control shares them with it.
-
-- **Keyboard and mouse stay on the same Mac.** Universal Control treats the
-  Mac whose devices last produced input as the source. With the keyboard on
-  one Mac and the mouse on the other, every keystroke and every mouse move
-  swaps the source, and keys land on the wrong machine.
-- **The keyboard follows a click, never an app coming to the front.** An app
-  launched by hotkey on the other Mac gets no keys until it is clicked once.
-  Settings: Displays → Advanced → "Link to Mac or iPad", all options on; the
-  laptop arranged to the left under Displays → Arrange, or both of the mini's
-  side edges lead to it.
-- **The link needs both displays on.** A closed lid, a sleeping display or a
-  resolution change marks that Mac unavailable, and the Displays pane shows
-  no second machine. Wake both, then push the pointer through the edge or pick
-  the laptop under Displays → "+" → Link Keyboard and Mouse. The agent
-  (`UniversalControl`, launchd label `com.apple.ensemble`) cannot be
-  restarted from a shell: SIP refuses `launchctl kickstart`. To diagnose,
-  read its log (`/usr/bin/log`, because zsh has a `log` builtin): category
-  `EVNT` records `Current Source Device` and key-focus moves, `SYNC` and
-  `DISC` record `Device Unavailable`.
-
-  ```bash
-  /usr/bin/log show --last 15m --info --debug --style compact \
-    --predicate 'subsystem == "com.apple.universalcontrol"'
-  ```
-- **A link that stays down with both Macs awake on the desk: restart the
-  mini's `rapportd` and `sharingd`.** From the laptop:
-
-  ```bash
-  ssh mini 'killall rapportd sharingd'
-  ```
-
-  launchd starts both again and the link is up within seconds; `Connection
-  Ready` in the log above confirms it. The hazard: the mini's `rapportd` can
-  lose the laptop as a Bluetooth device without finding it again, and then
-  never asks it to come up on AWDL. The mini's own connect times out after
-  15 s, and the laptop's incoming connect waits behind it, so both Macs log
-  `RPErrorDomain -6722` while the firewall, the LAN and both `awdl0`
-  interfaces are fine. The line that tells this case from others is in the
-  mini's `rapportd` log:
-  `Could not find device to target authTag advertisement to`.
-
-  ```bash
-  ssh mini '/usr/bin/log show --last 5m --info --debug --style compact \
-    --predicate "process == \"rapportd\" AND category == \"CLinkD\"" \
-    | grep -E "authTag|timed out"'
-  ```
-
-  `killall UniversalControl` leaves the agent running and changes nothing.
-- **The Apple Account on the mini puts iCloud within reach of the
-  permission-bypassed agents that run here → iCloud Keychain and iCloud Drive
-  stay off.** Universal Control needs only the account and Handoff.
-- **Screen Sharing is on**, so `open vnc://qiushi-mini.local` (or the tailnet
-  name) from the laptop gives the desktop without the desk.
-- **Hyper + letter launches are Raycast hotkeys, held in Raycast's own
-  database; Karabiner only turns Caps Lock into the hyper modifier.** On a
-  machine where the launches do nothing, import Raycast's settings: Export
-  Settings & Data on the laptop, Import Settings & Data here. Over
-  Bluetooth the NuPhy is one combined keyboard-and-pointer device, which
-  Karabiner modifies only through its device entry in `karabiner.json`
-  (vendor 2007, `ignore: false`); over USB it enumerates as separate keyboard
-  and pointer devices and needs no entry.
-- **Through Universal Control a modifier arrives once per keyboard of the
-  source Mac → ctrl+space reaches macOS as F18.** Karabiner's virtual
-  keyboard stands beside the NuPhy, Universal Control mirrors both, and the
-  other Mac gets every modifier press and release on each mirror. "Select the
-  previous input source" commits when the modifier is released, so bound to
-  ctrl+space it switches there and back within 20 ms and the input source
-  looks stuck. The rule in `karabiner.json` sends F18 for ctrl+space, which
-  has no modifier to release; each Mac binds the shortcut to F18 and keeps
-  ctrl+space on "select next source" for a keyboard Karabiner does not modify
-  (`docs/migration-app-state.md` §5c has the commands). Any other shortcut
-  that acts on a modifier's release is exposed the same way. The rule can go
-  when one modifier press on the mini's keyboard logs one event on the laptop
-  instead of a pair a millisecond apart:
-
-  ```bash
-  /usr/bin/log show --last 1m --info --debug --style compact \
-    --predicate 'process == "WindowServer" AND eventMessage CONTAINS "kCGSEventFlagsChanged"'
-  ```
-
 ## Toolchain
 
-A deliberately small subset of the laptop: no `bootstrap.sh`, no Brewfile.
-Add a tool when a task on the mini needs it, not to match the laptop.
+The Brewfile's every-machine section and its own (`asimov`, `tailscale`),
+installed by `make brew`; the desk section, its apps and fonts are mini2's
+and the laptop's. What Homebrew alone does not set up:
 
 | tool | version | how | update |
 |---|---|---|---|
-| Go | 1.27.1 | `brew install go` | `brew upgrade go` |
-| 1Password CLI | 2.40.0 | `brew install --cask 1password-cli` (`op`) | `brew upgrade --cask` |
-| CLI tools | — | `brew install gh tmux ripgrep fd fzf jq lazygit zoxide uv stow rsync unison git-lfs git-delta coreutils bat difftastic pngpaste` (`unison` is `twin`'s reconciler; `git-delta` is the stowed git config's pager; `coreutils`, `bat` and `difftastic` because `aliases.zsh`/`git.zsh` call `gls`, `bat`, `difft`; `pngpaste` because nvim's image-aware Ctrl+V reads the pasteboard only through it) | `brew upgrade` |
 | tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading and activating |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
 | node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'`; then move the versioned node path in Portless's service and slack-digest's agent (§ Personal jobs) |
@@ -162,31 +72,26 @@ Add a tool when a task on the mini needs it, not to match the laptop.
 | Claude Code | 2.1.280 | native `claude.ai/install.sh` → `~/.local/bin/claude` | auto-updates |
 | Codex CLI | 0.155.1 | `chatgpt.com/codex/install.sh` → `~/.local/bin/codex` | `codex update` |
 | Python | 3.14.7 | `uv python install 3.14` (versioned `python3.14` only) | `uv python upgrade` |
-| AWS CLI | 2.37.3 | `brew install awscli`; `~/.aws/config` is carried by `twin` (SSO profiles only; no `credentials`) | `brew upgrade awscli` |
+| AWS CLI | 2.37.3 | the Brewfile; `~/.aws/config` is carried by `twin` (SSO profiles only; no `credentials`) | `brew upgrade awscli` |
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
-| poppler | 26.09.0 | `brew install poppler` (`pdftotext` for planlab `debug:run` document reads) | `brew upgrade` |
 | asimov | 0.12.0 | `brew install asimov`, run every 30 minutes by `com.qiushi.asimov` (§ Personal jobs), never `brew services`; excludes dependency folders from Time Machine (`docs/recovery.md` § Time Machine on the mini) | `brew upgrade` |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
-| obelisk | the manifest's pin | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` holds the mini's own sessions, and the skill asks it and the laptop's together (`docs/claude-sessions-store.md`) | change the pin, then `twin tools install obelisk` (`docs/twin.md`) |
+| obelisk | the manifest's pin | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` holds the mini's own sessions, and the skill asks every machine's together (`docs/claude-sessions-store.md`) | change the pin, then `twin tools install obelisk` (`docs/twin.md`) |
 | portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
 
 Personal CLIs are built here, from the clones in `~/dev`, by
 `twin tools install` (`docs/twin.md`); Ghostty and its fonts are in § Ghostty
-on the mini. Karabiner-Elements is installed from its pkg, which needs `sudo`
-and so the mini's own screen or a terminal there. The `karabiner` package is
-stowed, so `~/.config/karabiner` is a folder link into this repository's
-clone, and a change made in Karabiner's UI on the mini is an uncommitted edit
-there, to commit and push like any other. Karabiner logs
-`Load …/karabiner.json` in `/var/log/karabiner/core_service.log` when it
-takes an edit to the file; the laptop's can miss one, and
-`launchctl kickstart -k gui/$(id -u)/org.pqrs.service.agent.karabiner_console_user_server`
-there makes it reread. TabType is the release
-`twin tools install tabtype` installs; its first launch needs the mini's
-screen for the Accessibility prompt, which macOS ties to the release's
-signature. The other desk apps, such as Raycast, 1Password, Arc, Slack and
-OrbStack, are installed by hand, as Homebrew casks or vendor downloads, and
-carry no config from this repo.
-Not installed: rust.
+on the mini. TabType is the release `twin tools install tabtype` installs;
+its first launch needs the screen for the Accessibility prompt, which macOS
+ties to the release's signature. Not installed: rust.
+
+**Apps are the headless set.** Grok Bot (§ Personal jobs), Rex, OrbStack,
+1Password (`op` unlocks through it) and TabType do the mini's work. Arc,
+Chrome, Slack, Raycast and Ghostty stay for working at its screen while the
+desk moves to mini2. The other desk apps, Karabiner included, were removed
+with their data; Karabiner's keyboard driver stays listed by
+`systemextensionsctl` until a restart, since SIP keeps a shell from removing
+a system extension.
 
 ## Shell
 
@@ -485,11 +390,11 @@ Planlab's handoff briefs are their own clone, at the path `brief` derives from
 this checkout: `gh repo clone planlab-ai/handoffs ~/dev/.handoffs/planlab-main`.
 `brief start` pulls it before a pickup; `git -C ~/dev/.handoffs/planlab-main
 pull --ff-only` refreshes it for a session that reads the files directly.
-`pp` fast-forwards both machines' clones along with the checkout, from either
+`pp` fast-forwards every machine's clones along with the checkout, from any
 machine; the manifest allows the briefs clone only `main`, so one on another
 branch is refused. Where a brief lands and what `brief sync` publishes are
-the binary's rules, so after a `brief` change, install it on both machines
-(`twin tools install brief` on each) before the other writes to the clone:
+the binary's rules, so after a `brief` change, install it on every machine
+(`twin tools install brief` on each) before another writes to the clone:
 an older binary files a brief where the new one reads another slug.
 
 ## Personal jobs
@@ -540,7 +445,8 @@ an older binary files a brief where the new one reads another slug.
   `tailscale serve --bg --https=8444 http://127.0.0.1:8792` publishes, a
   setting `tailscaled` keeps; `~/dev/drive/docs/batches.md` § The owner's
   page has the rest.
-- **The hourly `twin tick`, the daily snapshot, the tmux exit watcher,
+- **The hourly `twin tick`, which syncs every carried file as the hub, the
+  daily snapshot, the tmux exit watcher,
   asimov's Time Machine exclusions and planlab's git upkeep** — this
   repository's `launchd-mini/` package (`docs/twin.md` § The hourly tick;
   `docs/recovery.md` § Local snapshots, § Time Machine on the mini and

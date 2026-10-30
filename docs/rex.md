@@ -80,7 +80,7 @@ any notes kept here:
   whole server's sessions, tabs and drive batches back after a restart.
 - **The app owns the experience:** what is painted, the colours, key handling
   and modes, the sidebar's order, and its own settings, which `twin` does not
-  carry (§ Two machines). The server only checks a key map; the client
+  carry (§ Several machines). The server only checks a key map; the client
   decides which mode is active.
 - **A control connection attaches to a session before it may call into it.**
   `rex.session.attach` in a script changes which events it hears, not what it
@@ -169,24 +169,32 @@ agents; a new integration should reach for them first.
   `<config dir>/sessions/<pid>.json` with its session id and directory, which
   `claude-steps` takes.
 
-## Two machines
+## Several machines
 
-Each machine runs its own Rex server, and the laptop's app shows the mini's
+Each machine runs its own Rex server, and the laptop's app shows the minis'
 sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
 
-- **The mini's server serves its API over Tailscale** as
-  `qiushi-mini-rex.tailf7adf1.ts.net`, admitting only the account that enrolled
-  it. The mini's app starts it that way (Settings → Rex Server); a server
-  started from a shell needs the same flags, or it comes back without the
-  address:
+- **Each mini's server serves its API over Tailscale** as
+  `qiushi-mini-rex.tailf7adf1.ts.net` and `qiushi-mini-2-rex.tailf7adf1.ts.net`,
+  admitting only the account that enrolled it. The app starts it that way
+  from two settings (Settings → Rex Server), which a shell can write too, and
+  `tailscale on` serves at once without a restart; a first enrollment prints a
+  sign-in link for the owner to approve:
 
   ```bash
-  rex server start --tailscale --tailscale-hostname qiushi-mini-rex   # on the mini
+  defaults write com.superlogical.rex rex.server.tailnet-enabled -bool true
+  defaults write com.superlogical.rex rex.server.tailnet-hostname -string qiushi-mini-2-rex
+  rex server tailscale on --hostname qiushi-mini-2-rex && rex server tailscale login
   ```
 
-  The node's identity lives in `~/Library/Application Support/rex/tsnet`, so a
-  restart keeps the address. The first connection after one takes up to 20
-  seconds while the certificate is issued.
+  A server started from a shell needs `--tailscale --tailscale-hostname
+  <name>`, or it comes back without the address. The node's identity lives in
+  `~/Library/Application Support/rex/tsnet`, so a restart keeps the address.
+  The first connection after one, or after the first enrollment, takes up to
+  20 seconds while the certificate is issued, and the app reports the host
+  unreachable until then.
+- **The sidebar lists hosts in the order they were added**, and a host
+  cannot be dragged: remove it and add it again to move it to the end.
 - **There are two host lists.** The app's, filled by **Add Host…**, is what
   the sidebar shows and what `rex.servers()` returns inside an action a key
   ran. The server's, filled by `rex hosts add`, is what `rex -S <label>` and
