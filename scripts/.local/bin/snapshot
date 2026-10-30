@@ -6,8 +6,10 @@
 #                            the previous one taken this way (one stands)
 #        snapshot --daily    the LaunchAgent's run: take one, then delete
 #                            every local snapshot older than
-#                            SNAPSHOT_KEEP_DAYS (7); a no-op once Time
-#                            Machine has a destination, which snapshots itself
+#                            SNAPSHOT_KEEP_DAYS (7); a no-op while Time
+#                            Machine's destination is attached, since it
+#                            snapshots itself then, and not when the disk
+#                            is gone, when it keeps none on a desktop Mac
 #        snapshot --list     the local snapshot dates
 #
 # Taking and deleting need no sudo; restoring does — mount one read-only
@@ -25,7 +27,7 @@ KEEP_DAYS=${SNAPSHOT_KEEP_DAYS:-7}
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/snapshot"
 MANUAL="$STATE_DIR/manual"   # date of the last snapshot taken without --daily
 
-usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; }
 
 mode=manual
 case $# in
@@ -68,9 +70,12 @@ case $mode in
     ;;
 
   daily)
-    if tmutil destinationinfo 2>/dev/null | grep -q '^Name'; then
+    info=$(tmutil destinationinfo 2>/dev/null)
+    if grep -q '^Mount Point' <<<"$info"; then
       echo "snapshot: Time Machine has a destination; it snapshots hourly itself"
       exit 0
+    elif grep -q '^Name' <<<"$info"; then
+      echo "snapshot: Time Machine's destination is not attached; taking the daily snapshot"
     fi
     new=$(take) || exit 1
     cutoff=$(date -v-"${KEEP_DAYS}"d +%Y-%m-%d-%H%M%S)

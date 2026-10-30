@@ -56,7 +56,10 @@ case "$1" in
     grep -vx "$2" "$STUB_STORE" > "$STUB_STORE.new"; mv "$STUB_STORE.new" "$STUB_STORE"
     echo "Deleted local snapshot '$2'" ;;
   destinationinfo)
+    # STUB_DEST=mounted: the destination is attached; any other value: it is
+    # configured but its disk is gone, so tmutil names no mount point.
     if [ -n "${STUB_DEST:-}" ]; then echo "===================================================="; echo "Name          : Backup"
+      if [ "$STUB_DEST" = mounted ]; then echo "Mount Point   : /Volumes/Backup"; fi
     else echo "tmutil: No destinations configured."; fi ;;
   *) echo "stub tmutil: unexpected: $*" >&2; exit 99 ;;
 esac
@@ -115,7 +118,7 @@ CASE=S3; if want; then
 fi
 
 CASE=S4; if want; then
-    fresh "$OLD"; export STUB_DEST=1
+    fresh "$OLD"; export STUB_DEST=mounted
     out=$("$SNAP" --daily 2>&1); rc=$?
     ok "S4 exit 0" 0 "$rc"
     ok "S4 takes and deletes nothing" 0 "$(grep -cE '^(localsnapshot|deletelocalsnapshots)' "$STUB_LOG")"
@@ -134,6 +137,17 @@ fi
 CASE=S6; if want; then
     fresh "$OLD" "$RECENT"
     ok "S6 --list prints dates only" "$OLD $RECENT" "$("$SNAP" --list | tr '\n' ' ' | sed 's/ $//')"
+fi
+
+# A destination whose disk is not attached backs nothing up, and Time Machine
+# then keeps no local snapshots on a desktop Mac: the daily run takes its own.
+CASE=S8; if want; then
+    fresh "$OLD"; export STUB_DEST=unmounted
+    out=$("$SNAP" --daily 2>&1); rc=$?
+    ok "S8 exit 0" 0 "$rc"
+    ok "S8 takes the daily snapshot" 1 "$(grep -c '^localsnapshot' "$STUB_LOG")"
+    ok "S8 says the destination is not attached" 1 "$(printf '%s' "$out" | grep -c 'not attached')"
+    unset STUB_DEST
 fi
 
 CASE=S7; if want; then

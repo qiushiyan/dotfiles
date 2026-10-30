@@ -13,11 +13,11 @@ cost, and after a loss to know where each piece comes back from.
   `twin status` lists those on both machines.
 - **Uncommitted edits and gitignored files:** on the mini, Time Machine:
   hourly to an encrypted Samsung T7 left plugged into it, with Time Machine's
-  own local snapshots in between (§ Time Machine on the mini). On the laptop,
-  which has no backup destination, only the daily local snapshot, so the
-  laptop should hold no work that exists nowhere else. GitHub never sees
-  them. The gitignored files `twin` carries also exist on the other machine
-  (§ A carried copy is not a backup).
+  own local snapshots in between (§ Time Machine on the mini). On the laptop
+  and mini2, which have no backup destination, only the daily local
+  snapshot, so neither should hold work that exists nowhere else. GitHub
+  never sees them. The gitignored files `twin` carries also exist on the
+  other machines (§ A carried copy is not a backup).
 - **Credentials:** the password manager, never this tree (§ Credentials in
   1Password). `vpn-private/` stays in `.gitignore` and out of `PACKAGES` so
   that a copy restored into the checkout can be neither committed to this
@@ -169,8 +169,10 @@ it answers a delete, never a lost or dead Mac. Snapshots are taken:
   because it fired on routine worktree work; restore it with
   `git checkout ebc580f -- claude/.claude/rules/snapshots.md`.
 - **Daily**, on each machine, from the LaunchAgent `com.qiushi.snapshot` at
-  13:00, keeping 7 days, while Time Machine has no destination; once it has one, the run does
-  nothing, because Time Machine snapshots hourly itself. The window matters
+  13:00, keeping 7 days, unless Time Machine's destination is attached:
+  then Time Machine snapshots hourly itself and the run does nothing. A
+  destination whose disk is gone keeps no snapshots on a desktop Mac, so the
+  run takes its own. The window matters
   more than the frequency: the files only a snapshot protects change rarely,
   and their loss is noticed late, so a week of dailies beats a day of hourlies.
 
