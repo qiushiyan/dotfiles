@@ -6,6 +6,8 @@ bring every session back as it was. docs/rex-restart.md is the runbook.
   rex-upgrade stage [BUILD]       download the newest build (or BUILD) from the app's
                                   own feed, verify its signature, and stage it
   rex-upgrade start [--now]       run the restart as a one-off launchd job, outside Rex
+  rex-upgrade start --dry-run     what that job would do now, step by step, touching
+                                  nothing (the snapshot is real; the restore is a dry run)
   rex-upgrade snapshot [DIR]      record every session, tab and pane (reads only)
   rex-upgrade restore [--go] SNAPSHOT
                                   rebuild a snapshot on a restarted server; a dry run
@@ -749,6 +751,45 @@ def cmd_job(d, now, report):
     return 0
 
 
+def bundle_version(app):
+    """The rex version of the CLI inside an app bundle."""
+    clis = glob.glob(f"{app}/Contents/Helpers/*/Contents/MacOS/rex")
+    _, out, _ = run(clis[0], "version") if clis else (1, "", "")
+    m = re.match(r"rex (\S+)", out)
+    return m.group(1) if m else None
+
+
+def plan(d, now, report):
+    """What the job would do, step by step, touching nothing: the snapshot is real, every
+    other step is described, and the restore is its dry run."""
+    staged = staged_build()
+    why = noisy()
+    print("\n1. quiet: " + ("quiet now" if not why else "waits for: " + "; ".join(why[:12]))
+          + (" (--now: it would not wait)" if now else ""))
+    print("\n2. snapshot")
+    snap = snapshot(d)
+    if now:
+        mark_now(d, snap, report)
+    for s in snap["sessions"]:  # the job waits until that session is idle, or asks it to report
+        for b in (b for w in s["windows"] for b in w["blocks"] if report and (b.get("claude") or {}).get("sid") == report):
+            b["claude"]["busy"] = False
+    print("\n3. drive watch --stop-all; live batches: "
+          + (", ".join(f"{b} ({v['driver'] or 'no driver name'})" for b, v in snap["batches"].items()) or "none"))
+    pids = app_pids()
+    print(f"\n4. quit the app ({'pid ' + ' '.join(pids) if pids else 'not running'}), stop the server "
+          f"(pid {snap['server'].get('pid')}, {snap['server'].get('version')})")
+    if staged:
+        print(f"   swap {APP}: build {info(APP).get('CFBundleVersion')} -> {staged}; the old one moves to {d}/old/")
+    expected = bundle_version(f"{STAGE}/{os.path.basename(APP)}") if staged else cli_version()
+    print(f"   open the app to start build {expected}; if it starts none: rex server start "
+          + " ".join(start_flags(snap["server"])))
+    print("\n5. restore (its dry run):")
+    Restore(False).run(snap)
+    ids = {b["claude"]["sid"] for s in snap["sessions"] for w in s["windows"] for b in w["blocks"] if b.get("claude")}
+    print(f"\n   then: the watch --due lines step 3 prints; ask {report[:8] if report else 'no session'} to report"
+          + ("" if not report or report in ids else " (it is not in this Rex, so nothing is asked)"))
+
+
 def cmd_start(now, dry):
     uid = os.getuid()
     _, out, _ = run("launchctl", "print", f"gui/{uid}/{LABEL}")
@@ -768,7 +809,8 @@ def cmd_start(now, dry):
     print(f"{'upgrade to build ' + staged if staged else 'server restart'}"
           f"{', now' if now else ', once Rex is quiet'}; the session to report: {report or 'none'}")
     if dry:
-        print(f"dry run: {d}/job.plist written, nothing started")
+        plan(d, now, report)
+        print(f"\ndry run: nothing stopped or started; the job it would load is {d}/job.plist")
         return
     run("launchctl", "bootout", f"gui/{uid}/{LABEL}")  # a finished run's job stays loaded
     code, _, err = run("launchctl", "bootstrap", f"gui/{uid}", f"{d}/job.plist")

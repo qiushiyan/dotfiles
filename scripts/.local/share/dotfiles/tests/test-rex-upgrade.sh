@@ -10,7 +10,7 @@
 # job restarts the server and rebuilds each session, tab name, split, pane
 # label and cwd (U3); a staged app replaces the app and the one it replaced is
 # kept (U4); four rexd starts at once leave one rexd (U5); start --dry-run
-# writes the launchd job and starts nothing (U6).
+# shows the whole plan, swap and restore included, and stops nothing (U6).
 #
 # ISOLATION. A scratch Rex server under a short temporary HOME, with REX_*
 # stripped so no call reaches the live server; the app is a fake bundle
@@ -145,9 +145,15 @@ CASE=U5; if want; then
 fi
 
 CASE=U6; if want; then
+    before=$(rex --autostart=false server status | grep -E '^(pid|instance):' | tr '\n' ' ')
+    fake_app "$SB/.local/state/rex-lab/upgrades/stage/Rex Beta.app" 300
     out=$("$TOOL" start --dry-run 2>&1)
     plist=$(ls "$SB"/.local/state/rex-lab/upgrades/*/job.plist 2>/dev/null | head -1)
     ok "U6 the dry run writes the job and starts nothing" "dry run" "$(tail -1 <<<"$out" | cut -c1-7)"
+    ok "U6 the dry run leaves the server running" "$before" "$(rex --autostart=false server status | grep -E '^(pid|instance):' | tr '\n' ' ')"
+    ok "U6 the plan names the swap" "yes" "$(grep -q -- '-> 300' <<<"$out" && echo yes || echo no)"
+    ok "U6 the plan's restore rebuilds both sessions" "== alpha == beta" "$(grep -o '^== [a-z]*$' <<<"$out" | grep -v result | tr '\n' ' ' | sed 's/ $//')"
+    ok "U6 the staged app stays staged" "300" "$(build_of "$SB/.local/state/rex-lab/upgrades/stage/Rex Beta.app")"
     ok "U6 the job runs the tool's job in its run directory" "job $(dirname "$plist")" \
         "$(/usr/bin/python3 -c 'import plistlib,sys; a=plistlib.load(open(sys.argv[1],"rb"))["ProgramArguments"]; print(a[2], a[3])' "$plist" 2>/dev/null)"
 fi

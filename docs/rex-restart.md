@@ -14,6 +14,7 @@ nudge to every session the restart interrupted.
 ```bash
 rex-upgrade check     # the feed's newest build beside the app and the server
 rex-upgrade stage     # download it from the app's own feed, verify it, stage it
+rex-upgrade start --dry-run   # the job's plan right now, touching nothing
 rex-upgrade start     # the job below, in launchd; --now skips the wait for quiet
 ```
 
