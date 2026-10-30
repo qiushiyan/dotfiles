@@ -36,7 +36,8 @@ its app. The job:
 3. **Stops drive's wakes** with `drive watch --stop-all`. A watch that met the
    restart would wake its bot with "gone", and the bot would reopen its
    sessions itself, racing the restore. It prints the `watch --due` each batch
-   runs afterwards. If drive cannot stop them, the job stops there.
+   runs afterwards. If drive cannot stop them all, the job arms every batch's
+   wakes again and stops there.
 4. **Swaps and restarts:** it quits the app, stops the server, moves the
    staged app into place, and opens the app, which starts the new server from
    its own copy under `RexServer/Versions/<build>` with its own settings, the
@@ -55,7 +56,8 @@ Each run keeps its snapshot, screens, `job.log`, `restore.log` and the app it
 replaced in `~/.local/state/rex-lab/upgrades/<time>/`. When the job gives up,
 fix the server by hand and run `rex-upgrade restore --go <run>/snapshot.json`;
 without `--go` it prints what it would do. A second run rebuilds only the tabs
-the first did not (`restore.json` beside the snapshot records them).
+that are not back (`restore.json` beside the snapshot records each tab's
+window), and checks every conversation again.
 
 ## What survives and what is rebuilt
 

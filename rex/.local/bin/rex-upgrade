@@ -494,15 +494,17 @@ class Restore:
         return (r or {}).get("window_id"), (r or {}).get("block_ids") or []
 
     def reopen(self, sl, b):
-        """drive reopens a driven pane; the new block's id, found by its short id in the session."""
+        """drive reopens a driven pane; the new block's id, from the short id drive's status
+        records for the label (read --json names the label, not the block)."""
         dv, c = b["driven"], b["claude"]
         out = self.drive(dv["batch"], "open", dv["label"], "--dir", c["dir"], "--resume", c["sid"], "--account", c["account"])
         if out is None:
             return None
         if not self.go:
             return "<block>"
-        read = self.sh(["drive", "--batch", dv["batch"], "read", dv["label"], "--json"])
-        short = json.loads(read).get("session") if read else None
+        st = self.drive(dv["batch"], "status", "--json")
+        short = next((x.get("block") for x in (json.loads(st).get("sessions", []) if st else [])
+                      if x.get("label") == dv["label"]), None)
         for blk in (rexj("block", "ls", "-s", sl, "--json") or {"blocks": []})["blocks"]:
             if short and blk["block_id"].endswith(short):
                 return blk["block_id"]
@@ -547,23 +549,31 @@ class Restore:
             if anchor:
                 made[first] = anchor
                 made.update(self.around(sl, anchor, w["tree"], blocks, first, set(rest)))
-                if w["yours"] and w["name"] and self.go:
-                    wid = next((b.get("window_id") for b in (rexj("block", "ls", "-s", sl, "--json") or {"blocks": []})["blocks"]
-                                if b["block_id"] == anchor), None)
-                    if wid:
-                        self.api(sl, "session.set_window_label", {"window_id": wid, "label": w["name"]})
+                wid = self.window_of(sl, anchor)
+                if w["yours"] and w["name"] and wid:
+                    self.api(sl, "session.set_window_label", {"window_id": wid, "label": w["name"]})
             for i in rest:
                 bid = self.reopen(sl, blocks[i])
                 if bid:
                     made[i] = bid
-            wid = None
+            wid = self.window_of(sl, anchor) if anchor else None
+        self.expect_from(sl, blocks, made, expect, later)
+        return wid, made
+
+    def window_of(self, sl, block):
+        if not self.go:
+            return "<window>"
+        return next((b.get("window_id") for b in (rexj("block", "ls", "-s", sl, "--json") or {"blocks": []})["blocks"]
+                     if b["block_id"] == block), None)
+
+    def expect_from(self, sl, blocks, made, expect, later=None):
+        """Every conversation the tab's new blocks should run, and those to nudge."""
         for i, bid in made.items():
             b = blocks[i]
             if b.get("claude") and b["claude"]["sid"] not in self.running:
                 expect.append((sl, bid, b))
-                if interrupted(b):
+                if later is not None and interrupted(b):
                     later.append((sl, bid, b))
-        return wid, made
 
     def run(self, snap):
         live = {s["label"] for s in (rexj("ls", "--json") or {"sessions": []})["sessions"]} if self.go else set()
@@ -574,12 +584,14 @@ class Restore:
             windows = self.live_windows(sl) if sl in live else set()
             for n, w in enumerate(s["windows"]):
                 key = f"{sl}#{n}"
-                if key in self.done and (self.done[key] is None or self.done[key] in windows):
+                rec = self.done.get(key)
+                if rec and rec["window"] in windows:
                     print(f"  tab {w['label']}: restored already")
+                    self.expect_from(sl, w["blocks"], {int(i): bid for i, bid in rec["blocks"].items()}, expect)
                     continue
                 wid, made = self.window(sl, live, w, later, expect)
-                if self.go and made and len(made) == len(w["blocks"]):
-                    self.done[key] = wid
+                if self.go and wid and made and len(made) == len(w["blocks"]):
+                    self.done[key] = {"window": wid, "blocks": made}
                     json.dump(self.done, open(self.manifest_path, "w"), indent=1)
         print("\n== every conversation back")
         if self.go:
@@ -905,7 +917,12 @@ def cmd_job(d, now, report):
         log(f"not quiet after all ({', '.join(busy)}); waiting again")
     due = stop_watches(d)
     if due is None:
-        log("STOPPED before touching anything: drive could not stop the wakes, so its bots would race the restore")
+        # It may have stopped some batches' wakes before it failed: arm every batch's again.
+        for batch in snap["batches"]:
+            c, o, e = run("drive", "--batch", batch, "watch", "--due")
+            log(f"drive --batch {batch} watch --due -> {c} {(o + e).strip()[:300]}")
+        log("STOPPED: drive could not stop every wake, so its bots would race the restore; "
+            "the server and the app are as they were, the wakes armed again")
         return 1
 
     def back_out(why):

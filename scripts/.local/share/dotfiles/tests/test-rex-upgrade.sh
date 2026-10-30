@@ -137,7 +137,9 @@ EOF
 for a in tester bob; do ln -s x-account "$SB/.local/bin/x-$a"; done
 
 # drive: one batch, run by a driver of no name, its state in $HOME/drive.json;
-# every call is logged to $HOME/drive.log.
+# every call is logged to $HOME/drive.log. Its JSON follows drive's contract
+# (~/dev/drive/cmd/drive/testdata/contract): read names the session by its
+# label, or by the block it was asked about; status carries each label's block.
 cat > "$SB/.local/bin/drive" <<'EOF'
 #!/usr/bin/python3
 import json, os, subprocess, sys
@@ -149,7 +151,8 @@ batch = a[a.index("--batch") + 1] if "--batch" in a else None
 a = [x for i, x in enumerate(a) if x != "--batch" and (i == 0 or a[i - 1] != "--batch")]
 def save(): json.dump(st, open(F, "w"))
 if a[:1] == ["watch"] and "--stop-all" in a:
-    if os.path.exists(f"{H}/drive-fail-stop"):
+    if os.path.exists(f"{H}/drive-fail-stop"):  # fails after stopping the first batch's wakes
+        open(f"{H}/drive.log", "a").write(f"stopped {next(iter(st['batches']))}\n")
         sys.exit("drive: cannot stop the wakes (injected)")
     print("timers run on\nonce Rex's server runs again, run in each batch:")
     for b in st["batches"]:
@@ -169,7 +172,7 @@ if a[:1] == ["status"]:
 if a[:1] == ["read"]:
     s = next((s for s in B["sessions"] if s["label"] == a[1]), None)
     if s:
-        print(json.dumps({"session": s["block"], "view": f"{s['label']}@v1", "jobs": s.get("jobs") or []}))
+        print(json.dumps({"session": s["label"], "view": f"{s['label']}@v1", "jobs": s.get("jobs") or []}))
     else:
         print(json.dumps({"session": a[1], "jobs": [{"command": "sleep"}] if st["block_jobs"].get(a[1]) else []}))
     sys.exit(0)
@@ -322,10 +325,12 @@ CASE=U8; if want; then
     "$TOOL" job "$SB/.local/state/rex-lab/upgrades/fail1" --now > "$SB/fail1.log" 2>&1; code=$?
     command rm -f "$SB/rex-fail"
     ok "U8 a failed snapshot read stops the job" "1 yes" "$code $(has "$SB/fail1.log" 'STOPPED before touching anything: the snapshot failed')"
-    touch "$SB/drive-fail-stop"
+    touch "$SB/drive-fail-stop"; : > "$SB/drive.log"
     "$TOOL" job "$SB/.local/state/rex-lab/upgrades/fail2" --now > "$SB/fail2.log" 2>&1; code=$?
     command rm -f "$SB/drive-fail-stop"
-    ok "U8 a failed wake stop stops the job" "1 yes" "$code $(has "$SB/fail2.log" 'STOPPED before touching anything: drive could not stop')"
+    ok "U8 a failed wake stop stops the job" "1 yes" "$code $(has "$SB/fail2.log" 'STOPPED: drive could not stop every wake')"
+    ok "U8 the wakes it stopped before failing are armed again" "stopped b1 | --batch b1 watch --due" \
+        "$(grep -E '^stopped|watch --due' "$SB/drive.log" | tr '\n' '|' | sed 's/|$//; s/|/ | /')"
     ok "U8 neither touched the server" "$before" "$(instance)"
 fi
 
@@ -339,8 +344,21 @@ CASE=U4; if want; then
     ok "U4 the job ends with problems, and says so" "1 done, with problems" "$code $(tail -1 "$SB/run1.log" | cut -c10- | cut -d: -f1)"
     ok "U4 the server is a new instance" "yes" "$([ -n "$(instance)" ] && [ "$(instance)" != "$before" ] && echo yes || echo no)"
     ok "U4 alpha's windows come back with their layouts" "$ALPHA_BEFORE" "$(layout alpha)"
-    ok "U4 beta's windows come back, the name rexd gave left to rexd" \
-        "$(sed 's/^auto:/autopane:/' <<<"$BETA_BEFORE")" "$(layout beta | sed 's/^Window [0-9a-f]*:/autopane:/')"
+    ok "U4 beta's windows come back" "$(cut -d: -f2- <<<"$BETA_BEFORE")" "$(layout beta | cut -d: -f2-)"
+    ok "U4 tab names come back, except the one rexd gave" "one two c3 rep no" \
+        "$(layout beta | cut -d: -f1 | grep -v '^Window\|^autopane' | tr '\n' ' ')$(layout beta | grep -q '^auto:' && echo yes || echo no)"
+    cwds=$(rex block ls -s alpha --json > "$SB/blocks.json"; py "$SB/blocks.json" <<'PY'
+import json, subprocess, sys
+out = []
+for b in sorted(json.load(open(sys.argv[1]))["blocks"], key=lambda b: b.get("label") or ""):
+    if b.get("label") in ("a1", "a2", "c1", "side"):
+        p = json.loads(subprocess.run(["rex", "--autostart=false", "block", "call", "-s", "alpha", "--block", b["block_id"], "process"],
+                                      capture_output=True, text=True).stdout)
+        out.append(b["label"] + "=" + ((p.get("foreground") or {}).get("cwd") or "").rsplit("/", 1)[-1])
+print(" ".join(out))
+PY
+)
+    ok "U4 each pane opens in its cwd" "a1=w1 a2=w3 c1=w2 side=w2" "$cwds"
     ok "U4 a conversation resumes on its account with its flags" "x-tester --effort high --resume $C1" "$(grep "resume $C1" "$SB/launches.log" | tail -1)"
     ok "U4 another account's conversation resumes on it" "x-bob  --resume $C2" "$(grep "resume $C2" "$SB/launches.log" | tail -1)"
     ok "U4 drive reopens the driven pane in its batch" "yes" "$(has "$SB/drive.log" "^--batch b1 open L1 --dir $SB/w1 --resume $L1 --account bob")"
@@ -364,6 +382,12 @@ CASE=U5; if want; then
     "$TOOL" restore --go "$SB/.local/state/rex-lab/upgrades/run1/snapshot.json" > "$SB/rerun.log" 2>&1
     ok "U5 a second restore rebuilds nothing twice" "$before" "$(windows)"
     ok "U5 it says each tab is back already" "7" "$(grep -c 'restored already' "$SB/rerun.log")"
+    ok "U5 it still names the conversation that never came back" "yes no" \
+        "$(has "$SB/rerun.log" "conversation ${C3:0:8} did not come back") $(has "$SB/rerun.log" 'everything came back')"
+    "$BIN/rex" --autostart=false server stop >/dev/null 2>&1; "$BIN/rex" server start >/dev/null 2>&1
+    in_sandbox || { echo "the scratch server is not in the sandbox; stopping"; exit 1; }
+    "$TOOL" restore --go "$SB/.local/state/rex-lab/upgrades/run1/snapshot.json" > "$SB/rerun2.log" 2>&1
+    ok "U5 after a restart it rebuilds every tab, the driven one too" "$ALPHA_BEFORE" "$(layout alpha)"
 fi
 
 CASE=U6; if want; then
