@@ -4,6 +4,116 @@ Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares. A
 run by a real bot follows `DOGFOOD.md`.
 
+## 2026-10-30 — how the drivers read the pipeline (improve-tool pass)
+
+**Ask.** After the tstack-style rewrites and the prompt-engineering overhaul,
+learn from the bots' use how well they understand the session pipeline, and
+make it clearer. Laptop session `2bb79cc3`; ledger, scripts and both chat
+readers' findings in its scratchpad (`drive-session-frictions.md`,
+`itell-chat-findings.md`, `sd-chat-findings.md`).
+
+**Corpus.** `grokbot-transcript` for ITELL (10-28 → 10-29 23:47, both
+machines) and the Session Driver (10-26 → 10-29 23:49); batch records
+2026-10-28 and itell-2026-10-28 (mini), itell-2026-10-29, -29b, -29c (mac);
+266 send and open intents with their step files; 29 driven sessions, 30
+found in obelisk across the two machines. The bots' shell commands are not
+readable (every `$` line is a cursor wrapper), so which files a run read is
+unknown. Steps after the 10-29 voice change are those from 11:45, when the
+mini's drive first typed an `@` step.
+
+**Observed.**
+- **Stage order holds** for both bots: onboarding → design → spec or build →
+  review and verify → prompt check → land → code review → strategic review
+  → fold-in → merge → recap → closeout, with iTELL's verdict checked by the
+  bot every time and every merge on `--hold itell-main`.
+- **Asks beyond § Who decides' two kinds** (both bots, recurrent): the
+  Session Driver asked about a gate's evidence (A14), opening a strategic
+  review (A18) and branch cleanup; ITELL about retiring a brief (three
+  times), opening a fix session, closing a session, and a migration (P3, P4,
+  A), which `apps/platform/CLAUDE.md:28` ("never self-apply a migration")
+  made the sessions hold though it rode the merge unasked.
+- **Standing rules kept in the bots' memory** (both, 4 instances): "from
+  now on…" grants (ITELL 11:56, 18:30, 18:31; the Session Driver's
+  emergency-label rule carried from batch 2026-10-24 into 2026-10-28). One
+  `drive record grant` in five batches.
+- **Stops without the user-facing effect:** after the 10-27 fix the user
+  still asked "whats a direct user impact?" or for "a straightforwarad
+  explainaation" of three Session Driver stops (10-29 14:39, 20:13, 20:58);
+  each plain rewrite was answered within minutes.
+- **Post-PR mechanics:** three planlab merges went as hand-written file
+  steps without `--hold release`; builders were closed without recap once
+  their strategic review opened, on a rule the bot made after the user's
+  17:37 correction; ITELL opened no strategic review until asked (23:47),
+  its profile saying "Ignore PLANLAB.md" while ITELL.md pointed into it.
+- **Step voice** after the 10-29 change: Session Driver 8 of 51 own-text
+  steps in the third person, all relays of the user's answer ("A16 from
+  Qiushi: …"; 23 of 30 before); ITELL 3 ("Qiushi answered A1", "Owner
+  answers…"). ITELL typed `/onboarding Read /tmp/p4.md and do what it says.`
+  for both openings of batch -29b instead of `@`.
+- **Chat:** "On it" / "checking" messages remain, 19 of 66 (Session Driver)
+  and about 44 of 162 (ITELL), against BOT.md's rule; most answer a user
+  message seconds before the result.
+- **b0fa861** (ITELL's own edit, user-approved, unpushed) failed `skill-sync
+  --check` (+38 body, +370 total), left the pipeline doc saying only the user
+  can sign in to staging, wrote a deploy route through
+  `deploy-platform.yml --ref main` an hour after `release.yml` (#419) made
+  that the escape hatch, and added "a planning session's numbered PRs can
+  skip a number" from a misread: NB's plan had a PR 5.
+- Two typed `/strategic-review` openings arrived as "i/strategic-review"
+  (2026-10-28 log 15:55, 21:09): 76d0f53's revise condition.
+- Late 10-29 the Session Driver's wakes went unanswered while Grok's own
+  command safety check errored; outside this skill.
+
+**Changed.**
+- SKILL.md: § Asking opens on the two kinds, with the 10-29 asks as its
+  cost; a "from now on" rule is recorded for the batch and sent to the user
+  as a line for these files; the report's Needs you says who using the
+  product would notice each option.
+- BOT.md: a stop says what each option changes for the people using the
+  product; a stop opens on its goal, the target example says what happens
+  unanswered; the project file read is PLANLAB.md or ITELL.md.
+- PLANLAB.md: the builder is recapped and closed once its review session
+  runs; a merge uses the key with its context after it, with the cost.
+- ITELL.md: which PLANLAB sections hold; a migration is no ask of its own;
+  strategic reviews on the bot's judgment; the production deploy runs from
+  the merging session, through `release.yml`; a new table is classified
+  before its merge.
+- `docs/session-pipeline.md`: iTELL's finish, strategic reviews in itell
+  batches, a reversed answer reopens a design question (and NOTICE.md); the
+  PR-numbering line removed.
+- Handoff: `~/dev/.handoffs/drive/stray-i-on-open.md`.
+- Deletions to watch: "On the mac, batch.json's `after_wake` is a list"
+  (bring back if a bot edits batch.json by hand); "every action names the
+  view … refused once moved past" (drive's help opens on it; bring back if a
+  bot sends on a stale view without reading again); how drive handles a
+  held peer message (bring back if a bot delivers one); "`DEPLOYMENT.md` is
+  at the repository root".
+- Size record raised by hand (skill-budget.yaml), with the reason.
+
+**Validation.** A Sonnet cold reader on six scenarios over the changed
+files: eight defects; the stale deploy route and the late table check were
+verified against `learlab/itell` origin/main and fixed, as were the PLANLAB
+scope, the reversed answer, the hold sentence that read as permission, and
+the message opening. Not fixed: who deletes a merged PR's remote branches
+(minor). Not run: an eval replay. The bots run Grok, the 10-29 Grok route was
+stopped, and an Opus writer tied on these behaviours before, so no runtime
+claim is made.
+
+**Outside this skill** (for the user): each bot's profile is where a chat
+reply's rules land, since a run woken by a chat message need not reread
+BOT.md, so the "On it" messages want a line there; ITELL's profile should
+read PLANLAB.md where ITELL.md points; Browser Test asked for the user's own
+words four times after a standing grant.
+
+**Next pass compares:** asks outside the two kinds per batch (target none);
+"from now on" rules recorded and proposed as lines; plain-terms re-asks of
+a stop (target none); merges sent through `merge-when-ready` with `--hold
+release` (target all); iTELL migration holds (target none) and strategic
+reviews opened unasked; deploys run by a session through `release.yml`;
+third-person answer relays. Revise if a migration rides to production
+in a way the user would have stopped, or a deploy from a session ships
+something the bot's report misses.
+
 ## 2026-10-29 — a Rex restart (drive `f847a7b`)
 
 **Observed.** The mini's Rex server restarted three times for an app update.

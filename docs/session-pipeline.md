@@ -88,7 +88,7 @@ A brief one session writes to start another lists, by the names above, every
 stage from its entry to its finish, so the new session runs them all: a
 planlab finish of "open the PR, then handle code review" has dropped review
 and verification. A strategic review in a fresh session runs on a PR the
-user names, or in a planlab batch on the driver's judgment:
+user names, or in a planlab or itell batch on the driver's judgment:
 `strategic-review-brief` has the build session write that session's
 `/strategic-review <PR>` prompt.
 
@@ -152,8 +152,8 @@ itell's `consult-then-build` says.
   head, and the PR is open against `main` with its checks green; there are
   no review bots, so stage 8 is a person's comments when there are any.
   `merge-when-ready` merges it and follows it to staging. The production
-  deploy waits for the user: the staging check before it needs a sign-in
-  only the user can make (`ITELL.md` § After the PR).
+  deploy waits for the user's grant, after a signed-in check of staging
+  (`ITELL.md` § After the PR).
 - **Any other project** (a new repository): no default; the user names the
   finish.
 
@@ -171,11 +171,12 @@ driver does on its own judgment and reports.
 **Ask the user**, holding only the work that depends on the answer:
 
 - **Design questions, at the design checkpoint**: scope, what the product
-  does for the person using it, and what a customer is told, asked together before
-  the build, with every technical choice listed as the default the session
-  will take. A design question that reopens later comes back the same way: a
-  review finding the session judges foundational, a design objection it
-  rebutted, or a decision that is hard to undo and has no recommendation.
+  does for the person using it, and what a customer is told, asked together
+  before the build, with every technical choice listed as the default the
+  session will take. A design question that reopens later comes back the
+  same way: a review finding the session judges foundational, a design
+  objection it rebutted, a recommendation that reverses an answer the user
+  gave, or a decision that is hard to undo and has no recommendation.
 - **Mutations of production data**: SQL, a script or a backfill run against
   a production database; a write in a customer's workspace or data; a change
   to production infrastructure, such as taking down or resizing a tier; and a
@@ -216,9 +217,6 @@ driver does on its own judgment and reports.
   in: a cleanup inside an isolated clone has deleted other checkouts' lanes.
 - **Deleting data the session did not create and cannot restore**, and
   **text the user owns**, such as a decision-ledger entry.
-
-A planning session's numbered PRs can skip a number (PRs 1–4 and 6): a
-gap is numbering, not missing work, unless the planning session says so.
 
 An ask holds the work at the step that would act on it, not before: the
 session builds what does not depend on it and stops there, so the user comes

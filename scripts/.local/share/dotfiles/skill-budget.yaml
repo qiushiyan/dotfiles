@@ -23,7 +23,11 @@ skills:
   # raised 2026-10-29: the owner's page now shows each session's history with the
   # bot's notes verbatim, which a bot writing notes must know (drive 97c5961), and
   # each machine serves its own batches' page, which a bot linking one must know
-  drive-session: {body: 2781, total: 8520}
+  # raised 2026-10-30: the ITELL bot's b0fa861 (user-approved: the staging test account,
+  # Browser Test checks, the production deploy) and the 10-30 usage pass's fixes for
+  # unneeded asks, unrecorded standing rules, stops without user impact, iTELL's
+  # migration holds and strategic reviews, and a stale deploy route
+  drive-session: {body: 2852, total: 9202}
   enter-worktree: {body: 154, total: 154}
   go-cli: {body: 1963, total: 3977}
   handoff: {body: 2413, total: 3050}

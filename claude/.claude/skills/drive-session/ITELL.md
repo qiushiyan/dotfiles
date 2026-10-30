@@ -3,9 +3,10 @@
 An iTELL batch takes `learlab/itell` sessions from onboarding through a
 merged PR that staging serves; the production deploy stays the user's. This
 file holds what is iTELL's own. The stages and snippet keys are in
-`~/dotfiles/docs/session-pipeline.md`, the rest of the drive in SKILL.md, and
-a batch whose designs are unsettled stops at the design checkpoint as
-[`PLANLAB.md`](PLANLAB.md) § The design checkpoint describes.
+`~/dotfiles/docs/session-pipeline.md` and the rest of the drive in SKILL.md.
+Two sections of [`PLANLAB.md`](PLANLAB.md) hold here too: § The design
+checkpoint, for a batch whose designs are unsettled, and the strategic
+review in § After the PR.
 
 ## Opening a session
 
@@ -111,12 +112,20 @@ Ask, holding only the work that depends on it:
 - the production deploy (below);
 - a reply to a learner's bug report: draft it for the user to send.
 
+A migration is no ask of its own: the merge applies it on staging and the
+production deploy in production, so it waits only for that deploy. The
+platform's "never self-apply a migration" (`apps/platform/CLAUDE.md`) keeps
+sessions off the databases outside lanes and staging; on 10-29 three
+sessions held a migration for the user that rode its merge unasked.
+
 ## After the PR: merge, staging, production
 
 iTELL PRs carry no review bots, so stage 8 has nothing to loop over; a
-person's review comments are a fix step like any other. A complicated or
-critical change gets a strategic review in a fresh session, as `PLANLAB.md`
-§ After the PR describes; that session verifies in a lane of its own.
+person's review comments are a fix step like any other. Open a strategic
+review on your own judgment for a complicated or critical change, such as
+one that writes production data, adds a table or changes what every user
+meets; its session verifies in a lane of its own. On 10-29 none was opened
+until the user asked.
 
 Merging is yours once the stages have run with a passed verdict at the PR
 head. `merge-when-ready` has the session merge, follow the staging deploy
@@ -140,13 +149,20 @@ handoff distill), one session at a time.
 
 ## The production deploy
 
+Under the user's grant, the session that merged runs it as its next step,
+before its recap, so its report says what shipped. `release.yml` promotes
+what staging runs, for the platform, the CMS and the API together
+(`DEPLOYMENT.md` § Releasing to production); `deploy-platform.yml` by hand
+is the escape hatch, and from `main` it can ship a commit staging never ran:
+
 ```bash
-gh workflow run deploy-platform.yml --ref main -R learlab/itell   # migrations run in the Vercel build
-cd apps/platform && psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/agent-readonly-role.sql   # after a migration; URL from .env.production
+gh workflow run release.yml -R learlab/itell                      # the plan only: what each system would ship
+gh workflow run release.yml -R learlab/itell -f confirm=release   # ships it; migrations run in the platform's build
+cd apps/platform && psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scripts/agent-readonly-role.sql   # after a migration, under the same grant; URL from .env.production
 ```
 
-`DEPLOYMENT.md` is at the repository root. Check that every new table is
-classified in `scripts/agent-readonly-grants.sql`: the DB test meant to catch
-an unlisted one does not run on PRs, which run lint only. The report names
-every PR the deploy ships and flags any gate a user meets, such as a new
-terms version every account accepts again.
+A PR that adds a table classifies it in `scripts/agent-readonly-grants.sql`
+before it merges: PR checks run lint only, and the staging deploy's tests
+fail on an unlisted table. The report names every PR the deploy ships and
+flags any gate a user meets, such as a new terms version every account
+accepts again.

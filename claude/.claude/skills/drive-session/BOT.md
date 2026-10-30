@@ -1,13 +1,14 @@
 # Driving from a bot
 
 You are a bot outside Claude Code, such as the Grok Bot "Session Driver",
-driving the Rex sessions of the machine the batch runs on (`~/.config/machine`) by this skill. A command you run can be
-held for minutes, not the hour a session's turn can take; your context
-resets between runs, several of your runs can act at once, and the user
-reads you in a chat on their phone, hours later. So this
-file replaces how SKILL.md waits, remembers and reports; the rest of
-SKILL.md, NOTICE.md, PLANLAB.md and `~/dotfiles/docs/session-pipeline.md`
-applies as written. Read them from that machine at the start of every run: your
+driving the Rex sessions of the machine the batch runs on
+(`~/.config/machine`) by this skill. A command you run can be held for
+minutes, not the hour a session's turn can take; your context resets between
+runs, several of your runs can act at once, and the user reads you in a chat
+on their phone, hours later. So this file replaces how SKILL.md waits,
+remembers and reports; the rest of SKILL.md, NOTICE.md, your project's file
+(PLANLAB.md or ITELL.md) and `~/dotfiles/docs/session-pipeline.md` applies
+as written. Read them from that machine at the start of every run: your
 context does not carry over, and the files change.
 
 ## Your batch
@@ -21,8 +22,6 @@ add it as you write each one:
 ```bash
 drive --driver itell status     # as the iTELL bot writes `drive status`
 ```
-
-On the mac, batch.json's `after_wake` is a list of commands, not a string.
 
 A command drive prints for you already names its batch: run it as written.
 
@@ -112,17 +111,20 @@ Your messages carry what it cannot: what changed, why, and what you
 recommend.
 
 - **One message per event:** a park on something only the user can give, a
-  finish, a merge or release, a halt, the plan. Say what changed, then the
-  sections SKILL.md § Report gives. Each message buzzes the user's phone, so
-  send the result once it exists, never that you have started, are checking
-  or will report: on 10-21/22 about a third of your messages were "I'll tell
-  you once…" or "Checking…", each a notification with nothing to decide.
-- **A stop that needs the user** is written for the user as they read it:
-  on the phone, hours later, remembering the product, the customers and the
+  finish, a merge or release, a halt, the plan. Say what changed (a stop
+  opens on its session's goal, below), then the sections SKILL.md § Report
+  gives. Each message buzzes the user's phone, so send the result once it
+  exists, never that you have started, are checking or will report: on
+  10-21/22 about a third of your messages were "I'll tell you once…" or
+  "Checking…", each a notification with nothing to decide.
+- **A stop that needs the user** is written for the user as they read it: on
+  the phone, hours later, remembering the product, the customers and the
   people but not the session, its vocabulary, its tickets, its finding
-  numbers or what it tried. Here is a stop the bot relayed for the wrong
-  reader, which the user had to ask to have explained, and the same stop as
-  the bot wrote it once asked:
+  numbers or what it tried. It says what each option changes for the people
+  using the product: on 10-29 the user asked "what's the direct user
+  impact?" of three stops that opened on what had just happened. Here is a
+  stop the bot relayed for the wrong reader, which the user had to ask to
+  have explained, and the same stop as the bot wrote it once asked:
 
   <example type="avoid">
   **S1's re-run release gate failed, so it's parked until you answer two questions.** S1 is the summariser release-gate session, with the bench card on QIU-295 and #9539.
@@ -166,7 +168,7 @@ recommend.
 
   **Decision 2, lost commits (A23):** the gate has a hard rule that no saved schedule may be lost from the summary. On one long thread, saves went missing in develop too, because a script had trimmed the save output so the code can't see those saves at all. S1 suggests that until the save receipts another session is building land, the hard rule covers only saves the code can see. The invisible ones would still count in the totals but couldn't fail the gate on their own.
 
-  The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
+  Unanswered, S1 stays parked and nothing ships. The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
   </example>
 - **A message about one session** states its goal as `drive read` prints
   it, so the chat and the page agree, and links its card by its batch and

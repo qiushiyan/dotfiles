@@ -34,13 +34,11 @@ drive read T1                               # from then on, by label
 drive wait T1                               # until its turn ends, in the background (a bot is woken instead: BOT.md)
 ```
 
-Every action names the view it was decided on and is refused once the
-session has moved past it. drive and this skill divide the work: `drive
---help` and each command's own `--help` name the commands, their flags and
-the words status prints, and a refusal, failure or wake that leaves
-something to do ends with `next:`, the command to run on the session as it
-stands. That command is drive's part; whether the step still makes
-sense is yours.
+drive and this skill divide the work: `drive --help` and each command's own
+`--help` name the commands, their flags and the words status prints, and a
+refusal, failure or wake that leaves something to do ends with `next:`, the
+command to run on the session as it stands. That command is drive's part;
+whether the step still makes sense is yours.
 
 ## How a drive runs
 
@@ -150,7 +148,9 @@ it, and list it under **Done without asking** so they can reverse it:
 Authority the user hands over in conversation beyond § Who decides
 ("run the backfill on Acme's workspace") holds for the batch it was given in. Record it in their words with
 what it covers, act on it while `drive status` lists it, and name it when
-you do. A one-off "go ahead" covers the one thing it named:
+you do. A one-off "go ahead" covers the one thing it named. A rule for
+every batch ("from now on…") belongs in these files, not in your memory:
+record it for this batch and send the user the line for the file it changes:
 
 ```bash
 drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the backfill's --commit on Acme's workspace"
@@ -158,10 +158,12 @@ drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the ba
 
 ## Asking
 
-Recheck before you ask: read what the session reports now and what
-production serves, since a teammate or another session may already have
-done it. Then ask once, standing alone (§ Report says how), and keep the
-ask in the record from question to answer:
+Ask only the two kinds § What you do without asking names: on 10-29 both
+bots asked about cleanup, a gate's evidence and opening a strategic review,
+all theirs to settle. Recheck before you ask: read what the session reports
+now and what production serves, since a teammate or another session may
+already have done it. Then ask once, standing alone (§ Report says how), and
+keep the ask in the record from question to answer:
 
 ```bash
 drive record ask T1 --question '…' --recommendation '…' --if-unanswered '…'    # → A3
@@ -251,9 +253,7 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
   drive send sr-9531@… --snippet merge-when-ready --hold release
   ```
 - **A message from another session waiting for approval stays undelivered**:
-  delivering it wakes the session into work no step sent. drive reads such a
-  session as it stands and sends to it as usual; the message goes with its
-  block in the cleanup.
+  delivering it wakes the session into work no step sent.
 
 ## Report
 
@@ -282,7 +282,8 @@ decide from costs a round trip, so each item stands alone:
 </example>
 
 - **Needs you:** what waits for the user across every session, a decision
-  or a merge the user held: what it is, why now, the recommendation, and
+  or a merge the user held: what it is, why now, who using the product
+  would notice each option, or that nobody would, the recommendation, and
   what happens unanswered. If nothing, say so.
 - **Done without asking:** what you did on your own authority, and what you
   left in place and why.
