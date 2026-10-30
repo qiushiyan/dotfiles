@@ -111,8 +111,11 @@ cask "1password-cli"
 cask "orbstack"
 
 if MACHINE == "mini"
-  brew "asimov"     # run by launchd-mini's com.qiushi.asimov, never brew services
   brew "tailscale"  # a system daemon, up before login (docs/qiushi-mini.md)
+end
+
+if MACHINE == "mini2"
+  brew "asimov"     # run by launchd-mini2's com.qiushi.asimov, never brew services
 end
 
 if DESK

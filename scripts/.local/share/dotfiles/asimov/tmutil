@@ -5,7 +5,7 @@
 # which makes a first pass over agent worktrees take hours. Writing the
 # attribute tmutil writes takes milliseconds, and `tmutil isexcluded` reads it
 # back the same. Every other verb, and the fixed-path `-p` form, is the real
-# tmutil. docs/recovery.md § Time Machine on the mini.
+# tmutil. docs/recovery.md § Time Machine on mini2.
 if [ "$1" = addexclusion ] && [ "$2" != -p ]; then
   shift
   status=0

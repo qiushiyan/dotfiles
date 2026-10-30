@@ -167,4 +167,7 @@ and AWS; an Apple Account for Universal Control (above); Raycast's import and
 Karabiner's driver and Accessibility grants; Portless (`sudo portless service
 install`, then `sudo portless trust` at the screen) and planlab's home
 database (`docs/qiushi-mini.md` § planlab checkout); agent-browser; and
-`tailscale serve` for drive's page, through the app's CLI above.
+`tailscale serve` for drive's page, through the app's CLI above; and Time
+Machine to the T7 on 2026-11-02, after `make brew` brings asimov and
+`twin dotfiles apply --load-agents` loads its agent:
+`docs/recovery.md` § Time Machine on mini2.

@@ -10,7 +10,7 @@
        create them all day. A run with nothing new takes under a minute.
        The shim folder first on PATH makes asimov's addexclusion an attribute
        write instead of an ~11 s tmutil call.
-       docs/recovery.md § Time Machine on the mini. -->
+       docs/recovery.md § Time Machine on mini2. -->
   <key>ProgramArguments</key>
   <array>
     <string>/opt/homebrew/bin/asimov</string>

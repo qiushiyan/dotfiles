@@ -51,7 +51,7 @@ into it, because accepting a share needs the admin console.
 | model | Mac mini `Mac18,5`, Apple M6, 12 cores, arm64 |
 | memory | 32 GB |
 | disk | 926 GB internal |
-| backup | Time Machine, hourly, to an encrypted Samsung T7 2 TB on a USB-C port (`docs/recovery.md` § Time Machine on the mini) |
+| backup | the daily local snapshot only, since its Time Machine drive moved to mini2 with the desk (`docs/recovery.md` § What protects what) |
 | OS | macOS 27.0 (26A425) |
 | power | `pmset -a sleep 0 autorestart 1 womp 1`: never sleeps, restarts after power loss, wake-on-LAN |
 | FileVault | **on**, and not mine to turn off. After an unplanned restart the mini waits at the FileVault unlock screen, and `tailscaled` is down until someone unlocks it in person. For planned reboots, use `sudo fdesetup authrestart`. |
@@ -59,7 +59,7 @@ into it, because accepting a share needs the admin console.
 
 ## Toolchain
 
-The Brewfile's every-machine section and its own (`asimov`, `tailscale`),
+The Brewfile's every-machine section and its own (`tailscale`),
 installed by `make brew`; the desk section, its apps and fonts are mini2's
 and the laptop's. What Homebrew alone does not set up:
 
@@ -74,7 +74,6 @@ and the laptop's. What Homebrew alone does not set up:
 | Python | 3.14.7 | `uv python install 3.14` (versioned `python3.14` only) | `uv python upgrade` |
 | AWS CLI | 2.37.3 | the Brewfile; `~/.aws/config` is carried by `twin` (SSO profiles only; no `credentials`) | `brew upgrade awscli` |
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
-| asimov | 0.12.0 | `brew install asimov`, run every 30 minutes by `com.qiushi.asimov` (§ Personal jobs), never `brew services`; excludes dependency folders from Time Machine (`docs/recovery.md` § Time Machine on the mini) | `brew upgrade` |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
 | obelisk | the manifest's pin | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` holds the mini's own sessions, and the skill asks every machine's together (`docs/claude-sessions-store.md`) | change the pin, then `twin tools install obelisk` (`docs/twin.md`) |
 | portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
@@ -446,12 +445,10 @@ an older binary files a brief where the new one reads another slug.
   setting `tailscaled` keeps; `~/dev/drive/docs/batches.md` § The owner's
   page has the rest.
 - **The hourly `twin tick`, which syncs every carried file as the hub, the
-  daily snapshot, the tmux exit watcher,
-  asimov's Time Machine exclusions and planlab's git upkeep** — this
+  daily snapshot, the tmux exit watcher and planlab's git upkeep** — this
   repository's `launchd-mini/` package (`docs/twin.md` § The hourly tick;
-  `docs/recovery.md` § Local snapshots, § Time Machine on the mini and
-  § A dead tmux server; `docs/git-performance.md`). The snapshot run
-  does nothing here, because Time Machine has a destination.
+  `docs/recovery.md` § Local snapshots and § A dead tmux server;
+  `docs/git-performance.md`). The daily snapshot is the mini's only backup.
 
 ## Steward host
 

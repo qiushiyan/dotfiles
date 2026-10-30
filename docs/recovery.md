@@ -11,11 +11,11 @@ cost, and after a loss to know where each piece comes back from.
 - **Committed files:** git and the GitHub remote; a lost checkout is a
   re-clone. An unpushed commit exists only on the machine that made it;
   `twin status` lists those on both machines.
-- **Uncommitted edits and gitignored files:** on the mini, Time Machine:
-  hourly to an encrypted Samsung T7 left plugged into it, with Time Machine's
-  own local snapshots in between (§ Time Machine on the mini). On the laptop
-  and mini2, which have no backup destination, only the daily local
-  snapshot, so neither should hold work that exists nowhere else. GitHub
+- **Uncommitted edits and gitignored files:** on mini2, the workstation,
+  Time Machine: hourly to an encrypted Samsung T7 plugged into it, with Time
+  Machine's own local snapshots in between (§ Time Machine on mini2). On the
+  laptop and the mini, which have no backup destination, only the daily
+  local snapshot, so neither should hold work that exists nowhere else. GitHub
   never sees them. The gitignored files `twin` carries also exist on the
   other machines (§ A carried copy is not a backup).
 - **Credentials:** the password manager, never this tree (§ Credentials in
@@ -89,11 +89,14 @@ A copy that `twin files resolve` replaced or removed is kept under
 `~/.local/state/twin/replaced/` on the machine that held it. A bad change
 older than that comes back from the mini's Time Machine history.
 
-## Time Machine on the mini
+## Time Machine on mini2
 
-The mini backs up to a Samsung T7 2 TB on one of its own USB-C ports: an
+mini2 backs up to a Samsung T7 2 TB on one of its own USB-C ports: an
 encrypted APFS volume named `T7 Backup`, the whole drive given to Time
-Machine, password in 1Password. `~/Library/Caches` and `~/.cache` are
+Machine, password in 1Password. The drive backed up the mini until the desk
+moved; it was unplugged there on 2026-10-30, to be attached to mini2 on
+2026-11-02, and until then no machine has a backup off its own disk. The
+mini's old backups stay on it and thin away as mini2's fill it. `~/Library/Caches` and `~/.cache` are
 excluded. Time Machine thins on its own (hourly for a day, daily for a
 month, weekly until the drive fills, then the oldest weekly goes), so the
 drive never needs pruning. Nothing can be removed from a backup already
@@ -101,15 +104,15 @@ taken: each is a read-only APFS snapshot, deletable only whole, so an
 exclusion applies from the next backup and the old copies leave as thinning
 ages their backups out.
 
-Dependency folders are excluded as well, by asimov (§ Toolchain in
-`docs/qiushi-mini.md`): it gives each `node_modules`, `.venv` or similar
+Dependency folders are excluded as well, by asimov (the Brewfile's mini2
+section): it gives each `node_modules`, `.venv` or similar
 folder that sits beside its manifest Time Machine's sticky exclusion, which
 travels with the folder, while the source around it is still backed up.
-The mini needs it because every agent worktree installs its own
+mini2 needs it because every agent worktree installs its own
 dependencies: a project with a handful of worktrees holds hundreds of
 thousands of files, and without the exclusion copying them keeps `backupd`
-busy through most of each hour, load the mini shows as heat. The
-`com.qiushi.asimov` agent in `launchd-mini/` runs it every 30 minutes. The
+busy through most of each hour, load a Mac shows as heat. The
+`com.qiushi.asimov` agent in `launchd-mini2/` runs it every 30 minutes. The
 interval trades the run's cost (under a minute when nothing is new) against
 the chance that the hourly backup reaches a new worktree's dependencies
 first, about a quarter at this interval; a folder it reaches first is copied
@@ -129,21 +132,30 @@ it. OrbStack marks its disk images (`data/data.img.raw` and `swap.img` in
 its group container) excluded, and their folder still reports `[Included]`;
 ask about the file before concluding a large file is backed up.
 
-The hourly backups run while the screen is locked, which on the mini is every
+The hourly backups run while the screen is locked, which on mini2 is every
 night. A locked run copies everything except the handful of files macOS keeps
 unreadable until someone unlocks it; the first unlocked run copies those
 first. So the screen lock stays on: what it delays is those files alone.
 
-The drive sits in the office beside the mini: it answers a bad change or a
-dead mini, not a loss of the office. Work on the mini survives that
-only once it is pushed.
+The drive sits in the office beside mini2: it answers a bad change or a
+dead mini2, not a loss of the office. Work there survives that only once it
+is pushed.
 
-The laptop is not backed up to it. Network Time Machine from home to the
-mini over the tailnet would be slow to seed and fragile; the laptop stays
-free of unique work instead.
+The laptop and the mini are not backed up to it. Network Time Machine from
+home over the tailnet would be slow to seed and fragile, so the laptop stays
+free of unique work; the mini's own state is its jobs' records and the
+steward host's, kept by their projects (`docs/qiushi-mini.md`).
+
+Attaching it, at mini2's screen, since the volume's password is asked there:
 
 ```bash
-tmutil destinationinfo                       # the destination, on the mini
+sudo tmutil setdestination -a "/Volumes/T7 Backup"     # after unlocking the volume in Finder
+sudo tmutil addexclusion -p ~/Library/Caches ~/.cache
+ssh mini 'sudo tmutil removedestination <ID from tmutil destinationinfo there>'
+```
+
+```bash
+tmutil destinationinfo                       # the destination, on mini2
 tmutil status                                # a backup in progress
 tmutil listbackups                           # backups on the drive (needs Full Disk Access)
 tmutil isexcluded <path>                     # whether a path is backed up
@@ -193,11 +205,11 @@ for d in $(snapshot --list); do tmutil deletelocalsnapshots "$d"; done          
    damaged tree.
 2. Committed files: `git restore` in place if `.git` survived, otherwise
    re-clone.
-3. Uncommitted and ignored files: on the mini, open Time Machine from the
+3. Uncommitted and ignored files: on mini2, open Time Machine from the
    menu bar (or Finder in the affected folder) and restore from the newest
-   backup before the loss; a dead mini is rebuilt from the T7 with Migration
-   Assistant. On the laptop, pick the newest snapshot taken before the loss
-   (`snapshot --list`), mount it read-only and copy out.
+   backup before the loss; a dead mini2 is rebuilt from the T7 with Migration
+   Assistant. On the laptop and the mini, pick the newest snapshot taken
+   before the loss (`snapshot --list`), mount it read-only and copy out.
 4. What no snapshot holds: rebuild with the tools above, pull credentials from
    the password manager, and search agent history for files a session wrote.
 5. Resume the reconciler once the carried files are whole on one machine.
