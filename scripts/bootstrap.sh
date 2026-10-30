@@ -125,18 +125,18 @@ step_stow() {
 }
 
 step_pre_toolchain() {
-    say "Pre-toolchain (go + rustup, before make brew)"
-    brew install go rustup
-    if have cargo; then
-        ok "cargo already on PATH"
+    say "Pre-toolchain (go + rust, before make brew)"
+    brew install go
+    # rustup's own installer, not Homebrew's keg-only rustup (which no longer
+    # ships rustup-init): ~/.cargo/bin and ~/.cargo/env, which .zshenv sources.
+    if [[ -x "$HOME/.cargo/bin/cargo" ]]; then
+        ok "cargo already installed"
     else
-        rustup-init -y --default-toolchain stable --no-modify-path
-        if [[ -r "$HOME/.cargo/env" ]]; then
-            # shellcheck source=/dev/null
-            source "$HOME/.cargo/env"
-        fi
+        curl -fsSL https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --no-modify-path
         ok "rustup initialized"
     fi
+    # shellcheck source=/dev/null
+    source "$HOME/.cargo/env"
 }
 
 step_local_tap() {

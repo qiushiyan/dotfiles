@@ -68,7 +68,6 @@ brew "node"
 brew "nvm"
 brew "python-setuptools"
 brew "ruby", link: true
-brew "rustup"
 brew "uv"
 
 # === Code tools ===
