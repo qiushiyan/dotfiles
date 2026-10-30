@@ -86,6 +86,7 @@ url = "https://github.com/planlab-ai/main.git"
 carry = [
   ".githooks/reference-transaction",
   "application/.env.development.local",
+  "application/tests/e2e/loopy-stress/.env.regression.local",
   "application/tests/e2e/loopy-stress/.env.smoke.local",
   ".tabtype.local.toml",
 ]
