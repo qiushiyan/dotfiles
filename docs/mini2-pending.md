@@ -18,7 +18,7 @@ it; delete the file when it is empty.
   (`docs/qiushi-mini-2.md` § At the desk).
 - **Desk apps.** Raycast: Export Settings & Data on the laptop, Import here.
   Karabiner's driver approval and Accessibility and Automation grants
-  (`docs/migration-app-state.md` § 5c). Sign in to Slack, Linear, Arc, 1Password.
+  (`docs/migration-app-state.md` § 5c. App permissions, sign-ins, defaults to undo). Sign in to Slack, Linear, Arc, 1Password.
 - **Planlab lanes.** `pnpm add -g portless@<planlab's pin>`, `sudo portless
   service install`, `sudo portless trust` at the screen; planlab's
   `application/setup/bootstrap.sh` for the home database, `pnpm
