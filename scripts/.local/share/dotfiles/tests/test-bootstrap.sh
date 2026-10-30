@@ -79,6 +79,43 @@ CASE=B3; if want; then
     git -C "$REPO_DIR" checkout -q -- . && rm -rf "${REPO_DIR:?}/scripts"
 fi
 
+CASE=B5; if want; then
+    printf 'a\n' >> "$REPO_DIR/twin/.config/twin/twin.toml"
+    before=$(tree_state)
+    printf 'b\n' >> "$REPO_DIR/twin/.config/twin/twin.toml"
+    out=$(report_tree "$before")
+    check "B5 a file dirty before and changed again during the run is named" 1 "$(grep -c ' M twin/.config/twin/twin.toml$' <<<"$out")"
+    git -C "$REPO_DIR" checkout -q -- .
+fi
+
+# The stow step runs before the Brewfile, so the Homebrew step installs stow.
+CASE=B6; if want; then
+    pos() { local i; for i in "${!ALL_STEPS[@]}"; do [[ ${ALL_STEPS[$i]} == "$1" ]] && echo "$i"; done; }
+    check "B6 the Homebrew step comes before the stow step" 1 "$(( $(pos homebrew) < $(pos stow) ))"
+    # shellcheck disable=SC2329  # the stubs are called by step_homebrew
+    installs=$( (
+        have() { [[ $1 == brew ]]; }      # brew present, stow absent
+        brew() { echo "brew $*"; }
+        step_homebrew
+    ) | grep -c '^brew install stow$')
+    check "B6 the Homebrew step installs stow when it is missing" 1 "$installs"
+fi
+
+# The Brewfile picks its sections by ~/.config/machine.
+CASE=B7; if want; then
+    if command -v brew >/dev/null; then
+        mkdir -p "$SANDBOX/home/.config"
+        roles() { echo "$1" > "$SANDBOX/home/.config/machine"
+                  HOME=$SANDBOX/home HOMEBREW_NO_AUTO_UPDATE=1 brew bundle list --file="$ROOT/Brewfile" --all 2>/dev/null \
+                    | grep -xE 'ghostty|asimov|tailscale|deff' | sort | tr '\n' ' '; }
+        check "B7 the mini: its own tailscale, no desk apps or cargo" "tailscale " "$(roles mini)"
+        check "B7 mini2: the desk set and asimov" "asimov deff ghostty " "$(roles mini2)"
+        check "B7 the laptop: the desk set" "deff ghostty " "$(roles mac)"
+    else
+        echo "  skip B7: no brew"
+    fi
+fi
+
 CASE=B4; if want; then
     pk() { MACHINE=$1 manifest_packages; }
     check "B4 the mini's stow list, across lines and past a comment" "claude git launchd-mini zsh " "$(pk mini)"

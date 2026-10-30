@@ -39,11 +39,6 @@ it; delete the file when it is empty.
 - Confirm mini2's Rex app restarts its server with Tailscale on (the two
   `defaults` keys were written by hand).
 
-## twin
-
-- Review round 2 (`envoy collect review-r2`) on the one-model build every
-  machine now runs: act on what it finds.
-
 ## The mini
 
 - `sudo rm -rf "/Library/Application Support/org.pqrs"`; Karabiner's driver

@@ -351,10 +351,18 @@ ALL_STEPS=(
     finish
 )
 
-# The clone's state as git sees it, one line per changed or untracked path.
+# The clone's state as git sees it, one line per changed or untracked path,
+# each file's content hash after a tab: a file already dirty when the run
+# started and changed again during it differs only there.
 tree_state() {
-    [[ -d "$REPO_DIR/.git" ]] && git -C "$REPO_DIR" status --porcelain 2>/dev/null
-    return 0
+    [[ -d "$REPO_DIR/.git" ]] || return 0
+    local line f
+    git -C "$REPO_DIR" status --porcelain 2>/dev/null | while IFS= read -r line; do
+        f="$REPO_DIR/${line:3}"
+        if [[ -f $f ]]; then printf '%s\t%s\n' "$line" "$(git hash-object "$f")"
+        else printf '%s\n' "$line"
+        fi
+    done
 }
 
 # Names what changed in the clone since $1 (tree_state before the run). Stowed
@@ -366,7 +374,7 @@ report_tree() {
     new=$(comm -13 <(printf '%s\n' "$1" | sort) <(tree_state | sort) | sed '/^$/d')
     [[ -n $new ]] || return 0
     say "Changed in $REPO_DIR during this run: an installer wrote through a link"
-    while IFS= read -r line; do echo "    $line"; done <<<"$new"
+    while IFS= read -r line; do echo "    ${line%%$'\t'*}"; done <<<"$new"
     echo "    Review with: git -C $REPO_DIR status; revert what the repository should not hold."
 }
 
