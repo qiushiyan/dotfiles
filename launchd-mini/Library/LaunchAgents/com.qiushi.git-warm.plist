@@ -6,12 +6,11 @@
   <string>com.qiushi.git-warm</string>
 
   <!-- Keeps git status fast in the clones ~/.gitconfig registers for
-       maintenance (planlab): rewrites a worktree's untracked cache and
-       fsmonitor token where they have gone stale, which only a command
-       holding the index lock does and twin and gwt never do. At load (a
-       restart leaves every fsmonitor token stale), hourly, and when an
-       exclude file changes, which invalidates every worktree's cache at
-       once. The log has a line per worktree rewritten.
+       maintenance (planlab): rewrites a worktree's untracked cache where it
+       has gone stale, which only a command holding the index lock does and
+       twin and gwt never do. At load, hourly, and when an exclude file
+       changes, which invalidates every worktree's cache at once. The log
+       has a line per worktree rewritten.
        scripts/.local/bin/git-warm. -->
   <key>ProgramArguments</key>
   <array>

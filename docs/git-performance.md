@@ -4,9 +4,9 @@ planlab (`~/dev/planlab/main`) is about 31k tracked files, worked on in many
 linked worktrees at once on both machines, and `twin` reads every one of
 them: `twin status`, and the closing status of `pp` and `twin sync`. Nearly
 all of a `git status` there is the scan for untracked files, which the
-untracked cache and fsmonitor let git skip. A worktree whose cache holds
-answers in about 0.1s; one whose cache has gone stale walks some 6,000
-directories and takes a second. twin reads them all on every run, so a
+untracked cache lets git skip. A worktree whose cache holds answers in about
+0.1s; one whose cache has gone stale walks some 6,000 directories and takes a
+second. twin reads them all on every run, so a
 finished worktree costs every run until it is removed (the clean-worktrees
 skill, `tmux/.config/tmux/scripts/worktree-removal.md`).
 
@@ -14,8 +14,8 @@ skill, `tmux/.config/tmux/scripts/worktree-removal.md`).
 
 - **Config:** `git/.config/git/planlab.gitconfig`, which `git/.gitconfig`
   includes for the clone and its linked worktrees, turns on the untracked
-  cache, fsmonitor (a daemon per worktree) and `fetch.prune`, and leaves
-  maintenance to the agents below.
+  cache and `fetch.prune`, keeps fsmonitor off (§ Why fsmonitor stays off),
+  and leaves maintenance to the agents below.
 - **`git-warm`** (`scripts/.local/bin/git-warm`): rewrites the cache of each
   worktree whose cache has gone stale. `com.qiushi.git-warm` runs it on each
   machine at load, hourly, and when planlab's `.git/info/exclude` or the
@@ -41,6 +41,16 @@ git-warm reads each worktree without the lock first, and takes it only where
 that read showed a stale cache. A commit started in that worktree during the
 sub-second rewrite fails with `index.lock exists`, and succeeds when run
 again.
+
+## Why fsmonitor stays off
+
+The daemon answers a status only after a cookie file it writes comes back
+through FSEvents, and neither that wait nor the client's read has a timeout.
+When `fseventsd` stalls, every `git status`, and all that runs on one, hangs
+silently for as long as the stall lasts; both machines have done this. What
+the daemon saves is one lstat per tracked file, which is not much: without it
+a status takes 0.07–0.21s in every worktree on both machines, because the
+untracked cache still skips the walk. Those timings were taken on warm caches.
 
 ## Adding a clone
 
