@@ -168,6 +168,9 @@ test_marker_loads_its_host() {
   print mini >"$H/.config/machine"
   eq "mini 1" "$(probe -c 'print -r -- ${PROMPT_MACHINE:-unset} $+functions[aws]')" \
     "PROMPT_MACHINE and the mini's aws wrapper"
+  print mini2 >"$H/.config/machine"
+  eq "mini2 1" "$(probe -c 'print -r -- ${PROMPT_MACHINE:-unset} $+functions[aws]' 2>&1)" \
+    "PROMPT_MACHINE and mini2's aws wrapper, with stderr"
 }
 
 # The laptop's marker loads its host file silently and sets no badge: a

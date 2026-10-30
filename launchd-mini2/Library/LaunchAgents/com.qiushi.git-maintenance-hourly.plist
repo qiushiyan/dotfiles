@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.git-maintenance-hourly</string>
+
+  <!-- git's background maintenance, hourly: in each clone ~/.gitconfig
+       registers (maintenance.repo), the incremental strategy's hourly run:
+       commit-graph and prefetch. What `git maintenance start` would install,
+       kept here because start also registers the clone by absolute path in
+       the stowed ~/.gitconfig. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/git</string>
+    <string>-c</string>
+    <string>credential.interactive=false</string>
+    <string>-c</string>
+    <string>core.askPass=true</string>
+    <string>for-each-repo</string>
+    <string>--keep-going</string>
+    <string>--config=maintenance.repo</string>
+    <string>maintenance</string>
+    <string>run</string>
+    <string>--schedule=hourly</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>3600</integer>
+</dict>
+</plist>

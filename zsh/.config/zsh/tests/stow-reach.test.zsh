@@ -113,8 +113,8 @@ case_list_skips_non_packages() {
 case_list_names_this_machines_launchd_only() {
   local tmp out rc=0 name want
   tmp=$(mktemp -d "${TMPDIR:-/tmp}/sr-launchd.XXXXXX") || return 1
-  mkdir -p "$tmp"/tree/{launchd-mac,launchd-mini,zsh} "$tmp/home/.config"
-  for name want in mac "launchd-mac/ zsh/" mini "launchd-mini/ zsh/" "" "zsh/"; do
+  mkdir -p "$tmp"/tree/{launchd-mac,launchd-mini,launchd-mini2,zsh} "$tmp/home/.config"
+  for name want in mac "launchd-mac/ zsh/" mini "launchd-mini/ zsh/" mini2 "launchd-mini2/ zsh/" "" "zsh/"; do
     if [[ -n "$name" ]]; then print -r -- "  $name  " > "$tmp/home/.config/machine"
     else rm -f "$tmp/home/.config/machine"
     fi

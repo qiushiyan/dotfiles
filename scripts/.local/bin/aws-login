@@ -5,8 +5,8 @@
 #        aws-login [profile] --status
 #   profile            an SSO profile from ~/.aws/config (default: planlab-prod)
 #   --use-device-code  device-code flow instead of the browser redirect; the
-#                      default on the office mini, where the laptop's browser
-#                      cannot reach the mini's localhost listener
+#                      default on the office minis, where the laptop's browser
+#                      cannot reach their localhost listener
 #   --no-browser       print the sign-in URL instead of opening a browser
 #   --status           report the current session and exit 1 when the profile
 #                      has no working credentials; signs nothing in or out
@@ -93,7 +93,7 @@ if (( status )); then
 fi
 
 if (( ! device_code )) && [[ -r $HOME/.config/machine ]] \
-   && [[ $(tr -d '[:space:]' < "$HOME/.config/machine") == mini ]]; then
+   && [[ $(tr -d '[:space:]' < "$HOME/.config/machine") == mini* ]]; then
   device_code=1
 fi
 

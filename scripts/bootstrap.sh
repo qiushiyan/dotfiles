@@ -2,14 +2,21 @@
 # Bootstrap script for a fresh macOS machine.
 # Idempotent: every step gates on its own pre-condition.
 #
+# Every machine (mac, mini, mini2) runs it; the machine's name decides the
+# stow list, the Brewfile's sections and the power settings.
+#
 # Usage:
-#   ./scripts/bootstrap.sh                # run all steps in order
+#   BOOTSTRAP_MACHINE=mini2 ./scripts/bootstrap.sh   # first run: name the machine
+#   ./scripts/bootstrap.sh                # later runs read ~/.config/machine
 #   ./scripts/bootstrap.sh <step> [step]  # run specific steps, e.g. brewfile
 
 set -euo pipefail
 
-REPO_URL="git@github.com:qiushiyan/dotfiles.git"
+# HTTPS through gh's credential helper, like every clone twin makes: a
+# fresh machine has no GitHub SSH key.
+REPO_URL="https://github.com/qiushiyan/dotfiles.git"
 REPO_DIR="$HOME/dotfiles"
+MARKER="$HOME/.config/machine"
 
 say()  { printf "==> %s\n" "$*"; }
 ok()   { printf "    ok: %s\n" "$*"; }
@@ -56,11 +63,65 @@ step_clone() {
     fi
 }
 
+step_machine() {
+    say "Machine marker ($MARKER)"
+    local current="" want="${BOOTSTRAP_MACHINE:-}"
+    [[ -r "$MARKER" ]] && current="$(tr -d '[:space:]' < "$MARKER")"
+    if [[ -z "$want" ]]; then
+        [[ -n "$current" ]] || { echo "No $MARKER: run with BOOTSTRAP_MACHINE=<mac|mini|mini2>."; exit 1; }
+        want="$current"
+    fi
+    # hosts/<machine>.zsh is what makes a name a machine of this repository.
+    if [[ ! -r "$REPO_DIR/zsh/.config/zsh/hosts/$want.zsh" ]]; then
+        echo "Unknown machine '$want': add zsh/.config/zsh/hosts/$want.zsh first."
+        exit 1
+    fi
+    if [[ -n "$current" && "$current" != "$want" ]]; then
+        echo "$MARKER says '$current', not '$want'. Fix it by hand if this machine changed names."
+        exit 1
+    fi
+    mkdir -p "$(dirname "$MARKER")"
+    printf '%s\n' "$want" > "$MARKER"
+    MACHINE="$want"
+    ok "$MACHINE"
+}
+
+machine() {
+    [[ -n "${MACHINE:-}" ]] || MACHINE="$(tr -d '[:space:]' < "$MARKER" 2>/dev/null || true)"
+    [[ -n "$MACHINE" ]] || { echo "No machine marker: run the machine step first."; exit 1; }
+    printf '%s' "$MACHINE"
+}
+
+# The packages twin's manifest lists for this machine, one line; empty when it
+# lists none, which means the Makefile's default set (as `twin dotfiles apply`).
+manifest_packages() {
+    awk -v sect="[machines.$(machine)]" '
+        $0 == sect { inside = 1; next }
+        /^\[/ { inside = 0 }
+        inside && /^packages *=/ { collect = 1 }
+        collect {
+            line = $0; sub(/#.*/, "", line)
+            while (match(line, /"[^"]+"/)) {
+                printf "%s ", substr(line, RSTART + 1, RLENGTH - 2)
+                line = substr(line, RSTART + RLENGTH)
+            }
+            if ($0 ~ /\]/) collect = 0
+        }
+    ' "$REPO_DIR/twin/.config/twin/twin.toml"
+}
+
 step_stow() {
     say "Stow packages"
     cd "$REPO_DIR"
-    make install
-    ok "stowed"
+    local pk
+    pk="$(manifest_packages)"
+    if [[ -n "$pk" ]]; then
+        make install PACKAGES="$pk"
+        ok "stowed the manifest's list for $(machine): $pk"
+    else
+        make install
+        ok "stowed the default set: $(make -s list)"
+    fi
 }
 
 step_pre_toolchain() {
@@ -78,10 +139,38 @@ step_pre_toolchain() {
     fi
 }
 
+step_local_tap() {
+    say "Local tap qiushiyan/local (tmux-popupfix, docs/tmux-popup-patch.md)"
+    local formula
+    if brew tap | grep -qx qiushiyan/local; then
+        ok "already tapped"
+    else
+        brew tap-new --no-git qiushiyan/local >/dev/null
+        ok "created"
+    fi
+    formula="$(brew --repo qiushiyan/local)/Formula/tmux-popupfix.rb"
+    mkdir -p "$(dirname "$formula")"
+    cp "$REPO_DIR/docs/tmux-popupfix.rb" "$formula"
+    ok "formula copied from docs/tmux-popupfix.rb"
+}
+
+step_trust() {
+    say "Trust the Brewfile's third-party formulae"
+    # Homebrew loads a formula from a tap outside its own only once trusted
+    # (~/.homebrew/trust.json); the Brewfile names exactly these.
+    local f
+    for f in $(cd "$REPO_DIR" && brew bundle list --file=Brewfile --formula | grep /); do
+        brew trust --formula "$f" >/dev/null
+        ok "$f"
+    done
+}
+
 step_brewfile() {
-    say "Brewfile"
+    say "Brewfile ($(machine))"
     cd "$REPO_DIR"
-    make brew
+    # --adopt: an app installed by hand before the Brewfile ran (Slack, the
+    # Tailscale app) becomes the cask's instead of failing the install.
+    HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS:-} --adopt" make brew
 }
 
 step_thirdparty() {
@@ -150,12 +239,48 @@ step_node() {
     # ~/Library/pnpm/ (the path .zshrc's PNPM_HOME already expects)
     # so it survives nvm version switches. Don't use `npm install -g`:
     # the block-npm.sh hook in claude/ rejects it on principle.
+    # Pinned to major 11, as on every machine; not the Rust-port 12.
     if [[ -x "$HOME/Library/pnpm/pnpm" ]]; then
         ok "pnpm $("$HOME/Library/pnpm/pnpm" --version) already installed"
     else
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
+        curl -fsSL https://get.pnpm.io/install.sh | PNPM_VERSION=11 sh -
         ok "pnpm installed at ~/Library/pnpm/"
     fi
+}
+
+step_python() {
+    say "Python (uv)"
+    uv python install 3.14
+    ok "python3.14"
+}
+
+step_agents() {
+    say "Claude Code and Codex CLIs (native installers, ~/.local/bin)"
+    if [[ -x "$HOME/.local/bin/claude" ]]; then
+        ok "claude already installed (auto-updates)"
+    else
+        curl -fsSL https://claude.ai/install.sh | bash
+        ok "claude installed"
+    fi
+    if [[ -x "$HOME/.local/bin/codex" ]]; then
+        ok "codex already installed (codex update)"
+    else
+        curl -fsSL https://chatgpt.com/codex/install.sh | sh
+        ok "codex installed"
+    fi
+}
+
+step_twin() {
+    say "twin (~/dev/twin): clones, carried files and tools after this"
+    local dir="$HOME/dev/twin"
+    if [[ -d "$dir/.git" ]]; then
+        ok "already cloned at $dir"
+    else
+        mkdir -p "$HOME/dev"
+        git clone https://github.com/qiushiyan/twin.git "$dir"
+    fi
+    make -C "$dir" install
+    ok "twin installed; next: twin repos clone --all, twin tools install --all (docs/twin.md)"
 }
 
 step_macos_defaults() {
@@ -169,12 +294,19 @@ step_macos_defaults() {
 
     # Power management. Stock macOS / a config profile can leave system
     # sleep absurdly low (seen: sleep=1 min, so the Mac naps after a
-    # minute idle). pmset values are in MINUTES, 0 = never. -b battery,
-    # -c charger/AC. Needs sudo (unlike `defaults write`) — you'll be
-    # prompted for your password here.
-    sudo pmset -b sleep 30 displaysleep 10   # battery: sleep 30m, screen off 10m
-    sudo pmset -c sleep 0  displaysleep 20   # AC:      never sleep, screen off 20m
-    ok "power: battery sleep 30m / AC never (verify with 'pmset -g custom')"
+    # minute idle). pmset values are in MINUTES, 0 = never. Needs sudo
+    # (unlike `defaults write`) — you'll be prompted for your password here.
+    if [[ "$(machine)" == mac ]]; then
+        # -b battery, -c charger/AC
+        sudo pmset -b sleep 30 displaysleep 10   # battery: sleep 30m, screen off 10m
+        sudo pmset -c sleep 0  displaysleep 20   # AC:      never sleep, screen off 20m
+        ok "power: battery sleep 30m / AC never (verify with 'pmset -g custom')"
+    else
+        # A mini is reached over the tailnet: never sleep, come back after a
+        # power loss, wake on LAN.
+        sudo pmset -a sleep 0 displaysleep 20 autorestart 1 womp 1
+        ok "power: never sleep, restart after power loss, wake on LAN"
+    fi
 }
 
 step_default_shell() {
@@ -198,11 +330,17 @@ ALL_STEPS=(
     xcode_clt
     homebrew
     clone
+    machine
     stow
     pre_toolchain
+    local_tap
+    trust
     brewfile
     thirdparty
     node
+    python
+    agents
+    twin
     macos_defaults
     default_shell
     finish
