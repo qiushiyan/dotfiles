@@ -76,8 +76,8 @@ any notes kept here:
   focus, processes and every terminal's contents, and it outlives the app:
   quitting the app leaves every session running. Stopping the server ends
   every session on it, agents included; their Claude conversations come back
-  with `claude --resume`, and `docs/rex-restart.md` brings a whole server's
-  sessions, tabs and drive batches back after a restart.
+  with `claude --resume`, and `rex-upgrade` (`docs/rex-restart.md`) brings a
+  whole server's sessions, tabs and drive batches back after a restart.
 - **The app owns the experience:** what is painted, the colours, key handling
   and modes, the sidebar's order, and its own settings, which `twin` does not
   carry (§ Two machines). The server only checks a key map; the client
@@ -242,23 +242,24 @@ long-running script; the layout and idle blocks are nearly free.
 Each is a trap the Rex environment does not reveal; the guard is named where
 one exists.
 
-- **An app update leaves the old server running on a binary that is gone.**
-  The server starts every terminal through its own executable, so after the
-  bundle is replaced each split and new tab fails (`posix_spawn … no such
-  file or directory` in the server log) while the keys still resolve.
-  `rex server status` shows the old version. Restarting the server fixes it
-  and ends its sessions (§ The model), so do it on each machine as its app
-  updates, after the new app has launched, with `docs/rex-restart.md`. A
-  server started while the old app quits runs the old build from Sparkle's
-  cache. Updates also move the CLI inside the bundle: `rex/.local/bin/rex`
-  puts it on PATH and tries each layout it knows.
+- **A new build serves only after the server restarts,** which ends its
+  sessions (§ The model), so each machine takes `rex-upgrade` as its app
+  updates (`docs/rex-restart.md`). The server starts every terminal through
+  its own executable. The app runs the server it starts from its own copy
+  under `~/Library/Application Support/com.superlogical.rex/RexServer/Versions/<build>`,
+  which outlives the bundle, but `rex server start` from the bundle's CLI
+  runs it from the bundle: once that bundle is replaced, each split and new
+  tab fails (`posix_spawn … no such file or directory` in the server log)
+  while the keys still resolve. Updates also move the CLI inside the bundle:
+  `rex/.local/bin/rex` puts it on PATH and tries each layout it knows.
 - **Any `rex` call with no server running starts one, and every pane inherits
   that caller's environment.** `--autostart` defaults to true and no setting
   turns it off. A server started from a Claude Code tool shell gives every
   pane `NO_COLOR=1 FORCE_COLOR=0`, so nothing colours, and one started over
   ssh gives every pane that login's `SSH_CONNECTION` (below). A tool that only
-  looks passes `--autostart=false`, as drive does on every call. Check the environment of the server's pid
-  after any restart (`docs/rex-restart.md` § The sequence).
+  looks passes `--autostart=false`, as drive does on every call, and
+  `rex-upgrade` checks the environment of the server it starts
+  (`docs/rex-restart.md` § The upgrade).
 
 - **`rex.call` returns `nil, message`; it never raises.** A call that is not
   checked fails later and elsewhere. `rexkit.api`'s `call` raises on the paths
