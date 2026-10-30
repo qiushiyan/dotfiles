@@ -6,9 +6,9 @@ description: Search past Claude Code and Codex sessions and save conclusions. Us
 # obelisk — personal edition
 
 Past sessions are a queryable index (SQLite + FTS5), not a pile of
-transcripts to read. Each machine, the laptop (`mac`) and the office mini
-(`mini`), indexes its own sessions at `~/.obelisk/obelisk.sqlite`, and
-`scripts/obq` asks both in one call. Every answer comes from a
+transcripts to read. Each machine (`mac`, `mini`, `mini2`) indexes its own
+sessions at `~/.obelisk/obelisk.sqlite`, and `scripts/obq` asks every one in
+one call. Every answer comes from a
 **projection**: a small budgeted JS query whose JSON you read and synthesize.
 Claude Code is the primary corpus; Codex shares the index.
 
@@ -32,11 +32,11 @@ script body runs inside `(async () => { ... })()`; `return` emits JSON, and
 the JS sandbox has no fs or network — everything comes back through that one
 value.
 
-`obq` runs the script on this machine and on the other one at the same time
-and prints one object keyed by machine, this machine first:
+`obq` runs the script on this machine and on every other one at the same
+time and prints one object keyed by machine, this machine first:
 
 ```json
-{"mac": <what the script returned there>, "mini": <what it returned there>}
+{"mac": <what the script returned there>, "mini": <…>, "mini2": <…>}
 ```
 
 - **A machine that was not reached** has the value `{"not_reached": "<why>"}`
@@ -44,7 +44,7 @@ and prints one object keyed by machine, this machine first:
   in a clause which one was not reached.
 - **A machine whose engine rejected the script** has `{"error": "<message>"}`
   and the call exits 1. Fix the script and run it again.
-- **`obq --on <machine> $Q`** asks one machine. The other machine takes about
+- **`obq --on <machine> $Q`** asks one machine. Each other machine takes about
   four seconds per script whatever it asks, so a round whose ids all came
   from this machine is quicker with `--on`.
 - **With no other machine configured** the object has one key.
@@ -99,7 +99,7 @@ answers everything. Expand a promising hit with a bounded `messages()` window:
 causal path that led to it, `messages({ around: uuid })` its temporal
 neighbours, and `messages({ sessionId, limit: 20 })` a page of one session,
 continued with the returned `nextCursor`. Each returns `{ anchor, messages,
-hasMore, nextCursor }`. Ids from both machines go in the same script:
+hasMore, nextCursor }`. Ids from every machine go in the same script:
 `messages()` and `raw()` return `null`, and a session page comes back empty,
 for a row the machine does not hold, so each machine answers for its own.
 Done when every facet you named has an answer or a measured empty.
@@ -117,7 +117,7 @@ with real history as evidence. Its id is the UUID directory in your scratchpad
 path — known before the first query, and the same id is the session's
 `jsonl_path` basename. Filter it out of evidence (`self` above, or
 `AND s.id <> '<id>'` in SQL); what remains is history. The filter applies on
-the other machine too: a session moved there keeps its id.
+the other machines too: a session moved there keeps its id.
 
 The query path doubles as an invocation nonce, so on the machine the session
 runs on obelisk marks the session itself: `is_invoking: true` on `search()`
@@ -176,21 +176,22 @@ start time. `sql()` is the escalation for exact joins and aggregations.
   limit })` windows the source JSONL when the full text matters.
 - `project` filters are `LIKE` patterns over dash-mangled paths that begin
   with the machine's home (`-Users-qiushi-…` on mac, `-Users-qiushiyan-…` on
-  mini). Scope with the path below home after a `%`: `'%-dotfiles'` is that
-  checkout on both machines, where a full name matches on one only and
+  both minis). Scope with the path below home after a `%`: `'%-dotfiles'` is
+  that checkout on every machine, where a full name matches the laptop alone
+  or both minis, and
   `'%dotfiles%'` also takes in the scratchpad sessions started from it. A
   repo's worktrees are projects of their own, spelled `-dev--worktrees-` or
   `-dev-.worktrees-` by CLI version, so reach them with
   `'%worktrees-<repo>-%'` in a second call when the work happens there
   (planlab: `'%-dev-planlab-main'` is the checkout, `'%worktrees-main-%'`
   the worktrees that hold most of its sessions). `overview().current`
-  derives a project from the working directory, which on the other machine
+  derives a project from the working directory, which on another machine
   is the home directory, so scope by fragment.
-- A session id that both machines return is one conversation that was moved
+- A session id that two machines return is one conversation that was moved
   between them. The copy that ends later is the continuation and the other
   a prefix of it; match the two by id, since their projects can differ.
 - `fileHistory(path)` matches the exact absolute path, which begins with one
-  machine's home. For a file's history on both machines, query `tool_calls`
+  machine's home. For a file's history on every machine, query `tool_calls`
   with `tc.file_path LIKE '%/dotfiles/zsh/.zshrc'`.
 - Bind values as **named** params — ``sql(`… WHERE skill = :x`, { x: 'update-docs' })``.
   A positional array (`?`, `[value]`) fails with
@@ -223,7 +224,7 @@ start time. `sql()` is the escalation for exact joins and aggregations.
   evidence carries `COALESCE(m.is_meta,0)=0` (helpers already exclude meta).
 - Counts come from SQL `COUNT`/`GROUP BY` computed in the script, never from
   eyeballing returned rows. Each machine counts its own index, so a total is
-  the two added, and a moved session is in both.
+  the machines' counts added, and a moved session counts in each.
 - Timestamps are UTC. Check the local zone (`date +"%Z %z"`) before telling the
   user when something happened.
 - A failed `obelisk` call is answered by fixing the call, never by reading the
@@ -250,11 +251,11 @@ prefixed `codex:` — so queries need no structural change.
 Recall only pays if writing happens, and historically almost nothing was
 written. Close the loop:
 
-- **Recall** rides in round 1 (`memories({ query })`), on both machines. Query
+- **Recall** rides in round 1 (`memories({ query })`), on every machine. Query
   in English even when the conversation is Chinese — the runtime rejects CJK
   in memory queries and summaries. FTS does no stemming here either: use
   words that appear literally in summaries ("personalization" misses
-  "personalized"). A memory the other machine returns names a file there;
+  "personalized"). A memory another machine returns names a file there;
   its summary is the part you can use.
 - **Persist** when retrieval yields a durable conclusion — a design decision, a
   convention, an abandoned alternative, a repeated failure cause. End the
@@ -275,7 +276,7 @@ return remember({
 });
 ```
 
-- A source session that came from the other machine is not in this index, so
+- A source session that came from another machine is not in this index, so
   `remember()` cannot look up its project or its directory. Add
   `project: '<the project name a sessions() row gave>'`, since a memory
   stored without one is missed by every scoped recall; give `path` as an
@@ -286,7 +287,7 @@ return remember({
   exists — any query guarantees that. `forget({ id, reason })` archives and
   the file stays; an update is forget + remember as one approved operation. The
   user saying a memory is wrong *is* the approval; ask only when several
-  memories match. It writes this machine's memories only: one the other
+  memories match. It writes this machine's memories only: one another
   machine returned is forgotten from a session there.
 
 ## Escalation references
@@ -311,7 +312,7 @@ provider and visibility guidance only when the runtime and corpus support it.
 `.upstream/` is the pristine host-agnostic skill doc pinned at the commit in
 `.upstream/PINNED.txt`, and `references/` is a verbatim copy of its references.
 `LESSONS.md` holds the friction analysis behind every rule above, with
-session-id receipts. `scripts/obq` and the two-machine rules are local:
+session-id receipts. `scripts/obq` and the multi-machine rules are local:
 upstream's skill knows one index, and `tests/test-obq.sh` holds the
 wrapper's contract.
 

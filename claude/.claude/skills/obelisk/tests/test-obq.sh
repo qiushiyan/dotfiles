@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-obq.sh: scripts/obq's contract. One query runs here and on the other
+# test-obq.sh: scripts/obq's contract. One query runs here and on every other
 # machine, the answers come back in one object keyed by machine, a machine
 # that cannot be reached is a warning, and an engine failure is an error.
 #
@@ -7,7 +7,7 @@
 #
 # ISOLATION. `obelisk` and `ssh` are stubs on a PATH that leaves out every
 # directory holding the real engine, and HOME is a temporary directory holding
-# the machine marker and a copy of the tree's twin manifest. The ssh stub runs
+# the machine marker and a fixture twin manifest. The ssh stub runs
 # the remote command under zsh, the login shell of both machines, with its own
 # HOME, TMPDIR and engine stub, so "the other machine" is a sandbox directory.
 # O13 asserts the stubs are what the wrapper reached and that nothing is left
@@ -17,8 +17,6 @@ set -uo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 OBQ=$HERE/../scripts/obq
-ROOT=$(cd "$HERE/../../../../.." && pwd -P)
-MANIFEST=$ROOT/twin/.config/twin/twin.toml
 PASS=0; FAIL=0; FAILED=""
 
 SANDBOX=$(mktemp -d "${TMPDIR:-/tmp}/obq-test.XXXXXX")
@@ -87,13 +85,20 @@ export HERE_LOG="$SANDBOX/here.log" THERE_LOG="$SANDBOX/there.log"
 export SSH_LOG="$SANDBOX/ssh.log" SSH_ALIAS_LOG="$SANDBOX/ssh-alias.log" SSH_PID="$SANDBOX/ssh.pid"
 export PEER_HOME="$SANDBOX/peerhome" PEER_TMP="$SANDBOX/peertmp" PEER_BIN="$SANDBOX/peerbin"
 
-# fresh [machine]: a new HOME naming this machine (none when omitted) with the
-# tree's manifest, empty logs, an empty other machine, default stub behaviour.
+# fresh [machine [extra-machine]]: a new HOME naming this machine (none when
+# omitted) with a manifest of mac and mini, in twin's shape, plus the extra
+# machine when given; empty logs, an empty other machine, default stub
+# behaviour. Every other machine is the one sandbox the ssh stub enters.
 fresh() {
     rm -rf "$SANDBOX/home" "$PEER_HOME" "$PEER_TMP" "$SANDBOX/tmp"
     mkdir -p "$SANDBOX/home/.config/twin" "$PEER_HOME" "$PEER_TMP" "$SANDBOX/tmp"
     export HOME="$SANDBOX/home" TMPDIR="$SANDBOX/tmp"
-    cp "$MANIFEST" "$HOME/.config/twin/twin.toml"
+    {
+        printf 'reconciles = "mac"\n\n[machines.mac]\nssh = "mac"\n\n'
+        printf '[machines.mini]\nssh = "mini"\npackages = [\n  "claude", "zsh",\n]\n\n'
+        [ -n "${2:-}" ] && printf '[machines.%s]\nssh = "%s"\n\n' "$2" "$2"
+        printf '[dotfiles]\nrepo = "dotfiles"\n\n[repos.dotfiles]\npath = "~/dotfiles"\n'
+    } > "$HOME/.config/twin/twin.toml"
     [ -n "${1:-}" ] && echo "$1" > "$HOME/.config/machine"
     : > "$HERE_LOG"; : > "$THERE_LOG"; : > "$SSH_LOG"; : > "$SSH_ALIAS_LOG"; rm -f "$SSH_PID"
     unset STUB_HERE STUB_THERE STUB_SSH OBQ_TIMEOUT OBQ_CONNECT_TIMEOUT
@@ -226,6 +231,20 @@ CASE=O13; if want; then
     ok "O13 the engine and ssh on the test PATH are the stubs" "$SANDBOX/bin/obelisk $SANDBOX/bin/ssh" "$(command -v obelisk) $(command -v ssh)"
     ok "O13 the run reached both stubs" "1 1" "$(wc -l < "$HERE_LOG" | tr -d ' ') $(wc -l < "$THERE_LOG" | tr -d ' ')"
     ok "O13 the wrapper leaves no temporary directory" "" "$(ls -A "$SANDBOX/tmp")"
+fi
+
+CASE=O14; if want; then
+    fresh mac mini2
+    run ./obq-test.mjs
+    ok "O14 three machines: one object, this machine first, the others in manifest order" "0 mac,mini,mini2" \
+       "$rc $(j 'keys_unsorted | join(",")')"
+    ok "O14 each other machine is reached by its own alias" "mini mini2" "$(sort "$SSH_ALIAS_LOG" | tr '\n' ' ' | sed 's/ $//')"
+    fresh mini2 mini2
+    STUB_SSH=unreachable run ./obq-test.mjs
+    ok "O14 from mini2, both others unreachable: exit 0 on its own answer" "0 here" "$rc $(j '.mini2.where')"
+    ok "O14 one warning for each" \
+       "obq: warning: mac not reached (ssh: connect to host mac port 22: Operation timed out); answered by: mini2
+obq: warning: mini not reached (ssh: connect to host mini port 22: Operation timed out); answered by: mini2" "$err"
 fi
 
 printf '\n%d passed, %d failed%s\n' "$PASS" "$FAIL" "${FAILED:+ ($FAILED )}"

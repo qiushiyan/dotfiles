@@ -32,7 +32,7 @@ skills:
   go-cli: {body: 1963, total: 3977}
   handoff: {body: 2413, total: 3050}
   improve-tool: {body: 1410, total: 5770}
-  obelisk: {body: 2638, total: 2638}
+  obelisk: {body: 2634, total: 2634}
   prompt-engineering: {body: 762, total: 1607}
   refactoring: {body: 643, total: 643}
   resolving-merge-conflicts: {body: 117, total: 117}
