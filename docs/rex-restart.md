@@ -29,13 +29,14 @@ its app. The job:
    so a busy batch may never be quiet; `--now` restarts anyway, and the
    interrupted sessions get the continue line.
 2. **Snapshots right then,** since busy state, parks and blocks change by the
-   minute: each session, its tabs in order, each pane's split, cwd, program
-   and flags, each Claude Code's session id, account and busy state, each
-   drive label with its state and park, and every screen.
+   minute: each session, its tabs in order, each tab's layout tree, each
+   pane's cwd, program and flags, each Claude Code's session id, account, busy
+   state and background jobs, each drive label with its state and park, and
+   every screen. A read that fails stops the job before it touches anything.
 3. **Stops drive's wakes** with `drive watch --stop-all`. A watch that met the
    restart would wake its bot with "gone", and the bot would reopen its
    sessions itself, racing the restore. It prints the `watch --due` each batch
-   runs afterwards.
+   runs afterwards. If drive cannot stop them, the job stops there.
 4. **Swaps and restarts:** it quits the app, stops the server, moves the
    staged app into place, and opens the app, which starts the new server from
    its own copy under `RexServer/Versions/<build>` with its own settings, the
@@ -43,14 +44,18 @@ its app. The job:
    the old server's tailnet flags. The new server must run the new build,
    serve the tailnet if the old one did, and carry no `NO_COLOR`,
    `FORCE_COLOR`, `TERM=dumb`, `DRIVE_WATCH` or `SSH_CONNECTION`; one that
-   fails is stopped and started again, three times.
+   fails is stopped and started again, three times. If the app will not quit
+   or the old server will not stop, the job arms the wakes again and leaves
+   everything as it was.
 5. **Restores** (below), runs the `watch --due` lines, and asks the Claude
-   Code that ran `start`, if it ran in this Rex, to report.
+   Code that ran `start`, if it ran in this Rex, to report. Its last line, and
+   its exit status, say whether every session came back.
 
 Each run keeps its snapshot, screens, `job.log`, `restore.log` and the app it
 replaced in `~/.local/state/rex-lab/upgrades/<time>/`. When the job gives up,
 fix the server by hand and run `rex-upgrade restore --go <run>/snapshot.json`;
-without `--go` it prints what it would do.
+without `--go` it prints what it would do. A second run rebuilds only the tabs
+the first did not (`restore.json` beside the snapshot records them).
 
 ## What survives and what is rebuilt
 
@@ -64,9 +69,11 @@ change.
 
 So the restore rebuilds each kind of pane its own way:
 
-- **A pane nobody drives** opens with the same session label, tab name and
-  split, and runs the account's launcher with the session's flags:
-  `x-<account> --effort high --resume SID; exec zsh -l`. Only a tab name the
+- **A tab nobody drives** comes back whole from its layout tree in one Rex
+  call, each split with its direction and ratio, each pane with its label and
+  cwd, a Claude Code pane running the account's launcher with the session's
+  flags: `x-<account> --effort high --resume SID; exec zsh -l`. A conversation
+  already running elsewhere gets a shell instead of a second copy. Only a tab name the
   user gave is set again. rexd numbers every tab and names the rest after
   their pane, and its `~/.local/state/rex-lab/tab-names` file says which names
   it gave. A pane whose directory is gone opens in `~`, where its
@@ -78,9 +85,12 @@ So the restore rebuilds each kind of pane its own way:
   same label, so the batch, its goals, its asks and the owner's page carry
   on, and it starts the batch's Rex session under its label if none runs.
   Resuming the label's own conversation keeps its park, and a parked label
-  gets no wake until its next step.
+  gets no wake until its next step. The other panes of its tab are split in
+  around it, from the top of the tree down.
+- **Each conversation** is waited for until it runs again; one that does not
+  is named with the command that resumes it by hand.
 - **A session that was interrupted** gets one line once it is back: it was
-  mid-turn, or idle with a background job or subagent still running. A
+  mid-turn, or idle with a background job still running. A
   driven label gets it through `drive send`, so the record holds it. The line
   says the jobs are gone, since a bare "continue" leaves a session waiting on
   an agent the restart killed:
@@ -92,9 +102,10 @@ So the restore rebuilds each kind of pane its own way:
 ## Run it from outside Rex
 
 The process that restarts the server must not live in it, and neither must
-the shell that starts the new one. A Rex pane dies with the server. A server
-started from a pane, a Claude Code tool shell or an ssh login passes that
-shell's environment to every pane it runs (`docs/rex.md` § Lessons). So
+the shell that starts the new one. A Rex pane dies with the server, and a
+server an older build started from a pane, a Claude Code tool shell or an ssh
+login passes that shell's environment to every pane it runs (`docs/rex.md`
+§ Lessons). So
 `start` runs the job as a one-off launchd job in the user's GUI domain
 (`com.qiushi.rex-upgrade`, its plist beside the run), which gets the bare
 environment the app gives the server it starts, plus the PATH the plist
@@ -121,15 +132,17 @@ up to 20 seconds.
   the old version string, and the app shows a "restart server" toast that is
   right. `lsof -p <server pid>` names the executable it runs. After a Sparkle
   update, `rex-upgrade start` follows the new app's launch.
-- **After a stop, any `rex` call starts a server, and the server inherits
-  that caller's environment** (`docs/rex.md` § Lessons). One started from a
-  bot's Claude Code tool shell gives every pane `NO_COLOR=1 FORCE_COLOR=0`:
-  prompts, git and Claude Code lose their colours, and Claude Code's dim
-  prompt suggestion reads as typed text, reappearing after every delete, so
-  drive calls the input box typed. Only another restart clears it, since each
-  running pane already carries the variables. drive passes
-  `--autostart=false` on every call, and the job's check refuses such a
-  server.
+- **After a stop, any `rex` call starts a server** (`docs/rex.md` § Lessons).
+  On a build before 1497 it inherits that caller's environment: one started
+  from a bot's Claude Code tool shell gives every pane `NO_COLOR=1
+  FORCE_COLOR=0`, prompts, git and Claude Code lose their colours, and Claude
+  Code's dim prompt suggestion reads as typed text, so drive calls the input
+  box typed. Only another restart clears it. drive passes `--autostart=false`
+  on every call, and the job's check refuses such a server.
+- **drive's reopen arms an unparked label's wake at once,** so its bot can be
+  woken, and act, while the restore is still reopening the batch's other
+  labels and before the continue line reaches the one it reopened. A parked
+  label is safe. Nothing in the job holds the wakes off across the restore.
 - **A batch that names its Rex session by id loses it on every restart.**
   `rex_session` in a batch's `batch.json` is where `drive open` opens blocks.
   drive records the session's label (`planlab`, `itell`); a batch an older

@@ -252,14 +252,20 @@ one exists.
   tab fails (`posix_spawn … no such file or directory` in the server log)
   while the keys still resolve. Updates also move the CLI inside the bundle:
   `rex/.local/bin/rex` puts it on PATH and tries each layout it knows.
-- **Any `rex` call with no server running starts one, and every pane inherits
-  that caller's environment.** `--autostart` defaults to true and no setting
-  turns it off. A server started from a Claude Code tool shell gives every
-  pane `NO_COLOR=1 FORCE_COLOR=0`, so nothing colours, and one started over
-  ssh gives every pane that login's `SSH_CONNECTION` (below). A tool that only
-  looks passes `--autostart=false`, as drive does on every call, and
-  `rex-upgrade` checks the environment of the server it starts
-  (`docs/rex-restart.md` § The upgrade).
+- **Any `rex` call with no server running starts one.** `--autostart`
+  defaults to true and no setting turns it off. From build 1497 the server
+  keeps only a short list of the caller's variables (`PATH`, `HOME`, `SHELL`,
+  the locale, the user), so a Claude Code tool shell's `NO_COLOR=1
+  FORCE_COLOR=0` or an ssh login's `SSH_CONNECTION` never reaches its panes;
+  an older build hands the caller's whole environment to every pane,
+  and nothing colours. A tool that only looks passes `--autostart=false`, as
+  drive does on every call, and `rex-upgrade` refuses a new server carrying
+  them (`docs/rex-restart.md` § The upgrade).
+- **A command the API starts with `shell: none` runs under login(1) unless
+  `login` is false,** and that root-owned `login` is then what `process`
+  reports in front, hiding the program and its Claude Code registry entry.
+  `rex run --shell none` sets it; a layout built for `session.create` or
+  `session.new_window` must, as `rex-upgrade`'s restore does.
 
 - **`rex.call` returns `nil, message`; it never raises.** A call that is not
   checked fails later and elsewhere. `rexkit.api`'s `call` raises on the paths
@@ -350,16 +356,16 @@ one exists.
   Claude with the `x` launchers or an explicit `CLAUDE_CONFIG_DIR`.
 - **Claude reports SessionStart before it writes its sessions file,** so a
   lookup made on that first report retries for a moment.
-- **A pane's SSH variables are the server's, not the viewer's.** A pane
-  inherits the server's environment, so `SSH_CONNECTION` is whatever the
-  shell that started the server had: a long-closed ssh login, or nothing when
-  the app starts it. A tool that reads it to decide where you are decides by
-  how the server last started. Guard: `toclip` and Neovim's clipboard gate
+- **A pane's SSH variables are the server's, not the viewer's.** A server an
+  older build started over ssh hands every pane that login's
+  `SSH_CONNECTION`, long after it closed; one from build 1497 drops it (above).
+  A tool that reads it to decide where you are decides by how the server last
+  started. Guard: `toclip` and Neovim's clipboard gate
   test `REX_BLOCK` and copy through the terminal (§ Protocols that carry agent
   work), pinned by `scripts/.local/share/dotfiles/tests/test-toclip.sh` and
   `nvim/.config/nvim/tests/test-clipboard.sh`. headroom's `login` reads
-  `SSH_CONNECTION` unguarded, so in a mini pane on a server started over ssh it
-  treats you as remote.
+  `SSH_CONNECTION` unguarded, so in a mini pane on a server an older build
+  started over ssh it treats you as remote.
 - **Claude Code does not recognise `TERM_PROGRAM=rex`** and prints URLs as
   plain text unless `FORCE_HYPERLINK` says the terminal takes OSC 8 links.
   `rex.zsh` sets it in every Rex shell, and `.zshenv` takes it back out of
