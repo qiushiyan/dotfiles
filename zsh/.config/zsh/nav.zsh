@@ -70,10 +70,10 @@ drop() {
 # --------------------------------------------------------------------
 # Functions rather than aliases so the path lives in one place and `p` can
 # take a subpath (`p apps/web`). `pp` fast-forwards the checkout and
-# planlab's handoff briefs on both machines, from anywhere, through
+# planlab's handoff briefs on every machine, from anywhere, through
 # `twin repos pull --both`: each machine pulls its own clone and reports
 # for itself, and one refusing (uncommitted work, a diverged branch) does
-# not stop the other. The briefs clone tracks main only, which the manifest
+# not stop the others. The briefs clone tracks main only, which the manifest
 # holds (`branch = "main"` in ~/.config/twin/twin.toml). `pp --cd` then
 # enters the checkout, even after a refused pull, and keeps the pull's
 # status. `pp` shadows Homebrew nss's certificate printer; `command pp`

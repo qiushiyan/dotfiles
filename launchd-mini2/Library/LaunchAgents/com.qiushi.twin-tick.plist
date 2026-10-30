@@ -6,7 +6,8 @@
   <string>com.qiushi.twin-tick</string>
 
   <!-- Every hour: fetch every registered repository and record this machine's
-       observation; the reconciler's tick (twin.toml's reconciles) syncs carried files. It never pulls, installs or
+       observation, exchanged with every machine that answers; the mini's tick,
+       the hub's, syncs carried files. It never pulls, installs or
        applies, so it changes no tracked file. twin finds Homebrew and
        ~/.local/bin for itself. The log's last block is `twin status` as of
        the last run. twin/.config/twin/twin.toml. -->

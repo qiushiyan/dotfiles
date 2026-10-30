@@ -1,23 +1,29 @@
-# What twin manages across the two workstations. The one declaration: nothing
-# about targets is compiled into twin except the paths it never carries.
-# docs/qiushi-mini.md describes the machines.
+# What twin manages across the machines. The one declaration: nothing about
+# targets is compiled into twin except the paths it never carries.
+# docs/qiushi-mini.md and docs/qiushi-mini-2.md describe the minis.
 
-# The machine that runs the reconciler. The other hands it every `files`
-# command, so carried files move only while this one is awake.
-reconciles = "mac"
+# The machine that runs the reconciler, the hub every carried file passes
+# through. The others hand it every `files` command, so carried files move
+# only while it is up: the mini, which is always on, never the laptop.
+reconciles = "mini"
 
-# ssh is the alias the other machine reaches this one by. packages is the
+# ssh is the alias every other machine reaches this one by. packages is the
 # machine's stow list; without one it takes the Makefile's default set.
 [machines.mac]
 ssh = "mac"
 
+# Headless compute: no desk packages (karabiner).
 [machines.mini]
 ssh = "mini"
 packages = [
-  "claude", "claude-steps", "codex", "ghostty", "git", "gwt", "karabiner",
+  "claude", "claude-steps", "codex", "ghostty", "git", "gwt",
   "launchd-mini", "lessons", "nvim", "ohmyposh", "rex", "scripts", "tabtype",
   "tmux", "twin", "zsh",
 ]
+
+# The office workstation: the desk set, as the laptop.
+[machines.mini2]
+ssh = "mini2"
 
 [dotfiles]
 repo = "dotfiles"
@@ -34,7 +40,7 @@ codex_runtime_tables = [
 
 # ---- Files outside any repository ----
 # Literal paths under $HOME, never a wildcard. ~/.secrets.shared holds the
-# keys both machines use; ~/.secrets stays on its machine and is protected.
+# keys every machine uses; ~/.secrets stays on its machine and is protected.
 [home]
 carry = [
   ".aws/config",
