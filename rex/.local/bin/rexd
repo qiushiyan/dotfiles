@@ -43,6 +43,16 @@ find_running() {
 
 start() {
   [ -n "$(find_running)" ] && return 0
+  # Shells that open together (a restore, a new session's splits) each find
+  # none running: one takes the lock and starts it, the rest leave. A lock
+  # older than a minute is a start that died.
+  mkdir -p "$STATE"
+  LOCK="$STATE/rexd.starting"
+  if ! mkdir "$LOCK" 2>/dev/null; then
+    [ -n "$(find "$LOCK" -maxdepth 0 -mmin +1 2>/dev/null)" ] || return 0
+  fi
+  trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+  [ -n "$(find_running)" ] && return 0
   local session=${REX_SESSION:-}
   lua '
     local sid = rex.args.session

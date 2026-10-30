@@ -1,0 +1,810 @@
+#!/usr/bin/env python3
+"""rex-upgrade: move this machine's Rex, app and server, to a newer build and
+bring every session back as it was. docs/rex-restart.md is the runbook.
+
+  rex-upgrade check               the feed's newest build beside the app and the server
+  rex-upgrade stage [BUILD]       download the newest build (or BUILD) from the app's
+                                  own feed, verify its signature, and stage it
+  rex-upgrade start [--now]       run the restart as a one-off launchd job, outside Rex
+  rex-upgrade snapshot [DIR]      record every session, tab and pane (reads only)
+  rex-upgrade restore [--go] SNAPSHOT
+                                  rebuild a snapshot on a restarted server; a dry run
+                                  without --go
+  rex-upgrade job DIR [--now] [--report SID]
+                                  INTERNAL: what start runs
+
+The job waits until no Claude Code in Rex is busy and no drive step or job
+runs (--now: it does not wait), snapshots, stops drive's wakes, quits the
+app, stops the server, swaps in the staged app if there is one, opens the app
+so it starts the new server from its own copy, restores every session, arms
+drive's wakes again, and asks the Claude Code that ran `start` (when it ran in
+this Rex) to report. With nothing staged it only restarts, as after Sparkle
+updated the app. Each run keeps its snapshot, screens, logs and the app it
+replaced in ~/.local/state/rex-lab/upgrades/<time>/.
+
+The image is verified by its code signature, Gatekeeper and the installed
+app's team, not by Sparkle's EdDSA key, which needs a library the system
+Python lacks.
+
+REX_UPGRADE_APP and REX_UPGRADE_FEED replace the app's path and its feed, for
+tests.
+"""
+import glob, json, os, platform, plistlib, re, shlex, shutil, subprocess, sys, tempfile, time
+import xml.etree.ElementTree as ET
+
+HOME = os.path.expanduser("~")
+APP = os.environ.get("REX_UPGRADE_APP") or "/Applications/Rex Beta.app"
+STATE = f"{HOME}/.local/state/rex-lab/upgrades"
+STAGE = f"{STATE}/stage"
+VERSIONS = f"{HOME}/Library/Application Support/com.superlogical.rex/RexServer/Versions"
+LABEL = "com.qiushi.rex-upgrade"
+PATH = f"{HOME}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+SPARKLE = "{http://www.andymatuschak.org/xml-namespaces/sparkle}"
+CONTINUE = ("Rex restarted and ended this session mid-turn; any background jobs or agents it was "
+            "waiting on are gone. Continue from where you stopped.")
+# A pane's REX_SERVER outranks HOME, so every call reaches this HOME's server.
+ENV = {k: v for k, v in os.environ.items() if k not in ("REX_SESSION", "REX_BLOCK", "REX_SERVER")}
+ENV["PATH"] = PATH + ":" + ENV.get("PATH", "")  # an ssh command's PATH lacks ~/.local/bin
+ENV.setdefault("HEADROOM_PRIMARY_NAME", "qiushi.yann")  # drive's --account primary needs it; .zshrc exports it
+
+
+def run(*a, timeout=120):
+    try:
+        r = subprocess.run(list(a), capture_output=True, text=True, env=ENV, timeout=timeout)
+        return r.returncode, r.stdout, r.stderr
+    except subprocess.TimeoutExpired:
+        return 124, "", "timed out"
+    except FileNotFoundError as e:
+        return 127, "", str(e)
+
+
+def rex(*a, timeout=120):
+    return run("rex", "--autostart=false", *a, timeout=timeout)
+
+
+def rexj(*a):
+    code, out, _ = rex(*a)
+    try:
+        return json.loads(out) if code == 0 and out.strip() else None
+    except ValueError:
+        return None
+
+
+def log(msg):
+    print(time.strftime("%H:%M:%S ") + msg, flush=True)
+
+
+def remove(path):
+    """Delete a tree this tool made: only under STATE, never a path read empty."""
+    real = os.path.realpath(path) if path else ""
+    if not real or not real.startswith(os.path.realpath(STATE) + "/"):
+        sys.exit(f"refusing to delete {path!r}: not under {STATE}")
+    shutil.rmtree(real, ignore_errors=True)
+
+
+# The app, the feed and the server ----------------------------------------------------
+
+def info(app):
+    try:
+        with open(f"{app}/Contents/Info.plist", "rb") as f:
+            return plistlib.load(f)
+    except (OSError, plistlib.InvalidFileException):
+        return {}
+
+
+def feed():
+    """The feed's builds, newest first."""
+    url = os.environ.get("REX_UPGRADE_FEED") or info(APP).get("SUFeedURL")
+    if not url:
+        sys.exit(f"no feed: {APP} names no SUFeedURL")
+    code, body, err = run("curl", "-sfL", "--max-time", "30", url)
+    if code:
+        sys.exit(f"cannot read the feed {url}: {err.strip() or code}")
+    out = []
+    for item in ET.fromstring(body).iter("item"):
+        enc = item.find("enclosure")
+        build = item.findtext(f"{SPARKLE}version") or (enc.get(f"{SPARKLE}version") if enc is not None else None)
+        if not build or enc is None:
+            continue
+        m = re.search(r"Rex (\d+\.\d+\.\d+-g[0-9a-f]+)", item.findtext("description") or "")
+        out.append({"build": int(build), "version": m.group(1) if m else None, "url": enc.get("url"),
+                    "length": int(enc.get("length") or 0), "min_os": item.findtext(f"{SPARKLE}minimumSystemVersion"),
+                    "date": item.findtext("pubDate")})
+    return sorted(out, key=lambda b: -b["build"])
+
+
+def server_status():
+    code, out, _ = rex("server", "status")
+    if code != 0:
+        return None
+    st = dict(l.split(": ", 1) for l in out.splitlines() if ": " in l and not l.startswith(" "))
+    st["text"] = out
+    return st
+
+
+def cli_version():
+    _, out, _ = run("rex", "version")
+    m = re.match(r"rex (\S+)", out)
+    return m.group(1) if m else None
+
+
+def team(app):
+    _, _, err = run("codesign", "-dv", app)
+    m = re.search(r"TeamIdentifier=(\S+)", err)
+    return m.group(1) if m else None
+
+
+def staged_build():
+    return info(f"{STAGE}/{os.path.basename(APP)}").get("CFBundleVersion")
+
+
+def cmd_check():
+    builds = feed()
+    newest = builds[0] if builds else None
+    have = info(APP).get("CFBundleVersion")
+    st, cli, staged = server_status(), cli_version(), staged_build()
+    print(f"feed:    {newest['build']} (server {newest['version']}), {newest['date']}" if newest else "feed:    empty")
+    print(f"app:     {have or 'not installed'} ({APP}), CLI {cli}")
+    print(f"server:  {st['version']} (pid {st['pid']}, started {st.get('started')})" if st else "server:  not running")
+    print(f"staged:  {staged or 'nothing'}")
+    if staged:
+        print("next:    rex-upgrade start")
+    elif newest and have and newest["build"] > int(have):
+        print("next:    rex-upgrade stage, then rex-upgrade start")
+    elif st and cli and st["version"] != cli:
+        print("next:    the server runs another build than the app; rex-upgrade start restarts it")
+    else:
+        print("up to date")
+
+
+def cmd_stage(build=None):
+    builds = feed()
+    pick = next((b for b in builds if build is None or b["build"] == int(build)), None)
+    if not pick:
+        sys.exit(f"the feed has no build {build}" if build else "the feed lists no build")
+    have = info(APP).get("CFBundleVersion")
+    if build is None and have and int(have) >= pick["build"]:
+        print(f"the app is {have}, the feed's newest {pick['build']}: nothing to stage")
+        return
+    if pick["min_os"]:
+        mine = tuple(int(x) for x in platform.mac_ver()[0].split("."))
+        if mine < tuple(int(x) for x in pick["min_os"].split(".")):
+            sys.exit(f"build {pick['build']} needs macOS {pick['min_os']}")
+    os.makedirs(STATE, exist_ok=True)
+    work = tempfile.mkdtemp(prefix="download-", dir=STATE)
+    try:
+        dmg, mnt = f"{work}/rex.dmg", f"{work}/mnt"
+        print(f"downloading build {pick['build']} from {pick['url']}")
+        code, _, err = run("curl", "-sfL", "-o", dmg, pick["url"], timeout=1800)
+        if code:
+            sys.exit(f"download failed: {err.strip() or code}")
+        if pick["length"] and os.path.getsize(dmg) != pick["length"]:
+            sys.exit(f"downloaded {os.path.getsize(dmg)} bytes, the feed says {pick['length']}")
+        os.mkdir(mnt)
+        code, _, err = run("hdiutil", "attach", "-nobrowse", "-readonly", "-mountpoint", mnt, dmg, timeout=300)
+        if code:
+            sys.exit(f"cannot mount the image: {err.strip()}")
+        try:
+            apps = glob.glob(f"{mnt}/*.app")
+            if len(apps) != 1:
+                sys.exit(f"the image holds {len(apps)} apps, not one")
+            new = f"{work}/{os.path.basename(APP)}"
+            code, _, err = run("ditto", apps[0], new, timeout=600)
+            if code:
+                sys.exit(f"cannot copy the app out of the image: {err.strip()}")
+        finally:
+            run("hdiutil", "detach", "-quiet", mnt, timeout=120)
+        if str(info(new).get("CFBundleVersion")) != str(pick["build"]):
+            sys.exit(f"the image holds build {info(new).get('CFBundleVersion')}, not {pick['build']}")
+        code, _, err = run("codesign", "--verify", "--deep", "--strict", new, timeout=600)
+        if code:
+            sys.exit(f"its code signature does not verify: {err.strip()}")
+        code, _, err = run("spctl", "-a", "-t", "exec", new)
+        if code:
+            sys.exit(f"Gatekeeper refuses it: {err.strip()}")
+        want = team(APP) if os.path.isdir(APP) else None
+        if want and team(new) != want:
+            sys.exit(f"it is signed by team {team(new)}, the installed app by {want}")
+        if os.path.isdir(STAGE):
+            remove(STAGE)
+        os.makedirs(STAGE)
+        os.rename(new, f"{STAGE}/{os.path.basename(APP)}")
+        print(f"staged build {pick['build']} (server {pick['version']}), signed by team {team(f'{STAGE}/{os.path.basename(APP)}')}")
+        print("next: rex-upgrade start")
+    finally:
+        remove(work)
+
+
+# Snapshot ----------------------------------------------------------------------------
+
+def registry(pid):
+    """Claude Code's sessions/<pid>.json and the config dir it sits in."""
+    for f in glob.glob(f"{HOME}/.claude-accounts/*/sessions/{pid}.json") + glob.glob(f"{HOME}/.claude/sessions/{pid}.json"):
+        try:
+            return os.path.dirname(os.path.dirname(f)), json.load(open(f))
+        except ValueError:
+            return None, None
+    return None, None
+
+
+def account_names(config_dir):
+    """(launcher suffix for x-<name>, drive --account value)."""
+    if config_dir == f"{HOME}/.claude":
+        return ENV["HEADROOM_PRIMARY_NAME"], "primary"
+    local = os.path.basename(config_dir).split("@")[0]
+    return local, local
+
+
+def extra_args(argv):
+    """Claude flags worth keeping on the relaunch; x adds the bypass itself."""
+    out, skip = [], False
+    for t in argv.split()[1:]:
+        if skip:
+            skip = False
+        elif t in ("--resume", "-r", "--session-id"):
+            skip = True
+        elif t not in ("--dangerously-skip-permissions", "--continue", "-c"):
+            out.append(t)
+    return out
+
+
+def drivers():
+    """Every driver with a live batch; [None] for one with no name."""
+    code, _, err = run("drive", "status")
+    found = re.findall(r"(\S+) drives (\S+)", err)
+    return [d for d, _ in found] or ([None] if code == 0 else [])
+
+
+def drive_status(driver):
+    code, out, _ = run("drive", *(["--driver", driver] if driver else []), "status", "--json")
+    try:
+        return json.loads(out) if code == 0 else None
+    except ValueError:
+        return None
+
+
+def drive_batches():
+    """Every live driver's sessions, keyed by Rex block id's last six."""
+    by_block, batches = {}, {}
+    for d in drivers():
+        st = drive_status(d)
+        if not st:
+            continue
+        bname = st["batch"]["name"] if isinstance(st.get("batch"), dict) else st.get("batch")
+        batches[bname] = {"driver": d, "open_asks": st.get("open_asks")}
+        for s in st.get("sessions", []):
+            if s.get("block"):
+                watch = s.get("watch") or ""
+                by_block[s["block"]] = {"driver": d, "batch": bname, "label": s["label"], "sid": s.get("sid"),
+                                        "account": s.get("account"), "state": s.get("state"),
+                                        "parked": watch[len("parked: "):] if watch.startswith("parked: ") else None}
+    return by_block, batches
+
+
+def describe(d, sl, bid, label, rect, driven):
+    proc = rexj("block", "call", "-s", sl, "--block", bid, "process") or {}
+    fg, child = proc.get("foreground") or {}, proc.get("child") or {}
+    argv = run("ps", "-o", "args=", "-p", str(fg["pid"]))[1].strip() if fg.get("pid") else ""
+    b = {"block": bid, "short": bid[-6:], "label": label, "rect": rect, "cwd": fg.get("cwd") or child.get("cwd"),
+         "fg": fg.get("name"), "argv": argv, "kind": "shell"}
+    cfg, reg = registry(fg["pid"]) if fg.get("pid") else (None, None)
+    if reg:
+        launcher, account = account_names(cfg)
+        b["kind"] = "claude"
+        b["claude"] = {"sid": reg["sessionId"], "dir": reg.get("cwd") or b["cwd"], "launcher": f"x-{launcher}",
+                       "account": account, "extra": extra_args(argv), "busy": reg.get("status") == "busy"}
+    elif fg.get("name") not in (None, "zsh", "-zsh", "bash"):
+        b["kind"] = "other"
+    if bid[-6:] in driven:
+        b["driven"] = driven[bid[-6:]]
+    screen = rex("capture", "-s", sl, "-b", bid)[1]
+    open(f"{d}/screens/{sl}-{label}-{bid[-6:]}.txt", "w").write(screen)
+    return b
+
+
+def snapshot(d):
+    """Record every session, tab and pane in d/snapshot.json, each screen in d/screens/."""
+    st = server_status()
+    if not st:
+        sys.exit("no Rex server runs")
+    os.makedirs(f"{d}/screens", exist_ok=True)
+    driven, batches = drive_batches()
+    auto = {}
+    names = f"{HOME}/.local/state/rex-lab/tab-names"
+    if os.path.exists(names):
+        auto = dict(l.rstrip("\n").split("\t", 1) for l in open(names) if "\t" in l)
+    snap = {"taken_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "server": st, "batches": batches, "sessions": []}
+    for s in (rexj("ls", "--json") or {"sessions": []})["sessions"]:
+        sl = s["label"]
+        wins = (rexj("window", "ls", "-s", sl, "--json") or {"windows": []})["windows"]
+        wins.sort(key=lambda w: int(m.group()) if (m := re.match(r"\d+", w.get("label") or "")) else 1 << 30)
+        sess = {"label": sl, "windows": []}
+        for w in wins:  # in tab order
+            name = re.sub(r"^\d+\s*", "", w.get("label") or "")
+            # A name rexd gave follows the pane, so only one you gave is set again.
+            win = {"label": w.get("label"), "name": name, "yours": auto.get(w["window_id"]) != name, "blocks": []}
+            for layer in w["layers"]:
+                if layer["kind"] == "tiled":
+                    win["blocks"] += [describe(d, sl, b["block_id"], b.get("label"), b.get("rect"), driven)
+                                      for b in layer["blocks"]]
+            if win["blocks"]:
+                sess["windows"].append(win)
+        snap["sessions"].append(sess)
+    json.dump(snap, open(f"{d}/snapshot.json", "w"), indent=1)
+    print(f"snapshot {snap['taken_at']} -> {d}/snapshot.json")
+    for s in snap["sessions"]:
+        print(f"\n{s['label']}")
+        for w in s["windows"]:
+            for i, b in enumerate(w["blocks"]):
+                tab = f"  {w['label'] or '':<12}" if i == 0 else " " * 14
+                c, dv = b.get("claude") or {}, b.get("driven")
+                what = f"claude {c['sid'][:8]} {c['launcher']} {' '.join(c['extra'])}".rstrip() if c else (b["argv"] or b["fg"] or "")
+                tag = ("BUSY" if c.get("busy") else "idle") if c else ""
+                if dv:
+                    tag = f"drive {dv['driver']}:{dv['label']} {dv['state']}" + (" parked" if dv["parked"] else "")
+                print(f"{tab} {b['label'] or '':<8} {what:<55} {tag:<28} {b['cwd']}")
+    return snap
+
+
+# Restore -----------------------------------------------------------------------------
+
+class Restore:
+    def __init__(self, go):
+        self.go, self.problems = go, []
+
+    def sh(self, args, check=True):
+        print("  $ " + shlex.join(args))
+        if not self.go:
+            return ""
+        code, out, err = run(*args, timeout=300)
+        if code != 0:
+            msg = f"{shlex.join(args)} -> exit {code}: {(err or out).strip()[:600]}"
+            if check:
+                self.problems.append(msg)
+            print("    ! " + msg)
+            return None
+        return out.strip()
+
+    def rex(self, *a, check=True):
+        return self.sh(["rex", "--autostart=false", *a], check)
+
+    def drive(self, driver, *a):
+        return self.sh(["drive"] + (["--driver", driver] if driver else []) + list(a))
+
+    def cwd(self, b):
+        if b["cwd"] and os.path.isdir(b["cwd"]):
+            return b["cwd"]
+        self.problems.append(f"pane {b['label'] or b['short']} ran in {b['cwd']}, which is gone: opened in ~")
+        return HOME
+
+    def program(self, b):
+        """What a pane runs: Claude resumed through the account's launcher, then a shell."""
+        if b["kind"] == "claude":
+            c = b["claude"]
+            cmd = " ".join([c["launcher"], *map(shlex.quote, c["extra"]), "--resume", c["sid"]])
+            return ["--shell", "none", "--", "/bin/zsh", "-lic", cmd + "; exec zsh -l"]
+        if b["kind"] == "other":
+            self.problems.append(f"pane {b['label']} ({b['short']}) ran {b['argv']!r}: opened as a shell, start it by hand")
+        return []
+
+    def nudge(self, session, block, label):
+        """Type the continue line into a resumed Claude Code nobody drives."""
+        print(f"  continue -> {session}/{label} ({block[-6:]})")
+        if not self.go:
+            return
+        pid = wait_ready(session, block)
+        if not pid:
+            self.problems.append(f"{session}/{label}: Claude did not come up idle within 2 min; send it 'continue' by hand")
+            return
+        if not send_line(session, block, pid, CONTINUE):
+            self.problems.append(f"{session}/{label}: 'continue' did not start a turn; look at the pane")
+
+    def view_of(self, driver, label):
+        if not self.go:
+            return f"{label}@<view>"
+        out = self.drive(driver, "read", label, "--json")
+        return json.loads(out)["view"] if out else None
+
+    def run(self, snap):
+        live = set()
+        if self.go:
+            live = {s["label"] for s in (rexj("ls", "--json") or {"sessions": []})["sessions"]}
+        running = live_sids() if self.go else set()
+        later = []
+        for s in snap["sessions"]:
+            sl = s["label"]
+            print(f"\n== {sl}")
+            exists = sl in live
+            if exists:
+                print(f"  session {sl} exists already: missing tabs are added to it")
+            for w in s["windows"]:
+                first = w["blocks"][0]
+                if first.get("driven"):
+                    # drive reopens its own label; resuming the label's conversation keeps its park.
+                    dv, c = first["driven"], first.get("claude")
+                    if not c:
+                        self.problems.append(f"{sl}: driven label {dv['label']} ran no Claude Code; reopen it by hand")
+                        continue
+                    if sl not in live:
+                        self.rex("new", sl, "-c", HOME)
+                        live.add(sl)
+                        self.problems.append(f"{sl}: its first tab was driven, so an extra shell tab opened first; close it")
+                    self.drive(dv["driver"], "open", dv["label"], "--dir", c["dir"], "--resume", c["sid"], "--account", c["account"])
+                    if dv["state"] == "working":
+                        later.append(("drive", dv["driver"], dv["label"]))
+                    continue
+                if exists and any(b.get("claude") and b["claude"]["sid"] in running for b in w["blocks"]):
+                    continue
+                name = [w["name"]] if w["yours"] and w["name"] else []
+                placeholder = {"window_id": "<window>", "block_ids": ["<block>"]}
+                if sl not in live:
+                    out = self.rex("new", sl, *(["--window"] + name if name else []), "--json", "-c", self.cwd(first), *self.program(first))
+                    live.add(sl)
+                    win = json.loads(out)["initial_windows"][0] if out else placeholder
+                else:
+                    out = self.rex("window", "new", "-s", sl, *name, "--focus=false", "--json", "-c", self.cwd(first), *self.program(first))
+                    win = json.loads(out) if out else placeholder
+                wid, prev = win["window_id"], win["block_ids"][0]
+                blocks = [(first, prev)]
+                for b in w["blocks"][1:]:
+                    side = "below" if b["rect"] and b["rect"]["y"] > 0 and b["rect"]["x"] == 0 else "right"
+                    out = self.rex("run", "-s", sl, "-w", wid, "-b", prev, "--split", side, "--focus=false", "--json",
+                                   "-c", self.cwd(b), *(self.program(b) or ["--", "/bin/zsh", "-l"]))
+                    prev = json.loads(out)["block_ids"][0] if out else "<block>"
+                    blocks.append((b, prev))
+                for b, bid in blocks:
+                    if b["label"] and b["label"] != "shell":
+                        self.rex("block", "rename", "-s", sl, bid, b["label"])
+                    if (b.get("claude") or {}).get("busy"):
+                        later.append(("continue", sl, bid, b["label"] or b["short"]))
+        print("\n== after every pane is open")
+        for item in later:
+            if item[0] == "continue":
+                self.nudge(*item[1:])
+            else:
+                v = self.view_of(item[1], item[2])
+                if v:
+                    self.drive(item[1], "send", v, CONTINUE)
+        self.sh(["rexd"], check=False)
+        print("\n== result")
+        if self.problems:
+            print("needs a look:")
+            for p in self.problems:
+                print("  - " + p)
+        elif self.go:
+            print("everything came back; check with: rex window ls -A, and drive status per driver")
+
+
+def cmd_restore(path, go):
+    snap = json.load(open(path))
+    print(f"restoring the snapshot of {snap['taken_at']}" + ("" if go else "  (dry run: add --go to do it)"))
+    if go:
+        if os.environ.get("REX_BLOCK"):
+            sys.exit("run this from outside Rex: a launchd job (rex-upgrade start), or ssh from the other machine")
+        st = server_status()
+        if not st:
+            sys.exit("no Rex server runs; start it first")
+        if st.get("instance") == snap["server"].get("instance"):
+            sys.exit("this is still the server the snapshot was taken on; restart it first")
+        if "running" in snap["server"].get("tailscale", "") and "running" not in st.get("tailscale", ""):
+            sys.exit("the server runs without its tailnet address, so the other machine cannot reach it")
+    r = Restore(go)
+    r.run(snap)
+    return 1 if r.problems and go else 0
+
+
+# Claude Code in Rex ------------------------------------------------------------------
+
+def rex_claudes():
+    """(session, block, registry) for every Claude Code running in a Rex pane."""
+    out = []
+    for s in (rexj("ls", "--json") or {"sessions": []})["sessions"]:
+        for b in (rexj("block", "ls", "-s", s["label"], "--json") or {"blocks": []})["blocks"]:
+            p = rexj("block", "call", "-s", s["label"], "--block", b["block_id"], "process") or {}
+            pid = (p.get("foreground") or {}).get("pid")
+            reg = registry(pid)[1] if pid else None
+            if reg:
+                out.append((s["label"], b["block_id"], reg))
+    return out
+
+
+def live_sids():
+    """Claude conversations already running somewhere, so none is resumed twice."""
+    out = set()
+    for f in glob.glob(f"{HOME}/.claude-accounts/*/sessions/*.json") + glob.glob(f"{HOME}/.claude/sessions/*.json"):
+        try:
+            d = json.load(open(f))
+            os.kill(d["pid"], 0)
+            out.add(d["sessionId"])
+        except (OSError, ValueError, KeyError):
+            pass
+    return out
+
+
+def reg_status(pid):
+    return (registry(pid)[1] or {}).get("status")
+
+
+def wait_ready(session, block, limit=120):
+    end = time.time() + limit
+    while time.time() < end:
+        pid = ((rexj("block", "call", "-s", session, "--block", block, "process") or {}).get("foreground") or {}).get("pid")
+        if pid and reg_status(pid) in ("idle", "waiting"):
+            return pid
+        time.sleep(2)
+    return None
+
+
+def send_line(session, block, pid, text):
+    """Type TEXT and Enter into a Claude Code; True once it starts a turn."""
+    rex("send", "-s", session, "-b", block, text)
+    time.sleep(1)
+    for _ in range(2):
+        rex("send-key", "-s", session, "-b", block, "enter")
+        for _ in range(10):
+            time.sleep(1.5)
+            if reg_status(pid) == "busy":
+                return True
+    return False
+
+
+def caller_session():
+    """The Claude Code session this command runs under, found up the process tree."""
+    pid = os.getppid()
+    for _ in range(12):
+        if pid <= 1:
+            return None
+        reg = registry(pid)[1]
+        if reg and reg.get("sessionId"):
+            return reg["sessionId"]
+        _, out, _ = run("ps", "-o", "ppid=", "-p", str(pid))
+        pid = int(out.strip() or 0)
+    return None
+
+
+# The job -----------------------------------------------------------------------------
+
+def noisy():
+    """What keeps Rex from being quiet now; empty when quiet."""
+    why = [f"{s}/{b[-6:]} busy" for s, b, reg in rex_claudes() if reg.get("status") == "busy"]
+    for d in drivers():
+        st = drive_status(d)
+        if st is None:
+            why.append(f"drive {d} status failed")
+            continue
+        why += [f"{d}:{x['label']} runs a job" for x in st.get("sessions", []) if x.get("jobs")]
+        why += [f"{d}: a step in flight" for _ in (st.get("in_flight") or [])[:1]]
+    return why
+
+
+def wait_quiet():
+    said, streak = 0, 0
+    while True:
+        why = noisy()
+        streak = streak + 1 if not why else 0
+        if streak >= 2:
+            return
+        if why and time.time() - said > 600:
+            log("waiting for quiet: " + "; ".join(why[:12]))
+            said = time.time()
+        time.sleep(20)
+
+
+def mark_now(d, snap, report):
+    """--now: a driven session with a background job gets the continue line too, since the job
+    dies; the session that ran start is asked to report instead."""
+    jobs = set()
+    for drv in drivers():
+        jobs |= {(drv, x["label"]) for x in (drive_status(drv) or {}).get("sessions", []) if x.get("jobs")}
+    for s in snap["sessions"]:
+        for w in s["windows"]:
+            for b in w["blocks"]:
+                c, dv = b.get("claude"), b.get("driven")
+                if c and c["sid"] == report:
+                    c["busy"] = False
+                if dv and (dv["driver"], dv["label"]) in jobs:
+                    dv["state"], dv["parked"] = "working", None
+    json.dump(snap, open(f"{d}/snapshot.json", "w"), indent=1)
+
+
+def stop_watches(d):
+    """drive watch --stop-all; returns the watch --due commands it prints."""
+    code, out, err = run("drive", "watch", "--stop-all")
+    log(f"drive watch --stop-all -> {code}\n{out}{err}".rstrip())
+    open(f"{d}/watch-due.txt", "w").write(out)
+    return [l.strip() for l in out.splitlines() if l.strip().startswith("drive ") and "--due" in l]
+
+
+def app_pids():
+    exe = info(APP).get("CFBundleExecutable")
+    if not exe:
+        return []
+    _, out, _ = run("pgrep", "-f", f"{APP}/Contents/MacOS/{exe}")
+    return out.split()
+
+
+def quit_app():
+    for pid in app_pids():
+        run("kill", "-TERM", pid)
+    for _ in range(30):
+        if not app_pids():
+            return
+        time.sleep(1)
+    log("the app did not quit within 30 s")
+
+
+def swap_app(d):
+    """Put the staged bundle in place of the app; the app it replaces moves to d/old/."""
+    for prior in glob.glob(f"{STATE}/*/old"):
+        if os.path.realpath(prior) != os.path.realpath(f"{d}/old"):
+            remove(prior)  # one replaced app is kept, the last
+    os.makedirs(f"{d}/old", exist_ok=True)
+    os.rename(APP, f"{d}/old/{os.path.basename(APP)}")
+    os.rename(f"{STAGE}/{os.path.basename(APP)}", APP)
+    log(f"app swapped to build {info(APP).get('CFBundleVersion')}; the CLI is {cli_version()}")
+
+
+def server_ok(expected, old):
+    st = server_status()
+    if not st:
+        return False, "no server"
+    _, env, _ = run("ps", "eww", "-o", "command=", "-p", st["pid"])
+    bad = [t for t in env.split() if t.startswith(("NO_COLOR=", "FORCE_COLOR=", "TERM=dumb", "DRIVE_WATCH=", "SSH_CONNECTION="))]
+    if bad:
+        return False, f"server pid {st['pid']} carries {' '.join(bad)}"
+    if expected and st.get("version") != expected:
+        return False, f"server pid {st['pid']} runs {st.get('version')}, not {expected}"
+    if "running" in old.get("tailscale", "") and "running" not in st.get("tailscale", ""):
+        rex("server", "tailscale", "on")
+        time.sleep(5)
+        st = server_status() or {}
+        if "running" not in st.get("tailscale", ""):
+            return False, "the tailnet address is not up"
+    return True, st["text"]
+
+
+def start_flags(old):
+    """The tailnet flags the old server ran with, for a start without the app."""
+    m = re.match(r"running · ([^.\s]+)\.", old.get("tailscale", ""))
+    return ["--tailscale", "--tailscale-hostname", m.group(1)] if m else []
+
+
+def restart_server(old):
+    """Stop the server and bring the new build up: the app starts it from its own copy, or
+    this job does when the app does not. Three tries."""
+    expected = cli_version()
+    for attempt in range(1, 4):
+        log(f"stopping the server (attempt {attempt})")
+        rex("server", "stop")
+        if info(APP).get("CFBundleExecutable"):
+            run("open", APP)
+            for _ in range(30):
+                if server_status():
+                    break
+                time.sleep(1)
+        if not server_status():
+            ours = glob.glob(f"{VERSIONS}/{info(APP).get('CFBundleVersion')}/*/Contents/MacOS/rex")
+            code, out, err = run(*(ours[:1] or ["rex"]), "server", "start", *start_flags(old), timeout=120)
+            log(f"the app started no server; started one -> {code} {(out or err).strip()[:200]}")
+        for _ in range(12):
+            ok, why = server_ok(expected, old)
+            if ok:
+                log("server up and clean:\n" + why)
+                return True
+            time.sleep(5)
+        log("server not right: " + why)
+        quit_app()
+    return False
+
+
+def tell(report, d, staged):
+    for s, b, reg in rex_claudes():
+        if reg.get("sessionId") == report:
+            pid = wait_ready(s, b) or reg["pid"]
+            what = f"upgraded Rex to build {staged}" if staged else "restarted Rex's server"
+            send_line(s, b, pid, f"rex-upgrade {what} and resumed this session. Read {d}/job.log and "
+                                 f"{d}/restore.log, check every session as docs/rex-restart.md § The sequence "
+                                 f"says, and report the outcome.")
+            log(f"asked the session that ran start ({s}/{b[-6:]}) to report")
+            return
+    log("the session that ran start is not in this Rex; nothing asked it to report")
+
+
+def cmd_job(d, now, report):
+    staged = staged_build()
+    log(("upgrade to build " + staged if staged else "server restart")
+        + (" (--now: no wait for quiet)" if now else "; waiting until Rex is quiet"))
+    while True:
+        if not now:
+            wait_quiet()
+        log("taking the snapshot")
+        snap = snapshot(d)
+        if now:
+            mark_now(d, snap, report)
+            break
+        busy = [b["short"] for s in snap["sessions"] for w in s["windows"] for b in w["blocks"]
+                if (b.get("claude") or {}).get("busy") or (b.get("driven") or {}).get("state") == "working"]
+        if not busy:
+            break
+        log(f"not quiet after all ({', '.join(busy)}); waiting again")
+    due = stop_watches(d)
+    quit_app()
+    if staged:
+        log("stopping the old server")
+        rex("server", "stop")
+        swap_app(d)
+    if not restart_server(snap["server"]):
+        log(f"GAVE UP: the server is not right after three starts; nothing restored. Once it is: "
+            f"rex-upgrade restore --go {d}/snapshot.json")
+        return 1
+    code, out, err = run(sys.executable, os.path.abspath(__file__), "restore", "--go", f"{d}/snapshot.json", timeout=1800)
+    open(f"{d}/restore.log", "w").write(out + err)
+    log(f"restore exit {code}; its output is in restore.log")
+    for cmd in due:
+        c, o, e = run("/bin/zsh", "-c", cmd)
+        log(f"{cmd} -> {c} {(o + e).strip()[:300]}")
+    if report:
+        tell(report, d, staged)
+    log("done")
+    return 0
+
+
+def cmd_start(now, dry):
+    uid = os.getuid()
+    _, out, _ = run("launchctl", "print", f"gui/{uid}/{LABEL}")
+    if "state = running" in out:
+        sys.exit(f"a rex-upgrade job runs already: launchctl print gui/{uid}/{LABEL}")
+    d = f"{STATE}/{time.strftime('%Y-%m-%d-%H%M%S')}"
+    os.makedirs(d)
+    report = caller_session()
+    env = {"PATH": PATH, **{k: ENV[k] for k in ("HEADROOM_PRIMARY_NAME", "REX_UPGRADE_APP", "REX_UPGRADE_FEED") if k in ENV}}
+    job = {"Label": LABEL, "RunAtLoad": True, "KeepAlive": False, "WorkingDirectory": d,
+           "ProgramArguments": [sys.executable, os.path.abspath(__file__), "job", d]
+                               + (["--now"] if now else []) + (["--report", report] if report else []),
+           "StandardOutPath": f"{d}/job.log", "StandardErrorPath": f"{d}/job.log", "EnvironmentVariables": env}
+    with open(f"{d}/job.plist", "wb") as f:
+        plistlib.dump(job, f)
+    staged = staged_build()
+    print(f"{'upgrade to build ' + staged if staged else 'server restart'}"
+          f"{', now' if now else ', once Rex is quiet'}; the session to report: {report or 'none'}")
+    if dry:
+        print(f"dry run: {d}/job.plist written, nothing started")
+        return
+    run("launchctl", "bootout", f"gui/{uid}/{LABEL}")  # a finished run's job stays loaded
+    code, _, err = run("launchctl", "bootstrap", f"gui/{uid}", f"{d}/job.plist")
+    if code:
+        sys.exit(f"launchctl bootstrap failed: {err.strip()}")
+    print(f"started; follow it with: tail -f {d}/job.log")
+
+
+def main(argv):
+    if argv[:1] in (["-h"], ["--help"], ["help"]):
+        print(__doc__)
+        return 0
+    if not argv:
+        print(__doc__, file=sys.stderr)
+        return 2
+    cmd, rest = argv[0], argv[1:]
+    flags = {a for a in rest if a.startswith("--")}
+    args = [a for a in rest if not a.startswith("--")]
+    if cmd == "check":
+        cmd_check()
+    elif cmd == "stage":
+        cmd_stage(args[0] if args else None)
+    elif cmd == "start":
+        cmd_start("--now" in flags, "--dry-run" in flags)
+    elif cmd == "snapshot":
+        snapshot(args[0] if args else f"{STATE}/{time.strftime('%Y-%m-%d-%H%M%S')}-snapshot")
+    elif cmd == "restore" and args:
+        return cmd_restore(args[0], "--go" in flags)
+    elif cmd == "job" and args:
+        report = rest[rest.index("--report") + 1] if "--report" in rest else None
+        return cmd_job(args[0], "--now" in flags, report)
+    else:
+        print(__doc__, file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)
