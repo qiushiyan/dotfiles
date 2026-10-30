@@ -351,7 +351,28 @@ ALL_STEPS=(
     finish
 )
 
+# The clone's state as git sees it, one line per changed or untracked path.
+tree_state() {
+    [[ -d "$REPO_DIR/.git" ]] && git -C "$REPO_DIR" status --porcelain 2>/dev/null
+    return 0
+}
+
+# Names what changed in the clone since $1 (tree_state before the run). Stowed
+# links make the clone the target of anything an installer writes into a
+# linked file or folded directory: pnpm's PATH block into .zshrc, uv's Pythons
+# into a folded ~/.local/share.
+report_tree() {
+    local new line
+    new=$(comm -13 <(printf '%s\n' "$1" | sort) <(tree_state | sort) | sed '/^$/d')
+    [[ -n $new ]] || return 0
+    say "Changed in $REPO_DIR during this run: an installer wrote through a link"
+    while IFS= read -r line; do echo "    $line"; done <<<"$new"
+    echo "    Review with: git -C $REPO_DIR status; revert what the repository should not hold."
+}
+
 main() {
+    local before
+    before=$(tree_state)
     if (( $# == 0 )); then
         for step in "${ALL_STEPS[@]}"; do
             "step_$step"
@@ -366,6 +387,8 @@ main() {
             "step_$step"
         done
     fi
+    report_tree "$before"
 }
 
-main "$@"
+# Sourced (tests), it defines the steps and runs nothing.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then main "$@"; fi
