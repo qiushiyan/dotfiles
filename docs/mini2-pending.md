@@ -6,13 +6,7 @@ it; delete the file when it is empty.
 
 ## At mini2, needing a login or the screen
 
-- **Claude Code accounts.** `claude`, then `/login` as `qiushi@planlab.ai`
-  (the primary, `hosts/mini2.zsh`); then `x-account-add <email>` and `/login`
-  on each `x-<name>` for `cliushi@planlab.ai`, `qiushi.yan@itell.ai`,
-  `qiushi.yann@gmail.com`, `qiushiyan@planlab.ai`, `yan@planlab.ai` and
-  `yqs@planlab.ai` (`docs/claude-accounts.md`).
-- **Codex and AWS.** `codex login`, and `cx-account-add <email>` for the
-  extras; `aws-login`.
+- **AWS.** `aws-login`.
 - **Apple Account**, with iCloud Keychain and iCloud Drive off and Handoff
   on; then link the laptop through Universal Control
   (`docs/qiushi-mini-2.md` § At the desk).

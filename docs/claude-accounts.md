@@ -139,10 +139,12 @@ Everything derives from that tree:
   Please run /login` while the board still showed it healthy). Each
   approval page opens in the Chrome profile named after the account's local
   part, so the click is Authorize and nothing else; a `✗ … logged in as`
-  line means the wrong profile approved. Over ssh from the other machine,
-  run `security unlock-keychain` in that session first, or the accounts
-  whose login lives in the Keychain are left alone; each URL then opens on
-  the machine you are at, and you paste back the code it shows. The
+  line means the wrong profile approved. For another machine, run
+  `remote-logins <host>` here, on the laptop: it signs that machine's due
+  accounts in (named ones, `codex:<name>`, or `--all`), each page opened in
+  this laptop's matching Chrome profile, and you paste back each code. A
+  machine whose logins live in its Keychain (made at its screen) gets one
+  `ssh -t` command instead, which unlocks the Keychain first. The
   mechanism: `~/dev/headroom/DESIGN.md` § Renewing logins.
 - **After a Claude Code update**, or when the board misbehaves:
   `x-check` (`headroom check`) — a FAIL line names which reverse-engineered

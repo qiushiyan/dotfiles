@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# remote-logins — sign another machine's Claude Code and Codex accounts in from
+# this Mac, each approval page opened in this Mac's Chrome profile for the
+# account.
+#
+# Usage: remote-logins <host> [account ...]
+#        remote-logins <host> --all
+#
+#   <host>          an ssh alias (mini, mini2) whose headroom holds the accounts
+#   account         a Claude Code account as headroom names it there (an email,
+#                   or the primary's name); codex:<account> for a Codex account
+#   bare            the Claude Code accounts <host>'s headroom would renew now
+#                   (logged out, ended, or ending within a week)
+#   --all           every Claude Code and Codex account on <host>
+#
+# Claude Code: `headroom login start` there prints the sign-in URL, the page
+# opens here, you click Authorize and paste the code it shows, `headroom login
+# finish` there takes it. Codex: its device sign-in prints a code to type on
+# the page. A host whose logins live in its login Keychain (a login made at its
+# screen) cannot be signed in this way over ssh; the run then hands you one
+# interactive command that unlocks the Keychain and renews them, its URLs
+# opened by hand.
+#
+# The profile is headroom's match: the one signed in to Chrome as the
+# account's email, else the one not signed in whose name is the email or its
+# local part. With no single match the URL is printed for you to open.
+#
+# Exit codes: 0 every account signed in; 1 one or more did not; 2 bad arguments.
+set -uo pipefail
+
+usage() { sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; }
+[[ ${1:-} == -h || ${1:-} == --help ]] && { usage; exit 0; }
+[[ $# -ge 1 ]] || { usage >&2; exit 2; }
+host=$1; shift
+# shellcheck disable=SC2016  # expanded by the shell on <host>
+HR='$HOME/.local/bin/headroom'
+LOCAL_STATE=${REMOTE_LOGINS_LOCAL_STATE:-"$HOME/Library/Application Support/Google/Chrome/Local State"}
+# shellcheck disable=SC2029  # the command runs on <host>, by design
+remote() { ssh "$host" "$*"; }
+
+# The Chrome profile directory for an email, by headroom's rule, or nothing.
+profile_for() {
+  python3 - "$LOCAL_STATE" "$1" <<'PY'
+import json, sys
+try:
+    cache = json.load(open(sys.argv[1]))["profile"]["info_cache"]
+except Exception:
+    sys.exit(0)
+email = sys.argv[2].strip().lower(); local = email.split("@")[0]
+signed = [d for d, i in cache.items() if (i.get("user_name") or "").lower() == email]
+named = [d for d, i in cache.items() if not i.get("user_name") and (i.get("name") or "").lower() in (email, local)]
+pick = signed if signed else named
+if len(pick) == 1:
+    print(pick[0])
+PY
+}
+
+open_for() {  # open_for <email> <url>
+  local prof
+  prof=$(profile_for "$1")
+  if [[ -n $prof ]]; then
+    open -na "Google Chrome" --args --profile-directory="$prof" "$2"
+    echo "  opened in Chrome profile '$prof'"
+  else
+    echo "  no Chrome profile here matches $1; open this in the browser signed in as it:"
+    echo "  $2"
+  fi
+}
+
+failed=0
+keychain=()
+
+claude_login() {  # claude_login <account>
+  local acct=$1 json state email code
+  json=$(remote "$HR login start '$acct'")
+  state=$(jq -r '.state // empty' <<<"$json" 2>/dev/null)
+  if [[ $state != awaiting_code ]]; then
+    case $(jq -r '.reason // empty' <<<"$json" 2>/dev/null) in
+      keychain_unreadable|keychain_unknown) keychain+=("$acct"); echo "  its login lives in $host's Keychain: below"; return 0 ;;
+    esac
+    echo "✗ $acct: $(jq -r '((.reason // "") + " " + (.problem // "")) | ltrimstr(" ")' <<<"$json" 2>/dev/null || echo "$json")"
+    failed=1; return 1
+  fi
+  email=$(jq -r '.email // empty' <<<"$json")
+  open_for "${email:-$acct}" "$(jq -r .url <<<"$json")"
+  read -r -p "  Authorize, then paste the code: " code
+  json=$(printf '%s\n' "$code" | remote "$HR login finish '$acct'")
+  if [[ $(jq -r '.state // empty' <<<"$json" 2>/dev/null) == renewed ]]; then
+    echo "✔ $acct: signed in until $(jq -r '.login_ends_at' <<<"$json")"
+  else
+    echo "✗ $acct: $(jq -r '((.state // "") + " " + (.problem // "")) | ltrimstr(" ")' <<<"$json" 2>/dev/null || echo "$json")"
+    failed=1
+  fi
+}
+
+codex_login() {  # codex_login <account>
+  local acct=$1 out url email pid rc
+  out=$(mktemp)
+  remote "$HR launch --vendor codex --account '$acct' -- login --device-auth" >"$out" 2>&1 &
+  pid=$!
+  for _ in $(seq 60); do
+    url=$(grep -oE 'https://[^[:space:]]+' "$out" | head -1)
+    [[ -n $url ]] && break
+    sleep 1
+  done
+  sed 's/^/  /' "$out"
+  email=$acct; [[ $email == *@* ]] || email=$(remote "$HR --json --vendor codex" 2>/dev/null \
+    | jq -r --arg a "$acct" '.accounts[] | select(.name == $a) | .email // empty' 2>/dev/null | head -1)
+  [[ -n $url ]] && open_for "${email:-$acct}" "$url"
+  echo "  enter the code above on the page; waiting for codex…"
+  wait "$pid"; rc=$?
+  tail -1 "$out" | sed 's/^/  /'; rm -f "$out"
+  if (( rc == 0 )); then echo "✔ codex $acct"; else echo "✗ codex $acct: exit $rc"; failed=1; fi
+}
+
+accounts=()
+# Read one account name per line into accounts (macOS's bash 3.2 has no mapfile).
+add() { local a; while IFS= read -r a; do [[ -n $a ]] && accounts+=("$1$a"); done; }
+if [[ ${1:-} == --all ]]; then
+  add "" < <(remote "$HR login --all --dry-run --json" | jq -r '.accounts[].account')
+  add codex: < <(remote "$HR --json --vendor codex" 2>/dev/null | jq -r '.accounts[] | select(.vendor == "codex") | .name')
+elif (( $# )); then
+  accounts=("$@")
+else
+  add "" < <(remote "$HR login --dry-run --json" | jq -r '.accounts[] | select(.renew) | .account')
+  (( ${#accounts[@]} )) || { echo "$host: no Claude Code login ends within a week; name accounts or use --all"; exit 0; }
+fi
+
+for acct in "${accounts[@]}"; do
+  echo "── $host $acct"
+  if [[ $acct == codex:* ]]; then codex_login "${acct#codex:}"; else claude_login "$acct"; fi
+done
+
+if (( ${#keychain[@]} )); then
+  echo
+  echo "These live in $host's login Keychain, which an ssh session opens only after"
+  echo "unlocking it. Run this; it asks for $host's password, then prints one URL each"
+  echo "to open in the account's Chrome profile here and asks for its code:"
+  echo "  ssh -t $host 'security unlock-keychain && ~/.local/bin/headroom login ${keychain[*]}'"
+  failed=1
+fi
+
+echo; remote "$HR --compact" 2>&1 | head -20
+exit "$failed"
