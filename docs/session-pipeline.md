@@ -85,9 +85,9 @@ then skips the merge.
    verified and what waits, for a user who did not watch; `/show-me`
    answers a narrower question about it later.
 
-After the merge and deploy (§ Who decides; in a planlab batch,
-`PLANLAB.md` § After the PR says who runs them, in an itell one `ITELL.md`
-§ After the PR), planlab's `closeout` key runs `/pl-loopy-handoff-distill merged and
+After the merge and deploy (§ Who decides; in a planlab batch, `PLANLAB.md`
+§ After the PR says who runs them, in an itell one `ITELL.md` § After the
+PR), planlab's `closeout` key runs `/pl-loopy-handoff-distill merged and
 deployed`; elsewhere, itell's `closeout` key included, `/distill-handoffs`
 retires the spent brief.
 
@@ -135,15 +135,15 @@ itell's `consult-then-build` says.
 
 ## Finishes
 
-- **Planlab — a polished PR.** The stages through review and verification
-  have run, the PR is open against `develop` with the required checks green,
-  and at least one round of `/pl-handle-code-review` has been handled; its
-  outcome, caught up or stopped on churn, is reported. The bots help but are
-  not relied on. Then the strategic review (stage 9), and the merge and the
-  release follow without the user once the stages § Who decides lists have
-  run, unless the user holds them: the review session's `merge-when-ready`
-  runs them, and in a batch the driver sends it (`PLANLAB.md` § After the PR). The post-merge
-  closeout follows once the deploy serves.
+- **Planlab — a polished PR, then its strategic review and the merge.** The
+  stages through review and verification have run, the PR is open against
+  `develop` with the required checks green, and at least one round of
+  `/pl-handle-code-review` has been handled, its outcome (caught up or
+  stopped on churn) reported; the bots help but are not relied on. The
+  strategic review (stage 9) follows, then the merge and the release without
+  the user unless they hold them: the review session runs
+  `merge-when-ready`, which a batch's driver sends (`PLANLAB.md` § After the
+  PR). The post-merge closeout follows once the deploy serves.
 - **Personal tools** (`~/dotfiles` and the tools under `~/dev` that `twin`
   installs): `closeout` merges to `main` locally, with no PR, installs on
   both machines with `twin sync`, and removes the branch.
@@ -187,17 +187,20 @@ driver does on its own judgment and reports.
   release whose migration drops or rewrites customer data, or whose
   migration installs something that writes it. Any other migration rides its release, below.
 
-**Handled without asking**, and reported:
+**Handled without asking**, and reported: anything reversible that reaches
+no customer, such as the test account accepting the terms of service on
+staging. When unsure whether to ask, do it and report it. Beyond that:
 
 - **Every choice inside the change** once its design is settled:
   implementation, technical defaults, follow-up cards for work outside it.
 - **Merge and release**, once the stages have run: review and verification,
   the prompt check where it applies, the PR's code review handled, the
   strategic review with its findings folded in (planlab's default; elsewhere
-  where the change earned one), and required checks green. A release's migration gate is overridden with
-  the acknowledgement it suggests once the release's session has read what it
-  flagged and recommends it, unless the migration is one the second ask
-  names. A personal tool's `closeout` merge is the same.
+  where the change earned one), and required checks green. A release's
+  migration gate is overridden with the acknowledgement it suggests once the
+  release's session has read what it flagged and recommends it, unless the
+  migration is one the second ask names. A personal tool's `closeout` merge
+  is the same.
 - **Docs passes, handoffs, closeouts and cleanup**: the doc pass when a
   session is ready for one, and removing the branches, worktrees, review
   checkouts and scratch files the sessions recommend; a spent brief is
@@ -209,9 +212,6 @@ driver does on its own judgment and reports.
 - **Announcements in a channel**, by the project's own rule for who they
   notify (planlab: `pl-loopy-handoff-distill` § The announcement). A message
   addressed to a person goes as a draft the user sends.
-- **Anything reversible that reaches no customer**, such as the test
-  account accepting the terms of service on staging. When unsure whether to
-  ask, do it and report it.
 - **A judgment the user would hand to a model**: a spec review, a blind
   comparison, whether a gate's evidence holds. A fresh session decides it.
 

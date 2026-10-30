@@ -27,7 +27,7 @@ skills:
   # Browser Test checks, the production deploy) and the 10-30 usage pass's fixes for
   # unneeded asks, unrecorded standing rules, stops without user impact, iTELL's
   # migration holds and strategic reviews, and a stale deploy route
-  drive-session: {body: 2824, total: 9132}
+  drive-session: {body: 2824, total: 9096}
   enter-worktree: {body: 154, total: 154}
   go-cli: {body: 1963, total: 3977}
   handoff: {body: 2413, total: 3050}

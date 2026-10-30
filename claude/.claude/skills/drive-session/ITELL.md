@@ -126,30 +126,31 @@ one that writes production data, adds a table or changes what every user
 meets; its session verifies in a lane of its own.
 
 Merging is yours once the stages have run with a passed verdict at the PR
-head. `merge-when-ready` has the session merge, follow the staging deploy
-and check what staging shows a visitor. A change in both repositories
-merges the side that answers first (`STAGING.md`). One session merges at a
-time:
+head; the production deploy follows a signed-in staging check, under the
+user's grant ("fix X, then deploy" is one grant, recorded with `drive record
+grant`). One session merges at a time, the review session where one ran, and
+it carries the PR to its end:
 
 ```bash
-drive send T1@… --snippet merge-when-ready --hold itell-main
+drive send T1@… --snippet merge-when-ready --hold itell-main   # merge, follow the staging deploy, check what a visitor sees
+# the Browser Test bot runs the signed-in staging check
+drive send T1@… --file /tmp/t1-deploy.md                       # under the grant: the release, § The production deploy
+drive send T1@… --snippet recap
+drive send T1@… --snippet closeout                             # the handoff distill, one session at a time
 ```
 
-Every browser-based check, on staging or production, goes to the Browser
-Test bot without asking the user, naming the account it signs in as. The
-check lists what passing looks like exactly: the click path to the end
+A change in both repositories merges the side that answers first
+(`STAGING.md`). Every browser-based check, on staging or production, goes to
+the Browser Test bot without asking the user, naming the account it signs in
+as, and lists what passing looks like exactly: the click path to the end
 state (a lesson with only reading counts as done after "Mark as complete")
 and computed-style values for a subtle visual change. Its writes on staging
-are fine. The production deploy follows a signed-in staging check and is
-the user's grant; "fix X, then deploy" is one grant, recorded with `drive
-record grant`. Then send the session `recap`, and its `closeout` (the
-handoff distill), one session at a time.
+are fine.
 
 ## The production deploy
 
-Under the user's grant, the session that merged runs it as its next step,
-before its recap, so its report says what shipped. `release.yml` promotes
-what staging runs, for the platform, the CMS and the API together
+The merging session runs it, so its report says what shipped. `release.yml`
+promotes what staging runs, for the platform, the CMS and the API together
 (`DEPLOYMENT.md` § Releasing to production); `deploy-platform.yml` by hand
 is the escape hatch, and from `main` it can ship a commit staging never ran:
 

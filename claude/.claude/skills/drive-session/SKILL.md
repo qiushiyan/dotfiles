@@ -60,8 +60,8 @@ whether the step still makes sense is yours.
    on a default.
 
    <example>
-   - **1 · T1 · infra-runtime/pool-drain** (heavy): onboarded → consult-design → design checkpoint, where it waits for your review; then /write-spec, build, review and verify, land-pr, code review → polished PR. Defaults: Q1 oldest first, Q2 no flag.
-   - **2 · T2 · perf/cache-hits**: review folded in → land-pr, code review → polished PR.
+   - **1 · T1 · infra-runtime/pool-drain** (heavy): onboarded → consult-design → design checkpoint, where it waits for your review; then /write-spec, build, review and verify, land-pr, code review, strategic review → merged and released. Defaults: Q1 oldest first, Q2 no flag.
+   - **2 · T2 · perf/cache-hits**: review folded in → land-pr, code review, strategic review → merged and released.
    - **3 · T3 · dotfiles zsh-faster**: built → review-then-closeout → merged and synced.
 
    **Needs you:** window 1's experiment wants workspaces loopy-drain-a and loopy-drain-b; it builds and reviews without them and stops before the experiment.
@@ -106,6 +106,9 @@ ready to build.
   step says so: `Rex restarted and ended this session mid-turn; any
   background jobs or agents it was waiting on are gone. Continue from where
   you stopped.`
+- **A check that comes back blocked or inconclusive**, from a session or the
+  Browser Test bot, goes back once with what passing looks like exactly (the
+  click path, the expected value) before it reaches the user as a failure.
 - **Halt the drive** when a secret was exposed or shared state damaged:
   send nothing more, note what still runs, and lead the report with it.
 
@@ -145,23 +148,26 @@ it, and list it under **Done without asking** so they can reverse it:
   gwt remove BRANCH       # refuses uncommitted work and an unmerged branch: leave those, name them
   ```
 
-Authority the user hands over in conversation beyond § Who decides
-("run the backfill on Acme's workspace") holds for the batch it was given in. Record it in their words with
-what it covers, act on it while `drive status` lists it, and name it when
-you do. A one-off "go ahead" covers the one thing it named. A rule for
-every batch ("from now on…") belongs in these files, not in your memory:
-record it for this batch and send the user the line for the file it changes:
+Authority the user hands over in conversation beyond § Who decides ("run the
+backfill on Acme's workspace") holds for the batch it was given in: record
+it in their words with what it covers, act on it while `drive status` lists
+it, and name it when you do. A one-off "go ahead" covers the one thing it
+named:
 
 ```bash
 drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the backfill's --commit on Acme's workspace"
 ```
 
+A rule for every batch ("from now on…") also goes to the user as the line
+for the file it changes, since these files, not your memory, reach the next
+batch.
+
 ## Asking
 
-Ask only the two kinds § What you do without asking names, and for what only
-the user can do. Cleanup, a gate's evidence, a strategic review and anything
-else reversible that reaches no customer are yours to do and report. Recheck
-before you ask: a teammate or another session may already have done it. Then
+Ask only for the two kinds of moment above and for what only the user can
+do. The rest, such as cleanup, a gate's evidence, a strategic review or
+anything else reversible that reaches no customer, you do and report.
+Recheck first: a teammate or another session may already have done it. Then
 ask once, standing alone (§ Report says how), and keep the ask in the record
 from question to answer:
 
@@ -210,10 +216,9 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
   drive open T1 --dir ~/dev/tool --goal 'Let greet.py print its greeting in capitals when asked to shout.' --file /tmp/t1-start.md   # "Add --shout to greet.py with a test, in a worktree of your own. Commit and stop there."
   ```
 - Every session carries a goal: what it sets out to solve, for a user who
-  remembers the product but not the session. They read it on their page
-  when they come back, often to answer its question.
-  Record it again only when its purpose or scope changes; where the
-  session stands, the page reads live.
+  remembers the product but not the session. They read it on their page,
+  often to answer its question. Record it again only when its purpose or
+  scope changes; where the session stands, the page reads live.
 
   ```bash
   drive open S1 --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/s1-start.md
@@ -293,10 +298,6 @@ decide from costs a round trip, so each item stands alone:
   as the cleanup it leaves to the user, and how the night went: the stages
   sent, the defaults taken, anything a step did that reached into what is
   the user's.
-
-A check that comes back blocked or inconclusive, from a session or a
-browser-test bot, goes back once with what passing looks like exactly (the
-click path, the expected value) before it reaches the user as a failure.
 
 A message before the end, such as a decision a session parked on, takes the
 same shape with only the sections that have something in them.

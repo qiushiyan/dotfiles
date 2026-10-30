@@ -102,41 +102,33 @@ Ask, holding only the work that depends on it:
 
 ## After the PR: strategic review, merge, release
 
-Every PR gets a strategic review in a fresh session once its code review is
-handled (the pipeline doc's stage 9). Skip it only where the build session's
-report says the change is contained and isolated, touches no production
-path, and is a simple fix its own review round has settled, and its diff
-shows it. The build session writes the reviewer's prompt, a new session runs
-the review, and that review session folds the findings in and merges: it has
-read the whole change and holds the fixes.
+Every PR gets a strategic review once its code review is handled (the
+pipeline doc's stage 9), unless the build session's report opts out and its
+diff agrees: a contained, isolated change on no production path, a simple
+fix its own review round settled. The review session has read the whole
+change and holds the fixes, so it folds them in and merges, and the
+builder's part ends when it starts. Merging and releasing are yours unless
+the user says "hold merges":
 
 ```bash
-drive send T1@… --snippet strategic-review-brief    # the builder writes the reviewer's prompt
+drive send T1@… --snippet strategic-review-brief     # the builder writes the reviewer's prompt
 drive open sr-9531 --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
-drive send sr-9531@… 'fold these in'                 # once the review reports; the skill says how
-```
-
-Once the review session runs, the builder's part is over: send it `recap`
-and close it; its branch and worktree go in the cleanup after the merge.
-
-Merging and releasing are yours in a planlab batch unless the user says
-"hold merges". Have the session that last worked on the PR merge it (its
-review session, where it had one) once its stages have run (the pipeline
-doc's § Who decides) and its strategic review cleared it or its findings are
-folded in; merge PRs that touch the same code one after another. A finding
-the session judges foundational, or a design objection it rebutted, goes to
-the user first. `merge-when-ready` has the session merge, release (or
-confirm that a release already in flight shipped it), check what production
-serves and write the changelog, taking a migration gate as § Who can be hurt
-says; one session at a time. Send it with the key and `--hold release`, and
-put what the session should know after the key, so no other session releases
-at the same time.
-
-```bash
+drive send T1@… --snippet recap                      # then close T1; its branch and worktree wait for the cleanup after the merge
+drive send sr-9531@… 'Fold these in.'                # once the review reports; the skill says how
 drive send sr-9531@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
+drive send sr-9531@… --snippet recap
+drive send sr-9531@… --snippet closeout --hold planlab-main
 ```
 
-Then send the session that merged its `recap`, and its closeout
-(`--snippet closeout --hold planlab-main`), one session at a time. A PR whose
-session is gone gets a new session for its merge, so the merge runs where
-its checks and its report are.
+- A finding the review session judges foundational, or a design objection it
+  rebutted, goes to the user before the merge.
+- Once the stages the pipeline doc's § Who decides lists have run,
+  `merge-when-ready` merges, releases (or confirms that a release already in
+  flight shipped it), checks what production serves and writes the
+  changelog, taking a migration gate as § Who can be hurt says. Send it by
+  its key with `--hold release`, so no other session releases at the same
+  time, and put what the session should know after the key. PRs that touch
+  the same code merge one after another.
+- A PR that skipped its review merges from its builder. A PR whose session
+  is gone gets a new session for its merge, so the merge runs where its
+  checks and its report are.
