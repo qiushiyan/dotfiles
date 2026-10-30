@@ -12,14 +12,12 @@ it; delete the file when it is empty.
 - **Desk apps.** Raycast: Export Settings & Data on the laptop, Import here.
   Karabiner's driver approval and Accessibility and Automation grants
   (`docs/migration-app-state.md` § 5c. App permissions, sign-ins, defaults to undo). Sign in to Slack, Linear, Arc, 1Password.
-- **Portless's service, at the screen**, which both verify skills need:
-  `sudo portless service install --tld localhost --tld local.itell.ai`, then
-  `sudo portless trust`. itell's `pnpm verify up` refuses a proxy without
-  `local.itell.ai` (`apps/platform/docs/local-oauth.md` § The shared proxy).
-  The service bakes in nvm's node path (Node 24 is the default now, as on
-  the other machines and planlab's production).
-  The rest of planlab's lane setup is done: bootstrap's home database, the
-  `planlab` and `bench` launchers, Portless 0.15.6, Playwright's chromium.
+- **Portless's CA trust, at the screen**: `sudo portless trust` in a
+  Ghostty window outside Rex, approving the macOS dialog. From a Rex
+  session it times out, as over SSH: the dialog never shows. The service is
+  installed (Node 24, `--tld localhost --tld local.itell.ai`), and the CA is
+  in the System keychain without trust settings. The rest of planlab's lane
+  setup is done.
 - **Vercel for itell.** The CLI is signed in as `qiushi-8199` (teams
   `planlab-support` and personal), which cannot see itell's project
   (`team_WN5ARgxWCuO0ZJZMJPj2wKeX`), so itell's staging checks fail at
