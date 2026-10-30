@@ -19,7 +19,7 @@ around large material, [TOOLS.md](TOOLS.md).
 
 **Every line names what it prevents:** a failure seen in use, or a default
 the model gets wrong. A line that names nothing is a no-op, however
-reasonable it sounds. Text piles up because adding feels safe and removing
+sensible. Text piles up because adding feels safe and removing
 feels risky, so a kept line meets the same proof as an added one.
 
 Words go to three things. **Authority:** what the reader may do alone, and
@@ -73,8 +73,7 @@ are the calibrations our own work measured:
   write for asks for it. Ask for conclusions with their evidence; the
   evidence is what they debug from.
 - **Size.** A skill body past 1,500 words has stopped being a brief. In the
-  dotfiles repo every owned skill is recorded at its size and
-  `skill-sync --check` fails growth.
+  dotfiles repo `skill-sync --check` fails a skill's growth.
 - **Claims about mechanisms** are checked at the source before they ship. A
   stale or invented one costs more than a missing one.
 
@@ -84,8 +83,7 @@ current models: `~/dotfiles/references/fable-prompting-guide.md`.
 
 ## Before shipping: the revision pass
 
-Read each model-facing surface the session touched once, whole and cold, and
-ask of it:
+Read each model-facing surface the session touched, whole and cold, and ask:
 
 1. Does it open on the task and what done looks like?
 2. Does every line name what it prevents?
@@ -94,7 +92,8 @@ ask of it:
 4. Would the reader, holding only its input, know what to do?
 
 Fold a finding in by rewriting the sentence it corrects, and keep its
-reason: the failure it saw is what earns the line. Other growth pays with a
-cut. Where a question stays open, use a cold reader with a concrete
+reason as what goes wrong ("a hand-written merge step takes no hold"), not
+its dated incident; receipts go in the evidence log. Other growth
+pays with a cut. Where a question stays open, use a cold reader with a concrete
 scenario, or an eval case when the behavior can be replayed
 (`~/dev/skill-evals`).

@@ -5,6 +5,24 @@ rulebook; counts are written so the next pass can re-run them. Passes run
 under `improve-tool`; queries are obelisk scripts over `tool_calls` reads of
 the file and user turns naming it.
 
+## 2026-10-30 — a reason is what goes wrong, not when it went wrong
+
+**Correction.** The user, reading the drive-session pass (dotfiles c13f322):
+lines like "on 10-29 three sessions held a migration" are a classic prompt
+defect; state what to do instead of mentioning a date. The revision pass
+asks for each line's reason, and "the failure it saw is what earns the
+line" had been read as citing the incident, so drive-session's files carried
+a dozen dated clauses.
+
+**Changed.** The revision pass's fold-in sentence: the reason is stated as
+what goes wrong, the incident and its receipts stay in the evidence log.
+drive-session's model-facing files lost their dated clauses in the same
+change.
+
+**Next pass compares** dated clauses (`on 1[0-2]-[0-3][0-9]`, "last night")
+in owned skills' model-facing files; revise if a reason without its incident
+stops a reader from applying the rule.
+
 ## 2026-10-09 — upstream sync: empty delta
 
 `writing-for-agents` remains at folder hash

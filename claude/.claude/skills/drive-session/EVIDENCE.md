@@ -114,6 +114,51 @@ third-person answer relays. Revise if a migration rides to production
 in a way the user would have stopped, or a deploy from a session ships
 something the bot's report misses.
 
+### Same day — the user's direction: fewer asks, strategic review by default, no dates
+
+**Ask.** Make the bots and sessions more powerful rather than more limited:
+the user stays in the overall design and the major product forks, and the
+rest, down to the test account accepting the terms of service on staging,
+is the driver's. A planlab PR gets a strategic review by default; a session
+opts out when the change is contained and isolated, touches no production
+path, and is a simple fix its in-session review has settled. Instructions
+state what to do, never a dated incident.
+
+**Changed.**
+- `docs/session-pipeline.md`: stage 9 is the strategic review (planlab by
+  default, with the opt-out; elsewhere on a named PR or an itell driver's
+  judgment), recap is stage 10, the planlab finish and the merge conditions
+  name it; § Who decides hands over anything reversible that reaches no
+  customer ("when unsure whether to ask, do it and report it"). The
+  "reverses an answer the user gave" ask this pass had added is removed from
+  it and NOTICE.md: it widened the asks, and the user took every
+  recommendation of the A19 it came from.
+- PLANLAB.md: every PR gets a strategic review once its code review is
+  handled, skipped only on the build session's stated opt-out.
+- planlab's `land-pr` and `review-then-closeout` (`.tabtype.local.toml`,
+  carried by `twin files sync planlab`): the session says in its report
+  whether its change can skip the review.
+- SKILL.md § Asking names what is the driver's instead of the 10-29 asks.
+- Every dated clause left the model-facing files (SKILL, BOT, PLANLAB,
+  ITELL): the 10-21/22 acknowledgement count, the 10-22 fast-forward, the
+  10-23 first-turn merges, and this pass's own. This reverses 10-22's "kept:
+  the two rules with their cited cost"; the reasons stay as what goes
+  wrong. The prompt-engineering rulebook's fold-in rule now says so.
+
+**Validation.** A Sonnet cold reader on five scenarios (an opt-out that
+holds, one with no word, a review reversing a technical default, the
+staging terms, an opt-out whose diff touches production billing) routed all
+five without an ask; fixed from it: NOTICE.md lacked the reversible-step
+category, § Asking now keeps asks for what only the user can do, an opt-out
+is checked against the diff, and "installs something that writes it"
+belongs to the migration. Not run: a live batch on these files.
+
+**Next pass compares** strategic reviews opened per planlab PR and the
+opt-outs given (each meeting all three conditions), and asks per batch.
+Revise if a skipped review lets through a defect a review would have
+caught, or a reversible step the driver took is one the user would have
+stopped.
+
 ## 2026-10-29 — a Rex restart (drive `f847a7b`)
 
 **Observed.** The mini's Rex server restarted three times for an app update.

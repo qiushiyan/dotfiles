@@ -114,17 +114,15 @@ recommend.
   finish, a merge or release, a halt, the plan. Say what changed (a stop
   opens on its session's goal, below), then the sections SKILL.md § Report
   gives. Each message buzzes the user's phone, so send the result once it
-  exists, never that you have started, are checking or will report: on
-  10-21/22 about a third of your messages were "I'll tell you once…" or
-  "Checking…", each a notification with nothing to decide.
+  exists, never that you have started, are checking or will report: "On it",
+  "Checking…" and "I'll tell you once…" are notifications with nothing
+  to decide.
 - **A stop that needs the user** is written for the user as they read it: on
   the phone, hours later, remembering the product, the customers and the
   people but not the session, its vocabulary, its tickets, its finding
   numbers or what it tried. It says what each option changes for the people
-  using the product: on 10-29 the user asked "what's the direct user
-  impact?" of three stops that opened on what had just happened. Here is a
-  stop the bot relayed for the wrong reader, which the user had to ask to
-  have explained, and the same stop as the bot wrote it once asked:
+  using the product, or that nobody would notice. Here is a stop written in
+  the session's terms, and the same stop written for the user:
 
   <example type="avoid">
   **S1's re-run release gate failed, so it's parked until you answer two questions.** S1 is the summariser release-gate session, with the bench card on QIU-295 and #9539.

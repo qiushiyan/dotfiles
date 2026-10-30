@@ -158,12 +158,12 @@ drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the ba
 
 ## Asking
 
-Ask only the two kinds § What you do without asking names: on 10-29 both
-bots asked about cleanup, a gate's evidence and opening a strategic review,
-all theirs to settle. Recheck before you ask: read what the session reports
-now and what production serves, since a teammate or another session may
-already have done it. Then ask once, standing alone (§ Report says how), and
-keep the ask in the record from question to answer:
+Ask only the two kinds § What you do without asking names, and for what only
+the user can do. Cleanup, a gate's evidence, a strategic review and anything
+else reversible that reaches no customer are yours to do and report. Recheck
+before you ask: a teammate or another session may already have done it. Then
+ask once, standing alone (§ Report says how), and keep the ask in the record
+from question to answer:
 
 ```bash
 drive record ask T1 --question '…' --recommendation '…' --if-unanswered '…'    # → A3
@@ -200,12 +200,11 @@ drive send T1@… --file /tmp/t1-fixups.md                     # your own reques
 drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # @ attaches the file, as the user's would
 ```
 
-- A session's first step carries its task and says where it stops: a
-  session told its finish goes straight there, past review and any hold (on
-  10-23 three merged themselves in their first turn). One that builds in
-  that turn asks for a worktree in its text, and the session enters one
-  itself; `/enter-worktree` sent alone has nothing to set up for, so it goes
-  only to a session that stopped before building:
+- A session's first step carries its task and says where it stops: a session
+  told its finish goes straight there, past review and any hold. One that
+  builds in that turn asks for a worktree in its text, and the session
+  enters one itself; `/enter-worktree` sent alone has nothing to set up for,
+  so it goes only to a session that stopped before building:
 
   ```bash
   drive open T1 --dir ~/dev/tool --goal 'Let greet.py print its greeting in capitals when asked to shout.' --file /tmp/t1-start.md   # "Add --shout to greet.py with a test, in a worktree of your own. Commit and stop there."
@@ -230,12 +229,10 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
   line with its brief attached, as above.
 - Work the user asks *you* to do goes to a new session, opened with `drive
   open` in the project's main checkout and started at stage 1 with their
-  request. You stay a reader and sender: work run from your own shell has
-  no session to review or report it, and lands in checkouts others use (on
-  10-22 a driver fast-forwarded the mini's main checkout and reinstalled its
-  packages to run a CLI itself). Other sessions share that checkout, so the
-  first step ends `This checkout is shared: work in a worktree of your own,
-  and install nothing in this one.`
+  request. You stay a reader and sender: work run from your own shell has no
+  session to review or report it, and lands in checkouts others use. Other
+  sessions share that checkout, so the first step ends `This checkout is
+  shared: work in a worktree of your own, and install nothing in this one.`
 
 ## Shared worktrees and checkouts
 

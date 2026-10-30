@@ -73,7 +73,14 @@ then skips the merge.
    the bots' findings until the PR is caught up or the fixes stop
    converging. `handle-review` is its single-round form, for when the user
    runs the loop.
-9. **Recap**, once a session has finished or stopped on something that is
+9. **Strategic review** (planlab, by default). `strategic-review-brief` has
+   the build session write the reviewer's prompt, and a fresh session runs
+   `/strategic-review <PR>`, folds its findings in and merges. A change
+   skips it when it is contained and isolated, touches no production path,
+   and is a simple fix its own review round has settled; the build session
+   says so in its report. Elsewhere it runs on a PR the user names, or in an
+   itell batch on the driver's judgment.
+10. **Recap**, once a session has finished or stopped on something that is
    the user's: `recap` has it explain from its diff what it did, what was
    verified and what waits, for a user who did not watch; `/show-me`
    answers a narrower question about it later.
@@ -86,11 +93,8 @@ retires the spent brief.
 
 A brief one session writes to start another lists, by the names above, every
 stage from its entry to its finish, so the new session runs them all: a
-planlab finish of "open the PR, then handle code review" has dropped review
-and verification. A strategic review in a fresh session runs on a PR the
-user names, or in a planlab or itell batch on the driver's judgment:
-`strategic-review-brief` has the build session write that session's
-`/strategic-review <PR>` prompt.
+planlab finish of "open the PR, then handle code review" drops review and
+verification.
 
 Every stage that judges — a consult, a spike, a review — buys a judgment the
 authoring session cannot make about itself, so an artifact's author is never
@@ -135,10 +139,10 @@ itell's `consult-then-build` says.
   have run, the PR is open against `develop` with the required checks green,
   and at least one round of `/pl-handle-code-review` has been handled; its
   outcome, caught up or stopped on churn, is reported. The bots help but are
-  not relied on. The merge and the release follow without the user once the
-  stages § Who decides lists have run,
-  unless the user holds them: `merge-when-ready` runs them, and in a batch
-  the driver sends it (`PLANLAB.md` § After the PR). The post-merge
+  not relied on. Then the strategic review (stage 9), and the merge and the
+  release follow without the user once the stages § Who decides lists have
+  run, unless the user holds them: the review session's `merge-when-ready`
+  runs them, and in a batch the driver sends it (`PLANLAB.md` § After the PR). The post-merge
   closeout follows once the deploy serves.
 - **Personal tools** (`~/dotfiles` and the tools under `~/dev` that `twin`
   installs): `closeout` merges to `main` locally, with no PR, installs on
@@ -175,22 +179,22 @@ driver does on its own judgment and reports.
   before the build, with every technical choice listed as the default the
   session will take. A design question that reopens later comes back the
   same way: a review finding the session judges foundational, a design
-  objection it rebutted, a recommendation that reverses an answer the user
-  gave, or a decision that is hard to undo and has no recommendation.
+  objection it rebutted, or a decision that is hard to undo and has no
+  recommendation.
 - **Mutations of production data**: SQL, a script or a backfill run against
   a production database; a write in a customer's workspace or data; a change
   to production infrastructure, such as taking down or resizing a tier; and a
-  release whose migration drops or rewrites customer data, or installs
-  something that writes it. Any other migration rides its release, below.
+  release whose migration drops or rewrites customer data, or whose
+  migration installs something that writes it. Any other migration rides its release, below.
 
 **Handled without asking**, and reported:
 
 - **Every choice inside the change** once its design is settled:
   implementation, technical defaults, follow-up cards for work outside it.
 - **Merge and release**, once the stages have run: review and verification,
-  the prompt check where it applies, the PR's code review handled, a
-  strategic review where the change earned one with its findings folded in,
-  and required checks green. A release's migration gate is overridden with
+  the prompt check where it applies, the PR's code review handled, the
+  strategic review with its findings folded in (planlab's default; elsewhere
+  where the change earned one), and required checks green. A release's migration gate is overridden with
   the acknowledgement it suggests once the release's session has read what it
   flagged and recommends it, unless the migration is one the second ask
   names. A personal tool's `closeout` merge is the same.
@@ -205,6 +209,9 @@ driver does on its own judgment and reports.
 - **Announcements in a channel**, by the project's own rule for who they
   notify (planlab: `pl-loopy-handoff-distill` § The announcement). A message
   addressed to a person goes as a draft the user sends.
+- **Anything reversible that reaches no customer**, such as the test
+  account accepting the terms of service on staging. When unsure whether to
+  ask, do it and report it.
 - **A judgment the user would hand to a model**: a spec review, a blind
   comparison, whether a gate's evidence holds. A fresh session decides it.
 
