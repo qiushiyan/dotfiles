@@ -84,6 +84,12 @@ exit 2   the command itself failed
   usually because their checkouts are on different branches. Each is current
   against its own checkout, so nothing else would say it.
 - **needs resolving, blocked, not enrolled:** a carry set (§ Carried files).
+- **stale:** a pair's last reconciliation is over 26 hours old though the
+  hub answers: its hourly tick is not running. `twin files sync <target>`
+  runs it now; `launchctl print` on the mini says why the tick stopped
+  (§ The hourly tick).
+- **unused state:** this machine holds `unison/`, `files/` or `receipts/`
+  from a build before pairs; nothing reads them, and they can be deleted.
 - **not reachable:** a machine did not answer, and its lines come from the
   record of it, each carrying when its target was seen. An
   unreachable machine is never shown clean.
@@ -186,10 +192,10 @@ twin repos pull twin && twin tools install twin   # twin itself: on every machin
 ```
 
 Each machine calls the others' `twin` over ssh, so a `twin` change is
-installed on every machine. With more than two machines a pair whose other
-side runs a build from before that is blocked: `the twin on mini2 predates
-more than two machines; twin tools install twin there`. A build that old
-cannot read a manifest of more than two machines at all, so there it is
+installed on every machine. A pair whose other side runs a build from
+before pairs is blocked: `the twin on mini2 predates more than two machines;
+twin tools install twin there`. Such a build cannot read a manifest of more
+than two machines at all, so there it is
 `git -C ~/dev/twin pull && make -C ~/dev/twin install`.
 
 ### A branch continues on another machine
@@ -301,10 +307,10 @@ tick included.
 
 ### A new machine joins
 
-Every machine runs the current `twin` (`twin sync twin`) and `twin status`
-lists nothing to resolve before the manifest names the newcomer: enrolling
-starts each pair's record afresh, so a deletion still waiting for a
-resolution comes back.
+Every machine runs the current `twin` (`twin sync twin`) before the manifest
+names the newcomer. Enrolling keeps each pair already enrolled, so a
+deletion or a conflict waiting there still waits, and starts only the
+newcomer's pair; it ends with every machine holding what that pair copied.
 
 ```bash
 # twin.toml: [machines.<name>] with its ssh alias, and packages unless it takes the default set;
@@ -401,7 +407,12 @@ blocked — the two machines declare itell differently: dotfiles is at a1b2c3d o
 blocked — on mini, notes: holds a file git neither tracks nor ignores, notes/x.md     -> ignore or commit it
 blocked — on mini2, HANDOFF.md: is not gitignored in the checkout                     -> the clone's .git/info/exclude line
 blocked — the twin on mini2 predates more than two machines                           -> twin tools install twin there
+blocked — the pair's enrollment by mini at … was replaced on mac by mac's at …        -> twin files enroll <target>
 ```
+
+The last one follows a hub that moved and came back: a pair's record from
+before the move describes files that may have changed under the other hub,
+so it is enrolled again rather than run.
 
 ### What may be carried
 
@@ -509,5 +520,4 @@ changes reach Codex at the next apply.
 
 `twin`'s own rules and tests are in `~/dev/twin` (`CLAUDE.md`,
 `internal/files/files.go`'s header). Its state is `~/.local/state/twin` on
-each machine; with more than two machines each pair's records sit under
-`peers/<partner>/` there.
+each machine, each pair's records under `peers/<partner>/` there.
