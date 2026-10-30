@@ -5,101 +5,70 @@ sessions by this skill on the machine `~/.config/machine` names. A command
 you run can be held for minutes, not the hour a session's turn can take;
 your context resets between runs, several of your runs can act at once, and
 the user reads you in a chat on their phone, hours later. So this file
-replaces how SKILL.md waits, remembers and reports; the rest of SKILL.md,
-NOTICE.md, your project's file (PLANLAB.md or ITELL.md) and
-`~/dotfiles/docs/session-pipeline.md` applies as written. Read them from
-that machine at the start of every run: your context does not carry over,
+replaces how SKILL.md waits, remembers and reports. At the start of every
+run, on that machine, read SKILL.md, your project's file (PLANLAB.md or
+ITELL.md) and `~/dotfiles/docs/session-pipeline.md` § The stages, § Choosing
+the path, § Finishes and § Who decides: your context does not carry over,
 and the files change.
 
 ## Your batch
 
-Every drive command you write names you as its driver, by your webhook's
-name: `session-driver` for Session Driver, `itell` for the iTELL bot. Other
-bots drive batches of their own on the same machine, and nothing in your
-shell tells drive which bot is asking. The examples in these files leave it
-out, so add it as you write each one:
+Name yourself on every drive command by your webhook's name:
+`session-driver` for Session Driver, `itell` for the iTELL bot. The examples
+in these files leave it out. A command drive prints already names its batch,
+so run it as written.
 
 ```bash
-drive --driver itell status     # as the iTELL bot writes `drive status`
-```
-
-A command drive prints for you already names its batch: run it as written.
-
-```bash
+drive --driver itell status     # `drive status`, as the iTELL bot writes it
 drive batch new 2026-10-23 --webhook session-driver --rex-session work --tz Europe/London \
   --after-wake 'grokbot-transcript "Session Driver" --archive'                # Session Driver
 drive batch new itell-2026-10-23 --webhook itell --rex-session work --tz Europe/London \
   --after-wake 'grokbot-transcript ITELL --archive'                           # the iTELL bot
 ```
 
-`--webhook` names your own routine's webhook, a file the owner writes, and
-wakes it when a session's turn ends; another bot's file wakes that bot, and
-a batch started with it is that bot's. `--after-wake` keeps your chat beyond
-the app's local window. Start a batch once per drive, never after a reset
-(`drive --driver NAME batch` names yours): a new batch starts with no
-grants, however recently one was given, and stops the wakes of your last
-one. Leave it running when the drive ends, since the user reads it on the
-page until your next batch replaces it.
+`--webhook` is your own: a batch started with another bot's wakes that bot
+and is its batch. Start one batch per drive, never after a reset (`drive
+--driver NAME batch` names yours), since a new one drops the grants and your
+last batch's wakes. Leave it running when the drive ends: the user reads it
+on the page until your next one replaces it.
 
 ## Waiting
 
-After you send, open or respond, a wake brings you back when that session's
-turn ends or it stops on a prompt. A refused command did nothing and brings
-no wake: do what its `next:` says instead, which for a session left waiting
-is to park it, stopping its wakes until a step is sent to it:
+A send, open or respond arms a wake for when that session's turn ends or it
+stops on a prompt. A refused command arms none: do what its `next:` says,
+which for a session left waiting is to park it.
 
 ```bash
-drive park T3@… "waits for S2's release to finish"
-drive timer 300 veto                             # the plan's veto, as a timer wake; once the user answers, it brings nothing to do
+drive park T3@… "waits for S2's release to finish"   # shown on the user's page: write it in their terms
+drive timer 300 veto                                 # the plan's veto; once the user answers, it brings nothing to do
 ```
 
-A park's reason shows on the user's page beside the session, so write it
-for them: what the session waits on, in their terms.
+A wake may act on any session, from what `drive status` and `drive read`
+show now. A command your shell cuts short loses nothing: the next send,
+respond, park or close on that session settles it from the transcript. Send
+the step again only once `drive read T1 --user` shows it never arrived.
 
-Any wake may act on any session, from what `drive status` and `drive read`
-show now: drive keeps two runs off one session, and refuses a step decided
-on a view another run has moved past.
-
-A command your shell cuts short loses nothing: the next send, respond, park
-or close on that session settles it from the transcript. Send the step again
-only once `drive read T1 --user` shows it never arrived; `drive log` has it
-in full.
+Record what drive cannot see as you decide it, the plan first, since the run
+the veto timer wakes starts from the record, not the chat. A fact you
+remember, such as which release production serves, is stale until a command
+shows it again.
 
 ## Your watchdog
 
-Your watchdog routine runs on a schedule. It sends and answers nothing; it
-keeps the wakes coming, so that a wake does the acting. A wake no run acted
-on is posted once more by `--due`, and that wake's run acts. Each run:
+Your watchdog routine runs on a schedule and sends no step: it keeps the
+wakes coming, and the run a wake starts acts. Each run:
 
 ```bash
-drive watch --due    # arms every session whose wakes stopped coming, and says why
-drive status         # the open asks: recheck each, as SKILL.md § Asking says
+drive watch --due    # arms every session whose wakes stopped, reposts one nobody acted on, says why
+drive status         # recheck each open ask (SKILL.md § Acting and asking)
 ```
 
-When `--due` names a session that is gone, run the open it gives: no wake
-reports a parked one, and the open sends nothing and keeps its park.
-
-When `--due` says a watch has ended without a wake twice, tell the user
-once, with the lines `watches.log` in the batch's directory (`drive
---driver NAME batch` prints it) has for that session, and record that you
-did (`drive record note --session T4 'told the user: …'`). Pause the
-watchdog when the drive ends.
-
-## Your memory
-
-The batch's record is your memory: drive writes what you sent, approved,
-opened, parked and closed, and every wake. After a reset, read `drive
-status` for where each session stands and `drive log` for what happened.
-Record what drive cannot see as you decide it, your plan first, since the
-run the veto timer wakes starts from the record, not the chat:
-
-```bash
-drive record note 'plan: T1 consult-design → checkpoint; T2 land-pr → code review; T3 review-then-closeout'
-drive record grant --source '"merge when green" (02:08)' --scope 'merge #9531 once its checks pass'
-```
-
-A fact you remember, such as which release production serves, is stale
-until a command shows it again.
+When `--due` names a gone session, run the open it gives: a parked one gets
+no wake, and the open keeps its park. When it says a watch has ended without
+a wake twice, tell the user once with what `watches.log` in the batch's
+directory (`drive --driver NAME batch` prints it) says for that session, and
+record that you did (`drive record note --session T4 'told the user: …'`).
+Pause the watchdog when the drive ends.
 
 ## The chat
 
@@ -161,21 +130,20 @@ recommend.
   - **Sonnet doesn't fix it:** Sonnet makes up less but forgets more.
 
   **Decision 1, how to stop dropped rules (A22):**
-  - **A, recommended:** code carries every rule forward on each update, and a rule is removed only when the summariser explicitly marks it as finished. Rules stop vanishing later in a conversation. A rule the summariser misses the first time it summarises still wouldn't be caught.
-  - **B:** another round of prompt tuning. The round just done didn't stop the drops, so it may not work.
+  - **A, recommended:** code carries every rule forward on each update, and a rule is removed only when the summariser explicitly marks it as finished. People in long Loopy chats stop seeing the planner forget what they told it earlier. A rule the summariser misses the first time it summarises still wouldn't be caught.
+  - **B:** another round of prompt tuning. The round just done didn't stop the drops, so people may keep seeing the planner forget.
 
   **Decision 1b, a side question:** "keep the OPC browse focused" was dropped after the browse had finished. By your own definition, a rule holds while that work runs. If the rule ends with the browse, that drop is correct and not a failure, and the results look better.
 
-  **Decision 2, lost commits (A23):** the gate has a hard rule that no saved schedule may be lost from the summary. On one long thread, saves went missing in develop too, because a script had trimmed the save output so the code can't see those saves at all. S1 suggests that until the save receipts another session is building land, the hard rule covers only saves the code can see. The invisible ones would still count in the totals but couldn't fail the gate on their own.
+  **Decision 2, lost commits (A23):** the gate has a hard rule that no saved schedule may be lost from the summary. On one long thread, saves went missing in develop too, because a script had trimmed the save output so the code can't see those saves at all. S1 suggests that until the save receipts another session is building land, the hard rule covers only saves the code can see. The invisible ones would still count in the totals but couldn't fail the gate on their own. Nobody using Loopy would notice: it changes only what fails the gate.
 
   Unanswered, S1 stays parked and nothing ships. The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
   </example>
 - **A message about one session** states its goal as `drive read` prints
   it, so the chat and the page agree, and links its card by its batch and
   label (`…:8444/#2026-10-23/S1`).
-- **A choice card** suits a decision with fixed options. The card carries
-  only the question, so the explanation goes in the message before it.
-- **A message to a person** goes as a draft the user sends.
+- **A choice card** holds one decision with fixed options. It carries only
+  the question, so the explanation goes in the message before it.
 - **When the user asks for an outline** of where things stand, send the
   page and add what it cannot show, from `drive status`, the record and the
   sessions: what comes next for each, and anything holding the batch that

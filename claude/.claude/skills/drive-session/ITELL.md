@@ -1,12 +1,27 @@
 # Driving iTELL sessions
 
 An iTELL batch takes `learlab/itell` sessions from onboarding through a
-merged PR that staging serves; the production deploy stays the user's. This
-file holds what is iTELL's own. The stages and snippet keys are in
-`~/dotfiles/docs/session-pipeline.md` and the rest of the drive in SKILL.md.
-Two sections of [`PLANLAB.md`](PLANLAB.md) hold here too: § The design
-checkpoint, for a batch whose designs are unsettled, and the strategic
-review in § After the PR.
+merged PR that staging serves, and on to production under the user's grant.
+
+## The design checkpoint
+
+A batch whose designs are unsettled holds every session at its design, in
+one report once all are in; a session handed over already past its design
+goes straight on. After onboarding, each gets the same design stage:
+
+```bash
+drive send T1@… --snippet consult-design   # it ends with its decisions
+drive send T1@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
+```
+
+Park each once its design reply is in (that reply stands in for its recap),
+and until all are in, message the user only for a decision that holds a
+session. The report gives, per session, the design in a few lines, what the
+spikes showed and your call on a spec; ask the design questions the pipeline
+doc's § Who decides names, each as one question with what it changes, and
+list the technical choices as the defaults the sessions will take. Nothing
+builds past it without the user's word; the answers then go as
+`/write-spec @<answers>` or `--snippet implement-now '<answers>'`.
 
 ## Opening a session
 
@@ -35,8 +50,7 @@ verification lane, its own world on the running platform, and ends its
 report with the `verify:` line `pnpm verify verdict` printed — the branch's
 claim, every scenario it ran at its head taken together, e.g.
 `verify: 2 scenarios at 94a17a8219 — target 3 verified; risk 5 verified — passed`.
-That line is the claim and the verdicts the evidence. Check them yourself;
-it is a read, like `claude-steps show`:
+Check the verdicts behind it yourself; it is a read:
 
 ```bash
 cd <worktree>/apps/platform && pnpm --silent verify verdict --json   # works after the lane is down
@@ -106,7 +120,7 @@ Do these, or let the session do them, and report them:
 - reads of production through the read-only role
   (`ITELL_PROD_READONLY_DATABASE_URL`).
 
-Ask, holding only the work that depends on it:
+Ask:
 
 - a write to a production database, including the CMS's content;
 - the production deploy (below);
@@ -119,11 +133,18 @@ sessions off the databases outside lanes and staging.
 
 ## After the PR: merge, staging, production
 
-iTELL PRs carry no review bots, so stage 8 has nothing to loop over; a
-person's review comments are a fix step like any other. Open a strategic
-review on your own judgment for a complicated or critical change, such as
-one that writes production data, adds a table or changes what every user
-meets; its session verifies in a lane of its own.
+iTELL PRs carry no review bots, so stage 8 is a person's review comments, a
+fix step like any other. Open a strategic review (stage 9) on your own
+judgment for a complicated or critical change, such as one that writes
+production data, adds a table or changes what every user meets; its session
+verifies in a lane of its own, folds the findings in and merges:
+
+```bash
+drive send T1@… --snippet strategic-review-brief     # the builder writes the reviewer's prompt
+drive open sr-412 --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
+drive send T1@… --snippet recap                      # then close T1
+drive send sr-412@… 'Fold these in.'                 # once the review reports
+```
 
 Merging is yours once the stages have run with a passed verdict at the PR
 head; the production deploy follows a signed-in staging check, under the
@@ -132,7 +153,7 @@ grant`). One session merges at a time, the review session where one ran, and
 it carries the PR to its end:
 
 ```bash
-drive send T1@… --snippet merge-when-ready --hold itell-main   # merge, follow the staging deploy, check what a visitor sees
+drive send T1@… --snippet merge-when-ready --hold itell-main   # T1, or sr-412 where a review ran: merge, follow staging, check what a visitor sees
 # the Browser Test bot runs the signed-in staging check
 drive send T1@… --file /tmp/t1-deploy.md                       # under the grant: the release, § The production deploy
 drive send T1@… --snippet recap

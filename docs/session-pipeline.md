@@ -114,10 +114,11 @@ risk is the evidence:
   itself. In planlab, `infra-runtime` worktrees usually take it.
 - **Light:** a contained feature or fix; nearly every personal tool.
 
-A planlab batch that `drive-session` starts decides later: every session
-runs `consult-design`, the user reviews all the designs at once, and each
-then takes `/write-spec` or `implement-now`
-(`claude/.claude/skills/drive-session/PLANLAB.md` § The design checkpoint).
+A batch that `drive-session` starts with unsettled designs decides later:
+every session runs `consult-design`, the user reviews all the designs at
+once, and each then takes `/write-spec` or `implement-now`
+(`PLANLAB.md` § The design checkpoint, and its
+iTELL form in `ITELL.md`).
 
 ## Spikes
 
@@ -135,15 +136,14 @@ itell's `consult-then-build` says.
 
 ## Finishes
 
-- **Planlab — a polished PR, then its strategic review and the merge.** The
-  stages through review and verification have run, the PR is open against
-  `develop` with the required checks green, and at least one round of
+- **Planlab — a polished PR, merged and released.** The stages through
+  review and verification have run, the PR is open against `develop` with
+  the required checks green, and at least one round of
   `/pl-handle-code-review` has been handled, its outcome (caught up or
-  stopped on churn) reported; the bots help but are not relied on. The
-  strategic review (stage 9) follows, then the merge and the release without
-  the user unless they hold them: the review session runs
-  `merge-when-ready`, which a batch's driver sends (`PLANLAB.md` § After the
-  PR). The post-merge closeout follows once the deploy serves.
+  stopped on churn) reported; the bots help but are not relied on. Then
+  stage 9's review session merges and releases without the user unless they
+  hold them (`PLANLAB.md` § After the PR), and the closeout follows once the
+  deploy serves.
 - **Personal tools** (`~/dotfiles` and the tools under `~/dev` that `twin`
   installs): `closeout` merges to `main` locally, with no PR, installs on
   both machines with `twin sync`, and removes the branch.
@@ -172,7 +172,9 @@ preamble (`claude/.claude/skills/drive-session/NOTICE.md`) follow it. The
 user steps in at two kinds of moment. Everything else the session or the
 driver does on its own judgment and reports.
 
-**Ask the user**, holding only the work that depends on the answer:
+**Ask the user**, holding the work only at the step that would act on the
+answer: the session builds what does not depend on it and stops there, so
+the user comes back to everything else done.
 
 - **Design questions, at the design checkpoint**: scope, what the product
   does for the person using it, and what a customer is told, asked together
@@ -189,7 +191,9 @@ driver does on its own judgment and reports.
 
 **Handled without asking**, and reported: anything reversible that reaches
 no customer, such as the test account accepting the terms of service on
-staging. When unsure whether to ask, do it and report it. Beyond that:
+staging. When unsure whether a reversible step needs the user, do it and
+report it; when unsure whether a write lands in a customer's workspace or
+data, ask. Beyond that:
 
 - **Every choice inside the change** once its design is settled:
   implementation, technical defaults, follow-up cards for work outside it.
@@ -224,10 +228,6 @@ staging. When unsure whether to ask, do it and report it. Beyond that:
   in: a cleanup inside an isolated clone has deleted other checkouts' lanes.
 - **Deleting data the session did not create and cannot restore**, and
   **text the user owns**, such as a decision-ledger entry.
-
-An ask holds the work at the step that would act on it, not before: the
-session builds what does not depend on it and stops there, so the user comes
-back to everything else done.
 
 ## Project snippets
 

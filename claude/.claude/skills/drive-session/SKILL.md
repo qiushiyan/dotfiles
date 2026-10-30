@@ -10,13 +10,13 @@ argument-hint: "[which sessions, e.g. windows 1-4] [what each should do; unsaid,
 The user names Claude Code sessions running in Rex, often by window number,
 and goes away, usually overnight. You are the hands at the keyboard: when a
 session finishes a stage, send it the next one the way the user would, until
-each reaches its finish or needs something only the user can give. What the
-user said for a session decides what it runs; what they left unsaid follows
-`~/dotfiles/docs/session-pipeline.md`, which owns the stages, the paths,
-each project's finish and who decides what. Read it before planning,
-[`PLANLAB.md`](PLANLAB.md) for planlab sessions and
-[`ITELL.md`](ITELL.md) for itell ones. A chat bot reads
-[`BOT.md`](BOT.md) for how it waits, remembers and reports.
+each reaches its finish or needs something only the user can give. What the user said for a session decides what it runs; what they left unsaid
+follows `~/dotfiles/docs/session-pipeline.md`, which owns the stages, the
+paths, each project's finish and who decides what. Read its § The stages, §
+Choosing the path, § Finishes and § Who decides before planning,
+[`PLANLAB.md`](PLANLAB.md) for planlab sessions and [`ITELL.md`](ITELL.md)
+for itell ones. A chat bot reads [`BOT.md`](BOT.md) for how it waits,
+remembers and reports.
 
 Done is every named session at its finish or parked on something only the
 user can give, and the report written.
@@ -26,7 +26,7 @@ user can give, and the report written.
 `drive` reads sessions, acts on them and keeps the batch's record:
 
 ```bash
-drive batch new 2026-10-23                  # once per batch; it starts with no grants
+drive batch new 2026-10-23                  # once per batch
 drive status                                # every session: state, stage, PR, wake, view
 drive read e8fec0                           # a window the user named, by its block: reply and view
 drive send e8fec0@3fa91c07 --as T1 --snippet land-pr   # the first send brings window 1 in as T1
@@ -34,11 +34,10 @@ drive read T1                               # from then on, by label
 drive wait T1                               # until its turn ends, in the background (a bot is woken instead: BOT.md)
 ```
 
-drive and this skill divide the work: `drive --help` and each command's own
-`--help` name the commands, their flags and the words status prints, and a
-refusal, failure or wake that leaves something to do ends with `next:`, the
-command to run on the session as it stands. That command is drive's part;
-whether the step still makes sense is yours.
+`drive --help` and each command's `--help` name the commands, flags and the
+words status prints. A refusal, failure or wake that leaves something to do
+ends with `next:`, the command to run as things stand; whether that step
+still makes sense is yours.
 
 ## How a drive runs
 
@@ -81,11 +80,10 @@ dispatched review is not folded in, and a spec with open decisions is not
 ready to build.
 
 - **Continue** when the stage is done, or the session ended on a question it
-  answered with a recommendation, which is the default for anything inside
-  the change, heavy path included. A spec's decisions go back in one line,
-  then the build; a strategic review's report is answered `Fold these in.`,
-  and its known limits ride to the report for the user to pick from, as do
-  decisions the next step does not act on:
+  answered with a recommendation: take it for anything inside the change,
+  heavy path included. A spec's decisions go back in one line, then the
+  build. Decisions the next step does not act on, and a strategic review's
+  known limits, ride to the report for the user to pick from:
 
   ```bash
   drive send T1@… 'Go with your recommendations on D1 and D2; write them into the spec and commit.'
@@ -112,74 +110,60 @@ ready to build.
 - **Halt the drive** when a secret was exposed or shared state damaged:
   send nothing more, note what still runs, and lead the report with it.
 
-A prompt is a step too, judged by what it touches: approve what § Who
-decides hands to sessions, such as an edit in the session's
-own change or a read of production, and deny the rest. A deny ends the
-turn, so its next step is yours to send.
+## Acting and asking
 
-## What you do without asking
-
-The user wants to be stopped only for the two kinds of moment the pipeline
-doc's § Who decides asks them: design questions at the checkpoint, and
-mutations of production data. Its other lists
-stand for every batch: what it handles without asking is yours to do, and
-what is out of reach stays so. An ask they did not need holds its work
-until they next look, often hours later. Do the rest, or have a session do
-it, and list it under **Done without asking** so they can reverse it:
+The user is stopped only for the pipeline doc's two asks, design questions
+at the checkpoint and mutations of production data, and for what only they
+can do. What its § Who decides hands over is yours or a session's, cleanup,
+a gate's evidence and a strategic review included, and what it puts out of
+reach stays there. An ask they did not need holds its work until they next
+look, often hours later. Do the rest and list it under **Done without
+asking** so they can reverse it:
 
 - the closeout once the merge or deploy it waits on has happened, the
   follow-up cards sessions recommend, your own waits;
-- relaunching a session whose login was rejected on another of the user's
-  Claude accounts, as the exit-4 message says, and reopening one a Rex
-  restart ended, as its `next:` says;
-- a judgment the user would hand to a model, such as a spec review, a blind
-  comparison or whether a gate's evidence holds: `drive open judge-1 --model
-  fable --goal '…' '…'`, then act on its verdict;
-- the merge and release § Who decides hands over, through
-  `PLANLAB.md` § After the PR in a planlab batch;
-- the cleanup once a session's last step has run (its closeout, or its
-  recap where no PR follows), as far as that step left it: a closeout that
-  removed its own worktree leaves only the close, and its report says what
-  landed, where `gwt merged` finds no branch to judge:
+- relaunching a session whose login was rejected, or reopening one a Rex
+  restart ended, as drive's `next:` says;
+- a judgment the user would hand to a model, from a fresh session: `drive
+  open judge-1 --model fable --goal '…' '…'`, then act on its verdict;
+- the merge and release, by your project file's § After the PR (a personal
+  tool's is its closeout);
+- the cleanup once a session's last step has run, as far as that step left
+  it. A closeout that removed its own worktree leaves only the close, and
+  its report, not `gwt merged`, says what landed:
 
   ```bash
-  gwt merged BRANCH       # landed? gwt owns the verdict; a PR still waiting keeps everything
+  gwt merged BRANCH       # landed? a PR still waiting keeps everything
   drive close T1@…        # refused while it works: do what its next: says, name what you leave
   gwt remove BRANCH       # refuses uncommitted work and an unmerged branch: leave those, name them
   ```
 
-Authority the user hands over in conversation beyond § Who decides ("run the
-backfill on Acme's workspace") holds for the batch it was given in: record
-it in their words with what it covers, act on it while `drive status` lists
-it, and name it when you do. A one-off "go ahead" covers the one thing it
-named:
+A prompt is a step too: approve what the pipeline doc's § Who decides hands
+to sessions, such as an edit in the session's own change or a read of
+production, and deny the rest. A deny ends the turn, so its next step is
+yours to send.
+
+Authority the user hands over beyond the pipeline doc's § Who decides ("run
+the backfill on Acme's workspace") holds while `drive status` lists it:
+record it in their words with what it covers, and name it when you act on
+it. A one-off "go ahead" covers the one thing it named. A rule for every
+batch ("from now on…") also goes to the user as the line for the file it
+changes: these files, not your memory, reach the next batch.
 
 ```bash
 drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the backfill's --commit on Acme's workspace"
 ```
 
-A rule for every batch ("from now on…") also goes to the user as the line
-for the file it changes, since these files, not your memory, reach the next
-batch.
-
-## Asking
-
-Ask only for the two kinds of moment above and for what only the user can
-do. The rest, such as cleanup, a gate's evidence, a strategic review or
-anything else reversible that reaches no customer, you do and report.
-Recheck first: a teammate or another session may already have done it. Then
-ask once, standing alone (§ Report says how), and keep the ask in the record
-from question to answer:
+To ask, recheck first, since a teammate or another session may already have
+done it. Then ask once, standing alone (§ Report), and keep the ask in the
+record from question to answer. Recheck every open ask on each wake,
+whichever session woke you: the session it holds is parked and wakes no one.
 
 ```bash
 drive record ask T1 --question '…' --recommendation '…' --if-unanswered '…'    # → A3
-drive record answer A3 --source '<their words>' --took amended --explained     # recommended|amended|delegated|moot
+drive record answer A3 --source '<their words>' --took amended --explained
 drive record answer A3 --took moot --source '<what showed it no longer holds>'
 ```
-
-Recheck every open ask on each wake, whichever session woke you: the session
-it holds is parked and wakes no one. These records are how the batch is
-measured.
 
 ## Sending
 
@@ -208,27 +192,20 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
 
 - A session's first step carries its task and says where it stops: a session
   told its finish goes straight there, past review and any hold. One that
-  builds in that turn asks for a worktree in its text, and the session
-  enters one itself; `/enter-worktree` sent alone has nothing to set up for,
-  so it goes only to a session that stopped before building:
+  builds in that turn asks for a worktree in its text; `/enter-worktree`
+  alone goes only to a session that stopped before building. Every session
+  carries a `--goal`: what it sets out to solve, for a user who remembers
+  the product but not the session; record it again only when its purpose or
+  scope changes.
 
   ```bash
-  drive open T1 --dir ~/dev/tool --goal 'Let greet.py print its greeting in capitals when asked to shout.' --file /tmp/t1-start.md   # "Add --shout to greet.py with a test, in a worktree of your own. Commit and stop there."
-  ```
-- Every session carries a goal: what it sets out to solve, for a user who
-  remembers the product but not the session. They read it on their page,
-  often to answer its question. Record it again only when its purpose or
-  scope changes; where the session stands, the page reads live.
-
-  ```bash
-  drive open S1 --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/s1-start.md
+  drive open S1 --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/s1-start.md   # "… Build it in a worktree of your own; commit and stop before the PR."
   drive record goal P0 '…'   # a session that joined on a send, or one drive status names as having none
   ```
 - A key that resolves to another project's file is a stop, not a fallback.
 - A brief one session wrote to start another is acted on before you get a
-  turn, so return one that breaks the pipeline doc's rule for briefs ("open
-  the PR, then handle code review" drops review and verification) to its
-  author.
+  turn, so return one that drops a stage (the pipeline doc's rule for
+  briefs) to its author.
 - A skill that starts only when typed (`/write-spec`, `/enter-worktree`,
   `/strategic-review`, planlab's `/pl-loopy-handoff-distill`) goes as a typed
   line with its brief attached, as above.
@@ -247,8 +224,7 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
   one session's offer to do what another already does.
 - **One closeout into a main checkout, and one release, at a time**, and so
   for anything else only one session may do, such as commits into a checkout
-  others share. Name what it uses; drive refuses a second send naming it
-  until the first is through, and says what frees it:
+  others share. Name what it uses with `--hold`:
 
   ```bash
   drive send T2@… --snippet closeout --hold planlab-main
@@ -259,13 +235,11 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
 
 ## Report
 
-The user did not watch the night. When a session reaches its finish, or
-stops on something only the user can give, send it `recap` and wait for that
-turn, then park it, or close it when its cleanup follows at once: any send
-ends a park, so the recap goes first. A
-session parked only to wait for another session's hold gets its recap at
-its own finish. The session knows what it built and why, and reads its own
-diff for the facts.
+When a session reaches its finish, or stops on something only the user can
+give, send it `recap` and wait for that turn, then park it, or close it when
+its cleanup follows at once: any send ends a park, so the recap goes first.
+A session parked only to wait for another session's hold gets its recap at
+its own finish.
 Build the report from the recaps and the record (`drive log`, `drive
 metrics`). The user meets every id in it cold, and an item they cannot
 decide from costs a round trip, so each item stands alone:
@@ -290,14 +264,14 @@ decide from costs a round trip, so each item stands alone:
 - **Done without asking:** what you did on your own authority, and what you
   left in place and why.
 - **Waiting on time:** reads or checks owed on a date.
-- **A section per session,** by window and label: where it ended (finished,
-  with the PR and how its code review ended, the merge and install, or the
-  recap alone; parked, with what it needs; halted, with what happened and
-  what still runs), its recap quoted rather than retold and trimmed only of
-  what the needs-you list already says and what you have since done, such
-  as the cleanup it leaves to the user, and how the night went: the stages
-  sent, the defaults taken, anything a step did that reached into what is
-  the user's.
+- **A section per session,** by window and label:
+  - where it ended: finished (the PR, how its code review ended, the merge
+    and install, or the recap alone), parked (on what), or halted (what
+    happened, what still runs);
+  - its recap quoted, cut only of what Needs you says and what you have
+    since done, such as the cleanup it leaves to the user;
+  - the stages sent, the defaults taken, and any step that reached into
+    what is the user's.
 
 A message before the end, such as a decision a session parked on, takes the
 same shape with only the sections that have something in them.

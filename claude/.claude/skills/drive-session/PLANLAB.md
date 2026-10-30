@@ -2,9 +2,7 @@
 
 Most drives are planlab batches: several `planlab-ai/main` sessions taken
 from onboarding through a polished PR, its merge and release, and the
-closeout. This file holds what is planlab's own. The stages and snippet
-keys are in `~/dotfiles/docs/session-pipeline.md`, and the rest of the drive
-is in SKILL.md.
+closeout.
 
 ## The design checkpoint
 
@@ -23,21 +21,16 @@ drive send T1@… --snippet spike-check      # next, where the design rests on a
 ```
 
 Hold each session there: the design reply stands in for its recap, so send
-no `recap`; park it (`drive park T1@… "design checkpoint"`) and leave its block
-open for the user's answers. Until all have arrived or parked, message the
-user only for a decision that holds a session. Then report, as SKILL.md
+no `recap`; park it (`drive park T1@… "design checkpoint"`) and leave its
+block open for the user's answers. Until all have arrived or parked, message
+the user only for a decision that holds a session. Then report, as SKILL.md
 § Report shapes it: per session, the design in a few lines, what the spikes
-showed, and your call on a spec. A spec pays where the change is
-infrastructure or runtime with a large blast radius, or its design has
-decisions worth fixing in writing (`session-pipeline.md` § Choosing the path).
+showed, and your call on a spec (`session-pipeline.md` § Choosing the path).
 
-The user steers on scope, on what the product does for the person using it,
-and on who gets told what; on technical choices they defer to the session.
-So ask about the first three, each as one question with what it changes;
-list every technical choice as the default the session will take, with any
-consequence for scope, so the user can still overrule one. Keep the
-technical-looking choices in the report too: they are where the user has
-amended scope before.
+Ask the design questions the pipeline doc's § Who decides names, each as one
+question with what it changes. List every technical choice as the default
+the session will take, with any consequence for scope: technical-looking
+choices are where the user has amended scope before.
 
 Nothing goes past the checkpoint without the user's word; this outranks
 SKILL.md's Continue. A drive the user scoped to design is done once this
@@ -45,7 +38,7 @@ report is sent. With their answers, per session:
 
 ```bash
 drive send T1@… '/write-spec <their answers>'                  # spec: then /compact, then implement-spec
-drive send T1@… '/write-spec Read /path/answers.md for my answers'   # answers longer than a line
+drive send T1@… '/write-spec @/tmp/t1-answers.md'             # answers longer than a line, attached
 drive send T1@… --snippet implement-now '<their answers>'      # no spec: builds from the settled design
 ```
 
@@ -53,11 +46,9 @@ Then on through review to the finish.
 
 ## Who can be hurt decides what you ask
 
-The pipeline doc's § Who decides draws the lines; this section names
-planlab's spaces and gates. Planlab's `AGENTS.md` sizes caution to who can
-be hurt: Eval, Steward, Bench and the internal workspaces have no customer
-behind them. Do these, or let the session do them, and report them under
-**Done without asking**:
+Planlab's spaces, by the pipeline doc's § Who decides. Eval, Steward, Bench
+and the internal workspaces have no customer behind them (planlab
+`AGENTS.md`). Do these, or have the session do them, and report them:
 
 - **Read production:** `planlab` backstage reads and read-only SQL
   (`pl-planlab-cli`), `pl-backstage-db`, CloudWatch logs.
@@ -67,18 +58,14 @@ behind them. Do these, or let the session do them, and report them under
   and a demo check after a release.
 - **Use internal systems:** file and update Bench cards, and create, rename
   and sync briefs in the handoffs repository.
-- **Docs passes:** run them when a session is ready for one.
 - **Clean up a review branch** such as `pr-<N>-review` in the main
   checkout once its PR has merged, beside SKILL.md's cleanup.
 - **Leave a Bench card's verifier unnamed:** the card closes itself after a
   quiet week. Say so under **Done without asking**.
-- **A release's migration gate**, overridden with the acknowledgement it
-  suggests when the release's session recommends it, having read what the
-  gate flagged, and the migration only adds or reshapes schema. First
-  check whether a teammate's release has already shipped what the gate holds
-  (`pl-check-deployed`, and who ran the last `release prod`): a gate that no
-  longer holds anything needs no override. Name the override, what it
-  covered and why it was safe under **Done without asking**.
+- **A release's migration gate**, by the pipeline doc's § Who decides. First
+  check whether a teammate's release already shipped what it holds
+  (`pl-check-deployed`, and who ran the last `release prod`): then it needs
+  no override. Name an override, what it covered and why it was safe.
 - **A `#loopy` announcement**, posted by `pl-loopy-handoff-distill` § The
   announcement's rule for who it notifies, untagged where that rule says so.
 
@@ -86,7 +73,7 @@ A workspace is internal when PlanLab's own organization owns it; the names
 above are the known ones. Some customer-looking workspaces are run by
 staff, so when you cannot tell, treat it as a customer's.
 
-Ask, holding only the work that depends on it:
+Ask:
 
 - **A write in a customer's workspace or data:** a replay or `case run`
   there, an `--as-user` support session, an `aperture` switch for a
@@ -102,13 +89,11 @@ Ask, holding only the work that depends on it:
 
 ## After the PR: strategic review, merge, release
 
-Every PR gets a strategic review once its code review is handled (the
-pipeline doc's stage 9), unless the build session's report opts out and its
-diff agrees: a contained, isolated change on no production path, a simple
-fix its own review round settled. The review session has read the whole
-change and holds the fixes, so it folds them in and merges, and the
-builder's part ends when it starts. Merging and releasing are yours unless
-the user says "hold merges":
+Every PR gets a strategic review once its code review is handled (stage 9),
+unless the build session's report opts out on stage 9's terms and its diff
+bears them out. The review session has read the whole change, so it folds
+the findings in and merges; the builder's part ends when it starts. Merging
+and releasing are yours unless the user says "hold merges":
 
 ```bash
 drive send T1@… --snippet strategic-review-brief     # the builder writes the reviewer's prompt
@@ -120,15 +105,13 @@ drive send sr-9531@… --snippet recap
 drive send sr-9531@… --snippet closeout --hold planlab-main
 ```
 
-- A finding the review session judges foundational, or a design objection it
-  rebutted, goes to the user before the merge.
 - Once the stages the pipeline doc's § Who decides lists have run,
-  `merge-when-ready` merges, releases (or confirms that a release already in
-  flight shipped it), checks what production serves and writes the
-  changelog, taking a migration gate as § Who can be hurt says. Send it by
-  its key with `--hold release`, so no other session releases at the same
-  time, and put what the session should know after the key. PRs that touch
-  the same code merge one after another.
+  `merge-when-ready` merges, releases (or confirms a release in flight
+  shipped it), checks what production serves and writes the changelog,
+  taking a migration gate as above. Send it by its key with `--hold
+  release`, so no other session releases at once, and put what the session
+  should know after the key; a hand-written merge step needs the same hold.
+  PRs that touch the same code merge one after another.
 - A PR that skipped its review merges from its builder. A PR whose session
   is gone gets a new session for its merge, so the merge runs where its
   checks and its report are.

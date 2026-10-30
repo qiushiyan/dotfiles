@@ -114,6 +114,59 @@ third-person answer relays. Revise if a migration rides to production
 in a way the user would have stopped, or a deploy from a session ships
 something the bot's report misses.
 
+### Same day — a cold read for length
+
+**Ask.** Read the whole skill and the pipeline doc again: shorter, still
+expressive, by the rulebook. A Sonnet cold reader (scratchpad
+`coldread-brevity.md`) found the split right and the cost in repeats.
+
+**Changed.** SKILL.md's authority text is one § Who decides (it was four
+places, the two kinds stated twice); the two `drive open --goal` examples
+are one; the per-session report bullet is three sub-bullets. BOT.md reads
+four pipeline sections and no NOTICE.md (drive attaches it); § Your memory
+folds into § Waiting; a choice card holds one decision; the target stop
+example names what each option changes for people using Loopy (the trimmed
+pair the reader drafted waits for a `relay` replay). PLANLAB.md keeps only
+what is planlab's own; its `/write-spec Read /path…` example, the form the
+Session Driver typed six times on 10-29, is now an `@` attachment. ITELL.md
+carries its own design checkpoint and strategic-review commands instead of
+pointing into PLANLAB.md. The pipeline doc: one "hold only the step"
+statement, "when unsure" split between a reversible step (do it) and
+whether it reaches a customer (ask), and the checkpoint for any batch with
+unsettled designs. Words: SKILL 2825 → 2597, BOT 1971 → 1749, PLANLAB 1207
+→ 990, ITELL 1398 → 1483 (inlined), read per run about 8,600 → 6,600.
+
+**Parity read** (a second Sonnet reader, old f38d409 against the rewrite, two
+scenarios): fixed what it found. A merge step again names its release hold
+with its reason; SKILL's section is § Acting and asking, so "§ Who decides"
+means only the pipeline doc's; ITELL's checkpoint got back `spike-check`,
+"a session past its design goes straight on", "message only for a decision
+that holds a session" and the spec call; the "when unsure" ask narrowed to a
+write in a customer's workspace or data; ITELL's merge block names the review
+session where one ran; `watches.log`'s location and a personal tool's merge
+came back.
+
+**Deletions to watch**, each with the sign that brings it back:
+- "drive keeps two runs off one session…" (BOT): a bot resends on a stale
+  view.
+- "nothing in your shell tells drive which bot is asking" and the
+  `--after-wake` reason (BOT): a bot drops `--driver` or `--after-wake`.
+- "a new batch starts with no grants" as a comment (SKILL): a grant carried
+  across batches.
+- "These records are how the batch is measured" and the `--took` values
+  comment (SKILL): asks left unrecorded, or an invented `--took`.
+- "drive refuses a second send naming it… says what frees it" (SKILL): a
+  bot routes around a hold refusal.
+- "The user did not watch the night" and the recap's rationale (SKILL): a
+  bot writes a session's summary itself instead of a recap.
+- The goal's "they read it on their page" (SKILL): a bot rewrites the goal
+  at every stage.
+- PLANLAB's restated spec criteria, steering areas, docs-pass and
+  foundational-finding lines, and BOT's "a message to a person goes as a
+  draft" (all owned by the pipeline doc): a bot misses one of them.
+- NOTICE.md off the bot's reads: a bot sends a session a step the notice
+  already covers.
+
 ### Same day — the user's direction: fewer asks, strategic review by default, no dates
 
 **Ask.** Make the bots and sessions more powerful rather than more limited:
