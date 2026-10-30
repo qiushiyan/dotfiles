@@ -162,12 +162,5 @@ and runs `launchd-mini2/`'s agents. What is its own:
 - **Rex** serves over Tailscale as `qiushi-mini-2-rex`
   (`docs/rex.md` § Several machines).
 
-Not done yet, each needing a login or the screen: the Claude accounts, Codex
-and AWS; an Apple Account for Universal Control (above); Raycast's import and
-Karabiner's driver and Accessibility grants; Portless (`sudo portless service
-install`, then `sudo portless trust` at the screen) and planlab's home
-database (`docs/qiushi-mini.md` § planlab checkout); agent-browser; and
-`tailscale serve` for drive's page, through the app's CLI above; and Time
-Machine to the T7 on 2026-11-02, after `make brew` brings asimov and
-`twin dotfiles apply --load-agents` loads its agent:
-`docs/recovery.md` § Time Machine on mini2.
+What is still open, from logins to the Time Machine disk, is in
+`docs/mini2-pending.md`.
