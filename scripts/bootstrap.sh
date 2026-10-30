@@ -262,8 +262,10 @@ step_agents() {
         curl -fsSL https://claude.ai/install.sh | bash
         ok "claude installed"
     fi
-    if [[ -x "$HOME/.local/bin/codex" ]]; then
-        ok "codex already installed (codex update)"
+    # A desk machine has the Brewfile's codex cask; the native installer
+    # would put a second codex ahead of it on PATH.
+    if have codex; then
+        ok "codex already installed: $(command -v codex)"
     else
         curl -fsSL https://chatgpt.com/codex/install.sh | sh
         ok "codex installed"

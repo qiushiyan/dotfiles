@@ -15,8 +15,12 @@ PACKAGES := $(filter-out vpn-private/ docs/ references/ node_modules/ $(OTHER_LA
 # the tracked config inside them (per-item symlinks) instead of replacing the
 # whole dir with one folded symlink. This keeps each app's runtime state
 # (Claude history/sessions/telemetry; Codex sqlite/sessions/auth.json;
-# lazygit state.yml, etc.) in the real ~/dir, out of this repo.
-REAL_DIRS := $(HOME)/.claude $(HOME)/.codex $(HOME)/.agents $(HOME)/.config/lazygit $(HOME)/.config/rex
+# lazygit state.yml, etc.) in the real ~/dir, out of this repo. The last three
+# exist on any lived-in Mac but not on a fresh one, where installers then write
+# into the clone: uv's Pythons and Claude Code's versions under ~/.local/share,
+# brew services' plists under ~/Library/LaunchAgents.
+REAL_DIRS := $(HOME)/.claude $(HOME)/.codex $(HOME)/.agents $(HOME)/.config/lazygit $(HOME)/.config/rex \
+	$(HOME)/.local/bin $(HOME)/.local/share $(HOME)/Library/LaunchAgents
 
 install: ## Stow all packages
 	@mkdir -p $(REAL_DIRS)
