@@ -129,34 +129,6 @@ define{
   end,
 }
 
--- cmd+shift+v: this Mac's clipboard onto the pasteboard of the pane's host.
--- The app's copy on select lands only on the clipboard of the Mac it runs on
--- and tells the server nothing, so on another host's session nvim's p,
--- pbpaste and Claude Code's paste there read an older copy. Cmd+V still
--- types the clipboard into the pane; this is for what reads the host's own.
-define{
-  name = "send_clipboard",
-  title = "Send Clipboard to This Host",
-  args = action.schema({}),
-  run = function(ctx, args)
-    local sid, bid = action.block(ctx, args)
-    if not (sid and bid) then return { sent = false } end
-    if not ctx.server then
-      feedback.toast(sid, bid, "ok", "Clipboard", "this pane's host is this Mac: nothing to send")
-      return { sent = false }
-    end
-    local text = shell.capture("/usr/bin/pbpaste")
-    if not text or text == "" then
-      feedback.toast(sid, bid, "error", "Clipboard", "the clipboard here holds no text")
-      return { sent = false }
-    end
-    local ok = host.run_there(ctx, sid, 'printf %s "$1" | pbcopy && echo sent', { text })
-    if ok ~= "sent" then error("pbcopy on the pane's host did not answer", 0) end
-    feedback.toast(sid, bid, "ok", "Clipboard", "sent to " .. ctx.server .. "'s pasteboard")
-    return { sent = #text }
-  end,
-}
-
 -- prefix e: the pane's screen and scrollback, colours kept, as an HTML page
 -- (rex-export), opened in the browser of the machine the key was pressed on:
 -- here, or, from the laptop's app, the path goes to its clipboard.

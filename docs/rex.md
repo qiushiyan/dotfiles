@@ -145,10 +145,7 @@ agents; a new integration should reach for them first.
   pane: `toclip` (so `browser-clip` copies a URL rather than open it on the
   host), Neovim's `y`, and tmux's `load-buffer -w` for a tmux client running
   in a Rex pane. `docs/qiushi-mini.md` § Clipboard and attach owns the
-  routing. The app's own copy on select is not such a write: it lands on the
-  app's Mac and the server hears nothing, so another host's pasteboard keeps
-  an older copy until `cmd+shift+v` (`send_clipboard`) sends the app's
-  clipboard there.
+  routing.
 - **The foreground process and its cwd** come from the OS through the
   `process` block method, right while nvim or Claude runs: tmux's
   `pane_current_path`.
