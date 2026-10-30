@@ -41,10 +41,8 @@ it; delete the file when it is empty.
 
 ## twin
 
-- Deploy the one-model build with the review fixes (r1: F1, F2, F4, the stale
-  flag) to all three machines, then run round 2 of the review on it.
-- After it runs, remove each machine's unused pre-N state under
-  `~/.local/state/twin/{unison,files,receipts}`.
+- Review round 2 (`envoy collect review-r2`) on the one-model build every
+  machine now runs: act on what it finds.
 
 ## The mini
 
