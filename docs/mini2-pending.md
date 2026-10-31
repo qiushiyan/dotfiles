@@ -12,12 +12,17 @@ it; delete the file when it is empty.
 - **Desk apps.** Raycast: Export Settings & Data on the laptop, Import here.
   Karabiner's driver approval and Accessibility and Automation grants
   (`docs/migration-app-state.md` § 5c. App permissions, sign-ins, defaults to undo). Sign in to Slack, Linear, Arc, 1Password.
-- **Portless's CA trust, at the screen**: `sudo portless trust` in a
-  Ghostty window outside Rex, approving the macOS dialog. From a Rex
-  session it times out, as over SSH: the dialog never shows. The service is
-  installed (Node 24, `--tld localhost --tld local.itell.ai`), and the CA is
-  in the System keychain without trust settings. The rest of planlab's lane
-  setup is done.
+- **Portless's CA trust, at mini2's own screen.** The service is installed
+  (Node 24, `--tld localhost --tld local.itell.ai`) and the CA is in the
+  System keychain, with no trust settings; Chrome refuses the lanes' HTTPS
+  origins until then (`ERR_CERT_AUTHORITY_INVALID`). `sudo portless trust`
+  timed out three times, from Rex and from Ghostty: authd granted
+  `com.apple.trust-settings.admin` each time, then `security`'s
+  `SecTrustSettingsXPCWrite` got no answer for 60 s. At the screen, run it
+  once more and watch for a prompt; failing that, Keychain Access
+  (`/System/Library/CoreServices/Applications/Keychain Access.app`) →
+  System → portless Local CA → Trust → Always Trust. Check with
+  `security verify-cert -c ~/.portless/ca.pem`.
 - **Vercel for itell.** The CLI is signed in as `qiushi-8199` (teams
   `planlab-support` and personal), which cannot see itell's project
   (`team_WN5ARgxWCuO0ZJZMJPj2wKeX`), so itell's staging checks fail at
@@ -46,7 +51,11 @@ it; delete the file when it is empty.
 
 ## Unresolved
 
-- Screen Sharing to mini2 refuses the right password
-  (`screensharingd`: `client evidence does not match`).
+- Screen Sharing from the laptop to mini2 refuses the right password
+  (`screensharingd`: `Authentication: FAILED … Type: RSA-SRP`). Not the
+  password: changing it with `passwd` changed nothing, and `qiushiyan` is in
+  `com.apple.access_screensharing`. mini2 (27.0) signs in to the mini
+  (27.0); the laptop runs 26.5. Next: Screen Share from the laptop to the
+  mini. If that fails too, it is the laptop's version, not mini2.
 - `claude-tomini`, `tomini`, `frommini` and the `mini`/`mac` attach script
   still target the mini only; left as they are for now.
