@@ -3,7 +3,7 @@
 # published: onto this machine's pasteboard and every other machine's, so
 # nvim's p on one host pastes what was copied in a Rex pane on another.
 #
-# Usage: bash test-rex-clipshare.sh [C1 C4 ... R1]
+# Usage: bash test-rex-clipshare.sh [C1 C4 ... R1 H1]
 #
 # What this pins: a copy lands here at once and on each peer in twin's
 # manifest (C1); the command returns before a slow push lands, since rexd
@@ -14,15 +14,17 @@
 # with a UTF-8 locale for pbcopy (C7); no manifest still copies here (C8).
 # R1 drives the production join on a scratch Rex server: a terminal's OSC 52
 # write, small and too large for its event, reaches rex-clipshare through
-# rexd; it needs rex and skips without it.
+# rexd, and a copy the tool refuses still lands here and is logged; it needs
+# rex and skips without it. H1 pins rexkit.host.copy's routing under plain
+# Lua with its dependencies stubbed; it needs lua and skips without it.
 #
 # ISOLATION. Each machine is a sandbox directory: its "pasteboard" is a file
 # a stub pbcopy writes, its state is REX_CLIPSHARE_DIR. A stub ssh at the
 # head of PATH runs the peer's side (rex-clipshare receive) against that
 # peer's sandbox, so no connection is made and no real pasteboard is
 # touched. R1 runs its own Rex server under a short temporary HOME with
-# REX_* stripped, and a stub rex-clipshare there records what rexd hands it;
-# rexd's fallback writes the real pasteboard, so R1 asserts it untouched.
+# REX_* stripped: a stub rex-clipshare there records what rexd hands it, and
+# rexd's fallback pbcopy is swapped for a sandbox file before rexd loads.
 
 set -uo pipefail
 
@@ -186,31 +188,73 @@ CASE=R1; if want; then
     RHOME=$(mktemp -d /tmp/rcs.XXXX)
     mkdir -p "$RHOME/.config" "$RHOME/.local/bin" "$RHOME/got"
     ln -s "$REX_CFG" "$RHOME/.config/rex"
+    # The stub refuses a copy that starts with FAILME, as a missing tool would.
     cat > "$RHOME/.local/bin/rex-clipshare" <<EOF
 #!/bin/sh
-cat > "\$(mktemp "$RHOME/got/copy.XXXXXX")"
+f=\$(mktemp "$RHOME/got/copy.XXXXXX"); cat > "\$f"
+case \$(head -c 6 "\$f") in FAILME) rm -f "\$f"; exit 1 ;; esac
 EOF
     chmod +x "$RHOME/.local/bin/rex-clipshare"
+    # rexd from the working tree, its local pbcopy (the fallback, an absolute
+    # /usr/bin/pbcopy) swapped for a sandbox file before rexd loads it.
+    cat > "$RHOME/rexd-test.lua" <<EOF
+package.path = "$REX_CFG/lua/?.lua;" .. package.path
+local shell = require("rexkit.shell")
+shell.pbcopy = function(text)
+  local f = io.open("$RHOME/fallback", "a"); f:write(text); f:close(); return true
+end
+assert(loadfile("$REX_CFG/scripts/rexd.lua"))()
+EOF
     R() { env -u REX_SERVER -u REX_SESSION -u REX_BLOCK -u TMUX HOME="$RHOME" "$REX" "$@"; }
     R server run >"$RHOME/server.log" 2>&1 &
     SERVER_PID=$!
     for _ in $(seq 100); do R --autostart=false ls >/dev/null 2>&1 && break; sleep 0.1; done
     R --autostart=false new rcs --shell=none -- /bin/sleep 600 >/dev/null 2>&1
-    R --autostart=false do "$REX_CFG/scripts/rexd.lua" --all >"$RHOME/rexd.log" 2>&1 &
+    R --autostart=false do "$RHOME/rexd-test.lua" --all >"$RHOME/rexd.log" 2>&1 &
     RDPID=$!
     sleep 1.5
     head -c 300000 /dev/urandom | base64 | tr -d '\n' | head -c 300000 > "$RHOME/big.txt"
     printf 'small copy é' > "$RHOME/small.txt"
+    printf 'FAILME copy' > "$RHOME/failme.txt"
     found() { for g in "$RHOME"/got/*; do cmp -s "$g" "$RHOME/$1.txt" && { echo yes; return; }; done; echo no; }
+    osc52() { R --autostart=false run -s rcs --shell=none -- /bin/sh -c "printf '\\033]52;c;%s\\007' \"\$(base64 < '$RHOME/$1.txt' | tr -d '\\n')\"; sleep 2" >/dev/null 2>&1; }
     for f in small big; do
-      R --autostart=false run -s rcs --shell=none -- /bin/sh -c "printf '\\033]52;c;%s\\007' \"\$(base64 < '$RHOME/$f.txt' | tr -d '\\n')\"; sleep 2" >/dev/null 2>&1
+      osc52 $f
       for _ in $(seq 60); do [ "$(found $f)" = yes ] && break; sleep 0.1; done
     done
     ok "R1 rexd publishes a terminal's OSC 52 copy" "yes" "$(found small)"
     ok "R1 rexd publishes a copy too large for its event, whole" "yes" "$(found big)"
-    # rexd falls back to the real /usr/bin/pbcopy when publishing fails.
+    osc52 failme
+    for _ in $(seq 60); do [ -s "$RHOME/fallback" ] && break; sleep 0.1; done
+    ok "R1 a copy rex-clipshare refuses still lands here" "FAILME copy" "$(cat "$RHOME/fallback" 2>/dev/null)"
+    ok "R1 the refusal is logged" "1" "$(grep -c 'rex-clipshare failed' "$RHOME/.local/state/rex-lab/actions.log" 2>/dev/null || echo 0)"
     ok "R1 the real pasteboard is untouched" "$REAL_CLIP_BEFORE" "$(/usr/bin/pbpaste | shasum)"
     kill "$RDPID" 2>/dev/null
+  fi
+fi
+
+# H1: rexkit.host.copy routes a copy by where the app is.
+CASE=H1; if want; then
+  if ! command -v lua >/dev/null; then SKIP=$((SKIP+1)); echo "  skip H1: no lua"; else
+    out=$(lua - "$REX_CFG/lua" <<'LUA'
+package.path = arg[1] .. "/?.lua;" .. package.path
+local calls, publish_ok = {}, true
+package.loaded["rexkit.api"] = {}
+package.loaded["rexkit.feedback"] = { osc52 = function(_, _, t) calls[#calls + 1] = "osc52:" .. t; return true end }
+package.loaded["rexkit.shell"] = {
+  publish = function(t) calls[#calls + 1] = "publish:" .. t; return publish_ok end,
+  pbcopy = function(t) calls[#calls + 1] = "pbcopy:" .. t; return true end,
+}
+local host = require("rexkit.host")
+host.copy({ server = "mini" }, "s", "b", "a")
+publish_ok = false
+host.copy({ server = "mini" }, "s", "b", "b")
+host.copy({}, "s", "b", "c")
+print(table.concat(calls, " "))
+LUA
+)
+    ok "H1 another host's session publishes here, falls back to pbcopy, else OSC 52" \
+      "publish:a publish:b pbcopy:b osc52:c" "$out"
   fi
 fi
 
