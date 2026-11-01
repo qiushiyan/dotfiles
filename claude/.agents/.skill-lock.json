@@ -55,33 +55,6 @@
       "installedAt": "2026-07-09T09:15:20.822Z",
       "updatedAt": "2026-09-09T08:52:48.338Z"
     },
-    "make-interfaces-feel-better": {
-      "source": "jakubkrehel/make-interfaces-feel-better",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/jakubkrehel/make-interfaces-feel-better.git",
-      "skillPath": "skills/make-interfaces-feel-better/SKILL.md",
-      "skillFolderHash": "e880ad90e8a0a8384f5cfae2cdd6a854e2de5d89",
-      "installedAt": "2026-07-14T07:59:27.949Z",
-      "updatedAt": "2026-09-09T08:52:50.716Z"
-    },
-    "apple-design": {
-      "source": "emilkowalski/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/emilkowalski/skills.git",
-      "skillPath": "skills/apple-design/SKILL.md",
-      "skillFolderHash": "cd509ae729c86487d352e17a26651217a4c25711",
-      "installedAt": "2026-07-17T04:47:46.747Z",
-      "updatedAt": "2026-09-15T19:39:50.068Z"
-    },
-    "find-animation-opportunities": {
-      "source": "emilkowalski/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/emilkowalski/skills.git",
-      "skillPath": "skills/find-animation-opportunities/SKILL.md",
-      "skillFolderHash": "e6443880f38e33cf78e5d678471eed35e8566763",
-      "installedAt": "2026-07-17T04:47:46.749Z",
-      "updatedAt": "2026-09-15T19:39:51.636Z"
-    },
     "writing-for-agents": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -163,15 +136,6 @@
       "skillFolderHash": "e74c4496aca550c54228740fcc144372308da529",
       "installedAt": "2026-09-09T08:53:59.242Z",
       "updatedAt": "2026-09-09T08:53:59.242Z"
-    },
-    "emil-design-engineering": {
-      "source": "medoismail/claude-skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/medoismail/claude-skills.git",
-      "skillPath": "emil-design-engineering/SKILL.md",
-      "skillFolderHash": "af8a2304070a6f9a350e4222f5533d324da39816",
-      "installedAt": "2026-09-09T08:54:01.010Z",
-      "updatedAt": "2026-09-09T08:54:01.010Z"
     },
     "grilling": {
       "source": "mattpocock/skills",

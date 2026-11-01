@@ -10,6 +10,5 @@ disabled:
   - ~/.codex/skills/.system/skill-creator/SKILL.md
 manual:
   - ~/.codex/skills/.system/imagegen/SKILL.md
-  - claude/.claude/skills/apple-design/SKILL.md
   - claude/.claude/skills/archify/SKILL.md
   - claude/.claude/skills/grilling/SKILL.md
