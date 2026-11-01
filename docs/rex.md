@@ -137,10 +137,12 @@ agents; a new integration should reach for them first.
 - **The clipboard, OSC 52.** Written to a terminal, it becomes a
   `clipboard_written` event and the app showing that session copies it: the
   clipboard of the machine you are looking from, with no ssh-aware routing.
-  rexd puts the event's text on the host's pasteboard too (a copy too large
-  for the event is read back with `clipboard_read`), because Neovim's
-  `p` in a Rex pane reads `pbpaste` there: without it, a selection copied
-  from the laptop's app never reaches nvim on the mini. Since a pane cannot
+  Neovim's `p` in a Rex pane reads its own host's `pbpaste`, so rexd puts
+  the event's text on that pasteboard (a copy too large for the event is read
+  back with `clipboard_read`) and `rex-clipshare` pushes it over ssh to every
+  other machine in twin's manifest: a yank on one host pastes with `p` on
+  any. A copy made outside Rex, such as a screenshot or a URL from the
+  laptop's browser, reaches no other machine this way. Since a pane cannot
   say where you are, the shared copy tools send it this way in every Rex
   pane: `toclip` (so `browser-clip` copies a URL rather than open it on the
   host), Neovim's `y`, and tmux's `load-buffer -w` for a tmux client running
@@ -288,6 +290,11 @@ one exists.
   test loads everything fresh, so it passes while a key press still runs the
   old code. Reload after editing anything init.lua requires, on each machine;
   the reload reads the required modules again.
+- **Cmd+V can reach a program as the key `super+v`, not a paste.** Neovim
+  then typed the literal `<D-v>`; it maps `<D-v>` to its clipboard paste
+  (`nvim/.config/nvim/lua/config/keymaps.lua`, pinned by
+  `test-clipboard.sh`), so it reads its host's pasteboard rather than the
+  app's clipboard. A real paste arrives as a `paste` block event, bracketed.
 - **An action has no `rex.sleep`, `rex.wait` or `rex.stop`;** those are a
   `rex do` script's. An action that waits uses a shell sleep
   (`rexkit.shell`'s `pause`), and one that waits on a block polls it, since

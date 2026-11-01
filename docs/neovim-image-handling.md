@@ -6,7 +6,7 @@ How clipboard images get pasted into buffers and rendered on screen in this dotf
 
 | Trigger | What happens |
 |---|---|
-| `<C-v>` (n/v/i) | Image on clipboard → img-clip paste to `/tmp`; otherwise normal text paste |
+| `<C-v>`, Cmd+V (n/v/i) | Image on clipboard → img-clip paste to `/tmp`; otherwise normal text paste |
 | `<leader>ii` | Explicit image paste to `/tmp/img-clip/`, absolute path, no filename prompt |
 | `<leader>iI` | Image paste to the project's `img/` dir, relative path, prompts for a name |
 | (automatic) | `![](path)` links in markdown render as a floating preview via snacks.image |
@@ -30,7 +30,9 @@ This macOS has no `/etc/periodic` tmp-cleanup, so the img-clip spec purges its o
 
 ## The image-aware `<C-v>`
 
-`<C-v>` here has never been vim's visual block — `config/keymaps.lua` maps it (with `<C-c>`/`<C-x>`/`<C-z>`) to system-clipboard paste. The mapping is an expression map: it asks img-clip's `content_is_image()` (a `pngpaste` probe, a few ms) and resolves to `<Cmd>PasteImage<CR>` for an image, or the plain `"+p` text paste otherwise.
+`<C-v>` here has never been vim's visual block — `config/keymaps.lua` maps it (with `<C-c>`/`<C-x>`/`<C-z>`) to system-clipboard paste, and `<D-v>` (Cmd+V, which the Rex app delivers as a key) the same way. The mapping is an expression map: it asks img-clip's `content_is_image()` (a `pngpaste` probe, a few ms) and resolves to `<Cmd>PasteImage<CR>` for an image, or the plain `"+p` text paste otherwise.
+
+The probe reads the pasteboard of the machine nvim runs on. In a pane on a mini, a screenshot taken on the laptop is not there until `tomini` puts it there (`docs/qiushi-mini.md` § Clipboard and attach); the file and the path it inserts are the mini's, which is what Claude Code there reads.
 
 Quirk: some apps (Excel, rich-text editors) put *both* a text and an image representation on the clipboard — those paste as an image. Use `"+p` directly when you want the text.
 
