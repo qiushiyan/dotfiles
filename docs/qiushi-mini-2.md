@@ -157,8 +157,8 @@ and runs `launchd-mini2/`'s agents. What is its own:
   credential store.
 - **The primary Claude account** in `~/.claude` is `qiushi@planlab.ai`, as on
   the laptop (`hosts/mini2.zsh`); the other accounts are the laptop's set.
-- **Postgres** carries planlab's lane settings, as the mini's (§ Toolchain
-  there).
+- **The work checkouts run as the mini's** (`docs/qiushi-mini.md`
+  § Toolchain and § planlab checkout), both verify skills included.
 - **Rex** serves over Tailscale as `qiushi-mini-2-rex`
   (`docs/rex.md` § Several machines).
 

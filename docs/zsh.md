@@ -26,12 +26,15 @@ different kind of shell:
 They load `.zshenv` → `.zprofile` → `.zshrc` → `.zlogin`, skipping files that
 do not apply to the shell's mode.
 
-**`~/.zprofile` is not in this repo.** Homebrew's and OrbStack's installers
-write and own it, so a new machine gets it from those installers, not from
-`make install`. Its unconditional `brew shellenv` runs _after_ `.zshenv` and
-re-prepends Homebrew's paths, so `.zshrc` reapplies `toolchain.zsh` after
-plugin setup and `.zlogin` does for login shells, including non-interactive
-`zsh -lc`. It also exports `FPATH`, which `.zshrc` undoes (§ Completion dump).
+**`~/.zprofile` is not in this repo.** It is each machine's own: bootstrap
+writes its `brew shellenv` line (Homebrew's installer only prints it),
+OrbStack's installer adds its own, and a machine adds what is its alone. That
+line runs after `/etc/zprofile`'s `path_helper`, which puts `/usr/bin` first,
+so without it a login shell finds macOS's Python 3.9 before Homebrew's. It
+also re-prepends Homebrew after `.zshenv`, so `.zshrc` reapplies
+`toolchain.zsh` after plugin setup and `.zlogin` does for login shells,
+including non-interactive `zsh -lc`. It also exports `FPATH`, which `.zshrc`
+undoes (§ Completion dump).
 
 `toolchain.zsh` owns CLI install directories for every shell mode. Add new
 tool paths there, not to a static `PATH` in Codex's `shell_environment_policy`:

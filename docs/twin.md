@@ -322,6 +322,10 @@ twin files enroll <target> --copy-missing                # on any machine, for e
 twin dotfiles apply --load-agents                        # there
 ```
 
+The clones arrive bare. A work checkout's machine-level setup, its repo-local
+commit identity included (nothing carries it), is in `docs/qiushi-mini.md`
+§ Toolchain and § planlab checkout.
+
 A repository whose carried path is ignored only by each clone's
 `.git/info/exclude` (planlab's `/.githooks/reference-transaction`, tabtype's
 `HANDOFF.md`) needs that line in the new clone too, or enrollment stops at

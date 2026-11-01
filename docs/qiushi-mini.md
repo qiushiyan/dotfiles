@@ -67,8 +67,8 @@ and the laptop's. What Homebrew alone does not set up:
 |---|---|---|---|
 | tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading and activating |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
-| node | v24.21.0 LTS (`default` → `lts/*`) | `nvm install --lts` | `nvm install --lts && nvm alias default 'lts/*'`; then move the versioned node path in Portless's service and slack-digest's agent (§ Personal jobs) |
-| pnpm | 11.27.1 | `get.pnpm.io/install.sh` with `PNPM_VERSION=11.27.1` → `~/Library/pnpm`; pinned to 11 to match the laptop, not the Rust-port 12 | `pnpm self-update` |
+| node | v24.21.0 (`default` → `24`) | `nvm install 24` | planlab production's major (its `node-runtime.env`), not `lts/*`: `nvm install <major> && nvm alias default <major>`, then reinstall Portless's service and move slack-digest's agent's node path (§ Personal jobs) |
+| pnpm | 11.15.1 | `get.pnpm.io/install.sh` → `~/Library/pnpm` | planlab's `packageManager` pin: `(cd ~ && pnpm self-update <pin>)`. A newer global breaks its smoke suites (planlab's `local-dev.md`) |
 | Claude Code | 2.1.280 | native `claude.ai/install.sh` → `~/.local/bin/claude` | auto-updates |
 | Codex CLI | 0.155.1 | `chatgpt.com/codex/install.sh` → `~/.local/bin/codex` | `codex update` |
 | Python | 3.14.7 | `uv python install 3.14` (versioned `python3.14` only) | `uv python upgrade` |
@@ -76,7 +76,7 @@ and the laptop's. What Homebrew alone does not set up:
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
 | obelisk | the manifest's pin | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` holds the mini's own sessions, and the skill asks every machine's together (`docs/claude-sessions-store.md`) | change the pin, then `twin tools install obelisk` (`docs/twin.md`) |
-| portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
+| portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install --tld localhost --tld local.itell.ai` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
 
 Personal CLIs are built here, from the clones in `~/dev`, by
 `twin tools install` (`docs/twin.md`); Ghostty and its fonts are in § Ghostty
@@ -373,13 +373,19 @@ It is set up for `pl-loopy-verify`: the tools are in § Toolchain, and
 ignored env files (`application/.env.development.local`, the loopy-stress
 smoke file) and the lane identity (`~/.config/planlab/dev.json`, `lane me`'s
 file) are carried by `twin` (`docs/twin.md` § Carried files), all mode 0600,
-so a rotation on either machine reaches the other. Bootstrap's own env file
-is kept as `.env.development.local.bootstrap`.
+so a rotation on either machine reaches the other. Bootstrap overwrites the
+carried env file, so its own is kept as `.env.development.local.bootstrap`.
+`~/.zprofile` sets `AWS_PROFILE=planlab-prod`: `[default]` holds no
+credentials, and an evidence bundle read without it silently lacks its
+master-journal slice.
 
-`lane up` needs the Portless HTTPS proxy on 443. As on the laptop, it runs as
-the boot service `/Library/LaunchDaemons/sh.portless.proxy.plist`, which
-`sudo portless service install` writes with the current nvm node's absolute
-path. A node upgrade therefore needs the install re-run. The proxy's CA
+itell's verify lanes need the Portless HTTPS proxy on 443, and so does
+planlab's `lane up --portless`; a plain planlab lane serves on `localhost`. As
+on the laptop, the proxy runs as the boot service
+`/Library/LaunchDaemons/sh.portless.proxy.plist`, which `sudo portless service
+install --tld localhost --tld local.itell.ai` writes with the current nvm
+node's absolute path: itell's lanes refuse a proxy without `local.itell.ai`,
+and a node upgrade needs the install re-run. The proxy's CA
 (`~/.portless/ca.pem`) is trusted in the System keychain, which agent-browser's
 Chrome requires (without it: `ERR_CERT_AUTHORITY_INVALID`).
 `sudo portless trust` works only from the mini's own screen (Screen Sharing
