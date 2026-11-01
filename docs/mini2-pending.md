@@ -12,17 +12,15 @@ it; delete the file when it is empty.
 - **Desk apps.** Raycast: Export Settings & Data on the laptop, Import here.
   Karabiner's driver approval and Accessibility and Automation grants
   (`docs/migration-app-state.md` § 5c. App permissions, sign-ins, defaults to undo). Sign in to Slack, Linear, Arc, 1Password.
-- **Portless's CA trust, at mini2's own screen.** The service is installed
-  (Node 24, `--tld localhost --tld local.itell.ai`) and the CA is in the
-  System keychain, with no trust settings; Chrome refuses the lanes' HTTPS
-  origins until then (`ERR_CERT_AUTHORITY_INVALID`). `sudo portless trust`
-  timed out three times, from Rex and from Ghostty: authd granted
-  `com.apple.trust-settings.admin` each time, then `security`'s
-  `SecTrustSettingsXPCWrite` got no answer for 60 s. At the screen, run it
-  once more and watch for a prompt; failing that, Keychain Access
-  (`/System/Library/CoreServices/Applications/Keychain Access.app`) →
-  System → portless Local CA → Trust → Always Trust. Check with
-  `security verify-cert -c ~/.portless/ca.pem`.
+- **Portless's CA trust, at mini2's own screen.** Until then Chrome refuses
+  the lanes' HTTPS origins (`ERR_CERT_AUTHORITY_INVALID`), so itell's browser
+  stories error. The CA is already in the System keychain; only its trust is
+  missing. `sudo portless trust` hangs here after the password is accepted,
+  from Rex and from Ghostty alike, so try it once at the screen and watch for
+  a prompt, then fall back to Keychain Access
+  (`/System/Library/CoreServices/Applications/Keychain Access.app`) → System →
+  portless Local CA → Trust → Always Trust. Done when
+  `security verify-cert -c ~/.portless/ca.pem` passes.
 - **Vercel for itell.** The CLI is signed in as `qiushi-8199` (teams
   `planlab-support` and personal), which cannot see itell's project
   (`team_WN5ARgxWCuO0ZJZMJPj2wKeX`), so itell's staging checks fail at

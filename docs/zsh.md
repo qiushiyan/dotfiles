@@ -28,7 +28,7 @@ do not apply to the shell's mode.
 
 **`~/.zprofile` is not in this repo.** It is each machine's own: bootstrap
 writes its `brew shellenv` line (Homebrew's installer only prints it),
-OrbStack's installer adds its own, and a machine adds what is its alone. That
+OrbStack's installer adds its own, and a machine adds what is its alone (the minis' `AWS_PROFILE`). That
 line runs after `/etc/zprofile`'s `path_helper`, which puts `/usr/bin` first,
 so without it a login shell finds macOS's Python 3.9 before Homebrew's. It
 also re-prepends Homebrew after `.zshenv`, so `.zshrc` reapplies

@@ -67,7 +67,7 @@ and the laptop's. What Homebrew alone does not set up:
 |---|---|---|---|
 | tmux | 3.7c | `qiushiyan/local/tmux-popupfix`, as on the laptop: a `brew tap-new --no-git` tap holding `docs/tmux-popupfix.rb`; stock `tmux` stays installed, unlinked | `docs/tmux-popup-patch.md` § Upgrading and activating |
 | nvm | 0.40.8 | upstream `install.sh` (nvm rejects Homebrew installs) → `~/.nvm` | re-run installer with the new tag |
-| node | v24.21.0 (`default` → `24`) | `nvm install 24` | planlab production's major (its `node-runtime.env`), not `lts/*`: `nvm install <major> && nvm alias default <major>`, then reinstall Portless's service and move slack-digest's agent's node path (§ Personal jobs) |
+| node | v24.21.0 (`default` → `24`) | `nvm install 24` | planlab production's major (`infra/common/ansible/roles/nodejs/files/node-runtime.env` there), not `lts/*`: `nvm install <major> && nvm alias default <major>`, then reinstall Portless's service and move slack-digest's agent's node path (§ Personal jobs) |
 | pnpm | 11.15.1 | `get.pnpm.io/install.sh` → `~/Library/pnpm` | planlab's `packageManager` pin: `(cd ~ && pnpm self-update <pin>)`. A newer global breaks its smoke suites (planlab's `local-dev.md`) |
 | Claude Code | 2.1.280 | native `claude.ai/install.sh` → `~/.local/bin/claude` | auto-updates |
 | Codex CLI | 0.155.1 | `chatgpt.com/codex/install.sh` → `~/.local/bin/codex` | `codex update` |
