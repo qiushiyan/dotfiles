@@ -137,11 +137,12 @@ agents; a new integration should reach for them first.
 - **The clipboard, OSC 52.** Written to a terminal, it becomes a
   `clipboard_written` event and the app showing that session copies it: the
   clipboard of the machine you are looking from, with no ssh-aware routing.
-  Neovim's `p` in a Rex pane reads its own host's `pbpaste`, so rexd puts
-  the event's text on that pasteboard (a copy too large for the event is read
-  back with `clipboard_read`) and `rex-clipshare` pushes it over ssh to every
-  other machine in twin's manifest: a yank on one host pastes with `p` on
-  any. A copy made outside Rex, such as a screenshot or a URL from the
+  Neovim's `p` in a Rex pane reads its own host's `pbpaste`, so rexd
+  publishes the event's text (a copy too large for the event is read back
+  with `clipboard_read`) through `rex-clipshare`, the one place a Rex copy is
+  published: onto this machine's pasteboard and, over ssh, every other
+  machine's in twin's manifest, where the newest copy wins. A yank on one
+  host pastes with `p` on any. A copy made outside Rex, such as a screenshot or a URL from the
   laptop's browser, reaches no other machine this way. Since a pane cannot
   say where you are, the shared copy tools send it this way in every Rex
   pane: `toclip` (so `browser-clip` copies a URL rather than open it on the

@@ -1,6 +1,10 @@
 -- Paste an image from the clipboard or drag-and-drop. The <C-v> image-aware
 -- paste in config/keymaps.lua depends on this (pasting screenshots into
 -- markdown, e.g. to show Claude Code).
+-- IMG_CLIP_DIR moves the one-off directory, and the purge with it: the
+-- clipboard suite points it into its sandbox.
+local tmp_dir = vim.env.IMG_CLIP_DIR or "/tmp/img-clip"
+
 return {
   "HakonHarnes/img-clip.nvim",
   event = "BufEnter",
@@ -9,7 +13,7 @@ return {
     -- absolute path; purged after 3 days on plugin load since this macOS has
     -- no periodic clean-tmps. <leader>iI pastes into the project instead.
     default = {
-      dir_path = "/tmp/img-clip",
+      dir_path = tmp_dir,
       use_absolute_path = true,
       prompt_for_file_name = false,
     },
@@ -25,7 +29,7 @@ return {
   },
   config = function(_, opts)
     require("img-clip").setup(opts)
-    vim.system({ "find", "/tmp/img-clip", "-type", "f", "-mtime", "+3", "-delete" })
+    vim.system({ "find", tmp_dir, "-type", "f", "-mtime", "+3", "-delete" })
     vim.keymap.set("n", "<leader>ii", function()
       require("img-clip").paste_image()
     end, { desc = "insert [i]mage from clipboard (temp)" })

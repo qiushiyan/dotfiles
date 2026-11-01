@@ -74,6 +74,25 @@ function M.pbcopy(text)
   return ok
 end
 
+-- Publish TEXT as a Rex copy: on this machine's pasteboard and every other
+-- machine's (rex/.local/bin/rex-clipshare, which returns once this one has
+-- it). False when the tool could not run or this pasteboard refused it.
+function M.publish(text)
+  local tool = HOME .. "/.local/bin/rex-clipshare"
+  if rex.exec then
+    local r = rex.exec({ tool }, { stdin = text })
+    return r ~= nil and r.ok
+  end
+  local path = os.tmpname()
+  local f = io.open(path, "w")
+  if not f then return false end
+  f:write(text)
+  f:close()
+  local ok = M.run(M.quote(tool) .. " <" .. M.quote(path))
+  os.remove(path)
+  return ok
+end
+
 -- Open a URL or file with macOS `open`, on this machine.
 function M.open(target) M.spawn("open " .. M.quote(target)) end
 

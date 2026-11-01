@@ -24,9 +24,10 @@
 -- The pasteboards: a terminal's clipboard write (OSC 52, such as Claude
 -- Code's copy on selection or nvim's y) reaches only the clipboard of the
 -- app showing the pane, the laptop's when you look from there. Nvim's p in a
--- Rex pane reads its own host's pbpaste, so the text goes here too, and
--- rex-clipshare pushes it to every other machine's, so a yank on one host
--- pastes with p on another.
+-- Rex pane reads its own host's pbpaste, so rexd publishes the text
+-- (shell.publish): onto this machine's pasteboard and every other
+-- machine's, so a yank on one host pastes with p on another. When that
+-- fails it still copies here, and says so in the actions log.
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
 local api = require("rexkit.api")
@@ -176,9 +177,9 @@ rex.on("block_event", function(target, ev)
   if ev.name == "process_changed" then return on_process(target, ev) end
   if ev.name == "clipboard_written" then
     local text = copied_text(target, ev)
-    if text and text ~= "" then
+    if text and text ~= "" and not shell.publish(text) then
+      state.log("rexd: rex-clipshare failed; the copy reached this machine only")
       shell.pbcopy(text)
-      if rex.exec then rex.exec(shell.bin("rex-clipshare"), { stdin = text }) end
     end
     return
   end

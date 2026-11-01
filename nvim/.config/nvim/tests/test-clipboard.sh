@@ -18,7 +18,9 @@
 # nvim runs with a UI on a pty under script(1), whose typescript keeps what it
 # sent to the terminal. A temp HOME holds ~/.config/terminal-theme; XDG config
 # links the working tree's config, XDG state/cache are temp; TMUX/TMUX_PANE are
-# unset. Plugins are read from the real ~/.local/share/nvim.
+# unset. Plugins are read from the real ~/.local/share/nvim. img-clip's image
+# probe (pngpaste) is a stub that finds no image, and its directory, purged at
+# load, is IMG_CLIP_DIR in the sandbox.
 
 set -u
 REPO_NVIM=$(cd "$(dirname "$0")/.." && pwd)
@@ -40,10 +42,12 @@ cat >"$T/bin/pbpaste" <<EOF
 #!/bin/sh
 cat "$T/pasteboard"
 EOF
-chmod +x "$T/bin/pbcopy" "$T/bin/pbpaste"
+# img-clip's image probe: the sandbox pasteboard holds text only.
+printf '#!/bin/sh\nexit 1\n' >"$T/bin/pngpaste"
+chmod +x "$T/bin/pbcopy" "$T/bin/pbpaste" "$T/bin/pngpaste"
 export HOME="$T/home" XDG_CONFIG_HOME="$T/cfg" XDG_DATA_HOME="$REAL_DATA" \
   XDG_STATE_HOME="$T/state" XDG_CACHE_HOME="$T/cache" TERMINAL_THEME= \
-  PATH="$T/bin:$PATH"
+  IMG_CLIP_DIR="$T/img-clip" PATH="$T/bin:$PATH"
 unset TMUX TMUX_PANE
 SOCK="$T/n.sock"
 
@@ -97,6 +101,10 @@ case_() {
   printf 'cmd-v %s' "$name" >"$T/pasteboard"
   empty; R 'nvim_input("i<D-v><Esc>")' >/dev/null; sleep 0.3
   check "$name: Cmd+V sent as a key pastes the pasteboard" "cmd-v $name" "$(R 'getline(1)')"
+  line "x"; R 'nvim_input("<D-v>")' >/dev/null; sleep 0.3
+  check "$name: Cmd+V in normal mode pastes after the cursor" "xcmd-v $name" "$(R 'getline(1)')"
+  empty; R 'nvim_input(":let g:cmdv = \"<D-v>\"<CR>")' >/dev/null; sleep 0.3
+  check "$name: Cmd+V on the command line inserts the pasteboard" "cmd-v $name" "$(R 'get(g:, "cmdv", "")')"
   stop
   local sent; sent=$(osc52_sent "$name" | grep -cx "yank $name")
   if [ "$terminal" = yes ]; then

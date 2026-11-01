@@ -1,34 +1,46 @@
 #!/usr/bin/env bash
-# rex-clipshare: put a copy made in a Rex pane on every other machine's
-# pasteboard, so nvim's p on any host pastes what was yanked on another.
-# rexd (rex/.config/rex/scripts/rexd.lua) runs it for each clipboard write
-# its server reports, after putting the text on this machine's pasteboard;
+# rex-clipshare: this machine's one place to publish a copy made in Rex. It
+# puts the text on this machine's pasteboard and on every other machine's,
+# so nvim's p on any host pastes what was copied in a Rex pane on another.
+# rexd (rex/.config/rex/scripts/rexd.lua) publishes each clipboard write its
+# server reports, and rexkit.host.copy each copy an action makes here;
 # docs/rex.md § Protocols that carry agent work has why.
 #
-#   printf %s TEXT | rex-clipshare    save TEXT, push it to each peer, return
+#   printf %s TEXT | rex-clipshare           publish TEXT: here now, peers in
+#                                            the background
+#   printf %s TEXT | rex-clipshare receive STAMP
+#                                            INTERNAL: what a peer runs here
+#
+# Order is kept where the copy lands. Each copy carries the time it was
+# published, and a pasteboard takes a copy only when it is newer than the
+# last one it took, so a push that arrives late (a slow handshake, the
+# laptop waking) never lands over a newer copy, from this machine or
+# another. The clocks are the machines' own, kept by NTP; copies published
+# within their skew of each other may land in either order. A copy made
+# outside Rex (a browser, a screenshot) is not stamped, and a late push can
+# still land over it.
 #
 # The peers are the machines in twin's manifest (~/.config/twin/twin.toml),
-# reached by their ssh alias there, less this one (~/.config/machine). Each
-# push runs in the background and the command returns at once: a handshake
-# to a mini can take seconds, and rexd hears no events while it waits.
-#
-# Order: the text is saved, whole, as the one newest copy, and each peer's
-# push reads it only once it holds that peer's lock. Pushes to a peer run one
-# at a time, and the last to run sends the newest copy, so a slow push cannot
-# land an older copy over a newer one. A peer that is down (the laptop
-# asleep) costs one timed-out connection and a line in the log.
-#
-# The copy is kept in $TMPDIR, private to this user and cleared at boot.
+# reached by their ssh alias there, less this one (~/.config/machine). A
+# push to a peer that is down (the laptop asleep) costs one timed-out
+# connection and a line in the log. State (the last stamp taken, the log)
+# lives in this user's private temp directory, the same one whether rexd or
+# an ssh session runs this.
 #
 # Test seams: REX_CLIPSHARE_TWIN (the manifest), REX_CLIPSHARE_SELF (this
-# machine's name), REX_CLIPSHARE_DIR (where the copy, locks and log go), and
-# ssh found on PATH before the system's.
+# machine's name), REX_CLIPSHARE_DIR (the state directory), and ssh and
+# pbcopy found on PATH before the system's.
 set -u
 PATH="$PATH:/usr/bin:/bin"
+# pbcopy decodes its input by locale, and a non-interactive ssh session may
+# carry none: without this, non-ASCII text lands as mojibake.
+export LANG=en_US.UTF-8
 TWIN=${REX_CLIPSHARE_TWIN:-$HOME/.config/twin/twin.toml}
 SELF=${REX_CLIPSHARE_SELF:-$(cat "$HOME/.config/machine" 2>/dev/null)}
-DIR=${REX_CLIPSHARE_DIR:-${TMPDIR:-/tmp}/rex-clipshare}
+DIR=${REX_CLIPSHARE_DIR:-$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || printf %s "${TMPDIR:-/tmp}")/rex-clipshare}
 LOG="$DIR/log"
+
+log() { printf '%s %s\n' "$(date '+%F %T')" "$*" >>"$LOG"; }
 
 # The ssh alias of each machine in the manifest other than this one.
 peers() {
@@ -39,17 +51,43 @@ peers() {
   ' "$TWIN"
 }
 
+# accept STAMP FILE: put FILE on this pasteboard unless a newer copy is
+# already there. The comparison and the write happen under one lock.
+accept() {
+  lockf -k -t 30 "$DIR/lock" /bin/sh -c '
+    last=$(cat "$1/last" 2>/dev/null || echo 0)
+    awk -v a="$2" -v b="$last" "BEGIN { exit !(a > b) }" || exit 0
+    pbcopy <"$3" || exit 1
+    printf %s "$2" >"$1/last"' sh "$DIR" "$1" "$2"
+}
+
 umask 077
 mkdir -p "$DIR" || exit 1
-tmp=$(mktemp "$DIR/copy.XXXXXX") || exit 1
-cat >"$tmp" && mv -f "$tmp" "$DIR/copy" || { rm -f "$tmp"; exit 1; }
 
-for alias in $(peers); do
-  (
-    lockf -k -t 60 "$DIR/lock.$alias" /bin/sh -c '
-      ssh -o BatchMode=yes -o ConnectTimeout=5 "$1" /usr/bin/pbcopy <"$2" 2>/dev/null' \
-      sh "$alias" "$DIR/copy" \
-      || printf '%s %s: push failed\n' "$(date '+%F %T')" "$alias" >>"$LOG"
-  ) </dev/null >/dev/null 2>&1 &
-done
+if [ "${1:-}" = receive ]; then
+  stamp=${2:?usage: rex-clipshare receive STAMP}
+  tmp=$(mktemp "$DIR/in.XXXXXX") || exit 1
+  cat >"$tmp"
+  accept "$stamp" "$tmp"; rc=$?
+  rm -f "$tmp"
+  exit $rc
+fi
+
+stamp=$(perl -MTime::HiRes=time -e 'printf "%.6f", time')
+copy=$(mktemp "$DIR/copy.XXXXXX") || exit 1
+cat >"$copy" || { rm -f "$copy"; exit 1; }
+accept "$stamp" "$copy" || { log "this machine: pbcopy failed"; rm -f "$copy"; exit 1; }
+
+# Each push sends this copy's own file; the last push to finish removes it.
+peer_list=$(peers)
+[ -n "$peer_list" ] || { rm -f "$copy"; exit 0; }
+(
+  for alias in $peer_list; do
+    ssh -o BatchMode=yes -o ConnectTimeout=5 "$alias" \
+      "\"\$HOME/.local/bin/rex-clipshare\" receive $stamp" <"$copy" 2>/dev/null \
+      || log "$alias: push failed" &
+  done
+  wait
+  rm -f "$copy"
+) </dev/null >/dev/null 2>&1 &
 exit 0

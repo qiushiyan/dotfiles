@@ -28,13 +28,14 @@ function M.app_is_here(ctx)
   return ctx.server ~= nil or M.client_is_local(ctx.client_id)
 end
 
--- Put TEXT on the clipboard of the machine you are looking from: here with
--- pbcopy when the app is here and the block is another host's (no tty of
--- it here), else through the block's terminal (OSC 52). FG is the block's
--- front process when the caller has it.
+-- Put TEXT on the clipboard of the machine you are looking from: published
+-- here (and so on every machine) when the app is here and the block is
+-- another host's (no tty of it here), else through the block's terminal
+-- (OSC 52), which that host's rexd publishes. FG is the block's front
+-- process when the caller has it.
 function M.copy(ctx, session_id, block_id, text, fg)
   if ctx.server then
-    return shell.pbcopy(text)
+    return shell.publish(text) or shell.pbcopy(text)
   end
   return feedback.osc52(session_id, block_id, text, fg)
 end
