@@ -21,10 +21,12 @@
 -- from the tab you are on, its terminal sends a desktop notification (OSC 9),
 -- which the app shows as one.
 --
--- The host's pasteboard: a terminal's clipboard write (OSC 52, such as
--- Claude Code's copy on selection) reaches only the clipboard of the app
--- showing the pane, the laptop's when you look from there. Nvim's p in a
--- Rex pane reads this host's pbpaste, so the text goes here too.
+-- The pasteboards: a terminal's clipboard write (OSC 52, such as Claude
+-- Code's copy on selection or nvim's y) reaches only the clipboard of the
+-- app showing the pane, the laptop's when you look from there. Nvim's p in a
+-- Rex pane reads its own host's pbpaste, so the text goes here too, and
+-- rex-clipshare pushes it to every other machine's, so a yank on one host
+-- pastes with p on another.
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
 local api = require("rexkit.api")
@@ -174,7 +176,10 @@ rex.on("block_event", function(target, ev)
   if ev.name == "process_changed" then return on_process(target, ev) end
   if ev.name == "clipboard_written" then
     local text = copied_text(target, ev)
-    if text and text ~= "" then shell.pbcopy(text) end
+    if text and text ~= "" then
+      shell.pbcopy(text)
+      if rex.exec then rex.exec(shell.bin("rex-clipshare"), { stdin = text }) end
+    end
     return
   end
   if ev.name ~= "program_status_changed" or not ev.record then return end

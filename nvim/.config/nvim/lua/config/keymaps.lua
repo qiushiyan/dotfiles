@@ -24,9 +24,18 @@ local function image_aware_paste(image_keys, fallback)
     return fallback
   end
 end
-vim.keymap.set("n", "<C-v>", image_aware_paste("<Cmd>PasteImage<CR>", '"+p'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
-vim.keymap.set("v", "<C-v>", image_aware_paste("<Esc><Cmd>PasteImage<CR>", '"+p'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
-vim.keymap.set("i", "<C-v>", image_aware_paste("<Cmd>PasteImage<CR>", '<ESC>"+pa'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
+-- Cmd+V does the same: the Rex app hands it to nvim as a key (<D-v>) rather
+-- than a paste, which typed the literal text "<D-v>". Neovide maps it itself.
+local paste_keys = vim.g.neovide and { "<C-v>" } or { "<C-v>", "<D-v>" }
+for _, key in ipairs(paste_keys) do
+  vim.keymap.set("n", key, image_aware_paste("<Cmd>PasteImage<CR>", '"+p'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
+  vim.keymap.set("v", key, image_aware_paste("<Esc><Cmd>PasteImage<CR>", '"+p'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
+  vim.keymap.set("i", key, image_aware_paste("<Cmd>PasteImage<CR>", '<ESC>"+pa'), { expr = true, desc = "Paste from system clipboard (image-aware)" })
+end
+if not vim.g.neovide then
+  vim.keymap.set("c", "<D-v>", "<C-r>+", { desc = "Paste from system clipboard" })
+  vim.keymap.set("t", "<D-v>", '<C-\\><C-n>"+pi', { desc = "Paste from system clipboard" })
+end
 -- Undo (Ctrl+Z)
 vim.keymap.set("i", "<C-z>", "<ESC>ui", { desc = "Undo last change" })
 vim.keymap.set("n", "<C-z>", "u", { desc = "Undo last change" })

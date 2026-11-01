@@ -4,7 +4,9 @@
 # pickup prompt, both pressed at once on startup and later; y writes that
 # pasteboard, so yy/P round-trips; and y also goes out through the terminal
 # (OSC 52) wherever the screen may be another machine's: over ssh, and in any
-# Rex pane, whatever SSH variables the Rex server handed it.
+# Rex pane, whatever SSH variables the Rex server handed it. Cmd+V, which the
+# Rex app hands nvim as the key <D-v>, pastes the pasteboard rather than
+# typing "<D-v>" (config/keymaps.lua).
 # Runs whole: bash test-clipboard.sh
 #
 # The case that bought this suite: a Rex pane carries SSH_CONNECTION without
@@ -92,6 +94,9 @@ case_() {
   check "$name: yy writes the pasteboard" "yank $name" "$(pasteboard | tr -d '\n')"
   empty; normal P
   check "$name: yy then P round-trips" "yank $name" "$(R 'getline(1)')"
+  printf 'cmd-v %s' "$name" >"$T/pasteboard"
+  empty; R 'nvim_input("i<D-v><Esc>")' >/dev/null; sleep 0.3
+  check "$name: Cmd+V sent as a key pastes the pasteboard" "cmd-v $name" "$(R 'getline(1)')"
   stop
   local sent; sent=$(osc52_sent "$name" | grep -cx "yank $name")
   if [ "$terminal" = yes ]; then

@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# rex-clipshare: put a copy made in a Rex pane on every other machine's
+# pasteboard, so nvim's p on any host pastes what was yanked on another.
+# rexd (rex/.config/rex/scripts/rexd.lua) runs it for each clipboard write
+# its server reports, after putting the text on this machine's pasteboard;
+# docs/rex.md § Protocols that carry agent work has why.
+#
+#   printf %s TEXT | rex-clipshare    save TEXT, push it to each peer, return
+#
+# The peers are the machines in twin's manifest (~/.config/twin/twin.toml),
+# reached by their ssh alias there, less this one (~/.config/machine). Each
+# push runs in the background and the command returns at once: a handshake
+# to a mini can take seconds, and rexd hears no events while it waits.
+#
+# Order: the text is saved, whole, as the one newest copy, and each peer's
+# push reads it only once it holds that peer's lock. Pushes to a peer run one
+# at a time, and the last to run sends the newest copy, so a slow push cannot
+# land an older copy over a newer one. A peer that is down (the laptop
+# asleep) costs one timed-out connection and a line in the log.
+#
+# The copy is kept in $TMPDIR, private to this user and cleared at boot.
+#
+# Test seams: REX_CLIPSHARE_TWIN (the manifest), REX_CLIPSHARE_SELF (this
+# machine's name), REX_CLIPSHARE_DIR (where the copy, locks and log go), and
+# ssh found on PATH before the system's.
+set -u
+PATH="$PATH:/usr/bin:/bin"
+TWIN=${REX_CLIPSHARE_TWIN:-$HOME/.config/twin/twin.toml}
+SELF=${REX_CLIPSHARE_SELF:-$(cat "$HOME/.config/machine" 2>/dev/null)}
+DIR=${REX_CLIPSHARE_DIR:-${TMPDIR:-/tmp}/rex-clipshare}
+LOG="$DIR/log"
+
+# The ssh alias of each machine in the manifest other than this one.
+peers() {
+  [ -r "$TWIN" ] || return 0
+  awk -v self="$SELF" '
+    /^\[/ { name = ""; if (match($0, /^\[machines\.[A-Za-z0-9_-]+\]/)) name = substr($0, 11, RLENGTH - 11) }
+    name != "" && name != self && /^ssh *= *"/ { split($0, q, "\""); print q[2]; name = "" }
+  ' "$TWIN"
+}
+
+umask 077
+mkdir -p "$DIR" || exit 1
+tmp=$(mktemp "$DIR/copy.XXXXXX") || exit 1
+cat >"$tmp" && mv -f "$tmp" "$DIR/copy" || { rm -f "$tmp"; exit 1; }
+
+for alias in $(peers); do
+  (
+    lockf -k -t 60 "$DIR/lock.$alias" /bin/sh -c '
+      ssh -o BatchMode=yes -o ConnectTimeout=5 "$1" /usr/bin/pbcopy <"$2" 2>/dev/null' \
+      sh "$alias" "$DIR/copy" \
+      || printf '%s %s: push failed\n' "$(date '+%F %T')" "$alias" >>"$LOG"
+  ) </dev/null >/dev/null 2>&1 &
+done
+exit 0
