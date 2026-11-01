@@ -188,7 +188,20 @@
     "findSkillsPrompt": true
   },
   "lastSelectedAgents": [
-    "claude-code",
-    "codex"
+    "amp",
+    "cline",
+    "codex",
+    "cursor",
+    "droid",
+    "fx",
+    "gemini-cli",
+    "github-copilot",
+    "kilo",
+    "kimi-code-cli",
+    "opencode",
+    "pi",
+    "warp",
+    "zed",
+    "claude-code"
   ]
 }
