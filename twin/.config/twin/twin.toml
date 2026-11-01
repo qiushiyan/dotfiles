@@ -55,6 +55,9 @@ carry = [
   # main checkout and of its worktrees; keep the two copies identical.
   "dev/.worktrees/main/CLAUDE.local.md",
   "dev/planlab/CLAUDE.local.md",
+  # The aiforui.dev course skills: paid content, and its lessons hold the
+  # install token, so it stays off every remote. Its README says how to use it.
+  "dev/aiforui-skills",
 ]
 
 # ---- Repositories ----
