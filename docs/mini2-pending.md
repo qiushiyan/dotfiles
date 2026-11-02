@@ -7,8 +7,6 @@ it; delete the file when it is empty.
 ## At mini2, needing a login or the screen
 
 - **Desk apps.** Sign in to Linear, Arc, 1Password.
-- **Time Machine to the T7, Monday 2026-11-02**, and the mini's old
-  destination removed: `docs/recovery.md` § Time Machine on mini2.
 
 ## Rex
 
