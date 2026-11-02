@@ -44,6 +44,22 @@ drive send T1@… --snippet implement-now '<their answers>'      # no spec: buil
 
 Then on through review to the finish.
 
+## How the user likes planlab work
+
+- **Practical over perfect:** fix the obvious mistakes in this PR and leave
+  the rest for later. Prefer a library or a dependency upgrade to
+  hand-written code, and a shared package for anything both the app and
+  Taodesk need.
+- **A bug report** goes through `/pl-loopy-debug` against the real
+  production trace.
+- **Decisions** reach the user on one combined board, each with your
+  recommendation.
+- **Next-batch priorities** go to onboarding as your suggestion; onboarding
+  decides the order and what runs in parallel.
+- **Work the user hands you** starts a new session in its own worktree.
+  Planlab sessions open in a Rex session of their own, apart from other
+  projects.
+
 ## Who can be hurt decides what you ask
 
 Planlab's spaces, by the pipeline doc's § Who decides. Eval, Steward, Bench
@@ -119,3 +135,11 @@ drive send sr-9531@… --snippet closeout --hold planlab-main
   develop, or sit in files the branch did not touch, the step's text has the
   session attach the `emergency-merge` label and merge, with no ask. Name the
   tests under **Done without asking**.
+- **A docs pass runs before every merge**, the emergency merge included.
+- **Owed reads and gated checks** run as soon as there is enough data, not
+  at their deadline; when clean, go straight on to the merge.
+- **The strategic review's findings** are folded in with "Fold these in."
+  Relay one to the user only when it is major. Close the builder once its
+  `sr-<PR>` session opens.
+- **A session left only waiting** (on dates, people or a release) posts a PR
+  comment: what is left, what it waits on, and how to finish.

@@ -89,6 +89,9 @@ recommend.
   sections SKILL.md § Report gives. Each message buzzes the user's phone, so
   a run's first message is its result, once that exists, a reply to the
   user's own message included.
+- **Plain words, times in GMT.** Send a result, never a note that you are
+  checking or will report later. While the user is away, a message is for
+  something major.
 - **A stop that needs the user** is written for the user as they read it: on
   the phone, hours later, remembering the product, the customers and the
   people but not the session, its vocabulary, its tickets, its finding
@@ -150,3 +153,17 @@ recommend.
   page and add what it cannot show, from `drive status`, the record and the
   sessions: what comes next for each, and anything holding the batch that
   drive does not track, such as a release pause.
+
+## On the machine
+
+- The default machine is Mini 2: `~/dotfiles/docs/qiushi-mini-2.md` and
+  `docs/mini2-pending.md`.
+- A process a Shell call starts dies when the call ends: put a long wait in
+  a detached tmux session.
+- A repeat wake that changes nothing is noise: answer it with a `drive`
+  command and no message.
+- Bench cards (`QIU-…`) live outside the Linear connector, in the user's
+  personal workspace: have a session change them with the `bench` CLI.
+- A message for another person goes to the user as a draft. A reply to
+  Felix belongs in the matching thread of the user's DM with Felix.
+
