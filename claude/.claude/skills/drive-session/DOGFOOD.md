@@ -72,7 +72,7 @@ When the batch is done, send one message with:
 1. What worked as the files said.
 2. Each place you guessed, quoting the line.
 3. Each message that misled you, quoted, with what you did instead.
-4. <What this run aimed at, such as who waited on whom for a hold and how it was freed, which wakes came and which `--due` posted again>, and what `drive metrics` says.
+4. <What this run aimed at, such as who waited on whom for a hold and how it was freed, which wakes came, by the causes `drive metrics` counts, and what `drive log` says held any back>, and what `drive metrics` says.
 5. What you would change, as concrete wording.
 ```
 

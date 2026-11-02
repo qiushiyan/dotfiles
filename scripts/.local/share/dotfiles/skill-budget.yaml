@@ -29,7 +29,7 @@ skills:
   # migration holds and strategic reviews, and a stale deploy route
   # raised 2026-11-02: the owner asked for the bot's watchdog cadence and pauses, the
   # machine-unreachable rule and PATH in BOT.md, and the emergency-merge rule in PLANLAB.md
-  drive-session: {body: 2566, total: 8791}
+  drive-session: {body: 2566, total: 8708}
   enter-worktree: {body: 154, total: 154}
   go-cli: {body: 1963, total: 3977}
   handoff: {body: 2413, total: 3050}

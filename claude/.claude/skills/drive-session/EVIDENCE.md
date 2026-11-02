@@ -49,8 +49,9 @@ cases of the bot catching a stuck job or a CI result now reach it at two hours, 
 ten minutes, unless the job ends first; that is the price paid. Varying the hold
 from one hour to four moved the total by about 5%.
 
-**Next pass compares** `drive metrics`' wakes, carried and "followed by no
-action" for a batch after this, against 70% of wakes (706) followed by none here;
+**Next pass compares** `drive metrics`' wakes, carried, wakes by cause and
+"followed by no action" for a batch after this, the causes now recorded rather
+than inferred from elapsed time, against 70% of wakes (706) followed by none here;
 whether any turn sat parked behind a job with a question in it (grep a batch's
 `done` wakes for a job listed, and read those replies); and how often the two-hour
 backstop was what caught a stuck job.

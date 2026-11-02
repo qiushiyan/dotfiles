@@ -5,11 +5,12 @@ sessions by this skill on the machine `~/.config/machine` names. A command
 you run can be held for minutes, not the hour a session's turn can take;
 your context resets between runs, several of your runs can act at once, and
 the user reads you in a chat on their phone, hours later. So this file
-replaces how SKILL.md waits, remembers and reports. At the start of every
-run, on that machine, read SKILL.md, your project's file (PLANLAB.md or
-ITELL.md) and `~/dotfiles/docs/session-pipeline.md` § The stages, § Choosing
-the path, § Finishes and § Who decides: your context does not carry over,
-and the files change.
+replaces how SKILL.md waits, remembers and reports. Before a run decides or
+writes anything, on that machine, read SKILL.md, your project's file
+(PLANLAB.md or ITELL.md) and `~/dotfiles/docs/session-pipeline.md` § The
+stages, § Choosing the path, § Finishes and § Who decides: your context does
+not carry over, and the files change. A wake answered by the one command its
+`next:` names needs none of them.
 
 ## Your batch
 
@@ -32,9 +33,9 @@ and is its batch. Start one batch per drive, never after a reset (`drive
 last batch's wakes. Leave it running when the drive ends: the user reads it
 on the page until your next one replaces it.
 
-`drive` is on `PATH` in every shell on that machine: run it bare, never after
-`export PATH`. If that machine or these files cannot be read, tell the user
-once, unless the chat shows you have, and take no action.
+`drive` is on `PATH` in every shell on that machine: run it bare. If that
+machine or these files cannot be read, tell the user once, unless the chat
+shows you have, and take no action.
 
 ## Waiting
 
@@ -47,10 +48,9 @@ drive park T3@… "waits for S2's release to finish"   # shown on the user's pag
 drive timer 300 veto                                 # the plan's veto; once the user answers, it brings nothing to do
 ```
 
-Act on a wake from what it says. Each session it names under `also ended` gets
-no wake of its own. A wake that still lists a job is a check: if the reply says
-it waits, run only what `next:` names. Every run leaves a `drive` command behind
-it, since a wake with no trace reads as unheard and comes again.
+Act on a wake from what it says: its `next:` names the command for the case at
+hand. Every run leaves a `drive` command behind it, since a wake with no trace
+reads as unheard and comes again.
 
 A wake may act on any session, from what `drive status` and `drive read`
 show now. A command your shell cuts short loses nothing: the next send,
@@ -66,15 +66,8 @@ shows it again.
 
 `drive watch --due-all` runs on the machine every five minutes (launchd's
 `com.qiushi.drive-watchdog`) with no model run, and posts you only what needs
-you, as a `kind: watchdog` wake:
-
-- **A session is gone:** run the open it gives. A parked one gets no wake, and
-  the open keeps its park.
-- **A watch keeps ending without a wake:** tell the user once with what
-  `watches.log` in the batch's directory says for that session, and record
-  that you did (`drive record note --session T4 'told the user: …'`).
-- **Asks stay open with no wake for six hours:** recheck each (SKILL.md § Acting
-  and asking).
+you, as a `kind: watchdog` wake, each line saying what to do. A gone session
+that was parked comes back parked, with no wake of its own.
 
 A routine of your own adds nothing while that agent runs. If you keep one, run it
 at most every six hours, `drive watch --due` then `drive status`, and pause it
@@ -96,10 +89,8 @@ recommend.
 - **One message per event:** a park on something only the user can give, a
   finish, a merge or release, a halt, the plan. Say what changed, then the
   sections SKILL.md § Report gives. Each message buzzes the user's phone, so
-  send the result once it exists, a reply to the user's own message
-  included, never that you have started, are checking or will report: "On
-  it", "Got it, I'm sending…", "Checking…" and "I'll tell you once…" are
-  notifications with nothing to decide.
+  a run's first message is its result, once that exists, a reply to the
+  user's own message included.
 - **A stop that needs the user** is written for the user as they read it: on
   the phone, hours later, remembering the product, the customers and the
   people but not the session, its vocabulary, its tickets, its finding
