@@ -128,14 +128,13 @@ asking** so they can reverse it:
   open judge-1 --model fable --goal '…' '…'`, then act on its verdict;
 - the merge and release, by your project file's § After the PR (a personal
   tool's is its closeout);
-- the cleanup once a session's last step has run, as far as that step left
-  it. A closeout that removed its own worktree leaves only the close, and
-  its report, not `gwt merged`, says what landed:
+- the cleanup once a session's last step has run. A `left by` line in `drive
+  status` is a fact, named once in a report and never asked, whatever a recap
+  says it waits for:
 
   ```bash
-  gwt merged BRANCH       # landed? a PR still waiting keeps everything
-  drive close T1@…        # refused while it works: do what its next: says, name what you leave
-  gwt remove BRANCH       # refuses uncommitted work and an unmerged branch: leave those, name them
+  drive close T1@… --cleanup   # refused while it works: do what its next: says
+  drive cleanup                # when status names any
   ```
 
 A prompt is a step too: approve what the pipeline doc's § Who decides hands
@@ -161,7 +160,7 @@ whichever session woke you: the session it holds is parked and wakes no one.
 
 ```bash
 drive record ask T1 --question '…' --recommendation '…' --if-unanswered '…'    # → A3
-drive record answer A3 --source '<their words>' --took amended --explained
+drive record answer A3 --source '<their words>' --took amended --explained 'I agree; write the spec.'   # the step goes to T1 as well
 drive record answer A3 --took moot --source '<what showed it no longer holds>'
 ```
 

@@ -32,6 +32,10 @@ and is its batch. Start one batch per drive, never after a reset (`drive
 last batch's wakes. Leave it running when the drive ends: the user reads it
 on the page until your next one replaces it.
 
+`drive` is on `PATH` in every shell on that machine: run it bare, never after
+`export PATH`. If that machine or these files cannot be read, tell the user
+once, unless the chat shows you have, and take no action.
+
 ## Waiting
 
 A send, open or respond arms a wake for when that session's turn ends or it
@@ -42,6 +46,11 @@ which for a session left waiting is to park it.
 drive park T3@… "waits for S2's release to finish"   # shown on the user's page: write it in their terms
 drive timer 300 veto                                 # the plan's veto; once the user answers, it brings nothing to do
 ```
+
+Act on a wake from what it says. Each session it names under `also ended` gets
+no wake of its own. A wake that still lists a job is a check: if the reply says
+it waits, run only what `next:` names. Every run leaves a `drive` command behind
+it, since a wake with no trace reads as unheard and comes again.
 
 A wake may act on any session, from what `drive status` and `drive read`
 show now. A command your shell cuts short loses nothing: the next send,
@@ -55,20 +64,24 @@ shows it again.
 
 ## Your watchdog
 
-Your watchdog routine runs on a schedule and sends no step: it keeps the
-wakes coming, and the run a wake starts acts. Each run:
+`drive watch --due-all` runs on the machine every five minutes (launchd's
+`com.qiushi.drive-watchdog`) with no model run, and posts you only what needs
+you, as a `kind: watchdog` wake:
 
-```bash
-drive watch --due    # arms every session whose wakes stopped, reposts one nobody acted on, says why
-drive status         # recheck each open ask (SKILL.md § Acting and asking)
-```
+- **A session is gone:** run the open it gives. A parked one gets no wake, and
+  the open keeps its park.
+- **A watch keeps ending without a wake:** tell the user once with what
+  `watches.log` in the batch's directory says for that session, and record
+  that you did (`drive record note --session T4 'told the user: …'`).
+- **Asks stay open with no wake for six hours:** recheck each (SKILL.md § Acting
+  and asking).
 
-When `--due` names a gone session, run the open it gives: a parked one gets
-no wake, and the open keeps its park. When it says a watch has ended without
-a wake twice, tell the user once with what `watches.log` in the batch's
-directory (`drive --driver NAME batch` prints it) says for that session, and
-record that you did (`drive record note --session T4 'told the user: …'`).
-Pause the watchdog when the drive ends.
+A routine of your own adds nothing while that agent runs. If you keep one, run it
+at most every six hours, `drive watch --due` then `drive status`, and pause it
+when every session is parked with no ask open and when the drive ends. A run that
+fails for want of usage never reaches you, so drive holds your wakes instead,
+losing none. When `drive status` says the driver has not answered, tell the user
+once what that held up.
 
 ## The chat
 
@@ -85,8 +98,8 @@ recommend.
   sections SKILL.md § Report gives. Each message buzzes the user's phone, so
   send the result once it exists, a reply to the user's own message
   included, never that you have started, are checking or will report: "On
-  it", "Checking…" and "I'll tell you once…" are notifications with nothing
-  to decide.
+  it", "Got it, I'm sending…", "Checking…" and "I'll tell you once…" are
+  notifications with nothing to decide.
 - **A stop that needs the user** is written for the user as they read it: on
   the phone, hours later, remembering the product, the customers and the
   people but not the session, its vocabulary, its tickets, its finding

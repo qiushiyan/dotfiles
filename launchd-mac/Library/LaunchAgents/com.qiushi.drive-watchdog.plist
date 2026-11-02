@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.drive-watchdog</string>
+
+  <!-- Every five minutes: arm the wake of every session in this machine's
+       live drive batches that has stopped having one, and post a driver only
+       what needs its judgment (`drive watch - -help`, its - -due-all). Nothing
+       due posts nothing, so this runs no model and costs no bot usage, which
+       a watchdog routine on the bot's side cannot say. PATH reaches rex,
+       claude-steps and gh, without which it cannot read a session. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushiyan/.local/bin/drive</string>
+    <string>watch</string>
+    <string>--due-all</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/qiushiyan/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StartInterval</key>
+  <integer>300</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>WorkingDirectory</key>
+  <string>/tmp</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushiyan/Library/Logs/drive-watchdog.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushiyan/Library/Logs/drive-watchdog.log</string>
+</dict>
+</plist>

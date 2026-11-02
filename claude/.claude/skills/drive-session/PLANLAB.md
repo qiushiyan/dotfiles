@@ -115,3 +115,7 @@ drive send sr-9531@… --snippet closeout --hold planlab-main
 - A PR that skipped its review merges from its builder. A PR whose session
   is gone gets a new session for its merge, so the merge runs where its
   checks and its report are.
+- **Red checks that are not the PR's:** when the failing tests also fail on
+  develop, or sit in files the branch did not touch, the step's text has the
+  session attach the `emergency-merge` label and merge, with no ask. Name the
+  tests under **Done without asking**.

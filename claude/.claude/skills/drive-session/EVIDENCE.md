@@ -4,6 +4,52 @@ Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares. A
 run by a real bot follows `DOGFOOD.md`.
 
+## 2026-11-02 — what a driver's wakes cost (engine pass)
+
+**Ask.** Make the Session Driver cheaper and calmer, starting in drive. Each
+webhook post is a model run. Worked from the owner's reading of the chat, 15 Oct
+to 1 Nov, and checked against the record.
+
+**Corpus.** The mini's batch logs 2026-10-24, 2026-10-28 and itell-2026-10-28
+(1,012 posted wakes over 9.2 days) and the 42 transcripts of their sessions. A
+wake's cause is not recorded, so one posted 9.5 minutes or more after both its
+reply and its arming is taken as the ten-minute cap on a turn with a job running.
+
+**Observed.**
+- 679 of the 995 turn-ended wakes came from that cap, and 666 of those drew no
+  action: 258 distinct replies, up to 28 wakes each. Median gap between wakes
+  no action followed: 10.3 minutes.
+- Of the 13 capped wakes followed by an action, 7 were real endings with a job
+  left running (reports or decisions, all 1,425 characters or more), 4 were the
+  bot noticing a job that should have ended or a CI result the session had not
+  picked up, and 2 were steps the owner sent that the wake had nothing to do with.
+- The 1 Nov outage is invisible to the webhook: the post at 12:53 answered 200
+  and no run followed, so nothing that reads HTTP status can see it.
+- A run's actions land 33 seconds after its wake at the median, the last of them
+  within two minutes at the 90th percentile.
+
+**Changed.** A turn whose job runs wakes no one while its reply says it waits; a
+reply that asks wakes in a minute, any other in ten, once per view, and the watch
+stays armed. Endings share a post at most every three minutes. Wakes no trace
+followed back off to one try every two hours. `drive watch --due-all` is the
+machine's watchdog, with no model run when nothing is due. One command for an
+answer and its step (`record answer … 'step'`) and for what closed sessions left
+(`cleanup`). After-wake commands run hourly at most.
+
+**Replayed** through the shipped classifier: 1,012 wakes become 347 posts and 11
+ask rechecks, a 65% cut, with 50 endings carried by another's post. The capped
+path falls from 679 wakes to 64, every real ending among them still waking, the
+seven as soon or sooner. The other 333 wakes (real endings, prompts, sessions
+gone) stay. The four cases of the bot catching a stuck job reach it at two hours,
+not ten minutes, unless the job ends first; that is the price paid. The replay
+holds the bot's actions as they happened, so it models the posts, not the runs.
+
+**Next pass compares** `drive metrics`' wakes, carried and "followed by no
+action" for a batch after this, against 70% of wakes (706) followed by none here;
+whether any turn sat parked behind a job with a question in it (grep a batch's
+`done` wakes for a job listed, and read those replies); and how often the two-hour
+backstop was what caught a stuck job.
+
 ## 2026-10-30 — how the drivers read the pipeline (improve-tool pass)
 
 **Ask.** After the tstack-style rewrites and the prompt-engineering overhaul,

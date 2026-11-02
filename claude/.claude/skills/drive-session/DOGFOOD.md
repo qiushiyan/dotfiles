@@ -68,7 +68,7 @@ Hard limits: act only on sessions you opened in `dogfood`. The `work` session ho
 
 Record each friction in the batch the moment you hit it (`drive record note`): a line you had to guess at, a `next:` that did not run as written or misled you, something you did by hand that the skill or the tool should have done for you.
 
-When the batch is done, pause your watchdog and send one message with:
+When the batch is done, send one message with:
 1. What worked as the files said.
 2. Each place you guessed, quoting the line.
 3. Each message that misled you, quoted, with what you did instead.
@@ -132,9 +132,8 @@ changes, and what the next run compares.
 
 ## After the run
 
-The bot pauses its watchdog when the batch ends; an ask left open keeps it
-running, since the watchdog rechecks open asks, so answer or moot it to end
-the batch. Once its record is read, `drive --batch $B batch end` stops the
-dogfood's wakes and takes it off the owner's page.
+An ask left open wakes the bot every six hours, so answer or moot it. Once the
+record is read, `drive --batch $B batch end` stops the dogfood's wakes and
+takes it off the owner's page.
 Worktrees a run leaves in the scratch repository stay until a brief names
 them for cleanup.

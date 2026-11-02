@@ -207,7 +207,8 @@ data, ask. Beyond that:
   is the same.
 - **Docs passes, handoffs, closeouts and cleanup**: the doc pass when a
   session is ready for one, and removing the branches, worktrees, review
-  checkouts and scratch files the sessions recommend; a spent brief is
+  checkouts and scratch files the sessions recommend; a branch that is not
+  merged stays, stated plainly and not asked about; a spent brief is
   retired by the project's distill (planlab's `closeout` key), never by hand.
 - **Reads of production, and writes to the user's own, internal or demo
   workspaces and to internal systems** such as an issue tracker or the
