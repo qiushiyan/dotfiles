@@ -20,6 +20,8 @@ watch() {
   local session=$1 block=$2 sid=${3:-}
   local log="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/steps.err"
   mkdir -p "${log%/*}"
+  # A restored pane is a shell: this brings the sidecar back (rex-resume).
+  "$BIN/rex-resume" note-command "$SELF watch $session $block $sid" 2>/dev/null
   # rex probes a terminal it writes stderr to; keep its chatter out of the view.
   "$REX" do "$HOME/.config/rex/scripts/steps.lua" -s "$session" \
     session="$session" block="$block" bin="$STEPS" ${sid:+sid="$sid"} 2>>"$log"

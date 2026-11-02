@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # rex-urls SESSION BLOCK [here|away]: pick a URL from a Rex terminal's screen and
 # scrollback and open it (prefix u, the urls action, which runs this in a
-# split below the block). Rex's `format` method hands over the whole
-# scrollback as text, newest URL first in the list. Backslashes go first:
-# zsh escapes the ? and = of a URL typed at its prompt. A scrollback past the
-# 1 MiB one control reply carries comes back as an error, which is shown.
+# split below the block). `rex capture` hands over the whole scrollback as
+# text, newest URL first in the list. Backslashes go first: zsh escapes the ?
+# and = of a URL typed at its prompt.
 #
 #   enter    open it; with `away` (the key came from another machine's app,
 #            such as the laptop's) copy it instead, since a browser opened
@@ -22,17 +21,14 @@ say() { printf '\n  %s\n' "$1"; sleep "$2"; }
 # rex probes the terminal on stderr, and the answer would arrive as input; the
 # error is kept to say why a pane gave nothing.
 err=$(mktemp); trap 'rm -f "$err"' EXIT
-urls=$(rex block call -s "$session" -b "$block" format '{"format":"text","unwrap":true}' 2>"$err" \
-  | jq -r .content \
+urls=$(rex capture -s "$session" -b "$block" --unwrap 2>"$err" \
   | tr -d '\\' \
   | grep -oE '(https?|file)://[^][[:space:]<>"'"'"'`()]+' \
   | sed -E 's/[.,;:!?]+$//' \
   | awk '{ a[NR] = $0 } END { for (i = NR; i > 0; i--) if (!seen[a[i]]++) print a[i] }')
 
 if [ -z "$urls" ]; then
-  if grep -q too_large "$err"; then
-    say "this pane's scrollback is past the 1 MiB Rex sends in one reply; clear it (prefix C-k) to pick from what follows" 5
-  elif [ -s "$err" ]; then
+  if [ -s "$err" ]; then
     say "$(head -1 "$err")" 5
   else
     say "no URLs in this pane" 1.2

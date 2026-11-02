@@ -58,12 +58,32 @@ report() {
   emit "$body"
 }
 
+# The record that brings this conversation back into a restored pane
+# (rex-resume). In the background, since the registry it reads is written after
+# SessionStart reports. A prompt notes one a session started before this hook
+# never recorded, or a conversation it no longer names. Only a person's exit
+# forgets: a server stopping reports `other`, and that is the case to resume.
+remember() {
+  local event=$1 sid=$2 reason=$3 tool="$HOME/.local/bin/rex-resume" f
+  [ "$sid" != - ] && [ -x "$tool" ] || return 0
+  f="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/panes/${REX_BLOCK//:/_}.json"
+  case "$event" in
+    SessionStart) ;;
+    UserPromptSubmit) ! grep -q "$sid" "$f" 2>/dev/null || return 0 ;;
+    SessionEnd)
+      case "$reason" in prompt_input_exit|logout) "$tool" forget "$sid" ;; esac
+      return 0 ;;
+    *) return 0 ;;
+  esac
+  ( "$tool" note "$sid" </dev/null >/dev/null 2>&1 & )
+}
+
 # Claude Code hook events -> states. The title is the project the session works
 # in; the message is what the human would want to read first.
 claude_hook() {
-  local input event cwd message prompt tool ntype error
+  local input event cwd message prompt tool ntype error sid reason
   input=$(cat)
-  IFS=$'\t' read -r event cwd message prompt tool ntype error < <(
+  IFS=$'\t' read -r event cwd message prompt tool ntype error sid reason < <(
     printf '%s' "$input" | jq -r '[
       .hook_event_name // "-",
       .cwd // "-",
@@ -71,13 +91,16 @@ claude_hook() {
       (.prompt // "-" | gsub("[\t\n]"; " ") | .[0:120]),
       .tool_name // "-",
       .notification_type // "-",
-      .error // "-"
+      .error // "-",
+      .session_id // "-",
+      .reason // "-"
     ] | @tsv' 2>/dev/null
   )
   # Tab is IFS whitespace, so empty fields would collapse; "-" stands in.
   [ "$cwd" = - ] && cwd=""; [ "$message" = - ] && message=""
   [ "$prompt" = - ] && prompt=""; [ "$tool" = - ] && tool=""
   local common=(--id claude --app claude --title "${cwd##*/}")
+  remember "$event" "$sid" "$reason"
   case "$event" in
     SessionStart) report idle "${common[@]}" ;;
     UserPromptSubmit) report working "${common[@]}" --msg "$prompt" ;;

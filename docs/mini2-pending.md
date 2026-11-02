@@ -8,6 +8,13 @@ it; delete the file when it is empty.
 
 - **Desk apps.** Sign in to Linear, Arc, 1Password.
 
+## Rex
+
+- **The first real update, here.** Approve 1696 in the app, check `rex server
+  status` for the build, run `Restart Server…` if the server stayed behind, and
+  check this session resumes. Then the mini and the laptop, `rex-resume seed` on
+  each first, since their running sessions predate it.
+
 ## The mini
 
 - Karabiner's driver extension is still active, and clears at the next

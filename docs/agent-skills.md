@@ -239,6 +239,13 @@ or an entry in `docs/skill-customizations.md` identifies a customization.
 | **Customized** — upstream-derived with local changes (`obelisk`, `tailwind-best-practices`) | a pin or documented provenance and local changes; absent from the lock | edit freely; upgrade by hand, using `PINNED.txt` and `LESSONS.md` where present | in the skill's own lessons and body |
 | **Original** — ours (`review`, `consult`, `improve-tool`, `handoff`, …) | authored here, no managed upstream | edit freely | in the body, or in a lesson when several skills share the rule |
 
+**`rex` belongs to Rex.** `rex skill setup`, or the app's `Install Rex for
+Agents`, writes a stub whose guide comes from the installed CLI, and adds a
+`SessionStart` hook through `~/.claude/settings.json`, which is the tracked file:
+a later Rex can change both, so review and commit that diff as for a managed
+skill, and never edit the stub. `~/.codex/hooks.json` is gitignored, so Codex's
+hook needs `rex skill setup` on each machine.
+
 ### Where a writing guideline lives
 
 Guidance for writing agent-facing text is layered, and the layer decides the

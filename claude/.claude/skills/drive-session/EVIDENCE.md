@@ -227,7 +227,7 @@ server ran clean.
 session names the open that brings it back, which keeps the label's park
 and starts the Rex session; a resumed cut-short turn wakes `interrupted`;
 `drive watch --stop-all` stops the wakes before a planned restart
-(`~/dotfiles/docs/rex-restart.md`). SKILL.md lets the driver reopen without
+(`~/dotfiles/docs/rex.md` § Restarting). SKILL.md lets the driver reopen without
 asking and says what the reopened session's step carries; BOT.md has the
 watchdog reopen a gone session `--due` names, since a parked one gets no
 wake.

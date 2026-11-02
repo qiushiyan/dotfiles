@@ -3,7 +3,7 @@
 Rex is Superlogical's terminal multiplexer, in private beta: a long-lived
 server that owns every session, and clients (the macOS app, the `rex` CLI,
 scripts) that connect to it, each rendering terminals with libghostty. Rex
-runs beside tmux as a trial, on both machines, while the two are compared;
+runs beside tmux as a trial, on all three machines, while the two are compared;
 tmux is not being replaced. The `rex/` package carries the tmux muscle memory
 into Rex and tries what Rex makes possible for agent work.
 
@@ -17,7 +17,7 @@ action, a `rex do` script).
 
 This doc carries what the trial learned, so the next agent builds on it
 instead of re-deriving it: how Rex is shaped, where its truth lives, which of
-its protocols carry agent work, how the two machines meet in it, and the
+its protocols carry agent work, how the machines meet in it, and the
 traps. Each tool under `rex/` explains itself in its header. Everything here
 was established against CLI build `c50b257` and app build 1026; app build
 1069 (CLI `7b5bf3e`) added to the API, and 1497 took the shell out of its Lua.
@@ -75,9 +75,8 @@ any notes kept here:
   (terminals) placed in layers or detached from all of them. It owns layout,
   focus, processes and every terminal's contents, and it outlives the app:
   quitting the app leaves every session running. Stopping the server ends
-  every session on it, agents included; their Claude conversations come back
-  with `claude --resume`, and `rex-upgrade` (`docs/rex-restart.md`) brings a
-  whole server's sessions, tabs and drive batches back after a restart.
+  every program on it, agents included; the server saves its sessions, tabs
+  and block ids, and `rex-resume` brings the programs back (§ Restarting).
 - **The app owns the experience:** what is painted, the colours, key handling
   and modes, the sidebar's order, and its own settings, which `twin` does not
   carry (§ Several machines). The server only checks a key map; the client
@@ -201,8 +200,10 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
 - **There are two host lists.** The app's, filled by **Add Host…**, is what
   the sidebar shows and what `rex.servers()` returns inside an action a key
   ran. The server's, filled by `rex hosts add`, is what `rex -S <label>` and
-  `rex do` scripts see; the laptop's server lists the mini as `mini`, for the
-  agents board. Neither fills the other.
+  `rex do` scripts see; each machine declares the others by
+  `~/.config/machine` (`lab/hosts.lua`), and a stored host with the same label
+  outranks the declared one until `rex hosts remove`. Neither list fills the
+  other.
 - **A key in another host's session runs the config of the app's own
   machine.** The action sees `ctx.server`, and its `rex.call`s travel through
   the app to that host, but its files, processes, `$HOME`, clipboard and `open`
@@ -221,6 +222,41 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
   `Workspace.*` defaults, which the app reads when it launches. "Prefer
   generated titles" stays off on both, or pane headers show the program's
   name and folder instead of the title it sets.
+
+## Restarting
+
+The server saves its sessions. A restart, an update or a reboot brings back
+every session, window and block id, with their labels and layout, each block
+running a plain login shell in its directory. No running program comes back,
+scrollback did not in a scratch restart, and program status starts empty.
+Rex's server log says `restored saved sessions`.
+
+- **An update has two steps.** The app's updater replaces the app, and the
+  server keeps the old build until it restarts: the app's `Restart Server…`
+  (`client.server.restart`), or a reboot. A machine with no screen takes both
+  from another machine's Screen Sharing.
+- **Conversations come back through `rex-resume`.** `rex-agent` records each
+  pane's conversation, directory, account and flags under its block id in
+  `~/.local/state/rex-lab/panes`, and `rex.zsh` enters the resume at a restored
+  shell's first prompt, as if typed. It runs for a crash or a reboot as for a
+  planned restart, and resuming starts no turn. `rex-steps` records its own line
+  the same way. A session started before this tool has no record until its next
+  prompt; `rex-resume seed` records every Claude Code running now.
+- **Only a person's exit forgets.** A `SessionEnd` reason of
+  `prompt_input_exit` or `logout` removes the record, while a stopping server
+  and a killed Claude Code both report `other`. A record holds the server
+  instance that wrote it, so a shell starting under the same server resumes
+  nothing and clears the record: Claude Code that crashed back to a shell stays
+  down.
+- **A restart interrupts what is mid-turn,** and nothing waits for a quiet
+  moment. Pick it while batches run; `drive status` shows what is working. A
+  driven session wakes `interrupted` (`~/dev/drive/docs/batches.md` § When Rex
+  restarts); any other shows its interrupted turn on resuming. Its background
+  jobs and subagents are gone.
+- **A restored pane's first shell is the account's real one,** since it starts
+  through login(1), which resets `HOME`. A scratch server's restored panes read
+  the real `~/.zshrc`, with `REX_SERVER` naming the scratch server;
+  `test-rex-resume.sh` replaces that shell with a sandboxed one.
 
 ## Memory
 
@@ -253,16 +289,15 @@ long-running script; the layout and idle blocks are nearly free.
 Each is a trap the Rex environment does not reveal; the guard is named where
 one exists.
 
-- **A new build serves only after the server restarts,** which ends its
-  sessions (§ The model), so each machine takes `rex-upgrade` as its app
-  updates (`docs/rex-restart.md`). The server starts every terminal through
-  its own executable. The app runs the server it starts from its own copy
+- **A new build serves only after the server restarts** (§ Restarting). The
+  server starts every terminal through its own executable. The app runs the server it starts from its own copy
   under `~/Library/Application Support/com.superlogical.rex/RexServer/Versions/<build>`,
   which outlives the bundle, but `rex server start` from the bundle's CLI
   runs it from the bundle: once that bundle is replaced, each split and new
   tab fails (`posix_spawn … no such file or directory` in the server log)
   while the keys still resolve. Updates also move the CLI inside the bundle:
-  `rex/.local/bin/rex` puts it on PATH and tries each layout it knows.
+  `rex/.local/bin/rex` puts it on PATH, a pane's own server's first
+  (`REX_BIN_DIR`), then each layout it knows.
 - **Any `rex` call with no server running starts one.** `--autostart`
   defaults to true and no setting turns it off. From build 1497 the server
   keeps only a short list of the caller's variables (`PATH`, `HOME`, `SHELL`,
@@ -270,13 +305,12 @@ one exists.
   FORCE_COLOR=0` or an ssh login's `SSH_CONNECTION` never reaches its panes;
   an older build hands the caller's whole environment to every pane,
   and nothing colours. A tool that only looks passes `--autostart=false`, as
-  drive does on every call, and `rex-upgrade` refuses a new server carrying
-  them (`docs/rex-restart.md` § The upgrade).
+  drive does on every call.
 - **A command the API starts with `shell: none` runs under login(1) unless
   `login` is false,** and that root-owned `login` is then what `process`
   reports in front, hiding the program and its Claude Code registry entry.
   `rex run --shell none` sets it; a layout built for `session.create` or
-  `session.new_window` must, as `rex-upgrade`'s restore does.
+  `session.new_window` must.
 
 - **`rex.call` returns `nil, message`; it never raises.** A call that is not
   checked fails later and elsewhere. `rexkit.api`'s `call` raises on the paths
@@ -344,15 +378,10 @@ one exists.
   place that forks, falling back to the old calls on an older Rex. The Lua
   also crashes the whole script on `for … in (s:gsub(…) .. x):gmatch(…)`; the
   same through a local works.
-- **A control reply carries at most 1 MiB.** `format` returns more only in
-  parts: with `max_bytes` set, its reply carries an `id` that `blob_read`
-  pages through; without it, a long scrollback is a `too_large` error,
-  reached by the HTML long before the text. `rex-urls` and `rex-export` still
-  make the one call, so on a long scrollback they say why the pane gave
-  nothing, the export falling back to plain text first, and the `export_pane`
-  action raises the reason; clearing the pane (prefix `C-k`) makes it
-  readable again. Pulling a reply near the limit briefly inflates the server
-  by a few hundred MB.
+- **A control reply carries at most 1 MiB.** A `format` call past it is a
+  `too_large` error, reached by the HTML long before the text. `rex capture`
+  reads in parts, so anything reading a whole scrollback uses it, as `rex-urls`,
+  `rex-export` and `rex-run` do.
 - **A data stream lasts only as long as the control connection that asked
   for its ticket:** closing that connection cancels the stream (close code
   1001). A reader keeps both open and drains the control side's session
@@ -362,8 +391,6 @@ one exists.
   blocks,** where the live server sets it. A tool that finds its server from
   a block falls back to `~/Library/Application Support/rex/server.sock`, as
   the `rex` CLI does (`cout setup`).
-- **`rex run --wait` prints no creation result when its output is not a
-  terminal.** A caller finds the block by its label (`rex-run`).
 - **The app owns the colours.** It pushes its theme to every terminal on the
   server, so a server-side `set_theme` is overwritten (it only sets what
   programs see when they query colours). Following our theme means switching
@@ -468,6 +495,7 @@ failures. `init.lua` only loads them, and its header maps them.
   it.
 - **rex-run:** runs a command in a pane beside the caller and hands back its
   exit status and output, for an agent whose work the human should watch.
+- **rex-resume:** brings a restored pane's program back (§ Restarting).
 - **Theme:** `theme-set` switches the app to the Ghostty theme it chose.
 
 It reaches into other packages, which is where a change to them can break it:
@@ -510,8 +538,6 @@ every binding. The shape:
 - **The app's share of scrollback:** whether the app keeps its own copy of
   each block's scrollback, doubling § Memory's per-block cost; the probe is
   the app's footprint while a pane it shows fills its scrollback.
-- **Persistence past a reboot:** a server restart ends every session; whether
-  the app or launchd brings the mini's server back after a reboot is untested.
 - **Comparison with tmux:** which workflows feel better in each, as sessions
   move to Rex during the trial.
 - **Copying a command from Rex:** `cout` records and copies in blocks, but
@@ -523,7 +549,3 @@ every binding. The shape:
   1 MiB reply, so the text would travel base64-encoded and fail loudly past
   that size. Also untested: a copy from a mini block in the laptop's app,
   which `toclip`'s OSC 52 should deliver to the laptop.
-- **Hosts in config:** init.lua could declare the mini with `rex.host`, so
-  the server's host list is reproducible rather than stored by `rex hosts
-  add`; a declared host whose label a stored one already uses is left out,
-  so switching means removing the stored `mini` first. Held back for now.

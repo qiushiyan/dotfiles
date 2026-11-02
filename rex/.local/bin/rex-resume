@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+# rex-resume: bring a pane's program back after Rex restores it. A restart of
+# the server, an update or a reboot keeps sessions, tabs, splits, labels and
+# block ids, but a restored pane is a plain login shell in its directory: the
+# program it ran is gone. So each pane worth bringing back keeps a record under
+# its block id, and the pane's shell asks here at its first prompt
+# (zsh/.config/zsh/rex.zsh). Claude Code's hooks write the record (rex-agent),
+# rex-steps writes its own, and resuming a conversation starts no turn.
+#
+#   rex-resume note SID            INTERNAL, a hook: record the Claude Code in
+#                                  this pane, once its registry names SID
+#   rex-resume note-command LINE   INTERNAL: this pane runs LINE; exec it again
+#   rex-resume forget SID          INTERNAL, a hook: SID ended on purpose
+#   rex-resume line                INTERNAL, rex.zsh: the directory and the line
+#                                  to run; nothing unless this pane was restored
+#   rex-resume seed                record every Claude Code running now, which a
+#                                  session started before this tool needs once
+#   rex-resume list                the records on this machine
+#
+# A record holds the server instance it was written under, so a shell starting
+# in a pane resumes only after that server is gone: a Claude Code that crashed
+# back to a shell stays down instead of looping. A conversation already running
+# elsewhere gets no second copy.
+set -u
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+DIR="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/panes"
+
+record_of() { printf '%s/%s.json' "$DIR" "${1//:/_}"; }
+
+# rex probes a terminal on stderr, and the answer would arrive as input.
+rx() { rex --autostart=false "$@" 2>/dev/null; }
+
+instance() { rx server status | sed -n 's/^instance: //p'; }
+
+registries() { printf '%s\n' "$HOME/.claude" "$HOME"/.claude-accounts/*/; }
+
+# The config directory whose registry holds PID, or nothing.
+config_of() {
+  local cfg
+  while read -r cfg; do
+    cfg=${cfg%/}
+    [ -f "$cfg/sessions/$1.json" ] && { printf '%s\n' "$cfg"; return 0; }
+  done < <(registries)
+  return 1
+}
+
+# Flags worth keeping on the resume; the x launchers add the bypass themselves.
+extra_args() {  # ARGV as ps prints it
+  local skip=0 first=1 t
+  for t in $1; do
+    if [ "$first" = 1 ]; then first=0; continue; fi
+    if [ "$skip" = 1 ]; then skip=0; continue; fi
+    case "$t" in
+      --resume|-r|--session-id) skip=1 ;;
+      --dangerously-skip-permissions|--continue|-c) ;;
+      *) printf '%s\n' "$t" ;;
+    esac
+  done
+}
+
+# Write BLOCK's record for the Claude Code at PID. Only the pane's foreground
+# program counts: a `claude -p` an agent runs in its tool shell inherits
+# REX_BLOCK, and must not take the pane's record.
+write_claude() {  # BLOCK PID CFG ENV
+  local block=$1 pid=$2 cfg=$3 env=$4 argv inst
+  argv=$(ps -o args= -p "$pid" 2>/dev/null)
+  inst=$(instance)
+  [ -n "$inst" ] || return 1
+  mkdir -p "$DIR"
+  extra_args "$argv" | jq -Rs --arg instance "$inst" --arg cfg "$cfg" --arg env "$env" \
+    --slurpfile reg "$cfg/sessions/$pid.json" \
+    '{instance: $instance, kind: "claude", sid: $reg[0].sessionId, dir: $reg[0].cwd, config: $cfg, env: $env,
+      extra: (split("\n") | map(select(. != "")))}' > "$(record_of "$block").tmp" \
+    && mv "$(record_of "$block").tmp" "$(record_of "$block")"
+}
+
+note() {
+  local sid=${1:?usage: rex-resume note SID} block=${REX_BLOCK:-} try pid cfg
+  [ -n "$block" ] || return 0
+  # Claude Code reports SessionStart before it writes its registry entry.
+  for try in 1 2 3 4 5 6 7 8 9 10; do
+    pid=$(rx block call -b "$block" process | jq -r '.foreground.pid // empty')
+    if [ -n "$pid" ] && cfg=$(config_of "$pid") \
+      && [ "$(jq -r .sessionId "$cfg/sessions/$pid.json" 2>/dev/null)" = "$sid" ]; then
+      write_claude "$block" "$pid" "$cfg" "${PLANLAB_AGENT_NUDGES:+PLANLAB_AGENT_NUDGES=$PLANLAB_AGENT_NUDGES}"
+      return $?
+    fi
+    sleep 0.5
+  done
+  return 1
+}
+
+note_command() {
+  local block=${REX_BLOCK:-} inst
+  [ -n "$block" ] || return 0
+  inst=$(instance)
+  [ -n "$inst" ] || return 0
+  mkdir -p "$DIR"
+  jq -n --arg instance "$inst" --arg line "$*" --arg dir "$PWD" \
+    '{instance: $instance, kind: "command", line: $line, dir: $dir}' > "$(record_of "$block").tmp" \
+    && mv "$(record_of "$block").tmp" "$(record_of "$block")"
+  # Records whose pane closed long ago; a record is rewritten when its pane's
+  # session starts, so one this old belongs to nothing.
+  find "$DIR" -name '*.json' -mtime +90 -delete 2>/dev/null
+  return 0
+}
+
+forget() {
+  local sid=${1:?usage: rex-resume forget SID} f
+  [ -n "${REX_BLOCK:-}" ] || return 0
+  f=$(record_of "$REX_BLOCK")
+  [ "$(jq -r '.sid // empty' "$f" 2>/dev/null)" = "$sid" ] && rm -f "$f"
+  return 0
+}
+
+# Whether a conversation runs now, in any account's registry.
+running() {  # SID
+  local cfg f pid
+  while read -r cfg; do
+    for f in "${cfg%/}"/sessions/*.json; do
+      [ -f "$f" ] || continue
+      grep -q "$1" "$f" 2>/dev/null || continue
+      pid=${f##*/}; pid=${pid%.json}
+      kill -0 "$pid" 2>/dev/null && return 0
+    done
+  done < <(registries)
+  return 1
+}
+
+launcher() {  # CONFIG DIR
+  if [ "$1" = "$HOME/.claude" ]; then
+    case "${HEADROOM_PRIMARY_NAME:-primary}" in
+      primary) printf 'x' ;;
+      *) printf 'x-%s' "$HEADROOM_PRIMARY_NAME" ;;
+    esac
+  else
+    printf 'x-%s' "${1##*/}"
+  fi
+}
+
+# What a restored pane runs: its directory, an assignment to export or an empty
+# line, and the line. Claimed by moving the record away first, so a line that
+# fails is never tried again by the next shell in this pane.
+line() {
+  local block=${REX_BLOCK:-} f sid kind
+  [ -n "$block" ] || return 0
+  f=$(record_of "$block")
+  [ -f "$f" ] || return 0
+  kind=$(jq -r .kind "$f" 2>/dev/null) || { rm -f "$f"; return 0; }
+  sid=$(jq -r '.sid // empty' "$f")
+  # Running: a shell opened beside it, as in a tmux client in this pane.
+  if [ -n "$sid" ] && running "$sid"; then return 0; fi
+  if [ "$(jq -r .instance "$f")" = "$(instance)" ]; then
+    rm -f "$f"  # the same server: this program ended, and nothing restored the pane
+    return 0
+  fi
+  local claimed
+  claimed=$(mktemp "$DIR/.claim.XXXXXX") && mv -f "$f" "$claimed" || return 0
+  jq -r .dir "$claimed"
+  case "$kind" in
+    claude)
+      jq -r '.env // ""' "$claimed"
+      local cmd
+      cmd=$(launcher "$(jq -r .config "$claimed")")
+      while IFS= read -r t; do [ -n "$t" ] && cmd+=" $(printf '%q' "$t")"; done < <(jq -r '.extra[]?' "$claimed")
+      printf '%s --resume %s\n' "$cmd" "$(printf '%q' "$sid")" ;;
+    command)
+      printf '\n'
+      printf 'exec %s\n' "$(jq -r .line "$claimed")" ;;
+  esac
+  rm -f "$claimed"
+}
+
+seed() {
+  local sessions s b pid cfg env n=0
+  sessions=$(rx ls --json | jq -r '.sessions[].session_id')
+  for s in $sessions; do
+    for b in $(rx block ls -s "$s" --json | jq -r '.blocks[].block_id'); do
+      pid=$(rx block call -s "$s" -b "$b" process | jq -r '.foreground.pid // empty')
+      [ -n "$pid" ] && cfg=$(config_of "$pid") || continue
+      env=$(ps eww -o command= -p "$pid" 2>/dev/null | grep -oE 'PLANLAB_AGENT_NUDGES=[^ ]*' | head -1)
+      write_claude "$b" "$pid" "$cfg" "$env" && n=$((n + 1))
+    done
+  done
+  printf 'rex-resume: recorded %d running Claude Code\n' "$n"
+}
+
+list() {
+  local f
+  for f in "$DIR"/*.json; do
+    [ -f "$f" ] || continue
+    jq -r --arg f "${f##*/}" '[($f | rtrimstr(".json")[-6:]), .kind, (.sid // .line), .dir] | @tsv' "$f"
+  done
+}
+
+case "${1:-}" in
+  note) shift; note "$@" ;;
+  note-command) shift; note_command "$@" ;;
+  forget) shift; forget "$@" ;;
+  line) line ;;
+  seed) seed ;;
+  list) list ;;
+  *) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+esac

@@ -5,6 +5,28 @@ if [[ -o interactive && -n $REX_BLOCK ]] && (( $+commands[rexd] )); then
   rexd &>/dev/null &!
 fi
 
+# A pane Rex restored is a plain shell in its directory. If the pane has a
+# record, its program comes back as a line entered at the first prompt, as if
+# typed: the launchers exist by then, and the line shows what ran. rex-resume
+# decides, and says nothing unless the server that wrote the record is gone.
+_rex_pane_record="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/panes/${REX_BLOCK//:/_}.json"
+if [[ -o interactive && -n $REX_BLOCK && -e $_rex_pane_record ]]; then
+  _rex_resume_line() {
+    add-zle-hook-widget -d zle-line-init _rex_resume_line
+    local -a out
+    out=("${(@f)$($HOME/.local/bin/rex-resume line 2>/dev/null)}")
+    (( $#out == 3 )) || return 0
+    builtin cd -q -- $out[1] 2>/dev/null
+    [[ -n $out[2] ]] && export $out[2]
+    BUFFER=$out[3]
+    zle accept-line
+  }
+  autoload -Uz add-zle-hook-widget
+  zle -N _rex_resume_line
+  add-zle-hook-widget zle-line-init _rex_resume_line
+fi
+unset _rex_pane_record
+
 # Claude Code does not know TERM_PROGRAM=rex, so it prints URLs as plain text
 # unless told the terminal takes OSC 8 links. .zshenv takes it back out of the
 # shells Claude Code runs its tools in.
@@ -34,7 +56,7 @@ if [[ -o interactive && -n $REX_BLOCK ]]; then
     emulate -L zsh
     local word=${${(z)1}[1]}
     case $word in
-      n|nvim|vim|vi|view|claude|codex|ssh|mosh|lazygit|lg|less|more|man|htop|btop|top|yazi|tig|fzf|tmux|rex|watch)
+      n|nvim|vim|vi|view|claude|codex|ssh|mosh|lazygit|lg|less|more|man|htop|btop|top|yazi|tig|fzf|tmux|rex|watch|exec)
         word='' ;;
     esac
     # The Claude launchers (x and its per-account siblings, claude.zsh).

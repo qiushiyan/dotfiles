@@ -33,8 +33,7 @@ blocks_labelled() {
 }
 
 output_of() {
-  rx block call -s "$session" -b "$1" format '{"format":"text","unwrap":true,"trim":true}' \
-    | jq -r '.content // ""' | sed -e 's/[[:space:]]*$//' | tail -n "$2"
+  rx capture -s "$session" -b "$1" --trim --unwrap | sed -e 's/[[:space:]]*$//' | tail -n "$2"
 }
 
 case "${1:-}" in
@@ -90,11 +89,9 @@ if [ "$bg" = 1 ]; then
   exit 0
 fi
 
-# With --wait, rex prints no creation result when its output is not a
-# terminal; the label is unique in the session, so it finds the pane.
-rx "${common[@]}" --wait -- "$@" >/dev/null
+created=$(rx "${common[@]}" --wait -- "$@")
 status=$?
-block=$(blocks_labelled "$label" | head -1)
+block=$(jq -r '.block_ids[0] // empty' <<<"$created")
 if [ -z "$block" ]; then
   echo "rex-run: exit $status; its pane is gone, so there is no output to show" >&2
   exit "$status"
