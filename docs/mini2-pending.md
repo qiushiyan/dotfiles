@@ -7,10 +7,6 @@ it; delete the file when it is empty.
 ## At mini2, needing a login or the screen
 
 - **Desk apps.** Sign in to Linear, Arc, 1Password.
-- **Reinstall Karabiner.** `/Library/Application Support/org.pqrs` was removed
-  here on 2026-11-02, and the services that lived in it stopped at the restart:
-  `brew reinstall --cask karabiner-elements`, then approve what it asks. Done
-  when `pgrep -f Karabiner-Core-Service` finds it.
 
 ## The mini
 
