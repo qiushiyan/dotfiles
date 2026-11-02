@@ -1,9 +1,29 @@
 # Chrome shortcuts
 
-Chrome is the default browser on the Macs here. Its keys keep the habits from
-Arc: the address bar works as the command bar, and a few `ctrl` keys carry over.
-Chrome cannot rebind its own commands, so every custom key lives outside Chrome,
-in Karabiner, a macOS App Shortcut or an extension (§ Where a custom key lives).
+Chrome is becoming the primary browser in place of Arc (§ Moving from Arc). Its
+keys keep the habits from Arc: the address bar works as the command bar, and a
+few `ctrl` keys carry over. Chrome cannot rebind its own commands, so every custom
+key lives outside Chrome, in Karabiner, a macOS App Shortcut or an extension
+(§ Where a custom key lives).
+
+## Moving from Arc
+
+The move is under way, so both browsers stay installed and either may be in use
+on any machine; each machine's default browser is its own setting. Outlets report
+that Arc stops working on 2026-12-22, which would bound this period.
+
+- **A missing Arc habit is work to port.** More settings are expected to come
+  across, so add a key to this doc's menu when one does. Arc's custom keys are in
+  `~/Library/Application Support/Arc/StorableKeyBindings.json`, and its Favorites
+  and pinned tabs in `StorableSidebar.json` beside it.
+- **A password saved in Arc stays in Arc.** Arc's account does not sync to Chrome.
+  To move one, export a CSV from Arc and import it at
+  `chrome://password-manager/settings` on the same machine, choose the Google
+  account if asked, and delete the CSV.
+- **Chrome's rules do not touch Arc.** Every Karabiner rule here is limited to
+  Chrome, so Arc keeps its own keys while both are in use.
+
+When the move finishes, `cask "arc"` leaves the `Brewfile` and this section goes.
 
 ## Menu
 
