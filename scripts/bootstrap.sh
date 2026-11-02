@@ -304,6 +304,11 @@ step_macos_defaults() {
     defaults write -g com.apple.swipescrolldirection -bool false
     ok "natural scrolling: off (logout/reboot to apply)"
 
+    # Chrome has no key of its own for duplicating a tab, so Karabiner has
+    # nothing to remap; this binds the Tab menu's item. Restart Chrome to apply.
+    defaults write com.google.Chrome NSUserKeyEquivalents -dict-add "Duplicate Tab" '^d'
+    ok "Chrome: ctrl+d duplicates the tab (restart Chrome to apply)"
+
     # Power management. Stock macOS / a config profile can leave system
     # sleep absurdly low (seen: sleep=1 min, so the Mac naps after a
     # minute idle). pmset values are in MINUTES, 0 = never. Needs sudo
