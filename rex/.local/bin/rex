@@ -2,8 +2,7 @@
 # rex: the CLI Rex.app ships inside its bundle, put on PATH. App build 1069
 # moved it into Rex Server.app, and build 1497 renamed that Rex Server.rex;
 # the older paths serve a machine not yet updated. A pane first runs the CLI
-# of the server that started it (REX_BIN_DIR), which the app's bundle may have
-# moved ahead of until that server restarts.
+# Rex put on its PATH (REX_BIN_DIR), the one this wrapper would otherwise shadow.
 if [ -n "${REX_BIN_DIR:-}" ] && [ -x "$REX_BIN_DIR/rex" ]; then
   exec "$REX_BIN_DIR/rex" "$@"
 fi

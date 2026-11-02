@@ -232,8 +232,9 @@ Rex's server log says `restored saved sessions`.
 
 - **An update has two steps.** The app's updater replaces the app, and the
   server keeps the old build until it restarts: the app's `Restart Server…`
-  (`client.server.restart`), or a reboot. A machine with no screen takes both
-  from another machine's Screen Sharing.
+  (`client.server.restart`), or a reboot, as mini2 showed with app 1747 over a
+  1695 server. A machine with no screen takes both from another machine's
+  Screen Sharing.
 - **Conversations come back through `rex-resume`.** `rex-agent` records each
   pane's conversation, directory, account and flags under its block id in
   `~/.local/state/rex-lab/panes`, and `rex.zsh` enters the resume at a restored
@@ -295,8 +296,8 @@ one exists.
   runs it from the bundle: once that bundle is replaced, each split and new
   tab fails (`posix_spawn … no such file or directory` in the server log)
   while the keys still resolve. Updates also move the CLI inside the bundle:
-  `rex/.local/bin/rex` puts it on PATH, a pane's own server's first
-  (`REX_BIN_DIR`), then each layout it knows.
+  `rex/.local/bin/rex` puts it on PATH, a pane's `REX_BIN_DIR` first, then each
+  layout it knows.
 - **Any `rex` call with no server running starts one.** `--autostart`
   defaults to true and no setting turns it off. From build 1497 the server
   keeps only a short list of the caller's variables (`PATH`, `HOME`, `SHELL`,
