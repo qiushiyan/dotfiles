@@ -7,19 +7,10 @@ it; delete the file when it is empty.
 ## At mini2, needing a login or the screen
 
 - **Desk apps.** Sign in to Linear, Arc, 1Password.
-- **macOS loads no font from `~/Library/Fonts`.** The Brewfile's fonts are
-  there, but the folder is missing from fontd's registry, and neither
-  restarting fontd nor rebuilding the registry adds it. The folder was created
-  after this login, so try a restart first (`sudo fdesetup authrestart`), which
-  also tests Rex below. Done when `/Applications/Ghostty.app/Contents/MacOS/ghostty
-  +list-fonts --family="JetBrainsMono Nerd Font"` lists the family.
-
-## Rex
-
-- Confirm mini2's Rex app restarts its server with Tailscale on (the two
-  `defaults` keys were written by hand). The running server predates them: its
-  command line has no `--tailscale`, where the mini's has, so the first
-  restart is the test, and it ends every session on the server.
+- **Reinstall Karabiner.** `/Library/Application Support/org.pqrs` was removed
+  here on 2026-11-02, and the services that lived in it stopped at the restart:
+  `brew reinstall --cask karabiner-elements`, then approve what it asks. Done
+  when `pgrep -f Karabiner-Core-Service` finds it.
 
 ## The mini
 
