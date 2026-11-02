@@ -158,10 +158,9 @@ and runs `launchd-mini2/`'s agents. What is its own:
 - **The primary Claude account** in `~/.claude` is `qiushi@planlab.ai`, as on
   the laptop (`hosts/mini2.zsh`); the other accounts are the laptop's set.
 - **The work checkouts run as the mini's** (`docs/qiushi-mini.md`
-  § Toolchain and § planlab checkout), for both verify skills; itell's
-  browser stories wait on Portless's trust (`docs/mini2-pending.md`).
+  § Toolchain and § planlab checkout), for both verify skills. itell's work
+  belongs to the laptop, so its Vercel project is not linked to a login here.
 - **Rex** serves over Tailscale as `qiushi-mini-2-rex`
   (`docs/rex.md` § Several machines).
 
-What is still open, from logins to the Time Machine disk, is in
-`docs/mini2-pending.md`.
+What is still open is in `docs/mini2-pending.md`.

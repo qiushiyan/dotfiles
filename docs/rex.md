@@ -29,6 +29,9 @@ re-probe what matters (§ Lessons).
 Beside the official docs (above), the server describes itself, and both beat
 any notes kept here:
 
+- **Using Rex from an agent:** the `rex` skill, whose guide comes from the
+  installed CLI (`rex skill show`), covers sessions, tabs, panes, running
+  commands and reading their output. This doc starts where that guide stops.
 - **The wire API:** the server serves a full reference for agents at
   `/llms.txt` on its socket: every method with schemas and examples, the
   terminal block's methods, the WebSocket control and data protocols, the
@@ -101,8 +104,8 @@ any notes kept here:
 - **Events are the integration seam.** Block events carry a terminal's program
   status, title, foreground process, bell, clipboard writes and notifications;
   session events carry windows opening, closing, being renamed, and any layout
-  change. Only a running `rex do` script subscribes; init.lua handlers are
-  reserved for a later Rex. Anything always-on is therefore a long-running
+  change. Only a running `rex do` script hears them; init.lua is never sent
+  events. Anything always-on is therefore a long-running
   script, and a detached block (owned by a session, placed in no layout, shown
   nowhere) is the place to host one.
 - **Every terminal knows where it is, not who is looking at it:**
@@ -122,14 +125,8 @@ agents; a new integration should reach for them first.
   terminal; Rex keeps one record per `id` on the block, draws a badge on the
   tab ("Show status badges"), answers `program_status`, and emits
   `program_status_changed` with the record and the process that reported it.
-  The grammar, worked out by experiment (a malformed report is dropped whole,
-  silently):
-
-  ```text
-  ESC ] 7501 ; state=S[:kind=K][:id=ID][:app=A][:progress=0-100][:title=BASE64][:msg=BASE64] ESC \
-  S: idle working done blocked error clear      K: permission question auth
-  ```
-
+  The grammar is Superlogical's spec
+  (`https://www.superlogical.com/rex/docs/build/program-status.md`).
   Claude Code's hooks publish through it (`id=claude`), and so does every
   interactive shell for a command that runs ten seconds or more (`id=shell`,
   `zsh/.config/zsh/rex.zsh`), so a finished build is found as an agent is.
@@ -152,9 +149,8 @@ agents; a new integration should reach for them first.
   `process` block method, right while nvim or Claude runs: tmux's
   `pane_current_path`.
 - **A terminal's whole scrollback** comes back as text, HTML (palette slots as
-  CSS variables) or VT from the `format` block method, in parts past one
-  control reply (§ Lessons); `plain` returns nothing. The URL picker and the
-  pane export read it.
+  CSS variables) or VT from `rex capture`, in parts past one control reply
+  (§ Lessons). The URL picker, the pane export and `rex-run` read it.
 - **A block's raw bytes** come from the data protocol (`/api/data`,
   `rex.data.terminal.v1`): a ticket from `data.connect` on a control
   connection attached to the session, then HELLO (`0x01` and the ticket's 16
@@ -232,9 +228,8 @@ Rex's server log says `restored saved sessions`.
 
 - **An update has two steps.** The app's updater replaces the app, and the
   server keeps the old build until it restarts: the app's `Restart Server…`
-  (`client.server.restart`), or a reboot, as mini2 showed with app 1747 over a
-  1695 server. A machine with no screen takes both from another machine's
-  Screen Sharing.
+  (`client.server.restart`), or a reboot. A machine with no screen takes both
+  from another machine's Screen Sharing.
 - **Conversations come back through `rex-resume`.** `rex-agent` records each
   pane's conversation, directory, account and flags under its block id in
   `~/.local/state/rex-lab/panes`, and `rex.zsh` enters the resume at a restored
@@ -534,7 +529,8 @@ every binding. The shape:
 
 - **Display:** whether notifications, API-set names and floating layers
   appear after an app update, or with a setting not yet found
-  (§ What the app does not show).
+  (§ What the app does not show). The probe for floats is the app's own
+  `pane.float`.
 - **The app's share of scrollback:** whether the app keeps its own copy of
   each block's scrollback, doubling § Memory's per-block cost; the probe is
   the app's footprint while a pane it shows fills its scrollback.

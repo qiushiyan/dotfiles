@@ -322,6 +322,10 @@ twin files enroll <target> --copy-missing                # on any machine, for e
 twin dotfiles apply --load-agents                        # there
 ```
 
+macOS loads nothing from a `~/Library/Fonts` created after the login, and
+restarting `fontd` does not change that: restart the machine once the Brewfile's
+fonts are in, then check with `ghostty +list-fonts --family="JetBrainsMono Nerd Font"`.
+
 The clones arrive with no setup of their own. A work checkout's machine-level setup, its repo-local
 commit identity included (nothing carries it), is in `docs/qiushi-mini.md`
 § Toolchain and § planlab checkout.

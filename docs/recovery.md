@@ -28,8 +28,8 @@ cost, and after a loss to know where each piece comes back from.
 - **Claude session transcripts:** ccclean's mirror on each machine,
   `~/.ccclean/mirror/projects`, copied hourly and never pruned; a transcript
   the store lost is copied back from there (`docs/claude-sessions-store.md`
-  § Retention belongs to ccclean). On the mini, Time Machine backs up the
-  mirror too.
+  § Retention belongs to ccclean). On mini2, Time Machine backs up the mirror
+  too.
 - **Files an agent session wrote or edited:** as a last resort, agent session
   history. The tool calls carry the written content, which the mirror keeps
   byte-exact and obelisk's index keeps searchable; the obelisk skill queries
@@ -87,16 +87,14 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.qiushi.twin-tick.pli
 
 A copy that `twin files resolve` replaced or removed is kept under
 `~/.local/state/twin/replaced/` on the machine that held it. A bad change
-older than that comes back from the mini's Time Machine history.
+older than that comes back from mini2's Time Machine history, for a file mini2
+held.
 
 ## Time Machine on mini2
 
 mini2 backs up to a Samsung T7 2 TB on one of its own USB-C ports: an
 encrypted APFS volume named `T7 Backup`, the whole drive given to Time
-Machine, password in 1Password. The drive backed up the mini until the desk
-moved; it was unplugged there on 2026-10-30, to be attached to mini2 on
-2026-11-02, and until then no machine has a backup off its own disk. The
-mini's old backups stay on it and thin away as mini2's fill it. `~/Library/Caches` and `~/.cache` are
+Machine, password in 1Password. `~/Library/Caches` and `~/.cache` are
 excluded. Time Machine thins on its own (hourly for a day, daily for a
 month, weekly until the drive fills, then the oldest weekly goes), so the
 drive never needs pruning. Nothing can be removed from a backup already
@@ -146,12 +144,14 @@ home over the tailnet would be slow to seed and fragile, so the laptop stays
 free of unique work; the mini's own state is its jobs' records and the
 steward host's, kept by their projects (`docs/qiushi-mini.md`).
 
-Attaching it, at mini2's screen, since the volume's password is asked there:
+Attaching it happens at mini2's screen, since the volume's password is asked
+there: unlock the volume in Finder, pick it under System Settings → General →
+Time Machine → Add Backup Disk, then exclude the caches. The first backup may
+wait for the hourly run, and a restart ends one in progress until the next.
 
 ```bash
-sudo tmutil setdestination -a "/Volumes/T7 Backup"     # after unlocking the volume in Finder
 sudo tmutil addexclusion -p ~/Library/Caches ~/.cache
-ssh mini 'sudo tmutil removedestination <ID from tmutil destinationinfo there>'
+tmutil startbackup --auto                    # back up now rather than on the hour
 ```
 
 ```bash
