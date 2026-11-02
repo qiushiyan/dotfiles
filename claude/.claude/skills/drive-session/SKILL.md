@@ -123,19 +123,13 @@ asking** so they can reverse it:
 - the closeout once the merge or deploy it waits on has happened, the
   follow-up cards sessions recommend, your own waits;
 - relaunching a session whose login was rejected, or reopening one a Rex
-  restart ended, as drive's `next:` says;
+  restart ended;
 - a judgment the user would hand to a model, from a fresh session: `drive
   open judge-1 --model fable --goal '…' '…'`, then act on its verdict;
 - the merge and release, by your project file's § After the PR (a personal
   tool's is its closeout);
-- the cleanup once a session's last step has run. A `left by` line in `drive
-  status` is a fact, named once in a report and never asked, whatever a recap
-  says it waits for:
-
-  ```bash
-  drive close T1@… --cleanup   # refused while it works: do what its next: says
-  drive cleanup                # when status names any
-  ```
+- once a session's last step has run, `drive cleanup`; a `left by` line is
+  reported once, never asked.
 
 A prompt is a step too: approve what the pipeline doc's § Who decides hands
 to sessions, such as an edit in the session's own change or a read of
@@ -153,10 +147,7 @@ changes: these files, not your memory, reach the next batch.
 drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the backfill's --commit on Acme's workspace"
 ```
 
-To ask, recheck first, since a teammate or another session may already have
-done it. Then ask once, standing alone (§ Report), and keep the ask in the
-record from question to answer. Recheck every open ask on each wake,
-whichever session woke you: the session it holds is parked and wakes no one.
+Ask once, standing alone (§ Report); every wake, act on `drive status`'s open asks.
 
 ```bash
 drive record ask T1 --question '…' --recommendation '…' --if-unanswered '…'    # → A3
@@ -268,7 +259,7 @@ decide from costs a round trip, so each item stands alone:
     and install, or the recap alone), parked (on what), or halted (what
     happened, what still runs);
   - its recap quoted, cut only of what Needs you says and what you have
-    since done, such as the cleanup it leaves to the user;
+    since done;
   - the stages sent, the defaults taken, and any step that reached into
     what is the user's.
 

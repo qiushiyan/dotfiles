@@ -59,7 +59,7 @@ and the internal workspaces have no customer behind them (planlab
 - **Use internal systems:** file and update Bench cards, and create, rename
   and sync briefs in the handoffs repository.
 - **Clean up a review branch** such as `pr-<N>-review` in the main
-  checkout once its PR has merged, beside SKILL.md's cleanup.
+  checkout once its PR has merged; `drive cleanup` leaves it.
 - **Leave a Bench card's verifier unnamed:** the card closes itself after a
   quiet week. Say so under **Done without asking**.
 - **A release's migration gate**, by the pipeline doc's § Who decides. First

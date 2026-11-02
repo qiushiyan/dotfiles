@@ -12,6 +12,8 @@ stages, § Choosing the path, § Finishes and § Who decides: your context does
 not carry over, and the files change. A wake answered by the one command its
 `next:` names needs none of them.
 
+Do what drive's `next:` says.
+
 ## Your batch
 
 Name yourself on every drive command by your webhook's name:
@@ -40,16 +42,14 @@ shows you have, and take no action.
 ## Waiting
 
 A send, open or respond arms a wake for when that session's turn ends or it
-stops on a prompt. A refused command arms none: do what its `next:` says,
-which for a session left waiting is to park it.
+stops on a prompt. A refused command arms none.
 
 ```bash
 drive park T3@… "waits for S2's release to finish"   # shown on the user's page: write it in their terms
 drive timer 300 veto                                 # the plan's veto; once the user answers, it brings nothing to do
 ```
 
-Act on a wake from what it says: its `next:` names the command for the case at
-hand. Every run leaves a `drive` command behind it, since a wake with no trace
+Every run leaves a `drive` command behind it, since a wake with no trace
 reads as unheard and comes again.
 
 A wake may act on any session, from what `drive status` and `drive read`
@@ -69,9 +69,7 @@ shows it again.
 you, as a `kind: watchdog` wake, each line saying what to do. A gone session
 that was parked comes back parked, with no wake of its own.
 
-A routine of your own adds nothing while that agent runs. If you keep one, run it
-at most every six hours, `drive watch --due` then `drive status`, and pause it
-when every session is parked with no ask open and when the drive ends. A run that
+A routine of your own adds nothing while that agent runs. A run that
 fails for want of usage never reaches you, so drive holds your wakes instead,
 losing none. When `drive status` says the driver has not answered, tell the user
 once what that held up.
