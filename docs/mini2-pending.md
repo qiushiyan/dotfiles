@@ -10,10 +10,10 @@ it; delete the file when it is empty.
 
 ## Rex
 
-- **The first real update, here.** Approve 1696 in the app, check `rex server
-  status` for the build, run `Restart Server…` if the server stayed behind, and
-  check this session resumes. Then the mini and the laptop, `rex-resume seed` on
-  each first, since their running sessions predate it.
+- **The first real restart, here.** Run the app's `Restart Server…`, check
+  `rex server status` shows the app's build, and check each Claude Code resumes.
+  Then the mini and the laptop, `rex-resume seed` on each first, since a session
+  that has not had a prompt since has no record.
 
 ## The mini
 
