@@ -13,7 +13,7 @@
        claude-steps and gh, without which it cannot read a session. -->
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/qiushiyan/.local/bin/drive</string>
+    <string>/Users/qiushi/.local/bin/drive</string>
     <string>watch</string>
     <string>--due-all</string>
   </array>
@@ -21,7 +21,7 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
-    <string>/Users/qiushiyan/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <string>/Users/qiushi/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
 
   <key>StartInterval</key>
@@ -34,9 +34,9 @@
   <string>/tmp</string>
 
   <key>StandardOutPath</key>
-  <string>/Users/qiushiyan/Library/Logs/drive-watchdog.log</string>
+  <string>/Users/qiushi/Library/Logs/drive-watchdog.log</string>
 
   <key>StandardErrorPath</key>
-  <string>/Users/qiushiyan/Library/Logs/drive-watchdog.log</string>
+  <string>/Users/qiushi/Library/Logs/drive-watchdog.log</string>
 </dict>
 </plist>
