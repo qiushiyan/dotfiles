@@ -39,15 +39,15 @@ answer and its step (`record answer … 'step'`) and for what closed sessions le
 **Replayed** through the classifier as reviewed: 1,012 wakes become 389 posts and
 11 ask rechecks, a 60% cut, with 45 endings carried by another's post. Letting no
 reply stay silent on its words gives 547 posts and 11 rechecks, a 45% cut. Of the
-266 distinct capped replies, 168 read as waiting, 65 as ended, 33 as asking; the
+266 distinct capped replies, 168 read as waiting, 64 as ended, 34 as asking; the
 patterns were written on these same replies, so there is no held-out measure of
 what they miss. The replay holds the bot's actions at their real times and infers
 the capped wakes from elapsed time, so it models posts, not runs. In it the seven
-real endings all still wake: the four that ask nine minutes sooner, the three
-reports from six seconds sooner to under three minutes later once pacing is
-counted. Two of the four cases of the bot catching a stuck job or a CI result now
-reach it at two hours, not ten minutes, unless the job ends first; that is the
-price paid. Varying the hold from one hour to four moved the total by about 5%.
+real endings all still wake: the five that ask nine minutes sooner, the two reports
+from as soon to under three minutes later once pacing is counted. Three of the four
+cases of the bot catching a stuck job or a CI result now reach it at two hours, not
+ten minutes, unless the job ends first; that is the price paid. Varying the hold
+from one hour to four moved the total by about 5%.
 
 **Next pass compares** `drive metrics`' wakes, carried and "followed by no
 action" for a batch after this, against 70% of wakes (706) followed by none here;
