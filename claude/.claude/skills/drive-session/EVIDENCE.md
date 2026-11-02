@@ -36,13 +36,18 @@ machine's watchdog, with no model run when nothing is due. One command for an
 answer and its step (`record answer … 'step'`) and for what closed sessions left
 (`cleanup`). After-wake commands run hourly at most.
 
-**Replayed** through the shipped classifier: 1,012 wakes become 347 posts and 11
-ask rechecks, a 65% cut, with 50 endings carried by another's post. The capped
-path falls from 679 wakes to 64, every real ending among them still waking, the
-seven as soon or sooner. The other 333 wakes (real endings, prompts, sessions
-gone) stay. The four cases of the bot catching a stuck job reach it at two hours,
-not ten minutes, unless the job ends first; that is the price paid. The replay
-holds the bot's actions as they happened, so it models the posts, not the runs.
+**Replayed** through the classifier as reviewed: 1,012 wakes become 389 posts and
+11 ask rechecks, a 60% cut, with 45 endings carried by another's post. Letting no
+reply stay silent on its words gives 547 posts and 11 rechecks, a 45% cut. Of the
+266 distinct capped replies, 168 read as waiting, 65 as ended, 33 as asking; the
+patterns were written on these same replies, so there is no held-out measure of
+what they miss. The replay holds the bot's actions at their real times and infers
+the capped wakes from elapsed time, so it models posts, not runs. In it the seven
+real endings all still wake: the four that ask nine minutes sooner, the three
+reports from six seconds sooner to under three minutes later once pacing is
+counted. Two of the four cases of the bot catching a stuck job or a CI result now
+reach it at two hours, not ten minutes, unless the job ends first; that is the
+price paid. Varying the hold from one hour to four moved the total by about 5%.
 
 **Next pass compares** `drive metrics`' wakes, carried and "followed by no
 action" for a batch after this, against 70% of wakes (706) followed by none here;
