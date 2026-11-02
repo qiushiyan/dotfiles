@@ -44,6 +44,9 @@ Custom keys:
 Chrome's own keys worth keeping in hand:
 
 - **Address bar:** `cmd+l`
+- **Back and forward:** `cmd+left` and `cmd+right`, or `cmd+[` and `cmd+]`. The
+  page sees the arrow keys first, so in a text field they move the cursor, and a
+  Karabiner rule would lose that
 - **Close the tab:** `cmd+w`
 - **Reopen the closed tab:** `cmd+shift+t`
 - **Jump to a tab by position:** `cmd+1` to `cmd+8`; pinned tabs come first, so
