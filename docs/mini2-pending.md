@@ -24,21 +24,18 @@ it; delete the file when it is empty.
 - **Vercel for itell.** The CLI is signed in as `qiushi-8199` (teams
   `planlab-support` and personal), which cannot see itell's project
   (`team_WN5ARgxWCuO0ZJZMJPj2wKeX`), so itell's staging checks fail at
-  `vercel env pull --environment=staging`. Sign in with the account in
-  itell's team, or `vercel switch` to it.
-- **drive's page** on the tailnet:
-  `/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=8444 http://127.0.0.1:8792`.
+  `vercel env pull --environment=staging`. The laptop's login,
+  `learlabvu-9835`, is in the `itell` team; `vercel switch` cannot reach it
+  from `qiushi-8199`, so this takes `vercel login`.
 - **Time Machine to the T7, Monday 2026-11-02**, and the mini's old
   destination removed: `docs/recovery.md` § Time Machine on mini2.
 
 ## Rex
 
-- TabType's `rex_hosts` (`tabtype/.config/tabtype/config.toml`) names the mini
-  and the laptop only; add mini2's server once its label is settled.
-- The laptop's server lists the mini for the agents board (`rex hosts add`);
-  add mini2 there too (`docs/rex.md` § Several machines).
 - Confirm mini2's Rex app restarts its server with Tailscale on (the two
-  `defaults` keys were written by hand).
+  `defaults` keys were written by hand). The running server predates them: its
+  command line has no `--tailscale`, where the mini's has, so the first
+  restart is the test, and it ends every session on the server.
 
 ## The mini
 
