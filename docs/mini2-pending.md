@@ -7,6 +7,12 @@ it; delete the file when it is empty.
 ## At mini2, needing a login or the screen
 
 - **Desk apps.** Sign in to Linear, Arc, 1Password.
+- **macOS loads no font from `~/Library/Fonts`.** The Brewfile's fonts are
+  there, but the folder is missing from fontd's registry, and neither
+  restarting fontd nor rebuilding the registry adds it. The folder was created
+  after this login, so try a restart first (`sudo fdesetup authrestart`), which
+  also tests Rex below. Done when `/Applications/Ghostty.app/Contents/MacOS/ghostty
+  +list-fonts --family="JetBrainsMono Nerd Font"` lists the family.
 
 ## Rex
 
