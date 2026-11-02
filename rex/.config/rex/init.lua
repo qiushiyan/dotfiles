@@ -7,12 +7,11 @@
 --                api (calls to a server), agents, layout, host, feedback,
 --                shell, state
 --   lua/lab/     this config: action (how an action is defined), client
---                (moving the app), hosts (the other machines' servers), one
---                module of actions per domain, and keys, which binds them all
+--                (moving the app), one module of actions per domain, and
+--                keys, which binds them all
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
 
-require("lab.hosts")
 require("lab.agents")
 require("lab.tabs")
 require("lab.panes")

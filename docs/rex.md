@@ -197,13 +197,12 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
   unreachable until then.
 - **The sidebar lists hosts in the order they were added**, and a host
   cannot be dragged: remove it and add it again to move it to the end.
-- **There are two host lists.** The app's, filled by **Add Host…**, is what
-  the sidebar shows and what `rex.servers()` returns inside an action a key
-  ran. The server's, filled by `rex hosts add`, is what `rex -S <label>` and
-  `rex do` scripts see; each machine declares the others by
-  `~/.config/machine` (`lab/hosts.lua`), and a stored host with the same label
-  outranks the declared one until `rex hosts remove`. Neither list fills the
-  other.
+- **The app's hosts are the server's.** **Add Host…** writes to the server's
+  list, which is what `rex -S <label>`, `rex do` scripts and the sidebar use.
+  The app writes its hosts back the moment `rex hosts remove` takes one away, so
+  a stored host is removed in the app, and a config `rex.host` with a stored
+  label only earns a warning on each reload. A machine with no screen takes
+  `rex hosts add LABEL ENDPOINT`.
 - **A key in another host's session runs the config of the app's own
   machine.** The action sees `ctx.server`, and its `rex.call`s travel through
   the app to that host, but its files, processes, `$HOME`, clipboard and `open`

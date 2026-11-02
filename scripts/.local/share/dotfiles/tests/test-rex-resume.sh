@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-rex-resume.sh — a pane Rex restored brings its program back, the capture
-# tools read a long scrollback, each machine declares the others as hosts, and
-# rexd starts once however many shells ask at the same moment.
+# tools read a long scrollback, and rexd starts once however many shells ask at
+# the same moment.
 #
 # Usage: bash test-rex-resume.sh [R1 R5 ...]
 #
@@ -12,8 +12,8 @@
 # second copy (R4); after a real server restart each pane keeps its block id and
 # its shell enters the resume on the right account, once (R5); a sidecar's
 # command comes back the same way (R6); seed records what runs now (R7); rex-run
-# and rex-export read past the 1 MiB one control reply carries (R8); hosts follow
-# ~/.config/machine (R9); rexd starts once, also after a start that died (R10).
+# and rex-export read past the 1 MiB one control reply carries (R8); rexd starts
+# once, also after a start that died (R10).
 #
 # ISOLATION. A scratch Rex server under a short temporary HOME, with REX_*
 # stripped so no call reaches the live server. Claude Code is a stub that
@@ -246,15 +246,6 @@ CASE=R8; if want; then
     page=$(cat "$SB/export.out")
     ok "R8 rex-export writes the whole coloured page" "yes yes" "$(grep -q 'line 039999' "$page" 2>/dev/null && echo yes || echo no) $(grep -q 'vt-palette\|<span\|<div' "$page" 2>/dev/null && echo yes || echo no)"
     drop "$P"
-fi
-
-CASE=R9; if want; then
-    echo mini2 > "$SB/.config/machine"
-    rx config reload >/dev/null
-    ok "R9 mini2 declares the others" "mac qiushi-mac.tailf7adf1.ts.net|mini qiushi-mini-rex.tailf7adf1.ts.net|" \
-        "$(rx hosts list | awk 'NR>1 {print $1, $2}' | sort | tr '\n' '|')"
-    ok "R9 the config loads clean" "0" "$(rx config check "$SB/.config/rex/init.lua" 2>&1 | grep -c '^warning\|^error')"
-    rm -f "$SB/.config/machine"
 fi
 
 CASE=R10; if want; then
