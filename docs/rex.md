@@ -57,7 +57,9 @@ any notes kept here:
   `Library/Application Support/rex` has to fit a Unix socket's ~104 bytes.
   From inside a Rex pane, the pane's `REX_SERVER` outranks `HOME` and every
   command reaches the live server, so each one runs under
-  `env -u REX_SERVER -u REX_SESSION -u REX_BLOCK HOME=…`.
+  `env -u REX_SERVER -u REX_SESSION -u REX_BLOCK HOME=…`. Background it with
+  `( exec env … rex server run ) &`: a shell function's `$!` names a subshell,
+  and killing that orphans the server.
   The server log records every control request a client or script makes,
   with its duration, and `os.clock` is wall time in Rex's Lua, so a wrapper
   around `rex.action` can time each action and count its calls. `footprint
@@ -139,7 +141,8 @@ agents; a new integration should reach for them first.
   published: onto this machine's pasteboard and, over ssh, every other
   machine's in twin's manifest, where the newest copy wins. A yank on one
   host pastes with `p` on any. A copy made outside Rex, such as a screenshot or a URL from the
-  laptop's browser, reaches no other machine this way. Since a pane cannot
+  laptop's browser, reaches no other machine this way; Ctrl+V sends it on
+  demand (§ Several machines). Since a pane cannot
   say where you are, the shared copy tools send it this way in every Rex
   pane: `toclip` (so `browser-clip` copies a URL rather than open it on the
   host), Neovim's `y`, and tmux's `load-buffer -w` for a tmux client running
@@ -147,7 +150,8 @@ agents; a new integration should reach for them first.
   routing.
 - **The foreground process and its cwd** come from the OS through the
   `process` block method, right while nvim or Claude runs: tmux's
-  `pane_current_path`.
+  `pane_current_path`. Claude's Ctrl+G editor shares Claude's process group,
+  so `process` reports Claude while it is open.
 - **A terminal's whole scrollback** comes back as text, HTML (palette slots as
   CSS variables) or VT from `rex capture`, in parts past one control reply
   (§ Lessons). The URL picker, the pane export and `rex-run` read it.
@@ -207,6 +211,14 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
   `read_state` reads the lab's state there, `copy` copies on the app's
   machine; `rexkit.shell`'s `bin` names a tool for a pane by the pane host's
   `$HOME`.
+- **Ctrl+V in another host's pane sends this machine's clipboard there first.**
+  Programs read the pasteboard of the machine they run on (Claude Code's
+  paste, Neovim's `<C-v>`) and a paste event carries only text, so the key is
+  the one moment that knows where the person is. `paste_clipboard` runs `tomini`
+  whatever the pane holds, then queues the key; the log records what went. A
+  failed send raises its reason and withholds the key, since the key would
+  paste whatever that pasteboard last held. It rests on every host's label
+  being its ssh alias on the app's machine.
 - **The app cannot be sent to another host's session.** `session.select`
   queued by an action waits five seconds and gives up ("no host lists it" in
   the app's log). Moving between tabs is therefore the app's own
@@ -324,7 +336,8 @@ one exists.
   then typed the literal `<D-v>`; it maps `<D-v>` to its clipboard paste
   (`nvim/.config/nvim/lua/config/keymaps.lua`, pinned by
   `test-clipboard.sh`), so it reads its host's pasteboard rather than the
-  app's clipboard. A real paste arrives as a `paste` block event, bracketed.
+  app's clipboard; in another host's pane, Ctrl+V is the key that sends it
+  first. A real paste arrives as a `paste` block event, bracketed.
 - **An action has no `rex.sleep`, `rex.wait` or `rex.stop`;** those are a
   `rex do` script's. An action that waits uses a shell sleep
   (`rexkit.shell`'s `pause`), and one that waits on a block polls it, since
@@ -347,6 +360,8 @@ one exists.
 - **Client actions from outside the app need Remote Control** (Rex Settings →
   Rex Server); from a key press they need nothing. A CLI test of an action
   that queues a client step exercises only the server half.
+  `rex api call client.action` with `server` set runs an action as another
+  host's key would, on a session of the server it calls.
 - **A client step runs after the action returns, and the app learns of a new
   window later still.** A tab step queued right after `session.new_window`
   lands one tab too far, in the next session. On this host the action selects
@@ -496,7 +511,8 @@ failures. `init.lua` only loads them, and its header maps them.
 It reaches into other packages, which is where a change to them can break it:
 the Claude hooks in `claude/.claude/settings.json` (each guarded by
 `$REX_BLOCK`, so a no-op outside Rex), step 6 of
-`scripts/.local/bin/theme-set`, `zsh/.config/zsh/rex.zsh`, the yank-path block
+`scripts/.local/bin/theme-set`, `scripts/.local/bin/tomini`,
+`zsh/.config/zsh/rex.zsh`, the yank-path block
 in `nvim/.config/nvim/lua/config/autocmds.lua`, the clipboard gate in
 `nvim/.config/nvim/lua/config/options.lua`, the Rex route in
 `scripts/.local/bin/toclip`, and `~/.config/rex` as a real directory
@@ -521,9 +537,10 @@ every binding. The shape:
   rename the session.
 - **Tools after the prefix:** `y`/`Y` copy path, `g` gopen, `u` URLs, `e`
   export, `W` worktrees, `S` steps sidecar, `A` agents board, `a` next agent.
-- **Without the prefix:** `ctrl+h/j/k/l` pane focus, `ctrl+shift+up/down`
-  every tab in sidebar order across sessions and hosts, `shift+up/down` move
-  the tab; ⌘⇧S, ⌘⇧A and ⌘⇧J as above.
+- **Without the prefix:** `ctrl+h/j/k/l` pane focus, `ctrl+v` paste across
+  hosts (§ Several machines), `ctrl+shift+up/down` every tab in sidebar order
+  across sessions and hosts, `shift+up/down` move the tab; ⌘⇧S, ⌘⇧A and ⌘⇧J as
+  above.
 
 ## Open questions
 
@@ -534,6 +551,9 @@ every binding. The shape:
 - **The app's share of scrollback:** whether the app keeps its own copy of
   each block's scrollback, doubling § Memory's per-block cost; the probe is
   the app's footprint while a pane it shows fills its scrollback.
+- **A Ctrl+V press in the app:** tests and a stand-in client cover
+  `paste_clipboard`, but whether the app paints a failed send's reason, and
+  where keys typed during the send land, take a physical press from the laptop.
 - **Comparison with tmux:** which workflows feel better in each, as sessions
   move to Rex during the trial.
 - **Copying a command from Rex:** `cout` records and copies in blocks, but
