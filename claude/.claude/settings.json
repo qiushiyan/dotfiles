@@ -6,6 +6,9 @@
     "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/quota:~/.claude/mods/worktree"
   },
   "permissions": {
+    "allow": [
+      "Read(//tmp/img-clip/**)"
+    ],
     "deny": [
       "EnterPlanMode",
       "ExitPlanMode",

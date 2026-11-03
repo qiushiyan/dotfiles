@@ -24,9 +24,8 @@ local root = {
   -- with shift+left/right: up and down, since the tabs are a vertical list.
   { "shift+up", "client.tab.move.backward" }, { "shift+down", "client.tab.move.forward" },
   { "cmd+shift+j", "agents_next" }, { "cmd+shift+s", "steps_sidecar" }, { "cmd+shift+a", "agents_board" },
-  -- ctrl+v: the key as it is, after sending the clipboard to a Claude on
-  -- another host (lab.tools).
-  { "ctrl+v", "agent_paste" },
+  -- ctrl+v: on another host's pane, the clipboard goes there first (lab.tools).
+  { "ctrl+v", "paste_clipboard" },
 }
 -- ctrl+h/j/k/l: pane focus that passes the key to nvim and fzf (lab.panes nav).
 for _, dir in ipairs(DIRECTIONS) do root[#root + 1] = { "ctrl+" .. HJKL[dir], "nav", { direction = dir } } end

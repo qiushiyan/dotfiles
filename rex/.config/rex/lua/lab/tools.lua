@@ -4,7 +4,6 @@
 -- session is another host's (rexkit.host).
 
 local action = require("lab.action")
-local agents = require("rexkit.agents")
 local api = require("rexkit.api")
 local feedback = require("rexkit.feedback")
 local host = require("rexkit.host")
@@ -45,28 +44,25 @@ define{
   end,
 }
 
--- ctrl+v: Claude Code pastes from the pasteboard of the machine it runs on,
--- and a Rex paste event carries only text, so an image copied here never
--- reaches a Claude on another host. For one, the clipboard goes to that
--- host's pasteboard first; the key follows as a client step, which runs after
--- this returns, so Claude reads what was sent. Every other pane takes the key
--- as it is and forks nothing. A failed send still delivers the key, so the
--- key never goes dead; the failure is logged and notified.
+-- ctrl+v: programs here read the pasteboard of the machine they run on
+-- (Claude Code's paste, Neovim's <C-v>), and a Rex paste event carries only
+-- text, so what was copied on this machine never reaches a pane on another
+-- host. In such a pane the clipboard goes to that host's pasteboard first,
+-- whatever runs there; the key follows as a client step, which runs after this
+-- returns, so the program reads what was sent. A failed send fails the action,
+-- which reports the reason and withholds the key: pressed anyway, it would
+-- paste whatever the far pasteboard last held. A local pane just gets the key.
 define{
-  name = "agent_paste",
-  title = "Paste Clipboard Into Claude",
+  name = "paste_clipboard",
+  title = "Paste Clipboard",
   args = action.schema({}),
-  run = function(ctx, args)
-    local sent, why = false, nil
+  run = function(ctx)
     if ctx.server then
-      local sid, bid = action.block(ctx, args)
-      if sid and bid and agents.is_claude(api.foreground(sid, bid)) then
-        sent, why = host.send_clipboard(ctx.server)
-        if not sent then feedback.notify("Paste", "clipboard not sent to " .. ctx.server) end
-      end
+      local sent, why = host.send_clipboard(ctx.server)
+      if not sent then error("clipboard not sent to " .. ctx.server .. ": " .. why, 0) end
     end
     rex.client.queue("pane.send_key", { key = "ctrl+v" })
-    return { sent = sent, why = why }
+    return { sent = ctx.server ~= nil }
   end,
 }
 

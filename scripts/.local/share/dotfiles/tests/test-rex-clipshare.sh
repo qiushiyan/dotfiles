@@ -3,7 +3,7 @@
 # published: onto this machine's pasteboard and every other machine's, so
 # nvim's p on one host pastes what was copied in a Rex pane on another.
 #
-# Usage: bash test-rex-clipshare.sh [C1 C4 ... R1 H1 H2 T1 T2]
+# Usage: bash test-rex-clipshare.sh [C1 C4 ... R1 R2 H1 T1 T2]
 #
 # What this pins: a copy lands here at once and on each peer in twin's
 # manifest (C1); the command returns before a slow push lands, since rexd
@@ -17,10 +17,13 @@
 # rexd, and a copy the tool refuses still lands here and is logged; it needs
 # rex and skips without it. H1 pins rexkit.host.copy's routing under plain
 # Lua with its dependencies stubbed; it needs lua and skips without it.
-# H2 pins ctrl+v (lab.tools' agent_paste) the same way: only a Claude on
-# another host gets the clipboard, sent before the key, and the key always
-# follows. T1 and T2 pin tomini, which that send runs: MINI_HOST picks the
-# machine, and a clipboard it cannot read never reaches ssh.
+# R2 drives ctrl+v's action on a scratch Rex server, from the real config and
+# rex.exec to a stub tomini: on another host's pane the clipboard goes first
+# and the key follows, whatever runs there; a send that fails or hangs fails
+# the action with its reason and withholds the key, so stale content is never
+# pasted; a local pane runs nothing. T1 and T2 pin tomini, which that send runs:
+# MINI_HOST picks the machine, a dead host fails fast, and a clipboard it cannot
+# read never reaches ssh.
 #
 # ISOLATION. Each machine is a sandbox directory: its "pasteboard" is a file
 # a stub pbcopy writes, its state is REX_CLIPSHARE_DIR. A stub ssh at the
@@ -183,15 +186,27 @@ CASE=C8; if want; then
     ok "C8 no manifest, no pushes" "(none)|(none)" "$(board mini)|$(board mini2)"
 fi
 
+# A scratch Rex server under a short temporary HOME, REX_* stripped, running
+# the working tree's config. Started once; R1 and R2 share it.
+R() { env -u REX_SERVER -u REX_SESSION -u REX_BLOCK -u TMUX HOME="$RHOME" "$REX" "$@"; }
+scratch_server() {
+  [ -n "$SERVER_PID" ] && return 0
+  RHOME=$(mktemp -d /tmp/rcs.XXXX)
+  mkdir -p "$RHOME/.config" "$RHOME/.local/bin"
+  ln -s "$REX_CFG" "$RHOME/.config/rex"
+  R server run >"$RHOME/server.log" 2>&1 &
+  SERVER_PID=$!
+  for _ in $(seq 100); do R --autostart=false ls >/dev/null 2>&1 && break; sleep 0.1; done
+}
+
 # R1: a scratch Rex server, rexd.lua from the working tree, a stub
 # rex-clipshare that keeps each copy rexd publishes.
 CASE=R1; if want; then
   REX=$(command -v rex || true)
   if [ -z "$REX" ]; then SKIP=$((SKIP+1)); echo "  skip R1: no rex"; else
     REAL_CLIP_BEFORE=$(/usr/bin/pbpaste | shasum)
-    RHOME=$(mktemp -d /tmp/rcs.XXXX)
-    mkdir -p "$RHOME/.config" "$RHOME/.local/bin" "$RHOME/got"
-    ln -s "$REX_CFG" "$RHOME/.config/rex"
+    scratch_server
+    mkdir -p "$RHOME/got"
     # The stub refuses a copy that starts with FAILME, as a missing tool would.
     cat > "$RHOME/.local/bin/rex-clipshare" <<EOF
 #!/bin/sh
@@ -209,10 +224,6 @@ shell.pbcopy = function(text)
 end
 assert(loadfile("$REX_CFG/scripts/rexd.lua"))()
 EOF
-    R() { env -u REX_SERVER -u REX_SESSION -u REX_BLOCK -u TMUX HOME="$RHOME" "$REX" "$@"; }
-    R server run >"$RHOME/server.log" 2>&1 &
-    SERVER_PID=$!
-    for _ in $(seq 100); do R --autostart=false ls >/dev/null 2>&1 && break; sleep 0.1; done
     R --autostart=false new rcs --shell=none -- /bin/sleep 600 >/dev/null 2>&1
     R --autostart=false do "$RHOME/rexd-test.lua" --all >"$RHOME/rexd.log" 2>&1 &
     RDPID=$!
@@ -262,59 +273,54 @@ LUA
   fi
 fi
 
-# H2: ctrl+v sends the clipboard only for a Claude on another host, then the key.
-CASE=H2; if want; then
-  if ! command -v lua >/dev/null; then SKIP=$((SKIP+1)); echo "  skip H2: no lua"; else
-    out=$(lua - "$REX_CFG/lua" <<'LUA'
-package.path = arg[1] .. "/?.lua;" .. package.path
-local calls, fg, exec_result, defs = {}, nil, nil, {}
-local function note(s) calls[#calls + 1] = s end
-package.loaded["lab.action"] = {
-  group = function() return function(spec) defs[spec.name] = spec end end,
-  schema = function() return {} end,
-  block = function(ctx) return ctx.session_id, ctx.block_id end,
-  args = {},
-}
-package.loaded["rexkit.api"] = { foreground = function() note("fg"); return fg end }
-package.loaded["rexkit.feedback"] = { notify = function() note("notify") end, toast = function() end }
-package.loaded["rexkit.shell"] = { quote = tostring, PATH = "" }
-rex = {
-  exec = function(argv, opts)
-    note(argv[1]:match("[^/]+$") .. ":" .. opts.env.MINI_HOST .. ":" .. tostring(opts.timeout ~= nil))
-    return exec_result.r, exec_result.err
-  end,
-  client = { queue = function(name, args) note(name .. "=" .. args.key) end },
-}
-require("lab.tools")
-local function press(ctx, f, result)
-  calls, fg, exec_result = {}, f, result or { r = { ok = true } }
-  ctx.session_id, ctx.block_id = "s", "b"
-  local r = defs.agent_paste.run(ctx, {})
-  print(table.concat(calls, " ") .. " | " .. tostring(r.sent) .. " | " .. tostring(r.why))
-end
-local claude = { name = "2.1.317", argv0 = "claude", path = "/h/.local/share/claude/versions/2.1.317" }
-press({}, claude)
-press({ server = "mini2" }, { name = "nvim", argv0 = "nvim", path = "/opt/homebrew/bin/nvim" })
-press({ server = "mini2" }, nil)
-press({ server = "mini2" }, claude)
-press({ server = "mini2" }, { name = "2.1.317", argv0 = "/x/claude", path = "/other" })
-press({ server = "mini2" }, { name = "2.1.317", argv0 = "x", path = "/h/claude/versions/2.1.317" })
-press({ server = "mini2" }, claude, { r = { ok = false, stderr = "refused" } })
-press({ server = "mini2" }, claude, { r = { ok = false, timed_out = true } })
-press({ server = "mini2" }, claude, { r = nil, err = "no tomini" })
-LUA
-)
-    KEY=pane.send_key=ctrl+v; SENT="fg tomini:mini2:true $KEY | true | nil"
-    ok "H2 ctrl+v: local pane, other program, no process, sent three ways, each failure" \
-      "$KEY | false | nil
-fg $KEY | false | nil
-fg $KEY | false | nil
-$SENT
-$SENT
-$SENT
-fg tomini:mini2:true notify $KEY | false | refused
-fg tomini:mini2:true notify $KEY | false | timed out
-fg tomini:mini2:true notify $KEY | false | no tomini" "$out"
+# R2: ctrl+v's action on the scratch server. client.action with server= is what
+# the app sends for a key in another host's pane; the action reads nothing from
+# that host, so no client needs to answer for it. A stub tomini records what
+# rex.exec hands it and behaves as $RHOME/tomini-mode says.
+CASE=R2; if want; then
+  REX=$(command -v rex || true)
+  if [ -z "$REX" ]; then SKIP=$((SKIP+1)); echo "  skip R2: no rex"; else
+    scratch_server
+    cat > "$RHOME/.local/bin/tomini" <<EOF
+#!/bin/sh
+echo "\$MINI_HOST \$HOME" >> "$RHOME/tomini-calls"
+case \$(cat "$RHOME/tomini-mode") in
+  fail) echo "ssh: no route" >&2; exit 1 ;;
+  hang) exec /bin/sleep 30 ;;
+esac
+EOF
+    chmod +x "$RHOME/.local/bin/tomini"
+    R --autostart=false new paste --shell=none -- /bin/sleep 600 >/dev/null 2>&1
+    sid=$(R --autostart=false ls --json | sed -n 's/.*"session_id": "\(session:[^"]*\)".*/\1/p' | tail -1)
+    bid=$(R --autostart=false api call session.list_blocks "{\"session_id\":\"$sid\"}" | sed -n 's/.*"block_id":"\(block:[^"]*\)".*/\1/p' | head -1)
+    press() {  # press <tomini mode>: the action's output and error, on another host's pane
+      echo "$1" > "$RHOME/tomini-mode"; : > "$RHOME/tomini-calls"
+      R --autostart=false --timeout 15s api call client.action \
+        "{\"action\":\"paste_clipboard\",\"origin\":\"key\",\"session_id\":\"$sid\",\"block_id\":\"$bid\",\"server\":\"m2\",\"servers\":[{\"name\":\"m2\",\"id\":\"m2\"}]}" 2>&1
+    }
+    keymap=$(R --autostart=false keymap 2>/dev/null)
+    ok "R2 ctrl+v is bound to the action" "yes" \
+      "$(printf '%s\n' "$keymap" | grep -E '^ctrl\+v +paste_clipboard' >/dev/null && echo yes || echo no)"
+    out=$(press ok)
+    ok "R2 the send runs through rex.exec with the host's label and the environment kept" \
+      "m2 $RHOME" "$(cat "$RHOME/tomini-calls")"
+    ok "R2 the key follows a send" "yes" \
+      "$(printf %s "$out" | grep -q '"action":"pane.send_key","args":{"key":"ctrl+v"}' && echo yes || echo no)"
+    out=$(press fail)
+    ok "R2 a failed send names the host and the reason" "yes" \
+      "$(printf %s "$out" | grep -q 'clipboard not sent to m2: ssh: no route' && echo yes || echo no)"
+    ok "R2 a failed send withholds the key" "no" \
+      "$(printf %s "$out" | grep -q 'pane.send_key' && echo yes || echo no)"
+    start=$(date +%s); out=$(press hang); took=$(( $(date +%s) - start ))
+    ok "R2 a hung send times out with its reason" "yes" \
+      "$(printf %s "$out" | grep -q 'clipboard not sent to m2: timed out' && echo yes || echo no)"
+    ok "R2 the hang is bounded under ten seconds" "yes" "$([ "$took" -lt 10 ] && echo yes || echo no)"
+    echo ok > "$RHOME/tomini-mode"; : > "$RHOME/tomini-calls"
+    out=$(R --autostart=false do -e "rex.call('session.attach', { session_id = '$sid' })
+      return rex.call('client.action', { action = 'paste_clipboard', origin = 'key', session_id = '$sid', block_id = '$bid' })" 2>&1)
+    ok "R2 a local pane sends nothing" "" "$(cat "$RHOME/tomini-calls")"
+    ok "R2 a local pane still gets the key" "yes" \
+      "$(printf %s "$out" | tr -d ' \n' | grep -q 'pane.send_key' && echo yes || echo no)"
   fi
 fi
 
@@ -323,7 +329,7 @@ tomini_run() {  # tomini_run <dir> <pasteboard get body>: its exit status, ssh's
   local d=$1
   mkdir -p "$d/home/dotfiles/scripts/.local/share/dotfiles" "$d/bin"
   { printf '#!/bin/sh\n'; printf '%s\n' "$2"; } > "$d/home/dotfiles/scripts/.local/share/dotfiles/pasteboard"
-  printf '#!/bin/sh\necho "$1" >> "%s/ssh"; cat >> "%s/sent"\n' "$d" "$d" > "$d/bin/ssh"
+  printf '#!/bin/sh\nwhile [ "$1" = -o ]; do printf "%%s " "$2" >> "%s/ssh"; shift 2; done; echo "$1" >> "%s/ssh"; cat >> "%s/sent"\n' "$d" "$d" "$d" > "$d/bin/ssh"
   chmod +x "$d/home/dotfiles/scripts/.local/share/dotfiles/pasteboard" "$d/bin/ssh"
   HOME="$d/home" PATH="$d/bin:$PATH" MINI_HOST=${3:-mini2} \
     bash "$REX_CFG/../../../scripts/.local/bin/tomini" >/dev/null 2>&1
@@ -331,7 +337,8 @@ tomini_run() {  # tomini_run <dir> <pasteboard get body>: its exit status, ssh's
 CASE=T1; if want; then
   d=$SANDBOX/t1
   tomini_run "$d" 'printf hello > "$2/clip.txt"; echo "$2/clip.txt"'
-  ok "T1 tomini sends the clipboard to the machine MINI_HOST names" "mini2 hello" "$(cat "$d/ssh" 2>/dev/null) $(cat "$d/sent" 2>/dev/null)"
+  ok "T1 tomini sends to the machine MINI_HOST names, failing fast if it is dead" \
+    "BatchMode=yes ConnectTimeout=3 mini2 hello" "$(cat "$d/ssh" 2>/dev/null) $(cat "$d/sent" 2>/dev/null)"
 fi
 CASE=T2; if want; then
   d=$SANDBOX/t2

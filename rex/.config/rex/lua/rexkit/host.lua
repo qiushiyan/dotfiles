@@ -50,7 +50,7 @@ function M.send_clipboard(server)
     { env = { MINI_HOST = server }, timeout = 6 })
   if not r then return false, err end
   if r.ok then return true end
-  return false, r.timed_out and "timed out" or r.stderr
+  return false, r.timed_out and "timed out" or (r.stderr:gsub("%s+$", ""))
 end
 
 -- The output of a shell command run on the host the session's calls go to,
