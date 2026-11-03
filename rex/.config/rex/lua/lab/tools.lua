@@ -4,6 +4,7 @@
 -- session is another host's (rexkit.host).
 
 local action = require("lab.action")
+local agents = require("rexkit.agents")
 local api = require("rexkit.api")
 local feedback = require("rexkit.feedback")
 local host = require("rexkit.host")
@@ -41,6 +42,31 @@ define{
     end
     feedback.toast(sid, bid, "ok", "Copied", shell.tilde(path))
     return { copied = path }
+  end,
+}
+
+-- ctrl+v: Claude Code pastes from the pasteboard of the machine it runs on,
+-- and a Rex paste event carries only text, so an image copied here never
+-- reaches a Claude on another host. For one, the clipboard goes to that
+-- host's pasteboard first; the key follows as a client step, which runs after
+-- this returns, so Claude reads what was sent. Every other pane takes the key
+-- as it is and forks nothing. A failed send still delivers the key, so the
+-- key never goes dead; the failure is logged and notified.
+define{
+  name = "agent_paste",
+  title = "Paste Clipboard Into Claude",
+  args = action.schema({}),
+  run = function(ctx, args)
+    local sent, why = false, nil
+    if ctx.server then
+      local sid, bid = action.block(ctx, args)
+      if sid and bid and agents.is_claude(api.foreground(sid, bid)) then
+        sent, why = host.send_clipboard(ctx.server)
+        if not sent then feedback.notify("Paste", "clipboard not sent to " .. ctx.server) end
+      end
+    end
+    rex.client.queue("pane.send_key", { key = "ctrl+v" })
+    return { sent = sent, why = why }
   end,
 }
 

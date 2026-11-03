@@ -127,6 +127,15 @@ local function session_file(pid)
   end
 end
 
+-- Whether a block's foreground process (api.foreground) is Claude Code. The
+-- native binary is named for its version (…/claude/versions/2.1.317), so its
+-- name says nothing; argv0 and the path do, on any host.
+function M.is_claude(fg)
+  if not fg then return false end
+  return (fg.argv0 or ""):match("[^/]+$") == "claude"
+    or (fg.path or ""):find("/claude/versions/", 1, true) ~= nil
+end
+
 -- The Claude session running in a block of this server: its id and
 -- directory, or nil. The pid comes from the block's status record (its
 -- owner is the process that reported) or, failing that, the block's

@@ -3,7 +3,7 @@
 # published: onto this machine's pasteboard and every other machine's, so
 # nvim's p on one host pastes what was copied in a Rex pane on another.
 #
-# Usage: bash test-rex-clipshare.sh [C1 C4 ... R1 H1]
+# Usage: bash test-rex-clipshare.sh [C1 C4 ... R1 H1 H2 T1 T2]
 #
 # What this pins: a copy lands here at once and on each peer in twin's
 # manifest (C1); the command returns before a slow push lands, since rexd
@@ -17,6 +17,10 @@
 # rexd, and a copy the tool refuses still lands here and is logged; it needs
 # rex and skips without it. H1 pins rexkit.host.copy's routing under plain
 # Lua with its dependencies stubbed; it needs lua and skips without it.
+# H2 pins ctrl+v (lab.tools' agent_paste) the same way: only a Claude on
+# another host gets the clipboard, sent before the key, and the key always
+# follows. T1 and T2 pin tomini, which that send runs: MINI_HOST picks the
+# machine, and a clipboard it cannot read never reaches ssh.
 #
 # ISOLATION. Each machine is a sandbox directory: its "pasteboard" is a file
 # a stub pbcopy writes, its state is REX_CLIPSHARE_DIR. A stub ssh at the
@@ -256,6 +260,83 @@ LUA
     ok "H1 another host's session publishes here, falls back to pbcopy, else OSC 52" \
       "publish:a publish:b pbcopy:b osc52:c" "$out"
   fi
+fi
+
+# H2: ctrl+v sends the clipboard only for a Claude on another host, then the key.
+CASE=H2; if want; then
+  if ! command -v lua >/dev/null; then SKIP=$((SKIP+1)); echo "  skip H2: no lua"; else
+    out=$(lua - "$REX_CFG/lua" <<'LUA'
+package.path = arg[1] .. "/?.lua;" .. package.path
+local calls, fg, exec_result, defs = {}, nil, nil, {}
+local function note(s) calls[#calls + 1] = s end
+package.loaded["lab.action"] = {
+  group = function() return function(spec) defs[spec.name] = spec end end,
+  schema = function() return {} end,
+  block = function(ctx) return ctx.session_id, ctx.block_id end,
+  args = {},
+}
+package.loaded["rexkit.api"] = { foreground = function() note("fg"); return fg end }
+package.loaded["rexkit.feedback"] = { notify = function() note("notify") end, toast = function() end }
+package.loaded["rexkit.shell"] = { quote = tostring, PATH = "" }
+rex = {
+  exec = function(argv, opts)
+    note(argv[1]:match("[^/]+$") .. ":" .. opts.env.MINI_HOST .. ":" .. tostring(opts.timeout ~= nil))
+    return exec_result.r, exec_result.err
+  end,
+  client = { queue = function(name, args) note(name .. "=" .. args.key) end },
+}
+require("lab.tools")
+local function press(ctx, f, result)
+  calls, fg, exec_result = {}, f, result or { r = { ok = true } }
+  ctx.session_id, ctx.block_id = "s", "b"
+  local r = defs.agent_paste.run(ctx, {})
+  print(table.concat(calls, " ") .. " | " .. tostring(r.sent) .. " | " .. tostring(r.why))
+end
+local claude = { name = "2.1.317", argv0 = "claude", path = "/h/.local/share/claude/versions/2.1.317" }
+press({}, claude)
+press({ server = "mini2" }, { name = "nvim", argv0 = "nvim", path = "/opt/homebrew/bin/nvim" })
+press({ server = "mini2" }, nil)
+press({ server = "mini2" }, claude)
+press({ server = "mini2" }, { name = "2.1.317", argv0 = "/x/claude", path = "/other" })
+press({ server = "mini2" }, { name = "2.1.317", argv0 = "x", path = "/h/claude/versions/2.1.317" })
+press({ server = "mini2" }, claude, { r = { ok = false, stderr = "refused" } })
+press({ server = "mini2" }, claude, { r = { ok = false, timed_out = true } })
+press({ server = "mini2" }, claude, { r = nil, err = "no tomini" })
+LUA
+)
+    KEY=pane.send_key=ctrl+v; SENT="fg tomini:mini2:true $KEY | true | nil"
+    ok "H2 ctrl+v: local pane, other program, no process, sent three ways, each failure" \
+      "$KEY | false | nil
+fg $KEY | false | nil
+fg $KEY | false | nil
+$SENT
+$SENT
+$SENT
+fg tomini:mini2:true notify $KEY | false | refused
+fg tomini:mini2:true notify $KEY | false | timed out
+fg tomini:mini2:true notify $KEY | false | no tomini" "$out"
+  fi
+fi
+
+# T1, T2: tomini against a stub pasteboard and ssh, under a sandbox HOME.
+tomini_run() {  # tomini_run <dir> <pasteboard get body>: its exit status, ssh's calls in <dir>/ssh
+  local d=$1
+  mkdir -p "$d/home/dotfiles/scripts/.local/share/dotfiles" "$d/bin"
+  { printf '#!/bin/sh\n'; printf '%s\n' "$2"; } > "$d/home/dotfiles/scripts/.local/share/dotfiles/pasteboard"
+  printf '#!/bin/sh\necho "$1" >> "%s/ssh"; cat >> "%s/sent"\n' "$d" "$d" > "$d/bin/ssh"
+  chmod +x "$d/home/dotfiles/scripts/.local/share/dotfiles/pasteboard" "$d/bin/ssh"
+  HOME="$d/home" PATH="$d/bin:$PATH" MINI_HOST=${3:-mini2} \
+    bash "$REX_CFG/../../../scripts/.local/bin/tomini" >/dev/null 2>&1
+}
+CASE=T1; if want; then
+  d=$SANDBOX/t1
+  tomini_run "$d" 'printf hello > "$2/clip.txt"; echo "$2/clip.txt"'
+  ok "T1 tomini sends the clipboard to the machine MINI_HOST names" "mini2 hello" "$(cat "$d/ssh" 2>/dev/null) $(cat "$d/sent" 2>/dev/null)"
+fi
+CASE=T2; if want; then
+  d=$SANDBOX/t2
+  tomini_run "$d" 'exit 1'; rc=$?
+  ok "T2 a clipboard tomini cannot read fails and never reaches ssh" "1 no" "$rc $([ -e "$d/ssh" ] && echo yes || echo no)"
 fi
 
 echo "$PASS passed, $FAIL failed${SKIP:+, $SKIP skipped}${FAILED:+ ($FAILED )}"

@@ -40,6 +40,19 @@ function M.copy(ctx, session_id, block_id, text, fg)
   return feedback.osc52(session_id, block_id, text, fg)
 end
 
+-- Put this machine's clipboard, text or image, on the pasteboard of SERVER,
+-- a host's label in `rex hosts`, which is also its ssh alias. Returns true,
+-- or false and why. tomini reads it all before it touches the far side, so a
+-- failure leaves that pasteboard as it was. The timeout bounds a key press
+-- on a host that stopped answering.
+function M.send_clipboard(server)
+  local r, err = rex.exec({ os.getenv("HOME") .. "/.local/bin/tomini" },
+    { env = { MINI_HOST = server }, timeout = 6 })
+  if not r then return false, err end
+  if r.ok then return true end
+  return false, r.timed_out and "timed out" or r.stderr
+end
+
 -- The output of a shell command run on the host the session's calls go to,
 -- in directory CWD (optional), or nil. SCRIPT is sh source; ARGS become $1,
 -- $2, …. Here it is a plain shell. On another host's session a hidden block
