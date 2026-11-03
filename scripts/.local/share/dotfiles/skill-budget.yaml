@@ -51,6 +51,7 @@ skills:
   write-spec: {body: 1207, total: 6163}
   add-theme: {body: 1437, total: 2035}
   rex: {body: 65, total: 65}
+  emil-design: {body: 773, total: 773}
 # Every lesson file at its word count, under the same ratchet: the consult and
 # review voices read these each round. Dot-directories (the pinned upstream
 # copies) are skipped; skill-sync records a new file and drops a removed one.
