@@ -1,5 +1,7 @@
 {
   "cleanupPeriodDays": 36500,
+  "syncClaudeAiSkills": false,
+  "syncClaudeAiPlugins": false,
   "env": {
     "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
     "CLAUDE_AFK_TIMEOUT_MS": "2147483647",
@@ -27,9 +29,6 @@
     "defaultMode": "auto"
   },
   "disableClaudeAiConnectors": true,
-  "syncClaudeAiSkills": false,
-  "syncClaudeAiPlugins": false,
-  "feedbackDrafts": "off",
   "skillOverrides": {
     "artifact-capabilities": "off",
     "artifact-components": "off",
@@ -232,6 +231,7 @@
       }
     }
   },
+  "feedbackDrafts": "off",
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "modelSettings": {
