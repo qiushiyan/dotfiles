@@ -194,7 +194,9 @@ scratch_server() {
   RHOME=$(mktemp -d /tmp/rcs.XXXX)
   mkdir -p "$RHOME/.config" "$RHOME/.local/bin"
   ln -s "$REX_CFG" "$RHOME/.config/rex"
-  R server run >"$RHOME/server.log" 2>&1 &
+  # exec in the subshell: a backgrounded shell function leaves $! naming that
+  # subshell, and killing it would orphan the server.
+  ( exec env -u REX_SERVER -u REX_SESSION -u REX_BLOCK -u TMUX HOME="$RHOME" "$REX" server run ) >"$RHOME/server.log" 2>&1 &
   SERVER_PID=$!
   for _ in $(seq 100); do R --autostart=false ls >/dev/null 2>&1 && break; sleep 0.1; done
 }
@@ -225,7 +227,7 @@ end
 assert(loadfile("$REX_CFG/scripts/rexd.lua"))()
 EOF
     R --autostart=false new rcs --shell=none -- /bin/sleep 600 >/dev/null 2>&1
-    R --autostart=false do "$RHOME/rexd-test.lua" --all >"$RHOME/rexd.log" 2>&1 &
+    ( exec env -u REX_SERVER -u REX_SESSION -u REX_BLOCK -u TMUX HOME="$RHOME" "$REX" --autostart=false do "$RHOME/rexd-test.lua" --all ) >"$RHOME/rexd.log" 2>&1 &
     RDPID=$!
     sleep 1.5
     head -c 300000 /dev/urandom | base64 | tr -d '\n' | head -c 300000 > "$RHOME/big.txt"
@@ -298,6 +300,8 @@ EOF
       R --autostart=false --timeout 15s api call client.action \
         "{\"action\":\"paste_clipboard\",\"origin\":\"key\",\"session_id\":\"$sid\",\"block_id\":\"$bid\",\"server\":\"m2\",\"servers\":[{\"name\":\"m2\",\"id\":\"m2\"}]}" 2>&1
     }
+    ok "R2 the pid the cleanup kills is the server itself" "$SERVER_PID" \
+      "$(R --autostart=false whoami --json | sed -n 's/.*"pid": \([0-9]*\).*/\1/p' | tail -1)"
     keymap=$(R --autostart=false keymap 2>/dev/null)
     ok "R2 ctrl+v is bound to the action" "yes" \
       "$(printf '%s\n' "$keymap" | grep -E '^ctrl\+v +paste_clipboard' >/dev/null && echo yes || echo no)"
