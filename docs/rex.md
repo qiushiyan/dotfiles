@@ -219,6 +219,13 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
   failed send raises its reason and withholds the key, since the key would
   paste whatever that pasteboard last held. It rests on every host's label
   being its ssh alias on the app's machine.
+- **`prefix u` opens a pane's URL or file on the machine you are at.** A click
+  cannot: the app handles it with no hook, on a path its machine does not have,
+  and Claude Code's own click runs on the host. The action names the app's
+  machine and the picker, on the pane's host, hands the pick to `rex-open`, which
+  copies a file there and opens the copy. Fullscreen Claude Code's capture is its
+  current screen, broken mid-word by its renderer with no link targets in it, so
+  scroll to the path first; the picker rejoins a path only if the result exists.
 - **The app cannot be sent to another host's session.** `session.select`
   queued by an action waits five seconds and gives up ("no host lists it" in
   the app's log). Moving between tabs is therefore the app's own
@@ -535,7 +542,7 @@ every binding. The shape:
   session on this host, `c` new tab, `N` new tab here, `x` close after asking
   (`y` closes, `n` or `escape` keeps it), `m` rename, `T` `(` `)` sessions, `$`
   rename the session.
-- **Tools after the prefix:** `y`/`Y` copy path, `g` gopen, `u` URLs, `e`
+- **Tools after the prefix:** `y`/`Y` copy path, `g` gopen, `u` URLs and files, `e`
   export, `W` worktrees, `S` steps sidecar, `A` agents board, `a` next agent.
 - **Without the prefix:** `ctrl+h/j/k/l` pane focus, `ctrl+v` paste across
   hosts (§ Several machines), `ctrl+shift+up/down` every tab in sidebar order

@@ -1,51 +1,103 @@
 #!/usr/bin/env bash
-# rex-urls SESSION BLOCK [here|away]: pick a URL from a Rex terminal's screen and
-# scrollback and open it (prefix u, the urls action, which runs this in a
-# split below the block). `rex capture` hands over the whole scrollback as
-# text, newest URL first in the list. Backslashes go first: zsh escapes the ?
-# and = of a URL typed at its prompt.
+# rex-urls SESSION BLOCK [MACHINE]: pick a URL or file from a Rex terminal's
+# screen and scrollback and open it on MACHINE, the Mac the person is at (prefix
+# u, the urls action, which runs this in a split below the block, on the block's
+# host). `rex capture` hands over the text, newest first in the list; fullscreen
+# Claude Code has only its current screen there, so scroll it to the path first.
 #
-#   enter    open it; with `away` (the key came from another machine's app,
-#            such as the laptop's) copy it instead, since a browser opened
-#            here would open on the wrong screen
+#   enter    open it (rex-open), or copy it when MACHINE is unknown or unreachable
 #   ctrl-y   copy it instead (OSC 52: the clipboard of the machine you look from)
 #   esc      close
+#
+# A file is listed only if it exists here, which is what lets the matching be
+# loose: Claude Code's renderer breaks a long path mid-word with an indent, past
+# what --unwrap can join, so a path ending a row is also tried with the first
+# word of up to three rows after it. Relative paths resolve against this split's
+# directory, the block's. A URL broken across rows is not rejoined, and a path
+# with a space in it is not found.
 set -u
-export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-session=${1:?usage: rex-urls SESSION BLOCK}
-block=${2:?usage: rex-urls SESSION BLOCK}
-where=${3:-here}
+export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+session=${1:?usage: rex-urls SESSION BLOCK [MACHINE]}
+block=${2:?usage: rex-urls SESSION BLOCK [MACHINE]}
+machine=${3:-unknown}
 
 say() { printf '\n  %s\n' "$1"; sleep "$2"; }
+copy() { printf '\e]52;c;%s\a' "$(printf %s "$1" | base64 | tr -d '\n')"; }
+
+# Reads the capture, prints each URL and existing file once, newest first.
+extract() {
+  perl -e '
+    use File::Spec;
+    my @rows = map { s/\\//gr } <STDIN>;
+    my (@found);
+    sub words { grep { length } split /[\s()\[\]<>"\x27`]+/, $_[0] }
+    sub trim { my $w = shift; $w =~ s/[.,;:!?]+$//; $w }
+    sub resolve {
+      my $w = trim(shift);
+      $w =~ s/(?::\d+)+$//;
+      $w =~ s{^file://}{};
+      $w =~ s{^~(?=/)}{$ENV{HOME}};
+      for my $try ($w, $w =~ m{^[ab]/(.+)} ? $1 : ()) {
+        my $abs = File::Spec->rel2abs($try);
+        return $abs if -f $abs;
+      }
+      return;
+    }
+    for my $i (0 .. $#rows) {
+      my @w = words($rows[$i]);
+      for my $j (0 .. $#w) {
+        my $word = $w[$j];
+        if ($word =~ m{(https?://[^\s]+)}) { push @found, trim($1); next }
+        next unless $word =~ m{[/.]} && $word =~ /\w/;
+        my $hit = resolve($word);
+        if ($j == $#w && $word =~ m{/}) {
+          my $joined = $word;
+          for my $k (1 .. 3) {
+            last if $i + $k > $#rows;
+            my ($next) = grep { m{\w} } words($rows[$i + $k]);
+            last unless defined $next;
+            $joined .= $next;
+            my $longer = resolve($joined);
+            $hit = $longer if $longer;
+          }
+        }
+        push @found, $hit if $hit;
+      }
+    }
+    my %seen;
+    print "$_\n" for grep { !$seen{$_}++ } reverse @found;
+  '
+}
 
 # rex probes the terminal on stderr, and the answer would arrive as input; the
 # error is kept to say why a pane gave nothing.
 err=$(mktemp); trap 'rm -f "$err"' EXIT
-urls=$(rex capture -s "$session" -b "$block" --unwrap 2>"$err" \
-  | tr -d '\\' \
-  | grep -oE '(https?|file)://[^][[:space:]<>"'"'"'`()]+' \
-  | sed -E 's/[.,;:!?]+$//' \
-  | awk '{ a[NR] = $0 } END { for (i = NR; i > 0; i--) if (!seen[a[i]]++) print a[i] }')
+targets=$(rex capture -s "$session" -b "$block" --unwrap 2>"$err" | extract)
 
-if [ -z "$urls" ]; then
+if [ -z "$targets" ]; then
   if [ -s "$err" ]; then
     say "$(head -1 "$err")" 5
   else
-    say "no URLs in this pane" 1.2
+    say "no URLs or files in this pane" 1.2
   fi
   exit 0
 fi
 
-out=$(printf '%s\n' "$urls" | fzf --reverse --height=100% --prompt='url> ' \
-  --expect=enter,ctrl-y --header='enter: open · ctrl-y: copy') || exit 0
+out=$(printf '%s\n' "$targets" | fzf --reverse --height=100% --prompt='open> ' \
+  --expect=enter,ctrl-y --header="enter: open on $machine · ctrl-y: copy") || exit 0
 key=$(sed -n 1p <<<"$out")
-url=$(sed -n 2p <<<"$out")
-[ -n "$url" ] || exit 0
+target=$(sed -n 2p <<<"$out")
+[ -n "$target" ] || exit 0
 
-[ "$where" = away ] && key=ctrl-y
-case "$key" in
-  ctrl-y)
-    printf '\e]52;c;%s\a' "$(printf %s "$url" | base64 | tr -d '\n')"
-    rex-toast ok Copied "$url" ;;
-  *) open "$url" ;;
-esac
+if [ "$key" = ctrl-y ]; then
+  copy "$target"
+elif [ "$machine" = unknown ]; then
+  copy "$target"
+  say "cannot tell which machine you are at: copied it instead" 2
+else
+  printf '\n  opening on %s…\n' "$machine"
+  why=$(rex-open "$machine" "$target" 2>&1) || {
+    copy "$target"
+    say "not opened on $machine, copied it instead: $(tail -1 <<<"$why")" 4
+  }
+fi

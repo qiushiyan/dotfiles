@@ -196,6 +196,7 @@ purpose:
 | `frommini -g` | laptop | the mini's GUI pasteboard, text or image → laptop clipboard |
 | `tomini` | laptop | the laptop clipboard, text or image → the mini's pasteboard, or `MINI_HOST`'s |
 | Ctrl+V in a Rex pane on another host | the app's machine | that machine's clipboard, text or image → the pane host's pasteboard, then the key |
+| `prefix u` in a Rex pane on another host | the pane's host | a URL or a copy of a file from the pane → opened on the app's machine |
 
 - **OSC 52 is fire-and-forget.** A terminal that ignores it, such as macOS
   Terminal.app, drops the copy without an error. The text still sits in the

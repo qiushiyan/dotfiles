@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# rex-open MACHINE TARGET: open a file or http(s) URL on MACHINE, the Mac the
+# person is at (a name in twin's manifest, also its ssh alias). The picker
+# behind prefix u runs it on a pane's host (rex-urls), and anything else may.
+# On this machine it is plain `open`; for another, a file is copied there first
+# and opens as a copy, so edits do not come back.
+#
+#   rex-open receive NAME SIZE    INTERNAL: what MACHINE runs for a file
+#   rex-open receive-url          INTERNAL: what MACHINE runs for a URL
+#
+# A received file is quarantined, as a browser download is, so a picked script
+# or app meets Gatekeeper rather than launching. It is written whole or not at
+# all: a dropped connection can look like a clean end of input, so the byte
+# count is checked before it takes its name. Copies live 7 days under
+# ~/.cache/rex-open. Stubs of ssh and open on PATH test it (test-rex-open.sh).
+set -euo pipefail
+export PATH="$PATH:/usr/bin:/bin"
+
+die() { printf 'rex-open: %s\n' "$*" >&2; exit 1; }
+is_url() { [[ $1 =~ ^https?://[^[:space:]]+$ ]]; }
+
+receive() {
+  local name=${1:?} size=${2:?} root=$HOME/.cache/rex-open dir got
+  mkdir -p "$root"
+  find "$root" -mindepth 1 -mtime +7 -delete 2>/dev/null || true
+  dir=$(mktemp -d "$root/XXXXXX")
+  cat > "$dir/.part"
+  got=$(wc -c < "$dir/.part" | tr -d ' ')
+  if [ "$got" != "$size" ]; then
+    rm -rf "$dir"
+    die "got $got of $size bytes"
+  fi
+  xattr -w com.apple.quarantine "0083;$(printf %x "$(date +%s)");rex-open;" "$dir/.part"
+  mv "$dir/.part" "$dir/$name"
+  open "$dir/$name"
+}
+
+case ${1:-} in
+  receive) shift; receive "$@"; exit ;;
+  receive-url)
+    IFS= read -r url || true
+    is_url "$url" || die "not an http(s) URL"
+    exec open "$url" ;;
+esac
+
+machine=${1:?usage: rex-open MACHINE TARGET}
+target=${2:?usage: rex-open MACHINE TARGET}
+is_url "$target" || [ -f "$target" ] || die "no such file: $target"
+
+if [ "$machine" = "$(cat "$HOME/.config/machine" 2>/dev/null)" ]; then
+  exec open "$target"
+fi
+
+# Fail fast on a machine that is down. The picker is waiting on this.
+SSH=(ssh -o BatchMode=yes -o ConnectTimeout=3 "$machine")
+if is_url "$target"; then
+  printf '%s\n' "$target" | "${SSH[@]}" '"$HOME/.local/bin/rex-open" receive-url'
+else
+  # The name crosses a remote shell, so it keeps only characters that need no
+  # quoting there.
+  name=$(printf %s "$(basename "$target")" | LC_ALL=C tr -c 'A-Za-z0-9._-' '_' | sed -E 's/^[.-]+//')
+  [ -n "$name" ] || name=file
+  size=$(wc -c < "$target" | tr -d ' ')
+  "${SSH[@]}" "\"\$HOME/.local/bin/rex-open\" receive $name $size" < "$target"
+fi

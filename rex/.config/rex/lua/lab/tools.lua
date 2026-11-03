@@ -135,21 +135,20 @@ define{
   end,
 }
 
--- prefix u: pick a URL from the block's screen and scrollback and open it
--- (rex-urls), in a split below it. Rex hands over the whole scrollback as
+-- prefix u: pick a URL or file from the block's screen and scrollback and open
+-- it (rex-urls), in a split below it. Rex hands over the whole scrollback as
 -- text (`format`), so no copy mode is involved.
 define{
   name = "urls",
-  title = "Open a URL from This Pane",
+  title = "Open a URL or File from This Pane",
   args = action.schema({}),
   run = function(ctx, args)
     local sid, bid = action.block(ctx, args)
     if not (sid and bid) then return { opened = false } end
-    -- The picker runs on the session's host; it opens a URL only when the
-    -- app is there too, and copies it (OSC 52, to the app) otherwise.
-    local where = (not ctx.server and host.client_is_local(ctx.client_id)) and "here" or "away"
+    -- The picker runs on the session's host and opens the pick on the machine
+    -- the key was pressed on, which only this action can name.
     local block = api.split(sid, bid, { direction = "vertical", ratio = 0.6, label = "urls",
-      cwd = api.cwd(sid, bid), command = shell.bin("rex-urls", sid, bid, where), focus = true })
+      cwd = api.cwd(sid, bid), command = shell.bin("rex-urls", sid, bid, host.viewer(ctx)), focus = true })
     return { opened = block }
   end,
 }

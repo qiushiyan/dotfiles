@@ -28,6 +28,16 @@ function M.app_is_here(ctx)
   return ctx.server ~= nil or M.client_is_local(ctx.client_id)
 end
 
+-- The name of the machine the person is at (~/.config/machine, also its ssh
+-- alias): this one when the app is here, else "unknown".
+function M.viewer(ctx)
+  if not M.app_is_here(ctx) then return "unknown" end
+  local f = io.open(os.getenv("HOME") .. "/.config/machine")
+  local name = f and f:read("*l")
+  if f then f:close() end
+  return name and name ~= "" and name or "unknown"
+end
+
 -- Put TEXT on the clipboard of the machine you are looking from: published
 -- here (and so on every machine) when the app is here and the block is
 -- another host's (no tty of it here), else through the block's terminal
