@@ -290,6 +290,7 @@ case \$(cat "$RHOME/tomini-mode") in
   fail) echo "ssh: no route" >&2; exit 1 ;;
   hang) exec /bin/sleep 30 ;;
 esac
+echo "tomini: image (9 bytes) to \$MINI_HOST"
 EOF
     chmod +x "$RHOME/.local/bin/tomini"
     R --autostart=false new paste --shell=none -- /bin/sleep 600 >/dev/null 2>&1
@@ -310,6 +311,8 @@ EOF
       "m2 $RHOME" "$(cat "$RHOME/tomini-calls")"
     ok "R2 the key follows a send" "yes" \
       "$(printf %s "$out" | grep -q '"action":"pane.send_key","args":{"key":"ctrl+v"}' && echo yes || echo no)"
+    ok "R2 the log says what a send sent" "1" \
+      "$(grep -c 'paste_clipboard on m2 .*tomini: image (9 bytes) to m2' "$RHOME/.local/state/rex-lab/actions.log" 2>/dev/null)"
     out=$(press fail)
     ok "R2 a failed send names the host and the reason" "yes" \
       "$(printf %s "$out" | grep -q 'clipboard not sent to m2: ssh: no route' && echo yes || echo no)"

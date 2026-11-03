@@ -57,12 +57,15 @@ define{
   title = "Paste Clipboard",
   args = action.schema({}),
   run = function(ctx)
+    local summary
     if ctx.server then
-      local sent, why = host.send_clipboard(ctx.server)
-      if not sent then error("clipboard not sent to " .. ctx.server .. ": " .. why, 0) end
+      local sent, detail = host.send_clipboard(ctx.server)
+      if not sent then error("clipboard not sent to " .. ctx.server .. ": " .. detail, 0) end
+      summary = detail
     end
     rex.client.queue("pane.send_key", { key = "ctrl+v" })
-    return { sent = ctx.server ~= nil }
+    -- lab.action logs this on another host's pane: what went, and where.
+    return { sent = ctx.server ~= nil, summary = summary }
   end,
 }
 
