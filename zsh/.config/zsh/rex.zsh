@@ -48,8 +48,42 @@ if [[ -o interactive && -n $REX_BLOCK ]]; then
     print -n -- $'\e]7501;'"$1"$'\e\\'
   }
 
+  # _rex_job_text TEXT N: TEXT as Rex keeps it, in REPLY. Rex discards a whole
+  # report whose text holds a control character or passes its limits (msg
+  # 2048 bytes), so a multi-line or pasted command would lose its badge:
+  # every control character becomes a space and the text stops at N
+  # characters. Multibyte on, so a C1 control goes whole.
+  _rex_job_text() {
+    emulate -L zsh
+    REPLY=${1//[[:cntrl:]]/ }
+    REPLY=${REPLY[1,$2]}
+  }
+
+  # _rex_job_b64 TEXT: base64 of TEXT's bytes, in REPLY. In the shell, not
+  # base64(1): it runs before every command, and two forks there cost ~12 ms.
   _rex_job_b64() {
-    print -rn -- "$1" | base64 | tr -d '\n'
+    emulate -L zsh -o no_multibyte
+    local s=$1 t=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/ c
+    local -i i n=$#s a b d w x y z
+    REPLY=
+    for (( i = 1; i <= n; i += 3 )); do
+      c=$s[i] a=0 b=0 d=0; (( a = #c & 255 ))
+      if (( i + 1 <= n )); then c=$s[i+1]; (( b = #c & 255 )); fi
+      if (( i + 2 <= n )); then c=$s[i+2]; (( d = #c & 255 )); fi
+      (( w = (a >> 2) + 1, x = ((a & 3) << 4 | b >> 4) + 1,
+         y = ((b & 15) << 2 | d >> 6) + 1, z = (d & 63) + 1 ))
+      REPLY+=$t[w]$t[x]
+      if (( i + 1 <= n )); then REPLY+=$t[y]; else REPLY+='='; fi
+      if (( i + 2 <= n )); then REPLY+=$t[z]; else REPLY+='='; fi
+    done
+  }
+
+  # _rex_job_fields TITLE MSG: the report's title and msg pairs, in REPLY.
+  _rex_job_fields() {
+    local title msg
+    _rex_job_text "$1" 48; _rex_job_b64 "$REPLY"; title=$REPLY
+    _rex_job_text "$2" 200; _rex_job_b64 "$REPLY"; msg=$REPLY
+    REPLY="title=$title:msg=$msg"
   }
 
   _rex_job_preexec() {
@@ -68,7 +102,8 @@ if [[ -o interactive && -n $REX_BLOCK ]]; then
       return 0
     fi
     _rex_job_cmd=$1 _rex_job_start=$EPOCHSECONDS _rex_job_shown=1
-    _rex_job_emit "state=working:id=shell:app=shell:title=$(_rex_job_b64 ${PWD:t}):msg=$(_rex_job_b64 $1)"
+    _rex_job_fields "${PWD:t}" "$1"
+    _rex_job_emit "state=working:id=shell:app=shell:$REPLY"
   }
 
   _rex_job_precmd() {
@@ -81,9 +116,11 @@ if [[ -o interactive && -n $REX_BLOCK ]]; then
       _rex_job_emit 'state=clear:id=shell'
       _rex_job_shown=0
     else
-      local state=done msg="${_rex_job_cmd[1,80]} · ${took}s"
+      _rex_job_text "$_rex_job_cmd" 80
+      local state=done msg="$REPLY · ${took}s"
       (( rc )) && state=error msg+=" · exit $rc"
-      _rex_job_emit "state=$state:id=shell:app=shell:title=$(_rex_job_b64 ${PWD:t}):msg=$(_rex_job_b64 $msg)"
+      _rex_job_fields "${PWD:t}" "$msg"
+      _rex_job_emit "state=$state:id=shell:app=shell:$REPLY"
     fi
     _rex_job_cmd=''
     return 0
