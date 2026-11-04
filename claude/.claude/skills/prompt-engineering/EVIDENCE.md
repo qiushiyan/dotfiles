@@ -5,6 +5,12 @@ rulebook; counts are written so the next pass can re-run them. Passes run
 under `improve-tool`; queries are obelisk scripts over `tool_calls` reads of
 the file and user turns naming it.
 
+## 2026-11-04 — upstream sync: writing-for-agents unchanged
+
+`skills update -g` left `writing-for-agents` at folder hash
+`ad2925850efb8973a72d2e666f7a975f9a2d4a9b`, the fold baseline below: an
+empty delta, nothing to triage.
+
 ## 2026-10-30 — a reason is what goes wrong, not when it went wrong
 
 **Correction.** The user, reading the drive-session pass (dotfiles c13f322):
