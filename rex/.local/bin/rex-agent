@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # rex-agent: publish an agent's state to the Rex terminal it runs in, through
 # the Program Status Protocol (OSC 7501). Rex keeps one record per id on the
 # block, readable with `rex block call program_status` and announced as a
@@ -11,6 +11,10 @@
 # STATE is idle, working, done, blocked, error or clear; KIND is permission,
 # question or auth. Outside Rex (no REX_BLOCK) it does nothing, so hooks can
 # call it unconditionally. Wire format and findings: ~/dotfiles/docs/rex.md.
+#
+# Every Claude Code hook event runs this and waits for it, so it forks as
+# little as it can, and /bin/bash (3.2) starts faster than Homebrew's bash:
+# keep it 3.2-clean.
 
 set -u
 [ -n "${REX_BLOCK:-}" ] || exit 0
@@ -18,20 +22,43 @@ set -u
 b64() { printf '%s' "$1" | base64 | tr -d '\n'; }
 
 # The OSC has to reach the terminal's output side. A hook's stdout is captured
-# by its parent, so write to the controlling tty, or failing that to the
-# nearest ancestor's tty.
+# by its parent and a hook has no controlling tty, so write to the terminal of
+# the process that draws: Claude Code names itself in CLAUDE_PID, and its tty,
+# or its having none (a headless or driven session), is the answer. Without
+# that variable, the nearest ancestor's tty.
 emit() {
-  local seq=$'\e]7501;'"$1"$'\e\\'
+  local seq=$'\e]7501;'"$1"$'\e\\' pid ppid tty
   if { printf '%s' "$seq" > /dev/tty; } 2>/dev/null; then return 0; fi
-  local pid=$$ tty
+  if [ -n "${CLAUDE_PID:-}" ]; then
+    tty=$(ps -o tty= -p "$CLAUDE_PID" 2>/dev/null)
+    to_tty "${tty// /}" "$seq"
+    return
+  fi
+  pid=$$
   while [ "${pid:-1}" -gt 1 ]; do
-    tty=$(ps -o tty= -p "$pid" 2>/dev/null | tr -d ' ')
-    if [ -n "$tty" ] && [ "$tty" != "??" ] && [ -w "/dev/$tty" ]; then
-      printf '%s' "$seq" > "/dev/$tty" && return 0
-    fi
-    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+    read -r ppid tty <<< "$(ps -o ppid=,tty= -p "$pid" 2>/dev/null)"
+    to_tty "${tty:-}" "$seq" && return 0
+    pid=${ppid:-}
   done
   return 1
+}
+
+# to_tty TTY SEQ: write SEQ to the terminal ps names TTY, if it is one.
+to_tty() {
+  [ -n "$1" ] && [ "$1" != "??" ] && [ -w "/dev/$1" ] && printf '%s' "$2" > "/dev/$1"
+}
+
+# send STATE KIND ID APP PROGRESS TITLE64 MSG64: one report, its free text
+# already base64; an empty field is left out.
+send() {
+  local body="state=$1"
+  [ -n "$2" ] && body+=":kind=$2"
+  [ -n "$3" ] && body+=":id=$3"
+  [ -n "$4" ] && body+=":app=$4"
+  [ -n "$5" ] && body+=":progress=$5"
+  [ -n "$6" ] && body+=":title=$6"
+  [ -n "$7" ] && body+=":msg=$7"
+  emit "$body"
 }
 
 report() {
@@ -48,14 +75,9 @@ report() {
       *) printf 'rex-agent: unknown option %s\n' "$1" >&2; return 2 ;;
     esac
   done
-  local body="state=$state"
-  [ -n "$kind" ] && body+=":kind=$kind"
-  [ -n "$id" ] && body+=":id=$id"
-  [ -n "$app" ] && body+=":app=$app"
-  [ -n "$progress" ] && body+=":progress=$progress"
-  [ -n "$title" ] && body+=":title=$(b64 "$title")"
-  [ -n "$msg" ] && body+=":msg=$(b64 "$msg")"
-  emit "$body"
+  [ -n "$title" ] && title=$(b64 "$title")
+  [ -n "$msg" ] && msg=$(b64 "$msg")
+  send "$state" "$kind" "$id" "$app" "$progress" "$title" "$msg"
 }
 
 # The record that brings this conversation back into a restored pane
@@ -64,12 +86,14 @@ report() {
 # never recorded, or a conversation it no longer names. Only a person's exit
 # forgets: a server stopping reports `other`, and that is the case to resume.
 remember() {
-  local event=$1 sid=$2 reason=$3 tool="$HOME/.local/bin/rex-resume" f
+  local event=$1 sid=$2 reason=$3 tool="$HOME/.local/bin/rex-resume" f rec=""
   [ "$sid" != - ] && [ -x "$tool" ] || return 0
   f="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/panes/${REX_BLOCK//:/_}.json"
   case "$event" in
     SessionStart) ;;
-    UserPromptSubmit) ! grep -q "$sid" "$f" 2>/dev/null || return 0 ;;
+    UserPromptSubmit)
+      [ -r "$f" ] && IFS= read -r -d '' rec < "$f"
+      case "$rec" in *"$sid"*) return 0 ;; esac ;;
     SessionEnd)
       case "$reason" in prompt_input_exit|logout) "$tool" forget "$sid" ;; esac
       return 0 ;;
@@ -80,47 +104,56 @@ remember() {
 
 # Claude Code hook events -> states. The title is the project the session works
 # in; the message is what the human would want to read first.
+#
+# jq does all the text work, once: Rex discards a whole report whose text holds
+# a control character or runs past its limits (title 192 bytes, message 2048),
+# so each text is made one line, cut to a length that fits, and base64-encoded
+# where it was parsed. A base64 field never reads "-", and an empty text comes
+# out as "-" because tab is IFS whitespace and empty fields would collapse.
 claude_hook() {
-  local input event cwd message prompt tool ntype error sid reason
-  input=$(cat)
-  IFS=$'\t' read -r event cwd message prompt tool ntype error sid reason < <(
-    printf '%s' "$input" | jq -r '[
-      .hook_event_name // "-",
-      .cwd // "-",
-      (.message // .last_assistant_message // "-" | gsub("[\t\n]"; " ") | .[0:200]),
-      (.prompt // "-" | gsub("[\t\n]"; " ") | .[0:120]),
-      .tool_name // "-",
-      .notification_type // "-",
-      .error // "-",
-      .session_id // "-",
-      .reason // "-"
-    ] | @tsv' 2>/dev/null
+  local event title message prompt ran kind ntype error sid reason
+  IFS=$'\t' read -r event title message prompt ran kind ntype error sid reason < <(
+    jq -r '
+      def line($n): gsub("[[:cntrl:]]"; " ") | .[0:$n];
+      def b64: if . == "" then "-" else @base64 end;
+      (.message // .last_assistant_message // "" | line(200)) as $message |
+      [
+        .hook_event_name // "-",
+        (.cwd // "" | split("/") | last // "" | line(48) | b64),
+        ($message | b64),
+        (.prompt // "" | line(120) | b64),
+        ("ran " + (.tool_name // "") | b64),
+        (if .notification_type == "permission_prompt"
+            or (.notification_type == null and ($message | contains("permission")))
+         then "permission" else "question" end),
+        .notification_type // "-",
+        .error // "-",
+        .session_id // "-",
+        .reason // "-"
+      ] | @tsv' 2>/dev/null
   )
-  # Tab is IFS whitespace, so empty fields would collapse; "-" stands in.
-  [ "$cwd" = - ] && cwd=""; [ "$message" = - ] && message=""
-  [ "$prompt" = - ] && prompt=""; [ "$tool" = - ] && tool=""
-  local common=(--id claude --app claude --title "${cwd##*/}")
+  [ "$title" = - ] && title=""; [ "$message" = - ] && message=""
+  [ "$prompt" = - ] && prompt=""
   remember "$event" "$sid" "$reason"
   case "$event" in
-    SessionStart) report idle "${common[@]}" ;;
-    UserPromptSubmit) report working "${common[@]}" --msg "$prompt" ;;
-    PostToolUse) report working "${common[@]}" --msg "ran $tool" ;;
+    SessionStart) send idle "" claude claude "" "$title" "" ;;
+    UserPromptSubmit) send working "" claude claude "" "$title" "$prompt" ;;
+    PostToolUse) send working "" claude claude "" "$title" "$ran" ;;
     Notification)
       # idle_prompt only repeats that a finished turn awaits input: keep `done`.
-      case "$ntype:$message" in
-        idle_prompt:*|auth_success:*) ;;
-        permission_prompt:*|-:*permission*) report blocked --kind permission "${common[@]}" --msg "$message" ;;
-        *) report blocked --kind question "${common[@]}" --msg "$message" ;;
+      case "$ntype" in
+        idle_prompt|auth_success) ;;
+        *) send blocked "$kind" claude claude "" "$title" "$message" ;;
       esac ;;
-    Stop) report done "${common[@]}" ;;
+    Stop) send done "" claude claude "" "$title" "" ;;
     # An API error ended the turn. No Stop follows it, so without this the
     # session would read `working` for good. An expired login waits on a person.
     StopFailure)
       case "$error" in
-        authentication_failed) report blocked --kind auth "${common[@]}" --msg "$message" ;;
-        *) report error "${common[@]}" --msg "$message" ;;
+        authentication_failed) send blocked auth claude claude "" "$title" "$message" ;;
+        *) send error "" claude claude "" "$title" "$message" ;;
       esac ;;
-    SessionEnd) report clear --id claude ;;
+    SessionEnd) send clear "" claude "" "" "" "" ;;
   esac
   return 0
 }
@@ -128,5 +161,5 @@ claude_hook() {
 case "${1:-}" in
   claude) claude_hook ;;
   idle|working|done|blocked|error|clear) report "$@" ;;
-  *) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+  *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac
