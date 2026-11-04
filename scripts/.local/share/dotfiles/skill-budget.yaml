@@ -29,7 +29,12 @@ skills:
   # migration holds and strategic reviews, and a stale deploy route
   # raised 2026-11-02: the owner asked for the bot's watchdog cadence and pauses, the
   # machine-unreachable rule and PATH in BOT.md, and the emergency-merge rule in PLANLAB.md
-  drive-session: {body: 2474, total: 8708}
+  # raised 2026-11-04: S5 sat parked 23 h on a decision never asked (batch 2026-11-02);
+  # drive now refuses a park nothing on record ends, so the skill asks before parking,
+  # parks finished-but-pending sessions on an ask or --until, and asks at each design checkpoint
+  # (+35 body, +70 total). main's total already stood at 8902, over its 8708 record,
+  # before this change; that growth is not explained here
+  drive-session: {body: 2509, total: 8972}
   enter-worktree: {body: 154, total: 154}
   go-cli: {body: 1963, total: 3977}
   handoff: {body: 2413, total: 3050}

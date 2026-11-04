@@ -93,9 +93,11 @@ ready to build.
 - **Hold what is the user's at the step that needs it.** Something the
   pipeline doc's § Who decides asks the user stops only the work that depends on it,
   so the step names what waits: `--snippet implement-spec "D3 and phase 4's
-  EC2 run wait for me: build the rest, commit, and stop before them."` Park
-  a session whose next step cannot go on without it (`drive park T1@…
-  "<what it needs>"`) and keep driving the others.
+  EC2 run wait for me: build the rest, commit, and stop before them."` For
+  a session whose next step cannot go on without it, record the ask now, a
+  later step's decision included, since a parked session never reaches that
+  step; then park it (`drive park T1@… "<what it needs>"`) and keep driving
+  the others.
 - **A background job past its purpose is the session's to stop**: send the
   step drive's `next:` gives, never a kill from your own shell. The session
   started the job and knows whether its work still needs it.
@@ -147,7 +149,7 @@ changes: these files, not your memory, reach the next batch.
 drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the backfill's --commit on Acme's workspace"
 ```
 
-Ask once, standing alone (§ Report); every wake, act on `drive status`'s open asks.
+Ask once, standing alone (§ Report); every wake, act on `drive status`'s open asks and its `park of` lines.
 
 ```bash
 drive record ask T1 --question '…' --recommendation '…' --if-unanswered '…'    # → A3
@@ -226,10 +228,10 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
 ## Report
 
 When a session reaches its finish, or stops on something only the user can
-give, send it `recap` and wait for that turn, then park it, or close it when
-its cleanup follows at once: any send ends a park, so the recap goes first.
-A session parked only to wait for another session's hold gets its recap at
-its own finish.
+give, send it `recap` and wait for that turn, then close it, or while
+something is still to come, park it on its ask or `--until` that merge,
+release or read: any send ends a park, so the recap goes first. A session parked only to wait
+for another session's hold gets its recap at its own finish.
 Build the report from the recaps and the record (`drive log`, `drive
 metrics`). The user meets every id in it cold, and an item they cannot
 decide from costs a round trip, so each item stands alone:

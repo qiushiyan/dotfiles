@@ -45,7 +45,7 @@ A send, open or respond arms a wake for when that session's turn ends or it
 stops on a prompt. A refused command arms none.
 
 ```bash
-drive park T3@… "waits for S2's release to finish"   # shown on the user's page: write it in their terms
+drive park T3@… --until 2026-11-06 "waits for Friday's fleet read"   # shown on the user's page: write it in their terms
 drive timer 300 veto                                 # the plan's veto; once the user answers, it brings nothing to do
 ```
 
