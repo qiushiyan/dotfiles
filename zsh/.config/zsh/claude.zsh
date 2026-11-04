@@ -5,10 +5,6 @@
 # The filesystem is the account registry:
 #   ~/.claude                      primary, logged in per machine (host file)
 #   ~/.claude-accounts/<email>/    one dir per extra subscription
-#   ~/.claude-accounts/.current    which account bare `x` targets — written
-#                                  by headroom (the board's enter; `launch
-#                                  --remember` is the explicit scriptable
-#                                  spelling); nothing here parses it
 #   ~/.claude-accounts/.order      board display order (optional)
 #   ~/.claude-accounts/state.json  headroom's own file — its request ledger,
 #                                  the usage answers it fetched, session
@@ -36,28 +32,25 @@
 # for weeks, so nothing that can misroute, mutate, or misparse belongs
 # here — the binary is re-resolved from PATH at every keystroke.
 #
-#   x                     permissions bypassed, on the default account —
-#                         only the board's enter (x-acc) moves that target
+#   x                     permissions bypassed, on the least-loaded account
+#                         (headroom places every bare launch)
 #   x-<email>             one session on a specific account, permissions
-#                         bypassed; bare `x`'s target is untouched —
-#                         generated at shell init from the dirs; when the
-#                         local part is unique (and isn't the primary's
-#                         name or a reserved word) a short alias exists
-#                         too (x-yan, …)
+#                         bypassed — generated at shell init from the dirs;
+#                         when the local part is unique (and isn't the
+#                         primary's name or a reserved word) a short alias
+#                         exists too (x-yan, …)
 #   x-select              session picker (headroom sessions): pick any
 #                         session on the machine; headroom enters its
 #                         project dir and execs claude on the account that
 #                         last drove it. This wrapper only cds afterwards,
-#                         from the advisory --cd-file (bare `x`'s target is
-#                         untouched)
+#                         from the advisory --cd-file
 #   x-accounts / x-acc    account board (headroom accounts --compact): one
-#                         row per account, refreshing while it is open;
-#                         enter repins bare `x` and exits — no session
-#                         starts until `x` is typed
+#                         row per account, refreshing while it is open; it
+#                         records nothing and starts no session
 #   x-check               ≡ headroom check — verifies the reverse-engineered
 #                         machinery after a Claude Code update
 #   x-account             ≡ claude-account <name|email> [args...] — prompted
-#                         (no bypass) session; bare `x`'s target untouched
+#                         (no bypass) session on that account
 #   x-account-add         ≡ claude-account-add <email> — seed a new account
 #                         dir, then /login
 #   x-account-remove      ≡ claude-account-remove <email> — delete an
@@ -95,7 +88,7 @@ typeset -ga CLAUDE_X_EFFORT=(
 # so each host file names it with _claude_primary (below); until one does it
 # is "primary", headroom's own name for a primary nothing names. headroom
 # derives the local part from the logged-in email unless told; the pin keeps
-# `.current`, `--account <name>` and x-<name> agreeing even across a primary
+# its records, `--account <name>` and x-<name> agreeing even across a primary
 # logout. Exported: the launchers, tmux and hooks all inherit it.
 typeset -g CLAUDE_PRIMARY_NAME="primary"
 export HEADROOM_PRIMARY_NAME="$CLAUDE_PRIMARY_NAME"
@@ -106,7 +99,7 @@ export HEADROOM_LAUNCHER_FORMAT="x-%s"
 # bare provider binary with its caller's environment unless told otherwise:
 # a Claude voice then lands on whatever account the dispatching session is on.
 # Route it through headroom instead, so every turn — fresh, resumed or a
-# fan-out member — runs on the board's current account, decided at dispatch.
+# fan-out member — is placed on the least-loaded account at dispatch.
 # envoy splits this on whitespace and runs no shell. Exported only when
 # headroom exists: envoy never falls back from a configured launcher, so on a
 # machine without headroom the variable must stay unset for envoy to work.
@@ -228,12 +221,11 @@ x-account-add()    { claude-account-add "$@" }
 x-account-remove() { claude-account-remove "$@" }
 x-check()       { headroom check "$@" }
 # Account board (headroom accounts): live usage for every account, refreshing
-# itself while it is open. Enter repins bare `x` and exits — deliberately no
-# launch chained on: "change the default account" and "start a session" are
-# separate decisions, and when a session is wanted it is one keystroke (`x`)
-# away. The wrapper asks for the compact layout — one row per account,
-# percent and time-to-reset per window, every warning at the row's end — a
-# presentation flag and nothing more: same refresh, same enter, same data.
+# itself while it is open, and the account bare `x` would take next. It
+# records nothing: `x` places every session, and `x-<name>` names one. The
+# wrapper asks for the compact layout — one row per account, percent and
+# time-to-reset per window, every warning at the row's end — a presentation
+# flag and nothing more: same refresh, same data.
 # The presentation choice lives here, in the shell layer, by design; bare
 # `headroom` / `headroom accounts` keeps the block layout with bars.
 x-accounts()    { headroom accounts --compact "$@" }
@@ -247,9 +239,7 @@ x-acc()         { x-accounts "$@" }
 # committed (cancel or refusal — do not cd), non-empty means headroom
 # entered that dir, and the cd then sticks here regardless of how claude
 # exited. mktemp per invocation, never a fixed path: two concurrent shells
-# sharing one file would cd each other. Deliberately no --remember:
-# resuming a session never moves where bare `x` points — only the board's
-# enter (x-acc) does that.
+# sharing one file would cd each other.
 x-select() {
   emulate -L zsh
   _headroom_required claude || return
@@ -281,9 +271,9 @@ x-select() {
 #
 #   _claude_launch <name|""> [claude args...]
 #
-# "" means the recorded choice (.current), which headroom reads strictly —
-# empty, unreadable, or naming a deleted account refuses rather than
-# silently becoming the primary with permissions bypassed.
+# "" means a bare launch, which headroom places on the least-loaded account;
+# a name headroom does not know refuses rather than silently becoming the
+# primary with permissions bypassed.
 #
 # No fallback to bare `claude` when headroom is missing or refuses: a loud
 # stop is recoverable, a silent wrong-account session is not. The unmanaged
@@ -372,11 +362,10 @@ _claude_x() {
   _claude_launch "$sel" "${CLAUDE_X_BYPASS[@]}" "$@"
 }
 
-# Bypassed permissions on the default account (.current; the board's enter
-# is what moves it).
+# Bypassed permissions on the least-loaded account: headroom places it.
 x() { _claude_x "" "$@" }
 
-# Prompted (no bypass) session on any account; bare `x`'s target untouched.
+# Prompted (no bypass) session on the account named.
 claude-account() {
   emulate -L zsh
   if [[ -z "${1-}" ]]; then
@@ -401,9 +390,9 @@ claude-account-add() {
 
 # Retire a subscription (or delete stranded `<dir>.lock` debris): the engine
 # refuses while a session is live, asks for the dir name back, deletes the
-# account's own Keychain item and the dir, scrubs `.order`, and leaves
-# `.current` for the board to repick. Transcripts are machine-global and
-# survive. This wrapper only drops the launchers the shell generated.
+# account's own Keychain item and the dir, and scrubs `.order` and its
+# reservation. Transcripts are machine-global and survive. This wrapper only
+# drops the launchers the shell generated.
 claude-account-remove() {
   emulate -L zsh
   headroom accounts remove "$@" || return $?
@@ -413,16 +402,13 @@ claude-account-remove() {
     unfunction "x-$a" 2>/dev/null || true
   done
   _claude_gen_launchers
-  echo "exec zsh drops stale short aliases; x-acc repicks if bare x pointed here"
+  echo "exec zsh drops stale short aliases"
   return 0
 }
 
 # One x-<name> per account dir (_account_launchers). Each starts one session
-# on its account and nothing more — deliberately no --remember: a named launch
-# is scoped ("this session, that account"), and a pin riding along as its side
-# effect let a two-minute hop to another account silently retarget every
-# later bare `x`. Only the board's enter moves `.current`; `headroom launch
-# --remember` remains the explicit spelling.
+# on its account and nothing more: a named launch is scoped ("this session,
+# that account"), and nothing in headroom records a default.
 _claude_gen_launchers() {
   _account_launchers x "$CLAUDE_ACCOUNTS_ROOT" "$CLAUDE_PRIMARY_NAME" _claude_x "${CLAUDE_X_RESERVED[@]}"
 }

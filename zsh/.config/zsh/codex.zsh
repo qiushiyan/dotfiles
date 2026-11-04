@@ -7,9 +7,6 @@
 # ("home") per extra subscription lives at ~/.codex-accounts/<email>; the
 # default ~/.codex is the primary. headroom's own files sit beside them:
 #
-#   ~/.codex-accounts/.current    the account bare `cx` targets; written only
-#                                 by headroom (the board's enter on its Codex
-#                                 page; `launch --remember`)
 #   ~/.codex-accounts/state.json  headroom's request ledger and the usage
 #                                 responses it fetched — Codex's own, never
 #                                 shared with Claude Code's
@@ -32,12 +29,11 @@
 # depend on headroom. A function over it would also only ever cover
 # interactive shells. `cx` is the managed door.
 #
-#   cx [args]              Codex on the default account (.current; the
-#                          board's enter on the Codex page moves it)
-#   cx-<email> [args]      Codex on that account, this session only — bare
-#                          `cx`'s target is untouched. cx-<local-part> exists
-#                          when the local part is unique, the primary's
-#                          included; cx-qiushi ≡ ~/.codex
+#   cx [args]              Codex on the least-loaded account (headroom
+#                          places every bare launch)
+#   cx-<email> [args]      Codex on that account, this session only.
+#                          cx-<local-part> exists when the local part is
+#                          unique, the primary's included; cx-qiushi ≡ ~/.codex
 #   cx-accounts / cx-acc   the account board, Codex page only. (`x-acc` shows
 #                          both vendors; tab switches pages.)
 #   cx-account-add <email> seed a new home (sessions/ link + shared config),
@@ -51,14 +47,14 @@
 # which every home shares (see cx-account-add), so one edit lands on all.
 typeset -g CODEX_ACCOUNTS_ROOT="$HOME/.codex-accounts"
 typeset -g CODEX_PRIMARY_NAME="qiushi@planlab.ai"   # cx-qiushi ≡ default ~/.codex
-# Pinned for the same reason as HEADROOM_PRIMARY_NAME: `.current` records the
-# name, and a derived one would change under a primary logout.
+# Pinned for the same reason as HEADROOM_PRIMARY_NAME: headroom's records keep
+# the name, and a derived one would change under a primary logout.
 export HEADROOM_CODEX_PRIMARY_NAME="$CODEX_PRIMARY_NAME"
 # The board's captions promise the spelling that resolves in this shell.
 # (Its log-in hints keep the engine's own spelling on purpose.)
 export HEADROOM_CODEX_LAUNCHER_FORMAT="cx-%s"
 # envoy's Codex voices would otherwise always run on ~/.codex — no Claude
-# session carries a CODEX_HOME to inherit — whatever the board says. See the
+# session carries a CODEX_HOME to inherit — whatever the quota says. See the
 # ENVOY_CLAUDE_CMD note in claude.zsh for why this is guarded.
 if whence -p headroom >/dev/null; then
   export ENVOY_CODEX_CMD="headroom launch --vendor codex --"
@@ -66,8 +62,8 @@ fi
 # Local parts that never get a short launcher alias: cx-<these> are utilities.
 typeset -ga CODEX_CX_RESERVED=(account-add accounts acc)
 
-# Launch codex through headroom. "" means the recorded choice (.current),
-# which headroom reads strictly. No fallback to bare `codex` when headroom is
+# Launch codex through headroom. "" means a bare launch, which headroom places
+# on the least-loaded account. No fallback to bare `codex` when headroom is
 # missing or refuses: a loud failure beats a session on the wrong account.
 # The launch runs inside the tmux pane decoration plain `codex` gets
 # (tmux-utils.zsh), so a managed session looks the same on the border.

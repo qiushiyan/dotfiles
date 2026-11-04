@@ -2,7 +2,7 @@
 # What claude.zsh's launchers add on top of headroom: the refusal without
 # it, named-launch routing, the per-workspace effort flag, --fast, and
 # x-select's cd.
-# Topology, environment and `.current` policy are headroom's and tested there
+# Topology, environment and placement are headroom's and tested there
 # (~/dev/headroom internal/app, internal/accounts). Everything runs against a
 # throwaway $HOME with a recording claude stub — no real account dir or
 # vendor tree is touched.
@@ -93,22 +93,17 @@ test_launch_refuses_without_headroom() (
   [[ ! -f "$SB/claude.log" ]] || { print "claude ran without the managed path"; return 1 }
 )
 
-# A named launch is scoped: it routes to its account and leaves .current
-# alone — only the board's enter moves where bare `x` goes. The pin as a
-# launcher side effect is what let a two-minute hop to another account
-# silently retarget every later bare `x`.
-test_generated_launcher_routes_without_repinning() (
+# A generated launcher is a named launch: it routes to its own account,
+# whatever the rule would have chosen.
+test_generated_launcher_routes_to_its_account() (
   sandbox
   mkdir -p "$H/.claude-accounts/a@x.com"
   ln -s "$H/.claude/projects" "$H/.claude-accounts/a@x.com/projects"
-  print -rn -- b@x.com >"$H/.claude-accounts/.current"
   export HOME="$H" PATH="$SB/bin:$PATH"
   source "$CLAUDE_ZSH"
   x-a@x.com || { print "generated launcher failed"; return 1 }
   grep -q "cfg=$H/.claude-accounts/a@x.com" "$SB/claude.log" 2>/dev/null \
     || { print "launcher routed elsewhere:"; cat "$SB/claude.log" 2>/dev/null; return 1 }
-  [[ "$(<"$H/.claude-accounts/.current")" == "b@x.com" ]] \
-    || { print "named launcher moved .current: $(cat "$H/.claude-accounts/.current" 2>/dev/null)"; return 1 }
 )
 
 # Workspace effort rides into claude as a launch flag: inside a listed dir
@@ -261,7 +256,7 @@ EOS
 # ------------------------------------------------------------------------------
 
 t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_without_headroom
-t "generated launcher routes without repinning bare x"   test_generated_launcher_routes_without_repinning
+t "generated launcher routes to its account"              test_generated_launcher_routes_to_its_account
 t "workspace effort applies inside listed dirs only"     test_effort_follows_workspace
 t "specific dir and explicit --effort win"               test_effort_specific_dir_and_explicit_flag_win
 t "--fast becomes the one-session fastMode setting"      test_fast_becomes_session_setting

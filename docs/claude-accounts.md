@@ -7,9 +7,9 @@ lives.
 ## TL;DR
 
 ```text
-x                 → launch on the board's default account
-x-<name>          → one launch on a named account; default unchanged
-x-accounts / x-acc → choose the default account (compact board); no launch
+x                 → launch on the least-loaded account
+x-<name>          → one launch on a named account
+x-accounts / x-acc → the compact board: every account's quota; records nothing
 x-select          → resume in the session's project and owning account
 x-check           → verify routing after a Claude Code update
 headroom login    → renew the logins that end within a week, one click each
@@ -42,8 +42,6 @@ There is no account list anywhere. The dirs are the registry:
     settings.json, skills, …    symlinks → claude/.claude   (config: shared)
     projects                    symlink → ~/.claude/projects (sessions: shared)
     .claude.json, history, …    real files                  (login: per-account)
-  .current                    which account bare `x` targets — headroom's
-                              file alone; wrappers never parse it
   state.json                  headroom's own file: request ledger, fetched
                               usage answers, explicit session re-homes
   .order                      board display order (optional, one email
@@ -94,25 +92,25 @@ Everything derives from that tree:
   5-hour and 7-day usage (`yan opus-5[1m]:high 5h:23 7d:41 ✳ 37%`); `x-acc`
   is the complete board. The
   chip's rendering and quota sources: `tmux/.config/tmux/scripts/context-chip.md`.
-- **Out of quota**: `x-accounts` (or `x-acc`) — pick an account with
-  headroom off the live board, then type `x`; bare `x` targets it from then
-  on. For a one-off session on another account without moving `x`, that
-  account's `x-<name>`.
+- **Where sessions go**: bare `x` places each session on the least-loaded
+  account; `x-<name>` starts one session on that account. Nothing records a
+  default: the board (`x-acc`) shows quota and the account `x` would take
+  next, and no key on it changes where `x` goes.
 - **Resume an old conversation**: `x-select` — every session on the
   machine, this repo's (all worktrees) on top. Enter continues it in its
   own project dir on the account that last drove it, so a session keeps its
-  account (and its `/rewind` checkpoints) no matter what `x-accounts` did
-  since; the cd sticks after the session ends. `x` on a row resumes it on
-  the current account instead *and re-homes it* — from then on it lives
-  there (recorded in headroom's `state.json`; also the escape hatch when a
-  session's account was deleted). Rows whose project dir no longer exists
-  say so and refuse — `dd` is the cleanup. Native `x --resume` still works
-  and always uses the current account.
+  account (and its `/rewind` checkpoints); the cd sticks after the session
+  ends. `x` on a row resumes it on the least-loaded of the other accounts
+  instead *and re-homes it* — from then on it lives there (recorded in
+  headroom's `state.json`; also the escape hatch when a session's account
+  was deleted, or when its own account is out of quota). Rows whose project
+  dir no longer exists say so and refuse — `dd` is the cleanup. Native
+  `x --resume` still works and is placed like any bare launch.
 - **Reorder the board**: edit `~/.claude-accounts/.order`. The primary is
   always first; a new account needs no entry (it appends alphabetically
   until promoted).
 - **Prompted (no bypass) session**: `claude-account <name|email>` (alias
-  `x-account`); like `x-<name>`, bare `x`'s target is untouched.
+  `x-account`), one session on that account like `x-<name>`.
 - **New subscription**: `claude-account-add <email>` ≡ `headroom accounts
   add --share-config=~/dotfiles/claude/.claude <email>` plus launcher
   regeneration; the engine seeds and verifies the dir, and `/login` on its
@@ -124,8 +122,7 @@ Everything derives from that tree:
   deletes the account's Keychain item, its dir and its `.order` line
   (`~/dev/headroom/DESIGN.md` § The account lifecycle). Transcripts survive —
   they are machine-global — and the picker shows the dead owner as degraded
-  until `x` re-homes each session. If bare `x` pointed at the removed account,
-  launches refuse until `x-acc` repicks.
+  until `x` re-homes each session.
 - **A `<name>.lock` "account" appears**: vendor lock debris a crashed Claude
   Code strands in the accounts root, not an account. Discovery skips it,
   `headroom check` names it, and `claude-account-remove <name>.lock` (or a
@@ -207,15 +204,15 @@ Everything derives from that tree:
 - Launch routing belongs to headroom, verification included: wrappers
   delegate to `headroom launch` / `headroom sessions`, which validate the
   account and the shared-sessions topology themselves — wrappers never set
-  `CLAUDE_CONFIG_DIR`, never launch bare `claude`, never parse `.current`,
-  and never parse anything headroom prints. When headroom is missing or
+  `CLAUDE_CONFIG_DIR`, never launch bare `claude`, and never parse
+  anything headroom prints. When headroom is missing or
   refuses, they stop loudly rather than falling back; the unmanaged escape
   hatch is `env -u CLAUDE_CONFIG_DIR claude` (or the variable set by hand).
 - `CLAUDE_ACCOUNTS_ROOT` matches headroom's default accounts root, and
   `claude.zsh` pins headroom's primary name to `CLAUDE_PRIMARY_NAME` through
   `HEADROOM_PRIMARY_NAME`, so both sides answer to the one name the host file
   gives, even while the primary is logged out. headroom records that name in
-  `.current`, the reservations and the session re-homes, and moves them
+  the reservations and the session re-homes, and moves them
   itself, under its lock, the first time it is given a new name: renaming
   the primary is the host-file edit alone. The other `HEADROOM_*` overrides exist for headroom's test
   harnesses and re-point headroom only; under one, wrapper degradations are
