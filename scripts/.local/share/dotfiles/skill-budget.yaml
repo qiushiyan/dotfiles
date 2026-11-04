@@ -66,7 +66,7 @@ skills:
   # route, the structural-rewrite rule moved in from the prompt-check snippet, and the
   # pass's each-meaning-once question; write-prompt's checks name every surface it covers
   revise-prompt: {body: 766, total: 766}
-  write-prompt: {body: 664, total: 664}
+  write-prompt: {body: 663, total: 663}
 # Every lesson file at its word count, under the same ratchet: the consult and
 # review voices read these each round. Dot-directories (the pinned upstream
 # copies) are skipped; skill-sync records a new file and drops a removed one.
