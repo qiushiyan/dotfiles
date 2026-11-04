@@ -367,7 +367,7 @@ agent records each of its runs with `TWIN_TRACE=1` in its environment.
 note: mac's twin predates tracing; its half of the run is not shown
         -> twin tools install twin there
 git status --porcelain taking ~1s in a planlab worktree
-        -> its untracked cache is stale: docs/git-performance.md
+        -> its untracked cache is stale, or the vnode cache is too small: docs/git-performance.md
 ```
 
 ## Carried files

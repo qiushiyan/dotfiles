@@ -1035,7 +1035,9 @@ c29() {
     mkdir -p "$bin"
     printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s"\nexec "%s" "$@"\n' "$log" "$(command -v tmux)" > "$bin/tmux"
     chmod +x "$bin/tmux"
-    env HOME="$SANDBOX_HOME" PATH="$bin:$PATH" TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" \
+    # A tmux pane's shell: run from a Rex block, the inherited TERM_PROGRAM
+    # and REX_BLOCK would send _cout_setup down its Rex branch.
+    env -u TERM_PROGRAM -u REX_BLOCK HOME="$SANDBOX_HOME" PATH="$bin:$PATH" TMUX="$SOCKPATH,0,0" TMUX_PANE="$PANE" \
         zsh -f -i -c "source '$ZUTIL'; source '$COUT'; _cout_setup
             print -rl -- \$precmd_functions > '$hooks'
             : > '$log'

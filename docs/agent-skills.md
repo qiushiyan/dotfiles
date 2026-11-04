@@ -90,7 +90,10 @@ engine update and why.
   (`agent-browser skills get core`), so upgrading the stub alone updates
   neither the guides nor the browser engine. Run the commands below, exercise
   open → snapshot → click in a fresh named session and close it, and remove
-  any npm-global duplicate `type -a` shows from its Node prefix.
+  any npm-global duplicate `type -a` shows from its Node prefix. The CLI is
+  not in twin's manifest, so neither `twin sync` nor a pull carries it: run
+  the same commands and probe on every machine (`ssh mac`, `ssh mini`,
+  mini2), pinning the version the first machine installed.
 
 ```bash
 agent_browser_version="$(npm view agent-browser version)"

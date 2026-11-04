@@ -28,9 +28,8 @@ Keep one unique path per session and reuse it every round. Include its
 literal assignment in the tool call, as above, so the transcript contains
 the path Obelisk will look for. Quote the heredoc delimiter
 (`<<'EOF'`) so the shell leaves the `$` and backticks in the JS alone. The
-script body runs inside `(async () => { ... })()`; `return` emits JSON, and
-the JS sandbox has no fs or network — everything comes back through that one
-value.
+script body runs inside `(async () => { ... })()`; `return` emits the JSON
+everything comes back through. It runs with the CLI's privileges, unsandboxed.
 
 `obq` runs the script on this machine and on every other one at the same
 time and prints one object keyed by machine, this machine first:
@@ -130,8 +129,8 @@ the tool call still resolves, through the script's text, but took 7 s against
 
 ## Hot schema
 
-Verified against CLI 0.3.0's installed schema in an isolated database via
-`pragma_table_info` on 2026-10-24; the columns are unchanged since 0.2.6-rc.0,
+Verified against CLI 0.3.1's installed schema in an isolated database via
+`pragma_table_info` on 2026-11-04; the columns are unchanged since 0.2.6-rc.0,
 which both machines' live indexes matched on 2026-10-06. Guessed
 column names are the top historical failure class — trust this list over
 instinct:
@@ -292,9 +291,9 @@ return remember({
 
 ## Escalation references
 
-Upstream references can describe features ahead of the installed CLI,
-which indexes Claude, Codex, Copilot, DeepSeek, Hermes, Kimi, Kiro, OMP, Pi,
-and ZCode, but not OpenCode. Use their
+Upstream references can run ahead of the installed CLI, which indexes
+Claude, Codex, Copilot, DeepSeek, Hermes, Kimi, Kiro, OMP, OpenCode, Pi and
+ZCode, and whose `sessions()` matches ids exactly. Use their
 provider and visibility guidance only when the runtime and corpus support it.
 
 | Read | when |

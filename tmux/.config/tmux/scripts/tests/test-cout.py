@@ -74,7 +74,18 @@ class CoutTest(unittest.TestCase):
         while store and store.exists() and time.monotonic() < deadline:
             time.sleep(.03)
         self.assertFalse(store and store.exists(), "pane recorder must clean up after server exit")
-        self.temp.cleanup()
+        # The prompt's oh-my-posh serve daemon (streaming) outlives its shell
+        # by a moment and can still be writing its cache: retry the removal
+        # rather than fail on a directory it refilled.
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                self.temp.cleanup()
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(.1)
 
     def tmux(self, *args):
         return subprocess.check_output(["tmux", "-S", self.socket, *args],
