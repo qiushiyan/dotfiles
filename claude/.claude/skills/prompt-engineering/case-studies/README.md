@@ -29,7 +29,7 @@ three answers:
 
 **Done when:**
 - the opening says when to read it and when not to;
-- `../SKILL.md` § Pointers names it by its trigger, in one line;
+- `../SKILL.md` names it by its trigger, in one line;
 - `../EVIDENCE.md` records what was checked against the source.
 
 This repository is public, so leave out customer text and credentials.
