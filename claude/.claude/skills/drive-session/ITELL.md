@@ -14,10 +14,10 @@ drive send T1@… --snippet consult-design   # it ends with its decisions
 drive send T1@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
 ```
 
-Park each on its asks once its design reply is in (its questions for the
-user, or with none whether to go ahead; that reply stands in for its recap),
-and until all are in, message the user only for a decision that holds a
-session. The report gives, per session, the design in a few lines, what the
+Once a session's design reply is in (it stands in for its recap), record
+its questions for the user as asks (with none, whether to go ahead) and
+park it. Until all are in, message the user only for a decision
+that holds a session. The report gives, per session, the design in a few lines, what the
 spikes showed and your call on a spec; ask the design questions the pipeline
 doc's § Who decides names, each as one question with what it changes, and
 list the technical choices as the defaults the sessions will take. Nothing

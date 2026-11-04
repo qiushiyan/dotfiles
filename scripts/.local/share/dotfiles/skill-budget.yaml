@@ -32,9 +32,9 @@ skills:
   # raised 2026-11-04: S5 sat parked 23 h on a decision never asked (batch 2026-11-02);
   # drive now refuses a park nothing on record ends, so the skill asks before parking,
   # parks finished-but-pending sessions on an ask or --until, and asks at each design checkpoint
-  # (+35 body, +70 total). main's total already stood at 8902, over its 8708 record,
+  # (+35 body, +67 total). main's total already stood at 8902, over its 8708 record,
   # before this change; that growth is not explained here
-  drive-session: {body: 2509, total: 8972}
+  drive-session: {body: 2509, total: 8969}
   enter-worktree: {body: 154, total: 154}
   go-cli: {body: 1963, total: 3977}
   handoff: {body: 2413, total: 3050}
