@@ -56,7 +56,7 @@ for "refactor it later". A reason that only restates the rule is a no-op.
 
 ## Revising a lesson
 
-- Read `/prompt-engineering` first. A lesson is prompt surface, but it stays
+- Read `/revise-prompt` first. A lesson is prompt surface, but it stays
   descriptive, never a manual.
 - **Every line names what it prevents.** Delete a sentence, list or diagram
   that restates the one above it; do not trim its words.

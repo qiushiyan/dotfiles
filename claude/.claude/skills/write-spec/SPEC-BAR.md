@@ -404,8 +404,8 @@ notice proceed independently.
   enumeration (inside an obligation too), edit plans, rename inventories,
   doc update plans, commit order, estimates. Domain and interface vocabulary is the spec's to fix.
   A sentence a model or a judge will read is described by what it must
-  state and must not name; the build writes it under the prompt-engineering
-  rulebook. A sentence written out verbatim here ships as written, so it is
+  state and must not name; the build writes it with the write-prompt
+  skill. A sentence written out verbatim here ships as written, so it is
   a premise, run against a real record first.
 - **Revise by replacement.** A correction rewrites the sentence at the
   rule's home and the old sentence goes; missing content is added at the

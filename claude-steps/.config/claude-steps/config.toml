@@ -83,7 +83,7 @@ color = "cyan"
 
 [[label]]
 name = "prompts"
-skills = ["prompt-engineering"]
+skills = ["revise-prompt", "prompt-engineering"]
 snippets = ["prompt-check", "loopy-prompt-check"]
 color = "blue"
 

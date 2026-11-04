@@ -21,7 +21,7 @@ Identify the first point where you would need to guess a path, field, flag,
 or decision. Read references when the scenario requires them.
 
 Then evaluate the result against
-~/.claude/skills/prompt-engineering/SKILL.md. Report only supported defects,
+~/.claude/skills/revise-prompt/SKILL.md. Report only supported defects,
 ranked by their effect on this task: quote the relevant file and line, explain
 the consequence, and suggest a minimal correction. Include unnecessary
 instructions and missing routes when they affect the scenario. Verify any

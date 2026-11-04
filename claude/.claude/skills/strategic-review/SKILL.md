@@ -50,7 +50,7 @@ to build it once they do.
    - `~/.config/lessons/testing/test-quality.md`, for tests: what earns a
      place in a suite, the shapes of a test that cannot fail for a real
      reason, and why review drifts toward asking for more tests;
-   - `~/dotfiles/claude/.claude/skills/prompt-engineering/SKILL.md`, when the
+   - `~/dotfiles/claude/.claude/skills/revise-prompt/SKILL.md`, when the
      PR description or the touched files show a model-facing change: a
      prompt section, tool description, tool result, command help, refusal or
      error a model reads, a skill an agent loads, or what one of the agent's

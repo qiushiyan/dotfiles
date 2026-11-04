@@ -85,7 +85,7 @@ the decision point, then instruction for the judgment left to the model.
 Promote a repeated adaptation into a mechanism only when the outcome is
 worth its maintenance.
 Revise model-facing text by
-[`../prompt-engineering/SKILL.md`](../prompt-engineering/SKILL.md);
+[`../revise-prompt/SKILL.md`](../revise-prompt/SKILL.md);
 `~/.config/lessons/agent-tooling/usage-lessons.md` holds lessons from past
 passes.
 
@@ -135,8 +135,8 @@ in another session, leave a handoff, mark the dependent instructions
 pending, and continue the independent fixes.
 
 Make the smallest coherent change the evidence supports. When accumulated
-rules hide the purpose, reorganize around the goal. Run the rulebook's
-revision pass (`../prompt-engineering/SKILL.md`) on every touched
+rules hide the purpose, reorganize around the goal. Run the
+revise-prompt pass (`../revise-prompt/SKILL.md`) on every touched
 model-facing surface, its callers and examples included. Invocation
 mechanics are in `../writing-for-agents/SKILL-MECHANICS.md` when they change.
 

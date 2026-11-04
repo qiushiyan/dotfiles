@@ -2,8 +2,8 @@
 
 What usage history taught about tools whose user is an agent — a skill, a
 CLI, a script, a snippet, an agent-facing doc. The general rulebook is
-`/prompt-engineering` (model-facing text, structure and pointers included;
-skill frontmatter and invocation live in writing-for-agents'
+`prompt-engineering/SKILL.md` (model-facing text, structure and pointers
+included; skill frontmatter and invocation live in writing-for-agents'
 `SKILL-MECHANICS.md`); these lessons are the layer under it that only
 measured sessions could supply.
 

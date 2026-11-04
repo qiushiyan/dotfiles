@@ -15,8 +15,8 @@ re-finding fixed defects or assuming defects were already caught.
 The reviewer's expectation is asked for as output: the opening of its answer.
 Keep that shape when you adapt the posture. A note to write down first and
 repeat word for word asks the reviewer to transcribe its reasoning, which
-Anthropic's classifier can refuse on a Claude voice (the rulebook's Right
-altitude rule, `../prompt-engineering/SKILL.md`).
+Anthropic's classifier can refuse on a Claude voice (the rulebook's "Show
+your thinking", `../prompt-engineering/SKILL.md`).
 
 The structural block under Evaluate is a switch: keep it when the range
 decides structure — a new module, a reshaped interface, a real refactor — and
