@@ -1,6 +1,6 @@
 ---
 name: write-prompt
-description: Write new model-facing text, starting from the task its reader faces. Use when drafting a prompt, snippet, skill, CLAUDE.md, brief for another session, judge question, or tool description.
+description: Write new model-facing text, starting from the task its reader faces. Use when drafting a prompt, snippet, skill, CLAUDE.md, brief for another session, judge question, or tool text.
 ---
 
 # Write model-facing text
@@ -9,9 +9,8 @@ Write text a model will read that does not exist yet: a prompt, a system
 prompt, a skill, a brief for another session, a judge's questions, a tool's
 description, result or error. You are done when the text poses the reader's
 task in the reader's own terms, says what done looks like and where the
-reader stops, and has been checked by running it or by a cold read, or
-your report says why neither could run. Improving your draft before you hand
-it over stays here. A change to text that already exists goes to
+reader stops, and has had the check in step 4. Improving your draft before
+you hand it over stays here. A change to text that already exists goes to
 [`revise-prompt`](../revise-prompt/SKILL.md), an addition included, and so
 does a later review of what you wrote, such as a prompt check.
 
@@ -41,14 +40,14 @@ This branch is half of one change: a check that judges whether a reply leaves it
 
 Make done something the reader can check. Then spend words where the house
 rules say: authority, facts it cannot find, and judgment it gets wrong by
-default. Before writing a mode, a reply format that code parses, or a branch as
-prose, decide whether code should hold it. For a judge, check every
-question against its input, leave out what its verdict leads to, and ask for
-its conclusion with the evidence for it, never its reasoning written out,
-even when the notes ask for that: a request to show reasoning can be
-refused. Ask the
-user for authority or a fact you do not hold, such as whether the reader may
-commit.
+default. Before writing a mode, a reply format that code parses, or a branch
+as prose, decide whether code should hold it. Ask the user for authority or a
+fact you do not hold, such as whether the reader may commit.
+
+For a judge, check every question against its input, leave out what its
+verdict leads to, and ask for its conclusion with the evidence for it, never
+its reasoning written out, even when the notes ask for that: a request to
+show reasoning can be refused.
 
 ## 3. Decide what to show
 
@@ -64,12 +63,13 @@ time. When you cannot tell, try both in step 4.
   it (`claude -p` stands in for a Claude model), and read the outputs. When
   a choice stays open, such as the framing or an example, run both versions
   on the same inputs and keep the better one.
-- **A brief or a skill:** have a read-only cold reader with a concrete
-  scenario report the first point where it would guess. For a skill whose
-  behavior can be replayed, a case in `~/dev/skill-evals` shows what agents
-  do with it.
+- **A brief:** read it as its reader would, holding only the brief,
+  and ask it the five questions of
+  [`revise-prompt`'s pass](../revise-prompt/SKILL.md#the-pass).
+- **A skill:** have a read-only cold reader with a concrete scenario report
+  the first point where it would guess. When its behavior can be replayed, a
+  case in `~/dev/skill-evals` shows what agents do with it.
 
 This is a smoke check, not an eval suite. Confirm every pointer the text
 names resolves. Fix what the check shows by rewriting the sentence at
-fault. Your report says which check ran and what it showed, or why neither
-could run.
+fault. Your report says which check ran and what it showed.

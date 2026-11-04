@@ -52,8 +52,9 @@ from a tool failure, a prompt-check review, a parity read) named gaps that
 were folded in at `7cc64e8`; none found a lost rule. Callers moved: the
 prompt-check snippet (which stops asking for a code example every time),
 improve-tool, review, strategic-review, write-spec, the session board's
-prompts label, two lessons files; slackkit and planlab's prompting guide on
-branches of their own.
+prompts label, two lessons files; slackkit (merged); planlab's prompting
+guide and Steward's prompt-revise program, which still invoked
+`user:prompt-engineering` by name (found by codex on planlab #10559).
 
 **Eval** (`~/dev/skill-evals/cases/prompt-engineering`, now one family:
 `path` prompt-engineering, `with` the two workflows; requests skill-neutral,
@@ -103,18 +104,38 @@ planlab's branches merge after this one; skill-evals' recipes then need
 `docs/agent-skills.md` and `docs/skill-customizations.md` await the docs
 pass.
 
+**Goal review** `review-r1` (claude `claude-fable-5-1`, cold): partly
+landed, the larger part. Taken: write-prompt's description names tool
+text; its judge rule stands on its own line; a brief is checked by a
+self-read against revise-prompt's pass, since a cold reader per mid-build
+brief costs a subagent each time, and the cold reader stays for skills.
+Rebutted: the board's prompts column stays on revise-prompt, because it
+marks the check stage and a write during a build is not that stage; a case
+on the snippet's own words would be a literal test. Carried, the owner's
+settled shape: the shared rules by pointer go unread about one load in
+five (fold-finding 1 of 5), and the judge rule against written-out
+reasoning is deliberately in write-prompt as well as here, because the
+pointer alone lost it. Its namer check `no-sample-titles` failed on every
+revision (0/5, 0/5, 0/3): step 3 does not yet change what writers do, and
+the case cannot say whether those samples hurt.
+
 **Deletions to watch.** The old revision pass for writers became
 write-prompt's run-or-cold-read check: a new skill shipped with a stale
 pointer or a no-op line brings a self-read back. write-prompt's "give a
 reason where it changes how a rule is applied" was cut as a duplicate of
-the shared Write short.
+the shared Write short. The run-or-cold-read check for briefs became a
+self-read against the pass: a brief that misleads a fresh session brings
+the cold reader back.
 
 **Next pass compares**, over the next month on all three machines:
 Skill-tool loads per workflow and double loads per session; refused Skill
 calls for prompt-engineering (target none); reads of the shared rules after
 a workflow load (target three in four or better); whether the plain-terms
 addendum leaves prompt-check requests; judge prompts written with a
-reasoning field; revise-prompt edit lengths. Reversal: either workflow
+reasoning field; prompts for namers, classifiers and judges that carry
+sample outputs, and whether those samples hurt; revise-prompt edit lengths.
+A per-case routing check in the harness is the next pin, since routing is
+now a number someone must read. Reversal: either workflow
 firing on the other's task in more than about one load in ten, or a
 revision that loses the judge rules.
 
