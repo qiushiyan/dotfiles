@@ -64,7 +64,7 @@ example helps, try both in step 4.
   a choice stays open, such as the framing or an example, run both versions
   on the same inputs and keep the better one.
 - **A brief or a snippet:** read it as its reader would, holding only it,
-  and ask it the five questions of
+  and ask it the questions of
   [`revise-prompt`'s pass](../revise-prompt/SKILL.md#the-pass).
 - **A skill or a CLAUDE.md:** have a read-only cold reader with a concrete
   scenario report the first point where it would guess

@@ -59,12 +59,12 @@ in one plain sentence, as its reader meets it. Then ask:
 1. Does it open on the task and what done looks like?
 2. Is the task posed in the reader's world, without this session's names,
    and, for a judge, is every question answerable from its input?
-3. Does every line name what it prevents, and is each meaning stated once,
-   where the reader acts on it? A line narrating how something works names
-   nothing; keep the fact it implies for the reader (below).
+3. Does every line name what it prevents? A line narrating how something
+   works names nothing; keep the fact it implies for the reader (below).
 4. Is every claim true today, and does every pointer still resolve (grep
    for renamed names)?
 5. Would the reader, holding only its input, know what to do?
+6. Is each meaning stated once, where the reader acts on it?
 
 <example type="avoid">
 The way this works: each worker runs in its own background session spawned over RPC, and results arrive as follow-up messages on the event bus, so don't block waiting on them. (A worker turn can take several minutes.)
