@@ -252,9 +252,12 @@ Guidance for writing agent-facing text is layered, and the layer decides the
 file:
 
 ```
-claude/.claude/skills/prompt-engineering/   original — the one rulebook: SKILL.md for any
-                                            model-facing text and its revision pass;
+claude/.claude/skills/prompt-engineering/   original — the house rules every model-facing
+                                            text is held to (user-invoked only);
                                             AGENT-DOCS.md for skills, TOOLS.md for tools
+claude/.claude/skills/write-prompt/         original — the procedure for new text
+claude/.claude/skills/revise-prompt/        original — the procedure for changing text: a
+                                            failure's repair, and the pass a review runs
 claude/.claude/skills/writing-for-agents/   managed — reached only for SKILL-MECHANICS.md
                                             (frontmatter, invocation, routers); its
                                             general rules are folded into the rulebook
@@ -297,9 +300,9 @@ Triage every hunk into one bin and write the verdicts into
 `~/.agents/.skill-lock.json` (an empty delta is recorded too):
 
 1. **Graduate** — a general writing rule new or sharper than the rulebook's.
-   Rewrite it into the rulebook section it belongs to (a layer, every
-   sentence, write short, or a companion file), never pasted, then run the
-   rulebook's revision pass on the rulebook: an upstream addition is a reason
+   Rewrite it into the section it belongs to (a house rule, a companion file,
+   or a step of `write-prompt` or `revise-prompt`), never pasted, then run
+   `revise-prompt`'s pass on what changed: an upstream addition is a reason
    to be better, not longer.
 2. **Mechanics** — frontmatter, invocation, or routers. Nothing to do;
    `SKILL-MECHANICS.md` is read directly.

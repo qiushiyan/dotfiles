@@ -105,9 +105,11 @@ Sources and receipts: [pin](../claude/.claude/skills/tailwind-best-practices/.up
 
 ## The writing rulebook and its upstream reference
 
-`prompt-engineering` is locally authored, with selected rules absorbed from
-the managed `writing-for-agents` skill. It is not a verbatim fork. Its purpose
-is one coherent rulebook for model-facing text, shaped by our measured usage.
+`prompt-engineering` and the procedures that read it, `write-prompt` and
+`revise-prompt`, are locally authored, with selected rules absorbed from the
+managed `writing-for-agents` skill. They are not a verbatim fork. Their
+purpose is one coherent rulebook for model-facing text, shaped by our
+measured usage.
 
 Judge upstream writing improvements against that purpose; do not create a
 second authoritative writing guide. Skill mechanics remain a direct reference
