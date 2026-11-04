@@ -6,18 +6,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel-labs/agent-browser.git",
       "skillPath": "skills/agent-browser/SKILL.md",
-      "skillFolderHash": "82def67855a0d2aad7794207951820fa5422fdb0",
+      "skillFolderHash": "29ba9c12789b1c54ab76ad40e2472e646d141b85",
       "installedAt": "2026-07-09T08:59:29.069Z",
-      "updatedAt": "2026-09-09T08:52:42.942Z"
+      "updatedAt": "2026-11-04T12:42:29.525Z"
     },
     "codebase-design": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/engineering/codebase-design/SKILL.md",
-      "skillFolderHash": "07ba1cd60efc12d0d3a083005c1d9651cf15e39a",
+      "skillFolderHash": "4cbe1c131e1ea54109cb1e4e5f3c505810db6606",
       "installedAt": "2026-07-09T09:14:57.398Z",
-      "updatedAt": "2026-10-09T15:30:23.226Z"
+      "updatedAt": "2026-11-04T12:42:29.568Z"
     },
     "domain-modeling": {
       "source": "mattpocock/skills",
@@ -42,18 +42,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
-      "skillFolderHash": "39bd9cc130f7dfcc4e3ea0b3613f6ebed0d0ad2b",
+      "skillFolderHash": "587147dd230da299cc5e84971cb0a33f6676f8a6",
       "installedAt": "2026-07-09T09:15:16.263Z",
-      "updatedAt": "2026-10-09T15:30:25.931Z"
+      "updatedAt": "2026-11-04T12:42:29.602Z"
     },
     "research": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/engineering/research/SKILL.md",
-      "skillFolderHash": "0a6796c5667e95ed2301ba7381c123b4acb2ae1a",
+      "skillFolderHash": "2f8f36af48796faed5c687c75bb650071631a984",
       "installedAt": "2026-07-09T09:15:20.822Z",
-      "updatedAt": "2026-09-09T08:52:48.338Z"
+      "updatedAt": "2026-11-04T12:42:29.637Z"
     },
     "writing-for-agents": {
       "source": "mattpocock/skills",
@@ -78,9 +78,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/tt-a1i/archify.git",
       "skillPath": "archify/SKILL.md",
-      "skillFolderHash": "39069dd190f574064fe410aa3af1b6dfd98a522c",
+      "skillFolderHash": "d5fc699feb186e8be4e2d9e86f850a8ea1b6959e",
       "installedAt": "2026-09-04T13:51:01.199Z",
-      "updatedAt": "2026-10-24T09:21:21.416Z"
+      "updatedAt": "2026-11-04T12:42:30.642Z"
     },
     "find-docs": {
       "source": "upstash/context7",
@@ -142,9 +142,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/mattpocock/skills.git",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "skillFolderHash": "28aceb4c9567b985cb47f7db88cf23c9f33af8b8",
+      "skillFolderHash": "f551b6e0d219fdda0b6abf277f8f915b3127d1e9",
       "installedAt": "2026-09-09T09:13:22.777Z",
-      "updatedAt": "2026-10-09T15:30:27.893Z"
+      "updatedAt": "2026-11-04T12:42:29.669Z"
     },
     "gh": {
       "source": "cli/cli",

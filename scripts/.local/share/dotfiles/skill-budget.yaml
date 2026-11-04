@@ -12,7 +12,7 @@ description_words:
 # raised here by hand with a comment saying why.
 skills:
   check-memory: {body: 630, total: 630}
-  claude-accounts: {body: 301, total: 301}
+  claude-accounts: {body: 296, total: 296}
   clean-worktrees: {body: 467, total: 467}
   consult: {body: 1484, total: 3905}
   delegate: {body: 742, total: 1432}
