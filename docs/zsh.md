@@ -256,6 +256,23 @@ Read before editing.
   stripped, as `]8;;url\label` text. `.zshenv` unsets it in any shell with
   `CLAUDECODE` set, after the host file so nothing sets it again. Pinned by
   `zsh/.config/zsh/tests/portability.test.zsh`.
+- **The prompt renders in a daemon.** `zen.omp.json`'s `streaming` makes each
+  interactive shell keep one `oh-my-posh serve` (about 15 MB), which renders
+  in memory and hands over the transient prompt ready-made. Without the key,
+  Oh My Posh's init falls back to spawning its CLI on every Enter, before the
+  command can start, and again for every prompt. `POSH_DISABLE_STREAMING` set
+  before `.zshrc` runs turns it off for a shell. Oh My Posh's own
+  `pwd: osc7` writes `file://host//path` with spaces and UTF-8 unencoded, so
+  oh-my-zsh's `precmd` keeps reporting the directory.
+- **`zshexit` hooks also run in a subshell that calls `exit`**, `( … exit )`
+  or `$( … exit )`, not only when the shell exits. `rex.zsh`'s, `cout.zsh`'s and
+  Oh My Posh's do not check for one, so such a subshell clears the running
+  command's Rex badge, writes cout's end marker early and stops the prompt
+  daemon, which the next prompt restarts. A new `zshexit` hook returns first
+  when `(( ZSH_SUBSHELL ))`.
 - **Measure, don't guess.** Profile with `zmodload zsh/zprof`; verify a perf
   change with an _interleaved_ A/B benchmark (`git stash` the change, time both
-  back-to-back, repeat) — not before/after numbers taken minutes apart.
+  back-to-back, repeat) on a quiet machine — not before/after numbers taken
+  minutes apart or under a running suite. Time a hook in a loop after one
+  warm-up call, which pays its setup; time what a person feels on a pty, from
+  Enter to zle's bracketed-paste-on (`\e[?2004h`).

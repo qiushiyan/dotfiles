@@ -132,6 +132,11 @@ agents; a new integration should reach for them first.
   Claude Code's hooks publish through it (`id=claude`), and so does every
   interactive shell for a command that runs ten seconds or more (`id=shell`,
   `zsh/.config/zsh/rex.zsh`), so a finished build is found as an agent is.
+  Rex silently discards a whole report whose `title` or `msg` is not base64
+  of one line of UTF-8 within its limits (title 192 bytes, msg 2048): a
+  prompt with a `\r` or a multi-line command would leave the badge stale. Both
+  emitters make the text one line, every control character a space, and cut
+  it to fit before encoding.
 - **The clipboard, OSC 52.** Written to a terminal, it becomes a
   `clipboard_written` event and the app showing that session copies it: the
   clipboard of the machine you are looking from, with no ssh-aware routing.
@@ -416,6 +421,15 @@ one exists.
   Claude with the `x` launchers or an explicit `CLAUDE_CONFIG_DIR`.
 - **Claude reports SessionStart before it writes its sessions file,** so a
   lookup made on that first report retries for a moment.
+- **A Claude Code hook has no terminal.** Claude Code runs each hook in a
+  session of its own with no controlling tty, so `/dev/tty` fails, and its
+  `terminalSequence` hook output refuses any OSC but 0, 1, 2, 9, 99 and 777.
+  `rex-agent` writes to the tty of the process `CLAUDE_PID` names (set for
+  hooks, undocumented); a Claude Code with no terminal, headless or driven,
+  gets no report. Only a caller without the variable walks its ancestors, at
+  5–20 ms a `ps` that every hook waits on. Text crosses into bash already
+  encoded, since jq's `@tsv` escapes a backslash and `read -r` keeps it.
+  Guard: `scripts/.local/share/dotfiles/tests/test-rex-agent.sh`.
 - **A pane's SSH variables are the server's, not the viewer's.** A server an
   older build started over ssh hands every pane that login's
   `SSH_CONNECTION`, long after it closed; one from build 1497 drops it (above).
