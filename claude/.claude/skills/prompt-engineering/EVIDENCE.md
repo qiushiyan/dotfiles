@@ -129,7 +129,11 @@ stated twice; write-prompt's check names every surface its description
 does; the shared rules lead with the procedures' router and carry the
 judge rule as an instruction. Kept: write-prompt's "tell the reader only
 what it acts on", which decides what the reader is told, not where a rule
-lives.
+lives. Its first fold put "is each meaning stated once" into pass question
+3, ahead of the mechanism clause, and revise-mechanism-first fell to 2 of 5
+(4 of 5 the commit before, side by side); as its own question 6, 4 of 5
+(`runs/ab2-mech`, `runs/ab3-mech`). The pre-merge run on all nine cases
+(`runs/split-merge`, n=3) routed 27 of 27 to the right workflow.
 
 **Deletions to watch.** The old revision pass for writers became
 write-prompt's run-or-cold-read check: a new skill shipped with a stale
