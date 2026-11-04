@@ -1,9 +1,122 @@
 # prompt-engineering — evidence log
 
 One entry per mining pass over the sessions that read or invoked this
-rulebook; counts are written so the next pass can re-run them. Passes run
-under `improve-tool`; queries are obelisk scripts over `tool_calls` reads of
-the file and user turns naming it.
+rulebook, and since 2026-11-04 over the two workflow skills that read it,
+`write-prompt` and `revise-prompt`; counts are written so the next pass can
+re-run them. Passes run under `improve-tool`; queries are obelisk scripts
+over `tool_calls` reads of the file and user turns naming it.
+
+## 2026-11-04 — split into write-prompt and revise-prompt
+
+**Question**, the user's: two model-invoked skills, one for designing a
+prompt from scratch and one for revising one from failures, in the shape of
+the aiforui UI skills (`~/dev/aiforui-skills`: one skill per phase, each
+naming the sibling it does not cover). The writing steps the user named: the
+task in plain terms without the session's vocabulary (a made-up world is
+fine), the goals and constraints, then examples.
+
+**Corpus** (obelisk, mac, mini and mini2, 2026-08-01 → 11-04). Doors: user
+rows naming the rulebook by path, slash, skill field or the prompt-check
+snippet's opening, plus Skill-tool loads. Typed doors since the 10-28
+rewrite, regex-classified then read: revise or review 35, cold reader or
+eval 3, writing new 0, other 15 (dispatched review and fold briefs). Model
+loads since 10-01: a read sample of 31 rows of 47 (at most 12 per machine,
+one rater), about 12 writing new text (system prompts, snippets, task
+briefs for another session), about 10 revising, the rest unclear. The
+prompt-check snippet ran 78 times in about 67 machine-local sessions since
+09-15. Asks for the task in plain terms: mini2 `032e4414` (11-02), the
+09-27/28 jev pass, mac `2f010ad7` (09-21), and 6 of 40 pickups.
+
+**Consult** `consult-r1` (codex `gpt-6-astra`, high), no foundational
+objection. Adopted: the judge and answerability rules stay shared, so a
+revision keeps them; the harness counts delivered loads, not mentioned
+paths; the fixture's model-invocable `writing-for-agents` competed for
+skill-neutral requests; a review gets its own route and done; routing is by
+the operation on the artifact, so a later review of new text is a revision.
+It corrected the method: the title prompt at `1d6387cc634` is 26% shorter,
+not 40%, and its original opening already posed the reader's situation, so
+that session does not show the writer lacked the frame.
+
+**Spike** (skill-evals, one rollout each): the Skill tool refuses a
+`disable-model-invocation` skill with "Do not replicate this skill's
+workflow by other means", and the agent then declined to read the file. A
+model-invoked skill that points at the same file by path got it read. So
+every consumer that named `prompt-engineering` as a skill to load now names
+the file or a workflow skill.
+
+**Changed.** `write-prompt` and `revise-prompt` (model-invoked) hold the
+procedures; `SKILL.md` here is the shared house rules, user-invoked only,
+with a router for a reader who arrives directly. Each workflow keeps inline
+the example pair its cases measured. Four cold readers (a brief, a revision
+from a tool failure, a prompt-check review, a parity read) named gaps that
+were folded in at `7cc64e8`; none found a lost rule. Callers moved: the
+prompt-check snippet (which stops asking for a code example every time),
+improve-tool, review, strategic-review, write-spec, the session board's
+prompts label, two lessons files; slackkit and planlab's prompting guide on
+branches of their own.
+
+**Eval** (`~/dev/skill-evals/cases/prompt-engineering`, now one family:
+`path` prompt-engineering, `with` the two workflows; requests skill-neutral,
+`skill: none`; agent Opus 5.5; judge Claude Sonnet 5.5, and codex
+`gpt-6.1-sol` for judge-prompt, whose transcripts the Claude judge refused
+as reasoning extraction). 9732200 is the one rulebook; 1ac6138 the split;
+n=5 each, run interleaved (`runs/split-ab` on the mini):
+
+| case | one rulebook | split |
+|---|---|---|
+| fix-contradiction, fix-outside-text, fold-finding, new-skill, namer-builders-frame | 5/5 each | 5/5 each |
+| revise-delegate | 4/5 | 5/5 |
+| review-judge (stakes, unanswerable question, reasoning field) | 2/5 | 4/4, 1 refused |
+| judge-prompt: no-transcription | 3/3 | 1/3, 2 refused |
+| revise-mechanism-first: plumbing | 3/5 | 2/5 |
+
+- Routing: 45 of 45 split rollouts loaded the right workflow, none both,
+  none the manual-only skill; 36 of 45 read the shared rules (fold-finding 1
+  of 5). The one rulebook loaded in 42 of 45.
+- Checks summed over the nine cases: 49.9 against 49.0, interval
+  [−0.2, +2.1], so no measured regression overall.
+- The four new cases did not reproduce a failure at the one rulebook (the
+  namer's builder's frame and the tool-result cause pass there too), so the
+  writing procedure's first step is not shown to help by these runs.
+- Judge prompts kept a written-out reasoning field 4 of 6 times on the split
+  (`1ac6138` and `7cc64e8`) with the rule read but one file away. It moved
+  into write-prompt's judge sentence at `e04ee6f`: no-transcription 4/4 (one
+  session refused), `runs/confirm-judge`.
+- revise-mechanism-first fell from 5/5 under the old slash request to 3/5 on
+  the one rulebook with a neutral one, so the drop is mostly the request.
+  With the pair hung on the pass question it answers (`e04ee6f`), plumbing
+  passed 4/5 (`runs/confirm-mech`), against 2/5 at `1ac6138`.
+- The namer's no-internals check first forbade the input object's own keys,
+  which the namer receives; it was split and both revisions regraded.
+
+**Engine** (skill-evals, branch `prompt-split`): `with` installs a family at
+one revision; the activity table counts each member's delivered loads and
+reads; a safeguard refusal is the case's outcome and no longer benches an
+account (two did, on judge-prompt, and starved a run); the skill-writing and
+improve-tool-seeds fixtures copy only `SKILL-MECHANICS.md`.
+
+**After the merge:** planlab's untracked `.tabtype.local.toml`
+`loopy-prompt-check` takes the global snippet's two changes (revise-prompt
+by path, text written new included; the example clause); slackkit's and
+planlab's branches merge after this one; skill-evals' recipes then need
+`fixture build --force` for improve-tool-seeds and planlab-standards;
+`docs/agent-skills.md` and `docs/skill-customizations.md` await the docs
+pass.
+
+**Deletions to watch.** The old revision pass for writers became
+write-prompt's run-or-cold-read check: a new skill shipped with a stale
+pointer or a no-op line brings a self-read back. write-prompt's "give a
+reason where it changes how a rule is applied" was cut as a duplicate of
+the shared Write short.
+
+**Next pass compares**, over the next month on all three machines:
+Skill-tool loads per workflow and double loads per session; refused Skill
+calls for prompt-engineering (target none); reads of the shared rules after
+a workflow load (target three in four or better); whether the plain-terms
+addendum leaves prompt-check requests; judge prompts written with a
+reasoning field; revise-prompt edit lengths. Reversal: either workflow
+firing on the other's task in more than about one load in ten, or a
+revision that loses the judge rules.
 
 ## 2026-11-04 — upstream sync: writing-for-agents unchanged
 
