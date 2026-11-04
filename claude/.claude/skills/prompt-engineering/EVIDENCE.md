@@ -119,11 +119,25 @@ pointer alone lost it. Its namer check `no-sample-titles` failed on every
 revision (0/5, 0/5, 0/3): step 3 does not yet change what writers do, and
 the case cannot say whether those samples hurt.
 
+**House-rules audit** before the merge (a read-only reader holding
+writing-for-agents and these rules): duplicates folded to one home
+(write-prompt's step 3 now points at Show what you want back; the
+prompt-check snippet's report line and its structural-rewrite line moved
+into revise-prompt, which had no rule for a structural rewrite); revise-prompt
+gained a route for a review finding and a pass question for a meaning
+stated twice; write-prompt's check names every surface its description
+does; the shared rules lead with the procedures' router and carry the
+judge rule as an instruction. Kept: write-prompt's "tell the reader only
+what it acts on", which decides what the reader is told, not where a rule
+lives.
+
 **Deletions to watch.** The old revision pass for writers became
 write-prompt's run-or-cold-read check: a new skill shipped with a stale
 pointer or a no-op line brings a self-read back. write-prompt's "give a
 reason where it changes how a rule is applied" was cut as a duplicate of
-the shared Write short. The run-or-cold-read check for briefs became a
+the shared Write short; revise-prompt's "Capitals and MUST do not fix a
+miss", a copy of the shared emphasis rule (the one rulebook, which had only
+that copy, passed no-shouting 5/5). The run-or-cold-read check for briefs became a
 self-read against the pass: a brief that misleads a fresh session brings
 the cold reader back.
 

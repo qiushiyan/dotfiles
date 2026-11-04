@@ -10,23 +10,24 @@ requires:
 # House rules for model-facing text
 
 These are the rules every prompt, skill, brief, and tool text is held to.
-`write-prompt` and `revise-prompt` send you here and hold the procedures.
-If you came here on your own, the procedure you need is
-[`../write-prompt/SKILL.md`](../write-prompt/SKILL.md) for text that does not
-exist yet, or [`../revise-prompt/SKILL.md`](../revise-prompt/SKILL.md) for a
-change to text that does. Read that skill, which brings you back here.
+If no procedure sent you here, read
+[`../write-prompt/SKILL.md`](../write-prompt/SKILL.md) for new text or
+[`../revise-prompt/SKILL.md`](../revise-prompt/SKILL.md) for a change to
+existing text, and follow it; you have already read the rules it points to.
 
 For a skill, a `CLAUDE.md`, or an agent that runs over many steps, also read
 [AGENT-DOCS.md](AGENT-DOCS.md). For a tool or a prompt around large material,
-read [TOOLS.md](TOOLS.md).
+read [TOOLS.md](TOOLS.md). For a tool's or a CLI's instruction layer, read the
+lessons mined from agents' use of past tools,
+`~/.config/lessons/agent-tooling/usage-lessons.md`. When the current model's
+behavior is the question, read the vendor's guide,
+`~/dotfiles/references/fable-prompting-guide.md`.
 
 ## What the words are for
 
 You are writing for a capable model that has none of your context. Brief it
-the way you would brief a senior colleague: what the work is for, what done
-looks like, where it must stop, and the few things it cannot find out. Leave
-the method to it. Open on the task and what done looks like, in the reader's
-terms.
+the way you would a senior colleague: open on what the work is for and what
+done looks like, in the reader's terms, and leave the method to it.
 
 Words go to three things. **Authority:** what the reader may do alone, and
 where it stops. **Facts it cannot find:** the unwritten convention, the
@@ -56,13 +57,14 @@ mechanism means for it, not on the tour of how it works.
 Pose the task as the reader meets it: "the engineer who supervises this task
 reads your final message", not "your reply is stored as a `turn_reply` row".
 A name you coined while working helps you, not the reader; use the field's
-word. A stylised world is fine when the right answer survives in it. A
+word, and keep a name the reader will meet in its input. A stylised world is fine when the right answer survives in it. A
 reader that acts on the real system gets a simplified world, never an
 invented one, since an invented fact becomes a wrong action.
 
-A judge or classifier answers only what its input shows, and code joins the
-rest. It is not told what its verdict leads to, since a stated stake skews
-the verdict (`case-studies/classifier-judge-questions-jev-steward.md`).
+Ask a judge or classifier only what its input shows, and let code combine
+its answer with the rest. Leave out what its verdict leads to, since a
+stated stake skews the verdict (a worked rewrite:
+`case-studies/classifier-judge-questions-jev-steward.md`).
 
 ## Calibrations from our sessions
 
@@ -75,7 +77,3 @@ the verdict (`case-studies/classifier-judge-questions-jev-steward.md`).
   dotfiles repo `skill-sync --check` fails a skill's growth.
 - **Claims about mechanisms** are checked at the source before they ship. A
   stale or invented one costs more than a missing one.
-
-More, from mining how agents used past tools:
-`~/.config/lessons/agent-tooling/usage-lessons.md`. The vendor's guide for
-current models: `~/dotfiles/references/fable-prompting-guide.md`.
