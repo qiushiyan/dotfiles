@@ -52,8 +52,11 @@ skills:
   add-theme: {body: 1437, total: 2035}
   rex: {body: 65, total: 65}
   emil-design: {body: 773, total: 773}
-  revise-prompt: {body: 650, total: 650}
-  write-prompt: {body: 580, total: 580}
+  # raised 2026-11-04, before the split merged: four cold readers of the first draft named
+  # gaps (asking for authority or an unstated right answer, the replay route for text
+  # code sends, a review's own fix route, scope of a partly edited file, what reruns)
+  revise-prompt: {body: 725, total: 725}
+  write-prompt: {body: 643, total: 643}
 # Every lesson file at its word count, under the same ratchet: the consult and
 # review voices read these each round. Dot-directories (the pinned upstream
 # copies) are skipped; skill-sync records a new file and drops a removed one.

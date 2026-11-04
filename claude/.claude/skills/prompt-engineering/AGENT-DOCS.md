@@ -2,7 +2,7 @@
 
 Read this when writing a skill, its description, a `CLAUDE.md` or
 `AGENTS.md`, or instructions for an agent that works over many steps. The
-stance is in [SKILL.md](SKILL.md).
+rules are in [SKILL.md](SKILL.md).
 
 ## Where text sits
 
