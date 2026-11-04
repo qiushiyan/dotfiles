@@ -487,3 +487,50 @@ Not verified: the mini on 0.3.0 (not upgraded from here), inactive-branch
 filtering in `messages()` (needs Pi or OMP rows; the Claude fixture has
 none), and whether agents reach for `messages()` over `context()` in real
 use.
+
+## 2026-11-04 — skill delta e883398 → e7c0e35, engine 0.3.0 → 0.3.1
+
+Two upstream publishes. `db62981` (obelisk@bc64346) corrects the sandbox
+documentation: a `--query` script runs in `node:vm`, which is not a security
+boundary, so it has the CLI process's privileges; it also narrows upstream's
+`allowed-tools` to the non-evaluating commands. `e7c0e35` (obelisk@1f8205b,
+after 0.3.1) lets `sessions()` resolve a raw provider id as a literal
+fragment, capped at the 10 newest matches, and lists Copilot and Hermes among
+the provider ids. Installed 0.3.1 by moving the twin pin and running
+`twin tools install obelisk` on mini2. 0.3.1's engine delta is the OpenCode
+provider (f5d2cd3), the bounded invoker lookup (e5c3b77) and a DeepSeek
+rebuild fix; no column changed.
+
+Verdicts:
+
+- **Sandbox correction — adopted.** The body said the script had no fs or
+  network. Under 0.3.1 `process`, `require`, `import()` and `fetch` are
+  absent, but `this.constructor.constructor('return process')()` reaches the
+  host process and `getBuiltinModule('node:fs')`. The body now says the
+  script runs with the CLI's privileges, unsandboxed.
+- **`allowed-tools` — left upstream.** The local skill sets none, so every
+  `obelisk` call already goes through the host's permission check.
+- **`sessions()` fragment resolution — deferred.** On 0.3.1 a full id
+  matched one session and its first 8 characters matched none. The
+  escalation note says `sessions()` matches exactly; adopt with the engine
+  that ships 1f8205b.
+- **OpenCode — retired from deferred.** 0.3.1 ships the provider; the
+  escalation note now lists it. Host scope stays narrow (#9).
+- **Copilot, Hermes provider ids — covered** by the escalation note.
+
+Rechecked against 0.3.1:
+
+- Under a temporary HOME holding a one-session Claude fixture (real indexer,
+  no live state), all six hot-schema column sets match the skill (#1), and
+  `messages({ sessionId })` returns a page with `hasMore` and `nextCursor`.
+- Through `obq --on mini2` against the live index (incremental refresh, no
+  rebuild): the typed per-session path resolved this session, and a throwing
+  script exited 1 with `{error}`.
+- A script path absent from every transcript still waited 4.2 s, as on
+  0.3.0: e5c3b77 shortens the lookup's scan, not the wait, so the `--on` and
+  batching advice stands (#11–12, #17).
+- `tests/test-obq.sh`: 51 passed, 0 failed.
+
+Not verified: the laptop and the mini on 0.3.1 (each needs `twin tools
+install obelisk` after pulling the pin), and the bounded lookup's speedup on
+a large index.
