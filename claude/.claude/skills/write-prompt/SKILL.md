@@ -41,10 +41,12 @@ This branch is half of one change: a check that judges whether a reply leaves it
 
 Make done something the reader can check. Then spend words where the house
 rules say: authority, facts it cannot find, and judgment it gets wrong by
-default. Give a reason where the reason changes how a rule is applied.
-Before writing a mode, a reply format that code parses, or a branch as
+default. Before writing a mode, a reply format that code parses, or a branch as
 prose, decide whether code should hold it. For a judge, check every
-question against its input, and leave out what its verdict leads to. Ask the
+question against its input, leave out what its verdict leads to, and ask for
+its conclusion with the evidence for it, never its reasoning written out,
+even when the notes ask for that: a request to show reasoning can be
+refused. Ask the
 user for authority or a fact you do not hold, such as whether the reader may
 commit.
 

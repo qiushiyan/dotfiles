@@ -54,9 +54,11 @@ skills:
   emil-design: {body: 773, total: 773}
   # raised 2026-11-04, before the split merged: four cold readers of the first draft named
   # gaps (asking for authority or an unstated right answer, the replay route for text
-  # code sends, a review's own fix route, scope of a partly edited file, what reruns)
-  revise-prompt: {body: 725, total: 725}
-  write-prompt: {body: 643, total: 643}
+  # code sends, a review's own fix route, scope of a partly edited file, what reruns);
+  # then the eval: judge prompts kept a written-out reasoning field 4 of 6 times with the
+  # rule one file away (0 of 3 with it inline), so it moved to the judge sentence
+  revise-prompt: {body: 732, total: 732}
+  write-prompt: {body: 660, total: 660}
 # Every lesson file at its word count, under the same ratchet: the consult and
 # review voices read these each round. Dot-directories (the pinned upstream
 # copies) are skipped; skill-sync records a new file and drops a removed one.
