@@ -47,8 +47,9 @@
 # which every home shares (see cx-account-add), so one edit lands on all.
 typeset -g CODEX_ACCOUNTS_ROOT="$HOME/.codex-accounts"
 typeset -g CODEX_PRIMARY_NAME="qiushi@planlab.ai"   # cx-qiushi ≡ default ~/.codex
-# Pinned for the same reason as HEADROOM_PRIMARY_NAME: headroom's records keep
-# the name, and a derived one would change under a primary logout.
+# Pinned for the same reason as HEADROOM_PRIMARY_NAME: a derived name would
+# change under a primary logout, and cx-<name> with it. headroom's records
+# name the dir, so the pin is for the launchers alone.
 export HEADROOM_CODEX_PRIMARY_NAME="$CODEX_PRIMARY_NAME"
 # The board's captions promise the spelling that resolves in this shell.
 # (Its log-in hints keep the engine's own spelling on purpose.)

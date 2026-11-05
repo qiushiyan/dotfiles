@@ -87,9 +87,10 @@ typeset -ga CLAUDE_X_EFFORT=(
 # extra's short alias does. Which login it holds is a fact about the machine,
 # so each host file names it with _claude_primary (below); until one does it
 # is "primary", headroom's own name for a primary nothing names. headroom
-# derives the local part from the logged-in email unless told; the pin keeps
-# its records, `--account <name>` and x-<name> agreeing even across a primary
-# logout. Exported: the launchers, tmux and hooks all inherit it.
+# derives the local part from the logged-in email unless told, and its records
+# name the dir, never the name: the pin keeps `--account <name>` and x-<name>
+# agreeing across a primary logout, and changing it moves nothing. Exported:
+# the launchers, tmux and hooks all inherit it.
 typeset -g CLAUDE_PRIMARY_NAME="primary"
 export HEADROOM_PRIMARY_NAME="$CLAUDE_PRIMARY_NAME"
 # The board advertises `headroom launch --account <name>` by default; this
