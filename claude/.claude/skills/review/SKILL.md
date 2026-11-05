@@ -232,7 +232,7 @@ design nor agreement between reviewers earns anything.
   at whatever severity its content earns.
 - **Ideas** get a take, not a verdict: the friction or risk is real, the
   code does not already handle it, and the idea is as small as asked; then
-  decide whether you would take it and why. An idea that is a defect (a
+  decide whether you recommend it and why. An idea that is a defect (a
   reachable state with no handling, a case the goal implies) joins the
   findings at the severity it earns (in a goal round, among the obvious
   mistakes). With several voices, keep the best two or three.
@@ -281,12 +281,12 @@ is the failure there.
   place, keeping each struck tenet with its reason. They land in the fix
   commit, or their own. The build rereads the spec after every compaction,
   and a tenet left in this conversation is lost at the next one.
-- **Build the ideas you would take,** after the fixes and in a commit of
-  their own, with a test where an idea adds behaviour. The user reads them
-  in the report and can revert that commit, so do not hold them for a
-  go-ahead. Leave an idea unbuilt when it turns out not to be small (it
-  adds a mode, flag, command or option someone must learn), when it needs
-  authority this session lacks, or when the ask says ideas wait.
+- **Build the ideas you recommend, without asking:** the simple ones that
+  add real value. Build them after the fixes, in a commit of their own the
+  user can revert, with a test where an idea adds behaviour. Leave one
+  unbuilt only when it is a product decision the user should make (a new
+  mode, flag, command or option, or a change in what users can do), needs
+  authority this session lacks, or the ask says ideas wait.
 
 Done when the project's checks are green over the fixes and the ideas
 built, the step-5 tests among them.
