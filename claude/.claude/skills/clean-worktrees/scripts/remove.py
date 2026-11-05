@@ -17,6 +17,12 @@ import time
 
 # Only disposable dependency/cache directories. Archive everything else ignored.
 DISCARD = {"node_modules", ".next", ".turbo", "__pycache__"}
+# Next.js build output under a custom distDir, such as .next-smoke or .next-verify.
+DISCARD_PREFIXES = (".next-",)
+
+
+def disposable(name):
+    return name in DISCARD or name.startswith(DISCARD_PREFIXES)
 
 
 def command(args, cwd=None):
@@ -55,7 +61,7 @@ def ignored(path):
             continue
         relative = Path(name)
         components = [path.joinpath(*relative.parts[:i + 1])
-                      for i, part in enumerate(relative.parts) if part in DISCARD]
+                      for i, part in enumerate(relative.parts) if disposable(part)]
         if any(p.is_dir() and not p.is_symlink() for p in components):
             continue
         full = path / relative
@@ -68,7 +74,7 @@ def ignored(path):
                 if child.is_symlink():
                     yield child
                     dirs.remove(directory)
-                elif directory in DISCARD:
+                elif disposable(directory):
                     dirs.remove(directory)
             for filename in files:
                 yield Path(base) / filename

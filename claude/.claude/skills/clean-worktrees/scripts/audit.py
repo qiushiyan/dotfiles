@@ -11,7 +11,7 @@ import re
 import subprocess
 import time
 
-from remove import DISCARD, ignored, records, within, write_json
+from remove import disposable, ignored, records, within, write_json
 
 
 def run(path, *args):
@@ -41,7 +41,7 @@ def discover(root):
             found.append(Path(base))
             dirs[:] = []
         else:
-            dirs[:] = [name for name in dirs if name not in DISCARD and
+            dirs[:] = [name for name in dirs if not disposable(name) and
                        not (Path(base) / name).is_symlink()]
     return found, errors
 

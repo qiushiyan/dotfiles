@@ -198,6 +198,23 @@ class RemoveTests(unittest.TestCase):
                 self.assertTrue(archive.getmember(name).issym())
                 self.assertEqual(archive.getmember(name).linkname, str(external))
 
+    def test_custom_next_dist_dirs_are_discarded(self):
+        with (self.repo / ".gitignore").open("a") as file:
+            file.write(".next-*\napp/\n")
+        self.git("commit", "-am", "Ignore custom Next.js build directories")
+        self.initial_head = self.git("rev-parse", "HEAD").strip()
+        path = self.checkout("next-dist")
+        (path / ".next-smoke" / "cache").mkdir(parents=True)
+        (path / ".next-smoke" / "cache" / "00000001.sst").write_text("build cache\n")
+        (path / "app" / ".next-verify").mkdir(parents=True)
+        (path / "app" / ".next-verify" / "trace").write_text("build trace\n")
+        (path / "app" / "notes.txt").write_text("local data\n")
+        (path / ".next-notes").write_text("regular file, not a build directory\n")
+        result, = self.invoke([self.candidate(path)])
+        self.assert_removed(path, result)
+        with tarfile.open(result["archive"]) as archive:
+            self.assertCountEqual(archive.getnames(), [".next-notes", "app/notes.txt"])
+
     def test_ignored_secrets_are_archived_and_external_symlinks_survive(self):
         path = self.checkout("ignored")
         (path / ".env").write_text("SYNTHETIC_TOKEN=fixture-only\n")
