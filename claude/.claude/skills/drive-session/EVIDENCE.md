@@ -9,7 +9,7 @@ run by a real bot follows `DOGFOOD.md`.
 **Ask.** A maintenance pass over drive (`go-cli/MAINTAIN.md`), starting from
 how the bots used it.
 
-**Corpus.** The mac's batch 2026-11-02 (1,262 events, 2 Nov 20:56 → 5 Nov),
+**Corpus.** mini2's batch 2026-11-02 (1,262 events, 2 Nov 20:56 → 5 Nov),
 its `watches.log` and `drive metrics`, the Session Driver's transcript from
 2 Nov, and the mini's batches 2026-10-24, 2026-10-28 and itell-2026-10-28 for
 refusal counts. The bot's command lines are still unreadable (cursor
