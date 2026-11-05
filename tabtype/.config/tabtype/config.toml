@@ -44,6 +44,13 @@ Re-present the questions you just asked so I can decide them from your words alo
 
 For each, as if briefing a CEO: why it matters now, what it actually means in plain product terms, the options with what each implies for the real user, and your recommended answer. Where a question is a technical unknown that doesn't change the direction rather than a decision that's mine, move it under "Open technical questions — parked for the consult round" with your working answer instead of asking it.'''
 
+# The entry for a routine pass over a personal Go CLI with no request behind
+# it; go-cli's MAINTAIN.md owns the method.
+[[snippets]]
+key = "maintain"
+expand = '''
+Run a maintenance pass over this tool: read ~/dotfiles/claude/.claude/skills/go-cli/MAINTAIN.md and follow it. Stop at its report; a review comes next. $0'''
+
 # ── Consult and verify ─────────────────────────────────
 [[snippets]]
 key = "consult-design"
@@ -133,7 +140,7 @@ Work already on main skips the merge in step 2 and all of step 4, and its docs p
 [[snippets]]
 key = "review-then-closeout"
 expand = '''
-/review codex full review, then close the branch out if the round leaves nothing for me to decide: docs updated, main pushed, the new build installed on both machines, the feature branch gone. This is one of my own tools, so it merges locally with no PR.
+/review fable full review, then close the branch out if the round leaves nothing for me to decide: docs updated, main pushed, the new build installed on both machines, the feature branch gone. This is one of my own tools, so it merges locally with no PR.
 
 Fix what you confirm and build the ideas you would take, as the skill says, and run its second round first when the fixes were substantive. The closeout runs only if the skill's report would open by saying nothing needs me: a finding you judge foundational stops you at that report, and so does an objection to the design that you rebutted, which I should hear before a merge settles it. With nothing for me, continue:
 

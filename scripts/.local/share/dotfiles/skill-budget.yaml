@@ -36,7 +36,10 @@ skills:
   # before this change; that growth is not explained here
   drive-session: {body: 2509, total: 8969}
   enter-worktree: {body: 154, total: 154}
-  go-cli: {body: 1962, total: 3976}
+  # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
+  # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
+  # the body's one-line route to it
+  go-cli: {body: 1970, total: 4764}
   handoff: {body: 2413, total: 3050}
   improve-tool: {body: 1409, total: 5769}
   obelisk: {body: 2632, total: 2632}

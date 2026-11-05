@@ -10,7 +10,8 @@ argument-hint: "[the tool or change to build]"
 You are turning a settled design into a Go command-line tool in `~/dev`, or
 changing one that exists. Moving an existing tool onto clikit, or changing a
 command line whose output other programs read: read `MIGRATE.md` beside this
-file first. These tools are used by agents as much as by the
+file first. A maintenance pass with no change requested: `MAINTAIN.md`.
+These tools are used by agents as much as by the
 user: skills tell an agent to run `<tool> --help` and to read its `--json`
 output, so the help pages and the output contract are the tool's
 documentation. The work is done when `make check` passes, every help page

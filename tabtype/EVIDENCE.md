@@ -264,3 +264,71 @@ from 10-17; the global key once this branch reaches main):
 
 Revise if sessions now stop short of work the user expected done, so that the
 next turn is more often "continue" or "open the PR" than the review itself.
+
+## 2026-11-05 — the maintenance pass gets a key, and the review closeout names fable
+
+Session `mini2:f6f07667`, an `/improve-tool` pass; ledger
+`maintenance-pass-frictions.md` in its scratchpad (temporary).
+
+**Corpus.** Obelisk on all three machines. A maintenance pass is a first
+user turn in a `~/dev` tool that asks for a whole-project quality scan by
+naming `thermo-nuclear-code-quality-review`, `codebase-design` or
+`test-audit`, or that opens "Run open-ended explorations". Waves: 09-29
+(1), 10-01/02 (5), 10-04/05 (3), 10-24 (6), 11-04/05 (8). The deep cohort
+is the 11-04 wave on mini2: headroom `72385529`, brief `abf219e8`, clikit
+`aa0c4bce`, mailkit `46790b85`, gopen `777137d9`, slackkit `84b07ebe`,
+twin `a1e7643d`. Its window runs from the snippet to the next real user turn.
+
+**Observed in the cohort.**
+- **The prompt is hand-assembled:** 5 texts in 7 sessions. The test-audit
+  line came as a second turn after an interrupt (headroom), the whole text
+  was pasted twice (brief), and the line was left out of two (mailkit, gopen).
+- **Skills read:** thermo-nuclear 7/7, test-audit 6/7, go-cli 0/7,
+  codebase-design 0/7. go-cli holds the performance traps and module design
+  a Go pass needs. thermo-nuclear is written for a branch's diff, which the
+  user hedges each time ("one reference but not all").
+- **"Existing history" was read two ways:** Obelisk sessions in 4/7, git
+  alone in 3/7. Usage-derived defects led 4/7 reports.
+- **Tooling:** every session wrote its own mutation runner (7/7). deadcode
+  was installed ad hoc in 4/7; govulncheck and dependency updates ran in 0/7.
+- **One cross-session kill:** mailkit's `pkill -f 'run.py'` also killed
+  brief's `mutrun.py`.
+- **The review closeout is typed by hand:** "review with fable and build the
+  ideas you recommend, then closeout by updating the docs and merge and
+  install" appears in 7 turns across 6 sessions on 11-04/05, while
+  `review-then-closeout` named codex. `consult-then-build` moved to fable on
+  11-04 (`9732200`).
+
+**Changed.**
+- New key `maintain`, pointing at the new `go-cli/MAINTAIN.md`. That file
+  owns the method: usage, change and the last pass first; lenses with their
+  owners; a no-install toolchain (deadcode with and without `-test`,
+  govulncheck, `go list -m -u`, benchstat via `go run`, checked on gopen and
+  headroom clones); stopping processes by PID; and a report ending in "For
+  the next pass". The key is listed under the board's `onboard` label.
+- `review-then-closeout`: `/review fable`.
+- Not changed: the stop point differed (slackkit pushed to main, gopen
+  committed on main, the rest built in scratch), but each followed its
+  repository's `AGENTS.md`.
+
+**Not built:** a shared mutation runner, and a batch run of the pass through
+`drive-session`; both are open with the user. `docs/session-pipeline.md` and
+`DESIGN.md` wait for the docs pass.
+
+**Not tested:** no replay; a pass takes hours per repository. One cold
+reader read `MAINTAIN.md` on three scenarios (gopen as is, headroom with
+a feature request, brief beside five other passes). Folded in: spikes go to a
+scratch clone while fixes commit as `AGENTS.md` says (it had read "never in
+the main checkout" as barring commits on `main`), an added request is
+approved, timings alternate old and new builds on a loaded machine, and the
+report stands in for a skill's PR.
+
+**Next pass compares**, over passes started with `maintain`:
+- the skills read: go-cli and its toolchain (0/7 before);
+- a user turn that adds a lens the key already carries (1/7 before:
+  headroom's test-audit line);
+- cross-session kills (1 before);
+- "review with fable … closeout" typed by hand after the report (6/6 before).
+
+Revise if reports lose their usage-derived headline (4/7 before) or grow
+into per-lens checklists that the user stops reading.

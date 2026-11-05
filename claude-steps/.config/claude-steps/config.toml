@@ -20,11 +20,12 @@ snippets = [
   "~/dev/tabtype/.tabtype.local.toml",
 ]
 
-# The session's first stage: onboarding, or the triage a Loopy incident starts at.
+# The session's first stage: onboarding, the triage a Loopy incident starts at,
+# or a maintenance pass over a tool.
 [[label]]
 name = "onboard"
 skills = ["onboarding", "pl-loopy-onboarding", "pl-loopy-debug"]
-snippets = ["think-holistic"]
+snippets = ["think-holistic", "maintain"]
 color = "yellow"
 
 [[label]]
