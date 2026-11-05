@@ -1,9 +1,9 @@
 #!/usr/bin/env zsh
-# The working tree's _brief completer (git.zsh): what Tab does with the slugs
-# `brief resolve <word>` returns. The binary decides which slugs a word
-# reaches, and its own tests pin that; this suite pins the shell half, which
-# lives in compstate and can only be seen by pressing Tab in a real line
-# editor.
+# The working tree's _brief completer (git.zsh): which question it asks
+# `brief resolve` and what Tab does with the answer. The binary decides which
+# names a word reaches, and its own tests pin that; this suite pins the shell
+# half, which lives in compstate and can only be seen by pressing Tab in a real
+# line editor.
 #
 #   zsh ~/.config/zsh/tests/brief-completion.test.zsh
 #
@@ -63,6 +63,9 @@ case "$*" in
   'resolve sandbox-utf') echo sandbox-textdecoder-utf16le ;;
   'resolve sandbox') printf '%s\n' sandbox-deadline-and-lib-reuse sandbox-textdecoder-utf16le ;;
   'resolve wording') printf '%s\n' degraded-platform-wording long-read-wording ;;
+  'resolve --domains') printf '%s\n' agent infra infra-runtime run-state ;;
+  'resolve --domains inf') printf '%s\n' infra infra-runtime ;;
+  'resolve --domains run') echo run-state ;;
   *) echo "brief: error: no brief matching \"${2-}\"" >&2; exit 1 ;;
 esac
 EOF
@@ -139,12 +142,43 @@ test_empty_word_asks_bare() {
   eq "resolve" "$(calls)" "calls to the stub"
 }
 
+# ls takes a domain, so after it, or its alias list, Tab asks for domains, and
+# they extend the word as slugs do.
+test_ls_completes_domains() {
+  sandbox
+  eq "brief ls infra" "$(drive 'brief ls inf' $'\t')" "buffer" || return 1
+  eq "resolve --domains inf" "$(calls)" "calls to the stub"
+}
+
+test_list_completes_domains() {
+  sandbox
+  eq "b list run-state " "$(drive 'b list run' $'\t')" "buffer"
+}
+
+test_ls_empty_word_asks_every_domain() {
+  sandbox
+  drive 'brief ls ' $'\t' >/dev/null
+  eq "resolve --domains" "$(calls)" "calls to the stub"
+}
+
+# ls names a command only once a word follows it: while it is itself the word
+# being typed it may begin a slug.
+test_ls_being_typed_asks_for_slugs() {
+  sandbox
+  drive 'brief ls' $'\t' >/dev/null
+  eq "resolve ls" "$(calls)" "calls to the stub"
+}
+
 t "the stub answers, not a real brief (else everything below is void)" test_sandbox_holds
 t "a gapped word completes to the slug the binary returns"             test_gapped_word_completes
 t "matches the word does not prefix keep it; the next Tab cycles"      test_unprefixed_matches_keep_the_word
 t "matches sharing the word as a prefix still extend it"               test_common_prefix_still_inserts
 t "a miss keeps the word and asks the binary once"                     test_miss_asks_once
 t "an empty word asks for every live slug"                             test_empty_word_asks_bare
+t "ls completes domains, and extends the word"                         test_ls_completes_domains
+t "the list alias completes domains too"                               test_list_completes_domains
+t "an empty word after ls asks for every domain"                       test_ls_empty_word_asks_every_domain
+t "ls as the word being typed still asks for slugs"                    test_ls_being_typed_asks_for_slugs
 
 rm -rf "${TMPDIR:-/tmp}"/brief-comp-test.*(N)
 print -r -- "----"

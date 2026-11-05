@@ -947,25 +947,27 @@ brief() {
 }
 
 _brief() {
-  # The binary owns brief detection and matching: resolve lists the live
-  # slugs the word reaches by start's own rule (file scan only — no network
-  # on this path), so Tab offers what start would take, sandbox-utf for
+  # The binary owns matching: resolve answers from files alone (no network on
+  # this path) by the rule of the command being typed, start's for slugs, ls's
+  # for domains, so Tab offers what that command would take, sandbox-utf for
   # sandbox-textdecoder-utf16le included. -U keeps zsh's matchers from
-  # filtering them again; their answer is the same under every matcher, so
-  # only the first asks. With nothing to offer, show why (no repo, no handoff
-  # folder, no match) instead of completing silently.
+  # filtering the answer; it is the same under every matcher, so only the first
+  # asks. With nothing to offer, show why (no repo, no handoff folder, no match).
   (( _matcher_num > 1 )) && return 1
-  local out word=$PREFIX$SUFFIX expl
-  local -a slugs
+  local out word=$PREFIX$SUFFIX expl tag=briefs what=brief none='no live briefs in this project'
+  local -a names ask=(resolve)
   [[ $word == -* ]] && return 1
-  out=$("$HOME/.local/bin/brief" resolve ${word:+"$word"} 2>&1) || { _message -r "${${out#brief: }#error: }"; return 1 }
-  slugs=(${(f)out})
-  (( $#slugs )) || { _message -r 'no live briefs in this project'; return 1 }
-  _wanted briefs expl brief compadd -U -a slugs
+  if (( CURRENT > 2 )) && [[ $words[2] == (ls|list) ]]; then
+    ask+=(--domains) tag=domains what=domain none='no domains in this project'
+  fi
+  out=$("$HOME/.local/bin/brief" $ask ${word:+"$word"} 2>&1) || { _message -r "${${out#brief: }#error: }"; return 1 }
+  names=(${(f)out})
+  (( $#names )) || { _message -r "$none"; return 1 }
+  _wanted $tag expl $what compadd -U -a names
   # Matches that do not all start with the word would have zsh replace it
   # with their common prefix, often nothing: keep the word and list them,
   # and the next Tab starts the menu as usual.
-  if (( $#slugs > 1 )) && [[ -n ${(M)slugs:#^(#i)${(b)word}*} ]]; then
+  if (( $#names > 1 )) && [[ -n ${(M)names:#^(#i)${(b)word}*} ]]; then
     [[ $compstate[insert] == *unambiguous ]] && compstate[insert]=
   fi
 }
