@@ -39,7 +39,10 @@ skills:
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it
-  go-cli: {body: 1970, total: 4764}
+  # raised 2026-11-05 again: MAINTAIN.md restructured on the user's word to open on their
+  # prompt's areas and list the skills by purpose, plus the gremlins flags a spike showed
+  # are needed for an honest count
+  go-cli: {body: 1970, total: 5049}
   handoff: {body: 2413, total: 3050}
   improve-tool: {body: 1409, total: 5769}
   obelisk: {body: 2632, total: 2632}

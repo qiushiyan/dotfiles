@@ -47,7 +47,7 @@ For each, as if briefing a CEO: why it matters now, what it actually means in pl
 # The entry for a routine pass over a personal Go CLI with no request behind
 # it; go-cli's MAINTAIN.md owns the method.
 [[snippets]]
-key = "maintain"
+key = "go-cli-maintain"
 expand = '''
 Run a maintenance pass over this tool: read ~/dotfiles/claude/.claude/skills/go-cli/MAINTAIN.md and follow it. Stop at its report; a review comes next. $0'''
 

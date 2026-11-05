@@ -300,7 +300,7 @@ twin `a1e7643d`. Its window runs from the snippet to the next real user turn.
   11-04 (`9732200`).
 
 **Changed.**
-- New key `maintain`, pointing at the new `go-cli/MAINTAIN.md`. That file
+- New key `go-cli-maintain`, pointing at the new `go-cli/MAINTAIN.md`. That file
   owns the method: usage, change and the last pass first; lenses with their
   owners; a no-install toolchain (deadcode with and without `-test`,
   govulncheck, `go list -m -u`, benchstat via `go run`, checked on gopen and
@@ -311,8 +311,27 @@ twin `a1e7643d`. Its window runs from the snippet to the next real user turn.
   committed on main, the rest built in scratch), but each followed its
   repository's `AGENTS.md`.
 
-**Not built:** a shared mutation runner, and a batch run of the pass through
-`drive-session`; both are open with the user. `docs/session-pipeline.md` and
+**Gremlins** (the user's choice over a house mutation runner), spiked on a
+gopen clone at `fca6645` with gremlins v0.6.0:
+- Defaults: 60 killed, 2 lived, 48 not covered. It ran only each package's
+  own tests, and the code `cmd/` tests guard looked unguarded.
+- `--coverpkg ./...` alone: 38 lived, the same blind spot.
+- `--integration --coverpkg ./...` on a warm test cache: 45 timed out,
+  from a near-zero baseline.
+- `GOFLAGS=-count=1` with those flags and `--timeout-coefficient 20
+  --workers 4`: 99 killed, 7 lived, 4 not covered, in 3 min 14 s.
+  Among the 7: no test has a range `n-n` or a digit 9 in
+  `resolve.go`'s line-spec parser.
+
+That last command is in `MAINTAIN.md`.
+
+**Restructured on the user's word** (same day): `MAINTAIN.md` now opens on
+the pass as the user's prompt states it (open-ended explorations, the areas,
+spikes for real numbers), then a list of the skills and what each is for.
+The key was renamed `go-cli-maintain`.
+
+**Not built:** a batch run of the pass through `drive-session`; the user is
+starting one. `docs/session-pipeline.md` and
 `DESIGN.md` wait for the docs pass.
 
 **Not tested:** no replay; a pass takes hours per repository. One cold
@@ -323,7 +342,7 @@ the main checkout" as barring commits on `main`), an added request is
 approved, timings alternate old and new builds on a loaded machine, and the
 report stands in for a skill's PR.
 
-**Next pass compares**, over passes started with `maintain`:
+**Next pass compares**, over passes started with `go-cli-maintain`:
 - the skills read: go-cli and its toolchain (0/7 before);
 - a user turn that adds a lens the key already carries (1/7 before:
   headroom's test-audit line);

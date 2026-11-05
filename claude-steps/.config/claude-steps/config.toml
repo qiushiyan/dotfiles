@@ -25,7 +25,7 @@ snippets = [
 [[label]]
 name = "onboard"
 skills = ["onboarding", "pl-loopy-onboarding", "pl-loopy-debug"]
-snippets = ["think-holistic", "maintain"]
+snippets = ["think-holistic", "go-cli-maintain"]
 color = "yellow"
 
 [[label]]
