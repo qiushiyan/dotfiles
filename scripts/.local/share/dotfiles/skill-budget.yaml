@@ -43,7 +43,7 @@ skills:
   prompt-engineering: {body: 617, total: 1462}
   refactoring: {body: 643, total: 643}
   resolving-merge-conflicts: {body: 117, total: 117}
-  review: {body: 2922, total: 6879}
+  review: {body: 2740, total: 6809}
   spike: {body: 722, total: 722}
   # raised 2026-10-28: an unread fold-in shipped faults CI and bots then found in 5 of 11
   # folds; a wholesale cut to 1,615 words regressed its eval cases (EVIDENCE.md)

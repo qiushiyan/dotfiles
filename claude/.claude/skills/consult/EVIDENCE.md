@@ -392,3 +392,11 @@ conversation (`internal/dispatch/roster.go` shareRoster).
 next pass compares briefs after this commit for size (expect about two
 thirds of today's) and for voices still producing the asked-for output
 sections with the design bar applied where shape was at stake.
+
+## 2026-11-05 — decisions checked, no change
+
+See `../review/EVIDENCE.md`, same date. Consult's follow-ups since 10-06:
+94 direct user turns, 5 asked what a decision meant (all 10-07 → 10-15,
+before the 10-28 rewrite); sampled decisions are product calls the user
+often answers against the recommendation, so they stay with the user.
+`VOICE.md`'s small now excludes a new command.

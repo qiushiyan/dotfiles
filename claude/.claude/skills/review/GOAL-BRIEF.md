@@ -167,8 +167,9 @@ Nothing to name? Delete the section.»
 «Keep by default. Delete this section and its output item when the user's
 ask says no ideas, or the range is mechanical — a version bump, a syntax
 migration. Fill who uses it — a person and a moment in the goal paragraph's
-terms, never the mechanism — and keep the kind of better that fits what a
-failure costs, or both joined by "or".»
+terms, never the mechanism. Keep "harder to break" wherever a failure loses
+work or misleads someone, "smoother to use" otherwise, or both joined by
+"or".»
 
 The review above judges whether this landed; this asks for something else.
 Once it is done, name **up to two** small, additive changes that would make

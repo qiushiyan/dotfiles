@@ -441,3 +441,89 @@ $16.76 for 21 rollouts.
 **Next pass compares** live rounds after this commit: test runs after a
 collect, round-2 rate, and whether a tenet is filed as a finding or a
 report opens without the "nothing needs you" line.
+
+## 2026-11-05 — the host builds the ideas it would take, and goal rounds fix their defects
+
+**Request**, the user's (mini2 session `2c257532`): review should build the
+small ideas it recommends instead of reporting them unbuilt for the user's
+decision; look for weightier factors; refactor where the write-prompt /
+revise-prompt split applies; evals limited to the uncertain parts. This
+reopens the 2026-10-06 decision that hosts never build an idea unasked.
+
+**Corpus** (obelisk, mac, mini, mini2, 2026-10-06 → 11-05, one rater; the
+ledger `review-consult-frictions.md` and query outputs were scratch, the
+predicates rebuild them). Review sessions: a Bash call with `envoy collect`
+and `review-r` (mini 126, mac 32, mini2 20). The user's first text turn
+after each review or consult collect: 407 (review 182, consult 225). User
+turns after a session's first review collect that match `idea`: 47 in 42
+sessions, 37 independent once cold-reader prompts, a pasted brief and a
+prompt-check snippet are removed. Goal rounds: a brief written with
+`# Goal review:` then collected, 15.
+
+**Observed.**
+- **Ideas.** About 33 of 37 idea turns say build: "build the ideas you
+  recommend" (mini `9c4beb14`, `135ea742`, `b597484e`, `7e07db20`,
+  `857d97de`; mac `aac0ffab`, `3aea4230`, `b446ceb5`; mini2 `84b07ebe`).
+  Two declines (`f1f2636d` "post those ideas to github … no build now",
+  `3836e63b` record one as a not-do), and none of an idea the host said it
+  would take. Reports framed them as waiting ("not built; your call", "they
+  wait for you") and the host would take most. Two hosts built unasked
+  (`0646999b`, `3173aad4`); the user built on them.
+- **Goal rounds.** 4 of 15 held confirmed defects or test gaps with "in a
+  goal round I report first and build only what you approve" (`d709bfce`,
+  `2cdcabcc`, `96918aa0`, `e592d379` partly); each next turn took the
+  recommendation as written. The skill said both "take it" (step 5) and
+  "report first" (step 6).
+- **Minors.** "Go by the user's preference" with none stated; the user
+  asked for every tier twice (`bdf45362`, `ebd574f5`, 10-09) and the
+  closeout snippet says "minors included". Below the three-session floor;
+  changed because the same sentence was being rewritten.
+- **Consult**, no change: 5 clarification asks in 94 direct follow-ups, all
+  before the 10-28 rewrite; sampled decisions are product calls the user
+  often answers against the recommendation.
+
+**Changed.**
+- `SKILL.md` step 6 fixes every confirmed finding, minors included unless
+  the ask says otherwise; a goal round's obvious mistakes count as moderate
+  (pinned, then fixed) and only its design objections and deletions wait;
+  the ideas the host would take are built after the fixes in their own
+  commit, unless one adds a mode, flag, command or option, needs authority
+  the session lacks, or the ask says ideas wait. Step 8 lists ideas built,
+  then those left with the reason. Step 5's goal bullet: the verdict is
+  restated after the fixes, not put to the user; the duplicated design
+  objection sentence is one.
+- Step 3's restated slot conditions (structure, composition, milestone,
+  model-facing, ideas) moved into the templates' slots, where the host acts
+  on them. Body 2,922 → 2,787 words.
+- `BRIEF-TEMPLATE.md`: the conditions above; the trace is asked for only
+  when Composition is kept (a version-bump brief asked for a trace no
+  bullet defined). `GOAL-BRIEF.md`: the ideas slot's kind of better.
+  `../consult/VOICE.md`: small excludes a new command.
+- `tabtype` `review-then-closeout`, and the gitignored
+  `~/dev/tabtype/.tabtype.local.toml` copy: "build the ideas you would
+  take"; "Its ideas wait for me" is gone.
+
+**Eval** (`~/dev/skill-evals/cases/review/judge-fix-report`, tightened at
+skill-evals `3564e72` before the edit: the canned reply gained I2, a
+six-line refusal message, beside I1, a new `retry` command; checks
+`idea-built` and `idea-held` replace `idea-waits`). Agent Opus 5.5, n=2,
+judge codex `gpt-6.1-sol` with 3 passes (the mini's Claude judge login had
+expired; the report header still names the default). `af6f923`: 0/2, every
+check but idea-built (0/2). The edited copy (`runs/variants/review-1105-new`,
+before the cold reader's four fixes, none on this route): 2/2, all nine
+checks; one transcript read, I2 in commit `cf178a5` "(review r1 idea I2)",
+I1 left with "adds a new command and API route". Runs `runs/review-1105`
+and `runs/review-1105-new` on the mini, agent $4.95.
+
+**Cold reader** (read-only, three scenarios: a goal round's reply, a
+milestone full brief, a version-bump full brief). Four defects, all fixed:
+the verdict as a decision, the unconditional trace, goal findings without a
+severity to pin by, VOICE's small without commands. The goal route is
+read-checked only.
+
+**Next pass compares**, review rounds after this commit: reports that still
+say an idea waits (target 0 outside an ask that says so); ideas built per
+round and any the user asks to revert (revise if more than about one in
+ten); goal rounds that hold a confirmed defect; built ideas that are not
+small. Revise if a revert request or a "why did you build that" appears in
+two sessions.

@@ -122,35 +122,9 @@ Every voice's standing rules ride beside the brief as `--instructions-file
 ~/.agents/skills/consult/VOICE.md`. If envoy refuses it beside a warm voice
 that started without it, drop the flag and open the brief with that path.
 
-Each «keep when» slot in a template states its own condition. The full
-brief's Structural quality and Composition lines are fixed text, so their
-condition lives here:
-
-- **Structural quality** stays whenever the range decides structure: new
-  modules, reshaped interfaces, a real refactor, a schema or data migration.
-  Trim it only when the work is structurally inert, such as a version bump
-  or a mechanical syntax migration, however large the diff.
-- **Composition** survives that trim on a small contained fix, because a
-  patch bolted onto an existing call path is the shape it exists to catch.
-  Drop it only where the range adds no hop and rewires nothing.
-
-In goal mode the structural block is one slot with its own condition; the
-concept-count question the goal brief always carries is the altitude
-composition reaches without it.
-
-A range is a milestone when the user says "phase 1 is done" or "the rest
-continues here", or the spec's phases are partly unbuilt; keep **The rest of
-the build** then. When the range changes an agent's prompts, tools or
-skills, or alters what one of its tools does, keep **What the model is
-told**, and write any do-not-flag line about docs so it excludes
-those surfaces: a fresh read has found misleading model-facing text on
-ranges that passed full rounds without it.
-
-Keep **Where this can be better** in both modes unless the ask says no ideas
-or the range is mechanical. Fill in who uses the work and when, and pick the
-kind of better by what a failure costs: harder to break wherever a failure
-loses work or misleads someone, smoother to use otherwise, both where both
-apply.
+Each «slot» in a template says when its section or bullet stays and how to
+fill it; the structural, model-facing, milestone and ideas sections are
+decided there.
 
 ## 4. Dispatch
 
@@ -244,20 +218,21 @@ design nor agreement between reviewers earns anything.
   proves it, and the fix is the test, not the code. More coverage over a
   behaviour nobody would miss is not a finding.
 - **A goal round** returns judgments, headed by the **did it land** verdict.
-  Verify it like a design objection: confirm what the code does, form your
-  own position, and put both to the user. For an expectation violation, confirm the code does what the reviewer says,
-  then judge the expectation against the goal: one a reasonable user would
-  hold is a real defect with every test green; one that contradicts the goal
-  is rebutted on that ground. A design objection is foundational: verify its
-  premise, form your own position, and put both to the user. A line-level
-  defect the earlier rounds missed is still a real finding; take it, and
-  note that already judged over-claimed.
+  For an expectation violation, confirm the code does what the reviewer
+  says, then judge the expectation against the goal: one a reasonable user
+  would hold is a real defect with every test green; one that contradicts
+  the goal is rebutted on that ground. Confirm the verdict against the
+  code and report your own, restated after the fixes. Each design objection
+  is foundational: confirm its premise, form your own position, and put
+  both to the user. A line-level defect the earlier
+  rounds missed is still a real finding; take it, and note that already
+  judged over-claimed.
 - **Tenets** from a milestone round meet the bar in
   `~/.config/lessons/collaboration/tenets.md`; one that fails it is a tip,
   at whatever severity its content earns.
 - **Ideas** get a take, not a verdict: the friction or risk is real, the
   code does not already handle it, and the idea is as small as asked; then
-  say whether you would take it and why. An idea that is a defect (a
+  decide whether you would take it and why. An idea that is a defect (a
   reachable state with no handling, a case the goal implies) joins the
   findings at the severity it earns (in a goal round, among the obvious
   mistakes). With several voices, keep the best two or three.
@@ -277,12 +252,12 @@ every idea has a take.
 
 ## 6. Fix, and account for the tests
 
-You are the implementer here. Apply the confirmed criticals and moderates;
-minors go by the user's preference. Ideas wait for the user, whatever the
-ask says about minors. An unpinned-behaviour finding is fixed by writing its
-test, here. A goal round has no severity ladder: report first
-(step 8), build what the user authorizes, and report again. Applying a
-design objection unasked is the failure there.
+You are the implementer here. Fix every confirmed finding, minors included
+unless the ask says otherwise; an unpinned-behaviour finding is fixed by
+writing its test. A goal round's confirmed obvious mistakes count as
+moderate, pinned in step 5 and fixed here. Its design objections, and the
+weight the reviewer would delete, wait for the user: applying one unasked
+is the failure there.
 
 - **Design the fix from the finding, not from the red test.** The cheapest
   change that greens it is usually the local patch the reviewer stepped past.
@@ -306,20 +281,25 @@ design objection unasked is the failure there.
   place, keeping each struck tenet with its reason. They land in the fix
   commit, or their own. The build rereads the spec after every compaction,
   and a tenet left in this conversation is lost at the next one.
+- **Build the ideas you would take,** after the fixes and in a commit of
+  their own, with a test where an idea adds behaviour. The user reads them
+  in the report and can revert that commit, so do not hold them for a
+  go-ahead. Leave an idea unbuilt when it turns out not to be small (it
+  adds a mode, flag, command or option someone must learn), when it needs
+  authority this session lacks, or when the ask says ideas wait.
 
-Done when the project's checks are green over the fixes, the step-5 tests
-among them.
+Done when the project's checks are green over the fixes and the ideas
+built, the step-5 tests among them.
 
 ## 7. Round 2, when the fixes were substantive
 
-A full round only; goal has none unless the user asks, since its findings
-are decisions for the user or a reason to run full. Send a per-finding
+A full round only; goal has none unless the user asks. Send a per-finding
 summary of what changed, rebuttals included, into the same session (one
 voice or the whole fan-out) with the `resume:` command collect printed, a
 fresh name (`review-r2`) and the summary as its prompt file. The question is
 narrow: was each point integrated or hand-waved, and did the fixes regress
-anything? Converge; do not relitigate. Leave the ideas out. For light fixes, the tests that pinned them
-are the cheap substitute.
+anything? Converge; do not relitigate. Leave the ideas out. For light
+fixes, the tests that pinned them are the cheap substitute.
 
 ## 8. Report
 
@@ -334,5 +314,6 @@ Then the question the round bought and its mode; the verdict per finding
 (fixed, rebutted with the reason, or escalated); what the fixes changed and
 the check results; on a milestone round the tenets as written and those
 struck; and the job name, so the session stays continuable. Ideas come
-last, one line each with your take, after anything the caller's ask
-appends. They never count as something that needs the user.
+last, after anything the caller's ask appends: one line for each idea
+built, then one for each left unbuilt with your reason. They never count
+as something that needs the user.

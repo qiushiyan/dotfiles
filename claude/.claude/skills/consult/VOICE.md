@@ -34,7 +34,7 @@ that joins an existing call path, with
 When the brief asks where the work can be better, name at most two small,
 additive changes, after your review is done. Each names the moment it
 improves (who, doing what), the change, and roughly what it costs. Small means
-it adds no mode, flag, or option someone has to learn. A reshape, or missing
+it adds no mode, flag, command, or option someone has to learn. A reshape, or missing
 handling for a state that can actually happen, is a finding, not an idea, and
 ideas never raise a finding's severity.
 
