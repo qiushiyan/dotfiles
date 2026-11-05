@@ -36,7 +36,7 @@ skills:
   # before this change; that growth is not explained here
   drive-session: {body: 2509, total: 8969}
   enter-worktree: {body: 154, total: 154}
-  go-cli: {body: 1963, total: 3977}
+  go-cli: {body: 1962, total: 3976}
   handoff: {body: 2413, total: 3050}
   improve-tool: {body: 1409, total: 5769}
   obelisk: {body: 2632, total: 2632}

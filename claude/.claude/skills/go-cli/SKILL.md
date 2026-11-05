@@ -104,11 +104,10 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
   that needs them takes the root (`cli *CLI`); Kong binds it. Options are
   shared by every run, so they never capture a grammar instance
   (`kong.Bind(&cli.Globals)` carries one run's values into the next). A root
-  flag's name is taken for every command below it: Kong refuses a grammar
-  where a subcommand declares `--json` too, so a mode that only some commands
-  accept lives on those commands, or on a `default:"withargs"` command, whose
-  flags work before a command name only while that default runs: clikit
-  refuses `tool --json sub`, and sub's own `--json` goes after `sub`.
+  flag's name is taken for every command below it, so a mode that only some
+  commands accept lives on those commands, or on a `default:"withargs"`
+  command, whose flags work before a command name only while that default
+  runs.
 - **Dependencies load lazily** through `kong.BindToProvider`, called only when
   a Run method asks for the value (`kong.BindSingletonProvider` for one that
   several providers share). Config, tokens and stores loaded anywhere earlier
@@ -123,17 +122,14 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
   the same way; `clikit.Exit(n)` exits silently after the command has
   reported. Declare each such code in `App.ExitCodes` so help lists it. A rule
   the tags cannot express (one flag only valid with another's value) is
-  `clikit.Usage(err)`, returned before anything changed. A tool whose domain
-  errors end a run in their own way maps them once in `App.Outcome`, which
-  can end in a catch-all: what a command chose with these skips it.
+  `clikit.Usage(err)`, returned before anything changed. Map domain errors
+  onto these once, in `App.Outcome`, not in every Run method; it can end in a
+  catch-all, since what a command chose skips it.
 - **Constraints belong in tags**, where help states them: `enum:""` with a
   `default:""` among its values, `xor:"g"` (every member `required:""` for
   exactly one, as in `ExportCmd`), `and:"g"`, `env:""`, `type:"existingdir"`.
-  Keep a group's flags on one command, a required group's flags out of other
-  groups, and defaults off any group's flags: Kong checks a group among one
-  command's flags only, a shared flag can make its checks depart from the
-  tags, and it counts a default as given, so a default that matters applies
-  in Run.
+  Kong checks some group shapes differently from their tags; clikit refuses
+  those, and each error names the fix.
 - **Long help**: `Help() string` on a command holds the prose an agent needs
   to use it (what it does, side effects, output shape); `HelpSections()`
   adds titled blocks such as Examples, with `Shared: true` for one that
@@ -145,17 +141,15 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
 - **Less common forms**: a default subcommand (`default:"withargs"`, visible
   and without subcommands of its own, whose arguments, flags and constraints
   help lists on its parent's page), `default:"1"` for work that runs when no
-  command is named, since a Run beside commands is rejected (Kong would run
-  it after theirs too), passthrough to a child program
-  (`arg:"" passthrough:""`, which keeps `--`), hidden internal
-  commands (`hidden:""`; a hidden flag stays optional and out of `and`
-  groups), and a flag that takes values up to the next flag,
+  command is named (a Run beside commands is refused), passthrough to a child
+  program (`arg:"" passthrough:""`, which keeps `--`), hidden internal
+  commands (`hidden:""`), and a flag that takes values up to the next flag,
   which Kong's slices do not: a custom mapper using `ctx.Scan.PopWhile`
   (`--paths` in `~/dev/brief/cmd/brief/main.go`). `help [command…]` works in
   every tool without being declared.
 
 clikit rejects a declaration whose help would be missing or untrue, so the
-first test names every flag without help. The full contract is
+first test names each problem. The full contract is
 `~/dev/clikit/doc.go`; the fixtures in `~/dev/clikit/run_test.go` and
 `help_test.go` declare these grammar forms, and `testdata/` beside them holds
 the page each renders; Kong's tags are in its README (`find-docs` with
