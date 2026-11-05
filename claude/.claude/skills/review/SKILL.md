@@ -15,11 +15,13 @@ requires:
 Whoever wrote the code is never its only reviewer. A fresh session, the
 reviewer, reads the commits and reports findings; you verify each one
 against the code, fix what survives, and answer to the user for every
-verdict. The review being bought is strategic: findings that reshape the
-design (a new module, a shared extraction, a collapsed call path), not tweaks
-inside the implementation's frame. The round is done when every finding has
-a verdict, the fixes are green, and the user has a report they can decide
-from alone.
+verdict. Beside its findings it may suggest up to two ideas, small changes
+that would make the work better to use or harder to break; you judge each
+and build the ones you recommend. The review being bought is strategic:
+findings that reshape the design (a new module, a shared extraction, a
+collapsed call path), not tweaks inside the implementation's frame. The
+round is done when every finding has a verdict, the fixes are green, and
+the user has a report they can decide from alone.
 
 ## Resolving the voice
 
@@ -122,9 +124,8 @@ Every voice's standing rules ride beside the brief as `--instructions-file
 ~/.agents/skills/consult/VOICE.md`. If envoy refuses it beside a warm voice
 that started without it, drop the flag and open the brief with that path.
 
-Each «slot» in a template says when its section or bullet stays and how to
-fill it; the structural, model-facing, milestone and ideas sections are
-decided there.
+Each «slot» in a template says when its section stays and how to fill
+it.
 
 ## 4. Dispatch
 
@@ -230,9 +231,8 @@ design nor agreement between reviewers earns anything.
 - **Tenets** from a milestone round meet the bar in
   `~/.config/lessons/collaboration/tenets.md`; one that fails it is a tip,
   at whatever severity its content earns.
-- **Ideas** get a take, not a verdict: the friction or risk is real, the
-  code does not already handle it, and the idea is as small as asked; then
-  decide whether you recommend it and why. An idea that is a defect (a
+- **Ideas** get a take, not a verdict: confirm the friction or risk is
+  real and unhandled, then decide whether you recommend it and why. An idea that is a defect (a
   reachable state with no handling, a case the goal implies) joins the
   findings at the severity it earns (in a goal round, among the obvious
   mistakes). With several voices, keep the best two or three.
@@ -281,9 +281,9 @@ is the failure there.
   place, keeping each struck tenet with its reason. They land in the fix
   commit, or their own. The build rereads the spec after every compaction,
   and a tenet left in this conversation is lost at the next one.
-- **Build the ideas you recommend, without asking:** the simple ones that
-  add real value. Build them after the fixes, in a commit of their own the
-  user can revert, with a test where an idea adds behaviour. Leave one
+- **Build the ideas you recommend, without asking,** after the fixes, in
+  a commit of their own the user can revert, with a test where an idea
+  adds behaviour. Leave one
   unbuilt only when it is a product decision the user should make (a new
   mode, flag, command or option, or a change in what users can do), needs
   authority this session lacks, or the ask says ideas wait.
