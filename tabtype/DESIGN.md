@@ -21,6 +21,9 @@ a snippet departs from the skill it says so in words, as `spike-check` does
 when it asks for every assumption the approach fails without, against the
 skill's default of the costliest one.
 
+`go-cli-maintain` is a pointer and a stop alone: `go-cli/MAINTAIN.md` owns
+the pass, so the method changes there without touching the key.
+
 `think-holistic` has no skill behind it, so it carries its whole method.
 So does `strategic-review-brief`, whose reader is the build session rather
 than a skill. It asks for the builder's doubts and forbids its reassurances:
@@ -73,6 +76,7 @@ reading the code. The parked list is what `consult-then-build` puts on trial.
 Entries that chain are told apart by where the turn ends:
 
 ```text
+go-cli-maintain      → at its report: each finding fixed and verified, or put to the user
 consult-design       → at the synthesis; the user decides what follows
 consult-then-build   → at the finished build, unless the round leaves what a default cannot settle
 implement-spec       → at the finished build

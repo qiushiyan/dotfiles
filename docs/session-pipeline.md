@@ -36,8 +36,13 @@ then skips the merge.
    analysis that asks the user its product questions. `think-holistic` asks
    for the same analysis where no onboarding skill exists;
    `elaborate-questions` re-asks questions the user could not decide from
-   the words alone. A Loopy incident (an id, a window, a Bench card) enters
-   at `/pl-loopy-debug` instead; its dossier recommends whether to build a
+   the words alone. A routine pass over a personal Go tool, with no request
+   behind it, enters at `go-cli-maintain`
+   (`claude/.claude/skills/go-cli/MAINTAIN.md`). Its report holds fixes it
+   already verified, so the branch goes straight to `review-then-closeout`
+   unless a decision reshapes the design, which takes `consult-then-build`.
+   A Loopy incident (an id, a window, a Bench card) enters at
+   `/pl-loopy-debug` instead; its dossier recommends whether to build a
    fix, and a fix goes on with `/pl-loopy-onboarding <the dossier's route>`.
    An iTELL learner's bug report enters at `/bug-report-triage <reportId>`,
    and a fix it recommends goes on with `/onboarding`.
@@ -126,7 +131,7 @@ A spike is throwaway code that settles an assumption reading the code
 cannot, before the build commits to it, and it may kill the approach
 (`claude/.claude/skills/spike/SKILL.md`). `/write-spec` runs them on the
 heavy path, `consult-then-build` after its consult round on the light one,
-and `spike-check` asks for them on their own, the build waiting for the user
+`go-cli-maintain` throughout its pass, and `spike-check` asks for them on their own, the build waiting for the user
 to read the verdicts. In planlab they run on the real stack:
 `pl-loopy-verify`'s rungs where they hold the question, otherwise an
 OrbStack container or EC2 on the `planlab-personal` AWS profile, cleaned up
