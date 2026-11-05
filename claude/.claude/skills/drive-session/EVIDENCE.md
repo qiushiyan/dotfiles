@@ -16,11 +16,13 @@ refusal counts. The bot's command lines are still unreadable (cursor
 wrappers), so usage errors (exit 2) are uncounted.
 
 **Observed.**
-- 14 of 124 session wakes were followed by no action, against 70% before the
-  engine pass; 21 rode another session's post.
+- 14 of 124 session wakes were followed by no action, against 70% of the
+  engine pass's corpus (other batches, so no measure of its saving); 21 rode
+  another session's post.
 - All 10 `job-running` wakes (a job running, a reply that neither asks nor
-  says it waits, ten minutes on) drew no action; each turn resumed when its
-  job ended, 4 minutes to 7 hours later.
+  says it waits, ten minutes on) drew no action, and each session moved on
+  with none, its next wake 4 minutes to 7 hours later; the log does not say
+  its job's end was what moved it.
 - A weekly usage limit on 3 Nov failed five sessions' steps and left three on
   its menu. drive's next: was `timer 900 'retry …'` for a limit lifting 45
   hours later, so the bot asked the owner, who said to exit and resume on
