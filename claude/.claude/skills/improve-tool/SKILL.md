@@ -17,7 +17,7 @@ The request and the tool's past evidence set the scope. A request to assess
 or brainstorm calls for findings and a concrete design; a request to improve
 calls for the supported changes. No supported change is a valid result.
 
-Three companions hold the detail:
+Four companions hold the detail:
 
 - [`MINE.md`](MINE.md): queries for selecting and reading the history; read
   it before mining. Its examples show useful investigations, not facets to
@@ -27,6 +27,8 @@ Three companions hold the detail:
   deletion. Read it whenever a finding reproduces in one headless session.
 - [`COLD-READER.md`](COLD-READER.md): checking changed instructions with an
   independent reader, and a parity read after a rewrite.
+- [`BASELINE.md`](BASELINE.md): asking fresh subagents what they would do
+  without the text, to tell a needed line from a no-op.
 
 ## Ground the judgment
 
@@ -107,20 +109,27 @@ settle an open choice, carrying the ledger and predicates.
 
 ## Every line earns its place
 
-A line stays, or comes back after a rewrite, when it names what it prevents:
-a failure seen in use, or a default the model gets wrong. Keeping a line and
-adding one meet the same bar, because text piles up when adding feels safe
-and removing feels risky. Most of a long skill's length is behavior, so
-plainer sentences buy about a third; the rest comes from rules that name
-nothing. Cut those, and log each in the evidence log as a deletion to watch:
-what it guarded, and the sign in later use that would bring it back. Where
-a rule has an eval case, run the case against a copy without the rule
-first; a rule whose case then fails stays, and so does one that saves a
-round, named as a keep.
+**The bar.** A line stays, or comes back after a rewrite, only when it names
+what it prevents: a failure seen in use, or a default the model gets wrong.
+Keeping a line and adding one meet the same bar, because text piles up when
+adding feels safe and removing feels risky. Most of a long skill's length is
+behavior, so plainer sentences buy about a third; the rest comes from rules
+that name nothing.
 
-Fold a finding in by rewriting the sentence it corrects. Every owned skill
-is recorded at its size, so `skill-sync --check` fails growth: an addition
-pays with a cut, or the record is raised by hand with its reason.
+**Settle a doubtful line by measuring, not by opinion:**
+
+- **It has an eval case:** run the case against a copy without the rule. A
+  rule whose case then fails stays, and so does one that saves a round,
+  named as a keep; one that passes at the run count `EVALS.md` reads is cut.
+- **It has none:** screen it with a baseline interview
+  ([`BASELINE.md`](BASELINE.md) says what one can cut).
+
+**Log every cut** in the evidence log as a deletion to watch: what it
+guarded, and the sign in later use that would bring it back.
+
+**Fold a finding in** by rewriting the sentence it corrects. Every owned
+skill is recorded at its size, so `skill-sync --check` fails growth: an
+addition pays with a cut, or the record is raised by hand with its reason.
 
 ## Deliver and learn from the result
 

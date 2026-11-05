@@ -6,6 +6,78 @@ rulebook, and since 2026-11-04 over the two workflow skills that read it,
 re-run them. Passes run under `improve-tool`; queries are obelisk scripts
 over `tool_calls` reads of the file and user turns naming it.
 
+## 2026-11-05 — outside guide: agent-prose (a fork of writing-for-agents)
+
+**Question**, the user's: should the agent-prose skill (mbriggs's gist
+`1377f0ac0426b54150592b7172120026`, one revision, 2026-11-01; a fork of
+`writing-for-agents`) be integrated? Judged in the sync's three bins, not
+installed: it would be a second authoritative guide, and it links skills
+this machine lacks (`delegate`, `principle-prove-it-works`,
+`scripts/lint-skills`).
+
+**Graduated.**
+
+- **Baseline interview** → `improve-tool/BASELINE.md`, reached from
+  improve-tool's cut rules, revise-prompt's fix list and write-prompt step 2.
+  Calibrated against obelisk's replayed lessons before adoption (receipts in
+  `improve-tool/EVIDENCE.md`, same date): no needed rule marked for cutting.
+- **A better default before a new mode** → house rule here, named in
+  write-prompt step 2. Three skill-design sessions in which the owner
+  challenged an agent's mode: mac `3a8e018c` (09-25), mini `8ae01ce4`
+  (10-07), mac `7513cde5` (10-13, resolved as "the mode picks itself").
+- **Structure what matters** → house rule here. Not from the gist: the
+  owner's direction for this change, that important guidance gets a section,
+  bullet or bold lead rather than a mid-paragraph clause. The touched
+  sections of all three skills and improve-tool were set that way.
+
+**Covered.** Steps vs reference and a step only where the agent would
+diverge (goals over procedure); completion criteria with demand; context
+pointers, one trigger per branch, triggers on observables (AGENT-DOCS);
+leading words and negation (folded from writing-for-agents); routers and
+invocation (`SKILL-MECHANICS.md`); a script for what runs the same each
+time (code before prose); an example where form matters; word counts before
+and after (the skill-sync size ratchet); a cold read (`COLD-READER.md` is
+stronger: a scenario, the first guess, a parity read); checkable state
+across sessions (handoff's At pickup); invoke→run / plan→run / back and
+forth (CLAUDE.md, AGENT-DOCS's "Pause only where the work needs the user";
+47 matched turns in 164 writing sessions since 09-05 were nearly all "go
+ahead" after a plan).
+
+**Rejected.** "Read each linked target and delete every line it covers":
+shared rules behind a pointer are read about one load in five, and the
+judge rule was lost by pointer alone; the house rule is one statement where
+the reader acts on it. "A wrapped skill leaves its final check to the
+wrapper": no double checking observed. "Replace a weak leading word with a
+stronger one (relentless)": judged at the writing-for-agents fold, and the
+emphasis calibration warns against it.
+
+**Watch, no evidence yet.** A list whose items are not the next actions
+names its unit; a step that refers to something later is out of order.
+
+**Eval** (`~/dev/skill-evals`, `mode-default` added as a case; agent Opus
+5.5 on the mini; judge Claude Sonnet 5.5 here, three passes, since the
+mini's judge login had expired). `mode-default` passed 3/3 at f4b3972 and
+3/3 on the candidate: today's model already lets a small diff choose the
+lighter review, so the mode rule rests on the three corrections, not on a
+reproduced failure. Across the ten cases at n=3 (`runs/mode-baseline-1105`):
+every case passed at
+both revisions except the judge pair, which first read lower on the
+candidate (judge-prompt 1/1/1, review-judge 2/1, against 3/3 each). A
+confirmation at n=5 (`runs/judge-confirm-1105`) put them level: judge-prompt
+1/2/2 at f4b3972 against 2/3/0, review-judge 4/1 each, checks summed
++0.02 [−0.58, +0.62]; the contract check sits near 0.45 on both, a standing
+weakness of the case rather than of this change. revise-mechanism-first went
+1/3 → 3/3 (plumbing), noise at n=3. The candidate's extra subagents in
+judge-prompt are write-prompt step 4's test runs, which f4b3972 also makes;
+no rollout ran an interview unasked.
+
+**Next pass compares:** modes proposed in skill or prompt designs after
+this commit, and whether the owner still has to challenge one; whether cuts
+of caseless rules cite an interview; whether touched files keep their rules
+in bold-led bullets rather than mid-paragraph. Reversal: a mode the owner
+asks for that the rule talked an agent out of, or the judge cases regressing
+past noise.
+
 ## 2026-11-04 — split into write-prompt and revise-prompt
 
 **Question**, the user's: two model-invoked skills, one for designing a

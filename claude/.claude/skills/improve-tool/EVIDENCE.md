@@ -340,3 +340,47 @@ reproducible finding gets its case before the edit, and whether an
 over-budget pass cites the cases or history for each cut. The over-budget
 case wants more runs (n≥6) before its cut-on-evidence difference means
 anything.
+
+## 2026-11-05 — the baseline interview (a procedure change, not a mining pass)
+
+**Source.** The agent-prose gist (mbriggs, a fork of `writing-for-agents`),
+judged in this session as an outside writing guide; its verdicts are in
+`../prompt-engineering/EVIDENCE.md`, same date. Its one method this skill
+lacked: ask fresh subagents, with no tools and no draft, what they would do,
+and sort each line by whether every subject already does it.
+
+**Calibration against known answers.** Obelisk's nine replayed lessons
+(`../obelisk/LESSONS.md`, 2026-10-09) were the answer key. A blind Opus
+agent, holding the gist and the nine lines but not the replay results, wrote
+one interview prompt and pre-registered the "already does it" answer per
+line; two Opus and one Sonnet subagent answered it; the sort used those
+criteria. Prompt and answers: this session's scratchpad `interview/`.
+
+| line | interview | sort | replay at red |
+|---|---|---|---|
+| named params | 3/3 wrote `?` + array | keep | 0/3, still needed |
+| query path | scratchpad paths, 2/3 a new file each round | keep | 0/9, still needed |
+| user voice | Sonnet `role='user'` only | keep | 1/2, weak |
+| memory offer | 1/3 offered | keep | 3/3, saturated |
+| own session, output budget | 3/3 did it | task run (pressure) | saturated |
+| correlation, lean FTS | 3/3 did it | cut | saturated |
+| inline schema | 3/3 probed first | cut | saturated; the ablation costs a round |
+
+No needed line was marked for cutting; one unneeded line was kept; the
+round the schema saves is invisible to an interview. The two baselines
+differ: the interview has no text, the replay's red has the text before the
+fix, which for the two still-needed rules taught the wrong form. Side
+finding for obelisk's next pass: unprompted, Opus put query files in the
+scratchpad, whose path carries the session id, so the path rule may shrink
+to "reuse one path". Cost: four subagents, about five minutes.
+
+**Changed.** `BASELINE.md` (new companion); § Every line earns its place
+restructured into bold-led rules, the interview as the screen for a line
+with no case; `revise-prompt`'s fix list and `write-prompt` step 2 point at
+it.
+
+**Next pass compares:** cuts made in improve-tool and revise-prompt passes
+after this commit. Does a cut of a caseless rule cite an interview or a run?
+Does an interview-cut rule come back (a failure in later use that the cut
+line guarded)? Reversal: a cut made on an interview alone that later use
+shows was needed, or interviews skipped in favour of opinion.

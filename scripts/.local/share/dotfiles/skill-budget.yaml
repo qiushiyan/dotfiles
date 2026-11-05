@@ -44,9 +44,14 @@ skills:
   # are needed for an honest count
   go-cli: {body: 1970, total: 5049}
   handoff: {body: 2413, total: 3050}
-  improve-tool: {body: 1409, total: 5769}
+  # raised 2026-11-05: BASELINE.md, the baseline interview as the screen for a rule with no
+  # eval case (calibrated against obelisk's replayed lessons), and the cut rules set as
+  # bold-led bullets at the owner's request
+  improve-tool: {body: 1464, total: 6175}
   obelisk: {body: 2632, total: 2632}
-  prompt-engineering: {body: 617, total: 1462}
+  # raised 2026-11-05: two house rules from the agent-prose triage, a better default before
+  # a new mode (three owner corrections) and structure what matters (the owner's direction)
+  prompt-engineering: {body: 707, total: 1552}
   refactoring: {body: 643, total: 643}
   resolving-merge-conflicts: {body: 117, total: 117}
   review: {body: 2735, total: 6804}
@@ -71,8 +76,10 @@ skills:
   # and the house-rules audit before the merge: revise-prompt gained the review-finding
   # route, the structural-rewrite rule moved in from the prompt-check snippet, and the
   # pass's each-meaning-once question; write-prompt's checks name every surface it covers
-  revise-prompt: {body: 766, total: 766}
-  write-prompt: {body: 663, total: 663}
+  # raised 2026-11-05: both route an unsure line to its case or a baseline interview, set as
+  # bullets at the owner's request; write-prompt's step 2 names the better-default rule
+  revise-prompt: {body: 806, total: 806}
+  write-prompt: {body: 697, total: 697}
 # Every lesson file at its word count, under the same ratchet: the consult and
 # review voices read these each round. Dot-directories (the pinned upstream
 # copies) are skipped; skill-sync records a new file and drops a removed one.

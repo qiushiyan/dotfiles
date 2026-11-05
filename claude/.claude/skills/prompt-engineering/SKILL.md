@@ -40,9 +40,19 @@ model gets wrong. A line that names nothing is a no-op, however sensible.
 instruction works some of the time. Prose is for judgment, and a mode or
 flag is branched in the code that assembles a prompt, never in its text.
 
+**A better default before a new mode.** A mode works only when a caller
+remembers to turn it on, and the runs that need it most are the ones where
+nobody does. Let the text decide from what the reader can see, such as the
+diff's size or the request's words. Add a mode only for a choice nothing
+observable settles.
+
 **Write short.** One instruction per sentence. Plain words. A reason in a
 clause, where the reader would otherwise misapply the rule: "a timeout is
 not approval." Terse, not encoded: cut words, never grammar.
+
+**Structure what matters.** A rule the reader must not miss gets its own
+heading, bullet, or bold lead. A rule set mid-paragraph is the one that
+gets skimmed past.
 
 **Show what you want back.** The model copies examples more than it follows
 rules, so every example is an instruction. Show one where the output is

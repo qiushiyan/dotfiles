@@ -74,10 +74,15 @@ The way this works: each worker runs in its own background session spawned over 
 A worker turn takes several minutes, so send one complete request rather than a stream of small ones, and keep working elsewhere while it runs.
 </example>
 
-Fix what the pass finds as in steps 3 to 5. A false claim or a line that
-prevents nothing needs no case: verify the fix by reading, or by running the
-command. Where a question stays open, ask a read-only cold reader with a
-concrete scenario ([how to brief one](../improve-tool/COLD-READER.md)).
+Fix what the pass finds as in steps 3 to 5, settling each doubt by its kind:
+
+- **A false claim, or a line that prevents nothing:** no case needed. Verify
+  the fix by reading, or by running the command.
+- **Unsure whether the model already does it without the line:** run its
+  eval case against a copy without it; with no case, screen it with a
+  baseline interview ([how to run one](../improve-tool/BASELINE.md)).
+- **Any other open question:** ask a read-only cold reader with a concrete
+  scenario ([how to brief one](../improve-tool/COLD-READER.md)).
 
 ## Report
 

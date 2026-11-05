@@ -323,6 +323,13 @@ missed.
 grep -rn "writing-for-agents" --exclude-dir=.git . | grep -v "skills/writing-for-agents/"
 ```
 
+**Another author's writing guide** (a gist, someone's fork of the sibling)
+goes through the same three bins, once, instead of being installed beside
+the rulebook. Test a candidate whose value is a claim about what agents do
+before it graduates, and record the verdicts as one entry in
+`prompt-engineering/EVIDENCE.md`; the agent-prose entry (2026-11-05) is the
+worked example.
+
 ## Testing a skill by running it
 
 `~/dev/skill-evals` replays a skill headless against chosen revisions, so an

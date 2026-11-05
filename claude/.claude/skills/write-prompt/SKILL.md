@@ -38,13 +38,18 @@ A check judges whether a reply leaves its reader something to decide. Today it g
 
 ## 2. Say what done looks like, and the limits
 
-Make done something the reader can check. Then spend words where the house
-rules say: authority, facts it cannot find, and judgment it gets wrong by
-default. Before writing a mode, a reply format that code parses, or a branch
-as prose, decide whether code should hold it. Ask the user for authority or a
-fact you do not hold, such as whether the reader may commit.
+- **Done is checkable:** the reader can tell done from not done.
+- **Spend words where the house rules say:** authority, facts it cannot
+  find, and judgment it gets wrong by default. When you cannot tell what it
+  does by default, ask fresh subagents before writing the line
+  ([baseline interview](../improve-tool/BASELINE.md)).
+- **A better default before a new mode,** as the house rule says. Before
+  writing a reply format code parses, or a branch as prose, decide whether
+  code should hold it.
+- **Ask the user** for authority or a fact you do not hold, such as whether
+  the reader may commit.
 
-For a judge, check every question against its input, leave out what its
+**For a judge,** check every question against its input, leave out what its
 verdict leads to, and ask for its conclusion with the evidence for it, never
 its reasoning written out, even when you are asked to include it: a request
 to show reasoning can be refused.
