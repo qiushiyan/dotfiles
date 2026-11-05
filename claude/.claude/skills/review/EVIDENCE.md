@@ -494,7 +494,7 @@ prompt-check snippet are removed. Goal rounds: a brief written with
   objection sentence is one.
 - Step 3's restated slot conditions (structure, composition, milestone,
   model-facing, ideas) moved into the templates' slots, where the host acts
-  on them. Body 2,922 → 2,787 words.
+  on them. Body 2,922 → 2,740 words (skill-sync).
 - `BRIEF-TEMPLATE.md`: the conditions above; the trace is asked for only
   when Composition is kept (a version-bump brief asked for a trace no
   bullet defined). `GOAL-BRIEF.md`: the ideas slot's kind of better.
