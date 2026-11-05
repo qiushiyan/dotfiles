@@ -123,13 +123,17 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
   the same way; `clikit.Exit(n)` exits silently after the command has
   reported. Declare each such code in `App.ExitCodes` so help lists it. A rule
   the tags cannot express (one flag only valid with another's value) is
-  `clikit.Usage(err)`, returned before anything changed.
+  `clikit.Usage(err)`, returned before anything changed. A tool whose domain
+  errors end a run in their own way maps them once in `App.Outcome`, which
+  can end in a catch-all: what a command chose with these skips it.
 - **Constraints belong in tags**, where help states them: `enum:""` with a
   `default:""` among its values, `xor:"g"` (every member `required:""` for
   exactly one, as in `ExportCmd`), `and:"g"`, `env:""`, `type:"existingdir"`.
-  Keep a group's flags on one command and a required group's flags out of
-  other groups: Kong checks a group among one command's flags only, and a
-  shared flag can make its checks depart from the tags.
+  Keep a group's flags on one command, a required group's flags out of other
+  groups, and defaults off any group's flags: Kong checks a group among one
+  command's flags only, a shared flag can make its checks depart from the
+  tags, and it counts a default as given, so a default that matters applies
+  in Run.
 - **Long help**: `Help() string` on a command holds the prose an agent needs
   to use it (what it does, side effects, output shape); `HelpSections()`
   adds titled blocks such as Examples, with `Shared: true` for one that
@@ -140,9 +144,12 @@ func main() { os.Exit(app.Run(os.Args[1:])) }
   sections without `Shared`, which would carry them onto every page below.
 - **Less common forms**: a default subcommand (`default:"withargs"`, visible
   and without subcommands of its own, whose arguments, flags and constraints
-  help lists on its parent's page), passthrough to a child program
+  help lists on its parent's page), `default:"1"` for work that runs when no
+  command is named, since a Run beside commands is rejected (Kong would run
+  it after theirs too), passthrough to a child program
   (`arg:"" passthrough:""`, which keeps `--`), hidden internal
-  commands (`hidden:""`), and a flag that takes values up to the next flag,
+  commands (`hidden:""`; a hidden flag stays optional and out of `and`
+  groups), and a flag that takes values up to the next flag,
   which Kong's slices do not: a custom mapper using `ctx.Scan.PopWhile`
   (`--paths` in `~/dev/brief/cmd/brief/main.go`). `help [command…]` works in
   every tool without being declared.
