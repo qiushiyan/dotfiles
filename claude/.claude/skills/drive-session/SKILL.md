@@ -124,8 +124,8 @@ asking** so they can reverse it:
 
 - the closeout once the merge or deploy it waits on has happened, the
   follow-up cards sessions recommend, your own waits;
-- relaunching a session whose login was rejected, or reopening one a Rex
-  restart ended;
+- relaunching a session whose login was rejected or whose account hit its
+  usage limit, or reopening one a Rex restart ended;
 - a judgment the user would hand to a model, from a fresh session: `drive
   open judge-1 --model fable --goal '…' '…'`, then act on its verdict;
 - the merge and release, by your project file's § After the PR (a personal
@@ -198,9 +198,6 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
 - A brief one session wrote to start another is acted on before you get a
   turn, so return one that drops a stage (the pipeline doc's rule for
   briefs) to its author.
-- A skill that starts only when typed (`/write-spec`, `/enter-worktree`,
-  `/strategic-review`, planlab's `/pl-loopy-handoff-distill`) goes as a typed
-  line with its brief attached, as above.
 - Work the user asks *you* to do goes to a new session, opened with `drive
   open` in the project's main checkout and started at stage 1 with their
   request. You stay a reader and sender: work run from your own shell has no

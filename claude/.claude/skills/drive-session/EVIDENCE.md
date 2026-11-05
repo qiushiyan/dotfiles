@@ -4,6 +4,59 @@ Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares. A
 run by a real bot follows `DOGFOOD.md`.
 
+## 2026-11-05 — the first batch after the engine pass (drive maintenance pass)
+
+**Ask.** A maintenance pass over drive (`go-cli/MAINTAIN.md`), starting from
+how the bots used it.
+
+**Corpus.** The mac's batch 2026-11-02 (1,262 events, 2 Nov 20:56 → 5 Nov),
+its `watches.log` and `drive metrics`, the Session Driver's transcript from
+2 Nov, and the mini's batches 2026-10-24, 2026-10-28 and itell-2026-10-28 for
+refusal counts. The bot's command lines are still unreadable (cursor
+wrappers), so usage errors (exit 2) are uncounted.
+
+**Observed.**
+- 14 of 124 session wakes were followed by no action, against 70% before the
+  engine pass; 21 rode another session's post.
+- All 10 `job-running` wakes (a job running, a reply that neither asks nor
+  says it waits, ten minutes on) drew no action; each turn resumed when its
+  job ended, 4 minutes to 7 hours later.
+- A weekly usage limit on 3 Nov failed five sessions' steps and left three on
+  its menu. drive's next: was `timer 900 'retry …'` for a limit lifting 45
+  hours later, so the bot asked the owner, who said to exit and resume on
+  another account; the bot did it outside drive, leaving two copies of
+  sr-10450 (N46, N48). S8's gone wake then reopened it on the limited
+  account. Picking Stop on the menu writes nothing to the transcript (S5's).
+- `record answer` given the owner's words as its last argument typed them
+  into O1 as the step three times (A14, A17, A18, one a production
+  breakglass turn on the quote alone). A refused answer-with-step lost the
+  answer twice (A21, A24; the owner answered A24 again the next day).
+- The batch logs hold 30 refusals of two kinds across four batches, each
+  fixed by hand the same way: a typed line over 500 bytes (15) and a
+  typed-only skill heading a file (15, 13 of them
+  `/pl-loopy-handoff-distill`).
+- "another driver is sending" three times, each the bot's own overlapping
+  run.
+
+**Changed.** In drive: a usage limit's next: relaunches on another account
+(Stop on its menu, close, `open --resume` with the step), or says to tell
+the owner and park until the reset, and the limited account is never offered
+again; `record answer` needs `--source`; a line too long to type goes as a
+file, and a `--file` step headed by a typed-only skill is typed as that line
+with the rest attached; a refused answer-with-step says the answer is not
+recorded and how to record it; a lock held by the bot's own run says so. A
+turn whose own job runs now wakes when the job's end resumes it, or at two
+hours, unless its reply asks: the engine pass kept ten minutes for the two
+reports in its replay that ended with a job left running, and such a report
+now reaches the bot up to two hours later. Here, relaunching for a usage
+limit joins what is done without asking.
+
+**Next pass compares** wakes followed by no action against 14 of 124 here;
+the `job-running` and `job-wait` wakes at two hours that carried a finished
+report the bot then acted on, which is what the hold costs; usage-limit
+relaunches and whether any needed the owner; refusals by kind against the
+30 typed-step refusals here.
+
 ## 2026-11-02 — what a driver's wakes cost (engine pass)
 
 **Ask.** Make the Session Driver cheaper and calmer, starting in drive. Each
