@@ -42,7 +42,7 @@ skills:
   # raised 2026-11-05 again: MAINTAIN.md restructured on the user's word to open on their
   # prompt's areas and list the skills by purpose, plus the gremlins flags a spike showed
   # are needed for an honest count
-  go-cli: {body: 1970, total: 5049}
+  go-cli: {body: 1970, total: 5048}
   handoff: {body: 2413, total: 3050}
   # raised 2026-11-05: BASELINE.md, the baseline interview as the screen for a rule with no
   # eval case (calibrated against obelisk's replayed lessons), and the cut rules set as

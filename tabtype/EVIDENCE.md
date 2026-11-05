@@ -351,3 +351,43 @@ report stands in for a skill's PR.
 
 Revise if reports lose their usage-derived headline (4/7 before) or grow
 into per-lens checklists that the user stops reading.
+
+## 2026-11-05 — first observed run: drive
+
+Session `mini2:843de028` (`~/dev/drive`), 16:03 → its report at 17:26, from
+the `go-cli-maintain` text unchanged. Read in this session (`mini2:f6f07667`).
+
+**Held.**
+- **Skills read:** MAINTAIN.md and every skill it lists, go-cli's
+  `SKILL.md` among them (go-cli 0/7 in the 11-04 wave).
+- **Usage first:** an Obelisk mining agent ran before the code was judged,
+  and 4 of the 4 fixed wrong answers came from real batches.
+- **Toolchain:** deadcode, govulncheck, `go list -m -u` and `go fix` all
+  ran. Timings alternated old and new builds.
+- **Structure:** a structural review ran on the most-changed file. Splitting
+  two files just past 1,000 lines was rejected as cohesive, so the rule
+  served as a prompt, not a gate.
+- **Shape:** commits landed on `main`, as drive's `AGENTS.md` says. Three
+  `proto/` branches held the decisions, and the report ended with "For the
+  next pass".
+- **No `pkill`.** Its processes were stopped by PID.
+
+**Broke, and changed in MAINTAIN.md.**
+- **Gremlins on a slow suite.** With `--integration` the whole suite runs
+  once per mutant. drive's suite takes minutes, and `internal/turn` alone
+  was unfinished after about 20 minutes. Two of its "lived" mutants were
+  killed by the real suite. The session fell back to hand mutations: 14
+  tried, 2 lived, both now guarded. MAINTAIN.md now keeps gremlins for
+  suites of seconds, asks for hand mutation elsewhere, and asks for a rerun
+  of the full suite on any lived mutant.
+- **"For the next pass" had no home.** The session offered to commit it as
+  `EVIDENCE.md`. The user's reply did not take that up, so drive's
+  baselines (status 2.3 s, 172 tests, 2 lived of 14) live only in the
+  transcript. MAINTAIN.md now commits that section as a dated entry in the
+  repository's `EVIDENCE.md`.
+
+**Observed, not changed.** The user's next turn went to build, install and
+the docs pass with no review ("agree with all recs, go build install and
+twin"), against MAINTAIN.md's "a review round comes next". It is the user's
+call. Watch whether passes that already ran their own spikes and guards
+keep skipping the review.

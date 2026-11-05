@@ -12,7 +12,6 @@ to:
 - **Wiring and public interfaces:** commands, flags, help, `--json` output
   and package interfaces that a caller or a new reader should find easy to
   understand and hard to misuse.
-- **Code review:** the existing code held to the standards below.
 - **Tests:** guards missing where breakage is likely, and tests that guard
   nothing.
 
@@ -39,27 +38,25 @@ the work ready.
   when one reader cannot hold the whole suite.
 - **Spikes:** `../spike/SKILL.md`. Use its design moment to test a
   hypothesis, and its verification moment to prove a fix.
-- **Go conventions:** `SKILL.md` beside this file. Its sections "Module
-  design" and "Help and output are the interface" set the bar for
-  structure and interfaces, and "Performance traps" lists where these
-  tools lose time.
-- **Past usage:** `~/.agents/skills/obelisk/SKILL.md`, for searching past
-  sessions.
+- **Go conventions:** `SKILL.md` beside this file, whose sections "Module
+  design", "Help and output are the interface" and "Performance traps" set
+  the bar.
 
 ## Start from use, change and the last pass
 
 Most past passes found their headline defects in how the tool is used, not
 in its code. Before judging the code, gather:
 
-- **Use.** Search past sessions with Obelisk for runs of the tool: the
+- **Use.** Search past sessions with Obelisk
+  (`~/.agents/skills/obelisk/SKILL.md`) for runs of the tool: the
   commands agents ran, the errors and retries, what they did after reading
   the output, and where they worked around it. Read the tool's own logs and
   state where it keeps them.
 - **Change.** `git log` shows the hot spots and the fixes that keep coming
   back. Weight structural work toward what changes most.
-- **The last pass.** `EVIDENCE.md` and `docs/`, where the tool has them,
-  say what was measured, fixed or rejected. An idea rejected with a reason
-  stays rejected unless you have new evidence.
+- **The last pass.** `EVIDENCE.md` holds what earlier passes measured,
+  fixed and rejected. An idea rejected with a reason stays rejected unless
+  you have new evidence.
 
 A request the user adds, such as a feature or an area to look at, joins the
 pass and is already approved. Design a feature after the structural
@@ -85,16 +82,16 @@ GOFLAGS=-count=1 go run github.com/go-gremlins/gremlins/cmd/gremlins@latest \
 - Update a module that is behind its latest version when its changelog
   gives a reason, such as a fix this tool needs or a vulnerability.
 - Gremlins mutates the code and reports each mutant the suite let live.
-  Each flag above prevents a false count:
+  Each flag prevents a false count:
   - Without `--integration` and `--coverpkg`, it runs only the mutated
     package's tests, so code guarded through `cmd/` tests looks unguarded.
   - With cached tests, its timeout is set from a near-zero baseline, and
     mutants time out instead of being judged.
 
-  On gopen (about 700 lines) the run takes 3 minutes. On a larger tool,
-  pass the package you are auditing as its path argument.
-  A lived mutant is a candidate gap; the test audit decides whether it
-  matters.
+  `--integration` runs the whole suite per mutant, so it suits a suite of
+  seconds (gopen: 3 minutes). Where the suite takes minutes, as
+  drive's does, break the risk map's behaviours by hand instead. Rerun the
+  full suite on a lived mutant before counting it; on drive it killed two.
 - For a Go benchmark, use `-count=10` and compare runs with
   `go run golang.org/x/perf/cmd/benchstat@latest`.
 
@@ -130,4 +127,6 @@ the person using the tool, the options, and your recommendation.
 
 End with **For the next pass**: the baselines worth comparing (timings,
 suite size and runtime, deadcode and lived-mutant counts), the ideas you
-rejected with the reason, and what you left and why.
+rejected with the reason, and what you left and why. Commit it as a dated
+entry in the repository's `EVIDENCE.md`, created if missing: the next pass
+starts from that file, not from this session.
