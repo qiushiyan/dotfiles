@@ -34,8 +34,10 @@ guides for skills and tools.
 3. **Reproduce before you edit,** when one headless run can show the
    failure: record the commit and write the case first, so the current text
    fails it. A skill replays through
-   [improve-tool's `EVALS.md`](../improve-tool/EVALS.md); text that code
-   sends to a model replays by running that model on the recorded input.
+   [improve-tool's `EVALS.md`](../improve-tool/EVALS.md) where that skill is
+   installed, and otherwise as one headless run of the skill on the recorded
+   request; text that code sends to a model replays by running that model on
+   the recorded input.
 4. **Fix it in that layer.** Code owns what code can do. In text, rewrite
    the sentence that produced the behavior rather than adding a rule beside
    it: two rules that conflict become one that says which wins. When

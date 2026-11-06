@@ -75,7 +75,8 @@ example helps, try both in step 4.
   scenario report the first point where it would guess
   ([how to brief one](../prompt-engineering/COLD-READER.md)). When its behavior can
   be replayed, a case shows what agents do with it
-  ([`EVALS.md`](../improve-tool/EVALS.md)).
+  ([`EVALS.md`](../improve-tool/EVALS.md) where improve-tool is installed,
+  otherwise one headless run on a scripted request).
 
 This is a smoke check, not an eval suite. Confirm every pointer the text
 names resolves. Fix what the check shows by rewriting the sentence at

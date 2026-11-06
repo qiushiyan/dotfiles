@@ -38,9 +38,10 @@ when the skill fires. Pick its shape by how past sessions reached the skill
   in `argument-hint`, as one bracketed line.
 
 Leave out how the skill works, its internal terms, and `allowed-tools`. The
-invocation choice and router skills: `../writing-for-agents/SKILL-MECHANICS.md`.
-House shape, `skillOverrides`, and installing: `docs/agent-skills.md` in the
-dotfiles repo.
+invocation choice and router skills: `../writing-for-agents/SKILL-MECHANICS.md`,
+where that skill is installed. Where a skill lives, its house shape and how
+it is installed: the repository's agent setup doc (planlab's
+`docs/technical/agent-setup.md`, the dotfiles repo's `docs/agent-skills.md`).
 
 ## Agents that work over many steps
 
