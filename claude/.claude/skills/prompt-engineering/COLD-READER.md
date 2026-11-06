@@ -20,13 +20,13 @@ Give exact commands only where the instructions promise an executable recipe.
 Identify the first point where you would need to guess a path, field, flag,
 or decision. Read references when the scenario requires them.
 
-Then evaluate the result against
-~/.claude/skills/revise-prompt/SKILL.md. Report only supported defects,
-ranked by their effect on this task: quote the relevant file and line, explain
-the consequence, and suggest a minimal correction. Include unnecessary
-instructions and missing routes when they affect the scenario. Verify any
-claim that the repository contradicts the instructions before reporting it.
-No defects is an acceptable result. Keep the report under 700 words.
+Then evaluate the result against <path to revise-prompt/SKILL.md>. Report only
+supported defects, ranked by their effect on this task: quote the relevant
+file and line, explain the consequence, and suggest a minimal correction.
+Include unnecessary instructions and missing routes when they affect the
+scenario. Verify any claim that the repository contradicts the instructions
+before reporting it. No defects is an acceptable result. Keep the report under
+700 words.
 </example>
 
 Verify each finding against the files and the goal. A shared stall is strong

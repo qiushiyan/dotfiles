@@ -25,9 +25,9 @@ Four companions hold the detail:
 - [`EVALS.md`](EVALS.md): turning a finding into a case and replaying it
   through `~/dev/skill-evals`, which settles a runtime claim and tests a
   deletion. Read it whenever a finding reproduces in one headless session.
-- [`COLD-READER.md`](COLD-READER.md): checking changed instructions with an
+- [`COLD-READER.md`](../prompt-engineering/COLD-READER.md): checking changed instructions with an
   independent reader, and a parity read after a rewrite.
-- [`BASELINE.md`](BASELINE.md): asking fresh subagents what they would do
+- [`BASELINE.md`](../prompt-engineering/BASELINE.md): asking fresh subagents what they would do
   without the text, to tell a needed line from a no-op.
 
 ## Ground the judgment
@@ -122,7 +122,7 @@ that name nothing.
   rule whose case then fails stays, and so does one that saves a round,
   named as a keep; one that passes at the run count `EVALS.md` reads is cut.
 - **It has none:** screen it with a baseline interview
-  ([`BASELINE.md`](BASELINE.md) says what one can cut).
+  ([`BASELINE.md`](../prompt-engineering/BASELINE.md) says what one can cut).
 
 **Log every cut** in the evidence log as a deletion to watch: what it
 guarded, and the sign in later use that would bring it back.

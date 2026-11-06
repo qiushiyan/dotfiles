@@ -42,7 +42,7 @@ A check judges whether a reply leaves its reader something to decide. Today it g
 - **Spend words where the house rules say:** authority, facts it cannot
   find, and judgment it gets wrong by default. When you cannot tell what it
   does by default, ask fresh subagents before writing the line
-  ([baseline interview](../improve-tool/BASELINE.md)).
+  ([baseline interview](../prompt-engineering/BASELINE.md)).
 - **A better default before a new mode,** as the house rule says. Before
   writing a reply format code parses, or a branch as prose, decide whether
   code should hold it.
@@ -73,9 +73,10 @@ example helps, try both in step 4.
   [`revise-prompt`'s pass](../revise-prompt/SKILL.md#the-pass).
 - **A skill or a CLAUDE.md:** have a read-only cold reader with a concrete
   scenario report the first point where it would guess
-  ([how to brief one](../improve-tool/COLD-READER.md)). When its behavior can
+  ([how to brief one](../prompt-engineering/COLD-READER.md)). When its behavior can
   be replayed, a case shows what agents do with it
-  ([`EVALS.md`](../improve-tool/EVALS.md)).
+  ([`EVALS.md`](../improve-tool/EVALS.md) where improve-tool is installed,
+  otherwise one headless run on a scripted request).
 
 This is a smoke check, not an eval suite. Confirm every pointer the text
 names resolves. Fix what the check shows by rewriting the sentence at
