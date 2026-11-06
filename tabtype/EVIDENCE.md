@@ -444,3 +444,25 @@ own reply shape is overridden in step 5. In the run:
 - **Open.** It left the digest's open items older than the window
   untriaged and said so (Noah's task, the Stegra PDF, PLA-41, PLA-70). The
   snippet does not say whether those count; the user's answer decides.
+
+**Review of that run** (this session, against its staged files and the
+code). The 13 file:line citations checked match the code at `develop`.
+Its 5 bug reports all have a disposition.
+
+- **Changed: customer judge flags.** The run's notes marked a Count &
+  Cooper run "watch" (OPC answered HTTP 500 twice; the tool's error text
+  says the password has probably expired, and Loopy told the customer
+  so). The report left it out and opened with "no customer run errored",
+  true only by exit status. Step 3 now puts a customer run that delivered
+  nothing, or told the customer something untrue, in a cluster even when
+  only the judge flagged it.
+- **Changed: Rex tabs** (the user's addition). The user often works an
+  item by hand in a Rex tab before any PR. Window labels name the topic
+  (`rex window ls -A`: permission, universal-search, wiki), and
+  `rex block call program_status -b <block>` gives the agent's step.
+  Screen captures were no use: Claude Code's alternate screen leaves only
+  the status bar.
+- **Not changed.** Non-product asks the digest holds (Max's universal
+  search talk on 11-06) are outside the snippet's filter. The owed-replies
+  list (16 lines) partly repeats the digest's drafted replies; its added
+  value is checking each against the serving build and naming stale items.
