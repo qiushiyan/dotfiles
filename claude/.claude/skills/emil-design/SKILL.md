@@ -31,8 +31,8 @@ Decide from the request; when it is unclear, prototype.
 
 - **Prototype:** the direction is open. Steps 2 to 6.
 - **Improve:** the user knows the change or says no prototype. Walk the UI as
-  in step 2, then build without stopping: `emil-design-foundations` and what
-  README § Choosing skills maps each complaint to, then step 6.
+  in step 2, then build without stopping with what README § Choosing skills
+  maps each complaint to, then step 6.
 - **Finish:** the user has picked a variant, or the UI is already built, as in
   an open PR. Step 5 if a prototype is still up, then step 6.
 

@@ -54,7 +54,8 @@ Run a maintenance pass over this tool: read ~/dotfiles/claude/.claude/skills/go-
 # ── UI design ──────────────────────────────────────────
 # One key per route of the emil-design skill, which owns everything each route
 # does. They read the skill by path, so they work mid-message, after a
-# /compact, and in Codex.
+# /compact, and in Codex. ~/dev/planlab/main/.tabtype.local.toml replaces
+# emil-prototype there, naming that repo's prototype harness.
 [[snippets]]
 key = "emil-prototype"
 expand = '''

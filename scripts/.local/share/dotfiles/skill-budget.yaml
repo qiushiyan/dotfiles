@@ -77,7 +77,7 @@ skills:
   # raised 2026-11-06: routes for work with no prototype (2 of 7 uses) and the closing
   # prep-for-prod pass (asked for by hand in 4 of 7); planlab specifics moved to the README
   # paid for part of it, and cold readers restored the rest (EVIDENCE.md)
-  emil-design: {body: 911, total: 911}
+  emil-design: {body: 910, total: 910}
   # raised 2026-11-04, before the split merged: four cold readers of the first draft named
   # gaps (asking for authority or an unstated right answer, the replay route for text
   # code sends, a review's own fix route, scope of a partly edited file, what reruns);

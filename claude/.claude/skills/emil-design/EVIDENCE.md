@@ -143,3 +143,15 @@ real session since this change.
 - Whether a scoped `prep-for-prod` finds defects after review. Cut it to an
   on-request pass if three runs in a row add nothing.
 - Whether Improve runs skip a live look the user then has to ask for.
+
+**Follow-ups, same day, from the user.**
+
+- *Improve no longer always loads `emil-design-foundations`.* A narrow
+  complaint ("this list jumps") did not need it: `8a703a08` ran without it and
+  nothing suggests a miss. README § Choosing skills now decides, and sends
+  hierarchy and spacing complaints there. Bring it back if an Improve run fixes
+  the named symptom and the user then complains about hierarchy.
+- *Planlab's `emil-prototype` replaces the global key* and names
+  `pl-prototype-bar`, which the user kept referring to by hand ("use the
+  prototype toolkit in planlab", `e950fedf`). It covers the main app only:
+  Taodesk has no bar, and `1f8bb0da` used `PICKER.md` there.
