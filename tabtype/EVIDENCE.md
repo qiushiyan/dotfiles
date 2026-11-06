@@ -446,7 +446,9 @@ own reply shape is overridden in step 5. In the run:
   snippet does not say whether those count; the user's answer decides.
 
 **Review of that run** (this session, against its staged files and the
-code). The 13 file:line citations checked match the code at `develop`.
+code). Of 13 file:line citations checked at `develop`, 11 land on the line quoted;
+`subagent_contract.ts:192` and `loopy-composer-redesign.ts:13` land on the
+right function and flag, a few lines off.
 Its 5 bug reports all have a disposition.
 
 - **Changed: customer judge flags.** The run's notes marked a Count &
