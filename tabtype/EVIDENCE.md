@@ -468,3 +468,10 @@ Its 5 bug reports all have a disposition.
   search talk on 11-06) are outside the snippet's filter. The owed-replies
   list (16 lines) partly repeats the digest's drafted replies; its added
   value is checking each against the serving build and naming stale items.
+
+**Decided by the user, same day.** Items older than the window stay
+outside the triage, one line each with what is moving on them. The
+owed-replies list became the digest's corrections only (answered, shipped,
+or called live but not served), since the digest drafts the replies. Next
+pass: watch whether that end list stays short and whether an older item
+needed real triage.
