@@ -391,3 +391,36 @@ the docs pass with no review ("agree with all recs, go build install and
 twin"), against MAINTAIN.md's "a review round comes next". It is the user's
 call. Watch whether passes that already ran their own spikes and guards
 keep skipping the review.
+
+## 2026-11-06 — `loopy-slack-triage` added (planlab)
+
+Session `mini2:72dc0bd2`, from the user's ask: a snippet for the morning
+start they had been typing by hand in planlab.
+
+**Receipts.** `mini:4b3e8b77` (10-30 → 11-02) typed it whole: feature and
+bug asks from Slack DMs and mentions, checked against PRs and running
+sessions, a first analysis with `pl-loopy-debug` and production data, a
+priority and a root cause each. Its follow-ups set the rest: "deprioritize
+felix's dm because he has been spamming me with automated dms" (10-30), two
+"one day passed, recheck PR history and Slack" turns (10-31, 11-02), and
+"what the clusters of problems are, and what reports they correspond to …
+implementing them in batches as parallel sessions" (11-02). Narrower
+hand-typed relatives: `mac:32ec98aa` (09-22, last night's bug reports from
+one person) and `mini2:a23e9938` (11-06, one DM). Two independent sessions
+type the full shape, under the three-session floor; added on the user's word.
+
+**What it supplies.** The 10-30 session spent its first four minutes finding
+the commands: `slack-digest items --workspace planlab` as the inventory,
+`slack read @max --since 14d`, a mention search by user id, then failed to
+read Rex blocks for running work (their labels say `shell`). The snippet
+names the digest, `to:me` and the mention search (both checked 11-06: 248
+and 27 hits since 11-03, with bot and lunch noise), `gwt list`, `gh pr list`
+and obelisk in place of Rex.
+
+**Next pass compares.** Uses since 11-06 against hand-typed asks of the same
+shape. Success: the first report arrives as ranked clusters with what is
+already moving, without the user asking a second time for clusters, and no
+Slack post or production write. Revise if the user corrects the sender
+weighting again, re-asks for the "already moving" check, or the `to:me`
+sweep floods the report with bot DMs. The recheck ("one day passed") has no
+key yet; watch for it.

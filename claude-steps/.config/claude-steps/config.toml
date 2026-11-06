@@ -21,11 +21,11 @@ snippets = [
 ]
 
 # The session's first stage: onboarding, the triage a Loopy incident starts at,
-# or a maintenance pass over a tool.
+# the morning Slack triage, or a maintenance pass over a tool.
 [[label]]
 name = "onboard"
 skills = ["onboarding", "pl-loopy-onboarding", "pl-loopy-debug"]
-snippets = ["think-holistic", "go-cli-maintain"]
+snippets = ["think-holistic", "go-cli-maintain", "loopy-slack-triage"]
 color = "yellow"
 
 [[label]]
