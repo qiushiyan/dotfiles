@@ -46,9 +46,8 @@ The model does what a result says, edges included.
   known meanings, never the nearest spelling.
 - **A verb that is also a tool's name reads as a call.** Beside a tool named
   `ask`, write "tell the user", not "ask for".
-- **An agent without a clock cannot wait.** "Wait 30 seconds" cannot be
-  followed. Under load, give an order of work: carry on, try once more,
-  then tell the user.
+- **An agent without a clock gets an order of work,** since it cannot wait
+  30 seconds. Under load: carry on, try once more, then tell the user.
 - **A step names only what its reader holds.** Name a command the reader
   has, and, where several roles or hosts read the same text, only what all
   of them deliver. For what only the user can change, name the setting they
@@ -67,8 +66,8 @@ The model does what a result says, edges included.
   it promises only what each of those ways leaves true.
 - **A result that says the host rewrote the model's text** names what
   changed, and asks for a re-read before an edit that must match it.
-- **After an act the user approved, a note offers its inverse** only for
-  when the user wants it back, never as its lead.
+- **After an act the user approved, a note leads with that act's next
+  steps,** and offers its inverse only for when the user wants it back.
 - **Every outcome gets its line.** A silent success beside results that
   speak reads as doubt. A word a caller acts on, such as "saved", appears
   only in the line that gives that verdict.

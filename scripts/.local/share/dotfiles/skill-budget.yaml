@@ -55,8 +55,8 @@ skills:
   # from improve-tool (789 words; improve-tool lowered by the same) so planlab's copy of the
   # rulebook carries its own checks; TOOLS.md took the read-to-the-letter rules lifted out of
   # docs/loopy/prompting-guide.md, which shrank 44.9 KB -> 25.2 KB; SKILL.md, one sentence on
-  # house guides. Net for the family: +54 body words, +581 total.
-  prompt-engineering: {body: 761, total: 2922}
+  # house guides. Net for the family: +54 body words, +582 total.
+  prompt-engineering: {body: 761, total: 2923}
   refactoring: {body: 643, total: 643}
   resolving-merge-conflicts: {body: 117, total: 117}
   review: {body: 2735, total: 6804}
