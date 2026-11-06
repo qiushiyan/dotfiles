@@ -59,17 +59,17 @@ Run a maintenance pass over this tool: read ~/dotfiles/claude/.claude/skills/go-
 [[snippets]]
 key = "emil-prototype"
 expand = '''
-Read ~/dotfiles/claude/.claude/skills/emil-design/SKILL.md and take this down its prototype route. What's wrong: $0'''
+Read ~/dotfiles/claude/.claude/skills/emil-design/SKILL.md and follow its prototype route. What's wrong: $0'''
 
 [[snippets]]
 key = "emil-improve"
 expand = '''
-Read ~/dotfiles/claude/.claude/skills/emil-design/SKILL.md and take this down its improve route, no prototype. What's wrong: $0'''
+Read ~/dotfiles/claude/.claude/skills/emil-design/SKILL.md and follow its improve route. What's wrong: $0'''
 
 [[snippets]]
 key = "emil-finish"
 expand = '''
-Read ~/dotfiles/claude/.claude/skills/emil-design/SKILL.md and take this down its finish route. Stop at its report; no push or PR until I ask. My pick, if any: $0'''
+Read ~/dotfiles/claude/.claude/skills/emil-design/SKILL.md and follow its finish route. Stop at its report; no push or PR until I ask. My pick, if any: $0'''
 
 # ── Consult and verify ─────────────────────────────────
 [[snippets]]

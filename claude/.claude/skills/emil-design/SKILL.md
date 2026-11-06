@@ -13,8 +13,8 @@ down with its rejected options, and step 6 has run on the real code.
 
 The 28 course skills live at `~/dev/aiforui-skills/<name>/SKILL.md` and are
 not installed, so loading one by name fails. Read each by path, including a
-sibling one sends you to. In a brief or record another session may read, write the
-path with `~`: the laptop's home differs from the minis'.
+sibling one sends you to. In a brief or record another session may read,
+write the path with `~`: the laptop's home differs from the minis'.
 
 Read `~/dev/aiforui-skills/README.md` first. It is the map, and it holds the
 conflicts found against real design systems and the harness adjustments for
@@ -31,8 +31,8 @@ Decide from the request; when it is unclear, prototype.
 
 - **Prototype:** the direction is open. Steps 2 to 6.
 - **Improve:** the user knows the change or says no prototype. Walk the UI as
-  in step 2, then build without stopping with what README § Choosing skills
-  maps each complaint to, then step 6.
+  in step 2, then build without stopping, using the skills README § Choosing
+  skills maps each complaint to, then step 6.
 - **Finish:** the user has picked a variant, or the UI is already built, as in
   an open PR. Step 5 if a prototype is still up, then step 6.
 
@@ -56,8 +56,9 @@ stop and build once the user answers: the answer steers the variants.
 ## 3. Prototype
 
 Run `emil-prototype` (the course's; the personal `prototype` is for logic and
-state models) with the README's adjustments. Where the project has its own harness, such as planlab's `pl-prototype-bar`,
-use it instead of `PICKER.md` and meet its conditions for rendering.
+state models) with the README's adjustments. Where the project has its own
+harness, such as planlab's `pl-prototype-bar`, use it instead of `PICKER.md`
+and meet its conditions for rendering.
 
 Put a choice that cuts across variants, such as a font or a nav mode, on the
 control panel beside the numbers, with a button that copies the settings, so
@@ -81,7 +82,6 @@ reaches nothing. On any machine:
 
 After `emil-prototype`'s comparison table, give that link, the account and
 sign-in steps, the route, and the URL parameter or keys that switch variants.
-Then wait for the choice.
 
 ## 5. After the choice
 
@@ -95,16 +95,16 @@ Then wait for the choice.
   the project keeps design decisions (a spec, a design doc, the PR body), or
   ask where. An alternative the user wants kept goes there with the gist of
   how to build it.
-- Promote the winner as `emil-prototype` Phase 7 says, and any origin allowance
-  from step 4 goes with the harness. A project's harness retires by its own
-  skill's rules. A picker or control panel the user keeps on purpose stays.
+- Promote the winner as `emil-prototype` Phase 7 says, and remove any origin
+  allowance step 4 added. A project's harness retires by its own skill's
+  rules. A picker or control panel the user keeps on purpose stays.
 
 ## 6. Close on the real code
 
-Integration breaks what the prototype never met, so these run after it, on
-this run's diff, or the PR's when the run made none. In order:
+Run these on this run's diff, or the PR's when the run made none. A
+prototype's polish does not carry over: integration breaks what it never met.
 
-1. `emil-ui-polish` over the integrated code.
+1. `emil-ui-polish`.
 2. `emil-ui-review`. Fix its blocking and should-fix findings.
 3. `emil-prep-for-prod <changed paths>`, reading its lanes yourself: at this
    scope its subagent fan-out costs more than it finds.

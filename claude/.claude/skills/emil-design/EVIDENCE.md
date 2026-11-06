@@ -155,3 +155,11 @@ real session since this change.
   `pl-prototype-bar`, which the user kept referring to by hand ("use the
   prototype toolkit in planlab", `e950fedf`). It covers the main app only:
   Taodesk has no bar, and `1f8bb0da` used `PICKER.md` there.
+
+**Revise-prompt pass, same day.** Over the skill and all four keys. The keys
+said "take this down", which can read as removing it, and now say "follow".
+Step 6's reason fitted only the prototype route. Planlab's key restated harness
+detail, which moved to the README, so a plain `/emil-design` there gets it too.
+Cut as a deletion to watch: "Then wait for the choice" at the end of step 4,
+which repeats `emil-prototype` Phase 6's stop. Bring back if a run moves on
+from the comparison table without the user's pick. All by reading.
