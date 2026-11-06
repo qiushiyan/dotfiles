@@ -475,3 +475,17 @@ owed-replies list became the digest's corrections only (answered, shipped,
 or called live but not served), since the digest drafts the replies. Next
 pass: watch whether that end list stays short and whether an older item
 needed real triage.
+
+## 2026-11-06 — emil-prototype, emil-improve, emil-finish
+
+Added from the `improve-tool` pass over `emil-design`; corpus, predicates and
+receipts are in `claude/.claude/skills/emil-design/EVIDENCE.md`. In seven uses
+the user typed the skill's path in six, then the same asks by hand: prototypes
+to preview, remove the prototype, name the closing skills. One key per route of
+the skill, each a pointer and a stop in the sense of `DESIGN.md`. The keys read
+the skill by path, not by slash command, because most invocations came
+mid-message. "What's wrong:" before the cursor is deliberate: the course's main
+advice on prompting is to describe what is wrong rather than ask for better.
+
+Next pass: `history.json` counts for the three keys against `skill:emil-design`.
+Remove a key with no use after five uses of the skill.
