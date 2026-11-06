@@ -23,6 +23,12 @@ lessons mined from agents' use of past tools,
 behavior is the question, read the vendor's guide,
 `~/dotfiles/references/fable-prompting-guide.md`.
 
+A product's model-facing text can have a house guide, such as Loopy's
+`docs/loopy/prompting-guide.md` in planlab. Read it too: it holds what
+these rules cannot know, the words that product's users use and the facts
+of its runtime. A lesson you can state without them belongs in these rules,
+and the guide keeps its instance.
+
 ## What the words are for
 
 You are writing for a capable model that has none of your context. Brief it

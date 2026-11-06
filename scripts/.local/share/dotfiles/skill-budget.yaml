@@ -47,11 +47,16 @@ skills:
   # raised 2026-11-05: BASELINE.md, the baseline interview as the screen for a rule with no
   # eval case (calibrated against obelisk's replayed lessons), and the cut rules set as
   # bold-led bullets at the owner's request
-  improve-tool: {body: 1464, total: 6175}
+  improve-tool: {body: 1464, total: 5386}
   obelisk: {body: 2632, total: 2632}
   # raised 2026-11-05: two house rules from the agent-prose triage, a better default before
   # a new mode (three owner corrections) and structure what matters (the owner's direction)
-  prompt-engineering: {body: 707, total: 1552}
+  # Raised 2026-11-06, the planlab house-layer pass: BASELINE.md and COLD-READER.md moved in
+  # from improve-tool (789 words; improve-tool lowered by the same) so planlab's copy of the
+  # rulebook carries its own checks; TOOLS.md took the read-to-the-letter rules lifted out of
+  # docs/loopy/prompting-guide.md, which shrank 44.9 KB -> 25.2 KB; SKILL.md, one sentence on
+  # house guides. Net for the family: +54 body words, +581 total.
+  prompt-engineering: {body: 761, total: 2922}
   refactoring: {body: 643, total: 643}
   resolving-merge-conflicts: {body: 117, total: 117}
   review: {body: 2735, total: 6804}

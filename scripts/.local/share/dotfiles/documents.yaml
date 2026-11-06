@@ -15,3 +15,45 @@ documents:
         path: docs/documentation-standards.md
       - repo: ~/dev/envoy
         path: docs/documentation-standards.md
+
+  # The prompt rulebook, so planlab's teammates, Codex and CI read the rules
+  # its Loopy guide (docs/loopy/prompting-guide.md) builds on. A personal
+  # skill outranks a project one of the same name, so this machine keeps
+  # reading the originals here. Planlab keeps its own agents/openai.yaml,
+  # since its layout check rejects the managed comment in ours.
+  - source: claude/.claude/skills/prompt-engineering/SKILL.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/prompt-engineering/SKILL.md
+  - source: claude/.claude/skills/prompt-engineering/TOOLS.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/prompt-engineering/TOOLS.md
+  - source: claude/.claude/skills/prompt-engineering/AGENT-DOCS.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/prompt-engineering/AGENT-DOCS.md
+  - source: claude/.claude/skills/prompt-engineering/BASELINE.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/prompt-engineering/BASELINE.md
+  - source: claude/.claude/skills/prompt-engineering/COLD-READER.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/prompt-engineering/COLD-READER.md
+  - source: claude/.claude/skills/prompt-engineering/case-studies/README.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/prompt-engineering/case-studies/README.md
+  - source: claude/.claude/skills/prompt-engineering/case-studies/classifier-judge-questions-jev-steward.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/prompt-engineering/case-studies/classifier-judge-questions-jev-steward.md
+  - source: claude/.claude/skills/write-prompt/SKILL.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/write-prompt/SKILL.md
+  - source: claude/.claude/skills/revise-prompt/SKILL.md
+    destinations:
+      - repo: ~/dev/planlab/main
+        path: .agents/skills/revise-prompt/SKILL.md

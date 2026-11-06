@@ -80,9 +80,9 @@ Fix what the pass finds as in steps 3 to 5, settling each doubt by its kind:
   the fix by reading, or by running the command.
 - **Unsure whether the model already does it without the line:** run its
   eval case against a copy without it; with no case, screen it with a
-  baseline interview ([how to run one](../improve-tool/BASELINE.md)).
+  baseline interview ([how to run one](../prompt-engineering/BASELINE.md)).
 - **Any other open question:** ask a read-only cold reader with a concrete
-  scenario ([how to brief one](../improve-tool/COLD-READER.md)).
+  scenario ([how to brief one](../prompt-engineering/COLD-READER.md)).
 
 ## Report
 

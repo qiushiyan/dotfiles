@@ -13,7 +13,7 @@ case.
   there counts.
 - **Not behavior under task pressure:** stopping early, thin legwork, a
   habit that slips only deep in a long task. Every model says it would
-  verify. Settle those with a task run ([`EVALS.md`](EVALS.md)).
+  verify. Settle those with a task run ([improve-tool's `EVALS.md`](../improve-tool/EVALS.md)).
 - **Not a line that only saves a round,** such as an inline schema the
   model would otherwise look up. Only a run's cost shows that.
 

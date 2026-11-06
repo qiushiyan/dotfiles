@@ -6,6 +6,104 @@ rulebook, and since 2026-11-04 over the two workflow skills that read it,
 re-run them. Passes run under `improve-tool`; queries are obelisk scripts
 over `tool_calls` reads of the file and user turns naming it.
 
+## 2026-11-06 — the planlab house layer, second pass: what the guide adds
+
+**Question**, the user's: refactor planlab's `docs/loopy/prompting-guide.md`
+by the current rulebook, find where it helps a Loopy revision, and make the
+two layers work together. Then the challenge: does reading the guide help
+at all, even for Loopy's system prompt, given its intent is exposure to the
+planners' words?
+
+**Corpus.** git: the guide's 41 commits since the 09-25 rebuild; obelisk
+(mac, mini, mini2; Steward hosts and teammates not indexed): 152 sessions
+read the guide since 09-25, 12 snippet passes 09-28 → 10-09 (none after),
+rulebook-candidate mentions in assistant text. Ledger and grades:
+scratchpad of session `0a262f3d`, `loopy-prompting-guide-frictions.md`,
+`KEY-guide-ab.md`, `GRADES-guide-ab.md`.
+
+| finding | evidence | verdict |
+|---|---|---|
+| the guide regrew past the 09-25 reversal line | 17.8 → 44.9 KB over 39 commits, none smaller; the register flat (6.4 → 6.8 KB), the trap catalog 2.5 → 14.1 KB and placement 4.4 → 17.4 KB | rewritten to 25.2 KB; a 26 KiB ceiling in `pl-loopy-handoff`'s checks |
+| general rules lived in the house layer, and candidates never reached here | ~12 entries were tool-text rules with a Loopy case; 7+ sessions named "rulebook candidates", 0 of 8 probe phrases here | `TOOLS.md` § Results and errors are read to the letter; the cases stay in planlab's `issues/2026-08-27-model-facing-text-review-cases.md`, whose § Rulebook candidates is this rulebook's input |
+| most authors of Loopy text could not reach this rulebook | 60 days: 18 % of skill-file and 44 % of prompt-home commits by the owner; the rulebook was personal | broadcast to planlab `.agents/skills/` (`documents.yaml`); a personal skill outranks the project copy here (Claude Code docs) |
+| receipts went stale inline | `QUEUE_FULL_NEXT` moved files; the float entry named `durationInDays` (float uses `floatInDays`); ~20 % of the guide's characters were receipts | receipts to the case file; the guide keeps rule and guard |
+
+**Trial** (12 fresh Opus 5.5 subagents, read-only; two seeded drafts, a new
+prompt section with 8 domain and 4 general defects and a bridge command's
+text with 10; arms: the generic `prompt-check` snippet, the
+`loopy-prompt-check` snippet with the full guide, and that snippet with a
+register-only copy; key and predictions written first; graded by the
+author, not blind):
+
+| case | generic | full guide | register only |
+|---|---|---|---|
+| prompt section /12 | 11.5 (never read it), 12 (found it) | 12, 12 | 12 (read the full one too), 12 |
+| bridge text /10 | 9.5, 10 (both found it) | 10, 10 | 9.5, 10 (both read the full one too) |
+
+- **Ceiling.** Seeded defects are blatant; every arm caught nearly all.
+- **The guide is found unasked.** Six of the eight runs not handed it read
+  it anyway, through code comments that cite it, or on noticing a trimmed
+  copy.
+- **Loopy's own skills carry most of the domain.** The run that never saw
+  the register got 7.5 of 8 domain items from `planlab-style-guide`,
+  `agent-lib-guide`, `grid-rules.md` and engine code. It missed only what no
+  Loopy skill defines: slippage as the finish or a key milestone moving.
+  The guide now sends authors to those skills first.
+- **The register is copied into prompts verbatim.** "Under NEC the reference
+  is the Accepted Programme; call it that" went into new prompt text as a
+  rename of the baseline in 3 of the 5 runs that read it; the other two
+  caught it with a cold reader. The entry now states what the Accepted
+  Programme is.
+
+**Changed.** Planlab (`docs/loopy-prompting-guide` branch): the guide
+rewritten around the register, a runtime-facts § Prove what you prescribe
+and a placement § Steer at the right surface; the drift watch to
+`docs/loopy/prompting-drift-watch.md`; pointers from the prompt home's and
+the skills' `AGENTS.md`; the sub-schema rule to the tool catalog's;
+`pl-loopy-handoff` holds the ceiling and logs candidates; the rulebook's
+copy under `.agents/skills/`. Here: `TOOLS.md`'s new section, one sentence
+on house guides in `SKILL.md`, `BASELINE.md` and `COLD-READER.md` moved in
+from improve-tool so a project copy carries its checks, the budget record
+raised with its reason.
+
+**Parity read** (a fresh reader, old guide against new and every place
+material moved to): eight weakened or lost, mostly the second half of a
+rule, what to write instead. Restored where a recorded failure stands
+behind it: in `TOOLS.md` the error's two causes, its actionable cause and
+whether a retry can succeed, a refusal followed exactly, the true remedy in
+place of a false one, the user's setting, a value the reader will see, a
+state reached two ways, a host rewrite, and the inverse of an approved act;
+in the guide, a skill body's no-tool path, the tail's mention rule, a run
+lacking a step, the wiki re-write detail, `@catalog` and the shared
+sub-schema. Its scenario (a too-large refusal) had the new text lead an
+author to "try once more" against a fixed limit; "whether a retry can
+succeed" is the repair. It also found the guide's map naming
+`src/tools/` for menu rows, which live in `src/families/` (fixed).
+
+**Cold reader** (a fresh reader on planlab's copy of `revise-prompt` and the
+new guide; scenario: a teammate's NEC section in a bundled skill and a "wait
+20s, dropped from the mount" bridge line): it rewrote both correctly and
+found five defects, each checked and fixed: no route to where a workspace
+records its contract form (the wiki's `Planning conventions` page, now
+named), the NEC reference cited by a repo path Loopy cannot open (now its
+`/skills/` path, second-hand), `../improve-tool/EVALS.md` absent from the
+repo copy (the guide's step 3 now names `pl-loopy-verify` for a run), the
+sandbox file wrappers missing from the map and the not-loaded message from
+the drift watch (both added), and "load-bearing claims" against step 2's
+pin rule (now one rule).
+
+**Decided by the user.** Teammates and CI get the rulebook. General rules
+go up where they earn it, and the ceiling is a starting number, to revise.
+
+**Next pass compares.** Guide size per commit (target: under the ceiling,
+edits into owning entries); candidates logged against landed; whether
+authors copy register entries into prompts; Loopy's planner-vocabulary leak
+rate (62 / 1k final replies at 09-25, not re-measured here). Reversal: a
+production defect that an entry moved out of the guide would have
+prevented. Open: pl-bugbot's `loopy-prompting` charter reads the guide but
+not `TOOLS.md`; adding it needs strip-and-restore lines in `pl-bugbot.yml`
+and `run-local.sh`, which its policy test requires.
+
 ## 2026-11-05 — outside guide: agent-prose (a fork of writing-for-agents)
 
 **Question**, the user's: should the agent-prose skill (mbriggs's gist
