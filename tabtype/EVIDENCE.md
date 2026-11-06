@@ -424,3 +424,23 @@ Slack post or production write. Revise if the user corrects the sender
 weighting again, re-asks for the "already moving" check, or the `to:me`
 sweep floods the report with bot DMs. The recheck ("one day passed") has no
 key yet; watch for it.
+
+**First run, same day** (`mini2:da19e9fb`, 11:18 → report at 11:38). The
+user typed `/pl-loopy-onboarding` before the paste, so the key now opens
+with it: onboarding reads the handoff queue (`brief ls`) the first wording
+missed, and sends report ids to `pl-loopy-debug` first, as step 3 does. Its
+own reply shape is overridden in step 5. In the run:
+
+- **Held.** The report came in the snippet's shape, not onboarding's: 9
+  ranked clusters, each with items and links, cause and confidence, size,
+  what is moving, and why it ranks there. Then a batch of three sessions
+  that share no files, and 16 one-line owed replies. The 91 judge flags
+  were one line of noise (44 from one demo workspace's model comparison).
+  Bot DMs and GitHub mentions were filtered. Nothing posted or written.
+- **Beyond the ask.** It read `#bug-report`, `#loopy`, `#product` and
+  `#tech` unprompted, sized every cluster in production, checked a
+  subagent's trace against the master log before reporting it, and named
+  digest items that had gone stale.
+- **Open.** It left the digest's open items older than the window
+  untriaged and said so (Noah's task, the Stegra PDF, PLA-41, PLA-70). The
+  snippet does not say whether those count; the user's answer decides.
