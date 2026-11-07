@@ -134,7 +134,10 @@ describe('follow', () => {
     on('process.run', ($, e) => {
       if (e.argv[0] === 'gwt') return ok(`${ROOT}\n`)
       state.git += 1
-      return e.argv[1] === 'rev-parse' ? ok(`${options.gitDir ?? '.git'}\n.git\n`) : ok(porcelain(state.trees))
+      if (e.argv[1] !== 'rev-parse') return ok(porcelain(state.trees))
+      // as git answers from a subdirectory: the common dir is relative unless asked otherwise
+      const common = e.argv.includes('--path-format=absolute') ? `${MAIN}/.git` : '../../.git'
+      return ok(`${options.gitDir ?? `${MAIN}/.git`}\n${common}\n`)
     })
     on('tool.call', ($, e) => {
       const { command } = e as unknown as { command: string }
@@ -233,7 +236,7 @@ describe('follow', () => {
 
   test('a session already in a linked worktree stays there', async ($, on) => {
     const clock = mock.clock(on)
-    const state = world(on, { made: [{ path: WT, branch: 'feat/x' }], gitDir: '.git/worktrees/first' })
+    const state = world(on, { made: [{ path: WT, branch: 'feat/x' }], gitDir: `${MAIN}/.git/worktrees/first` })
     await $.session.start({ cwd: MAIN, surface: 'terminal', isInteractive: true })
 
     await $.tool.call(bash('gwt create -n feat/x'))

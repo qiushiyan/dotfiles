@@ -183,9 +183,8 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
 ```
 
 - A session's first step carries its task and says where it stops: a session
-  told its finish goes straight there, past review and any hold. One that
-  builds in that turn asks for a worktree in its text; `/enter-worktree`
-  alone goes only to a session that stopped before building. Every session
+  told its finish goes straight there, past review and any hold. A step
+  that has a session build asks for a worktree in its text. Every session
   carries a `--goal`: what it sets out to solve, for a user who remembers
   the product but not the session; record it again only when its purpose or
   scope changes.

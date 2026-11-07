@@ -44,9 +44,12 @@ async function listTrees($: EngineInterface): Promise<Tree[]> {
   return parseTrees((await stdout($, ['git', 'worktree', 'list', '--porcelain'])) ?? '')
 }
 
-/** A session in a linked worktree stays there: what it makes next is not its own move. */
+/**
+ * A session in a linked worktree stays there: what it makes next is not its own
+ * move. Absolute, since from a subdirectory the common dir prints relative.
+ */
 async function isInMainCheckout($: EngineInterface): Promise<boolean> {
-  const [gitDir, commonDir] = ((await stdout($, ['git', 'rev-parse', '--git-dir', '--git-common-dir'])) ?? '').split('\n')
+  const [gitDir, commonDir] = ((await stdout($, ['git', 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'])) ?? '').split('\n')
   return gitDir !== undefined && gitDir !== '' && gitDir === commonDir
 }
 

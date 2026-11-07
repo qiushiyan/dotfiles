@@ -4,6 +4,58 @@ Usage passes over the sessions that ran this skill, newest first. Each names
 its corpus, what it found, what changed, and what the next pass compares. A
 run by a real bot follows `DOGFOOD.md`.
 
+## 2026-11-07 — sessions follow their own worktrees; `/enter-worktree` goes (improve-tool pass, dogfood)
+
+**Ask.** An agent that makes a worktree should end up working in it, driven or
+not, with no slash command; `EnterWorktree` binned, the skill too if a dogfood
+says so.
+
+**Corpus.** Obelisk, all three machines, from 2026-09-15: 81 sessions that ran
+`gwt create`, with 20,780 later Bash calls, 7,879 of them (38%) `cd <worktree>
+&& …`. 559 "session is isolated" refusals in 33 sessions, against about 35 that
+entered through `EnterWorktree`. Dogfood: batch `wt-dogfood-1107`, 7 real
+sessions on the laptop under `drive`, run from a Claude Code session rather
+than a bot, Sonnet and Opus, two scratch repositories.
+
+**Observed.**
+- `CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=1` in `.zshrc` silently reset every
+  `cd`, so prefixing was the agent's working answer to a false system prompt.
+- `EnterWorktree` isolates the session: `git add`, heredocs, `sed` and `pnpm`
+  refused, and every Bash call after the worktree's removal. 23 of its 44
+  sessions came through the skill, 14 of them after `session-cd`, which needs
+  tmux and so fails in Rex.
+- No rule, no gwt in the repository (P1): raw `git worktree add` into
+  `~/dev/.worktrees/add-mul`, a slot gwt would not choose, so nothing followed
+  it and no `/cd` landed.
+- With the rule (R1, R2, O1, D1, D2, D3): all six ran `gwt create`, moved, and
+  their transcripts moved with them. Bash calls that carried a path after the
+  move: 0 in five, 1 in O1. R2 and D3 stopped first and were told in plain
+  words to build, which was the skill's one job under drive. D2 launched in a
+  subdirectory with a stray empty `.git`, the itell shape.
+- R1's closeout from inside its worktree merged, removed and ended on main.
+- A killed session (D3) came back on its worktree by the `next:` drive printed.
+
+**Changed.** The env var left `.zshrc`; `~/dev/.worktrees` joined
+`additionalDirectories`; `EnterWorktree` is denied; the worktree mod follows a
+new branch checkout under gwt's root (shell at once, `/cd` when the turn ends);
+`rules/worktrees.md` names gwt; drive's `reopen` reads the transcript for where
+a session last worked; `enter-worktree` and `session-cd` are gone, and the
+step line above says to ask for a worktree in the text.
+
+**Deletion to watch.** `enter-worktree` named the branch from the conversation
+and carried the move. Bring a skill back if sessions told to build in a
+worktree stop reaching for gwt, or name branches badly with no conversation to
+go on.
+
+**Limits.** Seven sessions on toy tasks, on the laptop, with no bot: wakes and
+real work are unmeasured, and the 38% is not yet re-measured. Throwaway
+checkouts also went through gwt in a headless check (2 of 2), and cleaned up.
+
+**Next pass compares.** The share of post-create Bash calls with a `cd` prefix
+(38%), "session is isolated" refusals (none should come from `EnterWorktree`),
+any coordinator moved by the mod (must stay 0), and failures from `cd` now
+persisting.
+
 ## 2026-11-05 — the first batch after the engine pass (drive maintenance pass)
 
 **Ask.** A maintenance pass over drive (`go-cli/MAINTAIN.md`), starting from
