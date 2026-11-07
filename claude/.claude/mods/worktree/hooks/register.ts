@@ -5,11 +5,15 @@
 // instruction typed with /wt is submitted as the person's next prompt, so
 // work starts in the worktree at once.
 //
-// The enter-worktree skill does the same through a full turn and cannot go on
-// in that turn, since its move lands when the turn ends; it stays for Codex.
+// A worktree the session makes for itself is followed the same way, so nothing
+// has to be typed: the shell enters it at once, and /cd makes the move last when
+// the turn ends, which is what a resumed session and drive read. A shell move
+// alone reopens on the launch directory while the conversation says otherwise.
 
 import type { EngineInterface, Register } from 'claude-code'
 
+import { followed, followText, mayCreate, parseTrees, quoted } from './follow'
+import type { Tree } from './follow'
 import { createdText, namePrompt, parsePlan, typed } from './plan'
 import type { Plan } from './plan'
 
@@ -30,16 +34,48 @@ async function choose($: EngineInterface, instruction: string): Promise<Plan | s
   return parsePlan(reply.text) ?? `The reply named no usable branch:\n${reply.text.trim()}\nName one: /wt <branch> [base].`
 }
 
+/** The stdout of a command in the session's directory; undefined when it fails. */
+async function stdout($: EngineInterface, argv: string[]): Promise<string | undefined> {
+  const ran = await $.process.run(argv).catch(() => undefined)
+  return ran === undefined || ran.exitCode !== 0 ? undefined : ran.stdout
+}
+
+async function listTrees($: EngineInterface): Promise<Tree[]> {
+  return parseTrees((await stdout($, ['git', 'worktree', 'list', '--porcelain'])) ?? '')
+}
+
+/** A session in a linked worktree stays there: what it makes next is not its own move. */
+async function isInMainCheckout($: EngineInterface): Promise<boolean> {
+  const [gitDir, commonDir] = ((await stdout($, ['git', 'rev-parse', '--git-dir', '--git-common-dir'])) ?? '').split('\n')
+  return gitDir !== undefined && gitDir !== '' && gitDir === commonDir
+}
+
+/**
+ * Whether the shell now stands in path. Only the shell can say: a directory
+ * outside the session's working directories resets, and $.session.cwd() trails
+ * a `cd` until the next tool call.
+ */
+async function enterShell($: EngineInterface, path: string): Promise<boolean> {
+  const shell = async (command: string, description: string) =>
+    (await $.tool.call({ tool: 'Bash', command, description }).catch(() => undefined))?.text ?? ''
+  await shell(`cd ${quoted(path)}`, 'Enter the new worktree')
+  return (await shell('pwd -P', 'Confirm the shell is there')).trim().split('\n')[0] === path
+}
+
+async function move($: EngineInterface, path: string): Promise<string | undefined> {
+  return $.command.run({ command: 'cd', args: path }).then(
+    () => undefined,
+    (error: unknown) => String(error),
+  )
+}
+
 /**
  * Moves the session, then hands over the instruction. It runs from a timer:
  * the engine refuses a command run from inside a `command.run` hook, which
  * would wait on the turn that hook is holding.
  */
 async function enter($: EngineInterface, plan: Plan, path: string, instruction: string) {
-  const refusal = await $.command.run({ command: 'cd', args: path }).then(
-    () => undefined,
-    (error: unknown) => String(error),
-  )
+  const refusal = await move($, path)
   if (refusal !== undefined) {
     $.ui.log(`worktree: the session did not move (${refusal}). Run /cd ${path}`)
     return
@@ -48,6 +84,39 @@ async function enter($: EngineInterface, plan: Plan, path: string, instruction: 
 }
 
 export const register: Register = on => {
+  /** A worktree this session entered, until its turn ends; `wasEntered` when the shell really went. */
+  let followedTree: { path: string; wasEntered: boolean } | undefined
+
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    if (e.tool !== 'Bash' || e.agentId !== undefined || !mayCreate(e.command)) return next(e)
+    const before = await listTrees($)
+    const isMain = before.length > 0 && (await isInMainCheckout($))
+    const ran = await next(e)
+    if (!isMain || ran.deny !== undefined) return ran
+
+    const after = await listTrees($)
+    if (after.length <= before.length) return ran
+    const root = (await stdout($, ['gwt', 'path']))?.trim()
+    const tree = root === undefined || root === '' ? undefined : followed(before, after, root)
+    if (tree === undefined) return ran
+
+    const wasEntered = await enterShell($, tree.path)
+    followedTree = { path: tree.path, wasEntered }
+    return { ...ran, context: [...(ran.context ?? []), followText(tree, wasEntered)] }
+  })
+
+  on('turn.complete', async ($, e, next) => {
+    const answer = await next(e)
+    if (e.agentId !== undefined || followedTree === undefined) return answer
+    const { path, wasEntered } = followedTree
+    followedTree = undefined
+    if (wasEntered && (await $.session.cwd()) !== path) return answer
+    $.clock.after(0, () => void move($, path).then(refusal => {
+      if (refusal !== undefined) $.ui.log(`worktree: the session did not move (${refusal}). Run /cd ${path}`)
+    }))
+    return answer
+  })
+
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'wt',

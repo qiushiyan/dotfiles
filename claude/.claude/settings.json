@@ -13,6 +13,7 @@
     ],
     "deny": [
       "EnterPlanMode",
+      "EnterWorktree",
       "ExitPlanMode",
       "DesignSync",
       "NotebookEdit",
@@ -26,7 +27,8 @@
       "CronDelete",
       "CronList"
     ],
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "additionalDirectories": ["~/dev/.worktrees"]
   },
   "disableClaudeAiConnectors": true,
   "skillOverrides": {

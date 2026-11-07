@@ -128,7 +128,7 @@ test_interactive_startup_is_silent() {
 # an interactive shell rather than grepped from the file.
 test_interactive_shell_carries_shared_behaviour() {
   sandbox
-  eq "on 1 1 1 1" "$(probe_tty '$options[ignore_eof] $+functions[_guard_ctrl_d] $+functions[git] $+functions[_cout_setup] $CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR')" \
+  eq "on 1 1 1 1" "$(probe_tty '$options[ignore_eof] $+functions[_guard_ctrl_d] $+functions[git] $+functions[_cout_setup] $ENABLE_LSP_TOOLS')" \
     "ignore_eof, Ctrl-D guard, git wrapper, cout hooks, Claude env"
 }
 

@@ -114,7 +114,6 @@ export COREPACK_ENABLE_AUTO_PIN=0
 export DISABLE_AUTO_TITLE=true
 
 # Claude Code
-export CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=1
 export ENABLE_LSP_TOOLS=1
 
 # Secrets, in two files. ~/.secrets.shared holds the keys both machines use
