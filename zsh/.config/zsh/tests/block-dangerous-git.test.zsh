@@ -194,6 +194,21 @@ t 0 'echo "\$(git reset --hard)"'
 t 0 'git commit -m "fix: $(date) after git reset --hard"'
 t 0 'echo "$(git status) never git push --force"'
 
+# --- a new branch's worktree goes through gwt; throwaway checkouts pass ---------
+t 2 "git worktree add -b feat ~/dev/.worktrees/feat"
+t 2 "git worktree add -q /Users/q/dev/.worktrees/repo/feat -b feat origin/main"
+t 2 "git -C ~/dev/repo worktree add -B feat /Users/q/dev/feat"
+t 2 "cd ~/dev/repo && git worktree add --orphan pages ~/dev/pages"
+t 0 "git worktree add --detach ~/dev/.worktrees/base HEAD"
+t 0 "git worktree add ~/dev/.worktrees/repo/feat feat"
+t 0 "git worktree add -b spike /tmp/spike"
+t 0 "git worktree add -q -b base /private/tmp/claude-501/x/scratchpad/wt main"
+t 0 "git worktree add -b base /var/folders/kl/T/wt"
+t 0 "git worktree add -b feat ../feat"
+t 0 'git worktree add -b feat "\$W"'
+t 0 "git worktree list"
+t 0 "git worktree remove ~/dev/.worktrees/repo/feat"
+
 # --- the messages tell the model what to do ------------------------------------
 msg=$(payload "git push origin main --force" | "$HOOK" 2>&1 >/dev/null) || true
 if [[ "$msg" == *"git push origin main --force"* && "$msg" == *"NEVER bypassable"* && "$msg" == *"--force-with-lease"* ]]; then
@@ -206,6 +221,13 @@ if [[ "$msg" == *"CLAUDE_ALLOW_BRANCH_DELETE=1 git branch -D"* && "$msg" == *"gi
   (( PASS++ )) || true; print -r -- "PASS branch-delete message gives the bypass and the -d alternative"
 else
   (( FAIL++ )) || true; print -r -- "FAIL branch-delete message"; print -r -- "$msg" | sed 's/^/    /'
+fi
+
+msg=$(payload "git worktree add -b feat ~/dev/.worktrees/feat" | "$HOOK" 2>&1 >/dev/null) || true
+if [[ "$msg" == *"gwt create -n <branch>"* && "$msg" == *"--detach"* ]]; then
+  (( PASS++ )) || true; print -r -- "PASS worktree message gives gwt and the throwaway form"
+else
+  (( FAIL++ )) || true; print -r -- "FAIL worktree message"; print -r -- "$msg" | sed 's/^/    /'
 fi
 
 print -- "----"

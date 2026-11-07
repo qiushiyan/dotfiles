@@ -5,7 +5,10 @@ remote history.
 Policy: Claude may push any branch, force-with-lease and remote ref deletes
 included; unconditional overwrites (--force, -f, +refspec, --mirror) and
 work-destroying commands are refused, and `git branch -D` is gated behind a
-per-command CLAUDE_ALLOW_BRANCH_DELETE=1. Work-destroying means reset --hard,
+per-command CLAUDE_ALLOW_BRANCH_DELETE=1. A worktree for a new branch
+(worktree add -b/-B) at a real path is refused and pointed at gwt, which places
+it where gwt's listing, removal and a session's move find it; a detached
+checkout, a temp or scratch path, and a relative or computed path pass. Work-destroying means reset --hard,
 clean -f, a forced checkout or switch, and a checkout or worktree restore of a
 whole-tree pathspec (`.`, `..`, `*`, `:/`, `:(top)` and their spellings).
 
@@ -307,6 +310,37 @@ def whole_tree(spec):
     return all(part in ("", ".", "..", "*", "**") for part in spec.split("/"))
 
 
+def scratch(path):
+    """Whether a worktree path is a throwaway place, or one the hook cannot judge."""
+    if not path.startswith(("/", "~")):
+        return True  # relative to a cwd the hook cannot see, or computed at run time
+    path = os.path.expanduser(path)
+    temp = os.environ.get("TMPDIR", "/tmp").rstrip("/") + "/"
+    roots = ("/tmp/", "/private/tmp/", "/var/folders/", "/private/var/folders/", temp)
+    return path.startswith(roots) or "/scratchpad/" in path
+
+
+def new_branch_worktree(args):
+    """The path of `git worktree add` when it makes a new branch, else None.
+
+    git takes options on either side of the path, so every word is read.
+    """
+    creates, operands, i = False, [], 0
+    while i < len(args):
+        a = args[i]
+        if a in ("-b", "-B", "--orphan", "--reason"):
+            creates = creates or a != "--reason"
+            i += 2
+            continue
+        if a == "--":
+            operands += args[i + 1:]
+            break
+        if not a.startswith("-"):
+            operands.append(a)
+        i += 1
+    return operands[0] if creates and operands else None
+
+
 def judge(sub, args):
     """(kind, label) when `git <sub> <args>` is refused, else None."""
     if "--" in args:
@@ -339,6 +373,10 @@ def judge(sub, args):
         for p in paths:
             if whole_tree(p):
                 return "destroy", f"git {sub} {p}"
+    elif sub == "worktree" and args[:1] == ["add"]:
+        path = new_branch_worktree(args[1:])
+        if path is not None and not scratch(path):
+            return "worktree", None
     elif sub == "branch":
         flags = short_flags(opts, "u")
         if "D" in flags or ((longs("--delete") or "d" in flags) and (longs("--force") or "f" in flags)):
@@ -399,6 +437,20 @@ If unsure: report the branch and why `-d` refused, then let the user decide.
 """
 
 
+WORKTREE_MSG = """\
+BLOCKED: '{cmd}' makes a new branch's worktree where gwt does not place it.
+
+Create it with gwt instead, which picks the slot and copies the ignored files
+the checkout needs; gwt's listing, its removal and the session's move into the
+worktree then find it:
+
+  gwt create -n <branch> [<base>]
+
+A throwaway checkout to read other code passes:
+`git worktree add --detach <path> <commit>`, or any path under a temp directory.
+"""
+
+
 def main():
     try:
         command = json.load(sys.stdin)["tool_input"]["command"]
@@ -408,7 +460,7 @@ def main():
     if not hit:
         return 0
     kind, label = hit
-    msg = {"force": FORCE_MSG, "destroy": DESTROY_MSG, "branch-delete": BRANCH_MSG}[kind]
+    msg = {"force": FORCE_MSG, "destroy": DESTROY_MSG, "branch-delete": BRANCH_MSG, "worktree": WORKTREE_MSG}[kind]
     sys.stderr.write(msg.format(cmd=command, label=label))
     return 2
 

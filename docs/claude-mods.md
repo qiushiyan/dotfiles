@@ -118,6 +118,8 @@ for a resume and drive to read.
   since it silently resets the shell after every call.
 - **`rules/worktrees.md` names gwt.** Without it a session runs
   `git worktree add` and lands outside gwt's slots, where nothing follows it.
+  `block-dangerous-git.py` refuses that form, a new branch at a real path, and
+  points at gwt; a detached or temp checkout passes.
 - **`EnterWorktree` is denied in the shared settings.** It moves a session in
   one call but isolates it: `git add`, `sed`, `pnpm` and anything aimed at the
   main checkout are refused, as is every Bash call once its worktree is

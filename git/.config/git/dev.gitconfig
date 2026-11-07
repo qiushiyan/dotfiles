@@ -1,0 +1,5 @@
+# Included for every repository under ~/dev (git/.gitconfig). The hooks here
+# hold the main-checkout guard; a repository that sets its own core.hooksPath
+# keeps it, and runs the guard from a wrapper (hooks/reference-transaction).
+[core]
+	hooksPath = ~/.config/git/hooks

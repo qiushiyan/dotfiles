@@ -54,8 +54,10 @@ checkouts also went through gwt in a headless check (2 of 2), and cleaned up.
 
 **Next pass compares.** The share of post-create Bash calls with a `cd` prefix
 (38%), "session is isolated" refusals (none should come from `EnterWorktree`),
-any coordinator moved by the mod (must stay 0), and failures from `cd` now
-persisting.
+any coordinator moved by the mod (must stay 0), failures from `cd` now
+persisting, and how often the main-checkout guard and the `worktree add -b`
+refusal fire (a session that then reached for gwt, or one that worked around
+the refusal).
 
 ## 2026-11-05 — the first batch after the engine pass (drive maintenance pass)
 

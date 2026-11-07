@@ -29,6 +29,7 @@ removal, snapshots, recovery, trash  → gwt remove
 tmux window, popup, prompts          → tmux-worktree.sh
 parent-shell cd (gwt --cd, gwtcd)    → zsh gwt function
 a session following its worktree     → worktree mod
+main checkout keeps its branch       → git/.config/git/hooks/reference-transaction
 brief lifecycle diagnosis/resume     → brief CLI
 ```
 

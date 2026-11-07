@@ -1,0 +1,50 @@
+#!/bin/sh
+# The main-checkout guard. In the main checkout of a repository twin carries
+# (twin/.config/twin/twin.toml), a checkout or switch that creates a branch is
+# refused and pointed at gwt: sessions share that checkout, so a branch switch
+# moves every one of them.
+#
+# Plain repositories under ~/dev run it through core.hooksPath
+# (git/.config/git/dev.gitconfig, included by git/.gitconfig). One that sets
+# its own hooks path, as planlab, itell and itell-cms do, runs it from a
+# two-line wrapper there, untracked and carried by twin. A person who means
+# it branches past the guard with: git -c core.hooksPath=/dev/null switch -c B
+#
+# Tested by zsh/.config/zsh/tests/main-checkout-guard.test.zsh.
+[ "$1" = prepared ] || exit 0
+
+creates=
+while read -r old new ref; do
+	case "$old" in *[!0]*) continue ;; esac
+	case "$ref" in refs/heads/*) creates=${ref#refs/heads/} ;; esac
+done
+[ -n "$creates" ] || exit 0
+
+# git branch, worktree add -b (whose child is git branch) and fetch create
+# branches without moving this checkout; only checkout and switch are refused.
+case " $(ps -o args= -p "$PPID") " in
+	*" checkout "* | *" switch "*) ;;
+	*) exit 0 ;;
+esac
+
+# A linked worktree is its session's own.
+gitdir=$(git rev-parse --path-format=absolute --git-dir) || exit 0
+[ "$gitdir" = "$(git rev-parse --path-format=absolute --git-common-dir)" ] || exit 0
+top=$(git rev-parse --show-toplevel) || exit 0
+grep -qxF "path = \"~${top#"$HOME"}\"" "$HOME/.config/twin/twin.toml" 2>/dev/null || exit 0
+
+cat >&2 <<MSG
+
+The main checkout stays on $(git branch --show-current), since other sessions
+work in it too; a new branch gets its own worktree:
+
+  gwt $creates                # prints the new worktree's path
+  gwt create -n $creates      # unattended form, for agents
+
+Uncommitted changes made here can move with it, since the stash is shared
+between worktrees:
+
+  git stash push -u && git -C <path> stash pop
+
+MSG
+exit 1

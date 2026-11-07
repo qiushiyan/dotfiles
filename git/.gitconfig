@@ -20,6 +20,10 @@ useConfigOnly = true
 [includeIf "gitdir:~/dev/"]
   path = ~/.gitconfig.personal
 
+# The main-checkout guard's hooks path for every repository under ~/dev.
+[includeIf "gitdir:~/dev/"]
+  path = ~/.config/git/dev.gitconfig
+
 # planlab's push flags (repo.pushArgs), read by the zsh git() wrapper and
 # gopen. Two patterns: the clone's own .git, and its linked worktrees' gitdirs.
 [includeIf "gitdir:~/dev/planlab/main/.git"]
