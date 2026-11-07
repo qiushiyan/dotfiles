@@ -105,7 +105,7 @@ export const register: Register = on => {
 
     const wasEntered = await enterShell($, tree.path)
     if (!wasEntered) {
-      $.ui.log(`worktree: the shell could not stay in ${tree.path}, so the session moves there when this turn ends. A session started before ~/dev/.worktrees existed, or with CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR set, keeps the shell where it is; a new session does not.`)
+      $.ui.log(`worktree: the shell could not stay in ${tree.path}, so the session moves there when this turn ends; ${root} is outside this session's working directories, or CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR is set.`)
     }
     followedTree = { path: tree.path, wasEntered }
     return { ...ran, context: [...(ran.context ?? []), followText(tree, wasEntered)] }
