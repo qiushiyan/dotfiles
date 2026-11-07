@@ -438,16 +438,15 @@ If unsure: report the branch and why `-d` refused, then let the user decide.
 
 
 WORKTREE_MSG = """\
-BLOCKED: '{cmd}' makes a new branch's worktree where gwt does not place it.
+BLOCKED: '{cmd}' makes a new branch's worktree outside gwt's placement.
 
-Create it with gwt instead, which picks the slot and copies the ignored files
-the checkout needs; gwt's listing, its removal and the session's move into the
-worktree then find it:
+Create it with gwt, so the session can follow it and gwt can list and remove
+it later:
 
   gwt create -n <branch> [<base>]
 
-A throwaway checkout to read other code passes:
-`git worktree add --detach <path> <commit>`, or any path under a temp directory.
+A throwaway checkout to read other code passes: `git worktree add --detach
+<path> <commit>`, or any path under a temp directory.
 """
 
 

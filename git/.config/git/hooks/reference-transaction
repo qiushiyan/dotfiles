@@ -62,10 +62,8 @@ work in it too. Give the new branch its own worktree:
   gwt create -n $creates
 
 At a terminal, \`gwt $creates\` does the same and asks before forking from HEAD.
-Uncommitted changes made here can move with it, since the stash is shared
-between worktrees:
-
-  git stash push -u && git -C <path> stash pop
+To carry your own uncommitted changes over, move only their paths: this
+checkout and its stash are shared with every other session.
 
 MSG
 	exit 1

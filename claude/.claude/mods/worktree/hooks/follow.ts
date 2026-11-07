@@ -31,6 +31,6 @@ export const quoted = (path: string): string => `'${path.replaceAll("'", `'\\''`
 /** What the model reads beside the command that made the worktree. */
 export function followText(tree: Tree, isThere: boolean): string {
   return isThere
-    ? `This session moved into the new worktree ${tree.path} (branch ${tree.branch}). Bash and relative paths resolve there from now on, so run commands as they are.`
+    ? `This session moved into the new worktree ${tree.path} (branch ${tree.branch}). Bash and relative paths resolve there from now on, so run each command from here.`
     : `This session moves into the new worktree ${tree.path} (branch ${tree.branch}) when this turn ends. Until then, name that path in each command.`
 }
