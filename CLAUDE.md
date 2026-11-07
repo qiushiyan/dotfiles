@@ -79,7 +79,7 @@ Read the owning docs before changing a feature that spans packages:
 - **Claude context chip** (`claude/`, `tmux/`, `zsh/`):
   `tmux/.config/tmux/scripts/context-chip.md`. `tmux-agent-status.sh` alone
   turns pane borders off.
-- **Worktrees** (`tmux/`, `~/dev/gwt`, the clean-worktrees skill):
+- **Worktrees** (`tmux/`, `claude/`, `~/dev/gwt`, the clean-worktrees skill):
   `tmux/.config/tmux/scripts/worktree.md`. gwt owns placement, listing,
   every merged verdict and removal; the `prefix W` popup owns windows and
   prompts.

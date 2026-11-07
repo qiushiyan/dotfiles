@@ -26,8 +26,8 @@ In order; a stage the branch does not need is skipped, and a later fix can
 send the branch back through review and docs. Where a project builds on
 branches — planlab, itell, the tools under `~/dev` — a session starts on the
 main checkout and moves to a worktree before it installs or builds anything:
-`/enter-worktree` names it, `gwt` places it, and the session follows with its
-context. Other sessions run from the main checkout, so an install there
+`gwt` places it and the session follows with its context
+(`docs/claude-mods.md` § worktree). Other sessions run from the main checkout, so an install there
 changes what they run. `~/dotfiles` commits on `main`, and its `closeout`
 then skips the merge.
 

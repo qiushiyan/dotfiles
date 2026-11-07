@@ -82,9 +82,7 @@ What a headless run cannot show is checked in an interactive session on its
 own tmux server, driven with `send-keys` and `capture-pane`
 (`tmux -L <name> -f /dev/null`): a band or pane as drawn, a toast, and `/cd`,
 which a `claude -p` session does not have. A `claude` started from inside a
-session inherits `TMUX` and `TMUX_PANE`: unset both first. A child that falls
-back to the `enter-worktree` skill runs `session-cd`, which types into the
-pane it was handed.
+session inherits `TMUX` and `TMUX_PANE`: unset both first.
 
 ## quota
 
@@ -107,21 +105,35 @@ whenever a window moves a whole point.
 
 ## worktree
 
-`claude/.claude/mods/worktree` gives `/wt`, which puts the session in a new
-worktree without a turn of the main model. A fork of the session picks the
-branch from the conversation and the repository's recent branch names, `gwt`
-creates it, `/cd` moves the session, and the instruction typed with `/wt` is
-then submitted as the person's next prompt, so the work starts in the worktree
-at once.
+`claude/.claude/mods/worktree` puts a session in the worktree it works in. A
+session that creates one is followed, driven or not: its shell enters the new
+checkout at once, so the turn goes on there, and `/cd` lands when the turn ends
+for a resume and drive to read.
+
+- **What is followed:** one new checkout on a branch under `gwt path`, made by
+  the main loop from the main checkout. Anything else is a look at other code
+  or work for someone else, and stays put.
+- **What the shell move needs:** `~/dev/.worktrees` in the shared settings'
+  `additionalDirectories`, and `CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR` unset,
+  since it silently resets the shell after every call.
+- **`rules/worktrees.md` names gwt.** Without it a session runs
+  `git worktree add` and lands outside gwt's slots, where nothing follows it.
+- **`EnterWorktree` is denied in the shared settings.** It moves a session in
+  one call but isolates it: `git add`, `sed`, `pnpm` and anything aimed at the
+  main checkout are refused, as is every Bash call once its worktree is
+  removed.
+
+`/wt` makes a worktree without a turn of the main model. A fork of the session
+picks the branch from the conversation and the repository's recent branch
+names, `gwt` creates it, `/cd` moves the session, and the instruction typed
+with `/wt` is then submitted as the person's next prompt, so the work starts in
+the worktree at once.
 
 - **`/wt <instruction>`:** "create a worktree and go fix it". The fork also
   says whether the instruction asks for anything beyond the worktree; only
   then is it submitted.
 - **`/wt <branch> [base]`:** a branch typed out, recognised by its slash, is
   taken as written and no model is asked.
-- **The `enter-worktree` skill stays.** It does the same through a full turn,
-  and its move lands only when that turn ends, so it cannot go on to the work
-  in the same turn. Codex has only the skill.
 - **A failure is reported and nothing is forced:** no usable branch from the
   fork, a `gwt` refusal, or a refused move each print what happened and what
   to type.

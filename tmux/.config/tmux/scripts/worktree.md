@@ -15,8 +15,8 @@ The scripts own syntax. These docs own the constraints behind it.
 `gwt` on PATH (source: `~/dev/gwt`) owns branch resolution,
 worktree creation, ignored-file seeding, listing, the trunk, every merged
 verdict, and removal with its recovery refs. Its callers are the tmux popup,
-`brief start`, the `enter-worktree` skill, the `/wt` mod
-(`docs/claude-mods.md`), and the zsh `gwt` function, which
+`brief start`, sessions and the `/wt` mod (`docs/claude-mods.md`), and the
+zsh `gwt` function, which
 adds the parent-shell cd behind `--cd` and forwards everything else. That
 function and its completion share one subcommand list, `_gwt_commands` in
 `git.zsh`; a binary subcommand missing from it turns `gwt --cd <subcommand>`
@@ -28,6 +28,7 @@ listing, trunk, merged verdicts      → gwt list / merged / trunk
 removal, snapshots, recovery, trash  → gwt remove
 tmux window, popup, prompts          → tmux-worktree.sh
 parent-shell cd (gwt --cd, gwtcd)    → zsh gwt function
+a session following its worktree     → worktree mod
 brief lifecycle diagnosis/resume     → brief CLI
 ```
 

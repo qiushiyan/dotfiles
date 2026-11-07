@@ -42,17 +42,13 @@ Moving a session therefore persists only if the transcript moves too:
 - **`/cd <dir>`** moves the file into `<dir>`'s project folder and records
   the move, so the session resumes in `<dir>`. Claude Code refuses it under
   `claude -p`, and the model cannot type it.
-- **`EnterWorktree`** switches directory for the live process only. On exit
-  the session moves back to where it was started, and resumes there.
+- **A shell `cd`** moves Bash and relative paths for the live session only. It
+  resumes where it was launched, on the main checkout while its conversation
+  says it is in a worktree.
 
-The `enter-worktree` skill uses `/cd` for this reason. Its
-`claude/.claude/skills/enter-worktree/scripts/session-cd` types `/cd <dir>`
-into the session's own tmux pane, and the TUI runs it when the turn ends. The
-script refuses to type when it runs outside Claude Code or tmux, and when the
-pane belongs to another process. It also refuses when the prompt box holds a
-draft, which would otherwise be sent with the command as one message.
-Worktrees of a trusted repo move without a trust prompt; any other directory
-asks the user first.
+The worktree mod runs `/cd` for this reason, when the turn that made the
+worktree ends (`docs/claude-mods.md` § worktree). Worktrees of a trusted repo
+move without a trust prompt; any other directory asks the user first.
 
 ## Retention belongs to ccclean
 

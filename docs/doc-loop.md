@@ -50,9 +50,8 @@ it carries state, lessons and dead-ends with their _why_, and first moves, and
 pointer to it.
 
 A brief is earned by the gap it crosses. Work that continues in the session that
-investigated it crosses none: `/enter-worktree` names the branch, `gwt` places
-it, and the session follows it in still holding what a brief would have had to
-reconstruct.
+investigated it crosses none: `gwt` places the branch, and the session follows
+it in still holding what a brief would have had to reconstruct.
 
 What the pointer carries, the pickup gate, the slug rule, where briefs live and
 which repo owns which half: `docs/handoff.md`.
