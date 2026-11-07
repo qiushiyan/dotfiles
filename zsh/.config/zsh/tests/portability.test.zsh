@@ -128,8 +128,8 @@ test_interactive_startup_is_silent() {
 # an interactive shell rather than grepped from the file.
 test_interactive_shell_carries_shared_behaviour() {
   sandbox
-  eq "on 1 1 1 1" "$(probe_tty '$options[ignore_eof] $+functions[_guard_ctrl_d] $+functions[git] $+functions[_cout_setup] $ENABLE_LSP_TOOLS')" \
-    "ignore_eof, Ctrl-D guard, git wrapper, cout hooks, Claude env"
+  eq "on 1 1 1 1 0" "$(probe_tty '$options[ignore_eof] $+functions[_guard_ctrl_d] $+functions[git] $+functions[_cout_setup] $ENABLE_LSP_TOOLS $+parameters[CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR]')" \
+    "ignore_eof, Ctrl-D guard, git wrapper, cout hooks, Claude env (a Bash cd persists, which a session following its worktree needs)"
 }
 
 # git.zsh's git() carries the branch guard and the planlab push; a git()

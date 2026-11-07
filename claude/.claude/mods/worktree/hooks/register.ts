@@ -55,8 +55,8 @@ async function isInMainCheckout($: EngineInterface): Promise<boolean> {
 
 /**
  * Whether the shell now stands in path. Only the shell can say: a directory
- * outside the session's working directories resets, and $.session.cwd() trails
- * a `cd` until the next tool call.
+ * outside the session's working directories resets, and $.session.cwd() reads
+ * the old directory until the call that ran the `cd` has finished.
  */
 async function enterShell($: EngineInterface, path: string): Promise<boolean> {
   const shell = async (command: string, description: string) =>
@@ -104,6 +104,9 @@ export const register: Register = on => {
     if (tree === undefined) return ran
 
     const wasEntered = await enterShell($, tree.path)
+    if (!wasEntered) {
+      $.ui.log(`worktree: the shell could not stay in ${tree.path}, so the session moves there when this turn ends. A session started before ~/dev/.worktrees existed, or with CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR set, keeps the shell where it is; a new session does not.`)
+    }
     followedTree = { path: tree.path, wasEntered }
     return { ...ran, context: [...(ran.context ?? []), followText(tree, wasEntered)] }
   })

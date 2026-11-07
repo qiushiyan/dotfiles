@@ -2,7 +2,9 @@
 # The main-checkout guard. In the main checkout of a repository twin carries
 # (twin/.config/twin/twin.toml), a checkout or switch that creates a branch is
 # refused and pointed at gwt: sessions share that checkout, so a branch switch
-# moves every one of them.
+# moves every one of them. Whatever it lets through goes on to the
+# repository's own reference-transaction hook, as every other hook here does
+# through `forward`.
 #
 # Plain repositories under ~/dev run it through core.hooksPath
 # (git/.config/git/dev.gitconfig, included by git/.gitconfig). One that sets
@@ -11,40 +13,66 @@
 # it branches past the guard with: git -c core.hooksPath=/dev/null switch -c B
 #
 # Tested by zsh/.config/zsh/tests/main-checkout-guard.test.zsh.
-[ "$1" = prepared ] || exit 0
 
-creates=
-while read -r old new ref; do
-	case "$old" in *[!0]*) continue ;; esac
-	case "$ref" in refs/heads/*) creates=${ref#refs/heads/} ;; esac
-done
-[ -n "$creates" ] || exit 0
+# A repository whose own hook is a wrapper of this guard lands here twice.
+[ -z "${MAIN_CHECKOUT_GUARD:-}" ] || exit 0
+export MAIN_CHECKOUT_GUARD=1
+input=$(cat)
 
-# git branch, worktree add -b (whose child is git branch) and fetch create
-# branches without moving this checkout; only checkout and switch are refused.
-case " $(ps -o args= -p "$PPID") " in
-	*" checkout "* | *" switch "*) ;;
-	*) exit 0 ;;
-esac
+# The path as the manifest writes it, by its value, so its spacing and quotes
+# do not matter.
+listed() {
+	awk -v want="$1" '{
+		line = $0; sub(/#.*/, "", line)
+		if (line !~ /^[ \t]*path[ \t]*=/) next
+		sub(/^[ \t]*path[ \t]*=[ \t]*/, "", line); gsub(/^["\047]|["\047][ \t]*$/, "", line)
+		if (line == want) { found = 1; exit }
+	} END { exit !found }' "$HOME/.config/twin/twin.toml" 2>/dev/null
+}
 
-# A linked worktree is its session's own.
-gitdir=$(git rev-parse --path-format=absolute --git-dir) || exit 0
-[ "$gitdir" = "$(git rev-parse --path-format=absolute --git-common-dir)" ] || exit 0
-top=$(git rev-parse --show-toplevel) || exit 0
-grep -qxF "path = \"~${top#"$HOME"}\"" "$HOME/.config/twin/twin.toml" 2>/dev/null || exit 0
+refuses() {
+	[ "$1" = prepared ] || return 1
+	creates=
+	while read -r old new ref; do
+		case "$old" in *[!0]*) continue ;; esac
+		case "$ref" in refs/heads/*) creates=${ref#refs/heads/} ;; esac
+	done <<IN
+$input
+IN
+	[ -n "$creates" ] || return 1
+	# git branch, worktree add -b (whose child is git branch) and fetch create
+	# branches without moving this checkout; only checkout and switch are refused.
+	case " $(ps -o args= -p "$PPID") " in
+		*" checkout "* | *" switch "*) ;;
+		*) return 1 ;;
+	esac
+	# A linked worktree is its session's own.
+	gitdir=$(git rev-parse --path-format=absolute --git-dir 2>/dev/null) || return 1
+	[ "$gitdir" = "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" ] || return 1
+	top=$(git rev-parse --show-toplevel 2>/dev/null) || return 1
+	listed "~${top#"$HOME"}"
+}
 
-cat >&2 <<MSG
+if refuses "$@"; then
+	cat >&2 <<MSG
 
 The main checkout stays on $(git branch --show-current), since other sessions
-work in it too; a new branch gets its own worktree:
+work in it too. Give the new branch its own worktree:
 
-  gwt $creates                # prints the new worktree's path
-  gwt create -n $creates      # unattended form, for agents
+  gwt create -n $creates
 
+At a terminal, \`gwt $creates\` does the same and asks before forking from HEAD.
 Uncommitted changes made here can move with it, since the stash is shared
 between worktrees:
 
   git stash push -u && git -C <path> stash pop
 
 MSG
-exit 1
+	exit 1
+fi
+
+# git init and clone run this before the repository is whole enough to name.
+common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
+own="$common/hooks/reference-transaction"
+[ -x "$own" ] || exit 0
+printf '%s\n' "$input" | "$own" "$@"

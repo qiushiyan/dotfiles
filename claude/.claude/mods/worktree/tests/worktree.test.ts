@@ -196,9 +196,12 @@ describe('follow', () => {
   test('a shell that snaps back is not reported as moved, and /cd still lands', async ($, on) => {
     const clock = mock.clock(on)
     const state = world(on, { made: [{ path: WT, branch: 'feat/x' }], snapsBack: true })
+    const logs: string[] = []
+    on('ui.log', ($, e) => (logs.push(e.text), { value: undefined }))
     await $.session.start({ cwd: MAIN, surface: 'terminal', isInteractive: true })
 
     const ran = await $.tool.call(bash('gwt create -n feat/x'))
+    expect(logs.join('\n')).toContain('could not stay')
     expect(ran.context?.join('\n')).toContain('when this turn ends')
     expect(ran.context?.join('\n')).not.toContain('run commands as they are')
 

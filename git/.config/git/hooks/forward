@@ -1,0 +1,10 @@
+#!/bin/sh
+# A repository's own hook of this name, run as git would run it without
+# dev.gitconfig's hooks path, so pointing ~/dev at this directory adds the
+# main-checkout guard without taking the slot. Each client hook name here links
+# to this file. post-index-change is left out: git would spawn it on every index
+# write, and no repository under ~/dev has one.
+common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
+hook="$common/hooks/${0##*/}"
+[ -x "$hook" ] || exit 0
+exec "$hook" "$@"
