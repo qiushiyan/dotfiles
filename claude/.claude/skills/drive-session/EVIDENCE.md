@@ -38,7 +38,8 @@ than a bot, Sonnet and Opus, two scratch repositories.
 **Changed.** The env var left `.zshrc`; `~/dev/.worktrees` joined
 `additionalDirectories`; `EnterWorktree` is denied; the worktree mod follows a
 new branch checkout under gwt's root (shell at once, `/cd` when the turn ends);
-`rules/worktrees.md` names gwt; drive's `reopen` reads the transcript for where
+`rules/worktrees.md` names gwt without promising a move, since none comes from
+a linked worktree or for a second one; drive's `reopen` reads the transcript for where
 a session last worked; `enter-worktree` and `session-cd` are gone, and the
 step line above says to ask for a worktree in the text.
 

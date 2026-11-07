@@ -181,7 +181,7 @@ describe('follow', () => {
     const ran = await $.tool.call(bash('P=$(gwt create -n feat/x 2>/dev/null); echo made'))
     expect(state.bash.slice(-2)).toEqual([`cd '${WT}'`, 'pwd -P'])
     expect(ran.context?.join('\n')).toContain(WT)
-    expect(ran.context?.join('\n')).toContain('no cd prefix')
+    expect(ran.context?.join('\n')).toContain('run commands as they are')
     expect(state.commands).toEqual([])
 
     await $.turn.complete(ended)
@@ -200,7 +200,7 @@ describe('follow', () => {
 
     const ran = await $.tool.call(bash('gwt create -n feat/x'))
     expect(ran.context?.join('\n')).toContain('when this turn ends')
-    expect(ran.context?.join('\n')).not.toContain('no cd prefix')
+    expect(ran.context?.join('\n')).not.toContain('run commands as they are')
 
     await $.turn.complete(ended)
     await clock.settle()

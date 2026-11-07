@@ -1,2 +1,3 @@
-To work on a branch in its own worktree, create it with `gwt create -n <branch>`.
-The session moves into it, so later commands need no path or `cd` prefix.
+To work on a branch in its own worktree, create it with `gwt create -n <branch>`
+and work from the path it prints; when the session moves there on its own, the
+result says so.
