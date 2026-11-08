@@ -17,7 +17,9 @@ mini2 (`docs/qiushi-mini-2.md`). Facts below were collected 2026-09-22.
 | key | default `~/.ssh/id_*` identity (no per-host `IdentityFile`) |
 | host key | ED25519 `SHA256:CLzS5O1NtMF/AO6FkM92Ux9n1dNf7iCitDuHDENqvgo` |
 
-Another local account, `maxsnijders`, exists on the machine.
+Another local account, `maxsnijders`, exists on the machine. The temporary
+guest account `nicholas`, and what is still open for it, are in
+`docs/mini-guest-account.md`.
 
 ## Tailscale
 
