@@ -87,6 +87,17 @@ Everything derives from that tree:
   repo. With it, a mid-session `/fast` stays in its session. How the flag
   reaches Claude Code, and why it refuses beside `--settings`: the comment
   above `_claude_fast_args` in `claude.zsh`.
+- **A PlanLab session without the team's Bench workflow**: a launch inside a
+  PlanLab checkout runs `claude-planlab-overlay`, which gives the session the
+  team `AGENTS.md` without its Bench tracking and transcript-sharing text, plus
+  a short note on how Bench is used here, and hides every repository skill
+  outside the Loopy, deploy and PR sets (each still a `/` command). The team
+  hook's own Bench text is switched off by `PLANLAB_BENCH_REMINDERS=off` in the
+  shared `settings.json`, which every launch gets. A session started outside
+  these launchers (`x-select`, Rex, devpool, a `claude -p` helper) loads the
+  team's `AGENTS.md` and skills whole. A section the team renamed stays in and
+  is logged to `~/.local/state/claude-planlab-overlay.log`. What it rewrites,
+  and why launch arguments rather than a hook: the script's header.
 - **Which lane is a running session on, and how much is left in it?** Its
   tmux context chip leads with the account, then the model and the lane's
   5-hour and 7-day usage (`yan opus-5[1m]:high 5h:23 7d:41 ✳ 37%`); `x-acc`
@@ -191,6 +202,10 @@ Everything derives from that tree:
   it, not to headroom, which stays read-only against the vendors' state. A
   wrapper only invokes the script — resolved from PATH at each launch, as
   headroom is — and launches whatever it returns.
+- The PlanLab overlay only rewrites a launch's arguments, and any failure
+  leaves them as they were: a session gets the team's instructions whole,
+  never part of the overlay. What the team's hooks say is decided by their own
+  switch, never by the overlay.
 - Everything under the trust roots is trusted before anyone has read it: a
   clone there runs the hooks its own settings declare from its first launch,
   unasked, and the `x*` launchers bypass permissions besides. Code that has
