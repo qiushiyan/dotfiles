@@ -136,6 +136,20 @@ _workspace_trust() {
   return 0
 }
 
+# Inside a PlanLab checkout, claude-planlab-overlay (scripts/) rewrites a
+# launch's args to this operator's view of the checkout: AGENTS.md without the
+# team's Bench tracking and transcript text, and only the skills it keeps; its
+# header owns the rule. It prints the args NUL-ended; anywhere else, or on any
+# failure, it prints nothing and the args stand. The args land in $reply.
+_claude_overlay() {
+  emulate -L zsh
+  reply=("$@")
+  whence -p claude-planlab-overlay >/dev/null || return 0
+  local out
+  out=$(claude-planlab-overlay "$@") && [[ -n "$out" ]] || return 0
+  reply=("${(@0)${out%$'\0'}}")
+}
+
 # _account_launchers <prefix> <root> <primary> <launch-fn> [reserved...]
 # Defines <prefix>-<email> for every account dir under <root>, each running
 # `<launch-fn> <email> "$@"`; it always exists and is the guaranteed identity.
@@ -299,6 +313,8 @@ _claude_launch() {
   # cleanup becomes manual, so it stays off by default.
   # CLAUDE_CODE_TMPDIR="$PWD/.tmp" \
   _claude_fast_args "$@" || return
+  set -- "${reply[@]}"
+  _claude_overlay "$@"
   set -- "${reply[@]}"
   local -a effort=()
   if (( ! ${argv[(I)(--effort|--effort=*)]} )) && _claude_workspace_effort; then

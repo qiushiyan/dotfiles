@@ -225,12 +225,34 @@ EOS
     || { print -r -- "workspace-trust ran as: ${(qqq)got}"; return 1 }
 }
 
+# A Claude launch hands headroom the args claude-planlab-overlay prints,
+# NUL-ended, an empty one kept; an overlay that fails leaves the launch's own
+# args. The real overlay is never on the sandbox PATH, so the other cases run
+# without one.
+test_launchers_take_the_overlay_args() {
+  sandbox yan@a.com || return 1
+  cat >"$SB/bin/claude-planlab-overlay" <<'EOS'
+#!/bin/sh
+printf -- '--settings\0/tmp/s.json\0--tools\0\0'
+for a; do printf '%s\0' "$a"; done
+EOS
+  chmod +x "$SB/bin/claude-planlab-overlay"
+  local B='--dangerously-skip-permissions'
+  expect "$(probe 'route x x-yan cx')" \
+    x     "launch -- --settings /tmp/s.json --tools  $B" \
+    x-yan "launch --account yan@a.com -- --settings /tmp/s.json --tools  $B" \
+    cx    "launch --vendor codex --" || return 1
+  printf '#!/bin/sh\nprintf -- "--half\\0"\nexit 1\n' >"$SB/bin/claude-planlab-overlay"
+  expect "$(probe 'route x')" x "launch -- $B"
+}
+
 t "x-* launchers: names and the account each reaches"   test_claude_launcher_names
 t "cx-* launchers: names and the account each reaches"  test_codex_launcher_names
 t "a host file names the primary and moves its launcher" test_host_names_the_primary
 t "a primary named by its email keeps its local part"    test_primary_named_by_email
 t "adding a same-local-part account retires the alias"  test_add_retires_an_ambiguous_alias
 t "session launchers run workspace-trust first"         test_launchers_record_trust_first
+t "claude launches take the overlay's args"             test_launchers_take_the_overlay_args
 
 rm -rf "${TMPDIR:-/tmp}"/al-test.*(N)
 print -r -- "----"
