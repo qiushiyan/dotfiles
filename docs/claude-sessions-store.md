@@ -146,7 +146,8 @@ running, and it never discards a transcript:
 3. Once every collision is identical, keep the original tree as a backup and
    link: `mv <dir>/projects <dir>/projects.pre-share.$(date +%Y%m%d-%H%M%S)
    && ln -s ~/.claude/projects <dir>/projects`. Delete the backup only after
-   `headroom check` passes and the picker shows the folded-in sessions.
+   `headroom check` passes and Claude Code's resume picker shows the folded-in
+   sessions.
 
 headroom's `headroom-setup` skill and the refusal message carry the same
 collision rule.
@@ -157,5 +158,5 @@ headroom owns and tests the topology, retention and launch environment
 (`~/dev/headroom`, `internal/accounts` and `internal/check`).
 `zsh/.config/zsh/tests/claude-launch.test.zsh` covers what `claude.zsh`'s
 launchers add on top (the refusal without headroom, named-launch routing,
-workspace effort, x-select's cd), building headroom from `~/dev/headroom` so
+workspace effort, `--fast`), building headroom from `~/dev/headroom` so
 routing crosses the real wrapper→engine seam.

@@ -17,8 +17,8 @@
 # settings, skills, hooks, rules stay shared; login and prompt history stay
 # per-account. Session transcripts are machine-global: every account's
 # projects/ symlinks to ~/.claude/projects (seeded by `headroom accounts
-# add`, verified by `headroom check`), so the resume picker sees every
-# session regardless of account.
+# add`, verified by `headroom check`), so `x --resume <id>` continues any
+# session on any account.
 #
 # Launch routing belongs to headroom (~/dev/headroom, installed to
 # ~/.local/bin/headroom): `headroom launch` validates the account, verifies
@@ -26,11 +26,10 @@
 # decision alone — every inherited CLAUDE_CONFIG_DIR is stripped, exactly
 # one is set for a non-primary — so a polluted shell (a tmux server started
 # inside a Claude Code session) can never re-route a launch. These wrappers
-# only add what is personal: the share source, flags, short aliases, and the one
-# thing only a parent shell can do (make a cd stick). The rule behind the
-# split, learned twice: shell functions are frozen at shell init and live
-# for weeks, so nothing that can misroute, mutate, or misparse belongs
-# here — the binary is re-resolved from PATH at every keystroke.
+# only add what is personal: the share source, flags and short aliases. The
+# rule behind the split, learned twice: shell functions are frozen at shell
+# init and live for weeks, so nothing that can misroute, mutate, or misparse
+# belongs here — the binary is re-resolved from PATH at every keystroke.
 #
 #   x                     permissions bypassed, on the least-loaded account
 #                         (headroom places every bare launch)
@@ -39,11 +38,6 @@
 #                         when the local part is unique (and isn't the
 #                         primary's name or a reserved word) a short alias
 #                         exists too (x-yan, …)
-#   x-select              session picker (headroom sessions): pick any
-#                         session on the machine; headroom enters its
-#                         project dir and execs claude on the account that
-#                         last drove it. This wrapper only cds afterwards,
-#                         from the advisory --cd-file
 #   x-accounts / x-acc    account board (headroom accounts --compact): one
 #                         row per account, refreshing while it is open; it
 #                         records nothing and starts no session
@@ -77,7 +71,6 @@ typeset -ga CLAUDE_X_BYPASS=(--dangerously-skip-permissions)
 # <level> (low medium high xhigh max); a dir covers its subdirs, and the most
 # specific match wins, so order carries no meaning. An explicit `--effort`
 # on the command line beats the table; CLAUDE_CODE_EFFORT_LEVEL beats both.
-# x-select is not covered: headroom picks its dir after the wrapper has run.
 # Like every table here, edits reach a shell at its next init (zshreload).
 typeset -ga CLAUDE_X_EFFORT=(
   "$HOME/wiki"      high
@@ -112,7 +105,7 @@ fi
 # Local parts that never get a short launcher alias: x-<these> are utilities.
 # Purely this file's concern — headroom advertises only the guaranteed
 # x-<email> identities, so there is no naming policy to keep in sync anymore.
-typeset -ga CLAUDE_X_RESERVED=(usage account account-add select accounts acc check)
+typeset -ga CLAUDE_X_RESERVED=(usage account account-add accounts acc check)
 
 # The launch layer both vendors share; codex.zsh, sourced after this file,
 # uses it too.
@@ -245,44 +238,11 @@ x-check()       { headroom check "$@" }
 # `headroom` / `headroom accounts` keeps the block layout with bars.
 x-accounts()    { headroom accounts --compact "$@" }
 x-acc()         { x-accounts "$@" }
-# Session picker (headroom sessions): every session on the machine, entered
-# in its own project dir and continued — by exec, inside headroom — on the
-# account that last drove it. Nothing routing-shaped crosses back into this
-# shell; the old decision-line protocol is a tombstone (`headroom resume`
-# exits 2 with a stale-shell message — if you are reading that, exec zsh).
-# The advisory cd file carries exactly one fact: empty means no launch was
-# committed (cancel or refusal — do not cd), non-empty means headroom
-# entered that dir, and the cd then sticks here regardless of how claude
-# exited. mktemp per invocation, never a fixed path: two concurrent shells
-# sharing one file would cd each other.
-x-select() {
-  emulate -L zsh
-  _headroom_required claude || return
-  _claude_fast_args "$@" || return
-  set -- "${reply[@]}"
-  _workspace_trust
-  local tmp rc dir
-  tmp=$(mktemp -d "${${TMPDIR:-/tmp}%/}/x-select.XXXXXX") || return
-  headroom sessions --cd-file "$tmp/cwd" -- "${CLAUDE_X_BYPASS[@]}" "$@"
-  rc=$?
-  if [[ -s "$tmp/cwd" ]]; then
-    dir="$(<"$tmp/cwd")"
-    if [[ "$dir" == /* ]]; then
-      cd -- "$dir"
-    else
-      print -u2 "x-select: ignoring malformed cd advice: $dir"
-    fi
-  fi
-  rm -rf "$tmp"
-  return $rc
-}
-
 # Launch claude through headroom, which owns the whole decision: name
 # validation, the shared-sessions topology check, and the child environment.
-# This wrapper parses nothing back — the resolve round-trip and the shell-side
-# topology preflight moved into the binary after the 2026-08-03 incident,
-# because a check that lives in a shell function is frozen at shell init and
-# a stale copy is worse than none.
+# This wrapper parses nothing back and checks nothing itself: a check that
+# lives in a shell function is frozen at shell init, and a stale copy is worse
+# than none.
 #
 #   _claude_launch <name|""> [claude args...]
 #

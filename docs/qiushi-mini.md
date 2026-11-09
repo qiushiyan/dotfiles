@@ -478,7 +478,7 @@ home** apart from mine:
 | `~/.local/state/steward/` | steward | the store, journal, evidence, launchd logs, deploy records |
 | `~/planlab` | steward | its checkout (not `~/dev/planlab/main`, which is mine) |
 | `~/steward-worktrees/` | steward | one worktree per task |
-| `~/.steward-home/` | steward | the `HOME` every steward process runs under: its own `.claude` (settings, skills link, login), `.codex` (config, login), pinned `dotfiles` clone, `.gitconfig`, `Library/pnpm` (obelisk), `.local/bin/{claude,envoy,steward,planlab}` |
+| `~/.steward-home/` | steward | the `HOME` every steward process runs under: its own `.claude` (settings, skills link), `.codex` (config, login), pinned `dotfiles` clone, `.gitconfig`, `Library/pnpm` (obelisk), `.local/bin/{claude,envoy,steward,planlab}` |
 | `/Library/LaunchDaemons/ai.planlab.steward.{tick,digest,sweep}.plist` | root | the three daemons, `UserName` qiushiyan |
 
 - **`twin` doesn't touch any of it.** What `twin` manages is mine: the
@@ -486,10 +486,14 @@ home** apart from mine:
   `~/.local/bin`, the carried files. The steward's dotfiles are a separate
   clone at the pin in `services/steward/host/versions.json`. A skill edit
   reaches the steward only by a pin bump and a deploy.
-- **Its logins live in files** in the session home, because the Keychain is
-  locked outside the GUI. To log in again:
-  `ssh -t qiushi-mini 'HOME=~/.steward-home ~/.steward-home/.local/bin/claude /login'`
-  (the same with `codex login`).
+- **Claude runs on my headless tokens**, so the session home holds no Claude
+  login: the steward's launcher places each turn with my headroom
+  (`HEADROOM_HOME` names my home) and runs it on that account's token.
+  Tokens last a year; `headroom headless` lists their ends, and
+  `headroom headless mint <account>`, at this screen, makes one.
+- **Its Codex login lives in a file** in the session home, because the
+  Keychain is locked outside the GUI: log in again with `codex login` under
+  `HOME=~/.steward-home`, over `ssh -t qiushi-mini`.
 - **Not a trust boundary.** Driven sessions run with permissions bypassed as
   my UID; the session home keeps configuration apart, nothing more.
 - **Status:** `ssh qiushi-mini '~/.steward-home/.local/bin/steward status'`;

@@ -147,7 +147,7 @@ the worktree at once.
 
 `CLAUDE_CODE_PLUGIN_DIRS` is read when a process starts, so a session that
 was running before the line or a mod's folder arrived loads nothing until it
-restarts; resuming it (`x-select`, `x --resume`) keeps the conversation.
+restarts; resuming it (`x --resume`) keeps the conversation.
 
 `~/.claude/mods` is one link to the package's `mods/` directory, made on each
 machine by its restow (`make restow`, or `twin dotfiles apply`).

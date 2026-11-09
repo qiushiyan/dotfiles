@@ -111,7 +111,7 @@ test_claude_launcher_names() {
     x-qiushi@b.com    "launch --account qiushi@b.com $B" \
     x-qiushi.yann     "launch --account qiushi.yann@b.com $B" \
     x-qiushi.yann@b.com "launch --account qiushi.yann@b.com $B" \
-    x-select          "sessions --cd-file * $B" \
+    x-select          "launch --account select@a.com $B" \
     x-select@a.com    "launch --account select@a.com $B" \
     x-acc             "accounts --compact" \
     x-acc@a.com       "launch --account acc@a.com $B" \
@@ -213,15 +213,14 @@ exit 1
 EOS
   chmod +x "$SB/bin/workspace-trust"
   local B='-- --dangerously-skip-permissions'
-  expect "$(probe 'route x x-yan x-select cx cx-yan x-acc')" \
+  expect "$(probe 'route x x-yan cx cx-yan x-acc')" \
     x         "launch $B" \
     x-yan     "launch --account yan@a.com $B" \
-    x-select  "sessions --cd-file * $B" \
     cx        "launch --vendor codex --" \
     cx-yan    "launch --vendor codex --account yan@a.com --" \
     x-acc     "accounts --compact" || return 1
   local got="$(<"$SB/trust.log")"
-  [[ "$got" == $'--quiet\n--quiet\n--quiet\n--quiet\n--quiet' ]] \
+  [[ "$got" == $'--quiet\n--quiet\n--quiet\n--quiet' ]] \
     || { print -r -- "workspace-trust ran as: ${(qqq)got}"; return 1 }
 }
 
