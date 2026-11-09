@@ -39,10 +39,13 @@ brew: ## Install Homebrew packages from Brewfile
 brew-dump: ## Update Brewfile with current Homebrew packages
 	brew bundle dump --file=Brewfile --force
 
+test: ## Run every suite, in scratch directories (T="zsh rex" narrows by path)
+	@scripts/test.sh $(T)
+
 list: ## List all stow packages
 	@echo $(PACKAGES)
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: install uninstall restow brew brew-dump list help
+.PHONY: install uninstall restow brew brew-dump test list help
