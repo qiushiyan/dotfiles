@@ -129,9 +129,9 @@ ZSH_THEME=""
 plugins=(history zsh-autosuggestions)
 
 # One fpath in every context, or oh-my-zsh deletes and rebuilds the completion
-# dump (200-350 ms) whenever it differs from the recorded one. `brew shellenv` in
-# ~/.zprofile exports FPATH, so without this a child shell inherits oh-my-zsh's
-# entries and adds them again. Drop inherited oh-my-zsh entries, pin the two
+# dump (200-350 ms) whenever it differs from the recorded one. A `brew shellenv`
+# line in a machine's ~/.zprofile exports FPATH, so without this a child shell
+# inherits oh-my-zsh's entries and adds them again. Drop inherited oh-my-zsh entries, pin the two
 # directories that only login shells add, and keep FPATH out of the
 # environment. docs/zsh.md § Completion dump.
 typeset -gU fpath
@@ -143,6 +143,11 @@ typeset +x FPATH
 # zsh-syntax-highlighting hooks zle-line-pre-redraw rather than wrapping
 # widgets, and fzf, Oh My Posh and this file define theirs at startup.
 ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+
+# No compaudit: oh-my-zsh runs it and then compinit runs it again, 10 ms a
+# shell, to find completion directories another user could write to. Every
+# directory on this fpath is this account's or Homebrew's.
+ZSH_DISABLE_COMPFIX=true
 
 source "$ZSH/oh-my-zsh.sh"
 
@@ -174,14 +179,39 @@ nvm() {
   nvm "$@"
 }
 
+# _init_cached NAME COMMAND [ARG...]: the file to source for a tool's shell
+# init, in REPLY. COMMAND's output is kept under ~/.cache/zsh-init and written
+# again when the binary changes: its resolved path, which a Homebrew upgrade
+# moves, and its modification time are the file's first line. A hit forks
+# nothing, where `source <(tool init)` costs 3-6 ms a tool. The caller
+# sources REPLY itself, at top level, so the init's own `typeset`s stay global.
+_init_cached() {
+  emulate -L zsh
+  zmodload -F zsh/stat b:zstat 2>/dev/null || return 1
+  local name=$1 bin=${commands[$2]:A} file sig first=
+  shift
+  [[ -n $bin ]] || return 1
+  local -a mtime
+  zstat -A mtime +mtime -- $bin 2>/dev/null || return 1
+  sig="# $bin $mtime[1]"
+  file=${XDG_CACHE_HOME:-$HOME/.cache}/zsh-init/$name.zsh
+  [[ -r $file ]] && IFS= read -r first <$file
+  if [[ $first != $sig ]]; then
+    local out
+    out=$("$@") && [[ -n $out ]] || return 1
+    mkdir -p ${file:h} && print -r -- $sig$'\n'$out >| $file.$$ && mv -f $file.$$ $file || return 1
+  fi
+  REPLY=$file
+}
+
 # fzf
-source <(fzf --zsh)
+if _init_cached fzf fzf --zsh; then source $REPLY; else source <(fzf --zsh); fi
 
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # zoxide (directory jumping)
-eval "$(zoxide init zsh)"
+if _init_cached zoxide zoxide init zsh; then source $REPLY; else eval "$(zoxide init zsh)"; fi
 
 # Google Cloud SDK
 [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ] && source "$HOME/google-cloud-sdk/completion.zsh.inc"

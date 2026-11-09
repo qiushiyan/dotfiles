@@ -3,6 +3,21 @@
 # .zshrc and .zlogin reapply this after profiles and plugins can reorder PATH.
 
 typeset -U path PATH
+
+# Homebrew's environment, as `brew shellenv` sets it for /opt/homebrew, without
+# the fork: 15 ms in every login shell and in every shell started from a bare
+# environment. Here, so that it is tracked and the reapplications put Homebrew
+# back ahead of /usr/bin after /etc/zprofile's path_helper; a machine's
+# ~/.zprofile needs no `brew shellenv` line. No fpath: .zshrc pins the
+# completion directory for interactive shells, and an exported FPATH is the
+# one thing it must never inherit (docs/zsh.md § Completion dump).
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  export HOMEBREW_PREFIX=/opt/homebrew HOMEBREW_CELLAR=/opt/homebrew/Cellar HOMEBREW_REPOSITORY=/opt/homebrew
+  path=(/opt/homebrew/bin /opt/homebrew/sbin $path)
+  [[ -z ${MANPATH-} ]] || export MANPATH=":${MANPATH#:}"
+  export INFOPATH="/opt/homebrew/share/info:${${INFOPATH-}#/opt/homebrew/share/info:}"
+fi
+
 export PATH="\
 $HOME/.bun/bin:\
 $HOME/bin:\

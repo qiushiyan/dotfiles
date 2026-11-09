@@ -4,14 +4,9 @@ typeset -U path PATH
 
 [[ -r "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 
-# Homebrew (Apple Silicon) — make /opt/homebrew/bin available to ALL zsh
-# invocations, including non-interactive SSH sessions. /etc/zprofile only
-# loads for login shells, so `ssh host cmd` (e.g. mosh spawning mosh-server)
-# would otherwise miss it. Idempotent.
-if [[ -x /opt/homebrew/bin/brew && ":$PATH:" != *":/opt/homebrew/bin:"* ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
+# Tool paths, Homebrew's among them, for ALL zsh invocations, including
+# non-interactive SSH sessions: /etc/zprofile only loads for login shells, so
+# `ssh host cmd` (e.g. mosh spawning mosh-server) would otherwise miss them.
 [ -f "$HOME/.config/zsh/toolchain.zsh" ] && source "$HOME/.config/zsh/toolchain.zsh"
 
 # Default locale for non-interactive shells (e.g., SSH command execution).

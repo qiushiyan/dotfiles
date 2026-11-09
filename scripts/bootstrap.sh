@@ -51,13 +51,9 @@ step_homebrew() {
     if [[ -x /opt/homebrew/bin/brew ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
-    # Homebrew's installer only prints this line. Without it a login shell
-    # keeps /etc/zprofile's path_helper order, /usr/bin ahead of Homebrew,
-    # and the system python3 (3.9) shadows Homebrew's.
-    if ! grep -qs 'brew shellenv' "$HOME/.zprofile"; then
-        printf '\neval "$(/opt/homebrew/bin/brew shellenv zsh)"\n' >> "$HOME/.zprofile"
-        ok "brew shellenv added to ~/.zprofile"
-    fi
+    # No `brew shellenv` line in ~/.zprofile, which Homebrew's installer asks
+    # for: toolchain.zsh sets the same environment in every zsh without the
+    # fork, and puts Homebrew back ahead of /usr/bin after path_helper.
     # The stow step runs before the Brewfile, so stow comes first.
     have stow || brew install stow
     ok "stow"

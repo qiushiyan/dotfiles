@@ -213,6 +213,39 @@ test_hyperlinks_reach_claude_not_its_tools() {
     zsh -c "$read")" "a Claude Code tool shell in a Rex pane on the mini"
 }
 
+# Homebrew's environment is toolchain.zsh's, set without running brew, so a
+# machine needs no `brew shellenv` line in ~/.zprofile (the bare $HOME has no
+# ~/.zprofile at all). A login shell runs /etc/zprofile's path_helper, which
+# puts /usr/bin first, and must still find Homebrew ahead of it, or macOS's
+# Python 3.9 shadows Homebrew's. FPATH stays out of the environment.
+test_homebrew_leads_without_a_profile_line() {
+  [[ -x /opt/homebrew/bin/brew ]] || return 0
+  sandbox
+  local read='print -r -- $(( ${path[(i)/opt/homebrew/bin]} < ${path[(i)/usr/bin]} )) $HOMEBREW_PREFIX $INFOPATH ${${(t)FPATH}[(w)1]}'
+  local want="1 /opt/homebrew /opt/homebrew/share/info: scalar-tied-special" mode
+  for mode in -c -lc; do
+    eq "$want" "$(probe $mode "$read")" "zsh $mode from an empty environment" || return 1
+  done
+  eq "1 /opt/homebrew" "$(probe_tty '$(( ${path[(i)/opt/homebrew/bin]} < ${path[(i)/usr/bin]} )) $HOMEBREW_PREFIX')" \
+    "an interactive shell"
+}
+
+# fzf's and zoxide's shell init is sourced from a cache, not printed by the
+# tool at every start. The cache's first line names the binary it came from,
+# so one that no longer matches (a Homebrew upgrade moves the path) is
+# written again instead of being sourced.
+test_tool_init_is_cached_and_follows_the_binary() {
+  sandbox
+  eq "1 1" "$(probe_tty '$+widgets[fzf-history-widget] $+functions[__zoxide_z]')" "fzf and zoxide after a first start" || return 1
+  local f=$H/.cache/zsh-init/fzf.zsh sig now
+  [[ -s $f && -s $H/.cache/zsh-init/zoxide.zsh ]] || { print -r -- "no cache under $H/.cache/zsh-init"; return 1; }
+  IFS= read -r sig <$f
+  print -r -- "# /gone/fzf 1"$'\n'"print -r -- RESULT:stale-cache-sourced" >|$f
+  eq "1" "$(probe_tty '$+widgets[fzf-history-widget]')" "fzf after a start that found its cache stale" || return 1
+  IFS= read -r now <$f
+  eq "$sig" "$now" "the cache's first line, written again"
+}
+
 t "throwaway \$HOME holds (else everything below is void)"  test_sandbox_holds
 t "non-interactive startup is silent on a bare machine"    test_noninteractive_startup_is_silent
 t "every module loads, with no allowlist"                  test_every_module_loads
@@ -225,6 +258,8 @@ t "~/.config/machine loads its tracked host file"          test_marker_loads_its
 t "the mac's host file is silent and sets no badge"         test_mac_marker_sets_no_badge
 t "an unknown machine warns only interactively"            test_unknown_marker_warns_only_interactively
 t "FORCE_HYPERLINK reaches Claude, not its tool shells"   test_hyperlinks_reach_claude_not_its_tools
+t "Homebrew leads /usr/bin with no ~/.zprofile line"       test_homebrew_leads_without_a_profile_line
+t "tool init is cached and follows the binary"             test_tool_init_is_cached_and_follows_the_binary
 
 rm -rf "${TMPDIR:-/tmp}"/port-test.*(N)
 print -r -- "----"
