@@ -187,10 +187,12 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
   that has a session build asks for a worktree in its text. Every session
   carries a `--goal`: what it sets out to solve, for a user who remembers
   the product but not the session; record it again only when its purpose or
-  scope changes.
+  scope changes. The label `drive open` gives it is also its tab's name in
+  Rex, where the user finds it among the others, so name its work
+  (`summary-decisions`, `search-repairs`) rather than a number like `S1`.
 
   ```bash
-  drive open S1 --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/s1-start.md   # "… Build it in a worktree of your own; commit and stop before the PR."
+  drive open summary-decisions --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/s1-start.md   # "… Build it in a worktree of your own; commit and stop before the PR."
   drive record goal P0 '…'   # a session that joined on a send, or one drive status names as having none
   ```
 - A key that resolves to another project's file is a stop, not a fallback.
