@@ -3,12 +3,11 @@
 The facet scripts for one tool's usage history: read these for the query
 shape, then write the one this engine needs — patterns, not coverage.
 
-Pick the variant for the engine's output kind — **consumed output** (a CLI:
-the script below), **findings** (lint, audit, test suite, review: the
-reporting variant), or **a document** (`CLAUDE.md`, an onboarding skill: the
-document variant), or **no engine** (a pure-instruction skill, a snippet:
-the last section) — fill the constants, run it as one obelisk round, then
-expand what it surfaces. Obelisk's query rules apply in full. Run every
+The script below fits **consumed output** (a CLI). **Findings** (lint, audit,
+test suite, review), **a document** (`CLAUDE.md`, an onboarding skill) and
+**no engine** (a pure-instruction skill, a snippet) each have a section
+after it saying what to measure instead. Fill the constants, run it as one
+obelisk round, then expand what it surfaces. Obelisk's query rules apply in full. Run every
 round into a file and read bounded slices with `jq`, so an oversized facet
 can be re-sliced without repeating the query. The acting harness's output
 limit and Obelisk's stored-text limit are different measurements.
@@ -154,27 +153,6 @@ a one-line correction can restore a critical fact. Repeated maintenance and
 the user's response to it suggest priorities to investigate, not automatic
 proof that the findings were noise.
 
-```js
-// finding classes from the engine's own output, then the repairs and user turns that followed
-const runs = sql(`SELECT tc.session_id sid, m.timestamp ts, tr.content FROM tool_calls tc JOIN messages m ON m.uuid=tc.message_uuid
-  LEFT JOIN tool_results tr ON tr.tool_use_id=tc.id
-  WHERE tc.name='Bash' AND tc.input_json LIKE :cli AND tc.session_id <> :self`, { cli: '%lint.sh%', self });
-const cls = {};
-for (const r of runs) for (const l of (r.content || '').split('\n')) {
-  const k = (l.match(/^([a-z ]+):/) || [])[1]; if (!k) continue;
-  (cls[k] ??= { n: 0, s: new Set(), after: [] }); cls[k].n++; cls[k].s.add(r.sid);
-  const nxt = sql(`SELECT substr(text,1,80) t FROM messages WHERE session_id=:sid AND role='user' AND content_type='text'
-    AND COALESCE(is_meta,0)=0 AND timestamp > :ts ORDER BY timestamp LIMIT 1`, { sid: r.sid, ts: r.ts })[0];
-  if (nxt) cls[k].after.push(nxt.t);
-}
-out.finding_classes = Object.entries(cls).map(([k, v]) => ({ k, flags: v.n, sessions: v.s.size, after: v.after.slice(0, 3) }))
-  .sort((a, b) => b.flags - a.flags);
-// repairs: edits to the flagged file inside the session; `git log --numstat -- <file>` outside obelisk says +1/-1 or content
-out.repairs = sql(`SELECT tc.file_path f, COUNT(*) n, COUNT(DISTINCT tc.session_id) sessions FROM tool_calls tc
-  WHERE tc.name IN ('Edit','Write') AND tc.input_json LIKE :marker AND tc.session_id <> :self GROUP BY tc.file_path ORDER BY n DESC LIMIT 10`,
-  { marker: '%verified-against%', self });
-```
-
 For a **document** — `CLAUDE.md`, `AGENTS.md`, a rules file, an onboarding
 skill — the instrument is what happened after it was read. An always-loaded
 document has no invocation, so the population is every session in the
@@ -184,44 +162,10 @@ invoked document (`/onboarding <goal>`) has a window — invocation to the next
 user turn — and three measures inside it: the docs read, the `Explore`
 prompts spawned (questions whose need for exploration should be assessed), and
 whether the doc owning an edited area was read before the first edit there.
-
-```js
-// pointer hit-rate: edits under a package vs reads of the doc its pointer names
-const P = { 'zsh/': 'docs/zsh.md', 'tmux/': 'tmux/.config/tmux/workflow.md' };
-const ed = sql(`SELECT DISTINCT session_id sid, file_path f FROM tool_calls tc JOIN sessions s ON s.id=tc.session_id
-  WHERE s.project LIKE :p AND tc.name IN ('Edit','Write') AND tc.file_path LIKE :root`, { p: '%dotfiles', root: '%/dotfiles/%' });
-const rd = sql(`SELECT DISTINCT session_id sid, file_path f FROM tool_calls tc JOIN sessions s ON s.id=tc.session_id
-  WHERE s.project LIKE :p AND tc.name='Read'`, { p: '%dotfiles' });
-out.pointer_hits = Object.entries(P).map(([pkg, doc]) => {
-  const inBranch = new Set(ed.filter(r => r.f.includes('/dotfiles/' + pkg)).map(r => r.sid));
-  const readDoc  = new Set(rd.filter(r => r.f.endsWith(doc)).map(r => r.sid));
-  return { pkg, doc, branch_sessions: inBranch.size, read_in_branch: [...inBranch].filter(s => readDoc.has(s)).length, read_anywhere: readDoc.size };
-});
-
-// invocation window for an invoked document: /onboarding … up to the next user turn
-const inv = sql(`SELECT m.session_id sid, m.timestamp ts, m.text FROM messages m JOIN sessions s ON s.id=m.session_id
-  WHERE m.role='user' AND COALESCE(m.is_meta,0)=0 AND m.session_id <> :self AND s.project LIKE :p
-    AND m.text LIKE '%<command-name>/onboarding</command-name>%' ORDER BY m.timestamp`, { self, p: '%itell%' });
-const argOf = t => (t.match(/<command-args>([\s\S]*?)<\/command-args>/) || [, ''])[1].trim();
-out.args_shape = { total: inv.length, empty: inv.filter(r => !argOf(r.text)).length, carries_goal: inv.filter(r => argOf(r.text).length > 60).length };
-out.windows = inv.map(r => {
-  const end = (sql(`SELECT timestamp ts FROM messages WHERE session_id=:sid AND role='user' AND content_type='text' AND COALESCE(is_meta,0)=0
-    AND timestamp > :ts AND text NOT LIKE '%<command-%' ORDER BY timestamp LIMIT 1`, { sid: r.sid, ts: r.ts })[0] || { ts: '9999' }).ts;
-  const w = { sid: r.sid, ts: r.ts, end };
-  const reads = sql(`SELECT tc.file_path f FROM tool_calls tc JOIN messages m ON m.uuid=tc.message_uuid WHERE tc.session_id=:sid AND tc.name='Read'
-    AND m.timestamp > :ts AND m.timestamp < :end AND COALESCE(m.is_sidechain,0)=0`, w).map(x => x.f.replace(/^.*?platform\//, ''));
-  const explore = sql(`SELECT substr(tc.input_json,1,140) p FROM tool_calls tc JOIN messages m ON m.uuid=tc.message_uuid
-    WHERE tc.session_id=:sid AND tc.name IN ('Agent','Task') AND m.timestamp > :ts AND m.timestamp < :end`, w).map(x => x.p);
-  return { sid: r.sid.slice(0, 8), arg: argOf(r.text).slice(0, 40), docs: reads.filter(f => f.startsWith('docs/')).length, src: reads.filter(f => f.startsWith('src/')).length, explore };
-});
-```
-
-`read_before_edit` extends the window facet: for each doc cluster (`{ dirs:
-[...], docs: [...] }`), sessions that edited under `dirs` against sessions
-that read one of `docs` before the first such edit. A cluster edited often
-and read rarely is a candidate routing gap. Check reads through other tools,
-already-loaded context, and whether the task needed that document. Pair the
-measure with the first-prompt task mix to assess actual coverage.
+A cluster of directories edited often whose docs are read rarely is a
+candidate routing gap. Check reads through other tools, already-loaded
+context, and whether the task needed that document, and pair the measure
+with the first-prompt task mix to assess actual coverage.
 
 For a tool with **no engine** (a pure-instruction skill, a doc, a snippet),
 the Bash signature is the script path or nothing, and B collapses to A; the

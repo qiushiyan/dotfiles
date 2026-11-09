@@ -50,7 +50,7 @@ skills:
   # raised 2026-11-05: BASELINE.md, the baseline interview as the screen for a rule with no
   # eval case (calibrated against obelisk's replayed lessons), and the cut rules set as
   # bold-led bullets at the owner's request
-  improve-tool: {body: 1441, total: 5340}
+  improve-tool: {body: 1441, total: 4746}
   obelisk: {body: 2632, total: 2632}
   # raised 2026-11-05: two house rules from the agent-prose triage, a better default before
   # a new mode (three owner corrections) and structure what matters (the owner's direction)
