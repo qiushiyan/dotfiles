@@ -29,9 +29,9 @@ user can give, and the report written.
 drive batch new 2026-10-23                  # once per batch
 drive status                                # every session: state, stage, PR, wake, view
 drive read e8fec0                           # a window the user named, by its block: reply and view
-drive send e8fec0@3fa91c07 --as T1 --snippet land-pr   # the first send brings window 1 in as T1
-drive read T1                               # from then on, by label
-drive wait T1                               # until its turn ends, in the background (a bot is woken instead: BOT.md)
+drive send e8fec0@3fa91c07 --as search --snippet land-pr   # the first send brings window 1 in as search
+drive read search                           # from then on, by label
+drive wait search                           # until its turn ends, in the background (a bot is woken instead: BOT.md)
 ```
 
 `drive --help` and each command's `--help` name the commands, flags and the
@@ -59,9 +59,9 @@ still makes sense is yours.
    on a default.
 
    <example>
-   - **1 · T1 · infra-runtime/pool-drain** (heavy): onboarded → consult-design → design checkpoint, where it waits for your review; then /write-spec, build, review and verify, land-pr, code review, strategic review → merged and released. Defaults: Q1 oldest first, Q2 no flag.
-   - **2 · T2 · perf/cache-hits**: review folded in → land-pr, code review, strategic review → merged and released.
-   - **3 · T3 · dotfiles zsh-faster**: built → review-then-closeout → merged and synced.
+   - **1 · pool-drain** (heavy): onboarded → consult-design → design checkpoint, where it waits for your review; then /write-spec, build, review and verify, land-pr, code review, strategic review → merged and released. Defaults: Q1 oldest first, Q2 no flag.
+   - **2 · cache-hits**: review folded in → land-pr, code review, strategic review → merged and released.
+   - **3 · zsh-faster** (dotfiles): built → review-then-closeout → merged and synced.
 
    **Needs you:** window 1's experiment wants workspaces loopy-drain-a and loopy-drain-b; it builds and reviews without them and stops before the experiment.
    Sending starts in 5 minutes; reply to change any of this.
@@ -187,9 +187,9 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
   that has a session build asks for a worktree in its text. Every session
   carries a `--goal`: what it sets out to solve, for a user who remembers
   the product but not the session; record it again only when its purpose or
-  scope changes. The label `drive open` gives it is also its tab's name in
-  Rex, where the user finds it among the others, so name its work
-  (`summary-decisions`, `search-repairs`) rather than a number like `S1`.
+  scope changes. Its label names its Rex tab, where the user finds it, so
+  name its work, never a number like `S1`; join a window under its tab's
+  name.
 
   ```bash
   drive open summary-decisions --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/s1-start.md   # "… Build it in a worktree of your own; commit and stop before the PR."
