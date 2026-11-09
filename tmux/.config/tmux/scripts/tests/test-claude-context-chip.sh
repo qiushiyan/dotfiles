@@ -219,14 +219,14 @@ has()    { case "$2" in *"$3"*) ok "$1" ;; *) no "$1" "no [$3] in [$2]" ;; esac;
 
 # The statusline's own text, colours stripped and its rows joined by " ⏎ ":
 # render <dir> [VAR=value ...].
-# Outside tmux (nothing publishes) and never refreshing; HOME is the sandbox's
+# Outside tmux and Rex (nothing publishes) and never refreshing; HOME is the sandbox's
 # physical path because git reports physical paths. The extra assignments
 # override the defaults (env applies them in order). RENDER_EXTRA, when set, is
 # spliced into the payload as further top-level members (",\"key\":value").
 render() {
     local dir="$1"; shift
     printf '{"session_id":"sid-R","workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' "$dir" "${RENDER_EXTRA:-}" \
-        | env -u TMUX -u TMUX_PANE -u CLAUDE_CONFIG_DIR -u COLUMNS -u ANTHROPIC_BASE_URL \
+        | env -u TMUX -u TMUX_PANE -u REX_BLOCK -u CLAUDE_CONFIG_DIR -u COLUMNS -u ANTHROPIC_BASE_URL \
             HOME="$(cd "$SANDBOX_HOME" && pwd -P)" TERMINAL_THEME=gruber_darker CLAUDE_CTX_REFRESH_CMD= \
             GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 "$@" bash "$STATUSLINE" 2>/dev/null \
         | sed $'s/\033\\[[0-9;]*m//g' | awk 'NR > 1 { printf " ⏎ " } { printf "%s", $0 }'

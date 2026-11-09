@@ -2,18 +2,29 @@
 # rex-label SESSION BLOCK: name a Rex block (prefix M, the label_pane action,
 # which runs this in a split below the block). The line starts with the
 # current label; enter applies it, an empty line gives the block Rex's
-# default back, and ctrl-c leaves it as it was.
+# default back, and ctrl-c leaves it as it was. A pane that wears a Claude
+# status chip has that as its label; its own name is the one rex-chip kept,
+# and the chip is drawn again after it.
 setopt err_return no_unset
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 session=$1 block=$2
 
-# rex probes the terminal on stderr, and the answer would arrive as input.
-label=$(rex api call session.list_blocks "{\"session_id\":\"$session\"}" 2>/dev/null \
-  | jq -r --arg b "$block" '.blocks[] | select(.block_id == $b) | .label // ""')
+chip="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/chip/${block//:/_}.base"
+if [[ -r $chip ]]; then
+  label=$(<$chip)
+else
+  chip=
+  # rex probes the terminal on stderr, and the answer would arrive as input.
+  label=$(rex api call session.list_blocks "{\"session_id\":\"$session\"}" 2>/dev/null \
+    | jq -r --arg b "$block" '.blocks[] | select(.block_id == $b) | .label // ""')
+fi
 
 print -n '\n  '
 vared -p 'pane name: ' label || exit 0
 [[ -n $label ]] || label=shell
+if [[ -n $chip ]]; then
+  REX_SESSION=$session rex-chip rename "$block" "$label" >/dev/null 2>&1 && exit 0
+fi
 rex api call session.set_block_label \
   "$(jq -nc --arg s "$session" --arg b "$block" --arg l "$label" '{session_id: $s, block_id: $b, label: $l}')" \
   >/dev/null 2>&1

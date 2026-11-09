@@ -1,11 +1,13 @@
 #!/bin/bash
 #
-# Claude Code statusline. One process per render, three files:
+# Claude Code statusline. One process per render, four files:
 #   statusline-command.sh   this file: the payload, then the line itself
 #   statusline-chip.sh      the account lane and the tmux pane chip, published
 #                           before the line is drawn so nothing below can stop it
+#   statusline-rex.sh       the same chip for a Rex pane: its header and the
+#                           floating chip (rex/.local/bin/rex-chip)
 #   statusline-palette.sh   the colours, one arm per theme (docs/theming.md)
-# The other two are sourced, not run: a fork here costs every pane on every
+# The other three are sourced, not run: a fork here costs every pane on every
 # render.
 
 case "${BASH_SOURCE[0]}" in
@@ -105,6 +107,7 @@ else
 fi
 
 . "$STATUSLINE_DIR/statusline-chip.sh"
+. "$STATUSLINE_DIR/statusline-rex.sh"
 
 # Resolve the active theme FILE-FIRST (not env-first): the file is the live
 # source of truth that `theme-set` rewrites, so an already-running Claude session
@@ -208,8 +211,9 @@ exec 4<&- 5<&-
 # cache, billing), so a long worktree path or branch never pushes the second
 # row off the pane. Claude Code draws each printed line as a row.
 # ACCOUNT is the lane label statusline-chip.sh worked out for the tmux border;
-# the line draws it too, because outside tmux (a Rex pane, a bare terminal)
-# nothing else says which account the session burns.
+# the line draws it too, because in a bare terminal nothing else says which
+# account the session burns. In a Rex pane the header does, in full
+# (statusline-rex.sh), so the line leaves it out there.
 SEG_COLORED=(); SEG_PLAIN=()
 add_seg() { [ -n "$2" ] && { SEG_COLORED+=("$1"); SEG_PLAIN+=("$2"); }; }
 
@@ -244,7 +248,7 @@ add_seg "$CTX_DISPLAY" "$CTX_PLAIN"
 add_seg "$GIT_STATUS" "$GIT_PLAIN"
 end_row
 
-add_seg "${LAVENDER}${ACCOUNT}${RESET}" "$ACCOUNT"
+[ -n "$REX_CHIP" ] || add_seg "${LAVENDER}${ACCOUNT}${RESET}" "$ACCOUNT"
 add_seg "$CACHE_DISPLAY" "$CACHE_PLAIN"
 add_seg "$API_DISPLAY" "$API_PLAIN"
 end_row

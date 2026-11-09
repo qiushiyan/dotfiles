@@ -32,6 +32,21 @@ unset _rex_pane_record
 # shells Claude Code runs its tools in.
 [[ -n $REX_BLOCK ]] && export FORCE_HYPERLINK=1
 
+# A prompt in a pane that still wears a Claude status chip (rex-chip): the
+# session was killed and never reported its end, or is suspended. The header
+# gets the pane's own label back; a session that comes back to the foreground
+# publishes again at its next render. One file test per prompt, and the tool
+# starts only when the chip is there.
+if [[ -o interactive && -n $REX_BLOCK ]]; then
+  typeset -g _rex_chip_state="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/chip/${REX_BLOCK//:/_}.chip"
+  _rex_chip_precmd() {
+    [[ -e $_rex_chip_state ]] && (( $+commands[rex-chip] )) && rex-chip clear $REX_BLOCK &>/dev/null &!
+    return 0
+  }
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd _rex_chip_precmd
+fi
+
 # Commands as program status (OSC 7501, id=shell), as agents report theirs: a
 # command shows as working on its tab's badge and the board while it runs; one
 # that ran REX_JOB_MIN seconds or more stays done or error until the next

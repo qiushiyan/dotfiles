@@ -12,12 +12,14 @@
 # command, control characters and C1 controls arrive as one valid line (J3,
 # J4); long text is cut to fit (J5); a long run that failed reads error with
 # its time and exit status, its command on one line (J6); an editor reports
-# nothing (J7).
+# nothing (J7). A prompt in a pane that still wears a Claude status chip
+# clears it, and one in a pane that wears none starts nothing (J8).
 #
 # ISOLATION. A real interactive zsh sources the working tree's rex.zsh alone,
 # under a throwaway HOME, with a PATH that holds no rexd (so no watcher
 # starts) and REX_BLOCK naming no live block; the hooks' output is captured
-# from stdout, never sent to a terminal.
+# from stdout, never sent to a terminal. J8's rex-chip is a stub that logs
+# its arguments, on a PATH of its own, and the chip's state is the sandbox's.
 
 emulate -L zsh
 setopt pipe_fail no_unset
@@ -86,6 +88,22 @@ ok "J6 a long run that failed reads error, with its time and status, on one line
     _rex_job_start=$(( EPOCHSECONDS - 20 )); three() { return 3 }; three; _rex_job_precmd' | decode)"
 
 ok "J7 an editor reports nothing" "" "$(shell '_rex_job_preexec "nvim notes.md"' | decode)"
+
+# J8: the prompt sweep. The stub stands where the stowed rex-chip would.
+mkdir -p "$SB/bin" "$SB/home/.local/state/rex-lab/chip"
+print -r -- '#!/bin/sh
+echo "$*" >> "'$SB'/chip.log"' > "$SB/bin/rex-chip"; chmod +x "$SB/bin/rex-chip"
+chipshell() {
+  command env -i HOME="$SB/home" PATH="$SB/bin:/usr/bin:/bin" LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
+    REX_BLOCK=block:rex-job-test TERM=xterm-256color \
+    zsh -f -i -c "source '$MOD'; _rex_chip_precmd; sleep 0.5" >/dev/null 2>&1
+}
+: > "$SB/chip.log"
+chipshell
+ok "J8 a prompt in a pane that wears no chip starts nothing" "" "$(<$SB/chip.log)"
+: > "$SB/home/.local/state/rex-lab/chip/block_rex-job-test.chip"
+chipshell
+ok "J8 a prompt in a pane that still wears a chip clears it" "clear block:rex-job-test" "$(<$SB/chip.log)"
 
 print -r -- "rex-job: $PASS passed, $FAIL failed"
 (( FAIL == 0 ))

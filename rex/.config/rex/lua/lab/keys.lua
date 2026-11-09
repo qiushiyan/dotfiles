@@ -24,6 +24,9 @@ local root = {
   -- with shift+left/right: up and down, since the tabs are a vertical list.
   { "shift+up", "client.tab.move.backward" }, { "shift+down", "client.tab.move.forward" },
   { "cmd+shift+j", "agents_next" }, { "cmd+shift+s", "steps_sidecar" }, { "cmd+shift+a", "agents_board" },
+  -- alt+cmd+.: the focused agent's floating status chip, beside the app's own
+  -- cmd+. (Toggle Activity); shift+cmd+. is its Dismiss Notice.
+  { "alt+cmd+.", "chip_toggle" },
   -- ctrl+v: on another host's pane, the clipboard goes there first (lab.tools).
   { "ctrl+v", "paste_clipboard" },
 }
@@ -87,6 +90,7 @@ local prefix = {
   { "y", "copy_path" }, { "shift+y", "copy_path", { rel = true } },
   { "g", "gopen" }, { "shift+w", "worktrees" }, { "u", "urls" }, { "e", "export_pane" },
   { "shift+s", "steps_sidecar" }, { "shift+a", "agents_board" }, { "a", "agents_next" },
+  { "i", "chip_toggle" },
   { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
 }
 for _, dir in ipairs(DIRECTIONS) do

@@ -1,0 +1,268 @@
+#!/bin/bash
+# rex-chip: the Claude status chip of a Rex pane. Claude Code's statusline
+# (claude/.claude/commands/statusline-rex.sh) records what a session burns in
+# a state file per block; this tool owns everything drawn from it:
+#
+#   rex-chip sync [--force] BLOCK   put the chip in the pane header, as the
+#                                   block's label (the statusline starts this
+#                                   detached, when a value changed)
+#   rex-chip clear BLOCK            the session is gone: give the block its
+#                                   own label back (SessionEnd through
+#                                   rex-agent, and a prompt returning, rex.zsh)
+#   rex-chip label BLOCK            print the label sync would set
+#   rex-chip rename BLOCK NAME      the pane's own name while it wears a chip
+#                                   (rex-label, prefix M)
+#   rex-chip render BLOCK [COLS]    print the chip once, in terminal colours
+#   rex-chip draw BLOCK             INTERNAL: the floating chip, redrawn when
+#                                   the state changes; it ends with the session
+#
+# The header draws a label as plain text in the app's own font, so the label
+# separates its fields with " · " and gets its colour from emoji, only where a
+# value warns: a mark before a quota at 50% (yellow) and 90% (red), and
+# context as a bar in the same scale. The floating chip (the chip_toggle
+# action: alt+cmd+. or prefix i) is a terminal, so it has the tmux border's
+# colours and the terminal's font.
+#
+# State, in ~/.local/state/rex-lab/chip, one set per block (":" as "_"):
+#   .chip    the statusline's values, one line, fields split by 0x1f:
+#            session account model effort 5h 7d weekly weekly-model context columns
+#   .base    the label the block had before the chip took the header
+#   .label   the label last set, so an unchanged chip calls nothing
+#   .width   the floating chip's width in columns, which sizes its layer
+#
+# Fields leave a narrow pane lowest priority first, as on the tmux border
+# (tmux/.config/tmux/scripts/context-chip.md): the model's weekly, the 5-hour
+# and 7-day pair, the model, the account. Context stays, and so does a quota
+# at its alarm. The gates are in terminal columns, which is all the statusline
+# knows of the pane's width.
+set -u
+export LC_ALL=en_US.UTF-8   # ${#label} counts characters, as Rex's 128 limit does
+
+BIN="$HOME/.local/bin"
+REX="$BIN/rex"
+DIR="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/chip"
+SEP=$'\x1f'
+
+GATE_WEEKLY=110 GATE_QUOTA=70 GATE_MODEL=50 GATE_ACCOUNT=36
+LABEL_MAX=128
+
+usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+key() { printf '%s' "${1//:/_}"; }
+
+# load BLOCK: the block's state into the globals below; false without one.
+load() {
+  local f; f="$DIR/$(key "$1").chip"
+  [ -r "$f" ] || return 1
+  STATE=""; IFS= read -r STATE < "$f"
+  IFS=$SEP read -r SID ACCOUNT MODEL EFFORT FIVE SEVEN WEEK WEEK_MODEL CTX COLS <<< "$STATE"
+  case "${CTX:-}" in ''|*[!0-9]*) return 1 ;; esac
+  case "${COLS:-}" in ''|*[!0-9]*) COLS=0 ;; esac
+  return 0
+}
+
+# wide N: whether the pane has N columns. An unknown width shows everything.
+wide() { [ "$COLS" -le 0 ] || [ "$COLS" -ge "$1" ]; }
+pct() { case "${1:-}" in ''|*[!0-9]*) return 1 ;; esac; }
+
+# mark PCT: the warning mark for a quota, with its trailing space, in REPLY.
+mark() {
+  REPLY=""
+  if [ "$1" -ge 90 ]; then REPLY="🔴 "; elif [ "$1" -ge 50 ]; then REPLY="🟡 "; fi
+}
+
+# bar PCT CELLS: context as a bar, in REPLY. Any use at all fills one cell.
+bar() {
+  local p=$1 cells=$2 on full i
+  if [ "$p" -ge 90 ]; then on="🟥"; elif [ "$p" -ge 50 ]; then on="🟨"; else on="🟩"; fi
+  full=$(( (p * cells + 50) / 100 ))
+  [ "$p" -gt 0 ] && [ "$full" -lt 1 ] && full=1
+  [ "$full" -gt "$cells" ] && full=$cells
+  REPLY=""
+  for ((i = 0; i < cells; i++)); do
+    if [ "$i" -lt "$full" ]; then REPLY+=$on; else REPLY+="⬜"; fi
+  done
+}
+
+# named BASE: whether a block's own label is a name someone gave it, not the
+# flavor's ("shell") or the default Rex makes from its id.
+named() {
+  case "$1" in ''|shell|Block\ ????????) return 1 ;; esac
+}
+
+# compose BASE: the header label for the loaded state, in LABEL.
+compose() {
+  local base=$1 parts=() model="" cells=10 out="" p
+  named "$base" && parts+=("${base:0:32}")
+  [ -n "$ACCOUNT" ] && wide "$GATE_ACCOUNT" && parts+=("$ACCOUNT")
+  if [ -n "$MODEL" ] && wide "$GATE_MODEL"; then
+    model=$MODEL; [ -n "$EFFORT" ] && model+=":$EFFORT"
+    parts+=("$model")
+  fi
+  if wide "$GATE_QUOTA"; then
+    pct "$FIVE" && { mark "$FIVE"; parts+=("${REPLY}5h ${FIVE}%"); }
+    pct "$SEVEN" && { mark "$SEVEN"; parts+=("${REPLY}7d ${SEVEN}%"); }
+  else
+    # Too narrow for the pair: a window at its alarm still shows, since the
+    # header's colour is the alarm and a dropped field has none.
+    cells=5
+    pct "$FIVE" && [ "$FIVE" -ge 90 ] && parts+=("🔴 5h ${FIVE}%")
+    pct "$SEVEN" && [ "$SEVEN" -ge 90 ] && parts+=("🔴 7d ${SEVEN}%")
+  fi
+  if pct "$WEEK" && [ -n "$WEEK_MODEL" ] && { wide "$GATE_WEEKLY" || [ "$WEEK" -ge 90 ]; }; then
+    mark "$WEEK"; parts+=("${REPLY}wk ${WEEK_MODEL} ${WEEK}%")
+  fi
+  bar "$CTX" "$cells"; parts+=("$REPLY ${CTX}%")
+  # Past Rex's limit the pane's name goes first, then fields from the left:
+  # the bar and its number are the last to go.
+  while :; do
+    out=""
+    for p in "${parts[@]}"; do out+="${out:+ · }$p"; done
+    [ "${#out}" -le "$LABEL_MAX" ] || [ "${#parts[@]}" -le 1 ] && break
+    parts=("${parts[@]:1}")
+  done
+  LABEL=$out
+}
+
+# rex probes a terminal its stderr reaches, and a hook or a render has none
+# to spare; it starts no server either.
+rex_call() { "$REX" --autostart=false api call "$@" 2>/dev/null; }
+
+current_label() {  # BLOCK: the block's label now
+  rex_call session.list_blocks "$(jq -nc --arg s "$REX_SESSION" '{session_id: $s}')" |
+    jq -er --arg b "$1" '.blocks[] | select(.block_id == $b) | .label // ""'
+}
+
+set_label() {  # BLOCK LABEL
+  rex_call session.set_block_label \
+    "$(jq -nc --arg s "$REX_SESSION" --arg b "$1" --arg l "$2" '{session_id: $s, block_id: $b, label: $l}')" >/dev/null
+}
+
+sync() {
+  local force=""
+  [ "${1:-}" = --force ] && { force=1; shift; }
+  local block=${1:-} f base last seen
+  [ -n "$block" ] && [ -n "${REX_SESSION:-}" ] || return 0
+  f="$DIR/$(key "$block")"
+  while load "$block"; do
+    seen=$STATE
+    if [ ! -e "$f.base" ]; then
+      base=$(current_label "$block") || return 1
+      printf '%s\n' "$base" > "$f.base"
+    fi
+    base=""; IFS= read -r base < "$f.base"
+    compose "$base"
+    last=""; [ -r "$f.label" ] && IFS= read -r last < "$f.label"
+    chip_line 0; printf '%s\n' "${#PLAIN}" > "$f.width"
+    if [ -n "$force" ] || [ "$LABEL" != "$last" ]; then
+      # A block that is gone takes no label: its state goes with it.
+      set_label "$block" "$LABEL" || { rm -f "$f.chip" "$f.base" "$f.label" "$f.width"; return 1; }
+      printf '%s\n' "$LABEL" > "$f.label"
+    fi
+    force=""
+    # The session ended while this ran: the label just set is nobody's.
+    [ -e "$f.chip" ] || { clear "$block"; return 0; }
+    # A render since this one read the state: go again, so the last one wins.
+    STATE=""; IFS= read -r STATE < "$f.chip"
+    [ "$STATE" = "$seen" ] && return 0
+  done
+  return 0
+}
+
+clear() {
+  local block=${1:-} f base=""
+  [ -n "$block" ] || return 0
+  f="$DIR/$(key "$block")"
+  # The state first: a sync still running finds none, and the floating chip ends.
+  rm -f "$f.chip"
+  if [ -e "$f.label" ] && [ -n "${REX_SESSION:-}" ]; then
+    [ -r "$f.base" ] && IFS= read -r base < "$f.base"
+    set_label "$block" "${base:-shell}"
+  fi
+  rm -f "$f.base" "$f.label" "$f.width"
+}
+
+rename() {
+  local block=${1:-} name=${2:-} f
+  [ -n "$block" ] || usage
+  f="$DIR/$(key "$block")"
+  [ -e "$f.base" ] || return 1
+  printf '%s\n' "${name:-shell}" > "$f.base"
+  sync --force "$block"
+}
+
+# The floating chip's line: the tmux border's fields and colours, from the
+# terminal's palette so it follows the theme. chip_line LEVEL leaves it in
+# LINE, and its text alone in PLAIN; each level drops the next field in the
+# order the header sheds them (1 the weekly, 2 the quota pair, 3 the model,
+# 4 the account).
+chip_line() {
+  local level=$1 c
+  local R=$'\e[0m' MUTED=$'\e[90m' CALM=$'\e[36m' WARN=$'\e[33m' ALARM=$'\e[31m' GOOD=$'\e[32m'
+  LINE="" PLAIN=""
+  add() { LINE+="${LINE:+  }$1$2$R"; PLAIN+="${PLAIN:+  }$2"; }
+  heat() {  # PCT CALM-COLOUR: the colour for a percentage, in c
+    if [ "$1" -ge 90 ]; then c=$ALARM; elif [ "$1" -ge 50 ]; then c=$WARN; else c=$2; fi
+  }
+  [ "$level" -lt 4 ] && [ -n "$ACCOUNT" ] && add "$MUTED" "$ACCOUNT"
+  [ "$level" -lt 3 ] && [ -n "$MODEL" ] && add "$MUTED" "$MODEL${EFFORT:+:$EFFORT}"
+  if [ "$level" -lt 2 ]; then
+    pct "$FIVE" && { heat "$FIVE" "$CALM"; add "$c" "5h:$FIVE"; }
+    pct "$SEVEN" && { heat "$SEVEN" "$CALM"; add "$c" "7d:$SEVEN"; }
+  fi
+  [ "$level" -lt 1 ] && pct "$WEEK" && [ -n "$WEEK_MODEL" ] && { heat "$WEEK" "$MUTED"; add "$c" "$WEEK_MODEL:$WEEK"; }
+  heat "$CTX" "$GOOD"; add "$c" "✳ $CTX%"
+  return 0
+}
+
+# render BLOCK [COLS]: the line for a float COLS wide, right-aligned one
+# column from its edge. A float too narrow for every field sheds them; it
+# never wraps and never cuts context off.
+render() {
+  local cols=${2:-0} level=0 pad
+  load "$1" || return 1
+  chip_line 0
+  while [ "$cols" -gt 0 ] && [ "${#PLAIN}" -ge "$cols" ] && [ "$level" -lt 4 ]; do
+    level=$((level + 1)); chip_line "$level"
+  done
+  pad=$(( cols - ${#PLAIN} - 1 ))
+  [ "$pad" -lt 0 ] && pad=0
+  printf '%*s%s' "$pad" '' "$LINE"
+}
+
+draw() {
+  local block=${1:-} last="" missing=0 f size
+  [ -n "$block" ] || usage
+  f="$DIR/$(key "$block").chip"
+  trap 'last=""' WINCH
+  printf '\e[?25l\e[?7l'
+  while :; do
+    if [ -r "$f" ]; then
+      missing=0
+      STATE=""; IFS= read -r STATE < "$f"
+      if [ "$STATE" != "$last" ]; then
+        size=$(stty size 2>/dev/null) || size="1 80"
+        printf '\e[H\e[2J'; render "$block" "${size#* }"
+        last=$STATE
+      fi
+    else
+      # No state: no Claude Code here, or its session ended. Say so, then go;
+      # the layer closes with this process.
+      [ "$missing" -eq 0 ] && printf '\e[H\e[2J\e[90m no Claude Code session in this pane\e[0m'
+      missing=$((missing + 1))
+      [ "$missing" -ge 3 ] && exit 0
+    fi
+    sleep 1
+  done
+}
+
+case "${1:-}" in
+  sync) shift; sync "$@" ;;
+  clear) shift; clear "$@" ;;
+  rename) shift; rename "$@" ;;
+  label) load "${2:-}" || exit 1
+         base=""; [ -r "$DIR/$(key "$2").base" ] && IFS= read -r base < "$DIR/$(key "$2").base"
+         compose "$base"; printf '%s\n' "$LABEL" ;;
+  render) shift; render "$@" || exit 1; printf '\n' ;;
+  draw) shift; draw "$@" ;;
+  *) usage ;;
+esac

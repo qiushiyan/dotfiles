@@ -102,6 +102,16 @@ remember() {
   ( "$tool" note "$sid" </dev/null >/dev/null 2>&1 & )
 }
 
+# The session's status chip (rex-chip) goes with it: the pane header gets the
+# block's own label back and the floating chip ends. Only a pane that wears
+# one starts the tool, in the background, deaf to the hangup of a terminal
+# that closes under it.
+chip_clear() {
+  local tool="$HOME/.local/bin/rex-chip"
+  [ -e "${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/chip/${REX_BLOCK//:/_}.chip" ] && [ -x "$tool" ] || return 0
+  ( trap '' HUP; "$tool" clear "$REX_BLOCK" </dev/null >/dev/null 2>&1 & )
+}
+
 # Claude Code hook events -> states. The title is the project the session works
 # in; the message is what the human would want to read first.
 #
@@ -153,7 +163,7 @@ claude_hook() {
         authentication_failed) send blocked auth claude claude "" "$title" "$message" ;;
         *) send error "" claude claude "" "$title" "$message" ;;
       esac ;;
-    SessionEnd) send clear "" claude "" "" "" "" ;;
+    SessionEnd) send clear "" claude "" "" "" ""; chip_clear ;;
   esac
   return 0
 }

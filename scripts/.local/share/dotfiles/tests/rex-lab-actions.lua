@@ -73,6 +73,26 @@ r = press("steps_sidecar", A, {})
 ok("steps_sidecar again closes it", r.closed ~= nil and window_of(side) == nil, dump(r))
 if side then rex.call("block.close", { session_id = S, block_id = side }) end
 
+-- The floating status chip: a layer in the pressed pane's tab, placed inside
+-- the window, and the same key takes it away.
+local function layer_of(label)
+  for _, w in ipairs(must("session.view", { session_id = S }).windows) do
+    for _, layer in ipairs(w.layers or {}) do
+      for _, b in ipairs(layer.blocks or {}) do
+        if b.label == label then return w.window_id, layer.kind, layer.bounds end
+      end
+    end
+  end
+end
+local chip = "chip·" .. A:sub(-6)
+r, q, e = press("chip_toggle", A, {})
+local cw, kind, bounds = layer_of(chip)
+ok("chip_toggle floats the chip in the pressed pane's tab", r.opened == chip and cw == w1.window_id and kind == "floating", e or dump(r))
+ok("chip_toggle keeps the chip inside the window", bounds ~= nil and bounds[1] >= 0 and bounds[2] >= 0
+  and bounds[1] + bounds[3] <= 1.0001 and bounds[2] + bounds[4] <= 1.0001, dump(bounds))
+r = press("chip_toggle", A, {})
+ok("chip_toggle again closes it", r.closed == chip and layer_of(chip) == nil, dump(r))
+
 r = press("pane_push", A, { direction = "right" }); ok("pane_push right swaps with the neighbour", r.swapped == B, dump(r))
 r = press("layout_toggle", A, {});                  ok("layout_toggle stacks a side-by-side tab", r.layout == "stacked", dump(r))
 r = press("layout_toggle", A, {});                  ok("layout_toggle again puts it side by side", r.layout == "side by side", dump(r))
