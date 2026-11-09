@@ -4,30 +4,37 @@ one interactive Claude Code launch.
 
 Usage:
   claude-planlab-overlay <claude args...>   what claude.zsh's _claude_launch runs before headroom
-  claude-planlab-overlay --show             in a checkout: what its sessions get, as a diff
-                                            of the team's AGENTS.md, and the skills they see
+  claude-planlab-overlay --show             in a checkout: what its sessions read, as a diff of
+                                            the team's AGENTS.md, the note, the skills they see,
+                                            and whether this checkout's team hooks honour the
+                                            operator's switches
 
 What it keeps, cuts and adds is ~/.local/share/dotfiles/planlab-overlay.toml
-(CLAUDE_PLANLAB_OVERLAY_CONFIG overrides it); an unreadable one is a failure.
+(CLAUDE_PLANLAB_OVERLAY_CONFIG overrides it).
 
 Inside a PlanLab checkout it prints the launch's args rewritten, each ended by
-a NUL, and exits 0. Outside one, or on any failure, it prints nothing and
-exits 1, and the launch keeps its args: a session gets the team's
+a NUL, says on stderr in one line what it did, and exits 0. Outside one it
+prints nothing and exits 1. On any failure inside one it says why on stderr
+and exits 1. Either way the launch keeps its args: a session gets the team's
 instructions whole, never half of this overlay.
 
-What the rewritten launch changes, for that session only:
+What the rewritten launch changes, for that session and its subagents:
   AGENTS.md  The team copy is excluded (claudeMdExcludes on the checkout's
-             .claude/CLAUDE.md, whose one line imports it) and a copy with the
-             config's cuts and note is given with --append-system-prompt-file.
-             A cut that no longer matches leaves its text in, and the miss is
-             logged to ~/.local/state/claude-planlab-overlay.log.
+             .claude/CLAUDE.md, whose one line imports it), and a copy with the
+             config's cuts and note is the CLAUDE.md of a cached directory the
+             launch adds (--add-dir=, with
+             CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1 in its settings).
+             That is project memory, as the team's file is, so subagents read
+             it too; an appended system prompt reaches the main session alone.
+             A cut that no longer matches leaves its text in and is named on
+             stderr.
   skills     Every skill in the checkout's .claude/skills outside the config's
              keep globs is user-invocable-only (hidden from the model, still a
              / command). A kept skill gets no override, so it stays as its
-             own frontmatter and the checkout's settings.local.json have it (pl-close hides
-             itself from the model by design; a launch --settings would
-             outrank both). A name the operator's own skills also use is left
-             alone, since overrides are keyed by name.
+             own frontmatter and the checkout's settings.local.json have it
+             (pl-close hides itself from the model by design; a launch
+             --settings would outrank both). A name the operator's own skills
+             also use is left alone, since overrides are keyed by name.
   --settings Claude Code applies only the last --settings, so one given to
              the launch (--fast's, or typed) is merged into this file, its
              keys winning; a launch whose --settings cannot be read keeps its
@@ -37,13 +44,15 @@ Why launch arguments and not a hook or a settings file (verified on Claude
 Code 2.1.319): hook additionalContext over 10,000 characters reaches the
 model only as a file path; CLAUDE.md files are read before SessionStart hooks
 run; --setting-sources without project also drops the project's skills and
-its nested CLAUDE.md files; skillOverrides take exact names, so a fixed list
-goes stale as the team adds skills.
+its nested CLAUDE.md files; additionalDirectories in a settings file load no
+CLAUDE.md; skillOverrides take exact names, so a fixed list goes stale as the
+team adds skills. The = in --add-dir= keeps the variadic flag from taking the
+launch's prompt as a second directory.
 
 The reminders the team's hooks give are switched off separately, by
-PLANLAB_BENCH_REMINDERS=off and PLANLAB_CORPUS_REMINDERS=off in the user
-settings' env, which every launch gets; this overlay never decides what those
-hooks say.
+PLANLAB_BENCH_REMINDERS=off and PLANLAB_CORPUS_REMINDERS=off (the user
+settings' env for Claude, codex.zsh for Codex); this overlay never decides
+what those hooks say.
 """
 
 import difflib
@@ -52,20 +61,27 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 import time
 from pathlib import Path
 
 CONFIG = Path(__file__).resolve().parents[1] / "share" / "dotfiles" / "planlab-overlay.toml"
-# Flags that set the system prompt or the settings sources: with one of them the overlay stands aside.
-CONFLICTS = ("--append-system-prompt", "--append-system-prompt-file", "--system-prompt",
-             "--system-prompt-file", "--setting-sources")
+# A flag that chooses the settings sources: with it the overlay stands aside.
+CONFLICTS = ("--setting-sources",)
+# The team hooks the operator's switches quiet, and the variable each reads.
+SWITCHES = ((".agents/skills/pl-bench-tasks/scripts/lifecycle.py", "PLANLAB_BENCH_REMINDERS"),
+            (".agents/skills/pl-scheduling-corpus-capture/scripts/corpus-reminder.py", "PLANLAB_CORPUS_REMINDERS"))
 CACHE_TTL_SECONDS = 14 * 24 * 3600
 
 
 class Refusal(Exception):
-    """This launch keeps its args."""
+    """This launch keeps its args. A quiet one is not worth a line: the launch is not in a checkout."""
+
+    def __init__(self, reason, quiet=False):
+        super().__init__(reason)
+        self.quiet = quiet
 
 
 def config():
@@ -118,9 +134,13 @@ def own_skill_names():
     return {entry.name for root in roots if root.is_dir() for entry in root.iterdir()}
 
 
-def skill_overrides(root, keep):
+def repository_skills(root):
     skills = root / ".claude" / "skills"
-    names = {entry.name for entry in skills.iterdir() if (entry / "SKILL.md").is_file()} if skills.is_dir() else set()
+    return {entry.name for entry in skills.iterdir() if (entry / "SKILL.md").is_file()} if skills.is_dir() else set()
+
+
+def skill_overrides(root, keep):
+    names = repository_skills(root)
     mine = own_skill_names()
     return {name: "user-invocable-only" for name in sorted(names - mine) if not any(fnmatch.fnmatchcase(name, glob) for glob in keep)}
 
@@ -161,59 +181,73 @@ def split_args(args):
 
 
 def merged(base, settings):
-    """base with settings on top: their keys win, except that exclusion lists add up and overrides merge."""
+    """base with settings on top: their keys win, except that exclusion lists add up and overrides and env merge."""
     result = dict(base)
     for key, value in settings.items():
         if key == "claudeMdExcludes" and isinstance(value, list):
             result[key] = result.get(key, []) + value
-        elif key == "skillOverrides" and isinstance(value, dict):
+        elif key in ("skillOverrides", "env") and isinstance(value, dict):
             result[key] = {**result.get(key, {}), **value}
         else:
             result[key] = value
     return result
 
 
-def cached(directory, stem, suffix, text):
-    """text in a file named for its content, so concurrent launches with different settings never share one."""
-    path = directory / f"{stem}-{hashlib.sha256(text.encode()).hexdigest()[:16]}{suffix}"
+def digest(text):
+    return hashlib.sha256(text.encode()).hexdigest()[:16]
+
+
+def written(path, text):
+    """path holding text, written atomically when it differs, and touched so the prune keeps it."""
     if not path.is_file() or path.read_text() != text:
-        handle, temporary = tempfile.mkstemp(dir=directory, prefix=".tmp-")
+        handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
         with os.fdopen(handle, "w") as stream:
             stream.write(text)
         os.replace(temporary, path)
     os.utime(path)
+    os.utime(path.parent)
     return path
 
 
 def prune(cache):
+    """Cached settings and memory directories unused for two weeks."""
     cutoff = time.time() - CACHE_TTL_SECONDS
     for old in cache.glob("*/*"):
         try:
-            if old.lstat().st_mtime < cutoff:
+            if old.lstat().st_mtime >= cutoff:
+                continue
+            if old.is_dir() and not old.is_symlink():
+                shutil.rmtree(old)
+            else:
                 old.unlink()
         except OSError:
             pass
 
 
-def log_misses(root, misses):
-    log = Path.home() / ".local" / "state" / "claude-planlab-overlay.log"
-    log.parent.mkdir(parents=True, exist_ok=True)
-    with log.open("a") as stream:
-        stream.write(f"{time.strftime('%Y-%m-%dT%H:%M:%S')} {root}: no match for {misses}; the text stays in\n")
-
-
 def session_view(root):
-    """(the appended system prompt, the settings) this checkout's sessions get, before any given --settings."""
+    """(the memory a session reads, the filtered team text, the cuts that missed, the skills to hide)."""
     choices = config()
     agents = root / "AGENTS.md"
     text, misses = filtered(agents.read_text(), choices["agents"])
-    if misses:
-        log_misses(root, misses)
     note = choices["agents"].get("note", "").strip()
-    prompt = (f"Contents of {agents} (project instructions, checked into the codebase). This operator's "
-              "launcher loads them here without the parts they do not use, and adds their own note at "
-              f"the end:\n\n{text.strip()}\n" + (f"\n{note}\n" if note else ""))
-    return prompt, text, misses, skill_overrides(root, choices["skills"]["keep"])
+    memory = (f"These are the project instructions in {agents}, the team's AGENTS.md, with the sections the "
+              f"user does not use left out and the user's own note at the end. Relative paths in them are "
+              f"relative to {root}.\n\n{text.strip()}\n" + (f"\n{note}\n" if note else ""))
+    return memory, text, misses, skill_overrides(root, choices["skills"]["keep"])
+
+
+def switch_states(root):
+    """Whether this checkout's copy of each team hook reads the operator's switch."""
+    states = []
+    for script, variable in SWITCHES:
+        path = root / script
+        if not path.is_file():
+            states.append(f"{variable}: this checkout has no {Path(script).name}")
+        elif variable in path.read_text():
+            states.append(f"{variable}: honoured by this checkout's {Path(script).name}")
+        else:
+            states.append(f"{variable}: not read by this checkout's {Path(script).name}, which still speaks; pull develop")
+    return states
 
 
 def show(cwd):
@@ -223,47 +257,62 @@ def show(cwd):
     _, text, misses, hidden = session_view(root)
     team = (root / "AGENTS.md").read_text()
     out = list(difflib.unified_diff(team.splitlines(keepends=True), text.splitlines(keepends=True),
-                                    "team AGENTS.md", "what a session gets", n=1))
-    skills = root / ".claude" / "skills"
-    shown = sorted(e.name for e in skills.iterdir() if (e / "SKILL.md").is_file() and e.name not in hidden)
-    out += [f"\n{len(team)} -> {len(text)} characters, plus the note.\n",
+                                    "team AGENTS.md", "what a session reads", n=1))
+    shown = sorted(repository_skills(root) - set(hidden))
+    note = config()["agents"].get("note", "").strip()
+    out += [f"\n{len(team)} -> {len(text)} characters, then the note:\n\n{note}\n\n",
             *(f"no match, left in: {miss}\n" for miss in misses),
+            *(f"{state}\n" for state in switch_states(root)),
             f"{len(shown)} repository skills visible, {len(hidden)} hidden: {' '.join(shown)}\n"]
     sys.stdout.write("".join(out))
 
 
 def overlay(args, cwd):
+    """(the rewritten args, the one line saying what changed)."""
     root = checkout(cwd)
     if root is None:
-        raise Refusal("not a PlanLab checkout")
+        raise Refusal("not a PlanLab checkout", quiet=True)
     given, rest = split_args(args)
-    prompt, _, _, hidden = session_view(root)
+    memory, _, misses, hidden = session_view(root)
     # The checkout as the shell names it too, when a symlink makes that differ from the resolved path.
     logical = checkout(Path(os.environ["PWD"])) if os.environ.get("PWD", "").startswith("/") else None
     entries = sorted({str(found / ".claude" / "CLAUDE.md") for found in (root, logical) if found})
-    settings = {"claudeMdExcludes": entries, "skillOverrides": hidden}
+    settings = {"claudeMdExcludes": entries, "skillOverrides": hidden,
+                "env": {"CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD": "1"}}
     for value in given:
         settings = merged(settings, given_settings(value))
     cache = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "claude-planlab-overlay"
-    directory = cache / hashlib.sha256(str(root).encode()).hexdigest()[:16]
+    directory = cache / digest(str(root))
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     prune(cache)
-    return ["--settings", str(cached(directory, "settings", ".json", json.dumps(settings, indent=1))),
-            "--append-system-prompt-file", str(cached(directory, "AGENTS", ".md", prompt)), *rest]
+    settings_text = json.dumps(settings, indent=1)
+    settings_file = written(directory / f"settings-{digest(settings_text)}.json", settings_text)
+    memory_dir = directory / f"memory-{digest(memory)}"
+    memory_dir.mkdir(exist_ok=True, mode=0o700)
+    written(memory_dir / "CLAUDE.md", memory)
+    line = (f"planlab overlay: the team's AGENTS.md with your cuts and note; "
+            f"{len(hidden)} of {len(repository_skills(root))} repository skills hidden")
+    line += "".join(f"; no match, left in: {miss!r}" for miss in misses)
+    return ["--settings", str(settings_file), f"--add-dir={memory_dir}", *rest], line
 
 
 def main():
+    cwd = Path(os.getcwd()).resolve()
     if sys.argv[1:] == ["--show"]:
         try:
-            show(Path(os.getcwd()).resolve())
+            show(cwd)
             return 0
         except (Refusal, OSError, ValueError, UnicodeDecodeError) as error:
             print(f"claude-planlab-overlay: {error}", file=sys.stderr)
             return 1
     try:
-        args = overlay(sys.argv[1:], Path(os.getcwd()).resolve())
-    except (Refusal, OSError, ValueError, UnicodeDecodeError):
+        args, line = overlay(sys.argv[1:], cwd)
+    except (Refusal, OSError, ValueError, UnicodeDecodeError) as error:
+        if not getattr(error, "quiet", False):
+            print(f"planlab overlay: not applied, so this session gets the team's setup whole ({error})",
+                  file=sys.stderr)
         return 1
+    print(line, file=sys.stderr)
     sys.stdout.write("".join(arg + "\0" for arg in args))
     return 0
 

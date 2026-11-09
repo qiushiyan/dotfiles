@@ -1,12 +1,13 @@
 # What a PlanLab session launched through x (or any launcher that runs
-# claude-planlab-overlay) gets instead of the team's AGENTS.md and skill list.
+# claude-planlab-overlay) reads instead of the team's AGENTS.md and skill list;
+# its subagents read the same.
 #
 # The team's text is cut, never rewritten, so its later edits still arrive. A
-# cut that stops matching leaves that text in and is logged to
-# ~/.local/state/claude-planlab-overlay.log. To see what a session now gets,
-# run `claude-planlab-overlay --show` in a PlanLab checkout.
+# cut that stops matching leaves that text in and is named when the session
+# starts. To see what a session reads, run `claude-planlab-overlay --show` in
+# a PlanLab checkout.
 #
-# An unreadable file leaves every launch with the team's text whole.
+# An unreadable file leaves the launch with the team's setup whole, and says so.
 
 [skills]
 # Repository skills the model sees; every other one stays a / command only.
@@ -15,7 +16,7 @@ keep = [
   "pl-loopy-*", "pl-deploy-*",
   # the PR workflow
   "pl-commit", "pl-tidy", "pl-merge-develop", "pl-squash-migrations", "pl-pr",
-  "pl-handle-code-review", "pl-local-bugbot-cycle", "pl-bugbot", "pl-qa", "pl-land", "pl-close",
+  "pl-handle-code-review", "pl-local-bugbot-cycle", "pl-bugbot", "pl-land", "pl-close",
   # the team's CLI-tooling hint names it
   "pl-update-cli",
   # production reads and migrations my sessions load on their own (3+ sessions each, Oct-Nov 2026)
@@ -27,18 +28,18 @@ keep = [
 # A "## <heading>" section, through to the next heading.
 drop_sections = [
   "Optional session transcript sharing",  # I share transcripts myself
-  "Scheduling corpus capture",            # I record samples myself; I told sessions not to ask
+  "Scheduling corpus capture",            # I record samples myself
 ]
 
 # A paragraph, by its opening words.
 drop_paragraphs = [
-  "Track substantive coding work in Bench",              # the note below says how I use Bench
-  "When selecting or creating internal Dev",             # CLAUDE.local.md names my sandbox workspace
-  "Scope and judge work by what the problem needs",      # my own scoping rule says the same
-  "Recommend the design that is right",                  # likewise
+  "Track substantive coding work in Bench",   # the note below says how I use Bench
+  "When selecting or creating internal Dev",  # ~/dev/planlab/CLAUDE.local.md names my workspace
 ]
 
-# A line, by its start: scoped AGENTS.md pointers for areas I never edit.
+# A line, by its start: scoped AGENTS.md pointers for areas I edit at most
+# rarely (no session in hub/ or playgrounds/, 2 of 410 in delivery-team/,
+# Oct 15 - Nov 9 2026).
 drop_lines = [
   "- `hub/AGENTS.md`",
   "- `playgrounds/autoandy/AGENTS.md`",
@@ -47,14 +48,19 @@ drop_lines = [
 
 # Added after the team's text.
 note = """
-## Bench, for this operator
+## Bench, transcripts and corpus samples, for this user
 
-I manage Bench cards, transcript sharing and corpus samples myself. Before
-changing code for substantive work, check Bench read-only for the same work:
-`bench tasks current`, then `bench tasks search <two or three words>`. When
-someone else holds it, tell me who before going on. Create, start or comment
-on a card, claim a Bench name, share a transcript, or record a schedule as a
-corpus sample only when I ask. A card I started or named for this work stays
-current through the PR and merge steps of
-`.agents/skills/pl-bench-tasks/SKILL.md` that the PR skills run.
+I manage Bench cards, transcript sharing and corpus samples myself. Create,
+start or comment on a card, claim a Bench name, share a transcript, or record
+a schedule as a corpus sample only when I ask. A hook reminder or a skill step
+that says to offer or do one of these is not me asking, so do not offer.
+
+Before changing code for substantive work, look for the same work in Bench,
+read-only: `bench tasks current`, then `bench tasks search <two or three
+words>`. When someone else holds it, tell me who before going on; when Bench
+cannot be reached, say so and carry on.
+
+When I started or named a card for this work, keep it current: run the PR and
+merge steps of `.agents/skills/pl-bench-tasks/SKILL.md` as the PR skills reach
+them. With no such card, skip those steps.
 """
