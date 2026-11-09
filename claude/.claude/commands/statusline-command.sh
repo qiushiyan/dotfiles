@@ -205,15 +205,17 @@ if IFS= read -r line <&4; then
 fi
 exec 4<&- 5<&-
 
-# Assemble the line as two rows of ordered segments, each segment carrying its
+# Assemble the line as rows of ordered segments, each segment carrying its
 # colored form and its plain (visible) text. The first row is the session's
 # work (path, branch, context, diff), the second what it spends (account,
 # cache, billing), so a long worktree path or branch never pushes the second
 # row off the pane. Claude Code draws each printed line as a row.
 # ACCOUNT is the lane label statusline-chip.sh worked out for the tmux border;
 # the line draws it too, because in a bare terminal nothing else says which
-# account the session burns. In a Rex pane the header does, in full
-# (statusline-rex.sh), so the line leaves it out there.
+# account the session burns.
+# In a Rex pane the header carries the account and the cache countdown
+# (statusline-rex.sh), so there the line is the first row alone, with the
+# billing mark at its end.
 SEG_COLORED=(); SEG_PLAIN=()
 add_seg() { [ -n "$2" ] && { SEG_COLORED+=("$1"); SEG_PLAIN+=("$2"); }; }
 
@@ -246,10 +248,11 @@ add_seg "${LAVENDER}${DISPLAY_DIR}${RESET}" "$DISPLAY_DIR"
 add_seg "${PINK}${BRANCH}${RESET}" "$BRANCH"
 add_seg "$CTX_DISPLAY" "$CTX_PLAIN"
 add_seg "$GIT_STATUS" "$GIT_PLAIN"
-end_row
-
-[ -n "$REX_CHIP" ] || add_seg "${LAVENDER}${ACCOUNT}${RESET}" "$ACCOUNT"
-add_seg "$CACHE_DISPLAY" "$CACHE_PLAIN"
+if [ -z "$REX_CHIP" ]; then
+    end_row
+    add_seg "${LAVENDER}${ACCOUNT}${RESET}" "$ACCOUNT"
+    add_seg "$CACHE_DISPLAY" "$CACHE_PLAIN"
+fi
 add_seg "$API_DISPLAY" "$API_PLAIN"
 end_row
 

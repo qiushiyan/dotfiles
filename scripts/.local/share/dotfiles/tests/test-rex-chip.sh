@@ -6,19 +6,24 @@
 # Usage: bash test-rex-chip.sh [K1 K4 ...]     # requires jq
 #
 # What this pins. A render in a Rex pane sets the block's label to the account's
-# full email, the model and effort, the quota windows and a context bar, with
+# full email, the model and effort behind an icon, the quota windows and a context bar, with
 # no mark on a calm value (K1) and a mark and a bar colour that follow 50% and
 # 90% (K2). An unchanged render calls Rex no more, and a changed one once (K3):
 # the render runs three times a second. Fields leave a narrow pane lowest
 # priority first, a quota at its alarm stays, and context always shows (K4).
 # The pane's own name leads the chip, a rename through rex-chip keeps both, and
-# the name comes back when the chip goes (K5). The statusline's own line leaves
-# the account to the header only when the header has it (K6). SessionEnd,
+# the name comes back when the chip goes (K5). The statusline's own line is one
+# row that leaves the account and the cache to the header, only when the header
+# has them (K6). SessionEnd,
 # through rex-agent as the hook runs it, clears the chip, and a pane that wears
 # none starts nothing (K7). A block that is gone takes its state with it (K8).
 # The floating chip's line has the border's fields and colours, right-aligned,
 # sheds fields in a float too narrow for them, and the float ends by itself
-# when there is no session (K9). Nothing here
+# when there is no session (K9). The prompt cache's minutes sit before context,
+# marked in the last ten and when cold, and a cache that warns stays on a
+# narrow pane (K10). A float sized just after it starts paints once, at its
+# real width, and a later resize repaints at once, not at the next tick (K11).
+# Nothing here
 # reaches the live state or the live server (Z1).
 #
 # ISOLATION. A throwaway HOME holds the state directory and a stub `rex` that
@@ -108,12 +113,18 @@ weekly() {
 # Rex pane, with CTX percent of context used; prints the line, colours
 # stripped and rows joined by " ⏎ ". Then waits for the label rex-chip sets
 # detached: until rex has been called and has been quiet for a moment.
+# CACHE, when set, is the prompt cache: minutes left, or "cold".
 render() {
   local ctx=$1 five=$2 seven=$3 cols=${4:-200}; shift $(( $# < 4 ? $# : 4 ))
   local windows="" extra="" before n
+  case "${CACHE:-}" in
+    "") ;;
+    cold) extra=',"prompt_cache":{"warm":false,"expires_at":1}' ;;
+    *) extra=$(printf ',"prompt_cache":{"warm":true,"expires_at":%s}' "$(( $(date +%s) + CACHE * 60 - 30 ))") ;;
+  esac
   [ -n "$five" ] && windows=$(printf '"five_hour":{"used_percentage":%s,"resets_at":9999999999}' "$five")
   [ -n "$seven" ] && windows="${windows:+$windows,}$(printf '"seven_day":{"used_percentage":%s,"resets_at":9999999999}' "$seven")"
-  [ -n "$windows" ] && extra=",\"rate_limits\":{$windows}"
+  [ -n "$windows" ] && extra="$extra,\"rate_limits\":{$windows}"
   before=$(wc -l < "$SANDBOX/rex.log")
   printf '{"session_id":"sid-K","model":{"id":"claude-fable-5-2"},"effort":{"level":"xhigh"},"workspace":{"current_dir":"%s"},"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s,"output_tokens":0,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}%s}' \
       "$H/work" "$((ctx * 10000))" "$extra" |
@@ -129,9 +140,9 @@ render() {
 
 CASE=K1; if want; then
   fresh; weekly 4 opus
-  render 31 12 30 >/dev/null
-  ok "K1 a render sets the header: full email, model:effort, calm quotas bare, a bar" \
-    "yan@planlab.ai · fable-5-2:xhigh · 5h 12% · 7d 30% · wk opus 4% · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  CACHE=43 render 31 12 30 >/dev/null
+  ok "K1 a render sets the header: full email, model:effort, calm quotas bare, the cache, a bar" \
+    "yan@planlab.ai · 🧠 fable-5-2:xhigh · 5h 12% · 7d 30% · wk opus 4% · ⏳ cache 43m · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   ok "K1 the state is the sandbox's" "block_t1.base block_t1.chip block_t1.label block_t1.width" "$(ls "$STATE" | tr '\n' ' ' | sed 's/ $//')"
   ok "K1 the label fits Rex's 128 characters" "1" "$([ "$(chars "$(label)")" -le 128 ] && echo 1)"
 fi
@@ -140,12 +151,12 @@ CASE=K2; if want; then
   fresh
   render 71 93 58 >/dev/null
   ok "K2 a quota at 90 and one at 50 wear their marks, and the bar turns yellow" \
-    "yan@planlab.ai · fable-5-2:xhigh · 🔴 5h 93% · 🟡 7d 58% · 🟨🟨🟨🟨🟨🟨🟨⬜⬜⬜ 71%" "$(label)"
+    "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🔴 5h 93% · 🟡 7d 58% · 🟨🟨🟨🟨🟨🟨🟨⬜⬜⬜ 71%" "$(label)"
   render 95 49 '' >/dev/null
   ok "K2 context at 90 is a red bar, and an absent window is not drawn" \
-    "yan@planlab.ai · fable-5-2:xhigh · 5h 49% · 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 95%" "$(label)"
+    "yan@planlab.ai · 🧠 fable-5-2:xhigh · 5h 49% · 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 95%" "$(label)"
   render 2 '' '' >/dev/null
-  ok "K2 any context at all fills one cell" "yan@planlab.ai · fable-5-2:xhigh · 🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜ 2%" "$(label)"
+  ok "K2 any context at all fills one cell" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜ 2%" "$(label)"
 fi
 
 CASE=K3; if want; then
@@ -162,11 +173,11 @@ CASE=K4; if want; then
   fresh; weekly 4 opus
   render 31 12 30 100 >/dev/null
   ok "K4 under 110 columns the model's weekly leaves" \
-    "yan@planlab.ai · fable-5-2:xhigh · 5h 12% · 7d 30% · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+    "yan@planlab.ai · 🧠 fable-5-2:xhigh · 5h 12% · 7d 30% · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   render 31 12 30 60 >/dev/null
-  ok "K4 under 70 the quota pair leaves and the bar halves" "yan@planlab.ai · fable-5-2:xhigh · 🟩🟩⬜⬜⬜ 31%" "$(label)"
+  ok "K4 under 70 the quota pair leaves and the bar halves" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩🟩⬜⬜⬜ 31%" "$(label)"
   render 31 93 30 60 >/dev/null
-  ok "K4 a quota at its alarm stays on a narrow pane" "yan@planlab.ai · fable-5-2:xhigh · 🔴 5h 93% · 🟩🟩⬜⬜⬜ 31%" "$(label)"
+  ok "K4 a quota at its alarm stays on a narrow pane" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🔴 5h 93% · 🟩🟩⬜⬜⬜ 31%" "$(label)"
   render 31 12 30 45 >/dev/null
   ok "K4 under 50 the model leaves" "yan@planlab.ai · 🟩🟩⬜⬜⬜ 31%" "$(label)"
   render 31 12 30 30 >/dev/null
@@ -176,9 +187,9 @@ fi
 CASE=K5; if want; then
   fresh "api server"
   render 31 '' '' >/dev/null
-  ok "K5 the pane's own name leads the chip" "api server · yan@planlab.ai · fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K5 the pane's own name leads the chip" "api server · yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   chip rename block:t1 "worker"
-  ok "K5 a rename through rex-chip keeps the chip" "worker · yan@planlab.ai · fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K5 a rename through rex-chip keeps the chip" "worker · yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   chip clear block:t1
   ok "K5 clear gives the pane its name back" "worker" "$(label)"
   ok "K5 and leaves no state" "" "$(ls "$STATE" 2>/dev/null)"
@@ -190,11 +201,16 @@ fi
 
 CASE=K6; if want; then
   fresh
-  ok "K6 in a Rex pane the line leaves the account to the header" "0" "$(render 31 12 30 | grep -c 'yan')"
+  ok "K6 in a Rex pane the line is one row, without the account or the cache" "work | 31%" \
+    "$(CACHE=43 render 31 12 30 | sed "s|^$H/||")"
+  ok "K6 the billing mark joins that row" "work | 31% | API" \
+    "$(CACHE=43 render 31 12 30 200 ANTHROPIC_BASE_URL=http://proxy.invalid | sed "s|^$H/||")"
   fresh
-  ok "K6 with the header chip off the line draws the account" "1" "$(render 31 12 30 200 REX_CHIP_CMD= | grep -c ' ⏎ yan')"
+  ok "K6 with the header chip off the line keeps its second row" "work | 31% ⏎ yan | cache 43m" \
+    "$(CACHE=43 render 31 12 30 200 REX_CHIP_CMD= | sed "s|^$H/||")"
   ok "K6 and nothing is published" "" "$(ls "$STATE" 2>/dev/null)$(cat "$SANDBOX/rex.log")"
-  ok "K6 outside Rex the line draws the account" "1" "$(render 31 12 30 200 REX_BLOCK= | grep -c ' ⏎ yan')"
+  ok "K6 outside Rex the line keeps its second row" "work | 31% ⏎ yan | cache 43m" \
+    "$(CACHE=43 render 31 12 30 200 REX_BLOCK= | sed "s|^$H/||")"
 fi
 
 # hook JSON: one Claude Code hook through rex-agent, as settings.json runs it.
@@ -238,6 +254,32 @@ CASE=K9; if want; then
     "$(for w in 55 40 12; do chip render block:t1 $w | sed $'s/\033\\[[0-9;]*m//g; s/^ *//'; done | paste -sd'|' - | sed 's/|/ | /g')"
   out=$(chip draw block:none 2>/dev/null); rc=$?
   ok "K9 with no session the float says so and ends" "0 1" "$rc $(printf '%s' "$out" | grep -c 'no Claude Code session')"
+fi
+
+CASE=K10; if want; then
+  fresh
+  CACHE=9 render 31 '' '' >/dev/null
+  ok "K10 a cache in its last ten minutes is marked" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟡 cache 9m · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  CACHE=cold render 31 '' '' >/dev/null
+  ok "K10 a cold cache is marked red" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🔴 cache cold · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K10 the floating chip draws it red too" "1" "$(chip render block:t1 80 | grep -c $'\033\\[31mcache cold')"
+  CACHE=43 render 31 '' '' 45 >/dev/null
+  ok "K10 under 50 columns a calm cache leaves" "yan@planlab.ai · 🟩🟩⬜⬜⬜ 31%" "$(label)"
+  CACHE=9 render 31 '' '' 30 >/dev/null
+  ok "K10 a cache that warns stays on the narrowest pane" "🟡 cache 9m · 🟩🟩⬜⬜⬜ 31%" "$(label)"
+  render 31 '' '' >/dev/null
+  ok "K10 a session that reports no cache draws none" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+fi
+
+# The float on a pty of its own (chip-resize.py): 80 columns as it starts, 55
+# a tenth of a second later, as the app sizes a new layer, then 70. It prints
+# the paints of the first 0.9 s and the width the last was laid out for, then
+# whether the second resize was painted within 0.4 s and that paint's width.
+CASE=K11; if want; then
+  fresh
+  render 31 12 58 >/dev/null
+  ok "K11 a float sized as it starts paints once at its real width, and a resize repaints at once" "1 55 fast 70" \
+    "$("${CLEAN[@]}" "${IN_REX[@]}" /usr/bin/python3 "$HERE/chip-resize.py" "$CHIP" block:t1)"
 fi
 
 CASE=Z1; if want; then
