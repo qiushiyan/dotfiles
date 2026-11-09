@@ -1,6 +1,6 @@
 -- lab.panes: tmux's pane keys that Rex's own pane.* actions do not cover:
 -- vim-aware focus, the side-by-side or stacked toggle, pane mode's push,
--- hold and put, a scratch shell, clear with scrollback, and renaming.
+-- hold, put and pick, a scratch shell, clear with scrollback, and renaming.
 
 local action = require("lab.action")
 local api = require("rexkit.api")
@@ -104,6 +104,16 @@ define{
   end,
 }
 
+-- Every move of a pane into another tab lands the same way: to the right of
+-- ANCHOR, and focused. Rex splits only beside a pane, not the whole window,
+-- so this is tmux's full-height right column only when the tab has one pane;
+-- hjkl in pane mode places it from there.
+local function land(sid, bid, anchor)
+  api.call("session.move_block", { session_id = sid, block_id = bid, anchor_block_id = anchor,
+    direction = "horizontal", side = "after" })
+  api.try("session.focus_block", { session_id = sid, block_id = bid })
+end
+
 -- Pane mode g / p / G: hold a pane, walk to any tab of the session, and put
 -- it beside the pane there (Rex moves a live block between windows, so
 -- nothing restarts). The hold is a state file, so it survives a reload.
@@ -135,9 +145,7 @@ define{
     end
     state.release()
     if hbid == bid then return { put = false, reason = "same pane" } end
-    api.call("session.move_block", { session_id = sid, block_id = hbid, anchor_block_id = bid,
-      direction = "horizontal", side = "after" })
-    api.try("session.focus_block", { session_id = sid, block_id = hbid })
+    land(sid, hbid, bid)
     return { put = hbid }
   end,
 }
@@ -148,6 +156,77 @@ define{
   run = function()
     state.release()
     return { released = true }
+  end,
+}
+
+-- Pane mode w: pick another tab of the session and move the pane there, as
+-- tmux's pick does, without walking to it with a hold. The picker
+-- (rex-pane-pick) runs in a split below the pane, since the app sends no
+-- keys to a floating layer, so the action leaves pane mode for it. It is
+-- handed the app that pressed the key, so pane mode comes back once it is
+-- done. On another host's session ctx.client_id names the app on this
+-- machine's server, which the picker on that host cannot reach, so there it
+-- gets none and the mode stays closed.
+define{
+  name = "pane_pick",
+  title = "Move Pane to a Tab…",
+  args = action.schema({}),
+  run = function(ctx, args)
+    local sid, bid = action.block(ctx, args)
+    if not (sid and bid) then return { opened = false } end
+    local view = api.call("session.view", { session_id = sid })
+    if not layout.window_of(view, bid) then
+      feedback.toast(sid, bid, "warn", "Move pane", "a floating pane cannot move between tabs", 2)
+      return { opened = false, reason = "not tiled" }
+    end
+    if #(view.windows or {}) < 2 then
+      feedback.toast(sid, bid, "info", "Move pane", "no other tab in this session (b breaks it into a new one)", 2)
+      return { opened = false, reason = "one tab" }
+    end
+    rex.client.queue("client.mode.exit", {})
+    local client = (not ctx.server and ctx.origin == "key" and ctx.client_id) or ""
+    local block = api.split(sid, bid, { direction = "vertical", ratio = 0.4, label = "move pane",
+      command = shell.bin("rex-pane-pick", sid, bid, client), focus = true })
+    return { opened = block }
+  end,
+}
+
+-- The pane a move into window W lands beside: its focused pane when that is
+-- tiled, else its first tiled one.
+local function landing(w)
+  local tiled = layout.tiled(w)
+  for _, b in ipairs(tiled) do
+    if b.block_id == w.focused_block_id then return b.block_id end
+  end
+  return tiled[1] and tiled[1].block_id
+end
+
+-- What rex-pane-pick runs on enter: move the pane into tab WINDOW_ID beside
+-- its focused pane, and show that tab (the app follows the server's active
+-- window in the session it shows, on any host). reenter = true puts the app
+-- back in pane mode, so hjkl places the pane, as after a put; the picker
+-- sets it only when it runs the action as that app (rex -C).
+define{
+  name = "pane_place",
+  title = "Move Pane to Tab",
+  args = action.schema({ window_id = { type = "string" }, reenter = { type = "boolean" } }, { "window_id" }),
+  run = function(ctx, args)
+    local sid, bid = action.block(ctx, args)
+    if not (sid and bid) then return { placed = false } end
+    local view = api.call("session.view", { session_id = sid })
+    local target
+    for _, w in ipairs(view.windows or {}) do
+      if w.window_id == args.window_id then target = w end
+    end
+    local here = layout.window_of(view, bid)
+    local anchor = target and landing(target)
+    local reason = (not here and "not tiled") or (not anchor and "no such tab")
+      or (here.window_id == target.window_id and "same tab")
+    if reason then return { placed = false, reason = reason } end
+    api.call("session.focus_window", { session_id = sid, window_id = target.window_id })
+    land(sid, bid, anchor)
+    if args.reenter then rex.client.queue("client.mode.enter", { name = "panes" }) end
+    return { placed = bid, window = target.window_id }
   end,
 }
 

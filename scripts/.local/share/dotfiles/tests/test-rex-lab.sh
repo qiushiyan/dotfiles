@@ -57,7 +57,7 @@ RH=$(mktemp -d /tmp/rxl.XXXX)
 mkdir -p "$RH/.config" "$RH/.local/bin"
 cp -R "$REPO/rex/.config/rex" "$RH/.config/rex"
 echo lab-test > "$RH/.config/machine"
-for t in rex-label rex-urls rex-worktree rex-steps rex-board rex-toast rex-chip rex-clipshare tomini gopen; do
+for t in rex-label rex-urls rex-worktree rex-pane-pick rex-steps rex-board rex-toast rex-chip rex-clipshare tomini gopen; do
   printf '#!/bin/sh\nexec /bin/sleep 30\n' > "$RH/.local/bin/$t"; chmod +x "$RH/.local/bin/$t"
 done
 R() { "${CLEAN[@]}" HOME="$RH" "$REX" --autostart=false "$@"; }

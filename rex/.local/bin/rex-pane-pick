@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# rex-pane-pick SESSION BLOCK [CLIENT]: pane mode's w, tmux's pick on Rex.
+# The pane_pick action runs it in a split below BLOCK. It lists SESSION's
+# other tabs, with a preview of each (its panes, then the end of its focused
+# pane's screen):
+#
+#   enter    move BLOCK beside that tab's focused pane and show the tab
+#            (the pane_place action, in lab.panes)
+#   esc      leave it where it is
+#
+# CLIENT is the app that pressed w. Given one, the move runs as that app
+# (rex -C), so its pane mode comes back afterwards for hjkl, as after a put;
+# esc brings the mode back too. Without one (a key in another host's
+# session), the pane still moves and the mode stays closed.
+#
+#   rex-pane-pick --preview SESSION WINDOW    the preview, for fzf
+#
+# Panes Rex starts get the server's bare PATH, hence the export. rex probes
+# the terminal on stderr, and the answer would arrive as input, hence every
+# 2>/dev/null.
+set -u
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+view() { rex api call session.view "$(jq -nc --arg s "$1" '{session_id: $s}')" 2>/dev/null; }
+
+# The tiled blocks of a window in a view, as block_id TAB label.
+TILED='[.layers[]? | select(.kind == "tiled") | .blocks[]?]'
+
+if [ "${1:-}" = --preview ]; then
+  session=$2 window=$3
+  w=$(view "$session" | jq -c --arg w "$window" '.windows[] | select(.window_id == $w)')
+  [ -n "$w" ] || { echo "that tab is gone"; exit 0; }
+  focused=$(jq -r '.focused_block_id // empty' <<<"$w")
+  jq -r '.label' <<<"$w"
+  echo
+  jq -r --arg f "$focused" "$TILED"' | .[] | "\(if .block_id == $f then "▶" else "·" end) \(.label // "pane")"' <<<"$w"
+  [ -n "$focused" ] || exit 0
+  printf '\n─────\n'
+  rex capture -s "$session" -b "$focused" --trim 2>/dev/null | tail -n 40
+  exit 0
+fi
+
+session=${1:?usage: rex-pane-pick SESSION BLOCK [CLIENT]} block=${2:?usage: rex-pane-pick SESSION BLOCK [CLIENT]}
+client=${3:-}
+
+fail() { printf '\n  %s\n\n  press a key to close' "$1"; read -rsn1; exit 1; }
+rex_as_app() { if [ -n "$client" ]; then rex -C "$client" "$@"; else rex "$@"; fi; }
+back_to_pane_mode() { [ -z "$client" ] || rex -C "$client" do client.mode.enter name=panes >/dev/null 2>&1; }
+
+# window_id TAB label TAB "N panes", for every tab but the one BLOCK is in.
+rows=$(view "$session" | jq -r --arg b "$block" "
+  .windows as \$all
+  | (\$all[] | select([$TILED | .[] | .block_id] | index(\$b)) | .window_id) as \$here
+  | \$all[] | select(.window_id != \$here)
+  | ($TILED | length) as \$n
+  | [.window_id, .label, \"\(\$n) pane\(if \$n == 1 then \"\" else \"s\" end)\"] | @tsv")
+[ -n "$rows" ] || fail "no other tab in this session"
+
+pick=$(printf '%s\n' "$rows" | fzf --delimiter='\t' --with-nth=2,3 --no-sort --reverse --height=100% \
+  --prompt='move pane to> ' --header='enter: move the pane here · esc: cancel' \
+  --preview "$(printf '%q --preview %q {1}' "$0" "$session")" --preview-window='right,55%,border-left' \
+  --bind 'tab:down,btab:up')
+window=$(cut -f1 <<<"$pick")
+if [ -z "$window" ]; then back_to_pane_mode; exit 0; fi
+
+reenter=false; [ -n "$client" ] && reenter=true
+out=$(rex_as_app do pane_place session_id="$session" block_id="$block" window_id="$window" \
+  reenter="$reenter" --json 2>/dev/null) || fail "the move failed: ${out:-no answer from rex}"
+reason=$(jq -r '.reason // empty' <<<"$out" 2>/dev/null)
+[ -z "$reason" ] || fail "not moved: $reason"
+exit 0

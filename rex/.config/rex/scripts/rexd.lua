@@ -44,7 +44,7 @@ local function strip_number(label)
 end
 
 -- Labels that say nothing about a pane: Rex's default and our own helpers'.
-local GENERIC = { shell = true, rexd = true, toast = true, worktrees = true }
+local GENERIC = { shell = true, rexd = true, toast = true, worktrees = true, ["move pane"] = true }
 
 -- AUTO maps window id to the name rexd gave that tab, kept across restarts.
 -- On the first run there is no record, so a name that already matches its

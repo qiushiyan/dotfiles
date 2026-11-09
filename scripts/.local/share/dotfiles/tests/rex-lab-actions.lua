@@ -99,6 +99,28 @@ r = press("layout_toggle", A, {});                  ok("layout_toggle again puts
 r, q = press("pane_hold", A, {});                   ok("pane_hold holds and leaves pane mode", r.held == A and steps(q) == "client.mode.exit", dump(r))
 r = press("pane_put", C, {});                       ok("pane_put moves the held pane to the other tab", r.put == A and window_of(A) == w2.window_id, dump(r))
 
+-- Pane mode w: the picker opens below the pressed pane after leaving the
+-- mode, and its enter (pane_place) moves the pane into the picked tab, shows
+-- that tab, and with reenter queues pane mode again.
+r, q, e = press("pane_pick", B, {})
+ok("pane_pick leaves pane mode and opens the picker in the pressed pane's tab",
+  steps(q) == "client.mode.exit" and select(2, window_of(r.opened)) == "move pane" and window_of(r.opened) == w1.window_id, e or dump(r))
+if r.opened then rex.call("block.close", { session_id = S, block_id = r.opened }) end
+r, q = press("pane_place", B, { window_id = w2.window_id, reenter = true })
+local active = must("session.view", { session_id = S }).active_window_id
+ok("pane_place moves the pane to the picked tab and shows it",
+  r.placed == B and window_of(B) == w2.window_id and active == w2.window_id, dump(r))
+ok("pane_place with reenter queues pane mode", steps(q) == "client.mode.enter", dump(q))
+r, q = press("pane_place", B, { window_id = w2.window_id })
+ok("pane_place into the pane's own tab moves nothing", r.reason == "same tab" and #q == 0, dump(r))
+local lone = must("session.create", { label = "lone" }).session_id
+must("session.attach", { session_id = lone })
+local lw = must("session.new_window", { session_id = lone, layout = blk("solo") })
+r, q = rex.call("client.action", { action = "pane_pick", origin = "key", session_id = lone, block_id = lw.block_ids[1] })
+r, q = (r and r.result) or {}, (r and r.client_actions) or {}
+ok("pane_pick in a one-tab session opens nothing and stays in the mode", r.reason == "one tab" and #q == 0, dump(r))
+rex.call("session.destroy", { session_id = lone })
+
 rex.sleep(0.3)
 r, q = press("agents_next", C, {})
 ok("agents_next jumps to the blocked agent", r.jumped == true and r.state == "blocked" and steps(q) == "session.select", dump(r))

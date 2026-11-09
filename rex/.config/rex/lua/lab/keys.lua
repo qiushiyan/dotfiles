@@ -39,7 +39,7 @@ bind_all(nil, root)
 rex.mode("panes", { exclusive = true })
 local panes = {
   { "escape", "client.mode.exit" }, { "enter", "client.mode.exit" }, { "q", "client.mode.exit" },
-  { "g", "pane_hold" }, { "p", "pane_put" }, { "shift+g", "pane_release" },
+  { "g", "pane_hold" }, { "p", "pane_put" }, { "shift+g", "pane_release" }, { "w", "pane_pick" },
   { "b", "pane.move_to_new_tab" }, { "e", "pane.balance" }, { "z", "pane.zoom" },
   { "space", "layout_toggle" },
 }
