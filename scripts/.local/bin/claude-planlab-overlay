@@ -2,8 +2,13 @@
 """claude-planlab-overlay — this operator's own view of a PlanLab checkout, for
 one interactive Claude Code launch.
 
-Usage (what claude.zsh's _claude_launch runs before headroom):
-  claude-planlab-overlay <claude args...>
+Usage:
+  claude-planlab-overlay <claude args...>   what claude.zsh's _claude_launch runs before headroom
+  claude-planlab-overlay --show             in a checkout: what its sessions get, as a diff
+                                            of the team's AGENTS.md, and the skills they see
+
+What it keeps, cuts and adds is ~/.local/share/dotfiles/planlab-overlay.toml
+(CLAUDE_PLANLAB_OVERLAY_CONFIG overrides it); an unreadable one is a failure.
 
 Inside a PlanLab checkout it prints the launch's args rewritten, each ended by
 a NUL, and exits 0. Outside one, or on any failure, it prints nothing and
@@ -12,20 +17,14 @@ instructions whole, never half of this overlay.
 
 What the rewritten launch changes, for that session only:
   AGENTS.md  The team copy is excluded (claudeMdExcludes on the checkout's
-             .claude/CLAUDE.md, whose one line imports it) and a filtered copy
-             is given with --append-system-prompt-file: without the
-             transcript-sharing section and the Bench tracking paragraph, with
-             a short note on how this operator uses Bench. What else it drops
-             is what this operator never uses or already has: corpus capture,
-             internal-workspace selection (CLAUDE.local.md names theirs), the
-             scoped AGENTS.md lines for areas they never edit, and the scoping
-             paragraphs their own rule repeats. A heading, paragraph or line
-             that no longer matches stays in, and the miss is logged to
-             ~/.local/state/claude-planlab-overlay.log.
-  skills     Every skill in the checkout's .claude/skills outside KEEP is
-             user-invocable-only (hidden from the model, still a / command).
-             A KEEP skill gets no override, so it stays as its own frontmatter
-             and the checkout's settings.local.json have it (pl-close hides
+             .claude/CLAUDE.md, whose one line imports it) and a copy with the
+             config's cuts and note is given with --append-system-prompt-file.
+             A cut that no longer matches leaves its text in, and the miss is
+             logged to ~/.local/state/claude-planlab-overlay.log.
+  skills     Every skill in the checkout's .claude/skills outside the config's
+             keep globs is user-invocable-only (hidden from the model, still a
+             / command). A kept skill gets no override, so it stays as its
+             own frontmatter and the checkout's settings.local.json have it (pl-close hides
              itself from the model by design; a launch --settings would
              outrank both). A name the operator's own skills also use is left
              alone, since overrides are keyed by name.
@@ -41,11 +40,14 @@ run; --setting-sources without project also drops the project's skills and
 its nested CLAUDE.md files; skillOverrides take exact names, so a fixed list
 goes stale as the team adds skills.
 
-The Bench reminders the team's hooks give are switched off separately, by
-PLANLAB_BENCH_REMINDERS=off in the user settings' env, which every launch
-gets; this overlay never decides what those hooks say.
+The reminders the team's hooks give are switched off separately, by
+PLANLAB_BENCH_REMINDERS=off and PLANLAB_CORPUS_REMINDERS=off in the user
+settings' env, which every launch gets; this overlay never decides what those
+hooks say.
 """
 
+import difflib
+import fnmatch
 import hashlib
 import json
 import os
@@ -55,27 +57,7 @@ import tempfile
 import time
 from pathlib import Path
 
-# Kept visible: Loopy work, deploys, the PR workflow, the tooling hint's skill, and the production
-# and migration skills this operator's sessions load on their own (each in 3+ sessions, Oct-Nov 2026).
-KEEP = re.compile(
-    r"pl-loopy-.+|pl-deploy-.+|pl-commit|pl-tidy|pl-merge-develop|pl-squash-migrations|pl-pr"
-    r"|pl-handle-code-review|pl-local-bugbot-cycle|pl-bugbot|pl-qa|pl-land|pl-close|pl-update-cli"
-    r"|pl-backstage-db|pl-planlab-cli|pl-check-deployed|pl-prisma-migrate|pl-cloudwatch-logs|pl-steward"
-)
-DROP_SECTIONS = ("Optional session transcript sharing", "Scheduling corpus capture")
-DROP_PARAGRAPHS = ("Track substantive coding work in Bench", "When selecting or creating internal Dev",
-                   "Scope and judge work by what the problem needs", "Recommend the design that is right")
-DROP_LINES = ("- `hub/AGENTS.md`", "- `playgrounds/autoandy/AGENTS.md`", "- `delivery-team/")
-NOTE = """## Bench, for this operator
-
-I manage Bench cards, transcript sharing and corpus samples myself. Before
-changing code for substantive work, check Bench read-only for the same work:
-`bench tasks current`, then `bench tasks search <two or three words>`. When
-someone else holds it, tell me who before going on. Create, start or comment
-on a card, claim a Bench name, share a transcript, or record a schedule as a
-corpus sample only when I ask. A card I started or named for this work stays
-current through the PR and merge steps of
-`.agents/skills/pl-bench-tasks/SKILL.md` that the PR skills run."""
+CONFIG = Path(__file__).resolve().parents[1] / "share" / "dotfiles" / "planlab-overlay.toml"
 # Flags that set the system prompt or the settings sources: with one of them the overlay stands aside.
 CONFLICTS = ("--append-system-prompt", "--append-system-prompt-file", "--system-prompt",
              "--system-prompt-file", "--setting-sources")
@@ -84,6 +66,23 @@ CACHE_TTL_SECONDS = 14 * 24 * 3600
 
 class Refusal(Exception):
     """This launch keeps its args."""
+
+
+def config():
+    """The operator's choices: the skills to keep, the cuts, the note."""
+    path = Path(os.environ.get("CLAUDE_PLANLAB_OVERLAY_CONFIG") or CONFIG)
+    try:
+        import tomllib  # Python 3.11+; an older python3 first on PATH is a refusal, not a traceback
+        data = tomllib.loads(path.read_text())
+        skills, agents = data["skills"], data["agents"]
+        lists = [skills["keep"], *(agents.get(k, []) for k in ("drop_sections", "drop_paragraphs", "drop_lines"))]
+        if not all(isinstance(x, list) and all(isinstance(i, str) for i in x) for x in lists):
+            raise TypeError("lists of strings expected")
+        if not isinstance(agents.get("note", ""), str):
+            raise TypeError("note is not a string")
+    except (ImportError, OSError, ValueError, KeyError, TypeError) as error:
+        raise Refusal(f"config {path}: {error}")
+    return data
 
 
 def checkout(start):
@@ -98,16 +97,16 @@ def checkout(start):
     return None
 
 
-def filtered(text):
-    """AGENTS.md without the dropped sections, paragraphs and list lines, and the patterns that matched nothing."""
+def filtered(text, agents):
+    """AGENTS.md without the config's sections, paragraphs and lines, and the cuts that matched nothing."""
     misses = []
-    for heading in DROP_SECTIONS:
+    for heading in agents.get("drop_sections", []):
         text, n = re.subn(r"^## " + re.escape(heading) + r"\n.*?(?=^## |\Z)", "", text, flags=re.M | re.S)
         misses += [] if n else [heading]
-    for opening in DROP_PARAGRAPHS:
+    for opening in agents.get("drop_paragraphs", []):
         text, n = re.subn(r"^" + re.escape(opening) + r".*?(?:\n\n|\Z)", "", text, flags=re.M | re.S)
         misses += [] if n else [opening]
-    for prefix in DROP_LINES:
+    for prefix in agents.get("drop_lines", []):
         text, n = re.subn(r"^" + re.escape(prefix) + r".*\n", "", text, flags=re.M)
         misses += [] if n else [prefix]
     return text, misses
@@ -119,11 +118,11 @@ def own_skill_names():
     return {entry.name for root in roots if root.is_dir() for entry in root.iterdir()}
 
 
-def skill_overrides(root):
+def skill_overrides(root, keep):
     skills = root / ".claude" / "skills"
     names = {entry.name for entry in skills.iterdir() if (entry / "SKILL.md").is_file()} if skills.is_dir() else set()
     mine = own_skill_names()
-    return {name: "user-invocable-only" for name in sorted(names - mine) if not KEEP.fullmatch(name)}
+    return {name: "user-invocable-only" for name in sorted(names - mine) if not any(fnmatch.fnmatchcase(name, glob) for glob in keep)}
 
 
 def given_settings(value):
@@ -203,24 +202,48 @@ def log_misses(root, misses):
         stream.write(f"{time.strftime('%Y-%m-%dT%H:%M:%S')} {root}: no match for {misses}; the text stays in\n")
 
 
+def session_view(root):
+    """(the appended system prompt, the settings) this checkout's sessions get, before any given --settings."""
+    choices = config()
+    agents = root / "AGENTS.md"
+    text, misses = filtered(agents.read_text(), choices["agents"])
+    if misses:
+        log_misses(root, misses)
+    note = choices["agents"].get("note", "").strip()
+    prompt = (f"Contents of {agents} (project instructions, checked into the codebase). This operator's "
+              "launcher loads them here without the parts they do not use, and adds their own note at "
+              f"the end:\n\n{text.strip()}\n" + (f"\n{note}\n" if note else ""))
+    return prompt, text, misses, skill_overrides(root, choices["skills"]["keep"])
+
+
+def show(cwd):
+    root = checkout(cwd)
+    if root is None:
+        raise Refusal("not a PlanLab checkout")
+    _, text, misses, hidden = session_view(root)
+    team = (root / "AGENTS.md").read_text()
+    out = list(difflib.unified_diff(team.splitlines(keepends=True), text.splitlines(keepends=True),
+                                    "team AGENTS.md", "what a session gets", n=1))
+    skills = root / ".claude" / "skills"
+    shown = sorted(e.name for e in skills.iterdir() if (e / "SKILL.md").is_file() and e.name not in hidden)
+    out += [f"\n{len(team)} -> {len(text)} characters, plus the note.\n",
+            *(f"no match, left in: {miss}\n" for miss in misses),
+            f"{len(shown)} repository skills visible, {len(hidden)} hidden: {' '.join(shown)}\n"]
+    sys.stdout.write("".join(out))
+
+
 def overlay(args, cwd):
     root = checkout(cwd)
     if root is None:
         raise Refusal("not a PlanLab checkout")
     given, rest = split_args(args)
+    prompt, _, _, hidden = session_view(root)
     # The checkout as the shell names it too, when a symlink makes that differ from the resolved path.
     logical = checkout(Path(os.environ["PWD"])) if os.environ.get("PWD", "").startswith("/") else None
     entries = sorted({str(found / ".claude" / "CLAUDE.md") for found in (root, logical) if found})
-    settings = {"claudeMdExcludes": entries, "skillOverrides": skill_overrides(root)}
+    settings = {"claudeMdExcludes": entries, "skillOverrides": hidden}
     for value in given:
         settings = merged(settings, given_settings(value))
-    agents = root / "AGENTS.md"
-    text, misses = filtered(agents.read_text())
-    if misses:
-        log_misses(root, misses)
-    prompt = (f"Contents of {agents} (project instructions, checked into the codebase). This operator's "
-              "launcher loads them here without the parts they do not use, and adds their own Bench note at "
-              f"the end:\n\n{text.strip()}\n\n{NOTE}\n")
     cache = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "claude-planlab-overlay"
     directory = cache / hashlib.sha256(str(root).encode()).hexdigest()[:16]
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -230,6 +253,13 @@ def overlay(args, cwd):
 
 
 def main():
+    if sys.argv[1:] == ["--show"]:
+        try:
+            show(Path(os.getcwd()).resolve())
+            return 0
+        except (Refusal, OSError, ValueError, UnicodeDecodeError) as error:
+            print(f"claude-planlab-overlay: {error}", file=sys.stderr)
+            return 1
     try:
         args = overlay(sys.argv[1:], Path(os.getcwd()).resolve())
     except (Refusal, OSError, ValueError, UnicodeDecodeError):

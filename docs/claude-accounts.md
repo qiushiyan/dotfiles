@@ -89,18 +89,20 @@ Everything derives from that tree:
   above `_claude_fast_args` in `claude.zsh`.
 - **A PlanLab session without the team's Bench workflow**: a launch inside a
   PlanLab checkout runs `claude-planlab-overlay`, which gives the session the
-  team `AGENTS.md` cut to the work done here (no Bench tracking, transcript
-  sharing or corpus capture, no lines for areas never edited), plus a short
-  note on how Bench is used here, and hides every repository skill outside the
-  Loopy, deploy and PR sets and the production skills sessions load on their
-  own (each still a `/` command). It cuts and never rewrites, so the team's
-  later edits arrive. The team
-  hook's own Bench text is switched off by `PLANLAB_BENCH_REMINDERS=off` in the
-  shared `settings.json`, which every launch gets. A session started outside
-  these launchers (`x-select`, Rex, devpool, a `claude -p` helper) loads the
-  team's `AGENTS.md` and skills whole. A section the team renamed stays in and
-  is logged to `~/.local/state/claude-planlab-overlay.log`. What it rewrites,
-  and why launch arguments rather than a hook: the script's header.
+  team `AGENTS.md` cut to the work done here, plus a short note on how Bench
+  is used here, and hides every repository skill outside a keep list (each
+  still a `/` command). What it keeps, cuts and adds, each with its reason, is
+  `scripts/.local/share/dotfiles/planlab-overlay.toml`; `claude-planlab-overlay
+  --show` in a checkout prints what a session gets, as a diff of the team's
+  file. It cuts and never rewrites, so the team's later edits arrive; a cut
+  that stops matching leaves the text in and is logged to
+  `~/.local/state/claude-planlab-overlay.log`. The team hooks' own Bench and
+  corpus reminders are switched off by `PLANLAB_BENCH_REMINDERS=off` and
+  `PLANLAB_CORPUS_REMINDERS=off` in the shared `settings.json`, which every
+  launch gets. A session started outside these launchers (`x-select`, Rex,
+  devpool, a `claude -p` helper) loads the team's `AGENTS.md` and skills
+  whole. What it rewrites, and why launch arguments rather than a hook: the
+  script's header.
 - **Which lane is a running session on, and how much is left in it?** Its
   tmux context chip leads with the account, then the model and the lane's
   5-hour and 7-day usage (`yan opus-5[1m]:high 5h:23 7d:41 ✳ 37%`); `x-acc`

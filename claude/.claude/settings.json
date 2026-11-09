@@ -6,7 +6,8 @@
     "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
     "CLAUDE_AFK_TIMEOUT_MS": "2147483647",
     "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/quota:~/.claude/mods/worktree",
-    "PLANLAB_BENCH_REMINDERS": "off"
+    "PLANLAB_BENCH_REMINDERS": "off",
+    "PLANLAB_CORPUS_REMINDERS": "off"
   },
   "permissions": {
     "allow": [

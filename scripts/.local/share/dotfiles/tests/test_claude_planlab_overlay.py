@@ -3,8 +3,9 @@
 PlanLab checkout a launch's args come back with one merged --settings (the
 team AGENTS.md excluded, skills outside the keep-set hidden, the operator's
 own skill names untouched) and a filtered AGENTS.md as the appended system
-prompt; anywhere else, or on anything it cannot read, it prints nothing and
-exits 1 so the launch keeps its args.
+prompt; anywhere else, or on anything it cannot read (its config included), it
+prints nothing and exits 1 so the launch keeps its args. The cases read the
+repository's own planlab-overlay.toml, so a broken edit to it fails here.
 
 Usage: python3 test_claude_planlab_overlay.py [O1 O4 ...]
 
@@ -120,11 +121,15 @@ def world(case, agents=AGENTS):
     return home, root, config
 
 
-def run(home, config, cwd, *args):
+def run(home, config, cwd, *args, overlay_config=None, raw=False):
     env = {"HOME": str(home), "XDG_CACHE_HOME": str(home / ".cache"), "CLAUDE_CONFIG_DIR": str(config),
            "PATH": os.environ.get("PATH", "/usr/bin:/bin"), "PWD": str(cwd)}
+    if overlay_config:
+        env["CLAUDE_PLANLAB_OVERLAY_CONFIG"] = str(overlay_config)
     done = subprocess.run([sys.executable, "-I", str(SCRIPT), *args], cwd=cwd, env=env, capture_output=True)
     out = done.stdout.decode()
+    if raw:
+        return done.returncode, out
     return done.returncode, (out.split("\0")[:-1] if out else [])
 
 
@@ -209,6 +214,26 @@ if want("O8"):  # files are named for their content: same launch, same files; an
     ok("O8 same launch reuses its files", first[:4], second[:4])
     ok("O8 other settings get another file", True, first[1] != fast[1] and first[3] == fast[3])
     ok("O8 cache lives under XDG_CACHE_HOME", True, first[1].startswith(str(home / ".cache" / "claude-planlab-overlay")))
+
+if want("O10"):  # a config it cannot use keeps the args
+    home, root, config = world("O10")
+    broken = home / "broken.toml"
+    for name, text in (("missing", None), ("not TOML", "keep = ["), ("no skills table", "[agents]\n"),
+                       ("keep not a list", '[skills]\nkeep = "pl-*"\n[agents]\n')):
+        if text is not None:
+            broken.write_text(text)
+        ok(f"O10 {name} keeps the args", (1, []),
+           run(home, config, root, "-p", "x", overlay_config=broken if text is not None else home / "none.toml"))
+
+if want("O11"):  # --show: the cuts as a diff, the misses, and the visible skills
+    home, root, config = world("O11", AGENTS.replace("## Scheduling corpus capture", "## Corpus samples"))
+    code, out = run(home, config, root, "--show", raw=True)
+    ok("O11 exit", 0, code)
+    ok("O11 a cut shows as a removed line", True, "\n-## Optional session transcript sharing\n" in out)
+    ok("O11 a miss is named", True, "no match, left in: Scheduling corpus capture" in out)
+    ok("O11 visible skills listed", True, "pl-backstage-db" in out.splitlines()[-1]
+       and "pl-demo-video-edit" not in out.splitlines()[-1])
+    ok("O11 outside a checkout it fails", 1, run(home, config, home, "--show", raw=True)[0])
 
 if want("O9"):  # the real cache and log were never reached
     ok("O9 real cache and log untouched", REAL_BEFORE, (stamp(REAL_CACHE), stamp(REAL_LOG)))

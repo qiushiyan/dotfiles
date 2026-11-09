@@ -1,0 +1,60 @@
+# What a PlanLab session launched through x (or any launcher that runs
+# claude-planlab-overlay) gets instead of the team's AGENTS.md and skill list.
+#
+# The team's text is cut, never rewritten, so its later edits still arrive. A
+# cut that stops matching leaves that text in and is logged to
+# ~/.local/state/claude-planlab-overlay.log. To see what a session now gets,
+# run `claude-planlab-overlay --show` in a PlanLab checkout.
+#
+# An unreadable file leaves every launch with the team's text whole.
+
+[skills]
+# Repository skills the model sees; every other one stays a / command only.
+# Globs. A skill hidden by its own frontmatter (pl-close) stays hidden.
+keep = [
+  "pl-loopy-*", "pl-deploy-*",
+  # the PR workflow
+  "pl-commit", "pl-tidy", "pl-merge-develop", "pl-squash-migrations", "pl-pr",
+  "pl-handle-code-review", "pl-local-bugbot-cycle", "pl-bugbot", "pl-qa", "pl-land", "pl-close",
+  # the team's CLI-tooling hint names it
+  "pl-update-cli",
+  # production reads and migrations my sessions load on their own (3+ sessions each, Oct-Nov 2026)
+  "pl-backstage-db", "pl-planlab-cli", "pl-check-deployed", "pl-prisma-migrate",
+  "pl-cloudwatch-logs", "pl-steward",
+]
+
+[agents]
+# A "## <heading>" section, through to the next heading.
+drop_sections = [
+  "Optional session transcript sharing",  # I share transcripts myself
+  "Scheduling corpus capture",            # I record samples myself; I told sessions not to ask
+]
+
+# A paragraph, by its opening words.
+drop_paragraphs = [
+  "Track substantive coding work in Bench",              # the note below says how I use Bench
+  "When selecting or creating internal Dev",             # CLAUDE.local.md names my sandbox workspace
+  "Scope and judge work by what the problem needs",      # my own scoping rule says the same
+  "Recommend the design that is right",                  # likewise
+]
+
+# A line, by its start: scoped AGENTS.md pointers for areas I never edit.
+drop_lines = [
+  "- `hub/AGENTS.md`",
+  "- `playgrounds/autoandy/AGENTS.md`",
+  "- `delivery-team/",
+]
+
+# Added after the team's text.
+note = """
+## Bench, for this operator
+
+I manage Bench cards, transcript sharing and corpus samples myself. Before
+changing code for substantive work, check Bench read-only for the same work:
+`bench tasks current`, then `bench tasks search <two or three words>`. When
+someone else holds it, tell me who before going on. Create, start or comment
+on a card, claim a Bench name, share a transcript, or record a schedule as a
+corpus sample only when I ask. A card I started or named for this work stays
+current through the PR and merge steps of
+`.agents/skills/pl-bench-tasks/SKILL.md` that the PR skills run.
+"""
