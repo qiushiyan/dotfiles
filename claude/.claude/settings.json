@@ -30,8 +30,11 @@
       "CronList"
     ],
     "defaultMode": "auto",
-    "additionalDirectories": ["~/dev/.worktrees"]
+    "additionalDirectories": [
+      "~/dev/.worktrees"
+    ]
   },
+  "model": "opus",
   "disableClaudeAiConnectors": true,
   "skillOverrides": {
     "artifact-capabilities": "off",
@@ -260,6 +263,9 @@
       "effortLevel": "high"
     },
     "claude-opus-5-5": {
+      "effortLevel": "xhigh"
+    },
+    "claude-fable-5-2": {
       "effortLevel": "xhigh"
     }
   },
