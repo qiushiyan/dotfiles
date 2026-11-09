@@ -124,25 +124,37 @@ describe('follow', () => {
   const ok = (stdout: string) => ({ value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } })
   const ended = { reason: 'answer', answer: 'done' } as never
 
-  /** A repository and shell: `made` joins the registry when a command naming it runs, and `cd` moves `here` unless the shell snaps back. */
-  function world(on: Parameters<typeof mock.clock>[0], options: { made?: { path: string; branch?: string }[]; snapsBack?: boolean; gitDir?: string } = {}) {
+  /**
+   * A repository and shell: `made` joins the registry when a command naming it runs, and `cd` moves `here` unless
+   * the shell snaps back. With `other`, a command that starts `cd <other> && ` leaves the shell in that second
+   * repository and makes `made` there; git answers for whichever directory it runs in.
+   */
+  function world(on: Parameters<typeof mock.clock>[0], options: { made?: { path: string; branch?: string }[]; snapsBack?: boolean; gitDir?: string; other?: string } = {}) {
     const state = { here: MAIN, trees: [{ path: MAIN, branch: 'main' }] as { path: string; branch?: string }[], bash: [] as string[], commands: [] as string[], git: 0 }
+    const otherTrees: { path: string; branch?: string }[] = [{ path: options.other ?? '', branch: 'main' }]
     on('command.register', ($, e) => ({ value: { command: e.name } }))
     on('session.start', ($, e) => ({ cwd: e.cwd }))
     on('turn.complete', () => ({ text: '' }))
     on('session.cwd', () => ({ value: state.here }))
+    on('session.root', () => ({ value: MAIN }))
     on('process.run', ($, e) => {
       if (e.argv[0] === 'gwt') return ok(`${ROOT}\n`)
       state.git += 1
-      if (e.argv[1] !== 'rev-parse') return ok(porcelain(state.trees))
+      const repo = options.other !== undefined && (e.init?.cwd ?? state.here) === options.other ? options.other : MAIN
+      if (e.argv[1] !== 'rev-parse') return ok(porcelain(repo === MAIN ? state.trees : otherTrees))
       // as git answers from a subdirectory: the common dir is relative unless asked otherwise
-      const common = e.argv.includes('--path-format=absolute') ? `${MAIN}/.git` : '../../.git'
-      return ok(`${options.gitDir ?? `${MAIN}/.git`}\n${common}\n`)
+      const common = e.argv.includes('--path-format=absolute') ? `${repo}/.git` : '../../.git'
+      return ok(`${options.gitDir ?? `${repo}/.git`}\n${common}\n`)
     })
     on('tool.call', ($, e) => {
       const { command } = e as unknown as { command: string }
       state.bash.push(command)
       if (command === 'pwd -P') return { result: {}, text: `${state.here}\n` }
+      if (options.other !== undefined && command.startsWith(`cd ${options.other} && `)) {
+        state.here = options.other
+        otherTrees.push(...(options.made ?? []))
+        return { result: {}, text: '' }
+      }
       const cd = /^cd '(.+)'$/.exec(command)
       if (cd?.[1] !== undefined && options.snapsBack !== true) state.here = cd[1]
       if (cd === null) state.trees.push(...(options.made ?? []))
@@ -234,6 +246,18 @@ describe('follow', () => {
     await $.turn.complete(ended)
     await clock.settle()
     expect(state.bash.filter(c => c.startsWith('cd '))).toEqual([])
+    expect(state.commands).toEqual([])
+  })
+
+  test("a worktree made in another repository after a cd there is that repository's, and moves nothing", async ($, on) => {
+    const clock = mock.clock(on)
+    const state = world(on, { made: [{ path: `${ROOT}/feat/y`, branch: 'feat/y' }], other: '/other' })
+    await $.session.start({ cwd: MAIN, surface: 'terminal', isInteractive: true })
+
+    await $.tool.call(bash('cd /other && gwt create -n feat/y'))
+    await $.turn.complete(ended)
+    await clock.settle()
+    expect(state.bash.filter(c => c.startsWith("cd '"))).toEqual([])
     expect(state.commands).toEqual([])
   })
 

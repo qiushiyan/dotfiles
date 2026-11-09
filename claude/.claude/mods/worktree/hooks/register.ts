@@ -34,22 +34,22 @@ async function choose($: EngineInterface, instruction: string): Promise<Plan | s
   return parsePlan(reply.text) ?? `The reply named no usable branch:\n${reply.text.trim()}\nName one: /wt <branch> [base].`
 }
 
-/** The stdout of a command in the session's directory; undefined when it fails. */
-async function stdout($: EngineInterface, argv: string[]): Promise<string | undefined> {
-  const ran = await $.process.run(argv).catch(() => undefined)
+/** The stdout of a command, in cwd or the session's directory; undefined when it fails. */
+async function stdout($: EngineInterface, argv: string[], cwd?: string): Promise<string | undefined> {
+  const ran = await $.process.run(argv, cwd === undefined ? undefined : { cwd }).catch(() => undefined)
   return ran === undefined || ran.exitCode !== 0 ? undefined : ran.stdout
 }
 
-async function listTrees($: EngineInterface): Promise<Tree[]> {
-  return parseTrees((await stdout($, ['git', 'worktree', 'list', '--porcelain'])) ?? '')
+async function listTrees($: EngineInterface, project: string): Promise<Tree[]> {
+  return parseTrees((await stdout($, ['git', 'worktree', 'list', '--porcelain'], project)) ?? '')
 }
 
 /**
  * A session in a linked worktree stays there: what it makes next is not its own
  * move. Absolute, since from a subdirectory the common dir prints relative.
  */
-async function isInMainCheckout($: EngineInterface): Promise<boolean> {
-  const [gitDir, commonDir] = ((await stdout($, ['git', 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'])) ?? '').split('\n')
+async function isInMainCheckout($: EngineInterface, project: string): Promise<boolean> {
+  const [gitDir, commonDir] = ((await stdout($, ['git', 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'], project)) ?? '').split('\n')
   return gitDir !== undefined && gitDir !== '' && gitDir === commonDir
 }
 
@@ -92,14 +92,17 @@ export const register: Register = on => {
 
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     if (e.tool !== 'Bash' || e.agentId !== undefined || !mayCreate(e.command)) return next(e)
-    const before = await listTrees($)
-    const isMain = before.length > 0 && (await isInMainCheckout($))
+    // The session's own repository, not wherever the shell stands: `cd <other repo> && gwt create`
+    // makes that repository's worktree, which this session does not move into.
+    const project = await $.session.root()
+    const before = await listTrees($, project)
+    const isMain = before.length > 0 && (await isInMainCheckout($, project))
     const ran = await next(e)
     if (!isMain || ran.deny !== undefined) return ran
 
-    const after = await listTrees($)
+    const after = await listTrees($, project)
     if (after.length <= before.length) return ran
-    const root = (await stdout($, ['gwt', 'path']))?.trim()
+    const root = (await stdout($, ['gwt', 'path'], project))?.trim()
     const tree = root === undefined || root === '' ? undefined : followed(before, after, root)
     if (tree === undefined) return ran
 

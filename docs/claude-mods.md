@@ -111,9 +111,9 @@ checkout at once, so the turn goes on there, and `/cd` lands when the turn ends
 for a resume and drive to read.
 
 - **What is followed:** one new checkout on a branch under `gwt path`, made by
-  the main loop from the main checkout. A detached or scratch checkout, a
-  subagent's, another repository's, and one made from a linked worktree stay
-  put. A session that makes a worktree for another session is followed too,
+  the main loop of a session whose project is the main checkout. A detached or
+  scratch checkout, a subagent's, another repository's (even after a `cd`
+  there), and one made from a linked worktree stay put. A session that makes a worktree for another session is followed too,
   since nothing says whose work it is; drive's steps have each session make its
   own.
 - **What the shell move needs:** `~/dev/.worktrees` in the shared settings'
