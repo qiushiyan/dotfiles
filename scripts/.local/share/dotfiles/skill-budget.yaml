@@ -34,7 +34,11 @@ skills:
   # parks finished-but-pending sessions on an ask or --until, and asks at each design checkpoint
   # (+35 body, +67 total). main's total already stood at 8902, over its 8708 record,
   # before this change; that growth is not explained here
-  drive-session: {body: 2482, total: 8942}
+  # raised 2026-11-09 on the user's word (batch 2026-11-06): a read owed after the merge
+  # is a marker on develop at closeout and the session closes rather than parks; a park
+  # brings a closed tab back; every batch links Mini 2's page; the strategic-review fold
+  # continues past the churn stop (+15 body, +132 total)
+  drive-session: {body: 2497, total: 9074}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it

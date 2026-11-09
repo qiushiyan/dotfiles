@@ -45,7 +45,7 @@ A send, open or respond arms a wake for when that session's turn ends or it
 stops on a prompt. A refused command arms none.
 
 ```bash
-drive park T3@… --until 2026-11-06 "waits for Friday's fleet read"   # shown on the user's page: write it in their terms
+drive park T3@… "waits for your call on the backfill (A4)"           # shown on the user's page: write it in their terms
 drive timer 300 veto                                 # the plan's veto; once the user answers, it brings nothing to do
 ```
 
@@ -66,8 +66,12 @@ shows it again.
 
 `drive watch --due-all` runs on the machine every five minutes (launchd's
 `com.qiushi.drive-watchdog`) with no model run, and posts you only what needs
-you, as a `kind: watchdog` wake, each line saying what to do. A gone session
-that was parked comes back parked, with no wake of its own.
+you, as a `kind: watchdog` wake, each line saying what to do.
+
+**A park keeps the tab.** A parked session whose tab the user closes comes
+back: the watchdog reports it gone, and its reopen restores it, still parked.
+So close a wrapped-up session (`drive close`); park only one with a step to
+come.
 
 A routine of your own adds nothing while that agent runs. A run that
 fails for want of usage never reaches you, so drive holds your wakes instead,
@@ -78,9 +82,9 @@ once what that held up.
 
 The user's page shows every driver's batch on the machine you run on, live:
 each session's goal, where it stands, its PRs, its history with your notes
-verbatim, and the questions waiting on the user. `~/.config/machine` names
-the machine: the mini's page is `https://qiushi-mini.tailf7adf1.ts.net:8444`,
-the mac's `https://qiushis-macbook-pro.tailf7adf1.ts.net:8444`.
+verbatim, and the questions waiting on the user. Every batch runs on Mini 2:
+link the page as `https://qiushi-mini-2.tailf7adf1.ts.net:8444`
+(`…:8444/#2026-11-06/S1` for a session), never `qiushi-mini`.
 Your messages carry what it cannot: what changed, why, and what you
 recommend.
 

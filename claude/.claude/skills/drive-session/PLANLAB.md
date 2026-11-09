@@ -119,7 +119,7 @@ drive send T1@… --snippet recap                      # then close T1; its bran
 drive send sr-9531@… 'Fold these in.'                # once the review reports; the skill says how
 drive send sr-9531@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
 drive send sr-9531@… --snippet recap
-drive send sr-9531@… --snippet closeout --hold planlab-main
+drive send sr-9531@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
 ```
 
 - Once the stages the pipeline doc's § Who decides lists have run,
@@ -141,6 +141,11 @@ drive send sr-9531@… --snippet closeout --hold planlab-main
   at their deadline; when clean, go straight on to the merge.
 - **The strategic review's findings** are folded in with "Fold these in."
   Relay one to the user only when it is major. Close the builder once its
-  `sr-<PR>` session opens.
-- **A session left only waiting** (on dates, people or a release) posts a PR
-  comment: what is left, what it waits on, and how to finish.
+  `sr-<PR>` session opens. The fold counts toward the code review's churn
+  budget, so the merge step after it adds `If the review stops on churn,
+  that's my fold: continue with --churn-ok.`
+- **A read owed after the merge** closes its session once it is a marker on
+  develop (`pl-loopy-handoff` § Documentation bindings, *Owed reads*), as
+  the closeout step above makes sure: a PR comment alone reminds nobody.
+- **A session left waiting** on people or a release posts a PR comment: what
+  is left, what it waits on, and how to finish.

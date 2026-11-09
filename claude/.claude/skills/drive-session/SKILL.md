@@ -224,10 +224,11 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
 ## Report
 
 When a session reaches its finish, or stops on something only the user can
-give, send it `recap` and wait for that turn, then close it; while a merge,
-release or read is still to come, park it on its ask or `--until` its date.
-Any send ends a park, so the recap goes first. A session parked only to wait
-for another session's hold gets its recap at its own finish.
+give, send it `recap` and wait for that turn, then close it; while a merge
+or release is still to come, park it on its ask or `--until` its date. A
+read owed after the merge is recorded at closeout instead (PLANLAB.md § After
+the PR). Any send ends a park, so the recap goes first. A session parked
+only to wait for another session's hold gets its recap at its own finish.
 Build the report from the recaps and the record (`drive log`, `drive
 metrics`). The user meets every id in it cold, and an item they cannot
 decide from costs a round trip, so each item stands alone:

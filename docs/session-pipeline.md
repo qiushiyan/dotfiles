@@ -205,11 +205,13 @@ data, ask. Beyond that:
 - **Merge and release**, once the stages have run: review and verification,
   the prompt check where it applies, the PR's code review handled, the
   strategic review with its findings folded in (planlab's default; elsewhere
-  where the change earned one), and required checks green. A release's
-  migration gate is overridden with the acknowledgement it suggests once the
-  release's session has read what it flagged and recommends it, unless the
-  migration is one the second ask names. A personal tool's `closeout` merge
-  is the same.
+  where the change earned one), and required checks green. The strategic
+  review's fold is change the user asked for, so the code review's churn
+  stop after it is no reason to hold: the merge goes on with `--churn-ok`.
+  A release's migration gate is overridden with the acknowledgement it
+  suggests once the release's session has read what it flagged and
+  recommends it, unless the migration is one the second ask names. A
+  personal tool's `closeout` merge is the same.
 - **Docs passes, handoffs, closeouts and cleanup**: the doc pass when a
   session is ready for one, and removing the branches, worktrees, review
   checkouts and scratch files the sessions recommend; a branch that is not
