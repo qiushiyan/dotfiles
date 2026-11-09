@@ -103,7 +103,10 @@ def config():
 
 def checkout(start):
     """The PlanLab checkout holding start: the nearest .claude/CLAUDE.md, when it is the one-line import of
-    AGENTS.md beside the team's Bench skill."""
+    AGENTS.md beside the team's Bench skill.
+
+    claude.zsh's _claude_overlay does not run this program at all when no directory above the launch holds
+    .agents/skills/pl-bench-tasks, so a checkout must keep requiring it here."""
     for directory in (start, *start.parents):
         entry = directory / ".claude" / "CLAUDE.md"
         if entry.is_file():

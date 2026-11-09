@@ -124,8 +124,36 @@ _headroom_required() {  # <vendor>
 # and every launch runs it first, so a new clone or a new account is never
 # asked about. It writes only when something is missing, and a launch never
 # depends on its outcome; its header owns the rule and the cleanup (--prune).
+#
+# A run that had nothing to write still starts Python and walks ~/dev, 65 ms
+# before every launch. So a clean run is remembered for the directory it was
+# launched from, and a launch from a remembered directory skips it. The memo
+# says nothing of the rule: it starts over when the set of account
+# directories changes or it is a day old, which is how long trust taken away
+# behind it (a hand-edited .claude.json) can go unrestored.
 _workspace_trust() {
-  whence -p workspace-trust >/dev/null && workspace-trust --quiet
+  emulate -L zsh
+  whence -p workspace-trust >/dev/null || return 0
+  zmodload zsh/datetime 2>/dev/null
+  local memo=${XDG_CACHE_HOME:-$HOME/.cache}/workspace-trust.covered here=${PWD:A}
+  local -a lines accounts=($HOME/.claude-accounts/*(/N:t) codex $HOME/.codex-accounts/*(/N:t))
+  local -i current=0
+  # Line 1 is when the memo was started, line 2 the accounts it holds for,
+  # and the rest the directories a clean run was launched from.
+  [[ -r $memo ]] && lines=("${(@f)$(<$memo)}")
+  if [[ ${lines[1]-} == <-> && ${lines[2]-} == "${accounts[*]}" ]] \
+      && (( EPOCHSECONDS - lines[1] < 86400 )); then
+    current=1
+    (( ${lines[(Ie)$here]} > 2 )) && return 0
+  fi
+  workspace-trust --quiet || return 0
+  {
+    if (( current )); then
+      print -r -- $here >> $memo
+    else
+      mkdir -p ${memo:h} && print -rl -- $EPOCHSECONDS "${accounts[*]}" $here >| $memo
+    fi
+  } 2>/dev/null
   return 0
 }
 
@@ -134,9 +162,19 @@ _workspace_trust() {
 # team's Bench tracking and transcript text, and only the skills it keeps; its
 # header owns the rule. It prints the args NUL-ended; anywhere else, or on any
 # failure, it prints nothing and the args stand. The args land in $reply.
+#
+# Its checkout is a directory holding the team's Bench skill, so with no such
+# directory above this one it would start Python (30 ms) to print nothing, and
+# the launch does not run it. The overlay's `checkout` owns the full rule and
+# says that this is the part of it relied on here.
 _claude_overlay() {
   emulate -L zsh
   reply=("$@")
+  local dir=${PWD:A}
+  until [[ -d $dir/.agents/skills/pl-bench-tasks ]]; do
+    [[ $dir == / ]] && return 0
+    dir=${dir:h}
+  done
   whence -p claude-planlab-overlay >/dev/null || return 0
   local out
   out=$(claude-planlab-overlay "$@") && [[ -n "$out" ]] || return 0

@@ -60,9 +60,12 @@ EOS
 # probe <script>: the launcher modules, sourced as .zshenv does, then
 # <script>, in which `route <fn>...` prints "<fn> => <headroom argv>" or
 # "<fn> => absent". Outside tmux and non-interactive, so cx runs headroom
-# directly rather than through the pane decoration.
+# directly rather than through the pane decoration. It runs in $AL_CWD, or the
+# sandbox, never where the suite was started: a launch reads the directory it
+# is in, and the memo of covered directories lands under the sandbox $HOME.
 probe() {
-  env -u TMUX -u TMUX_PANE HOME="$H" PATH="$SB/bin:/usr/bin:/bin" "$ZSH_BIN" -f -c '
+  env -u TMUX -u TMUX_PANE -u XDG_CACHE_HOME HOME="$H" PATH="$SB/bin:/usr/bin:/bin" "$ZSH_BIN" -f -c '
+    cd -q -- $3 || exit 1
     log=$2/headroom.log
     for f in "$1"/{claude,codex,tmux-utils}.zsh; do source "$f"; done
     route() {
@@ -76,7 +79,7 @@ probe() {
         fi
       done
     }
-    '"$1" zsh "$MODS" "$SB"
+    '"$1" zsh "$MODS" "$SB" "${AL_CWD:-$SB}"
 }
 
 # expect <output> <fn> <want-pattern>...: each pair must appear as a line.
@@ -224,12 +227,34 @@ EOS
     || { print -r -- "workspace-trust ran as: ${(qqq)got}"; return 1 }
 }
 
+# A clean workspace-trust run is remembered for the directory it was launched
+# from, so the next launch there does not run it; a launch from another
+# directory, or after an account directory appears, does.
+test_a_covered_directory_skips_workspace_trust() {
+  sandbox yan@a.com || return 1
+  printf '#!/bin/sh\necho run >> "%s/trust.log"\n' "$SB" >"$SB/bin/workspace-trust"
+  chmod +x "$SB/bin/workspace-trust"
+  mkdir -p "$SB/one" "$SB/two"
+  runs() { local -a ran=("${(@f)$(<$SB/trust.log)}"); print -r -- $#ran }
+  AL_CWD="$SB/one" probe 'route x x-yan cx' >/dev/null
+  [[ $(runs) == 1 ]] || { print -r -- "three launches from one directory ran it $(runs) times, not once"; return 1 }
+  AL_CWD="$SB/two" probe 'route x' >/dev/null
+  [[ $(runs) == 2 ]] || { print -r -- "a launch from a second directory: $(runs) runs, not 2"; return 1 }
+  mkdir "$H/.claude-accounts/new@a.com"
+  AL_CWD="$SB/one" probe 'route x x' >/dev/null
+  [[ $(runs) == 3 ]] || { print -r -- "two launches after a new account: $(runs) runs, not 3"; return 1 }
+}
+
 # A Claude launch hands headroom the args claude-planlab-overlay prints,
 # NUL-ended, an empty one kept; an overlay that fails leaves the launch's own
-# args. The real overlay is never on the sandbox PATH, so the other cases run
-# without one.
+# args. The overlay runs only under a directory holding the team's Bench
+# skill: anywhere else the launch does not start it. The real overlay is never
+# on the sandbox PATH, so the other cases run without one.
 test_launchers_take_the_overlay_args() {
   sandbox yan@a.com || return 1
+  mkdir -p "$SB/checkout/.agents/skills/pl-bench-tasks" "$SB/checkout/apps/web"
+  local AL_CWD="$SB/checkout/apps/web"
+  export AL_CWD
   cat >"$SB/bin/claude-planlab-overlay" <<'EOS'
 #!/bin/sh
 printf -- '--settings\0/tmp/s.json\0--tools\0\0'
@@ -242,7 +267,11 @@ EOS
     x-yan "launch --account yan@a.com -- --settings /tmp/s.json --tools  $B" \
     cx    "launch --vendor codex --" || return 1
   printf '#!/bin/sh\nprintf -- "--half\\0"\nexit 1\n' >"$SB/bin/claude-planlab-overlay"
-  expect "$(probe 'route x')" x "launch -- $B"
+  expect "$(probe 'route x')" x "launch -- $B" || return 1
+  printf '#!/bin/sh\necho ran >> "%s/overlay.log"\n' "$SB" >"$SB/bin/claude-planlab-overlay"
+  AL_CWD="$SB" probe 'route x' >/dev/null
+  [[ ! -e "$SB/overlay.log" ]] || { print -r -- "the overlay ran outside a checkout"; return 1 }
+  unset AL_CWD
 }
 
 t "x-* launchers: names and the account each reaches"   test_claude_launcher_names
@@ -251,6 +280,7 @@ t "a host file names the primary and moves its launcher" test_host_names_the_pri
 t "a primary named by its email keeps its local part"    test_primary_named_by_email
 t "adding a same-local-part account retires the alias"  test_add_retires_an_ambiguous_alias
 t "session launchers run workspace-trust first"         test_launchers_record_trust_first
+t "a covered directory skips workspace-trust"           test_a_covered_directory_skips_workspace_trust
 t "claude launches take the overlay's args"             test_launchers_take_the_overlay_args
 
 rm -rf "${TMPDIR:-/tmp}"/al-test.*(N)
