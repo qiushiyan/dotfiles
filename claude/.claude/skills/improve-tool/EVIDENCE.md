@@ -1,7 +1,42 @@
 # improve-tool — evidence log
 
-One entry per mining pass over sessions that ran this skill; counts are
-written so the next pass can re-run them.
+A pass reads the two sections below first, then the newest entry. Dated
+entries follow, oldest first, one per pass, with counts written so a later
+pass can re-run them.
+
+## Decisions that stand
+
+- **A shape change is designed to the user before it is built** (09-01; no
+  full revert in the 54 runs since, against 1 of the first 6).
+- **No fixed session budget, review window or scheduled re-measurement**
+  (09-07): scope follows the question.
+- **No mandatory interview and no automatic closing review** (09-07). The
+  closing prompt pass is the one exception this log keeps reopening; see the
+  first open comparison.
+- **Three independent sessions is a reporting floor,** not proof and not a
+  bar to fixing one verified defect (09-07).
+- **A reproducible finding gets its case before the edit** (10-09, 10-28).
+- **Silence in the history is no reason to cut a guardrail** (10-28); a
+  cut needs its case run without the line, or a baseline interview (11-05).
+
+## Open comparisons
+
+Each is a measurement the next pass can run. Answer or retire them before
+adding more.
+
+1. **Does the closing prompt pass run without being asked?** Predicate: a
+   user turn after the invocation `LIKE '%Review and revise the model-facing
+   surfaces%'` (the `prompt-check` snippet), in runs that edited model-facing
+   text. Baseline: 19 of 54 runs (09-15 → 11-07), and the pass it asked for
+   found defects in at least 13 of the 15 replies read. After the 11-09
+   rewrite ships: the next five such runs. Reverse: still sent and still
+   finding defects in three of five means a line cannot carry it, and the
+   pass needs a fresh reader as a mechanism.
+2. **Does the report still leave the user to ask what changed for them?**
+   Predicate: a follow-up asking what they now type, how an agent comes to
+   know the change, or "what do you mean by" a label the report coined.
+   Baseline: 7 and 12 of 54 runs. After the rewrite: the next five runs.
+   Reverse: no drop means the report list is not what the reader acts on.
 
 ## 2026-08-29 — first two runs
 
@@ -384,3 +419,128 @@ after this commit. Does a cut of a caseless rule cite an interview or a run?
 Does an interview-cut rule come back (a failure in later use that the cut
 line guarded)? Reversal: a cut made on an interview alone that later use
 shows was needed, or interviews skipped in favour of opinion.
+
+## 2026-11-09 — the skill on its own 54 runs: a stance and a toolkit
+
+Purpose: the user asked what would make the skill "more flexible and more
+powerful", by "a helpful philosophy" or "the toolkit they would likely need",
+without a longer prompt. Session `93a3dd6a` (mac); ledger
+`improve-tool-frictions.md` in its scratchpad.
+
+**Corpus.** Discovery (user role, `is_meta=0`, `is_sidechain=0`, self
+excluded, `skill='improve-tool' OR text LIKE '%improve-tool%'`): 138 sessions
+(mac 88, mini 38, mini2 12), 08-29 → 11-09. Confirmed invocations
+(`text LIKE '%<command-name>/improve-tool</command-name>%'`, continuations
+excluded): 72 rows in 66 sessions (mac 50/45, mini 13/12, mini2 9/9); five
+sessions hold the same request re-sent after an interrupt. Window: the 54
+sessions invoked after 09-07 (mac 33, mini 12, mini2 9), which no pass had
+read. Read: every user turn after each invocation (576), the head and tail
+of each first report with its reply, six steering turns with the whole
+report they answered, and per-run tool facts. Not read: the work between
+reports, each pass's diff, sidechains. Bash-heredoc edits are invisible to
+the edit counts, and "claimed a pass" is a LIKE match on assistant text.
+
+**Comparisons answered.**
+
+| promised | result |
+|---|---|
+| 09-01 shape change designed first | held: 0 full reverts in 54 |
+| 09-01 holistic prompt pass inside the skill | not held: open comparison 1 |
+| 09-07 rates carry a classified cohort | held in the reports since 10-28 that count anything |
+| 09-07 questions name a real open decision | not held: go-ahead asks for work in scope in at least 8 runs ("Should I make these three changes?", "Whether to record this pass in the evidence log") |
+| 10-06 corpus stated per machine | held where sampled (`2c257532`, `c7ba697e`, `1c432277`, `f6f07667`) |
+| 10-09, 10-28 case before the edit | skill-eval in 12 of 33 runs since 10-09; of 6 since 10-28, 4 ran red or wrote the case first, 2 edited first (`4404a72d`, `60bd494a` by hand) |
+| 10-28 over-budget cuts cite cases; n≥6 on the over-budget case | not measured; retired as a promise, kept as a deletion to watch below |
+| 11-05 a caseless cut cites an interview | pending: 6 runs since, 1 interview-like (`0a262f3d`) |
+
+**Findings.**
+
+| finding | evidence and limits | disposition |
+|---|---|---|
+| The skill is asked more than its body describes | hand-tagged requests: a named tool's usage 20, an open design or placement question 12, "is X effective" by experiment 7, an outside idea to judge 8, a retyped prompt to turn into a tool 7 | opening rewritten |
+| The pass runs inside the session pipeline and the body claimed the later stages as its own | after the first report the user started a consult or review in about 25 of 54, sent `prompt-check` in 19, typed a landing nudge in at least 14; `docs/session-pipeline.md` names no entry for this skill | § Deciding and asking; the pipeline line is the user's docs pass |
+| The closing prompt pass does not run | open comparison 1; the assistant had claimed a pass before the ask in 3 of 15; the build comes turns after the skill was read | "A build is not done at the last edit", named in the report's closing line |
+| The report leaves the user to ask | what changes for me, and how an agent learns it: 7 runs; "what do you mean by" a coined label: 12; a recap after hours away: 5 | the report list; questions answerable alone |
+| A rule per finding, and the smaller fix first | `75e316e5` (eight spec rules; "address the root problem rather than just applying a patch", then "I don't want to overfit"), `be35ec01`, `71bdb6e3`, `8ae01ce4`, `a5cdd6e5`, `527fd55a`; the body's "smallest coherent change" against the global scoping rule's "propose the proper fix first". None seen in the 14 first reports since the 10-28 size ratchet, so size has a mechanism and reasoning had none | § The stance |
+| "Among others you find" retyped in the arguments | at least 11 of 54 requests; sampled runs do report unasked findings, so a preference, not a measured failure | stance, first paragraph |
+| Promised comparisons mostly never happen | a subagent's read of 11 evidence logs: 103 promises, 88 with a later entry, 36 followed, 17 in full; followed where the next entry opens on the last measures (strategic-review 5 of 6, write-spec 9 of 11), not where they trail (review 1 of 7, consult 1 of 6, tabtype 2 of 9, envoy 2 of 10); this log's five lists since 09-07 first compared today | the log's top section; promise one or two |
+| MINE.md is read and not reused | read in about 45 of 54 first windows; its run block in 1, the voice sweep 0, the document and reporting variants 0, pairs 7 and next-turn 8 (all September); name matches undercount adapted copies. Two defects: `context()` and `thread()` called bounded, and the next-turn query returning `[Request interrupted…` as a reply (231 such rows in 197 sessions since 09-07) | both defects fixed; slimming is the user's decision |
+| skill-eval is driven by hand around its edges | 450 calls in 28 sessions since 10-09, 8 errors; 132 through `ssh mini`; one rollout inspected with jq or python over `row.json` and `transcript.jsonl` in at least 7 sessions, 11-04 and 11-05 included | proposal for skill-evals: a `show` command; not built |
+| Offers nobody takes | an Obelisk memory offered in at least 16 of 54 runs, written in 5, none after 10-02 | the offer is cut |
+
+**Changed.** `SKILL.md` rewritten from the goal: what a good pass is, five
+stance paragraphs, the toolkit as one list, then changing, deciding, proving
+and recording; 1,464 → 1,441 body words, so about the same size for a wider
+job. `MINE.md`: the counting rules stated once there, `messages()` for the
+follow-up, the interrupt marker excluded from the next-turn facet, and the
+read this pass turned on, every user turn after a run. `EVALS.md`: where
+subscription rollouts run, and that `WORKTREE` is the checkout `tool.json`
+names. This log: the two sections at its top.
+
+**Changed on purpose, beyond the cuts below.** "Smallest coherent change"
+became the right fix over the smallest. Questions are asked together, each
+with its default, where the body said one neutral question at a time; the
+session pipeline's § Who decides asks them that way. The case-before-edit
+rule now names a failing test in the engine's suite for an engine defect.
+
+**Cut, to watch.**
+- *The Obelisk memory offer.* Bring back if a later session asks for a
+  conclusion that lives only in an evidence log it had no reason to open.
+- *"Most of a long skill's length is behavior".* Bring back if an over-budget
+  pass reaches its budget by rewording and its parity read finds behavior
+  lost; the `over-budget` case is the check.
+- *The pointer to `SKILL-MECHANICS.md`.* Reached through revise-prompt and
+  `AGENT-DOCS.md`. Bring back if a pass changes a skill's frontmatter without
+  reading it.
+- *One success measure per change.* Replaced by one or two open comparisons.
+  Bring back if a change ships with nothing a later pass could measure.
+- *§ Every line earns its place,* now a pointer to revise-prompt, which
+  holds the bar and both ways to settle a doubt.
+
+- *`MINE.md`'s keyword sweep for corrections* (`why`, `stuck`, `wrong` …),
+  reused in 0 of 54 runs and replaced by reading the turns after a run; it
+  pays for the additions to the two companions. Bring back if a pass over a
+  corpus too large to read turn by turn misses a correction the sweep's
+  words would have caught.
+- *"Add a broader review when a material question remains",* the ledger's
+  per-change fields, and the compact table in the report. The pipeline has a
+  review stage, and no run was seen to need the other two.
+
+**Verified by reading.** One parity read against `main`: 30 of the old
+file's 52 action-changing instructions kept, several through `MINE.md` and
+revise-prompt. Restored from it: checking help and results against the
+installed build, "or explicit correction" beside the verified defect, a cut
+logged with what it guarded, and the contract-change rule as it stood
+(design and consumer check first, ask when it exceeds the request), which
+the first draft had tightened into asking more. Three cold readers on
+scenarios taken from real runs (`2c257532`, `9f01709a`, `71bdb6e3`): each
+reached a determinate first report; the CLI reader proposed the broader fix
+and closed on what one "go" would do, and the review reader found the
+request already shipped and measured its promises instead of re-editing.
+Adopted from them: the engine-test route, what a narrow pass does with
+inherited comparisons, a line for a log that lacks the new opening, the
+dotfiles scope of the size check, and the two `EVALS.md` facts (both
+checked: `skill-eval` copies `WORKTREE` from `tool.json`'s repo, and this
+laptop's cases were five commits behind).
+
+**Not verified.** No replay ran: the two existing cases have not been run
+against this text, so nothing here is a runtime claim.
+
+**Proposed outside this skill, not built.**
+- *skill-evals:* a `show` command for one rollout (verdict, checks, whether
+  the skill loaded, the command trail), and leaving `EVIDENCE.md` and
+  `LESSONS.md` out of the skill a rollout installs, since a log beside the
+  skill can name a case's answer (a reader's finding; no rollout was seen
+  reading one).
+- *`docs/session-pipeline.md`:* a line naming this skill as an entry, as
+  `go-cli-maintain` has, for the user's docs pass.
+- *`MINE.md`:* dropping the document and reporting variants' code, unused
+  in 54 runs.
+
+**Cases written before the rewrite, not built and not run.** A
+`closing-pass` check for `finding-to-case` (after its edits the agent runs
+revise-prompt's pass on the text it changed and the report says what it
+found), and a `root-not-rules` case seeded with write-spec's five-build
+findings of 09-21 and no user correction (the design groups failure classes
+by cause, changes how the spec is produced so a class gets less likely,
+names a class it leaves alone, and is not one new rule per class).

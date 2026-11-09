@@ -1,10 +1,13 @@
 # Replay a finding through skill-evals
 
-`~/dev/skill-evals` (private, on both machines through twin) replays a skill
-headless against chosen revisions; its README covers cases, fixtures, and
-commands, including which judge grades by default. Use it when a finding
-reproduces within one headless session, from the request alone or with one
-scripted reply. Rollouts send the fixture's content to Anthropic for the
+`~/dev/skill-evals` (private, a clone on each machine: pull before reading
+its cases) replays a skill headless against chosen revisions; its README
+covers cases, fixtures, and commands, including which judge grades by
+default. Subscription rollouts run on the mini, the one machine whose
+accounts hold headless tokens: from another machine start the run there over
+ssh and collect it with `skill-eval wait`. Use it when a finding reproduces
+within one headless session, from the request alone or with one scripted
+reply. Rollouts send the fixture's content to Anthropic for the
 agent and the default judge, and to OpenAI for a `codex:<model>` judge or a
 tool that consults codex. Name them in the pass's disclosure.
 
@@ -17,8 +20,9 @@ outcome, so a run cannot pass on process alone. If a case already tests the
 behavior, tighten it; a case that passed the failure you found is itself a
 finding. Then run every case of the tool at `red` and at `WORKTREE`, so each
 has a baseline. Set the run count by how often the failure shows: a mistake
-seen a few times a week needs more than three runs. To keep a candidate out
-of live sessions until it passes, edit a copy and pass its directory as the
+seen a few times a week needs more than three runs. `WORKTREE` is the skill
+in the checkout `tool.json` names. To keep a candidate out of live sessions
+until it passes, edit a copy or a worktree and pass its directory as the
 revision.
 
 Before spending runs on a new case, run `skill-eval calibrate` on it (a

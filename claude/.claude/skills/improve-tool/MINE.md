@@ -20,8 +20,12 @@ do not establish human authorship. Keep connected runs linked for provenance,
 not counted as independent support. The examples below discover candidates;
 refine their predicates for the confirmed cohort and task window before
 reporting rates. Report both population and sample sizes, dates, exclusions,
-and missing follow-through. Preserve an exact query and its constants beside
-the local ledger so another pass can reproduce the denominator.
+and missing follow-through. Sample across the dates, tasks and providers
+the question spans; widen when a gap or a rival explanation could change the
+decision, and stop when the action and its limits are clear: a large hit
+count does not need a large reading pass. Preserve an
+exact query and its constants beside the local ledger so another pass can
+reproduce the denominator.
 
 ```bash
 S=<your scratchpad directory>; Q=/tmp/obq-<session-id>.mjs
@@ -101,22 +105,13 @@ out.workarounds = sql(`
 
 // E. user voice — corrections in the sessions that used the tool, scoped by session, never by
 // whether the text names the tool: the corrections that decide a pass ("please revert", "go ahead")
-// rarely do. Explicit markers first.
+// rarely do. Explicit markers here; the turns themselves through facet F.
 const used = [...new Set(calls.map(r => r.sid))].map(s => `'${s}'`).join(',') || "''";
 out.friction_markers = sql(`
   SELECT m.session_id sid, m.uuid, substr(m.text,1,300) text FROM messages m
   WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.source='claude'
     AND m.text LIKE '%friction:%' AND m.session_id IN (${used})
   ORDER BY m.timestamp DESC LIMIT 15`);
-const voice = sql(`
-  SELECT COUNT(*) n, COUNT(DISTINCT m.session_id) sessions, MIN(m.session_id) sid, MIN(m.uuid) uuid, substr(m.text,1,240) text FROM messages m
-  WHERE m.role='user' AND m.content_type='text' AND COALESCE(m.is_meta,0)=0 AND m.session_id IN (${used})
-    AND m.source = 'claude' AND m.text NOT LIKE 'This session is being continued%' AND m.text NOT LIKE '<command-%'
-    AND (m.text LIKE '%why%' OR m.text LIKE '%stuck%' OR m.text LIKE '%wrong%' OR m.text LIKE '%didn''t%'
-      OR m.text LIKE '%again%' OR m.text LIKE '%revert%' OR m.text LIKE '%forgot%' OR m.text LIKE '%wait%' OR m.text LIKE '%不%')
-  GROUP BY substr(m.text,1,80) ORDER BY MAX(m.timestamp) DESC LIMIT 60`);
-out.user_voice = voice.filter(v => v.n === 1).slice(0, 10);                          // single matching prefix; inspect whether it is a correction
-out.standing   = voice.filter(v => v.n > 1).sort((a, b) => b.n - a.n).slice(0, 6);   // repeated prefix; inspect duplicates and provenance
 
 // F. what came next — the user's first turn after each engine call or skill invocation, read by
 // position: candidates for outcome analysis. Read the preceding report to distinguish approval,
@@ -126,7 +121,8 @@ const invRows = sql(`SELECT m.session_id sid, m.timestamp ts FROM messages m WHE
 const seenNext = new Set(); out.after = [];
 for (const r of [...calls, ...invRows]) {
   const n = sql(`SELECT uuid, timestamp ts, substr(text,1,160) t FROM messages WHERE session_id=:sid AND role='user' AND content_type='text'
-    AND COALESCE(is_meta,0)=0 AND timestamp > :ts AND text NOT LIKE 'This session is being continued%' ORDER BY timestamp LIMIT 1`, { sid: r.sid, ts: r.ts })[0];
+    AND COALESCE(is_meta,0)=0 AND timestamp > :ts AND text NOT LIKE 'This session is being continued%'
+    AND text NOT LIKE '[Request interrupted%' ORDER BY timestamp LIMIT 1`, { sid: r.sid, ts: r.ts })[0];
   if (!n || seenNext.has(n.uuid)) continue; seenNext.add(n.uuid);
   out.after.push({ sid: r.sid, uuid: n.uuid, ts: n.ts, gapMin: Math.round((Date.parse(n.ts) - Date.parse(r.ts)) / 60000), len: n.t.length, t: n.t });
 }
@@ -139,15 +135,15 @@ return out;
 
 The user-voice facet is the one that states intent. A `friction:` marker —
 the user's one-word tag on a correction ("friction: review made me assemble
-the resume command by hand") — is mined verbatim; the keyword sweep is the
-fallback, grouped by text prefix so a hit arrives with its count:
-`user_voice` and `standing` are candidate buckets by prefix frequency, not
-proof of unique corrections or standing preferences.
+the resume command by hand") — is mined verbatim.
 
-Follow-up rounds expand vertically: `context(uuid)` on a user-voice hit, the
-bounded `thread(sid)` projection of the seed session, `raw(uuid, { offset, limit })` when a
-truncated tool result hides the error text; `obq --on <machine>` asks only
-the machine that returned the hit. The skill body's own claims are
+Drop facet F's `LIMIT 1` to read the conversation a run caused: every user
+turn after it, in order, for the sessions in the sample. A few hundred turns
+fit one file. Follow-up rounds expand vertically:
+`messages({ around: uuid })` on a turn worth its context, the report before
+it (the last assistant text in the window), `raw(uuid, { offset, limit })`
+when a truncated tool result hides the error text; `obq --on <machine>`
+asks only the machine that returned the hit. The skill body's own claims are
 also queries — "agents call `describe` before guessing a column" is a count,
 and the count tells you whether the rule is working.
 
