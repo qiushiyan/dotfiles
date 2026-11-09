@@ -31,8 +31,8 @@ job records what ran. Resolve it from the user's words:
 ```sh
 --with codex:gpt-6-astra:high    # the default: no voice named, "codex", or "astra"
 --with codex:gpt-6.1-sol:xhigh   # "sol"
---with claude:claude-opus-5-5    # "claude", "opus"
---with claude:claude-fable-5-1   # "fable"
+--with claude:claude-fable-5-2   # "claude", "fable"
+--with claude:claude-opus-5-5    # "opus"
 --with codex:gpt-6-astra:xhigh   # another effort only when the user asks: "astra on xhigh"
 ```
 
@@ -60,7 +60,7 @@ A good ask carries the goal in the user's terms, what something outside this
 session settled, and what the round should not be spent on; supply what a
 one-word ask leaves out from the session. Say the pick back in one line
 before writing anything, voices included: "this round buys *is it built
-right*, full mode, @consult-r1 warm beside a cold opus". That line is the
+right*, full mode, @consult-r1 warm beside a cold fable". That line is the
 user's one chance to redirect the round. Stop to ask only where the pick is
 genuinely balanced.
 
@@ -154,7 +154,7 @@ With a consult, one fan-out: the consult session continued beside a cold
 voice.
 
 ```sh
-envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-opus-5-5 --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
+envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-fable-5-2 --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
 ```
 
 - **Name the member** whose position the implementation followed, as the
@@ -167,8 +167,8 @@ envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-op
   every member warm is the user's call, one `--with @<member>` each.
 - **The cold voice is the warm voice's other family.** Two voices of one
   model mostly find the same things. A warm codex voice, whether a one-voice
-  consult or a member, takes `claude:claude-opus-5-5` cold; a warm Claude
-  one (member `claude-claude-opus-5-5`) takes `codex:gpt-6-astra:high`. This outranks the stock
+  consult or a member, takes `claude:claude-fable-5-2` cold; a warm Claude
+  one (member `claude-claude-fable-5-2`) takes `codex:gpt-6-astra:high`. This outranks the stock
   words "codex" and "astra"; a voice the user picks beyond them is the cold
   voice as typed.
 - **Warm judges follow-through**: did the build integrate what was agreed
@@ -179,7 +179,7 @@ envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-op
   brief:
 
   ```sh
-  envoy run review-r1 --with @consult-r1/codex-gpt-6-astra=<full-brief> --with claude:claude-opus-5-5=<goal-brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
+  envoy run review-r1 --with @consult-r1/codex-gpt-6-astra=<full-brief> --with claude:claude-fable-5-2=<goal-brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
   ```
 
 Collapse to the single cold turn when the user asks for one voice, when the

@@ -22,8 +22,8 @@ records what ran. Resolve it from the user's words:
 ```sh
 --with codex:gpt-6-astra:high    # the default: no voice named, "codex", or "astra"
 --with codex:gpt-6.1-sol:xhigh   # "sol"
---with claude:claude-opus-5-5    # "claude", "opus"
---with claude:claude-fable-5-1   # "fable"
+--with claude:claude-fable-5-2   # "claude", "fable"
+--with claude:claude-opus-5-5    # "opus"
 --with codex:gpt-6-astra:xhigh   # another effort only when the user asks: "astra on xhigh"
 ```
 
@@ -95,7 +95,7 @@ model it started on.
    inside a shared brief. A voice without its own file takes `--prompt-file`:
 
    ```sh
-   envoy run consult-r1 --with claude:claude-fable-5-1=<critique-brief> --with codex:gpt-6-astra:high=<survey-brief> \
+   envoy run consult-r1 --with claude:claude-fable-5-2=<critique-brief> --with codex:gpt-6-astra:high=<survey-brief> \
      --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
    ```
 

@@ -18,7 +18,7 @@ Name the model on every cold voice, and the effort on a codex one, so the job re
 --with codex:gpt-6.1-sol:xhigh   # the default: no voice named, "codex", or "sol"
 --with codex:gpt-6-astra:high    # "astra"
 --with claude:claude-opus-5-5    # "claude", "opus"
---with claude:claude-fable-5-1   # "fable"
+--with claude:claude-fable-5-2   # "fable"
 --with codex:gpt-6.1-sol:high    # another effort only when the user asks: "sol on high"
 ```
 
