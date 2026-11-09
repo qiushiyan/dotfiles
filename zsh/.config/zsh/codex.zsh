@@ -14,9 +14,8 @@
 # Sessions are machine-global here too: every extra home's sessions/ is a
 # symlink to ~/.codex/sessions (seeded by `headroom accounts add --vendor
 # codex`), so Codex's own `resume` reaches any session from any account.
-# headroom has no Codex session picker: continuing on another account is
-# naming it — `cx-<other> resume` (this directory's sessions) or
-# `cx-<other> resume --all`.
+# Continuing a session on another account is naming it — `cx-<other> resume`
+# (this directory's sessions) or `cx-<other> resume --all`.
 #
 # Launch routing belongs to headroom: `headroom launch --vendor codex`
 # validates the account, verifies the sessions/ link, and builds the child

@@ -59,7 +59,7 @@ case $cmd in
   *"login finish '"*)
     printf 'code\t%s\n' "$(cat)" >> "$SSH_LOG"
     echo '{"state":"renewed","login_ends_at":"2026-12-01T00:00:00Z"}' ;;
-  *"--json --vendor codex"*)
+  *"limits --vendor codex"*)
     echo '{"accounts":[{"vendor":"codex","name":"cq","email":"cq@x.com"}]}' ;;
   *"launch --vendor codex"*)
     echo "Open https://auth.openai.com/codex/device and enter ABCD-1234"

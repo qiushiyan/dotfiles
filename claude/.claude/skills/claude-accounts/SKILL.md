@@ -17,10 +17,10 @@ the user as commands to run — launchers start live sessions.
   through `headroom launch`, which validates the account and owns
   `CLAUDE_CONFIG_DIR`. Credentials are per-account — `/login` plays no part.
 - **Resuming / session history**: sessions are machine-global — every
-  account's `projects/` symlinks to `~/.claude/projects`. `x-select` lists
-  every session and resumes each on the account that last drove it (`x` on
-  a row moves it elsewhere); native `x --resume` also sees everything
-  (`Ctrl+A` = all projects) and is placed like bare `x`.
+  account's `projects/` symlinks to `~/.claude/projects`. `x --resume <id>`
+  in the session's project continues it on its last account (another when
+  it nears a limit), `x-<name> --resume <id>` on the one named; `x -c` and
+  bare `x --resume` are placed like bare `x`.
 - **New subscription**: `claude-account-add <email>`, then that account's
   launcher and a one-time `/login`.
 - **Dashboard misbehaving, or after a Claude Code update**: `headroom check`

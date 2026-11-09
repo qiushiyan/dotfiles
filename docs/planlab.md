@@ -32,8 +32,7 @@ untouched. Three rules shape it:
 ## Where it does not reach
 
 - **A launch not through the `x` launchers** gets the team's setup whole:
-  `x-select` (headroom's session picker), Rex, the dev pool, and `claude -p`
-  helpers. `x -c` and `x --resume <id>` from a checkout keep it.
+  Rex, the dev pool, and `claude -p` helpers. `x -c` and `x --resume <id>` from a checkout keep it.
 - **Codex** gets the reminder switches and its own copy of my rules, not the
   cuts or the hidden skills.
 - **A checkout behind the two team PRs** still speaks those reminders; `--show`

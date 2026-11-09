@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 # What claude.zsh's launchers add on top of headroom: the refusal without
-# it, named-launch routing, the per-workspace effort flag, --fast, and
-# x-select's cd.
+# it, named-launch routing, the per-workspace effort flag and --fast.
 # Topology, environment and placement are headroom's and tested there
 # (~/dev/headroom internal/app, internal/accounts). Everything runs against a
 # throwaway $HOME with a recording claude stub — no real account dir or
@@ -184,75 +183,6 @@ test_fast_refuses_beside_settings() (
   [[ ! -f "$SB/claude.log" ]] || { print "claude ran:"; cat "$SB/claude.log"; return 1 }
 )
 
-# --- x-select: the wrapper's whole job is the cd afterwards -------------------
-
-# x-select takes --fast too: headroom receives the setting for the claude it
-# execs, never the bare flag.
-test_x_select_passes_fast() (
-  sandbox
-  rm -f "$SB/bin/headroom"
-  cat >"$SB/bin/headroom" <<EOS
-#!/bin/sh
-echo "\$@" >> "$SB/headroom.log"
-: > "\$3"
-exit 0
-EOS
-  chmod +x "$SB/bin/headroom"
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$CLAUDE_ZSH"
-  cd "$H"
-  x-select --fast || { print "x-select --fast failed"; return 1 }
-  local got="$(<"$SB/headroom.log")"
-  [[ "$got" == *'-- --dangerously-skip-permissions --settings {"fastMode":true}'* && "$got" != *" --fast"* ]] \
-    || { print "headroom got: $got"; return 1 }
-)
-
-# The advisory cd-file contract, wrapper side: non-empty and absolute means
-# headroom entered that dir, and the cd sticks regardless of how the session
-# exited; the exit status passes through untouched. The stub stands in for
-# headroom because the picker needs a terminal — the binary's own side of the
-# contract is pinned in headroom's pty harness.
-test_x_select_cds_from_advice() (
-  sandbox
-  mkdir -p "$H/proj"
-  rm -f "$SB/bin/headroom" # a symlink to the real binary — never write through it
-  cat >"$SB/bin/headroom" <<EOS
-#!/bin/sh
-[ "\$1" = sessions ] && [ "\$2" = --cd-file ] || exit 9
-printf '%s' "$H/proj" > "\$3"
-exit 7
-EOS
-  chmod +x "$SB/bin/headroom"
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$CLAUDE_ZSH"
-  cd "$H"
-  local rc=0
-  x-select || rc=$?
-  [[ $rc -eq 7 ]] || { print "exit status not passed through: rc=$rc, want 7"; return 1 }
-  [[ "$PWD" == "$H/proj" ]] || { print "did not cd to the advised dir: $PWD"; return 1 }
-)
-
-# Empty advice means no launch was committed — cancel or refusal — and the
-# wrapper must stay put.
-test_x_select_stays_put_on_empty_advice() (
-  sandbox
-  rm -f "$SB/bin/headroom"
-  cat >"$SB/bin/headroom" <<'EOS'
-#!/bin/sh
-[ "$1" = sessions ] && [ "$2" = --cd-file ] || exit 9
-: > "$3"
-exit 1
-EOS
-  chmod +x "$SB/bin/headroom"
-  export HOME="$H" PATH="$SB/bin:$PATH"
-  source "$CLAUDE_ZSH"
-  cd "$H"
-  local rc=0
-  x-select || rc=$?
-  [[ $rc -eq 1 ]] || { print "exit status not passed through: rc=$rc, want 1"; return 1 }
-  [[ "$PWD" == "$H" ]] || { print "cd'd on empty advice: $PWD"; return 1 }
-)
-
 # ------------------------------------------------------------------------------
 
 t "missing headroom refuses; no bare-claude fallback"    test_launch_refuses_without_headroom
@@ -261,9 +191,6 @@ t "workspace effort applies inside listed dirs only"     test_effort_follows_wor
 t "specific dir and explicit --effort win"               test_effort_specific_dir_and_explicit_flag_win
 t "--fast becomes the one-session fastMode setting"      test_fast_becomes_session_setting
 t "--fast beside --settings refuses before launch"       test_fast_refuses_beside_settings
-t "x-select passes --fast as the setting"                test_x_select_passes_fast
-t "x-select cds from non-empty advice, status through"   test_x_select_cds_from_advice
-t "x-select stays put on empty advice"                   test_x_select_stays_put_on_empty_advice
 
 rm -rf "${TMPDIR:-/tmp}"/cl-test.*(N) "${TMPDIR:-/tmp}"/cl-test-headroom.*(N)
 print -r -- "----"
