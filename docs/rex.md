@@ -373,7 +373,11 @@ one exists.
   Rex Server); from a key press they need nothing. A CLI test of an action
   that queues a client step exercises only the server half.
   `rex api call client.action` with `server` set runs an action as another
-  host's key would, on a session of the server it calls.
+  host's key would, on a session of the server it calls. A picker in a split
+  hands its result back as the app that pressed the key, `rex -C
+  <ctx.client_id> do ACTION`, so the action's client steps reach that app; on
+  another host's session that id is the app's client on this machine's server,
+  which the far host cannot reach (`rex-pane-pick`).
 - **A client step runs after the action returns, and the app learns of a new
   window later still.** A tab step queued right after `session.new_window`
   lands one tab too far, in the next session. On this host the action selects
@@ -517,8 +521,8 @@ failures. `init.lua` only loads them, and its header maps them.
 - **The tmux keys** (§ Keys), on Rex's own API: pane focus that passes
   `ctrl+h/j/k/l` through to nvim and fzf, per-session tab numbers kept by a
   watcher (`rexd`, in a detached block a Rex shell starts), pane mode with
-  push, hold and put across tabs, a scratch split, and a URL picker and pane
-  export over the block's scrollback.
+  push within a tab and hold and put or a picker across tabs, a scratch split,
+  and a URL picker and pane export over the block's scrollback.
 - **Agent status:** every Claude in Rex publishes its state over OSC 7501
   (`rex-agent`, from the hooks); the tab badge shows it, `rex-board` lists the
   agents of every server it can reach most-urgent first, and a key jumps to
@@ -557,7 +561,7 @@ every binding. The shape:
   resize, `z` zoom, `X` close, `space` side by side or stacked, `b` to a new
   tab, `Z` a scratch shell below, `M` rename, `C-k` clear with scrollback, `p`
   pane mode (`hjkl` push, `HJKL` resize, `space` as above, `e` balance, `g`
-  hold, `p` put, `G` release, `Esc` leave).
+  hold, `p` put, `G` release, `w` pick a tab to move it to, `Esc` leave).
 - **Tabs and sessions after the prefix:** `1`–`9` this session's tab N, `C-h`
   `C-l` (`C-p` `C-n`) previous and next, `Tab` the last tab, `S-Tab` the last
   session on this host, `c` new tab, `N` new tab here, `x` close after asking
