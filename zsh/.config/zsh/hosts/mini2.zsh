@@ -10,6 +10,13 @@ export PROMPT_MACHINE=mini2
 # (claude.zsh, _claude_primary).
 (( $+functions[_claude_primary] )) && _claude_primary qiushi@planlab.ai   # x-qiushi too
 
+# A batch runs four or five planlab sessions here, and a multi-file vitest run
+# sizes its pool to the machine (cores minus one, 14 here), so their test runs
+# oversubscribe the 15 cores and tests time out under load. vitest reads this
+# after its config and flags, so it caps every run however it was typed; CI
+# never sees it. planlab docs/devpool/qiushi/README.md, M2.
+export VITEST_MAX_WORKERS=3
+
 # Reached from the laptop over ssh as the mini is, so the same two fixes
 # (hosts/mini.zsh says why): OSC 8 links over sshd, and URLs that follow the
 # screen last typed at.
