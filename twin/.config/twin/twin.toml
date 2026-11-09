@@ -49,7 +49,9 @@ carry = [
   ".config/slack",
   ".config/slack-digest",
   ".gitconfig.personal",
-  ".planlab/.env",
+  # Not ~/.planlab/.env: `planlab backstage login` saves a token there that
+  # works only on the machine that asked for it, so each machine keeps its
+  # own file. `planlab-login-all` renews every machine's login at once.
   ".secrets.shared",
   # Personal Claude instructions for planlab, loaded from the parent of the
   # main checkout and of its worktrees; keep the two copies identical.

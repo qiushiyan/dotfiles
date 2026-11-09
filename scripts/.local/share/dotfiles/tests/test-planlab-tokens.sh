@@ -100,7 +100,8 @@ chmod +x "$SANDBOX/bin/"*
 export PATH="$SANDBOX/bin:$PATH"
 
 # fresh: a new HOME with the env file and Slack tokens, empty logs, and the
-# list answer built from "label:createdOffset:expiresOffset" arguments.
+# list answer built from "label:createdOffset:expiresOffset[:audience]"
+# arguments.
 fresh() {
     rm -rf "$SANDBOX/home" "$SANDBOX"/*.log "$SANDBOX"/posted*; mkdir -p "$SANDBOX/home/.planlab" "$SANDBOX/home/.config/slack"
     export HOME="$SANDBOX/home"
@@ -115,10 +116,10 @@ fresh() {
     echo '{"window":"24h","configured":true,"data":{"ok":true}}' > "$STUB_WALL"
     echo "PLANLAB_BACKSTAGE_TOKEN=www.planlab.example:$LOCAL_SECRET" > "$HOME/.planlab/.env"
     printf 'planlab=xoxp-test\nplanlab-bot=xoxb-test\n' > "$HOME/.config/slack/tokens.env"
-    local spec label c e rows=""
+    local spec label c e a rows=""
     for spec in "$@"; do
-        IFS=: read -r label c e <<<"$spec"
-        rows+="${rows:+,}{\"label\":\"$label\",\"createdAt\":\"$(iso "$c")\",\"expiresAt\":\"$(iso "$e")\"}"
+        IFS=: read -r label c e a <<<"$spec"
+        rows+="${rows:+,}{\"label\":\"$label\",\"createdAt\":\"$(iso "$c")\",\"expiresAt\":\"$(iso "$e")\"${a:+,\"audience\":\"$a\"}}"
     done
     echo "{\"tokens\":[$rows]}" > "$STUB_LIST"
 }
@@ -168,6 +169,19 @@ CASE=P3; if want; then
     fresh "dev:-$DAY:$((10*DAY))"; export PLANLAB_TOKENS_WARN_DAYS=14
     "$TOOL" check --notify >/dev/null 2>&1
     ok "P3 PLANLAB_TOKENS_WARN_DAYS widens the window" 1 "$(calls 'chat.postMessage')"
+fi
+
+CASE=P9; if want; then
+    # A device login's token is labelled by its machine and renewed by
+    # planlab-login-all; an unknown label of another kind keeps the generic advice.
+    fresh "qiushi-mini:$((-28*DAY)):$((2*DAY)):device" "ci-runner:$((-28*DAY)):$((2*DAY)):legacy"
+    "$TOOL" check --notify >/dev/null 2>&1; rc=$?
+    text=$(posted_text)
+    ok "P9 exit 0" 0 "$rc"
+    ok "P9 a due device token says planlab-login-all" yes "$(has ': renew it with `planlab-login-all`' "$(printf '%s\n' "$text" | grep -F '*qiushi-mini*')")"
+    ok "P9 another label keeps the generic advice" yes "$(has ': put it wherever this one is used' "$(printf '%s\n' "$text" | grep -F '*ci-runner*')")"
+    fresh "dev:$((-28*DAY)):$((2*DAY))"
+    ok "P9 dev's advice names planlab-login-all" yes "$(has 'on every machine with `planlab-login-all`' "$("$TOOL" check 2>&1)")"
 fi
 
 CASE=P4; if want; then

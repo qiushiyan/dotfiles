@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# planlab-login-all — renew the PlanLab Backstage login on every machine at
+# once. `planlab backstage login` binds its token to the machine that asked
+# for it (its tailnet node), so each machine keeps its own token in its own
+# ~/.planlab/.env, which twin does not carry. This starts that login on every
+# machine twin.toml lists, together, and prints each approval link, so one
+# sitting in the browser renews them all and they expire on the same day.
+#
+# Usage: planlab-login-all [machine ...] [-- login options]
+#
+#   machine        a [machines.<name>] of ~/.config/twin/twin.toml; none: all
+#                  of them. This machine (~/.config/machine) logs in here, the
+#                  others over ssh by the `ssh` alias the manifest gives them.
+#   login options  passed to every `planlab backstage login`, e.g. -- --ttl 7
+#
+# Approve each code from a browser signed in to Tailscale as you; a code
+# expires after 10 minutes. A machine that does not answer is named and the
+# rest go on. Exit 1 when any login did not end approved, 2 on a usage error.
+# Ctrl-C stops the waiting here; a login already started on another machine
+# lapses with its code.
+set -uo pipefail
+
+MANIFEST=${TWIN_MANIFEST:-$HOME/.config/twin/twin.toml}
+START_SECONDS=60   # how long a machine may take to print its code
+
+die() { printf 'planlab-login-all: %s\n' "$1" >&2; exit 2; }
+usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; }
+
+# One "<name><TAB><ssh alias>" line per [machines.<name>] table; the alias is
+# the name when the table gives none.
+machines_in() {
+  awk '
+    /^\[/ { if (name != "") print name "\t" ssh; name = ""; ssh = "" }
+    /^\[machines\.[A-Za-z0-9_-]+\][[:space:]]*$/ {
+      name = $0; sub(/^\[machines\./, "", name); sub(/\].*$/, "", name); ssh = name
+    }
+    name != "" && /^ssh[[:space:]]*=/ {
+      v = $0; sub(/^ssh[[:space:]]*=[[:space:]]*"/, "", v); sub(/".*$/, "", v); ssh = v
+    }
+    END { if (name != "") print name "\t" ssh }
+  ' "$1"
+}
+
+wanted=() login=()
+while (( $# )); do
+  case $1 in
+    -h|--help) usage; exit 0 ;;
+    --) shift; login=("$@"); break ;;
+    -*) die "unknown option $1; login options go after --" ;;
+    *) wanted+=("$1") ;;
+  esac
+  shift
+done
+
+[[ -r $MANIFEST ]] || die "no twin manifest at ${MANIFEST/#$HOME/~}"
+all=$(machines_in "$MANIFEST")
+[[ -n $all ]] || die "${MANIFEST/#$HOME/~} lists no [machines.<name>]"
+me=""
+[[ -r $HOME/.config/machine ]] && me=$(tr -d '[:space:]' < "$HOME/.config/machine")
+
+# bash 3.2 (macOS's /bin/bash): parallel indexed arrays, no associative ones.
+names=() hosts=()
+if (( ${#wanted[@]} )); then
+  for w in "${wanted[@]}"; do
+    line=$(printf '%s\n' "$all" | awk -F'\t' -v w="$w" '$1 == w')
+    [[ -n $line ]] || die "$w is not a machine in ${MANIFEST/#$HOME/~} ($(printf '%s\n' "$all" | cut -f1 | paste -sd' ' -))"
+    names+=("$w"); hosts+=("${line#*$'\t'}")
+  done
+else
+  while IFS=$'\t' read -r n h; do names+=("$n"); hosts+=("$h"); done <<<"$all"
+fi
+
+dir=$(mktemp -d "${TMPDIR:-/tmp}/planlab-login-all.XXXXXX") || die "no temporary directory"
+cleanup() { local p; for p in ${pids[@]+"${pids[@]}"}; do kill "$p" 2>/dev/null; done; rm -rf "$dir"; }
+trap cleanup EXIT
+trap 'exit 130' INT TERM
+
+# The remote side is a login shell, so nvm's node and the launcher are on
+# PATH; both quoting layers are the remote shell's to undo.
+remote="planlab backstage login"
+for a in ${login[@]+"${login[@]}"}; do remote+=" $(printf '%q' "$a")"; done
+
+pids=() state=()   # state: start (no code yet), code, done
+for i in "${!names[@]}"; do
+  out="$dir/$i"
+  if [[ ${names[$i]} == "$me" ]]; then
+    planlab backstage login ${login[@]+"${login[@]}"} >"$out" 2>&1 </dev/null &
+  else
+    ssh -o ConnectTimeout=10 -o BatchMode=yes "${hosts[$i]}" "zsh -lc $(printf '%q' "$remote")" >"$out" 2>&1 </dev/null &
+  fi
+  pids+=($!) state+=(start)
+done
+
+width=0
+for n in "${names[@]}"; do (( ${#n} > width )) && width=${#n}; done
+indent() { sed 's/^/    /'; }
+is_live() { kill -0 "$1" 2>/dev/null; }
+
+echo "Approve each from a browser signed in to Tailscale as you (codes expire in 10 minutes):"
+failed=0 waiting=${#names[@]}
+while (( waiting )); do
+  for i in "${!names[@]}"; do
+    [[ ${state[$i]} == start ]] || continue
+    link=$(sed -n 's/^Or open \(https:[^[:space:]]*\).*/\1/p' "$dir/$i" | head -n 1)
+    if [[ -n $link ]]; then
+      printf '  %-*s  %s\n' "$width" "${names[$i]}" "$link"
+      state[$i]=code; waiting=$((waiting - 1))
+    elif ! is_live "${pids[$i]}" || (( SECONDS > START_SECONDS )); then
+      is_live "${pids[$i]}" && { kill "${pids[$i]}" 2>/dev/null; echo "no code after ${START_SECONDS}s" >>"$dir/$i"; }
+      printf '  %-*s  no code:\n' "$width" "${names[$i]}"
+      indent <"$dir/$i"
+      state[$i]=done; waiting=$((waiting - 1)); failed=1
+    fi
+  done
+  (( waiting )) && sleep 0.3
+done
+
+# Each outcome as it lands: what login said after it started waiting.
+waiting=0
+for s in "${state[@]}"; do [[ $s == code ]] && waiting=$((waiting + 1)); done
+(( waiting )) && echo "Waiting for approval…"
+while (( waiting )); do
+  for i in "${!names[@]}"; do
+    [[ ${state[$i]} == code ]] && ! is_live "${pids[$i]}" || continue
+    wait "${pids[$i]}"; rc=$?
+    if (( rc == 0 )); then printf '%s: approved\n' "${names[$i]}"
+    else printf '%s: not approved (exit %d)\n' "${names[$i]}" "$rc"; failed=1; fi
+    sed '1,/^Waiting for approval/d' "$dir/$i" | indent
+    state[$i]=done; waiting=$((waiting - 1))
+  done
+  (( waiting )) && sleep 0.3
+done
+exit "$failed"
