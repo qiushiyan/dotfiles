@@ -88,24 +88,9 @@ Everything derives from that tree:
   reaches Claude Code, and why it refuses beside `--settings`: the comment
   above `_claude_fast_args` in `claude.zsh`.
 - **A PlanLab session without the team's Bench workflow**: a launch inside a
-  PlanLab checkout runs `claude-planlab-overlay`, which gives the session, and
-  its subagents, the team `AGENTS.md` cut to the work done here plus a short
-  note on how Bench is used here, and hides every repository skill outside a
-  keep list (each still a `/` command). What it keeps, cuts and adds, each with
-  its reason, is `scripts/.local/share/dotfiles/planlab-overlay.toml`;
-  `claude-planlab-overlay --show` in a checkout prints what a session reads, as
-  a diff of the team's file, and whether the checkout's team hooks honour the
-  switches below. It cuts and never rewrites, so the team's later edits
-  arrive. Each launch says in one line what it did, a cut that stopped
-  matching included, or why it did not apply, in which case the session gets
-  the team's setup whole. The team hooks' Bench and corpus reminders are
-  switched off by `PLANLAB_BENCH_REMINDERS=off` and
-  `PLANLAB_CORPUS_REMINDERS=off`, in the shared `settings.json` for Claude and
-  in `codex.zsh` for Codex. A session started outside these launchers
-  (`x-select`, Rex, devpool, a `claude -p` helper, or headroom's own resume
-  from `headroom sessions`) loads the team's `AGENTS.md` and skills whole;
-  `x -c` or `x --resume <id>` from the checkout keeps the overlay. What it
-  rewrites, and why launch arguments rather than a hook: the script's header.
+  PlanLab checkout runs `claude-planlab-overlay` before headroom, and its
+  args go to headroom like any other launch's. What it changes, the rest of
+  my PlanLab setup, and what it does not reach: `docs/planlab.md`.
 - **Which lane is a running session on, and how much is left in it?** Its
   tmux context chip leads with the account, then the model and the lane's
   5-hour and 7-day usage (`yan opus-5[1m]:high 5h:23 7d:41 ✳ 37%`); `x-acc`

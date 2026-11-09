@@ -94,6 +94,10 @@ Read the owning docs before changing a feature that spans packages:
   `scripts/` grokbot-transcript, `~/dev/drive`): `~/dev/drive/CLAUDE.md`. The
   skill teaches the judgment and relies on drive's messages for the commands,
   so a change to either lands with the other.
+- **PlanLab, my layer over the team's repository** (`claude/`, `scripts/`,
+  `zsh/`, `git/`, `twin/`, `codex/`): `docs/planlab.md`. It cuts the team's
+  text and never rewrites it, and the team's hooks go quiet only through
+  their own switches.
 - **Claude accounts:** `docs/claude-accounts.md`. The `x*` launchers in
   `zsh/.config/zsh/claude.zsh` delegate routing and validation to headroom
   (`~/dev/headroom`); engine fixes belong in that project.
