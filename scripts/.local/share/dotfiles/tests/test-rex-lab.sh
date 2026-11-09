@@ -3,7 +3,7 @@
 # rex/.config/rex loads clean, every server call it makes matches the schemas
 # that server publishes, and its actions do what their keys promise.
 #
-# Usage: bash test-rex-lab.sh [L1 L2 L3]     # requires rex and jq
+# Usage: bash test-rex-lab.sh [L1 L2 L3 L4]     # requires rex and jq
 #
 # What this pins: `rex config check` passes and the keymap has no diagnostics
 # (L1); rex-doctor's contract check finds every call's method, payload keys
@@ -12,6 +12,8 @@
 # without an error; and the actions, pressed as keys while another tab is the
 # server's active one, move, split, swap, hold and jump where they should
 # (L3, rex-lab-actions.lua, whose header says which actions it leaves out).
+# rexd names a tab for its pane's directory or the pane's own label, never
+# for the status chip the pane wears as its label (L4).
 #
 # The server is the CLI the installed app bundles (REX_BIN_DIR is dropped, so
 # the wrapper does not pick an older running server's CLI): the build the next
@@ -28,8 +30,9 @@ set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../../../../.." && pwd)"
 PASS=0; FAIL=0; FAILED=""
-RH=; SERVER_PID=
+RH=; SERVER_PID=; REXD_PID=
 cleanup() {
+  [ -n "$REXD_PID" ] && kill "$REXD_PID" 2>/dev/null
   if [ -n "$SERVER_PID" ]; then
     kill "$SERVER_PID" 2>/dev/null
     for _ in 1 2 3 4 5; do kill -0 "$SERVER_PID" 2>/dev/null || break; sleep 0.1; done
@@ -47,7 +50,7 @@ ok() {  # ok <name> <expected> <actual>
 want() { [ ${#ONLY[@]} -eq 0 ] && return 0; case " ${ONLY[*]} " in *" $CASE "*) return 0;; esac; return 1; }
 ONLY=("$@")
 
-CLEAN=(env -u REX_SERVER -u REX_SESSION -u REX_BLOCK -u REX_BIN_DIR -u TMUX -u TMUX_PANE -u CLAUDE_PID)
+CLEAN=(env -u REX_SERVER -u REX_SESSION -u REX_BLOCK -u REX_BIN_DIR -u TMUX -u TMUX_PANE -u CLAUDE_PID -u XDG_STATE_HOME)
 REX=${REX_BIN:-$("${CLEAN[@]}" /bin/sh -c 'command -v rex')}
 if [ -z "$REX" ] || ! command -v jq >/dev/null; then
   echo "rex-lab: skipped, needs rex and jq"; exit 0
@@ -100,6 +103,33 @@ CASE=L3; if want; then
     p=${result%% passed*}; f=${result##*, }; f=${f%% failed*}
     PASS=$((PASS+p)); FAIL=$((FAIL+f)); [ "$f" = 0 ] || FAILED="$FAILED L3"
   fi
+fi
+
+# L4: rexd from the sandbox's copy of the config, on a tab whose one pane
+# sleeps in /tmp. The chip's files are written as rex-chip writes them: the
+# pane's own label first, then the chip as the block's label.
+CASE=L4; if want; then
+  ( exec "${CLEAN[@]}" HOME="$RH" "$REX" --autostart=false do "$RH/.config/rex/scripts/rexd.lua" --all ) >"$RH/rexd.log" 2>&1 &
+  REXD_PID=$!
+  TS=$(R api call session.create '{"label":"tabs"}' | jq -r .session_id)
+  made=$(R api call -s "$TS" session.new_window '{"layout":{"block":{"flavor":"com.superlogical.terminal.shell","label":"shell","options":{"command":["/bin/sleep","3600"],"login":false,"cwd":"/tmp"}}}}')
+  TB=$(jq -r '.block_ids[0]' <<<"$made")
+  tab() { R api call -s "$TS" session.view '{}' | jq -r '.view.windows[0].label // .windows[0].label'; }
+  # tab_becomes WANT: the tab's label once it is WANT, or what it still is after 5 s.
+  tab_becomes() { local got; for _ in $(seq 50); do got=$(tab); [ "$got" = "$1" ] && break; sleep 0.1; done; printf '%s' "$got"; }
+  wear() {  # wear BASE CHIP: the pane takes CHIP as its label, its own being BASE
+    mkdir -p "$RH/.local/state/rex-lab/chip"
+    printf '%s\n' "$1" > "$RH/.local/state/rex-lab/chip/${TB//:/_}.base"
+    R api call -s "$TS" session.set_block_label "$(jq -nc --arg b "$TB" --arg l "$2" '{block_id: $b, label: $l}')" >/dev/null
+  }
+  ok "L4 a plain pane names its tab for its directory" "1 tmp" "$(tab_becomes "1 tmp")"
+  wear api 'a@b.example · 💠 fable-5-2:high · 🟩⬜⬜⬜⬜ 9%'
+  ok "L4 a named pane that wears a chip names its tab by its own name" "1 api" "$(tab_becomes "1 api")"
+  wear shell 'a@b.example · 💠 fable-5-2:high · 🟩🟩⬜⬜⬜ 31%'
+  ok "L4 an unnamed pane that wears a chip keeps the directory" "1 tmp" "$(tab_becomes "1 tmp")"
+  rm -f "$RH/.local/state/rex-lab/chip/${TB//:/_}.base"
+  R api call -s "$TS" session.set_block_label "$(jq -nc --arg b "$TB" '{block_id: $b, label: "worker"}')" >/dev/null
+  ok "L4 without a chip the pane's label names the tab, as before" "1 worker" "$(tab_becomes "1 worker")"
 fi
 
 echo "rex-lab: $PASS passed, $FAIL failed${FAILED:+ —$FAILED}"

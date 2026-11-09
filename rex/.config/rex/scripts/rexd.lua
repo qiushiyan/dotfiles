@@ -9,7 +9,9 @@
 -- number says. The name you give a tab (prefix m) is kept; any other tab is
 -- named for its focused pane and follows it: the pane's label when it has a
 -- telling one (api, claude), else the directory its foreground process is
--- in, renamed as you cd. rexd remembers the names it gave (the tab-names
+-- in, renamed as you cd. A pane that wears a Claude status chip (rex-chip)
+-- has the chip as its label, for the pane header alone: its tab goes by the
+-- pane's own label, which rex-chip keeps. rexd remembers the names it gave (the tab-names
 -- state file), so a label it did not give is yours; clearing it, or leaving
 -- only the number, hands the tab back.
 --
@@ -66,13 +68,25 @@ end
 -- block it has heard nothing of.
 local cwds = {}
 
+-- A pane's own label. While it wears a status chip the block's label is the
+-- chip, and its own is in the file rex-chip wrote before setting that
+-- (rex-chip's .base), so this never reads a chip as a name. No fork.
+local function own_label(block, label)
+  local key = block:gsub(":", "_")
+  local base = state.read("chip/" .. key .. ".base")
+  if not base then return label end
+  return (base:gsub("%s+$", ""))
+end
+
 -- The name a tab's focused pane gives it, or nil. LABELS maps block id to
 -- label, listed once per renumber.
 local function pane_name(session_id, w, labels)
   local block = w.focused_block_id
   if not block then return nil end
-  local label = labels()[block]
-  if label and not GENERIC[label] and not label:find("^steps·") then return label end
+  local label = own_label(block, labels()[block])
+  if label and label ~= "" and not GENERIC[label] and not label:find("^steps·") and not label:find("^chip·") then
+    return label
+  end
   cwds[block] = cwds[block] or api.cwd(session_id, block)
   return cwds[block] and cwds[block]:match("[^/]+$")
 end
