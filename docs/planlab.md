@@ -26,8 +26,8 @@ untouched. Three rules shape it:
 | My rules | Read production AWS without asking, never change it unasked; write on deployed workspaces only in my sandbox, `planlab-dev-qiushi` | Claude: `~/dev/planlab/CLAUDE.local.md` and `~/dev/.worktrees/main/CLAUDE.local.md`, identical, carried by twin. Codex: `codex/.codex/AGENTS.md`. Three copies, kept in step by hand |
 | Worktrees | gwt puts each branch at `~/dev/.worktrees/main/<branch>`; the main checkout refuses to create a branch; a session that creates a worktree moves into it | `tmux/.config/tmux/scripts/worktree.md` maps it; the guard reaches planlab through `.githooks/reference-transaction`, a wrapper twin carries |
 | Git | Pushes skip the LFS-only pre-push hook; settings and a warm cache keep status fast in many worktrees | `git/.config/git/planlab.gitconfig`; `docs/git-performance.md` |
-| Ignored local files | The app's and the stress tests' env files, `.tabtype.local.toml`, `~/.planlab/.env`, `~/.config/planlab/dev.json`, `~/.bench/.env` | Carried by twin: `twin/.config/twin/twin.toml`, `[repos.planlab]` and `[home]` |
-| Credentials | AWS SSO sign-in; a reminder before a Backstage token expires | `aws-login` (`docs/aws-sso.md`); `planlab-tokens`, run by a LaunchAgent on the mini |
+| Ignored local files | The app's and the stress tests' env files, `.tabtype.local.toml`, `~/.config/planlab/dev.json`, `~/.bench/.env` | Carried by twin: `twin/.config/twin/twin.toml`, `[repos.planlab]` and `[home]` |
+| Credentials | AWS SSO sign-in; each machine's Backstage login, renewed together; a reminder before a token expires | `aws-login` (`docs/aws-sso.md`); `planlab-login-all` logs in on every machine at once (a login's token works only on the machine that asked for it, so `~/.planlab/.env` stays on each); `planlab-tokens`, run by a LaunchAgent on the mini |
 
 ## Where it does not reach
 

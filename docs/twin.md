@@ -20,6 +20,7 @@ CLIs, apps, stow links,    never move: each machine builds from its own clone
 uncommitted work,          nothing: commit and push, or it stays where it is
   branches with no upstream
 OAuth logins, ~/.secrets,  nothing: per machine by design
+  ~/.planlab/.env,
   node_modules, build output
 session transcripts,       nothing: per machine; the obelisk skill asks each
   their mirror,              (docs/claude-sessions-store.md)
@@ -397,8 +398,8 @@ twin files sync <target>                      # every later run
 Nothing is overwritten. The path is listed in every run until resolved:
 
 ```bash
-twin files resolve home .planlab/.env --keep mac     # the laptop's copy wins, on every machine
-twin files resolve home .planlab/.env --delete       # remove every copy
+twin files resolve home .secrets.shared --keep mac   # the laptop's copy wins, on every machine
+twin files resolve home .secrets.shared --delete     # remove every copy
 ls ~/.local/state/twin/replaced/                     # what a resolution replaced or removed, on the machine that held it
 ```
 
