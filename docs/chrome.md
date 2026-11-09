@@ -33,7 +33,8 @@ Custom keys:
 | --- | --- | --- |
 | `ctrl+shift+p` | Focus the address bar | Karabiner, sends `cmd+l` |
 | `cmd+shift+p` | Open Chrome Palette: actions, tabs, bookmarks, history | Extension |
-| `cmd+n` | New tab | Karabiner, sends `cmd+t` |
+| `cmd+n` | New tab after the current one | Karabiner, sends `ctrl+t` |
+| `ctrl+t` | New tab after the current one | macOS App Shortcut |
 | `cmd+d` | Duplicate the tab | Karabiner, sends `ctrl+d` |
 | `ctrl+d` | Duplicate the tab | macOS App Shortcut |
 | `cmd+backspace` | Close the tab | Karabiner, sends `cmd+w` |
@@ -44,6 +45,7 @@ Custom keys:
 Chrome's own keys worth keeping in hand:
 
 - **Address bar:** `cmd+l`
+- **New tab at the end of the strip:** `cmd+t`
 - **Back and forward:** `cmd+left` and `cmd+right`, or `cmd+[` and `cmd+]`. The
   page sees the arrow keys first, so in a text field they move the cursor, and a
   Karabiner rule would lose that
@@ -68,14 +70,15 @@ Choose by what the key has to do:
   changes, and a machine gets the rules when it pulls this repository.
 - **macOS App Shortcut, `step_macos_defaults` in `scripts/bootstrap.sh`:** the
   command has a menu item but no key, which is the case for **Tab > Duplicate
-  Tab**, so Karabiner has nothing to send. Each machine holds its own copy in
+  Tab** and **Tab > New Tab Below**, so Karabiner has nothing to send. Each machine holds its own copy in
   Chrome's preferences, and Chrome reads it when it starts.
 - **Extension key, `chrome://extensions/shortcuts`:** the key opens an extension.
   Chrome Palette claims `cmd+shift+p` itself, and the extension reaches a machine
   through the Chrome profile's sync or the Web Store.
 
-`cmd+d` chains Karabiner and the App Shortcut: Karabiner sends `ctrl+d`, and the
-App Shortcut turns that into **Duplicate Tab**. Without the App Shortcut on a machine, `cmd+d` does
+`cmd+d` and `cmd+n` chain Karabiner and the App Shortcut: Karabiner sends
+`ctrl+d` or `ctrl+t`, and the App Shortcut turns that into **Duplicate Tab** or
+**New Tab Below**. Without the App Shortcut on a machine, the `cmd` key does
 nothing useful there.
 
 ## Traps
@@ -104,15 +107,17 @@ nothing useful there.
   ```
 
 - **An item's title must match exactly,** including the `…` character in `Open
-  Location…`.
+  Location…`. Some titles follow the tab layout: with horizontal tabs, **New Tab
+  Below** reads **New Tab to the Right**, so `bootstrap.sh` binds both.
 - **`ctrl+d` next to Dictation's shortcut.** When Dictation's shortcut is "press
   Control twice", pressing `ctrl+d` twice quickly asks to enable Dictation. It is
   system state on each machine, off in **System Settings > Keyboard > Dictation >
   Shortcut** on the laptop and mini2. A new machine that shows the prompt needs
   the same setting.
-- **`ctrl+f` and `ctrl+d` are also text-editing keys on a Mac,** for moving the
-  cursor forward and deleting forward. `ctrl+f` loses that in Chrome's text
-  fields, and `ctrl+d` should too.
+- **`ctrl+f`, `ctrl+d` and `ctrl+t` are also text-editing keys on a Mac,** for
+  moving the cursor forward, deleting forward and swapping the characters around
+  the cursor. `ctrl+f` loses that in Chrome's text fields, and `ctrl+d` and
+  `ctrl+t` should too.
 - **`cmd+d` does not bookmark.** The star in the address bar does.
 - **Karabiner only acts on keyboards it manages.** A keyboard set to `ignore` in
   `karabiner.json`'s `devices` keeps Chrome's own keys, so the Karabiner rows
