@@ -10,6 +10,12 @@ export PROMPT_MACHINE=mini2
 # (claude.zsh, _claude_primary).
 (( $+functions[_claude_primary] )) && _claude_primary qiushi@planlab.ai   # x-qiushi too
 
+# Temporary, from 2026-11-09: sessions that ran a command while an earlier
+# VITEST_MAX_WORKERS cap was exported here carry it in their shell environment,
+# and vitest applies it over fileParallelism: false, running serial suites in
+# parallel. Remove once every session started before then has been restarted.
+unset VITEST_MAX_WORKERS
+
 # Reached from the laptop over ssh as the mini is, so the same two fixes
 # (hosts/mini.zsh says why): OSC 8 links over sshd, and URLs that follow the
 # screen last typed at.
