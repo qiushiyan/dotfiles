@@ -143,6 +143,7 @@ verifies in a lane of its own, folds the findings in and merges:
 ```bash
 drive send T1@… --snippet strategic-review-brief     # the builder writes the reviewer's prompt
 drive open sr-412 --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
+drive open sr-412 --model fable …                    # the same, when the user wants it on Fable
 drive send T1@… --snippet recap                      # then close T1
 drive send sr-412@… 'Fold these in.'                 # once the review reports
 ```

@@ -115,6 +115,7 @@ and releasing are yours unless the user says "hold merges":
 ```bash
 drive send T1@… --snippet strategic-review-brief     # the builder writes the reviewer's prompt
 drive open sr-9531 --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
+drive open sr-9531 --model fable …                   # the same, when the user wants it on Fable
 drive send T1@… --snippet recap                      # then close T1; its branch and worktree wait for the cleanup after the merge
 drive send sr-9531@… 'Fold these in.'                # once the review reports; the skill says how
 drive send sr-9531@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
