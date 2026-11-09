@@ -10,8 +10,8 @@ one report once all are in; a session handed over already past its design
 goes straight on. After onboarding, each gets the same design stage:
 
 ```bash
-drive send T1@… --snippet consult-design   # it ends with its decisions
-drive send T1@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
+drive send invite-links@… --snippet consult-design   # it ends with its decisions
+drive send invite-links@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
 ```
 
 Once a session's design reply is in (it stands in for its recap), record
@@ -35,8 +35,8 @@ Sessions leave the untracked `apps/platform/supabase/` folder in the main
 checkout alone: it links to production and is never committed.
 
 ```bash
-drive open T1 --dir ~/dev/itell/apps/platform --goal '…' --file /tmp/t1-start.md   # "… in a worktree of your own"
-drive open T2 --dir ~/dev/itell/apps/platform --goal 'Find what causes <the reported bug>, and whether it needs a fix.' '/bug-report-triage <reportId>'
+drive open invite-links --dir ~/dev/itell/apps/platform --goal '…' --file /tmp/invite-links-start.md   # "… in a worktree of your own"
+drive open login-loop-triage --dir ~/dev/itell/apps/platform --goal "Find why a learner's login loops, and whether it needs a fix." '/bug-report-triage <reportId>'
 ```
 
 A learner's bug report enters at `/bug-report-triage`; a fix it recommends
@@ -141,11 +141,11 @@ production data, adds a table or changes what every user meets; its session
 verifies in a lane of its own, folds the findings in and merges:
 
 ```bash
-drive send T1@… --snippet strategic-review-brief     # the builder writes the reviewer's prompt
-drive open sr-412 --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
-drive open sr-412 --model fable …                    # the same, when the user wants it on Fable
-drive send T1@… --snippet recap                      # then close T1
-drive send sr-412@… 'Fold these in.'                 # once the review reports
+drive send invite-links@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
+drive open invite-links-review --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
+drive open invite-links-review --model fable …               # the same, when the user wants it on Fable
+drive send invite-links@… --snippet recap                    # then close invite-links
+drive send invite-links-review@… 'Fold these in.'            # once the review reports
 ```
 
 Merging is yours once the stages have run with a passed verdict at the PR
@@ -155,11 +155,11 @@ grant`). One session merges at a time, the review session where one ran, and
 it carries the PR to its end:
 
 ```bash
-drive send T1@… --snippet merge-when-ready --hold itell-main   # T1, or sr-412 where a review ran: merge, follow staging, check what a visitor sees
+drive send invite-links@… --snippet merge-when-ready --hold itell-main   # invite-links, or invite-links-review where a review ran: merge, follow staging, check what a visitor sees
 # the Browser Test bot runs the signed-in staging check
-drive send T1@… --file /tmp/t1-deploy.md                       # under the grant: the release, § The production deploy
-drive send T1@… --snippet recap
-drive send T1@… --snippet closeout                             # the handoff distill, one session at a time
+drive send invite-links@… --file /tmp/invite-links-deploy.md             # under the grant: the release, § The production deploy
+drive send invite-links@… --snippet recap
+drive send invite-links@… --snippet closeout                             # the handoff distill, one session at a time
 ```
 
 A change in both repositories merges the side that answers first

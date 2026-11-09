@@ -16,14 +16,14 @@ After onboarding, every such session gets the same design stage, whatever
 its path, and the spec question waits until its design is in:
 
 ```bash
-drive send T1@… --snippet consult-design   # astra and fable settle the design; it ends with its decisions
-drive send T1@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
+drive send summary-decisions@… --snippet consult-design   # astra and fable settle the design; it ends with its decisions
+drive send summary-decisions@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
 ```
 
 Hold each session there: the design reply stands in for its recap, so send
 no `recap`; record each question it leaves the user as an ask (with none,
 whether to go ahead), then park it (`drive park
-T1@… "design checkpoint"`) and leave its block open for the user's answers. Until all have arrived or parked, message
+summary-decisions@… "design checkpoint"`) and leave its block open for the user's answers. Until all have arrived or parked, message
 the user only for a decision that holds a session. Then report, as SKILL.md
 § Report shapes it: per session, the design in a few lines, what the spikes
 showed, and your call on a spec (`session-pipeline.md` § Choosing the path).
@@ -38,9 +38,9 @@ SKILL.md's Continue. A drive the user scoped to design is done once this
 report is sent. With their answers, per session:
 
 ```bash
-drive send T1@… '/write-spec <their answers>'                  # spec: then /compact, then implement-spec
-drive send T1@… '/write-spec @/tmp/t1-answers.md'             # answers longer than a line, attached
-drive send T1@… --snippet implement-now '<their answers>'      # no spec: builds from the settled design
+drive send summary-decisions@… '/write-spec <their answers>'                      # spec: then /compact, then implement-spec
+drive send summary-decisions@… '/write-spec @/tmp/summary-decisions-answers.md'   # answers longer than a line, attached
+drive send summary-decisions@… --snippet implement-now '<their answers>'          # no spec: builds from the settled design
 ```
 
 Then on through review to the finish.
@@ -113,14 +113,14 @@ the findings in and merges; the builder's part ends when it starts. Merging
 and releasing are yours unless the user says "hold merges":
 
 ```bash
-drive send T1@… --snippet strategic-review-brief     # the builder writes the reviewer's prompt
-drive open sr-9531 --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
-drive open sr-9531 --model fable …                   # the same, when the user wants it on Fable
-drive send T1@… --snippet recap                      # then close T1; its branch and worktree wait for the cleanup after the merge
-drive send sr-9531@… 'Fold these in.'                # once the review reports; the skill says how
-drive send sr-9531@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
-drive send sr-9531@… --snippet recap
-drive send sr-9531@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
+drive send summary-decisions@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
+drive open summary-decisions-review --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
+drive open summary-decisions-review --model fable …               # the same, when the user wants it on Fable
+drive send summary-decisions@… --snippet recap                    # then close summary-decisions; its branch and worktree wait for the cleanup after the merge
+drive send summary-decisions-review@… 'Fold these in.'            # once the review reports; the skill says how
+drive send summary-decisions-review@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
+drive send summary-decisions-review@… --snippet recap
+drive send summary-decisions-review@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
 ```
 
 - Once the stages the pipeline doc's § Who decides lists have run,

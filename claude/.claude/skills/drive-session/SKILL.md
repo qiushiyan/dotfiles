@@ -86,9 +86,9 @@ ready to build.
   known limits, ride to the report for the user to pick from:
 
   ```bash
-  drive send T1@… 'Go with your recommendations on D1 and D2; write them into the spec and commit.'
-  drive send T1@… /compact                    # once that turn ends
-  drive send T1@… --snippet implement-spec    # once the compaction ends
+  drive send pool-drain@… 'Go with your recommendations on D1 and D2; write them into the spec and commit.'
+  drive send pool-drain@… /compact                   # once that turn ends
+  drive send pool-drain@… --snippet implement-spec   # once the compaction ends
   ```
 - **Hold what is the user's at the step that needs it.** Something the
   pipeline doc's § Who decides asks the user stops only the work that depends on it,
@@ -96,7 +96,7 @@ ready to build.
   EC2 run wait for me: build the rest, commit, and stop before them."` For
   a session whose next step cannot go on without it, record the ask now,
   even for a later step's decision, since a parked session never gets
-  there; then park it (`drive park T1@… "<what it needs>"`) and keep
+  there; then park it (`drive park pool-drain@… "<what it needs>"`) and keep
   driving the others.
 - **A background job past its purpose is the session's to stop**: send the
   step drive's `next:` gives, never a kill from your own shell. The session
@@ -127,7 +127,7 @@ asking** so they can reverse it:
 - relaunching a session whose login was rejected or whose account hit its
   usage limit, or reopening one a Rex restart ended;
 - a judgment the user would hand to a model, from a fresh session: `drive
-  open judge-1 --model fable --goal '…' '…'`, then act on its verdict;
+  open backfill-judge --model fable --goal '…' '…'`, then act on its verdict;
 - the merge and release, by your project file's § After the PR (a personal
   tool's is its closeout);
 - once a session's last step has run, `drive cleanup`; a `left by` line is
@@ -152,8 +152,8 @@ drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the ba
 Ask once, standing alone (§ Report); every wake, act on `drive status`'s open asks and its `park of` lines.
 
 ```bash
-drive record ask T1 --question '…' --recommendation '…' --if-unanswered '…'    # → A3
-drive record answer A3 --source '<their words>' --took amended --explained 'I agree; write the spec.'   # the step goes to T1 as well
+drive record ask pool-drain --question '…' --recommendation '…' --if-unanswered '…'    # → A3
+drive record answer A3 --source '<their words>' --took amended --explained 'I agree; write the spec.'   # the step goes to pool-drain as well
 drive record answer A3 --took moot --source '<what showed it no longer holds>'
 ```
 
@@ -176,10 +176,10 @@ I agree with your recommendations. I don't understand this area deeply, but it r
 </example>
 
 ```bash
-drive snippet land-pr ~/dev/planlab/.worktrees/pool-drain    # the file the key resolves to there
-drive send T1@… --snippet land-pr 'D3 waits for me.'
-drive send T1@… --file /tmp/t1-fixups.md                     # your own request, or anything over a line
-drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # @ attaches the file, as the user's would
+drive snippet land-pr ~/dev/planlab/.worktrees/pool-drain             # the file the key resolves to there
+drive send pool-drain@… --snippet land-pr 'D3 waits for me.'
+drive send pool-drain@… --file /tmp/pool-drain-fixups.md              # your own request, or anything over a line
+drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ attaches the file, as the user's would
 ```
 
 - A session's first step carries its task and says where it stops: a session
@@ -192,7 +192,7 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
   name.
 
   ```bash
-  drive open summary-decisions --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/s1-start.md   # "… Build it in a worktree of your own; commit and stop before the PR."
+  drive open summary-decisions --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/summary-decisions-start.md   # "… Build it in a worktree of your own; commit and stop before the PR."
   drive record goal P0 '…'   # a session that joined on a send, or one drive status names as having none
   ```
 - A key that resolves to another project's file is a stop, not a fallback.
@@ -217,8 +217,8 @@ drive send T1@… '/strategic-review 9531 @/tmp/sr-prompt.md'                 # 
   others share. Name what it uses with `--hold`:
 
   ```bash
-  drive send T2@… --snippet closeout --hold planlab-main
-  drive send sr-9531@… --snippet merge-when-ready --hold release
+  drive send cache-hits@… --snippet closeout --hold planlab-main
+  drive send cache-hits-review@… --snippet merge-when-ready --hold release
   ```
 - **A message from another session waiting for approval stays undelivered**:
   delivering it wakes the session into work no step sent.

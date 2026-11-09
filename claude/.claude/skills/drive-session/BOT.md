@@ -45,8 +45,8 @@ A send, open or respond arms a wake for when that session's turn ends or it
 stops on a prompt. A refused command arms none.
 
 ```bash
-drive park T3@… "waits for your call on the backfill (A4)"           # shown on the user's page: write it in their terms
-drive timer 300 veto                                 # the plan's veto; once the user answers, it brings nothing to do
+drive park backfill@… "waits for your call on the backfill (A4)"   # shown on the user's page: write it in their terms
+drive timer 300 veto                                               # the plan's veto; once the user answers, it brings nothing to do
 ```
 
 Every run leaves a `drive` command behind it, since a wake with no trace
@@ -55,7 +55,7 @@ reads as unheard and comes again.
 A wake may act on any session, from what `drive status` and `drive read`
 show now. A command your shell cuts short loses nothing: the next send,
 respond, park or close on that session settles it from the transcript. Send
-the step again only once `drive read T1 --user` shows it never arrived.
+the step again only once `drive read search --user` shows it never arrived.
 
 Record what drive cannot see as you decide it, the plan first, since the run
 the veto timer wakes starts from the record, not the chat. A fact you
