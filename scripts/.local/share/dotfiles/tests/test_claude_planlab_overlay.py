@@ -43,6 +43,25 @@ AGENTS = """# Coding agent development guide
 
 Intro line.
 
+When selecting or creating internal Dev, QA or Testing workspaces, use
+`pl-internal-workspace`.
+
+## Before working in an area
+
+- `packages/loopy/AGENTS.md` — purity.
+- `hub/AGENTS.md` — Swift.
+- `delivery-team/demo-materials/01/AGENTS.md` — demo preparation.
+- `delivery-team/recruiting/interview-test-2/AGENTS.md` — interviews.
+
+## Scoping work
+
+Scope and judge work by what the problem needs. A holistic feature
+ships as one PR.
+
+Recommend the design that is right for the problem, and compare options.
+
+Size caution to who can be hurt.
+
 ## Shared workflows
 
 Track substantive coding work in Bench as the skill describes: run
@@ -55,12 +74,16 @@ Merge a PR only when the user approved merging that PR, and only through
 
 Offer transcript sharing after substantive work of any kind.
 
+## Scheduling corpus capture
+
+A session that works with a schedule file offers to record it.
+
 ## Dependencies
 
 The package manager is pnpm.
 """
 
-SKILLS = ["pl-loopy-onboarding", "pl-deploy-taodesk", "pl-pr", "pl-land", "pl-update-cli",
+SKILLS = ["pl-loopy-onboarding", "pl-deploy-taodesk", "pl-pr", "pl-land", "pl-update-cli", "pl-backstage-db",
           "pl-bench-tasks", "pl-customer-service-transcripts", "pl-demo-video-edit", "revise-prompt"]
 
 
@@ -132,8 +155,12 @@ if want("O2"):  # inside one: the two files lead, the launch's args follow
         "pl-demo-video-edit": "user-invocable-only"}, settings["skillOverrides"])
     ok("O2 transcript section gone", False, "Optional session transcript sharing" in prompt)
     ok("O2 tracking paragraph gone", False, "Track substantive coding work" in prompt)
-    ok("O2 the rest stays", [True, True, True], ["Merge a PR only when" in prompt, "## Dependencies" in prompt,
-                                                 "Intro line." in prompt])
+    ok("O2 unused parts gone", [False] * 6, [t in prompt for t in (
+        "## Scheduling corpus capture", "pl-internal-workspace", "hub/AGENTS.md", "delivery-team/",
+        "Scope and judge work", "Recommend the design")])
+    ok("O2 the rest stays", [True] * 6, [t in prompt for t in (
+        "Merge a PR only when", "## Dependencies", "Intro line.", "- `packages/loopy/AGENTS.md` — purity.\n",
+        "## Scoping work\n\nSize caution", "## Shared workflows")])
     ok("O2 the operator note ends it", True, prompt.rstrip().endswith("that the PR skills run."))
 
 if want("O3"):  # a given --settings is merged in, its keys winning, and leaves the args

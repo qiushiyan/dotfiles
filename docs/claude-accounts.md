@@ -89,9 +89,12 @@ Everything derives from that tree:
   above `_claude_fast_args` in `claude.zsh`.
 - **A PlanLab session without the team's Bench workflow**: a launch inside a
   PlanLab checkout runs `claude-planlab-overlay`, which gives the session the
-  team `AGENTS.md` without its Bench tracking and transcript-sharing text, plus
-  a short note on how Bench is used here, and hides every repository skill
-  outside the Loopy, deploy and PR sets (each still a `/` command). The team
+  team `AGENTS.md` cut to the work done here (no Bench tracking, transcript
+  sharing or corpus capture, no lines for areas never edited), plus a short
+  note on how Bench is used here, and hides every repository skill outside the
+  Loopy, deploy and PR sets and the production skills sessions load on their
+  own (each still a `/` command). It cuts and never rewrites, so the team's
+  later edits arrive. The team
   hook's own Bench text is switched off by `PLANLAB_BENCH_REMINDERS=off` in the
   shared `settings.json`, which every launch gets. A session started outside
   these launchers (`x-select`, Rex, devpool, a `claude -p` helper) loads the
