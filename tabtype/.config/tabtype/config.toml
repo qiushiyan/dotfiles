@@ -104,7 +104,7 @@ Decisions are settled as above; where I left one open, take your recommendation.
 [[snippets]]
 key = "review-verify"
 expand = '''
-/review codex full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read ~/dotfiles/claude/.claude/skills/spike/SKILL.md and treat this as its verification moment. Report its verdicts with the review's findings.'''
+/review codex astra full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read ~/dotfiles/claude/.claude/skills/spike/SKILL.md and treat this as its verification moment. Report its verdicts with the review's findings.'''
 
 [[snippets]]
 key = "strategic-review-brief"
