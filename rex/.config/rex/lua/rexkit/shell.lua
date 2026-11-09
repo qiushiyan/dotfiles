@@ -19,9 +19,8 @@ function M.bin(name, ...)
   return { "/bin/sh", "-c", 'exec "$HOME/.local/bin/' .. name .. '" "$@"', name, ... }
 end
 
--- Rex from app build 1497 forks only through rex.exec, an argv with no
--- shell; before it (the mini until it updates), io.popen and os.execute.
--- rex.exec returns nil only when it cannot start the program.
+-- Rex forks only through rex.exec, an argv with no shell. It returns nil
+-- only when it cannot start the program.
 local function sh(cmd)
   return rex.exec{ "/bin/sh", "-c", cmd } or { ok = false, stdout = "" }
 end
@@ -29,68 +28,31 @@ end
 -- A shell command's output with trailing white space removed, or nil when
 -- it printed nothing.
 function M.capture(cmd)
-  local out
-  if rex.exec then
-    out = sh(cmd).stdout
-  else
-    local p = io.popen(cmd)
-    out = p and p:read("*a") or ""
-    if p then p:close() end
-  end
-  out = out:gsub("%s+$", "")
+  local out = sh(cmd).stdout:gsub("%s+$", "")
   return out ~= "" and out or nil
 end
 
-function M.run(cmd)
-  if rex.exec then return sh(cmd).ok end
-  return os.execute(cmd) == 0
-end
+function M.run(cmd) return sh(cmd).ok end
 
 -- CMD in the background, its output discarded. Rex stops what an action
 -- or script started once it returns, unless it was started detached.
 function M.spawn(cmd)
-  if rex.exec then
-    rex.exec.start({ "/bin/sh", "-c", cmd }, { detach = true, stdout = false, stderr = false })
-    return
-  end
-  os.execute("(" .. cmd .. ") >/dev/null 2>&1 &")
+  rex.exec.start({ "/bin/sh", "-c", cmd }, { detach = true, stdout = false, stderr = false })
 end
 
--- Put TEXT on this machine's pasteboard. On an older Rex it goes through a
--- file, not printf's argument, since a copy can outgrow ARG_MAX, and not
--- io.popen(…, "w"), whose pipe that Lua never closes.
+-- Put TEXT on this machine's pasteboard, on pbcopy's stdin: a copy can
+-- outgrow ARG_MAX.
 function M.pbcopy(text)
-  if rex.exec then
-    local r = rex.exec({ "/usr/bin/pbcopy" }, { stdin = text })
-    return r ~= nil and r.ok
-  end
-  local path = os.tmpname()
-  local f = io.open(path, "w")
-  if not f then return false end
-  f:write(text)
-  f:close()
-  local ok = M.run("/usr/bin/pbcopy <" .. M.quote(path))
-  os.remove(path)
-  return ok
+  local r = rex.exec({ "/usr/bin/pbcopy" }, { stdin = text })
+  return r ~= nil and r.ok
 end
 
 -- Publish TEXT as a Rex copy: on this machine's pasteboard and every other
 -- machine's (rex/.local/bin/rex-clipshare, which returns once this one has
 -- it). False when the tool could not run or this pasteboard refused it.
 function M.publish(text)
-  local tool = HOME .. "/.local/bin/rex-clipshare"
-  if rex.exec then
-    local r = rex.exec({ tool }, { stdin = text })
-    return r ~= nil and r.ok
-  end
-  local path = os.tmpname()
-  local f = io.open(path, "w")
-  if not f then return false end
-  f:write(text)
-  f:close()
-  local ok = M.run(M.quote(tool) .. " <" .. M.quote(path))
-  os.remove(path)
-  return ok
+  local r = rex.exec({ HOME .. "/.local/bin/rex-clipshare" }, { stdin = text })
+  return r ~= nil and r.ok
 end
 
 -- Open a URL or file with macOS `open`, on this machine.

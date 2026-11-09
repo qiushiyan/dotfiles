@@ -51,10 +51,6 @@ local function bind(K, server, label)
     return result
   end
 
-  -- Attach explicitly: only a `rex do` script that wants a session's events
-  -- needs it, since every call attaches on demand.
-  function K.attach(session_id) return K.call("session.attach", { session_id = session_id }) end
-
   -- A terminal block's method (llms.txt, § com.superlogical.terminal block
   -- methods): process, program_status, format, size, title, clear, ….
   function K.block(session_id, block_id, method, args)
@@ -82,7 +78,9 @@ local function bind(K, server, label)
   -- The block that has focus in a session's active window.
   function K.focused_block(session_id)
     local view = K.view(session_id)
-    return view and view.focused_window and view.focused_window.focused_block_id
+    for _, w in ipairs((view and view.windows) or {}) do
+      if w.window_id == view.active_window_id then return w.focused_block_id end
+    end
   end
 
   -- The process in front in a block: the one a key press is about. Its cwd
@@ -102,7 +100,7 @@ local function bind(K, server, label)
   -- and the new block's label, cwd and command. Returns its block id.
   function K.split(session_id, anchor, spec)
     local r = K.call("session.new_split", {
-      session_id = session_id, anchor_block_id = anchor,
+      session_id = session_id, anchor_id = anchor,
       direction = spec.direction, side = spec.side or "after", ratio = spec.ratio,
       layout = rex.layout.block{ flavor = M.SHELL, label = spec.label,
         options = { cwd = spec.cwd, command = spec.command } },
