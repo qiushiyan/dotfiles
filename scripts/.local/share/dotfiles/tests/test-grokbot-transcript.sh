@@ -17,7 +17,12 @@
 # turn whose request id it carries and leaves out other requests' (G8); a
 # card shows every question with the bot's pick (G9); a drive batch whose
 # webhook is named for the bot is spliced in, its intents and wake plumbing
-# left out, and another bot's batch is never read (G10).
+# left out, and another bot's batch is never read (G10). The app's own way of
+# running a command, a fixed wrapper that takes the command on descriptor 5
+# and restores the shell before it, logs each command with its own status
+# under its own id, whatever functions and id that older shell had, and two
+# shells' long lines never interleave (G11); the view shows such a command
+# from its end line, and says so when a log never recorded one (G12).
 #
 # ISOLATION. GROKBOT_DATA_DIR, GROKBOT_ARCHIVE_DIR and DRIVE_STATE_DIR point
 # into a sandbox, and a stub `drive` heads PATH; G6 asserts the real archive
@@ -191,6 +196,88 @@ CASE=G10; if want; then
         "$(printf '%s\n' "$out" | grep -A2 'drive wake' | grep -v '── turn' | paste -sd'|' -)"
     ok "G10 intents and wake plumbing are left out" "" "$(printf '%s\n' "$out" | grep -e 'drive watch' -e 'send-intent')"
     ok "G10 only the bot's own batch is read" "log --batch b1 --json" "$(cat "$SANDBOX/drive-calls")"
+fi
+
+# The app's wrapper in miniature: the command arrives NUL-terminated on
+# descriptor 5 and becomes $1, the state on descriptor 3 (every function and
+# export of the shell before) is restored over this shell's, $1 runs, and this
+# shell's state leaves on descriptor 4 for the next.
+WRAPPER='IFS= builtin read -r -d "" __cursor_command <&5; exec 5<&-; builtin set -- "$__cursor_command"; builtin unset __cursor_command; builtin eval "$(command cat <&3)"; builtin eval "$1" 3<&- 4>&- </dev/null; rc=$?; { builtin typeset -f; builtin typeset -xp | command grep "^export _GROKBOT"; } >&4; builtin exit $rc'
+# app_run REQUEST COMMAND: one command as the app runs it, in the chain $SANDBOX/state carries.
+app_run() {
+    printf '%s\0' "$2" > "$SANDBOX/cmd"
+    ZDOTDIR="$SANDBOX/zdot" CURSOR_AGENT=1 CURSOR_REQUEST_ID="$1" /bin/zsh -c "$WRAPPER" \
+        5<"$SANDBOX/cmd" 3<"$SANDBOX/state" 4>"$SANDBOX/state.next" >/dev/null 2>&1
+    local rc=$?
+    mv "$SANDBOX/state.next" "$SANDBOX/state"
+    return $rc
+}
+# log_lines FILE: each line as "start REQUEST [wrapped] CMD" or "end STATUS
+# CMD", an end marked ≠ when its id is not that of the start before it.
+log_lines() {
+    /usr/bin/python3 -c '
+import json, sys
+out, last = [], None
+for l in open(sys.argv[1]):
+    r = json.loads(l)
+    if r["t"] == "start":
+        last = r["id"]
+        out.append(" ".join(["start", r["request_id"]] + (["wrapped"] if r.get("wrapped") else []) + [r["cmd"]]).rstrip())
+    else:
+        out.append(("end" if r["id"] == last else "end≠") + " %d %s" % (r["status"], r.get("cmd", "")))
+print("|".join(out))' "$1"
+}
+
+CASE=G11; if want; then
+    mkdir -p "$SANDBOX/zdot"
+    printf 'source %q\n' "$MODULE" > "$SANDBOX/zdot/.zshenv"
+    log="$GROKBOT_ARCHIVE_DIR/host-commands.jsonl"
+    rm -f "$log"
+    # The shell before this chain ran an older grokbot.zsh: its functions and
+    # its id come back.
+    printf '%s\n' \
+        '_grokbot_host_line () { print -r -- stale >> "$GROKBOT_ARCHIVE_DIR/host-commands.jsonl" }' \
+        '_grokbot_host_log () { print -r -- stale >> "$GROKBOT_ARCHIVE_DIR/host-commands.jsonl" }' \
+        'export _GROKBOT_HOST_CMD=an-older-shell' > "$SANDBOX/state"
+    app_run rq3 'echo one'
+    app_run rq3 'ls /nonexistent-g11'
+    ok "G11 the app's shell keeps the command's status" "1" "$?"
+    app_run rq3 'zsh -c "true"; echo "a\"b"; (exit 7)'
+    ok "G11 each command on its own end line, with its own status, under its own id" \
+        "start rq3 wrapped|end 0 echo one|start rq3 wrapped|end 1 ls /nonexistent-g11|start rq3 wrapped|end 7 zsh -c \"true\"; echo \"a\\\"b\"; (exit 7)" \
+        "$(log_lines "$log")"
+    # Twelve shells at once, each line longer than one flush of print's buffer.
+    long=$(printf 'x%.0s' $(seq 1 12000))
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+        ZDOTDIR="$SANDBOX/zdot" CURSOR_AGENT=1 CURSOR_REQUEST_ID=burst /bin/zsh -c ": $i $long" &
+    done
+    wait
+    ok "G11 twelve shells' long lines, none interleaved" "30 lines, 0 unreadable" \
+        "$(/usr/bin/python3 -c '
+import json, sys
+n = bad = 0
+for l in open(sys.argv[1]):
+    n += 1
+    try: json.loads(l)
+    except ValueError: bad += 1
+print("%d lines, %d unreadable" % (n, bad))' "$log")"
+fi
+
+CASE=G12; if want; then
+    turn_window
+    log="$GROKBOT_ARCHIVE_DIR/host-commands.jsonl"
+    # A wrapped command whose end line carries it; then one from the log before
+    # that: the wrapper as the command, and an end with no command, which that
+    # log paired to the wrong start.
+    printf '%s\n' \
+        '{"t":"start","id":"n1","at_ms":1761127410000,"request_id":"rq3","conversation_id":"","cwd":"/tmp","cmd":"","wrapped":true}' \
+        '{"t":"end","id":"n1","at_ms":1761127412000,"status":3,"cmd":"drive status --quick"}' \
+        '{"t":"start","id":"o1","at_ms":1761127420000,"request_id":"rq3","conversation_id":"","cwd":"/tmp","cmd":"IFS= builtin read -r -d '' __cursor_command <&5 2>/dev/null || exit 126; and the rest"}' \
+        '{"t":"end","id":"o1","at_ms":1761127421000,"status":0}' > "$log"
+    out=$("$TOOL" "Session Driver" --since seq:20 --tz UTC 2>/dev/null)
+    ok "G12 a wrapped command shows from its end line; an older log's says it has none" \
+        '  $ 10:03:30 drive status --quick  (exit 3 · 2s)|  $ 10:03:40 (command not recorded)  (no exit recorded)' \
+        "$(printf '%s\n' "$out" | grep '^  \$ ' | paste -sd'|' -)"
 fi
 
 CASE=G6; if want; then

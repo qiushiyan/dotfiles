@@ -103,9 +103,21 @@ def host_commands(request_ids):
                 except ValueError:
                     continue   # a line cut short by a full disk or a kill
                 if r.get("t") == "start" and r.get("request_id") in request_ids:
+                    # The app's wrapper is the same text for every command, so
+                    # a start line that logged it (before `wrapped`) says nothing.
+                    if "__cursor_command <&5" in r.get("cmd", "")[:200]:
+                        r["cmd"], r["wrapped"] = "", True
                     runs[r["id"]] = r
                 elif r.get("t") == "end" and r.get("id") in runs:
-                    runs[r["id"]]["end"] = r
+                    run = runs[r["id"]]
+                    # A wrapped command's end line carries the command. One
+                    # without it is from the log that paired ends by a
+                    # variable the wrapper restores, to the wrong start.
+                    if run.get("wrapped") and "cmd" not in r:
+                        continue
+                    run["end"] = r
+                    if "cmd" in r:
+                        run["cmd"] = r["cmd"]
     except FileNotFoundError:
         pass
     return list(runs.values())
@@ -153,7 +165,8 @@ def render_command(c, tz):
         result = "no exit recorded"
     else:
         result = f"exit {end.get('status')} · {took(end['at_ms'] - c['at_ms'])}"
-    return f"  $ {when(c['at_ms'], tz, '%H:%M:%S')} {clip(c.get('cmd', ''))}  ({result})"
+    cmd = clip(c.get("cmd", "")) or "(command not recorded)"
+    return f"  $ {when(c['at_ms'], tz, '%H:%M:%S')} {cmd}  ({result})"
 
 
 def render_drive(ev, tz):
