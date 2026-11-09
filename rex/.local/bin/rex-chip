@@ -116,7 +116,7 @@ compose() {
     pct "$SEVEN" && [ "$SEVEN" -ge 90 ] && parts+=("🔴 7d ${SEVEN}%")
   fi
   if pct "$WEEK" && [ -n "$WEEK_MODEL" ] && { wide "$GATE_WEEKLY" || [ "$WEEK" -ge 90 ]; }; then
-    mark "$WEEK"; parts+=("${REPLY}wk ${WEEK_MODEL} ${WEEK}%")
+    mark "$WEEK"; parts+=("${REPLY}${WEEK_MODEL} ${WEEK}%")
   fi
   # The prompt cache, beside the context it prices: its minutes on a pane with
   # room, and its warning on any.

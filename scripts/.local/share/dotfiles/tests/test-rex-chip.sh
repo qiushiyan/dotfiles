@@ -142,7 +142,7 @@ CASE=K1; if want; then
   fresh; weekly 4 opus
   CACHE=43 render 31 12 30 >/dev/null
   ok "K1 a render sets the header: full email, model:effort, calm quotas bare, the cache, a bar" \
-    "yan@planlab.ai · 💠 fable-5-2:xhigh · 5h 12% · 7d 30% · wk opus 4% · ⏳ cache 43m · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+    "yan@planlab.ai · 💠 fable-5-2:xhigh · 5h 12% · 7d 30% · opus 4% · ⏳ cache 43m · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   ok "K1 the state is the sandbox's" "block_t1.base block_t1.chip block_t1.label block_t1.width" "$(ls "$STATE" | tr '\n' ' ' | sed 's/ $//')"
   ok "K1 the label fits Rex's 128 characters" "1" "$([ "$(chars "$(label)")" -le 128 ] && echo 1)"
 fi
