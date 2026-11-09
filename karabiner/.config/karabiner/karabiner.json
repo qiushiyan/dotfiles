@@ -210,7 +210,7 @@
                         ]
                     },
                     {
-                        "description": "Chrome: cmd+n opens a new tab, as cmd+t does, not a new window",
+                        "description": "Chrome: cmd+n opens a new tab right after the current one, through the ctrl+t App Shortcut that bootstrap.sh sets, not a new window",
                         "manipulators": [
                             {
                                 "type": "basic",
@@ -226,7 +226,7 @@
                                     {
                                         "key_code": "t",
                                         "modifiers": [
-                                            "left_command"
+                                            "left_control"
                                         ]
                                     }
                                 ],

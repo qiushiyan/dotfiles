@@ -305,6 +305,14 @@ step_macos_defaults() {
     defaults write com.google.Chrome NSUserKeyEquivalents -dict-add "Duplicate Tab" '^d'
     ok "Chrome: ctrl+d duplicates the tab (restart Chrome to apply)"
 
+    # Chrome's cmd+t appends the tab at the end of the strip; the Tab menu's
+    # item opens it right after the current tab but has no key. Its title
+    # follows the tab layout: "New Tab Below" with vertical tabs, "New Tab to
+    # the Right" with horizontal ones. Karabiner sends ctrl+t for cmd+n.
+    defaults write com.google.Chrome NSUserKeyEquivalents -dict-add "New Tab Below" '^t'
+    defaults write com.google.Chrome NSUserKeyEquivalents -dict-add "New Tab to the Right" '^t'
+    ok "Chrome: ctrl+t opens a tab after the current one (restart Chrome to apply)"
+
     # Power management. Stock macOS / a config profile can leave system
     # sleep absurdly low (seen: sleep=1 min, so the Mac naps after a
     # minute idle). pmset values are in MINUTES, 0 = never. Needs sudo
