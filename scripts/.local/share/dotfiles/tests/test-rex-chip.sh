@@ -142,7 +142,7 @@ CASE=K1; if want; then
   fresh; weekly 4 opus
   CACHE=43 render 31 12 30 >/dev/null
   ok "K1 a render sets the header: full email, model:effort, calm quotas bare, the cache, a bar" \
-    "yan@planlab.ai · 🧠 fable-5-2:xhigh · 5h 12% · 7d 30% · wk opus 4% · ⏳ cache 43m · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+    "yan@planlab.ai · 🔵 fable-5-2:xhigh · 5h 12% · 7d 30% · wk opus 4% · ⏳ cache 43m · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   ok "K1 the state is the sandbox's" "block_t1.base block_t1.chip block_t1.label block_t1.width" "$(ls "$STATE" | tr '\n' ' ' | sed 's/ $//')"
   ok "K1 the label fits Rex's 128 characters" "1" "$([ "$(chars "$(label)")" -le 128 ] && echo 1)"
 fi
@@ -151,12 +151,12 @@ CASE=K2; if want; then
   fresh
   render 71 93 58 >/dev/null
   ok "K2 a quota at 90 and one at 50 wear their marks, and the bar turns yellow" \
-    "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🔴 5h 93% · 🟡 7d 58% · 🟨🟨🟨🟨🟨🟨🟨⬜⬜⬜ 71%" "$(label)"
+    "yan@planlab.ai · 🔵 fable-5-2:xhigh · 🔴 5h 93% · 🟡 7d 58% · 🟨🟨🟨🟨🟨🟨🟨⬜⬜⬜ 71%" "$(label)"
   render 95 49 '' >/dev/null
   ok "K2 context at 90 is a red bar, and an absent window is not drawn" \
-    "yan@planlab.ai · 🧠 fable-5-2:xhigh · 5h 49% · 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 95%" "$(label)"
+    "yan@planlab.ai · 🔵 fable-5-2:xhigh · 5h 49% · 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 95%" "$(label)"
   render 2 '' '' >/dev/null
-  ok "K2 any context at all fills one cell" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜ 2%" "$(label)"
+  ok "K2 any context at all fills one cell" "yan@planlab.ai · 🔵 fable-5-2:xhigh · 🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜ 2%" "$(label)"
 fi
 
 CASE=K3; if want; then
@@ -173,11 +173,11 @@ CASE=K4; if want; then
   fresh; weekly 4 opus
   render 31 12 30 100 >/dev/null
   ok "K4 under 110 columns the model's weekly leaves" \
-    "yan@planlab.ai · 🧠 fable-5-2:xhigh · 5h 12% · 7d 30% · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+    "yan@planlab.ai · 🔵 fable-5-2:xhigh · 5h 12% · 7d 30% · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   render 31 12 30 60 >/dev/null
-  ok "K4 under 70 the quota pair leaves and the bar halves" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩🟩⬜⬜⬜ 31%" "$(label)"
+  ok "K4 under 70 the quota pair leaves and the bar halves" "yan@planlab.ai · 🔵 fable-5-2:xhigh · 🟩🟩⬜⬜⬜ 31%" "$(label)"
   render 31 93 30 60 >/dev/null
-  ok "K4 a quota at its alarm stays on a narrow pane" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🔴 5h 93% · 🟩🟩⬜⬜⬜ 31%" "$(label)"
+  ok "K4 a quota at its alarm stays on a narrow pane" "yan@planlab.ai · 🔵 fable-5-2:xhigh · 🔴 5h 93% · 🟩🟩⬜⬜⬜ 31%" "$(label)"
   render 31 12 30 45 >/dev/null
   ok "K4 under 50 the model leaves" "yan@planlab.ai · 🟩🟩⬜⬜⬜ 31%" "$(label)"
   render 31 12 30 30 >/dev/null
@@ -187,9 +187,9 @@ fi
 CASE=K5; if want; then
   fresh "api server"
   render 31 '' '' >/dev/null
-  ok "K5 the pane's own name leads the chip" "api server · yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K5 the pane's own name leads the chip" "api server · yan@planlab.ai · 🔵 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   chip rename block:t1 "worker"
-  ok "K5 a rename through rex-chip keeps the chip" "worker · yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K5 a rename through rex-chip keeps the chip" "worker · yan@planlab.ai · 🔵 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   chip clear block:t1
   ok "K5 clear gives the pane its name back" "worker" "$(label)"
   ok "K5 and leaves no state" "" "$(ls "$STATE" 2>/dev/null)"
@@ -259,16 +259,16 @@ fi
 CASE=K10; if want; then
   fresh
   CACHE=9 render 31 '' '' >/dev/null
-  ok "K10 a cache in its last ten minutes is marked" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟡 cache 9m · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K10 a cache in its last ten minutes is marked" "yan@planlab.ai · 🔵 fable-5-2:xhigh · 🟡 cache 9m · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   CACHE=cold render 31 '' '' >/dev/null
-  ok "K10 a cold cache is marked red" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🔴 cache cold · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K10 a cold cache is marked red" "yan@planlab.ai · 🔵 fable-5-2:xhigh · 🔴 cache cold · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
   ok "K10 the floating chip draws it red too" "1" "$(chip render block:t1 80 | grep -c $'\033\\[31mcache cold')"
   CACHE=43 render 31 '' '' 45 >/dev/null
   ok "K10 under 50 columns a calm cache leaves" "yan@planlab.ai · 🟩🟩⬜⬜⬜ 31%" "$(label)"
   CACHE=9 render 31 '' '' 30 >/dev/null
   ok "K10 a cache that warns stays on the narrowest pane" "🟡 cache 9m · 🟩🟩⬜⬜⬜ 31%" "$(label)"
   render 31 '' '' >/dev/null
-  ok "K10 a session that reports no cache draws none" "yan@planlab.ai · 🧠 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K10 a session that reports no cache draws none" "yan@planlab.ai · 🔵 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
 fi
 
 # The float on a pty of its own (chip-resize.py): 80 columns as it starts, 55

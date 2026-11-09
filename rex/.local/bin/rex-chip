@@ -21,7 +21,7 @@
 # value warns: a mark before a quota at 50% (yellow) and 90% (red), context as
 # a bar in the same scale, and a mark on the prompt cache in its last ten
 # minutes (yellow) and once it is cold (red). Two fields wear an icon to be
-# found by: the model a brain, the cache an hourglass, which its warning mark
+# found by: the model a blue dot, the cache an hourglass, which its warning mark
 # replaces. The floating chip (the chip_toggle
 # action: alt+cmd+. or prefix i) is a terminal, so it has the tmux border's
 # colours and the terminal's font.
@@ -103,7 +103,7 @@ compose() {
   [ -n "$ACCOUNT" ] && wide "$GATE_ACCOUNT" && parts+=("$ACCOUNT")
   if [ -n "$MODEL" ] && wide "$GATE_MODEL"; then
     model=$MODEL; [ -n "$EFFORT" ] && model+=":$EFFORT"
-    parts+=("🧠 $model")
+    parts+=("🔵 $model")
   fi
   if wide "$GATE_QUOTA"; then
     pct "$FIVE" && { mark "$FIVE"; parts+=("${REPLY}5h ${FIVE}%"); }
