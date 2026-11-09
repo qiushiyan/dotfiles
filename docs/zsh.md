@@ -8,16 +8,16 @@ Which file a change belongs in is most of the work, because each runs for a
 different kind of shell:
 
 - **`.zshenv`** — _every_ zsh invocation, including scripts and `ssh host cmd`.
-  Sets `typeset -U path`, puts Homebrew on `PATH` (guarded and idempotent — the
-  system `/etc/zprofile` only fires for login shells, so `ssh host cmd` and
-  mosh-server would otherwise miss it), forces a UTF-8 locale for the same
-  reason, sources `toolchain.zsh`, then sources every other
+  Sets `typeset -U path`, sources `toolchain.zsh`, which puts Homebrew and the
+  other tools on `PATH` (the system `/etc/zprofile` only fires for login
+  shells, so `ssh host cmd` and mosh-server would otherwise miss them), forces
+  a UTF-8 locale for the same reason, then sources every other
   `~/.config/zsh/*.zsh` so functions and aliases exist everywhere, then this
   machine's host file (§ Machines), then takes `FORCE_HYPERLINK` out of the
   shells Claude Code runs its tools in and sets global options such as
   `EQUALS` off.
   It must end with status 0 (§ Lessons learned).
-- **`.zprofile`** — login shells only. Homebrew + OrbStack `shellenv`.
+- **`.zprofile`** — login shells only; each machine's own (below).
 - **`.zshrc`** — interactive shells only. oh-my-zsh, syntax highlighting,
   completions, Oh My Posh prompt, fzf/zoxide, the lazy `nvm` stub.
 - **`.zlogin`** — login shells only, after the other startup files. Reapplies
@@ -26,15 +26,15 @@ different kind of shell:
 They load `.zshenv` → `.zprofile` → `.zshrc` → `.zlogin`, skipping files that
 do not apply to the shell's mode.
 
-**`~/.zprofile` is not in this repo.** It is each machine's own: bootstrap
-writes its `brew shellenv` line (Homebrew's installer only prints it),
-OrbStack's installer adds its own, and a machine adds what is its alone (the minis' `AWS_PROFILE`). That
-line runs after `/etc/zprofile`'s `path_helper`, which puts `/usr/bin` first,
-so without it a login shell finds macOS's Python 3.9 before Homebrew's. It
-also re-prepends Homebrew after `.zshenv`, so `.zshrc` reapplies
+**`~/.zprofile` is not in this repo.** It is each machine's own: OrbStack's
+installer adds its line, and a machine adds what is its alone (the minis'
+`AWS_PROFILE`). It needs no `brew shellenv` line, since `toolchain.zsh` sets
+Homebrew's environment; a machine that still has one works the same, pays its
+fork, and exports `FPATH`, which `.zshrc` undoes (§ Completion dump).
+`/etc/zprofile`'s `path_helper` puts `/usr/bin` first in a login shell, where
+macOS's Python 3.9 would shadow Homebrew's, so `.zshrc` reapplies
 `toolchain.zsh` after plugin setup and `.zlogin` does for login shells,
-including non-interactive `zsh -lc`. It also exports `FPATH`, which `.zshrc`
-undoes (§ Completion dump).
+including non-interactive `zsh -lc`.
 
 `toolchain.zsh` owns CLI install directories for every shell mode. Add new
 tool paths there, not to a static `PATH` in Codex's `shell_environment_policy`:
@@ -147,12 +147,12 @@ the same fpath before it sources oh-my-zsh: it drops inherited `$ZSH/*`
 entries, deduplicates (`typeset -U`), pins Homebrew's and OrbStack's
 completion directories, and unexports `FPATH`.
 
-The export is the trap. `brew shellenv` runs `export FPATH`, so without the
-unexport a child shell (nested `zsh`, `zshreload`, a tmux pane whose server
+The export is the trap. A `brew shellenv` line in `~/.zprofile` runs
+`export FPATH`, so without the unexport a child shell (nested `zsh`, `zshreload`, a tmux pane whose server
 captured the variable) inherits its parent's oh-my-zsh entries and adds them
 again; each such context has a different fpath and rewrites the shared dump.
-The pinned directories are the ones only login shells add, through
-`~/.zprofile`; without the pin a non-login shell lacks `brew`, `docker` and
+The pinned directories are the ones only a login shell's `~/.zprofile` may
+add; without the pin another shell lacks `brew`, `docker` and
 `orb` completions and records yet another fpath. A new completion directory belongs in that pin,
 guarded with `(N/)`, not on an exported `FPATH`. `tests/portability.test.zsh`
 checks that an inherited `FPATH` changes nothing and does not leak.
@@ -221,6 +221,12 @@ Read before editing.
 - **`.zshenv` must end with status 0.** A non-zero last statement silently
   breaks `source ~/.zshenv && …` chains, so whatever comes last is a plain
   command or a complete `if`, never a short-circuiting `&&`.
+- **Starting a shell forks no tool for its setup.** `toolchain.zsh` sets
+  Homebrew's variables (`brew shellenv` costs 15 ms), `ZSH_DISABLE_COMPFIX`
+  skips oh-my-zsh's `compaudit` (10 ms), and `_init_cached` in `.zshrc`
+  sources fzf's and zoxide's init from a cache that follows the binary. A new
+  tool's init goes through it unless its output differs per shell, as
+  oh-my-posh's does. Pinned by `tests/portability.test.zsh`.
 - **nvm is lazy-loaded.** Eagerly sourcing `nvm.sh` costs ~230 ms per shell.
   `toolchain.zsh` already puts the default Node on `PATH` cheaply; an `nvm()`
   stub in `.zshrc` loads the real nvm on first call. Don't reinstate eager

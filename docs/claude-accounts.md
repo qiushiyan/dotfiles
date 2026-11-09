@@ -175,7 +175,8 @@ Everything derives from that tree:
   `x-<name>`, `claude-account`, `cx`, `cx-<name>`) first runs
   `workspace-trust`, which records those roots and every repository under
   them as trusted in each account's `.claude.json` and in Codex's
-  `config.toml`; Claude Code keeps trust per account, so without it each
+  `config.toml`, unless a clean run is remembered for the directory it is
+  launched from (for a day, and until the account directories change); Claude Code keeps trust per account, so without it each
   repository asks once on each. Trust given at a prompt elsewhere lasts until
   `workspace-trust --prune`, the cleanup that also drops entries for
   directories that are gone (`-n` previews it). The roots, the search depth

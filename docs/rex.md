@@ -21,8 +21,8 @@ its protocols carry agent work, how the machines meet in it, and the
 traps. Each tool under `rex/` explains itself in its header. Everything here
 was established against CLI build `c50b257` and app build 1026; app build
 1069 (CLI `7b5bf3e`) added to the API, and 1497 took the shell out of its Lua.
-Rex moves fast: after an update, restart the server, check the config, and
-re-probe what matters (§ Lessons).
+Rex moves fast: after an update, restart the server and run `rex-doctor`
+(§ Lessons).
 
 ## Where Rex's truth lives
 
@@ -397,7 +397,7 @@ one exists.
   `^A`; `rex config check ~/.config/rex/init.lua` names the line. A command
   is stopped when the action or script that started it returns, unless
   `rex.exec.start` started it detached. Guard: `rexkit.shell` is the one
-  place that forks, falling back to the old calls on an older Rex. The Lua
+  place that forks. The Lua
   also crashes the whole script on `for … in (s:gsub(…) .. x):gmatch(…)`; the
   same through a local works.
 - **A control reply carries at most 1 MiB.** A `format` call past it is a
@@ -412,7 +412,14 @@ one exists.
 - **A server started with `rex server run` leaves `REX_SERVER` unset in its
   blocks,** where the live server sets it. A tool that finds its server from
   a block falls back to `~/Library/Application Support/rex/server.sock`, as
-  the `rex` CLI does (`cout setup`).
+  the `rex` CLI does (`cout setup`). So a scratch pane with no command, the
+  account's real login shell, reaches the live server through `rex.zsh`'s
+  `rexd`: give every scratch pane a command with `login = false`.
+- **Rex drops a payload key it does not know, with no error,** so a renamed
+  key makes a call succeed and do something else. Guard: `rex-doctor` checks
+  every call the Lua and the tools make against each known server's schemas,
+  reading only, and `test-rex-lab.sh` presses the actions on a scratch
+  server of the build the app bundles, the one the next restart runs.
 - **The app owns the colours.** It pushes its theme to every terminal on the
   server, so a server-side `set_theme` is overwritten (it only sets what
   programs see when they query colours). Following our theme means switching
