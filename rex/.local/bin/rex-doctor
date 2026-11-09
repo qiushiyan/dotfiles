@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+"""rex-doctor: is the lab still right for the Rex servers it runs on?
+
+  rex-doctor                      every server this machine knows
+  rex-doctor --contract HELP.json [--config DIR] [--bin DIR]
+                                  the contract check alone, against a saved
+                                  `rex api call help.all` (the lab's suite
+                                  runs it against a scratch server)
+
+Run it after a Rex update, a server restart or a config edit. It only reads:
+server status, the keymap, help.all, list_blocks and a block's process. For
+this server and each `rex hosts` label it reports
+
+  - the build and API revision the server runs;
+  - whether it loaded the same config as the first server (the keymap's hash
+    covers init.lua and every module it requires) and the keymap's diagnostics;
+  - the contract: every server call the Lua and the tools make, against the
+    schemas that server publishes;
+  - whether rexd is alive there.
+
+The contract check is the reason this exists. Rex drops a payload key it does
+not know without an error, so a renamed key makes a call succeed and do
+something else: `anchor_block_id` for `anchor_id` sent every split to the
+server's active tab. The check reads the source, calls nothing, and
+reports
+
+  - a method the server does not have,
+  - a payload key the method's input does not take,
+  - a required key a call never sends,
+  - a result field the code reads that the method's output does not have
+    (READS and BLOCK_READS below, kept by hand: add a field when new code
+    reads one).
+
+It finds calls by pattern (`call("a.b", {…})`, `block(s, b, "name", {…})`,
+`rex api call a.b '{…}'`), so a method name built at run time is not seen.
+What an action queues for the app (`pane.focus`, `client.tab.next`) is the
+app's own action list, not the server's, and is not checked.
+
+Exit status 1 when anything is wrong, 2 for a usage error.
+"""
+import glob
+import json
+import os
+import re
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+CONFIG = os.path.normpath(os.path.join(HERE, "../../.config/rex"))
+
+# Result fields the code reads: method -> dotted paths ([] = each array item).
+READS = {
+    "session.view": ["active_window_id", "windows[].window_id", "windows[].label",
+                     "windows[].focused_block_id", "windows[].layers[].kind",
+                     "windows[].layers[].layout", "windows[].layers[].blocks[].label"],
+    "session.list_blocks": ["blocks[].block_id", "blocks[].label", "blocks[].creator_name",
+                            "blocks[].flavor", "blocks[].window_id"],
+    "session.list": ["sessions[].session_id", "sessions[].label"],
+    "session.new_split": ["block_ids"],
+    "session.new_window": ["window_id"],
+    "session.new_layer": ["layer_id"],
+    "session.new_block": ["block_id"],
+    "server.status": ["instance_id"],
+    "client.inspect": ["client.principal.transport"],
+}
+BLOCK_READS = {
+    "process": ["foreground.name", "foreground.cwd", "foreground.pid", "child", "last_exit"],
+    "program_status": ["records[].state", "records[].owner.pid", "records[].updated_at", "records[].id"],
+    "size": ["columns", "rows"],
+    "title": ["title"],
+    "format": ["content"],
+    "clipboard_read": ["data", "eof"],
+}
+
+
+def top_keys(src, i):
+    """The keys of the Lua table literal whose `{` is at src[i]."""
+    depth, j, keys, cur, in_str = 0, i, [], i + 1, None
+    while j < len(src):
+        c = src[j]
+        if in_str:
+            if c == "\\":
+                j += 1
+            elif c == in_str:
+                in_str = None
+        elif c in "\"'":
+            in_str = c
+        elif c in "{(":
+            depth += 1
+        elif c in "})":
+            depth -= 1
+            if depth == 0:
+                break
+        elif depth == 1 and c == "=" and src[j + 1] != "=" and src[j - 1] not in "~=<>":
+            m = re.search(r"(\w+)\s*$", src[cur:j])
+            if m:
+                keys.append(m.group(1))
+        elif depth == 1 and c == ",":
+            cur = j + 1
+        j += 1
+    return keys
+
+
+def call_sites(config, bindir):
+    """(where, kind, name, keys) for each call the Lua and the tools make."""
+    calls = []
+    paths = sorted(glob.glob(config + "/**/*.lua", recursive=True)) + sorted(glob.glob(bindir + "/*"))
+    for path in paths:
+        if os.path.realpath(path) == os.path.realpath(__file__):
+            continue
+        try:
+            with open(path, encoding="utf-8") as f:
+                src = f.read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        base = config if path.startswith(config) else bindir
+        rel = os.path.relpath(path, os.path.dirname(base.rstrip("/")))
+
+        def at(m):
+            return f"{rel}:{src.count(chr(10), 0, m.start()) + 1}"
+
+        for m in re.finditer(r"""\b(?:call|try)\(\s*["']([a-z_]+\.[a-z_.]+)["']\s*(,\s*\{)?""", src):
+            calls.append((at(m), "method", m.group(1), top_keys(src, m.end() - 1) if m.group(2) else []))
+        for m in re.finditer(r"""\bblock\(\s*[\w.]+\s*,\s*[\w.]+\s*,\s*["'](\w+)["']\s*(,\s*\{)?""", src):
+            calls.append((at(m), "block", m.group(1), top_keys(src, m.end() - 1) if m.group(2) else []))
+        for m in re.finditer(r"api call ([a-z_]+\.[a-z_.]+)([^\n]*(?:\n[^\n]*)?)", src):
+            keys = re.findall(r'\\"(\w+)\\":', m.group(2)) or re.findall(r"[{,]\s*(\w+):", m.group(2))
+            calls.append((at(m), "method", m.group(1), keys))
+        for m in re.finditer(r"block call [^|\n]*?\b(process|title|size|format|program_status)\b", src):
+            calls.append((at(m), "block", m.group(1), []))
+    return calls
+
+
+def has_path(schema, path):
+    node = schema
+    for part in path.split("."):
+        each = part.endswith("[]")
+        part = part[:-2] if each else part
+        props = (node or {}).get("properties") or {}
+        if part not in props:
+            return False
+        node = props[part]
+        if each:
+            node = node.get("items") or {}
+    return True
+
+
+def contract(help_all, config, bindir):
+    """(summary line, problems) for the lab's calls against one server's help.all."""
+    methods = {m["name"]: m for m in help_all["methods"]}
+    block_methods = {}
+    for bt in help_all.get("block_types", []):
+        for m in bt.get("methods") or []:
+            block_methods[m["name"].split(".")[-1]] = m
+    problems, seen = [], set()
+    calls = call_sites(config, bindir)
+    for where, kind, name, keys in calls:
+        table = methods if kind == "method" else block_methods
+        if name not in table:
+            problems.append(f"{where}: the server has no {kind} `{name}`")
+            continue
+        seen.add((kind, name))
+        schema = table[name].get("input_schema") or table[name].get("args_schema") or {}
+        props = set((schema.get("properties") or {}).keys())
+        for k in keys:
+            if k not in props:
+                problems.append(f"{where}: {name} is sent `{k}`, which it does not take "
+                                f"(it takes {', '.join(sorted(props))})")
+        if kind == "method" and keys:
+            for r in schema.get("required") or []:
+                if r not in keys:
+                    problems.append(f"{where}: {name} is never sent `{r}`, which it requires")
+    for table, reads, what in ((methods, READS, ""), (block_methods, BLOCK_READS, "block method ")):
+        for name, paths in reads.items():
+            out = (table.get(name) or {}).get("output_schema") or {}
+            if name not in table or not out.get("properties"):
+                continue
+            for p in paths:
+                if not has_path(out, p):
+                    problems.append(f"{what}{name}: the code reads `{p}`, which its result does not have")
+    return f"{len(calls)} call sites, {len(seen)} methods", problems
+
+
+def rex(*args, host=None):
+    """A rex command's stdout, or None when it failed. Never starts a server."""
+    env = {k: v for k, v in os.environ.items() if k not in ("REX_SESSION", "REX_BLOCK")}
+    argv = ["rex", "--autostart=false", "--timeout", "8s"] + (["-S", host] if host else []) + list(args)
+    try:
+        r = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def rex_json(*args, host=None):
+    out = rex(*args, host=host)
+    try:
+        return json.loads(out) if out else None
+    except ValueError:
+        return None
+
+
+def rexd_alive(host):
+    for s in (rex_json("ls", "--json", host=host) or {}).get("sessions", []):
+        blocks = rex_json("api", "call", "session.list_blocks",
+                          json.dumps({"session_id": s["session_id"]}), host=host) or {}
+        for b in blocks.get("blocks", []):
+            if b.get("label") != "rexd":
+                continue
+            proc = rex_json("block", "call", "-s", s["session_id"], "-b", b["block_id"], "process", host=host)
+            if proc is not None and proc.get("last_exit") is None:
+                return True
+    return False
+
+
+def check_servers(config, bindir):
+    hosts = [h["host"]["label"] for h in (rex_json("hosts", "--json") or {}).get("hosts", [])]
+    try:
+        with open(os.path.expanduser("~/.config/machine")) as f:
+            here = f.read().strip()
+    except OSError:
+        here = "this machine"
+    wrong, first = 0, None
+    for host in [None] + hosts:
+        name = host or here
+        st = rex_json("server", "status", "--json", host=host)
+        if st is None:
+            print(f"{name}: unreachable")
+            wrong += 1
+            continue
+        print(f"{name}: {st.get('rex_version')}  api {st.get('api_revision')}  up since {st.get('started_at')}")
+
+        def say(ok, good, bad):
+            nonlocal wrong
+            wrong += 0 if ok else 1
+            print(("  ok    " + good) if ok else ("  WRONG " + bad))
+
+        keymap = rex_json("keymap", "--json", host=host) or {}
+        digest = (keymap.get("config") or {}).get("hash", "")
+        first = first or digest
+        say(bool(digest) and digest == first, f"config {digest[:12]}, the same on every server so far",
+            f"config {digest[:12] or 'unread'} differs from {first[:12]}: its checkout or its reload is behind")
+        diag = keymap.get("diagnostics")
+        say(diag == [], "keymap has no diagnostics", f"keymap diagnostics: {json.dumps(diag)}")
+        help_all = rex_json("api", "call", "help.all", host=host)
+        if help_all is None:
+            say(False, "", "help.all could not be read, so the contract is unchecked")
+        else:
+            summary, problems = contract(help_all, config, bindir)
+            say(not problems, f"contract: {summary} match this server's schemas",
+                f"contract: {len(problems)} of the lab's calls do not match this server")
+            for p in problems:
+                print("        " + p)
+        say(rexd_alive(host), "rexd is running",
+            "rexd is not running: tab numbers and shared copies are off until a shell starts there")
+    return 1 if wrong else 0
+
+
+def main(argv):
+    config, bindir, help_path = CONFIG, HERE, None
+    args = list(argv)
+    while args:
+        a = args.pop(0)
+        if a in ("-h", "--help"):
+            print(__doc__.strip())
+            return 0
+        if a in ("--contract", "--config", "--bin") and args:
+            v = args.pop(0)
+            if a == "--contract":
+                help_path = v
+            elif a == "--config":
+                config = v
+            else:
+                bindir = v
+        else:
+            print(f"rex-doctor: unexpected argument {a!r}; see rex-doctor --help", file=sys.stderr)
+            return 2
+    if help_path is None:
+        return check_servers(config, bindir)
+    with open(help_path, encoding="utf-8") as f:
+        summary, problems = contract(json.load(f), config, bindir)
+    print(f"{summary} checked against {os.path.basename(help_path)}")
+    for p in problems:
+        print("  ✗ " + p)
+    if not problems:
+        print("  ok: every call matches")
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
