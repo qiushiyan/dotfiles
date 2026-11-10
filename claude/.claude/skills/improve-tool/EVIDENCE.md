@@ -18,20 +18,28 @@ pass can re-run them.
 - **A reproducible finding gets its case before the edit** (10-09, 10-28).
 - **Silence in the history is no reason to cut a guardrail** (10-28); a
   cut needs its case run without the line, or a baseline interview (11-05).
+- **The closing prompt pass goes to a fresh reader** (11-09). Told to run it
+  themselves, authors did in 1 of 13 replayed builds; handed to a subagent
+  it ran in 33 of 33.
+- **The build rules stay in the main file** (11-09). Moved to a companion
+  that every run opened, the case-before-edit rule held in 6 of 9 replays
+  against 9 of 9 in place. A companion is routed from the opening with the
+  moment it is read; one named only mid-file was opened in 0 of 3.
 
 ## Open comparisons
 
 Each is a measurement the next pass can run. Answer or retire them before
 adding more.
 
-1. **Does the closing prompt pass run without being asked?** Predicate: a
+1. **Does the user still send `prompt-check` after a run?** Predicate: a
    user turn after the invocation `LIKE '%Review and revise the model-facing
-   surfaces%'` (the `prompt-check` snippet), in runs that edited model-facing
-   text. Baseline: 19 of 54 runs (09-15 → 11-07), and the pass it asked for
-   found defects in at least 13 of the 15 replies read. After the 11-09
-   rewrite ships: the next five such runs. Reverse: still sent and still
-   finding defects in three of five means a line cannot carry it, and the
-   pass needs a fresh reader as a mechanism.
+   surfaces%'`, in runs that edited model-facing text. Baseline: 19 of 54
+   runs (09-15 → 11-07), and the pass it asked for found defects in at least
+   13 of the 15 replies read. The replay shows the fresh reader's pass
+   running; only live runs show whether it leaves the snippet nothing to
+   find. After the rewrite ships: the next five such runs. Reverse: still
+   sent and still finding defects in three of five means the reader's pass
+   is weaker than the user's, and its brief is what to look at.
 2. **Does the report still leave the user to ask what changed for them?**
    Predicate: a follow-up asking what they now type, how an agent comes to
    know the change, or "what do you mean by" a label the report coined.
@@ -468,79 +476,144 @@ the edit counts, and "claimed a pass" is a LIKE match on assistant text.
 | skill-eval is driven by hand around its edges | 450 calls in 28 sessions since 10-09, 8 errors; 132 through `ssh mini`; one rollout inspected with jq or python over `row.json` and `transcript.jsonl` in at least 7 sessions, 11-04 and 11-05 included | proposal for skill-evals: a `show` command; not built |
 | Offers nobody takes | an Obelisk memory offered in at least 16 of 54 runs, written in 5, none after 10-02 | the offer is cut |
 
-**Changed.** `SKILL.md` rewritten from the goal: what a good pass is, five
-stance paragraphs, the toolkit as one list, then changing, deciding, proving
-and recording; 1,464 → 1,441 body words, so about the same size for a wider
-job. `MINE.md`: the counting rules stated once there, `messages()` for the
-follow-up, the interrupt marker excluded from the next-turn facet, and the
-read this pass turned on, every user turn after a run. `EVALS.md`: where
-subscription rollouts run, and that `WORKTREE` is the checkout `tool.json`
-names. This log: the two sections at its top.
+**Changed.** `SKILL.md` rewritten from the goal: what a good pass is, the
+companions routed from the opening with the moment each is read, five stance
+paragraphs, a short toolkit, then changing, deciding, proving and recording.
+Body 1,464 → 1,458 words; with its companions 5,386 → 4,825. `MINE.md`
+3,225 → 2,561: the counting rules and predicates first, then the measure per
+kind of tool, then the script; it loses the keyword sweep and the reporting
+and document query variants, and gains the read this pass turned on, every
+user turn after a run. `EVALS.md` 697 → 806: its steps in order, where
+rollouts run, what `WORKTREE` means, and what to do when a judge cannot log
+in. This log: the two sections at its top.
 
-**Changed on purpose, beyond the cuts below.** "Smallest coherent change"
-became the right fix over the smallest. Questions are asked together, each
-with its default, where the body said one neutral question at a time; the
-session pipeline's § Who decides asks them that way. The case-before-edit
-rule now names a failing test in the engine's suite for an engine defect.
+**Changed on purpose.**
+- *The right fix over the smallest,* where the body said "smallest coherent
+  change" against the global scoping rule.
+- *Questions asked together, each with its default,* where the body said one
+  neutral question at a time; the pipeline's § Who decides asks them so.
+- *The closing pass by a fresh reader,* and *a build ends with it, the check
+  and the evidence entry.*
+- *One or two open comparisons at the head of the log,* where each change
+  had a success measure nobody ran.
+- *A trace may follow a symptom into the sessions it leads to; ask before a
+  wider sweep.* The fresh reader found "ask before reaching into history the
+  request does not cover" in conflict with tracing a cause into another
+  tool. A default taken here; the boundary is the owner's.
 
 **Cut, to watch.**
 - *The Obelisk memory offer.* Bring back if a later session asks for a
   conclusion that lives only in an evidence log it had no reason to open.
-- *"Most of a long skill's length is behavior".* Bring back if an over-budget
-  pass reaches its budget by rewording and its parity read finds behavior
-  lost; the `over-budget` case is the check.
+- *"Most of a long skill's length is behavior".* The `over-budget` case
+  passed 9 of 9 without it. Bring back if an over-budget pass reaches its
+  budget by rewording and its parity read finds behavior lost.
 - *The pointer to `SKILL-MECHANICS.md`.* Reached through revise-prompt and
   `AGENT-DOCS.md`. Bring back if a pass changes a skill's frontmatter without
   reading it.
-- *One success measure per change.* Replaced by one or two open comparisons.
-  Bring back if a change ships with nothing a later pass could measure.
-- *§ Every line earns its place,* now a pointer to revise-prompt, which
-  holds the bar and both ways to settle a doubt.
-
-- *`MINE.md`'s keyword sweep for corrections* (`why`, `stuck`, `wrong` …),
-  reused in 0 of 54 runs and replaced by reading the turns after a run; it
-  pays for the additions to the two companions. Bring back if a pass over a
-  corpus too large to read turn by turn misses a correction the sweep's
-  words would have caught.
+- *`MINE.md`'s keyword sweep for corrections,* reused in 0 of 54 runs, and
+  its reporting and document query variants, 0 of 54. Bring back if a pass
+  over a corpus too large to read turn by turn misses a correction the
+  sweep's words would have caught.
 - *"Add a broader review when a material question remains",* the ledger's
-  per-change fields, and the compact table in the report. The pipeline has a
-  review stage, and no run was seen to need the other two.
+  per-change fields, the compact table in the report, "the user remembers
+  the moments that hurt", "a finding is a symptom", "never adopted on
+  reputation", and the parity read "as a risk check, not a list to
+  restore" (COLD-READER.md holds it).
 
-**Verified by reading.** One parity read against `main`: 30 of the old
+**Restored after the checks caught their loss.** Checking help and results
+against the installed build, "or explicit correction" beside the verified
+defect, a cut logged with what it guarded, and the contract-change rule as it
+stood (parity read). The case before any edit: a rewording that offered an
+engine test in its place wrote the case late or not at all in 3 of 3 replays.
+The rule naming the baseline interview: turned into a pointer through
+revise-prompt, `BASELINE.md` was opened in 0 of 3 over-budget replays
+against 3 of 3 for the live text. "An addition pays with a cut": cut on the
+fresh reader's advice, and the design case's check that a proposal says what
+it makes room with fell to 2 of 3; back in, 3 of 3.
+
+**Verified by reading.** One parity read against `main` (30 of the old
 file's 52 action-changing instructions kept, several through `MINE.md` and
-revise-prompt. Restored from it: checking help and results against the
-installed build, "or explicit correction" beside the verified defect, a cut
-logged with what it guarded, and the contract-change rule as it stood
-(design and consumer check first, ask when it exceeds the request), which
-the first draft had tightened into asking more. Three cold readers on
-scenarios taken from real runs (`2c257532`, `9f01709a`, `71bdb6e3`): each
-reached a determinate first report; the CLI reader proposed the broader fix
-and closed on what one "go" would do, and the review reader found the
-request already shipped and measured its promises instead of re-editing.
-Adopted from them: the engine-test route, what a narrow pass does with
-inherited comparisons, a line for a log that lacks the new opening, the
-dotfiles scope of the size check, and the two `EVALS.md` facts (both
-checked: `skill-eval` copies `WORKTREE` from `tool.json`'s repo, and this
-laptop's cases were five commits behind).
+revise-prompt). Three cold readers on scenarios from real runs (`2c257532`,
+`9f01709a`, `71bdb6e3`); each reached a determinate first report. One fresh
+reader ran revise-prompt's pass over the three files after the replays and
+found, beyond wording: `MINE.md`'s script matching every Bash call when a
+tool has no CLI, its moved-session check reading a list capped at ten,
+`EVALS.md` telling the reader to run before calibrating, and the two
+conflicting instructions above. All fixed.
 
-**Not verified.** No replay ran: the two existing cases have not been run
-against this text, so nothing here is a runtime claim.
+**Verified by replay** (`~/dev/skill-evals`, tool `improve-tool`, arms under
+`skills/`; rollouts on Opus 5.5 on the subscriptions, the model the 14 runs
+since 10-28 used; judge Sonnet 5.5, three passes, graded on the laptop
+because the mini's judge login had expired; runs `it-1109b` to `it-1109g`). "Final single file" sums the text before
+and after the fresh reader's pass.
+Cells are runs that passed the named check.
+
+| case and check | live | first rewrite | final single file | split |
+|---|---|---|---|---|
+| design-then-go: closing pass | 1 of 3 | 0 of 3 | 6 of 6 | 3 of 3 |
+| design-then-go: all checks | 1 of 3 | 0 of 3 | 6 of 6 | 3 of 3 |
+| finding-to-case: case before the edit | about 4 of 5 judge passes, n=3 | 0 of 3 | 12 of 12 | 6 of 9 |
+| finding-to-case: closing pass | 0 of 3 | 0 of 3 | 12 of 12 | 9 of 9 |
+| over-budget: all checks | 3 of 3 | 3 of 3 | 6 of 6 | 3 of 3 |
+| root-not-rules: all six checks | groups in 1 of 3 | 3 of 3 | 3 of 3 | not run |
+
+- *The closing pass.* "First rewrite" told the author to run it, with a
+  sharper sentence than the live text; a variant differing only in handing it
+  to a fresh reader passed 3 of 3. In 5 of 6 final builds the session edited
+  the target again after the reader returned.
+- *The split* put the build rules in a `BUILD.md` routed from the opening.
+  It was opened in each of the nine runs checked, at the start, not at the
+  first edit. At nine runs each the case-first gap could be chance (about
+  one in five); it points the way `AGENT-DOCS.md` § Where text sits predicts.
+- *root-not-rules* is the 09-21 write-spec case: the control arm, told the
+  owner's answer, passed all six checks.
+- *Cost.* A build with the reader's pass ran about twice as long as the live
+  text's: 7 to 11 minutes against 4 on design-then-go. About $135 across
+  all runs, at Claude Code's API-price estimate.
+- *Limits.* Three runs a cell except where nine is said. `go-says-what`, the
+  design reply naming what a go-ahead does, was read from transcripts by a
+  script, since the judge sees that reply clipped: the final text did in 3
+  of 3.
+
+**An outside skill judged: mattpocock's `retro`** (`skills/engineering/retro`
+at a7d038f, 2026-09-24; the user asked for "Ritual", and that repository has
+no skill of the name). It reads one session, the current one by default,
+from the raw logs, and proposes changes to the agent's environment in seven
+categories; nothing changes until the user picks one.
+
+- *Replayed as an arm,* its body verbatim. On the one-session defect
+  (`finding-to-case`) it found the cause and fixed both layers in 3 of 3, in
+  2 minutes and $0.67 against the live skill's 4 and $1.15, and wrote no case
+  and ran no pass. On `root-not-rules`, outside the one session it is built
+  for, it scored below the live skill: groups in about 1 of 5 judge passes,
+  what to leave alone in about half.
+- *Graduated, each on our own evidence.* A check that fails when the mistake
+  is made now heads the stance's list of fixes: retro gives a mechanical
+  violation "a deterministic check, full stop", and here the 10-28 size
+  ratchet stopped skill growth where prose had not. A rule goes where there
+  is room to apply it: retro hands standards to the reviewer, who gets a
+  diff, and keeps them from the implementer, who is under the most context
+  pressure; here the build drops the closing prompt pass and a separate pass
+  finds defects, while the one-PR rule shows the other half, a default that
+  must change from the first reply. Twelve of the 54 requests were placement
+  questions.
+- *Covered already.* Every candidate traces to a moment in the record; a
+  line that changes nothing is cut; an existing check that sits unwired is
+  the finding; wider access to information.
+- *Rejected.* Its fixed categories: its own doc quotes a user for whom the
+  model "invents generic advice to satisfy the retro categories". Proposing
+  only: in review about 33 of 37 replies to an offered idea said build. One
+  session as the unit: its doc says it "cannot tell you that a rule now
+  fires too often".
 
 **Proposed outside this skill, not built.**
-- *skill-evals:* a `show` command for one rollout (verdict, checks, whether
-  the skill loaded, the command trail), and leaving `EVIDENCE.md` and
-  `LESSONS.md` out of the skill a rollout installs, since a log beside the
-  skill can name a case's answer (a reader's finding; no rollout was seen
-  reading one).
-- *`docs/session-pipeline.md`:* a line naming this skill as an entry, as
+- *skill-evals.* A `show` command for one rollout. Leave `EVIDENCE.md` and
+  `LESSONS.md` out of the skill a rollout installs, since a log can name a
+  case's answer. Keep the reply a scripted answer responds to whole for the
+  judge; it arrives clipped at 4,000 characters, so a two-turn case cannot
+  judge its first reply. A judge route that works on the mini over ssh (its Claude
+  login had expired, on 11-05 as well).
+  The read policy let one rollout read `editorMode` from the owner's real
+  `~/.claude.json`.
+- *`docs/session-pipeline.md`.* A line naming this skill as an entry, as
   `go-cli-maintain` has, for the user's docs pass.
-- *`MINE.md`:* dropping the document and reporting variants' code, unused
-  in 54 runs.
-
-**Cases written before the rewrite, not built and not run.** A
-`closing-pass` check for `finding-to-case` (after its edits the agent runs
-revise-prompt's pass on the text it changed and the report says what it
-found), and a `root-not-rules` case seeded with write-spec's five-build
-findings of 09-21 and no user correction (the design groups failure classes
-by cause, changes how the spec is produced so a class gets less likely,
-names a class it leaves alone, and is not one new rule per class).

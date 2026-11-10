@@ -1,30 +1,91 @@
-# Usage-analysis script
+# Mining a tool's usage history
 
-The facet scripts for one tool's usage history: read these for the query
-shape, then write the one this engine needs — patterns, not coverage.
+Read this before querying the session index. Take two things from it: how to
+count, and the predicates that are easy to get wrong. The script further
+down is a pattern for one kind of tool; write the query yours needs. Obelisk's
+query rules apply in full.
 
-The script below fits **consumed output** (a CLI). **Findings** (lint, audit,
-test suite, review), **a document** (`CLAUDE.md`, an onboarding skill) and
-**no engine** (a pure-instruction skill, a snippet) each have a section
-after it saying what to measure instead. Fill the constants, run it as one
-obelisk round, then expand what it surfaces. Obelisk's query rules apply in full. Run every
-round into a file and read bounded slices with `jq`, so an oversized facet
-can be re-sliced without repeating the query. The acting harness's output
-limit and Obelisk's stored-text limit are different measurements.
+## Counting rules
 
-Before counting patterns, classify signature hits as actual uses, quoted
-instructions, continuations, delegated work, or adjacent tasks. Read the
-invocation and relevant follow-up in context; provider and role fields alone
-do not establish human authorship. Keep connected runs linked for provenance,
-not counted as independent support. The examples below discover candidates;
-refine their predicates for the confirmed cohort and task window before
-reporting rates. Report both population and sample sizes, dates, exclusions,
-and missing follow-through. Sample across the dates, tasks and providers
-the question spans; widen when a gap or a rival explanation could change the
-decision, and stop when the action and its limits are clear: a large hit
-count does not need a large reading pass. Preserve an
-exact query and its constants beside the local ledger so another pass can
-reproduce the denominator.
+- **Classify before counting.** A signature hit is an actual use, a quoted
+  instruction, a continuation, delegated work, or an adjacent task. Read the
+  invocation and its follow-up in context; provider and role fields alone do
+  not establish human authorship. Connected runs stay linked for provenance
+  and are not counted as independent support.
+- **Report the denominator.** Population and sample sizes, dates, exclusions,
+  and missing follow-through. The examples below discover candidates: refine
+  their predicates for the confirmed cohort and task window before reporting
+  a rate, and keep the exact query and its constants beside the ledger so
+  another pass can reproduce it.
+- **Sample to the decision.** Sample across the dates, tasks and providers
+  the question spans; widen when a gap or a rival explanation could change
+  the decision, and stop when the action and its limits are clear. A large
+  hit count does not need a large reading pass.
+- **Each machine counts its own.** The result holds one object per machine,
+  so every tally is one machine's. Calls add across machines; distinct
+  sessions add too, except one moved between machines, which each holder
+  counts:
+  `jq '[.[] | .sessions[]?.id] | group_by(.) | map(select(length > 1))'`
+  lists those among facet A's ten, so raise its `LIMIT` to check all. Report
+  the corpus per machine and an unreached machine as a coverage gap. Keep
+  constants as fragments below the home directory: the homes differ.
+- **Writes and reads go through the shell too.** Count files across
+  `Edit`/`Write` and Bash heredocs (`cat >`, `python3 - <<`, `sed -i`), and
+  reads across `Read` and `cat`/`sed -n`/`head`/`tail`: a count over the edit
+  or read tools alone undercounts.
+- **The skill body's own claims are queries.** "Agents call `describe` before
+  guessing a column" is a count, and the count says whether the rule works.
+
+## Predicates that are easy to get wrong
+
+- **A turn the user typed:** `role='user' AND content_type='text' AND
+  COALESCE(is_meta,0)=0`, minus `This session is being continued%` and
+  `[Request interrupted%`.
+- **Corrections are scoped by session, never by whether the text names the
+  tool.** The ones that decide a pass ("please revert", "go ahead") rarely do.
+- **A reply's length and delay are not verdicts.** Read the report before it
+  to tell approval from clarification, correction and restart.
+- **A stored result of exactly 10,000 characters was cut by the index;**
+  `raw()` windows the source. The harness's own output limit is a separate
+  measurement.
+
+## The measure follows the tool's kind
+
+- **A CLI** (consumed output) is measured by drive cost: the script below.
+- **A reporting engine** (lint, audit, a test suite, a review pass) is
+  measured downstream: per finding class, what did the repair improve?
+  Inspect the consequence of the change, not its line count; a one-line
+  correction can restore a critical fact. Repeated maintenance suggests
+  where to look, not that the findings were noise.
+- **A document** (`CLAUDE.md`, `AGENTS.md`, a rules file, an onboarding
+  skill) is measured by what happened after it was read. An always-loaded
+  one has no invocation, so the population is every session in the project
+  and the measure is **pointer hit-rate**: for each pointer, sessions whose
+  edits fell in its branch against sessions that read its target. An invoked
+  one (`/onboarding <goal>`) has a window, invocation to the next user turn,
+  and three measures inside it: the docs read, the `Explore` prompts
+  spawned, and whether the doc owning an edited area was read before the
+  first edit there. A cluster
+  of directories edited often whose docs are read rarely is a candidate
+  routing gap. Check reads through other tools, already-loaded context, and
+  whether the task needed that document, and pair the measure with the
+  first-prompt task mix.
+- **No engine** (a pure-instruction skill, a snippet): there is no Bash
+  signature, and an empty `cli` matches every call, so drop the script's
+  Bash facets and build `used` from the invocation rows. The failure facet
+  becomes the user's turns plus the files the sessions touched. Inspect why
+  a repair was needed: it can expose an instruction gap, a useful
+  adaptation, or a defect elsewhere in the workflow. For an adoption or
+  missing-capability question, comparable tasks done without the tool can
+  reveal alternatives worth testing, within the authorized scope.
+- **A pipeline** (one session writes what another consumes): pairs, in the
+  last section.
+
+## The script (a CLI)
+
+Fill the constants and run it as one obelisk round. Run every round into a
+file and read bounded slices with `jq`, so an oversized facet is re-sliced
+without repeating the query.
 
 ```bash
 S=<your scratchpad directory>; Q=/tmp/obq-<session-id>.mjs
@@ -32,15 +93,6 @@ S=<your scratchpad directory>; Q=/tmp/obq-<session-id>.mjs
 jq -c 'to_entries[] | {(.key): (.value | if has("not_reached") or has("error") then . else with_entries(.value |= length) end)}' $S/mine.json
 jq -r 'to_entries[] | .key as $m | .value.subcommands[]? | [$m,.k,.calls,.sessions] | @tsv' $S/mine.json | head -40   # one facet per command; a slice over the cap is re-sliced, not re-run
 ```
-
-The script runs on each machine against that machine's own sessions, and
-`mine.json` holds one result per machine (`{"mac": {…}, "mini": {…}}`), so
-every tally is one machine's. Calls add across machines. Distinct sessions
-add too, except a session moved between machines, which both count:
-`jq '[.[] | .sessions[]?.id] | group_by(.) | map(select(length > 1))'` lists
-those. Report the corpus per machine, and a machine `obq` could not reach as
-a coverage gap beside the denominator. Keep the constants as fragments below
-the home directory, as they are here, because the two homes differ.
 
 ```js
 const self  = '<your session id — the UUID directory in your scratchpad path>';
@@ -102,9 +154,7 @@ out.workarounds = sql(`
     AND (tc.input_json LIKE '%python%' OR tc.input_json LIKE '%jq %' OR tc.input_json LIKE '%sleep %' OR tc.input_json LIKE '%until %')
   ORDER BY m.timestamp DESC LIMIT 10`);
 
-// E. user voice — corrections in the sessions that used the tool, scoped by session, never by
-// whether the text names the tool: the corrections that decide a pass ("please revert", "go ahead")
-// rarely do. Explicit markers here; the turns themselves through facet F.
+// E. user voice — explicit `friction:` markers, scoped by session; the turns themselves through facet F.
 const used = [...new Set(calls.map(r => r.sid))].map(s => `'${s}'`).join(',') || "''";
 out.friction_markers = sql(`
   SELECT m.session_id sid, m.uuid, substr(m.text,1,300) text FROM messages m
@@ -112,9 +162,7 @@ out.friction_markers = sql(`
     AND m.text LIKE '%friction:%' AND m.session_id IN (${used})
   ORDER BY m.timestamp DESC LIMIT 15`);
 
-// F. what came next — the user's first turn after each engine call or skill invocation, read by
-// position: candidates for outcome analysis. Read the preceding report to distinguish approval,
-// clarification, correction, and restart; message length and delay do not establish wasted work.
+// F. what came next — the user's first turn after each engine call or skill invocation, read by position.
 const invRows = sql(`SELECT m.session_id sid, m.timestamp ts FROM messages m WHERE m.role='user' AND COALESCE(m.is_meta,0)=0
   AND m.session_id <> '${self}' AND m.timestamp > '${since}' AND (m.skill = '${skill}' OR m.text LIKE '%/${skill}%' OR m.text LIKE '%${path}%')`);
 const seenNext = new Set(); out.after = [];
@@ -132,9 +180,8 @@ out.after = [...out.after.filter(x => x.len <= 40).slice(0, 6),
 return out;
 ```
 
-The user-voice facet is the one that states intent. A `friction:` marker —
-the user's one-word tag on a correction ("friction: review made me assemble
-the resume command by hand") — is mined verbatim.
+A `friction:` marker is the user's one-word tag on a correction ("friction:
+review made me assemble the resume command by hand"), mined verbatim.
 
 Drop facet F's `LIMIT 1` to read the conversation a run caused: every user
 turn after it, in order, for the sessions in the sample. A few hundred turns
@@ -142,45 +189,9 @@ fit one file. Follow-up rounds expand vertically:
 `messages({ around: uuid })` on a turn worth its context, the report before
 it (the last assistant text in the window), `raw(uuid, { offset, limit })`
 when a truncated tool result hides the error text; `obq --on <machine>`
-asks only the machine that returned the hit. The skill body's own claims are
-also queries — "agents call `describe` before guessing a column" is a count,
-and the count tells you whether the rule is working.
+asks only the machine that returned the hit.
 
-For a **reporting engine** — lint, audit, a test suite, a review pass — the
-CLI facets can miss the downstream outcome: per finding class, what did the
-repair improve? Inspect the consequence of the change, not its line count;
-a one-line correction can restore a critical fact. Repeated maintenance and
-the user's response to it suggest priorities to investigate, not automatic
-proof that the findings were noise.
-
-For a **document** — `CLAUDE.md`, `AGENTS.md`, a rules file, an onboarding
-skill — the instrument is what happened after it was read. An always-loaded
-document has no invocation, so the population is every session in the
-project and the measure is **pointer hit-rate**: for each pointer, sessions
-whose edits fell in its branch against sessions that read its target. An
-invoked document (`/onboarding <goal>`) has a window — invocation to the next
-user turn — and three measures inside it: the docs read, the `Explore`
-prompts spawned (questions whose need for exploration should be assessed), and
-whether the doc owning an edited area was read before the first edit there.
-A cluster of directories edited often whose docs are read rarely is a
-candidate routing gap. Check reads through other tools, already-loaded
-context, and whether the task needed that document, and pair the measure
-with the first-prompt task mix to assess actual coverage.
-
-For a tool with **no engine** (a pure-instruction skill, a doc, a snippet),
-the Bash signature is the script path or nothing, and B collapses to A; the
-failure facet becomes the user-voice facet plus the files the sessions
-touched. Inspect why the repair was needed: it can expose an instruction
-gap, useful adaptation, or a defect elsewhere in the workflow. Count files
-across `Edit`/`Write` *and* Bash heredocs
-(`cat >`, `python3 - <<`, `sed -i`): with permissions bypassed, writes go
-through Bash, and a count over the edit tools alone undercounts. For an
-adoption or missing-capability question, comparable tasks done without the
-tool can reveal alternatives worth testing, within the authorized scope.
-Sparse usage can still justify a verified local repair; it does not itself
-require a wider search or make every workaround a requirement.
-
-## The pipeline variant — the writer/reader pair
+## The writer/reader pair
 
 For a tool whose output one session writes and another consumes (a handoff
 brief, a spec, a status page), the population is pairs, not sessions. Build
@@ -249,10 +260,10 @@ out.pairs = readers.map(r => {
 ```
 
 The writer is looked up among the reader's machine's sessions, so a brief
-written on one machine and picked up on the other comes back with no
+written on one machine and picked up on another comes back with no
 `writer`. Before counting a pair as writerless, run the writer query for its
-slug with `obq --on <the other machine>`, then intersect the two read sets
-after stripping each machine's home prefix from the paths.
+slug with `obq --on <machine>` on each other machine, then intersect the read
+sets after stripping each machine's home prefix from the paths.
 
 Report confirmed pairs with reader tokens, overlap by stage, verified
 falsifications (changed source / wrong at anchor), and unresolved claims.
