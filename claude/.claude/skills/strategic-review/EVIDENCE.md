@@ -740,8 +740,29 @@ whose request carries the away notice, so the review folds in the same
 turn, with and without the sentence in § Folding, scored on the fold's
 diff (reshapes made, behaviour changed outside a finding, tests green).
 
+**Effort on Fable 5.2, one replay.** The user plans Fable for strategic
+reviews; `settings.json` runs it at `xhigh`, and Anthropic's guide keeps
+`xhigh` for a measured gain. Replayed `pr-8948` (`~/dev/skill-evals`, the
+skill at the mini's HEAD, report only, Sonnet 5.5 judge with three passes,
+n=3 at each effort; the runner gained `--effort` for this):
+
+| effort | answer-key checks passed, of 10, per review | minutes | API-price estimate |
+|---|---|---|---|
+| `high` | 5, 6, 4 | 44, 35, 47 | $13.96, $13.81, $14.54 |
+| `xhigh` | 2, 2, 3 | 72, 52, 45 | $19.01, $20.33, $15.12 |
+
+Every `high` review found more of the key than every `xhigh` one, in less
+time. Of the five defects the real review had missed, `high` found 1.78 a
+run and `xhigh` 0.56. Both found K2 and K3 every time and neither found K4
+or K19. One PR and three runs each: enough to say `xhigh` showed no gain
+here, not that it is worse. Why is not established; the two arms used
+about the same number of subagents (3.7 and 3.3). For scale only, Opus 5.5
+on this PR on 10-17, with an older skill and another judge, passed 2.33 a
+run in 16 minutes. Runs `sr-fable-high-1110`, `sr-fable-xhigh-1110`.
+
 **Next pass compares** driven reviews that stopped before the fold (target:
 only on a finding with no recommendation); bot steps that still carry the
 fold riders (target none); and what the read of the fold found, against the
-unread folds of 10-28.
-
+unread folds of 10-28. And Fable's effort on a second and
+third replay (`pr-8858`, `pr-8959`): if `high` again matches or beats
+`xhigh`, set `claude-fable-5-2` to `high` in `settings.json`.
