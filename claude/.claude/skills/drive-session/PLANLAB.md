@@ -8,9 +8,9 @@ closeout.
 
 When a batch starts sessions whose design is not settled, the user sees
 every design in one report, once all of them have reached it. A session
-that recommends an answer builds on it, and only its merge waits for the
-user's word (the pipeline doc's § Who decides). A session handed over
-already past its design goes straight on.
+that recommends an answer builds on it, since a night parked at its design
+costs more than the rare rebuild, and only its merge waits for the user's
+word. A session handed over already past its design goes straight on.
 
 After onboarding, every such session gets the same design stage, whatever
 its path:
