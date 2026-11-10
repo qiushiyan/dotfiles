@@ -46,6 +46,13 @@ then skips the merge.
    fix, and a fix goes on with `/pl-loopy-onboarding <the dossier's route>`.
    An iTELL learner's bug report enters at `/bug-report-triage <reportId>`,
    and a fix it recommends goes on with `/onboarding`.
+   In planlab, when the user has not said what the next batch holds, it is
+   decided before any of its sessions onboards, by sessions that change no
+   code: `loopy-slack-triage` for what arrived, `loopy-initiatives-review`
+   for what was planned, `loopy-batch-review` for a fresh review of both,
+   and `loopy-batch-notes` for the start note each session then opens from.
+   A start note names no stages, since they are sent one at a time. A driver
+   follows `PLANLAB-NEXT-BATCH.md` beside its skill.
 2. **Design.** The path decides the prompt (§ Choosing the path):
    - **Light:** `consult-then-build` — one consult round with the user's
      open questions on trial, a spike where the direction rests on an
@@ -195,7 +202,12 @@ the user comes back to everything else done.
   The step that acts on the answer is the merge. A session that recommends
   an answer builds on it, since the user nearly always takes it and a
   rebuild costs less than a night parked; a question with no recommendation
-  holds the work that depends on it. A design question that reopens later comes back the same
+  holds the work that depends on it. A critical one, which later work will
+  be built on or which changes an important behaviour customers see in
+  production, is asked at once and on its own, however technical it looks
+  and whatever the session recommends, never listed as a default: the
+  session still builds on it, and the user agrees to it before the merge.
+  A design question that reopens later comes back the same
   way: a review finding the session judges foundational, or a design
   objection it rebutted.
 - **Mutations of production data**: SQL, a script or a backfill run against
