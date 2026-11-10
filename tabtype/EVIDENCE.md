@@ -489,3 +489,35 @@ advice on prompting is to describe what is wrong rather than ask for better.
 
 Next pass: `history.json` counts for the three keys against `skill:emil-design`.
 Remove a key with no use after five uses of the skill.
+
+## 2026-11-10 — `loopy-slack-triage` batches misc-fix sessions (planlab)
+
+From the user's ask (`mac:e1f831bd`): small asks in one domain go together
+into one miscellaneous-fix PR, suggested beside focused sessions for the
+problems that need design. A new step 5, **Batch**, says so; the report
+became step 6 and names each session's kind and items, and what each
+waiting item needs first. The opening is unchanged, so the board still
+matches earlier pastes.
+
+**Receipts.**
+
+- **Both runs left small asks unworked.** The 11-06 run's batch notes
+  (`mini2:da19e9fb`, `session-prompts.md`) held four focused sessions and a
+  "What waits" table of eight. Several were small fixes needing nothing
+  first: the background bar's wording, a truthful line for FEL-255. The
+  11-02 report (`mini:4b3e8b77`) did rank "Cards in the transcript (small
+  state and copy fixes)" as a cluster of its own, but it did not propose a
+  PR for it.
+- **The user groups by hand.** #10468 shipped AND-566 ("decided offers")
+  from that small cluster inside the chat-footer PR, which shares its
+  domain. #10547 bundled the 11-04 Taodesk meeting's ticket-page asks
+  (`mini2:9f0b4f57`), and #11027 bundled three streaming fixes.
+  `mac:e2ec05c0` (09-04): "trying to group some misc wiki issues to this
+  handoff as well if they are relatively small".
+- **Size is left undefined**, on the user's word: "small" explains itself.
+
+**Next pass compares.** In the next run, does the batch carry at least one
+miscellaneous-fix session where small same-domain items exist? Does "what
+waits" shrink to items that need an answer or a product call? Revise if a
+misc session collides with a focused one in the same code, or if the user
+splits a proposed misc session or merges two focused ones by hand.
