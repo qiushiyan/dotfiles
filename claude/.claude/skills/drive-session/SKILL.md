@@ -101,9 +101,9 @@ ready to build.
 - **A wait on something outside the batch is yours to watch**: park the
   session until you should look again (`drive park streaming@… --until 2h
   "waits for #11015 to merge"`) and check it yourself then.
-- **A background job past its purpose is the session's to stop**: send the
-  step drive's `next:` gives, never a kill from your own shell. The session
-  started the job and knows whether its work still needs it.
+- **A background job past its purpose is the session's to stop**, since only
+  it knows whether its work still needs the job: send the step drive's
+  `next:` gives, never a kill from your shell.
 - **A session back from a Rex restart** lost every background job and agent
   it ran, and a turn the restart cut short wakes `interrupted`. Its next
   step says so: `Rex restarted and ended this session mid-turn; any
@@ -225,9 +225,10 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
   one session's offer to do what another already does.
 - **One closeout into a main checkout, and one release, at a time**, and so
   for anything else only one session may do, such as commits into a checkout
-  others share. Name what it uses with `--hold`, on a step that carries
-  only that work: a hold lasts while any job the step started runs, so a
-  release sent with an eval stays held until the eval ends.
+  others share. Name what it uses with `--hold`, by one name only, since a
+  step sent under a second runs beside the holder, and on a step that
+  carries only that work: a hold lasts while any job the step started runs,
+  so a release sent with an eval stays held until the eval ends.
 
   ```bash
   drive send cache-hits@… --snippet closeout --hold planlab-main
