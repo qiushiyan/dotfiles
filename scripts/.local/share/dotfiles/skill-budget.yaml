@@ -51,7 +51,9 @@ skills:
   # on an outside event is a park the driver checks, a design question with a
   # recommendation holds the merge and not the build, a held step carries only the held
   # work, and a driven strategic review folds on its own (+160 body, +338 total)
-  drive-session: {body: 2690, total: 9488}
+  # raised 2026-11-10 on the user's word: Fable runs at high by their settings, and a
+  # strategic review opens at xhigh only when they ask, by drive open's --effort (+22 total)
+  drive-session: {body: 2690, total: 9510}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it

@@ -152,7 +152,8 @@ before 11-09 22:00 are not covered. Ledgers in that session's scratchpad:
   docs pass) and settled before its own merge step.
 - `claude/.claude/hooks/pr-stage-check.py`: the first `gh pr create` in a
   PlanLab session with no review round is refused once, with what to run.
-- drive (branch `usage-fixes`): a keyed typed-only snippet with trailing
+- drive (`usage-fixes`, merged as `2185870` and installed on mini2 at 16:17
+  the same day by a drive session): a keyed typed-only snippet with trailing
   text is typed with the rest attached; the park refusal and the wake's
   default lead with the outside wait, and the ask reads as a decision only
   the owner can make; `drive free` hands back a hold that only a background
@@ -195,8 +196,9 @@ before 11-09 22:00 are not covered. Ledgers in that session's scratchpad:
   checks were loosened after the first grading, where they failed what the
   rule intends (a park once the work is done, going on to the spec, the
   recorded asks as the telling), and every arm was graded on them.
-- *drive:* each fix has a test that was red first; `make check` is green at
-  the branch's tip. Not installed, so no live batch has run it.
+- *drive:* each fix has a test that was red first; `make check` was green
+  at the branch's tip. Installed since, but no batch step has yet taken the
+  new paths.
 - *The hook:* 159 cases on synthetic payloads with a stub `claude-steps`,
   under both Pythons; no live session has met it.
 - *By reading:* a fresh reader ran revise-prompt's pass over every touched

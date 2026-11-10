@@ -117,6 +117,7 @@ and releasing are yours unless the user says "hold merges":
 drive send summary-decisions@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
 drive open sr-summary-decisions --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
 drive open sr-summary-decisions --model fable …                   # the same, when the user wants it on Fable
+drive open sr-summary-decisions --model fable --effort xhigh …    # only when the user asks for xhigh; their settings run Fable at high
 drive send summary-decisions@… --snippet recap                    # then close summary-decisions; its branch and worktree wait for the cleanup after the merge
 drive send sr-summary-decisions@… 'Fold these in. On F3, <the user's answer>.'   # only to a review that stopped on a finding it could not recommend on
 drive send sr-summary-decisions@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
