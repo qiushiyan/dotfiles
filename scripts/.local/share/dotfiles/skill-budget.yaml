@@ -46,7 +46,9 @@ skills:
   # raised 2026-11-10 (batch 2026-11-09): a hold keeps one name; a driver got past a release
   # an eval kept by sending under a second name, which 18 steps then took, so two releases
   # could have run at once (+12 body, +12 total)
-  drive-session: {body: 2530, total: 9150}
+  # raised 2026-11-10 on the user's word: Fable runs at high by their settings, and a
+  # strategic review opens at xhigh only when they ask, by drive open's --effort (+22 total)
+  drive-session: {body: 2530, total: 9172}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it
