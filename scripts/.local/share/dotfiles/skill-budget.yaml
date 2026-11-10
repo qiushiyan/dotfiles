@@ -53,7 +53,7 @@ skills:
   # work, and a driven strategic review folds on its own (+160 body, +338 total)
   # raised 2026-11-10 on the user's word: Fable runs at high by their settings, and a
   # strategic review opens at xhigh only when they ask, by drive open's --effort (+22 total)
-  drive-session: {body: 2690, total: 9510}
+  drive-session: {body: 2670, total: 9477}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it
@@ -89,7 +89,7 @@ skills:
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}
   update-docs: {body: 456, total: 456}
   wiki: {body: 324, total: 324}
-  write-spec: {body: 1197, total: 6093}
+  write-spec: {body: 1197, total: 6070}
   add-theme: {body: 1437, total: 2035}
   rex: {body: 65, total: 65}
   # raised 2026-11-06: routes for work with no prototype (2 of 7 uses) and the closing
