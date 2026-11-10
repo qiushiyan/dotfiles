@@ -570,6 +570,13 @@ Cells are runs that passed the named check.
 - *Cost.* A build with the reader's pass ran about twice as long as the live
   text's: 7 to 11 minutes against 4 on design-then-go. About $135 across
   all runs, at Claude Code's API-price estimate.
+- *The evidence log was in the room.* A rollout installs the skill's
+  directory whole, and 40 of the 80 rollouts read this file, whose 10-28
+  entry describes `finding-to-case`'s checks. Every arm carried the same
+  copy, and within an arm the rollouts that read it passed at the same rate
+  as those that did not (final: case-first 5 of 5 against 4 of 4; split: 4
+  of 6 against 2 of 3). Found on 11-10 while writing the skill-evals
+  handoff (`~/dev/.handoffs/skill-evals/rollout-reading-and-leaks.md`).
 - *Limits.* Three runs a cell except where nine is said. `go-says-what`, the
   design reply naming what a go-ahead does, was read from transcripts by a
   script, since the judge sees that reply clipped: the final text did in 3
