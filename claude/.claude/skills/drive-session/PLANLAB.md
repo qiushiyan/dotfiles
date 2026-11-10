@@ -6,44 +6,45 @@ closeout.
 
 ## The design checkpoint
 
-When a batch starts sessions whose design is not settled, the user reviews
-every design before anything is built, in one report once all of them have
-reached it. That is when they still steer cheaply: a design they would amend
-costs a rebuild once built. A session handed over already past its design
-goes straight on.
+When a batch starts sessions whose design is not settled, the user sees
+every design in one report, once all of them have reached it. They nearly
+always take the recommendation, and a night parked at the design costs more
+than the rare rebuild, so a session that recommends an answer builds on it,
+and only its merge waits for the user's word. A session handed over already
+past its design goes straight on.
 
 After onboarding, every such session gets the same design stage, whatever
-its path, and the spec question waits until its design is in:
+its path:
 
 ```bash
 drive send summary-decisions@… --snippet consult-design   # astra and fable settle the design; it ends with its decisions
 drive send summary-decisions@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
 ```
 
-Hold each session there: the design reply stands in for its recap, so send
-no `recap`; record each question it leaves the user as an ask (with none,
-whether to go ahead), then park it (`drive park
-summary-decisions@… "design checkpoint"`) and leave its block open for the user's answers. Until all have arrived or parked, message
-the user only for a decision that holds a session. Then report, as SKILL.md
-§ Report shapes it: per session, the design in a few lines, what the spikes
-showed, and your call on a spec (`session-pipeline.md` § Choosing the path).
-
-Ask the design questions the pipeline doc's § Who decides names, each as one
-question with what it changes. List every technical choice as the default
-the session will take, with any consequence for scope: technical-looking
-choices are where the user has amended scope before.
-
-Nothing goes past the checkpoint without the user's word; this outranks
-SKILL.md's Continue. A drive the user scoped to design is done once this
-report is sent. With their answers, per session:
+The design reply stands in for a recap, so send no `recap`. Record each
+design question it leaves the user as an ask that says what runs meanwhile,
+then send the session on, by your call on a spec (`session-pipeline.md` §
+Choosing the path):
 
 ```bash
-drive send summary-decisions@… '/write-spec <their answers>'                      # spec: then /compact, then implement-spec
-drive send summary-decisions@… '/write-spec @/tmp/summary-decisions-answers.md'   # answers longer than a line, attached
-drive send summary-decisions@… --snippet implement-now '<their answers>'          # no spec: builds from the settled design
+drive record ask summary-decisions --question '…' --recommendation '…' --if-unanswered 'It builds as recommended; the merge waits for your answer.'
+drive send summary-decisions@… '/write-spec Go with your recommendations. I answer the design questions before the merge.'   # spec: then /compact, then implement-spec
+drive send summary-decisions@… --snippet implement-now 'I answer the design questions before the merge.'                   # no spec: builds from the settled design
 ```
 
-Then on through review to the finish.
+A question it gives no recommendation for holds only the work that depends
+on it; park the session once nothing else is left to build. Once all have
+reached the checkpoint, report as SKILL.md § Report shapes it: per session,
+the design in a few lines, what the spikes showed, and each design question
+with what it changes for the person using the product. List every technical
+choice as the default taken, with any consequence for scope:
+technical-looking choices are where the user has amended scope before.
+
+An answer that amends a design goes at once to the session that holds the
+change, the builder or its `sr-` session, with what to rebuild. A merge
+waits while a design question about its session is open. A drive the user
+scoped to design builds nothing: park each session on its asks, and it is
+done once this report is sent.
 
 ## How the user likes planlab work
 
@@ -117,7 +118,7 @@ drive send summary-decisions@… --snippet strategic-review-brief   # the builde
 drive open sr-summary-decisions --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
 drive open sr-summary-decisions --model fable …                   # the same, when the user wants it on Fable
 drive send summary-decisions@… --snippet recap                    # then close summary-decisions; its branch and worktree wait for the cleanup after the merge
-drive send sr-summary-decisions@… 'Fold these in.'                # once the review reports; the skill says how
+drive send sr-summary-decisions@… 'Fold these in. On F3, <the user's answer>.'   # only to a review that stopped on a finding it could not recommend on
 drive send sr-summary-decisions@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
 drive send sr-summary-decisions@… --snippet recap
 drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
@@ -134,17 +135,23 @@ drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #
   is gone gets a new session for its merge, so the merge runs where its
   checks and its report are.
 - **Red checks that are not the PR's:** when the failing tests also fail on
-  develop, or sit in files the branch did not touch, the step's text has the
-  session attach the `emergency-merge` label and merge, with no ask. Name the
-  tests under **Done without asking**.
+  develop, or sit in files the branch did not touch, the merge step says so
+  and has the session attach the `emergency-merge` label and merge, with no
+  ask, since `pl-land` stops at a red check it did not cause. Name the tests
+  under **Done without asking**.
 - **A docs pass runs before every merge**, the emergency merge included.
 - **Owed reads and gated checks** run as soon as there is enough data, not
   at their deadline; when clean, go straight on to the merge.
-- **The strategic review's findings** are folded in with "Fold these in."
-  Relay one to the user only when it is major. Close the builder once its
-  `sr-<PR>` session opens. The fold counts toward the code review's churn
-  budget, so the merge step after it adds `If the review stops on churn,
-  that's my fold: continue with --churn-ok.`
+- **The strategic review folds its own findings** when you opened it, and
+  reports after the fold. Relay a finding to the user only when the review
+  calls it foundational or could recommend nothing on it; that one holds the
+  merge.
+  Close the builder once its `sr-<PR>` session opens. The fold counts toward
+  the code review's churn budget, so the merge step after it adds `If the
+  review stops on churn, that's my fold: continue with --churn-ok.`
+- **A builder that stops on churn before its strategic review** goes to the
+  review, not to the user: open it, and have the builder's brief say where
+  the fixes kept landing.
 - **A read owed after the merge** closes its session once it is a marker on
   develop (`pl-loopy-handoff` § Documentation bindings, *Owed reads*), as
   the closeout step above makes sure: a PR comment alone reminds nobody.

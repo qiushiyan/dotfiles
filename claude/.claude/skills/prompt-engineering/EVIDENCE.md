@@ -6,6 +6,71 @@ rulebook, and since 2026-11-04 over the two workflow skills that read it,
 re-run them. Passes run under `improve-tool`; queries are obelisk scripts
 over `tool_calls` reads of the file and user turns naming it.
 
+## 2026-11-10 — the vendor's guides for Fable 5.2 and Opus 5.5, and a standing rule for stops
+
+**Question**, the user's: read Anthropic's new guide for Fable 5.2, the
+Opus 5.5 guide and the prompting best practices; they plan Fable for
+strategic reviews, and each page may overlap these rules. Asked inside an
+improve-tool pass over the session pipeline (mini2 `427f5995`).
+
+**The local copy was two models stale.** `references/fable-prompting-guide.md`
+held the Fable 5 page saved on 10-30, and this skill sends a reader there
+before the vendor's site. It now holds the Fable 5.2 page, with
+`opus-prompting-guide.md` beside it for Opus 5.5, both fetched 11-10 from
+`platform.claude.com/docs/en/build-with-claude/prompt-engineering/`.
+
+**Already here.** A reason with each rule; examples steer harder than
+rules; no capitals for emphasis; never ask for reasoning in the reply; write
+for a reader with none of your context.
+
+**New in the pages, and where each went.**
+- *Ownership.* "This codebase is yours" made Fable merge repeated code in
+  about half of tries against under a tenth, at 1.5 times the output and a
+  changed existing behaviour in one try in six to ten. Not a house rule: a
+  test on the strategic review's fold comes first (`strategic-review`'s log).
+- *Caution builds up.* Fable 5.2 follows cautions in notes, instruction
+  files and other agents' messages closely; a "never" rule got an approved
+  step taken one try in ten, "get a go-ahead first" nine in ten. Checked
+  against `drive-session/NOTICE.md`: it names what needs no approval and
+  writes its two stops as go-aheads. No change from this alone.
+- *Effort.* Both pages keep `xhigh` for a measured gain; `settings.json`
+  runs both models there. Being measured on one strategic-review replay.
+- *Hard style limits make prose choppy.* "One instruction per sentence"
+  stays: no session on record reads worse for it.
+
+**A standing rule, `claude/.claude/rules/stops.md`.** In hand-driven planlab
+sessions (84, 728 turns, 10-25 → 11-10) about 27 turns in 19 sessions asked
+what was waiting on the user, about 22 in 16 could not follow a report, and
+6 sessions were handed technical choices; in the bot's chat at least 9
+answers needed a question first. The ask shape lived in `think-holistic`
+and three skills' report steps, each scoped to its own turn. The rule is
+loaded in every session: a turn that ends on the user closes with what
+waits, each item decidable from that message, and implementation choices
+are taken and listed.
+
+**Replayed** (`~/dev/skill-evals` case `stops/design-stop`, Opus 5.5,
+Sonnet 5.5 judge, three judge passes): a design pass on the toy job queue,
+with and without the rule as standing instructions, n=5 each. Run
+`stops-1110` took the first wording; a fresh reader then found its last
+sentence ("If nothing waits for me, say so") unscoped, since every answer
+would gain it, and `stops-1110b` took the wording that shipped.
+
+| check | plain | rule | plain (second run) | rule as shipped |
+|---|---|---|---|---|
+| closes on what waits | 0.20 | 1.00 | 0.60 | 1.00 |
+| each item decidable alone | 0.00 | 1.00 | 0.00 | 1.00 |
+| says what goes on meanwhile | 0.20 | 1.00 | 0.07 | 0.87 |
+| implementation choices taken, not asked | 0.60 | 1.00 | 0.93 | 1.00 |
+
+Verdicts: plain 0 of 5 both times, the rule 5 of 5 both times. One case on
+a toy repository, so it shows the rule is followed and does not add
+questions; it does not show a real planlab report reads better.
+
+**Next pass compares** hand turns that ask what is waiting or say they
+cannot follow, per hand-driven session, against 27 and 22 turns in 84
+sessions; and sessions handed a technical choice, against 6. Cut the rule
+if the counts do not fall, since it costs every session 80 words.
+
 ## 2026-11-06 — the planlab house layer, second pass: what the guide adds
 
 **Question**, the user's: refactor planlab's `docs/loopy/prompting-guide.md`

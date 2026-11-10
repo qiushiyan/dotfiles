@@ -10,18 +10,20 @@ judgeable. The journey that produced the spec (job names, consult rounds and
 their finding counts, the scope cut's history, decision logs) goes in the
 report, not the spec; each decision's reason and evidence stay in.
 
-**Size.** Aim for about 4,000 words outside code blocks for a one-PR change:
-specs that size built without a stall on a spec gap. Longer ones are read
-by heading and line range, so a rule in a skipped range is missed. The user
-asks for specs "high level, without implementation details": what § Before
-you finish leaves to the build, not the interfaces, states and wiring that
-bind. Past 6,000 words, cut what the build owns and what restates a
-decision.
+**Size.** A build reads the spec whole once, then comes back to it after
+each compaction by obligation number, heading and term, whatever its
+length. So a binding rule sits under a heading that names it or in a
+numbered obligation, where the build finds it again. Length costs writing
+and checking time, not build quality. The user asks for specs "high level,
+without implementation details": what § Before you finish leaves to the
+build, not the interfaces, states and wiring that bind. Past about 6,000
+words outside code blocks, cut what the build owns and what restates a
+decision before adding more.
 
 Done when the summary alone re-grounds a cold reader, every design-changing
 premise carries evidence or a fallback that preserves the design, every
-rule has one home, every cited path and heading resolves, and the spec is
-under 6,000 words or the report names the decisions that earned the rest.
+rule has one home that a heading or an obligation number leads to, and
+every cited path and heading resolves.
 The examples are adapted from shipped specs: they show a form, not the
 project at hand.
 

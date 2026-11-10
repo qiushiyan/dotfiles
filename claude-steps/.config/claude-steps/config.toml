@@ -74,11 +74,12 @@ snippets = ["land-pr"]
 count_commits = true
 color = "green"
 
-# The reviewers on the pull request itself, bots and people. `review` is the
-# cold round this session dispatches.
+# The reviewers on the pull request itself, bots and people, handled by the
+# team's pl-land, or by pl-handle-code-review for one round alone. `review`
+# is the cold round this session dispatches.
 [[label]]
 name = "pr-review"
-skills = ["pl-handle-code-review"]
+skills = ["pl-land", "pl-handle-code-review"]
 count_commits = true
 color = "cyan"
 

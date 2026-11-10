@@ -93,7 +93,7 @@ Before we commit to this approach, settle what it rests on with throwaway spikes
 [[snippets]]
 key = "implement-spec"
 expand = '''
-Reread the settled spec to rebuild your mental model on the goals and implementation tenets, then implement end to end, commit at major milestones along the way.'''
+Reread the settled spec to rebuild your mental model on the goals and implementation tenets, then implement end to end, commit at major milestones along the way. After each compaction, reread the spec's Summary and Tenets before you go on.'''
 
 [[snippets]]
 key = "implement-now"

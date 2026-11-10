@@ -74,10 +74,16 @@ then skips the merge.
    verdicts in the PR body; a personal tool `closeout`.
    `review-then-closeout` is stages 5 and 7 in one prompt, for a branch
    nothing has reviewed yet; sent after a review, it would start another.
-8. **Code review on the PR** (planlab). `/pl-handle-code-review` loops over
-   the bots' findings until the PR is caught up or the fixes stop
-   converging. `handle-review` is its single-round form, for when the user
-   runs the loop.
+   In planlab a session's first `gh pr create` is refused when stage 5 has
+   not run in it, with what to run
+   (`claude/.claude/hooks/pr-stage-check.py`), so a build step that names
+   the PR does not skip the review.
+8. **Settle the PR** (planlab). `land-pr` hands the PR to the team's
+   `pl-land`, which asks for CI by label, handles red CI and what reviewers
+   post, and ends at ready to merge or at a churn stop. It merges only on
+   the user's approval, which `merge-when-ready` carries.
+   `handle-review` is one round of the review handling alone, for when the
+   user runs the loop.
 9. **Strategic review** (planlab, by default). `strategic-review-brief` has
    the build session write the reviewer's prompt, and a fresh session runs
    `/strategic-review <PR>`, folds its findings in and merges. A change
@@ -120,10 +126,10 @@ risk is the evidence:
 - **Light:** a contained feature or fix; nearly every personal tool.
 
 A batch that `drive-session` starts with unsettled designs decides later:
-every session runs `consult-design`, the user reviews all the designs at
-once, and each then takes `/write-spec` or `implement-now`
-(`PLANLAB.md` § The design checkpoint, and its
-iTELL form in `ITELL.md`).
+every session runs `consult-design`, each then takes `/write-spec` or
+`implement-now` on its own recommendations, and the user sees all the
+designs at once; a merge waits only for a design question still open
+(`PLANLAB.md` § The design checkpoint, and its iTELL form in `ITELL.md`).
 
 ## Spikes
 
@@ -131,8 +137,9 @@ A spike is throwaway code that settles an assumption reading the code
 cannot, before the build commits to it, and it may kill the approach
 (`claude/.claude/skills/spike/SKILL.md`). `/write-spec` runs them on the
 heavy path, `consult-then-build` after its consult round on the light one,
-`go-cli-maintain` throughout its pass, and `spike-check` asks for them on their own, the build waiting for the user
-to read the verdicts. In planlab they run on the real stack:
+`go-cli-maintain` throughout its pass, and `spike-check` asks for them on
+their own and ends at their verdicts: by hand the build waits for the user
+to read them, and in a driven batch the next step sends it on. In planlab they run on the real stack:
 `pl-loopy-verify`'s rungs where they hold the question, otherwise an
 OrbStack container or EC2 on the `planlab-personal` AWS profile, cleaned up
 afterwards; planlab's `consult-then-build` says so. In itell they run in the
@@ -143,9 +150,9 @@ itell's `consult-then-build` says.
 
 - **Planlab — a polished PR, merged and released.** The stages through
   review and verification have run, the PR is open against `develop` with
-  the required checks green, and at least one round of
-  `/pl-handle-code-review` has been handled, its outcome (caught up or
-  stopped on churn) reported; the bots help but are not relied on. Then
+  the required checks green, and `pl-land` has settled it, its outcome
+  (ready to merge, or stopped on churn) reported; the bots help but are
+  not relied on. Then
   stage 9's review session merges and releases without the user unless they
   hold them (`PLANLAB.md` § After the PR), and the closeout follows once the
   deploy serves.
@@ -181,13 +188,15 @@ driver does on its own judgment and reports.
 answer: the session builds what does not depend on it and stops there, so
 the user comes back to everything else done.
 
-- **Design questions, at the design checkpoint**: scope, what the product
-  does for the person using it, and what a customer is told, asked together
-  before the build, with every technical choice listed as the default the
-  session will take. A design question that reopens later comes back the
-  same way: a review finding the session judges foundational, a design
-  objection it rebutted, or a decision that is hard to undo and has no
-  recommendation.
+- **Design questions**: scope, what the product does for the person using
+  it, and what a customer is told, asked together once the design is in,
+  with every technical choice listed as the default the session will take.
+  The step that acts on the answer is the merge. A session that recommends
+  an answer builds on it, since the user nearly always takes it and a
+  rebuild costs less than a night parked; a question with no recommendation
+  holds the work that depends on it. A design question that reopens later comes back the same
+  way: a review finding the session judges foundational, or a design
+  objection it rebutted.
 - **Mutations of production data**: SQL, a script or a backfill run against
   a production database; a write in a customer's workspace or data; a change
   to production infrastructure, such as taking down or resizing a tier; and a
@@ -196,18 +205,21 @@ the user comes back to everything else done.
 
 **Handled without asking**, and reported: anything reversible that reaches
 no customer, such as the test account accepting the terms of service on
-staging. When unsure whether a reversible step needs the user, do it and
-report it; when unsure whether a write lands in a customer's workspace or
+staging. A fact that can be looked up, such as whether a pull request
+merged, is looked up. When unsure whether a reversible step needs the user,
+do it and report it; when unsure whether a write lands in a customer's workspace or
 data, ask. Beyond that:
 
 - **Every choice inside the change** once its design is settled:
   implementation, technical defaults, follow-up cards for work outside it.
-- **Merge and release**, once the stages have run: review and verification,
-  the prompt check where it applies, the PR's code review handled, the
-  strategic review with its findings folded in (planlab's default; elsewhere
-  where the change earned one), and required checks green. The strategic
-  review's fold is change the user asked for, so the code review's churn
-  stop after it is no reason to hold: the merge goes on with `--churn-ok`.
+- **Merge and release**, once the stages have run and no design question
+  about the change is open: review and verification, the prompt check where
+  it applies, the PR settled, the strategic review with its findings folded
+  in (planlab's default; elsewhere where the change earned one), and
+  required checks green. The strategic review's fold is change the user
+  asked for, so the code review's churn stop after it is no reason to hold:
+  the merge goes on with `--churn-ok`. A churn stop before that review goes
+  to the review, which reads the whole change.
   A release's migration gate is overridden with the acknowledgement it
   suggests once the release's session has read what it flagged and
   recommends it, unless the migration is one the second ask names. A

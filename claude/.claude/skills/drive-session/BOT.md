@@ -146,7 +146,7 @@ recommend.
 
   **Decision 2, lost commits (A23):** the gate has a hard rule that no saved schedule may be lost from the summary. On one long thread, saves went missing in develop too, because a script had trimmed the save output so the code can't see those saves at all. Summary gate suggests that until the save receipts another session is building land, the hard rule covers only saves the code can see. The invisible ones would still count in the totals but couldn't fail the gate on their own. Nobody using Loopy would notice: it changes only what fails the gate.
 
-  Unanswered, Summary gate stays parked and nothing ships. The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
+  Meanwhile Summary gate builds A as recommended, and nothing ships until you answer. The card from last night has all three. I'd go with A, "the browse rule ends with the browse", and yes on A23.
   </example>
 - **A message about one session** states its goal as `drive read` prints
   it, so the chat and the page agree, and links its card by its batch and

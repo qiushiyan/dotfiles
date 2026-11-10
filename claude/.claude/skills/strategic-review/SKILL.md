@@ -12,9 +12,7 @@ requires:
 # Strategic review of a pull request
 
 You are reviewing a pull request that someone else built, in a session that
-starts fresh. The user opens it only for PRs big or consequential enough
-that a design-level read is worth a session of its own. The build has
-usually already passed its own review rounds, which read the change inside
+starts fresh. The build has usually already passed its own review rounds, which read the change inside
 the builder's framing. Your value is what they cannot see. That includes
 the defects they missed, the text that misleads the model, the handling
 those rounds piled up without a case that needs it, and the reshape that
@@ -22,10 +20,13 @@ would make the design simpler.
 
 The deliverable is one report the user decides from: is it ready, what must
 change before merge, and what would make it better. Report every problem
-you can point at code for, minor ones included. The user sorts them and
-usually answers "fold these in", in this same session. Change no code
-until then; [Folding the findings in](#folding-the-findings-in) says how
-to build it once they do.
+you can point at code for, minor ones included. By hand, the user sorts
+them and usually answers "fold these in", in this same session: change no
+code until then. When the session's first message says someone else sends
+your steps while the user is away, do not stop there: fold on your own
+recommendations, then end the turn on the report as it now stands, led by
+any finding you could recommend nothing on, which stays unfolded.
+[Folding the findings in](#folding-the-findings-in) says how to build it.
 
 ## How to work
 
@@ -74,9 +75,8 @@ to build it once they do.
 4. **Verify before you report.** Re-read the cited code for every finding
    the report will carry, because reviewers state wrong findings with the
    same confidence as real ones. Every finding an area reported reaches the
-   report or is dropped here with its reason, since past reports lost more
-   findings this way than any other. Say which findings rest on reading
-   alone.
+   report or is dropped here with its reason. Say which findings rest on
+   reading alone.
 
 ## The lenses
 
@@ -174,17 +174,14 @@ Open with the verdict, then the short list to fix before merge. Then the
 findings grouped by lens. Give each one a severity (critical blocks merge,
 moderate is fixed before merge, minor is optional) and its class tag from
 `~/.config/lessons/collaboration/finding-classes.md`, then where it is
-(file:line), the evidence, and how it was confirmed. A finding that asks
-for handling carries its `reaches:` line. Give the fix, including the reshape when one
-would make the problem disappear, and name the callers and invariants the
+(file:line), the evidence, and how it was confirmed. Give the fix,
+including the reshape when one would make the problem disappear, and name the callers and invariants the
 fix changes, since a right finding with a wrong fix still ships a defect.
 Answer the user's question if they asked one; if it does not fit this PR,
 say so and answer the nearest question that does.
 
-Then two short lists, each omitted when empty. **Investigate:** serious
-cases whose reachability you could not settle, each with the observation
-that would settle it. **Known limits, not built:** cases nothing reaches
-today or whose cost is minor, one line each with what would earn handling.
+Then the two lists the earned-handling lens fills, each omitted when
+empty: **Investigate** and **Known limits, not built**, one line a case.
 
 <example>
 **Known limits, not built**
@@ -223,8 +220,10 @@ marked.
 
 Your fixes meet the bar you held the PR to: handling a fix adds is earned by
 what reaches it, and a probe you built is not a real caller. The fold is
-code you wrote, and unread folds have shipped faults that CI and the bots
-then found. With push rights and network, push to the PR branch, wait with
-`gh pr checks --watch` rather than a wakeup, judge each bot finding by these
-lenses, and fix what stands, in one round. Without them, say the fold is
-unread and name its commits.
+code you wrote, and unread folds have shipped faults, so have it read: a
+`/review` round over its substantive fixes, revise-prompt's pass where it
+changed text a model reads, and the project's docs pass. Then push and
+settle the PR as the project does (PlanLab: `pl-land`, with no merge),
+judging what its reviewers post by these lenses. The merge is its own step.
+Without push rights or network, say the fold is unpushed and name its
+commits.
