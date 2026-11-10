@@ -21,6 +21,9 @@ bot follows `DOGFOOD.md`.
   taken, with the option passed over).
 - **A design question with a recommendation holds the merge, not the
   build** (11-10, an experiment the user will judge after a few batches).
+  PLANLAB.md's checkpoint keeps the reason beside the rule: with it cut as
+  a duplicate of the pipeline doc's, a driver parked its session at the
+  design in 2 of 15 replays, and in none of 15 with it.
 - **A strategic review a driver opened folds its own findings** (11-10); by
   hand it still stops at its report.
 
@@ -210,6 +213,18 @@ before 11-09 22:00 are not covered. Ledgers in that session's scratchpad:
   SKILL examples still showed a decision holding a build; an amending
   answer goes to the session that holds the change, which after the review
   opens is `sr-`; the emergency-merge bullet contradicted `pl-land`.
+- *At the landing:* a second reading by revise-prompt's pass cut what
+  drive's own help says (the command for an outside wait, how long a hold
+  lasts) and one of the two statements of the checkpoint's reason. Side by
+  side at ten runs a case the text before and after were level (10.90
+  against 10.80 checks a run, interval −0.40 to +0.20; `drive-asks-landed2`),
+  but both checkpoint failures were the driver parking the session at its
+  design, and only without the reason (2 of 15 with `drive-asks-landed`;
+  0 of 15 before). The reason went back as a clause: 0 of 15
+  (`drive-asks-landed3`). The choice told and not asked misses about one
+  run in fifteen in either text. The hook's suite and two drive tests from
+  this pass asserted message wording; they now assert what a refusal names
+  and the order of its ways.
 - *Not verified:* a real bot on the revised files; the design-checkpoint
   experiment; anything on iTELL.
 

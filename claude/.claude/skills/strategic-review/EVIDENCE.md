@@ -740,29 +740,39 @@ whose request carries the away notice, so the review folds in the same
 turn, with and without the sentence in § Folding, scored on the fold's
 diff (reshapes made, behaviour changed outside a finding, tests green).
 
-**Effort on Fable 5.2, one replay.** The user plans Fable for strategic
-reviews; `settings.json` runs it at `xhigh`, and Anthropic's guide keeps
-`xhigh` for a measured gain. Replayed `pr-8948` (`~/dev/skill-evals`, the
-skill at the mini's HEAD, report only, Sonnet 5.5 judge with three passes,
-n=3 at each effort; the runner gained `--effort` for this):
+**Effort on Fable 5.2: no difference once the replay runs as live reviews
+do.** The user runs strategic reviews on Fable. Replayed `pr-8948`
+(`~/dev/skill-evals`, the skill at the mini's HEAD, report only, Sonnet 5.5
+judge with three passes; the runner gained `--effort` and
+`--context-window` for this). Answer-key checks passed, of 10, per review:
 
-| effort | answer-key checks passed, of 10, per review | minutes | API-price estimate |
-|---|---|---|---|
-| `high` | 5, 6, 4 | 44, 35, 47 | $13.96, $13.81, $14.54 |
-| `xhigh` | 2, 2, 3 | 72, 52, 45 | $19.01, $20.33, $15.12 |
+| the lead's context | `high` | `xhigh` |
+|---|---|---|
+| 200k, the runner's default: every lead compacted two or three times near 167k | 5, 6, 4 | 2, 2, 3 |
+| 1M (`claude-fable-5-2[1m]`, `--context-window 833000`): no lead compacted, peaks 360k to 475k | 4, 5, 2 | 5, 5, 3 |
 
-Every `high` review found more of the key than every `xhigh` one, in less
-time. Of the five defects the real review had missed, `high` found 1.78 a
-run and `xhigh` 0.56. Both found K2 and K3 every time and neither found K4
-or K19. One PR and three runs each: enough to say `xhigh` showed no gain
-here, not that it is worse. Why is not established; the two arms used
-about the same number of subagents (3.7 and 3.3). For scale only, Opus 5.5
-on this PR on 10-17, with an older skill and another judge, passed 2.33 a
-run in 16 minutes. Runs `sr-fable-high-1110`, `sr-fable-xhigh-1110`.
+Live reviews run as the second row: of the 12 on planlab from 11-01 to
+11-10, six never compacted (peaks 479k to 748k) and the rest once, at 460k
+or more. So the first row's gap belongs to the replay. There every `xhigh`
+lead compacted once before it dispatched its areas and again before it
+wrote, and the reports were written from summaries: the area reviewers had
+found the ten defects 15 times against 13, and the reports carried 13
+against 8 (trace of all six in that session's scratchpad, `sr/funnel.md`).
+At the live window three runs a level cannot tell the levels apart (3.67
+against 4.33 a run); `xhigh` took 35 to 48 minutes against 37 to 38 and
+cost about a third more ($20.42 against $15.55 a review). Both rows found
+K2 and K3 every time and K19 never.
+
+On the first row alone the user set `claude-fable-5-2` to `high`, with
+`drive open --effort xhigh` for a review they want at `xhigh`. The second
+row neither supports that nor overturns it. Runs `sr-fable-high-1110`,
+`sr-fable-xhigh-1110`, `sr-smoke-window` (200k, `high`, one compaction: 5),
+`sr-smoke-window-1m` (the first `high` at 1M), `sr-fable-high-1m-1110`,
+`sr-fable-xhigh-1m-1110`.
 
 **Next pass compares** driven reviews that stopped before the fold (target:
 only on a finding with no recommendation); bot steps that still carry the
 fold riders (target none); and what the read of the fold found, against the
-unread folds of 10-28. And Fable's effort on a second and
-third replay (`pr-8858`, `pr-8959`): if `high` again matches or beats
-`xhigh`, set `claude-fable-5-2` to `high` in `settings.json`.
+unread folds of 10-28. And Fable's effort at the live window on a second
+and third replay (`pr-8858`, `pr-8959`): what `xhigh` finds beyond `high`,
+against a third more cost.
