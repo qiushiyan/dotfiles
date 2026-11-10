@@ -85,8 +85,9 @@ then skips the merge.
    `handle-review` is one round of the review handling alone, for when the
    user runs the loop.
 9. **Strategic review** (planlab, by default). `strategic-review-brief` has
-   the build session write the reviewer's prompt, and a fresh session runs
-   `/strategic-review <PR>`, folds its findings in and merges. A change
+   the build session write the reviewer's prompt, and a fresh session, on
+   Fable when a driver opens it, runs `/strategic-review <PR>`, folds its
+   findings in and merges. A change
    skips it when it is contained and isolated, touches no production path,
    and is a simple fix its own review round has settled; the build session
    says so in its report. Elsewhere it runs on a PR the user names, or in an

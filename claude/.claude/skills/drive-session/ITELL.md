@@ -139,12 +139,12 @@ iTELL PRs carry no review bots, so stage 8 is a person's review comments, a
 fix step like any other. Open a strategic review (stage 9) on your own
 judgment for a complicated or critical change, such as one that writes
 production data, adds a table or changes what every user meets; its session
-verifies in a lane of its own, folds the findings in and merges:
+verifies in a lane of its own, folds the findings in and merges. It opens on
+Fable, the user's choice for this review, unless they name another model:
 
 ```bash
 drive send invite-links@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
-drive open sr-invite-links --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
-drive open sr-invite-links --model fable …                   # the same, when the user wants it on Fable
+drive open sr-invite-links --model fable --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
 drive send invite-links@… --snippet recap                    # then close invite-links
 drive send sr-invite-links@… "F2: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user
 ```

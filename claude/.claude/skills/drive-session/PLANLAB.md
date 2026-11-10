@@ -109,14 +109,14 @@ Ask:
 Every PR gets a strategic review once its code review is handled (stage 9),
 unless the build session's report opts out on stage 9's terms and its diff
 bears them out. The review session has read the whole change, so it folds
-the findings in and merges; the builder's part ends when it starts. Merging
-and releasing are yours unless the user says "hold merges":
+the findings in and merges; the builder's part ends when it starts. It
+opens on Fable, the user's choice for this review, unless they name another
+model. Merging and releasing are yours unless the user says "hold merges":
 
 ```bash
 drive send summary-decisions@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
-drive open sr-summary-decisions --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
-drive open sr-summary-decisions --model fable …                   # the same, when the user wants it on Fable
-drive open sr-summary-decisions --model fable --effort xhigh …    # only when the user asks for xhigh; their settings run Fable at high
+drive open sr-summary-decisions --model fable --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
+drive open sr-summary-decisions --model fable --effort xhigh …    # only when the user asks; their settings run Fable at high
 drive send summary-decisions@… --snippet recap                    # then close summary-decisions; its branch and worktree wait for the cleanup after the merge
 drive send sr-summary-decisions@… "F3: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user
 drive send sr-summary-decisions@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
