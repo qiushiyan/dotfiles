@@ -577,3 +577,43 @@ hand", not use in a window.
 no review round, against 6 of 11; the hook's denials and what followed each;
 and reads covering § Summary or § Tenets after a mid-build compaction,
 against 17 and 14 of 77.
+
+## 2026-11-10 — three keys that decide planlab's next batch; `loopy-slack-triage` takes cards and PR follow-ups
+
+From the user's ask in improve-tool pass mini2 `50c232d4`; the procedure a
+driver follows and the corpus are in drive-session's `EVIDENCE.md`, same
+date.
+
+**Receipts.** Seven earlier runs since 13 Oct decided a batch from one
+onboarding session, and the user typed the same follow-ups into them:
+measure in production before judging (3 of 7: `mini:3d3bb977`,
+`mini:4b3e8b77`, `mini:49eba4bf`), a Fable and Astra review of the batch
+notes (3 of 7: `mini:49eba4bf`, `mini:4b3e8b77`, `mini2:da19e9fb`), and
+start notes or briefs per session (4 of 7). On 11-10 the Session Driver
+rewrote `loopy-slack-triage` into a file to add Bench follow-up cards and
+merged-PR follow-ups, wrote the other two sessions' prompts itself
+(`~/.local/state/drive/batches/2026-11-09/sends/`), and the user sent five
+more messages to add what the prompts lacked.
+
+**Changed** (planlab `.tabtype.local.toml`).
+- `loopy-slack-triage`: step 1 adds my open Bench cards and the follow-ups
+  my merged PRs name; a new step 5, **Measure today**; the report lists
+  cards to close and ends with its file's path. The opening is unchanged.
+  Two fixes a cold reader verified by running: Slack's `after:` leaves out
+  the day it names (90 hits `on:2026-11-06`, none of them under
+  `after:2026-11-06`), and `reports list --since` takes a date or `Nd`.
+- New `loopy-initiatives-review` (what was planned: initiatives, owed
+  reads, the brief queue), `loopy-batch-review` (a fresh session turns both
+  reports into one batch; no spec-only sessions) and `loopy-batch-notes`
+  (a start note per session under the handoffs clone's `_batches/<date>/`,
+  one consult round with fable and astra, `brief sync`).
+- Every one carries the same step: a brief, a card or an older report is a
+  lead, and each ranked item has its number, the query or spike behind it
+  and the date of the data.
+
+**Not run.** No session has been started from the three new keys, and
+`brief sync` has not yet published a `_batches/` folder.
+
+**Next pass compares** the user's typed messages between asking for a batch
+and its sessions opening (11-10: six, five of them additions), and start
+notes a session found wrong at pickup.

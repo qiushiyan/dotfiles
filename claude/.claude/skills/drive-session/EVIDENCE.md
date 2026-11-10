@@ -31,6 +31,16 @@ bot follows `DOGFOOD.md`.
   when they ask. Replayed (`q-open-review`, n=5): the open named `--model
   fable` in none of 5 runs on the text before and in 5 of 5 after, with no
   `--effort` in either.
+- **What planlab's next batch holds is worked out by sessions that change
+  no code, and the user picks once** (11-10, `PLANLAB-NEXT-BATCH.md`): two
+  gather by source, a fresh third reviews both for a large batch, start
+  notes live in the handoffs clone, and a claim older than today is a lead
+  until it is measured. The session-facing words are planlab snippets, which
+  a driver may adapt (the user's word).
+- **A critical design question is asked at once and on its own, and still
+  built on** (11-10, the user's word: fewer questions, but aware of the
+  important decisions). Holding its build was tried first and parked the
+  core of a fix in `q-checkpoint-mixed` (0 of 3, from 3 of 3).
 
 ## Open comparisons
 
@@ -62,12 +72,121 @@ adding more.
    is broken and no harm is on record; left alone. Act if a session
    misreads such a step.
 
+6. **What deciding a batch costs the user.** Predicate: the user's typed
+   messages in the driver's chat from asking what the next batch should be
+   to its sessions opening, and the asks put to them for the pick.
+   Baseline, 11-10: six messages, five of them adding instructions, and
+   three asks (A37, A38, A39). After `PLANLAB-NEXT-BATCH.md`: the next two
+   planned batches. Also count start notes a session found wrong at pickup.
+   Drop the third session if its report changes nothing the user notices
+   twice running.
+7. **Critical questions.** Predicate: asks a session or the driver marked
+   critical, against all design asks in the batch, and any design choice
+   the user amended that had been listed as a default. Revise the wording
+   if more than about a fifth of design asks are marked critical, or if the
+   share of open comparison 1 rises with it.
+
 Retired, answered here: wakes that drew no action (12 of 76 in 11-09,
 against 14 of 124 and the 70% the engine pass began from); strategic reviews
 per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 (none in three batches). Retired, not reached: the iTELL comparisons of
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
+
+## 2026-11-10 — deciding the next batch, and critical design questions (improve-tool pass, mini2 `50c232d4`)
+
+**Ask.** Formalize how the next batch is decided, which the user had been
+typing by hand and through the bot; then, mid-pass: a really critical
+design question should still be flagged for their agreement, recommendation
+or not.
+
+**Corpus.** The Session Driver's transcript, 11-02 20:49 to 11-10 20:52 GMT
+(archive from seq 1, read with `grokbot-transcript`); the session index on
+mac, mini and mini2, all reached; the 11-09 batch's `sends/` and event log.
+Predicate for a run that decided a batch: a user turn in a planlab session
+containing `next batch` or `parallel sessions` (or the Slack triage's
+opening), read in context. Seven before 11-10: `mini:74869f39` (10-13),
+`mini:fec0d58b` (10-15), `mini:3d3bb977` (10-17), `mini:49eba4bf` (10-27),
+`mini:4b3e8b77` (10-30), `mini2:dc974e02` (11-02, the bot's O1),
+`mini2:da19e9fb` (11-06). Not read: the three 11-10 planning sessions' full
+reports, drive's code beyond the park and carry-over paths. None of the
+five open comparisons was reached: the batch they wait for opened at 20:58.
+
+**Found.**
+- **The user retyped the procedure each run.** On 11-10 they sent six
+  messages from the ask (14:52) to the start notes (17:09), five adding
+  instructions. Earlier runs carry the same ones: measure in production
+  before judging (3 of 7), a Fable and Astra review of the batch notes (3
+  of 7), start notes or briefs per session (4 of 7).
+- **A fresh review of the two reports paid, once.** `batch-coordinator`
+  (`mini2:6189b211`) corrected five facts in them, one a storage deadline
+  already stale by a teammate's PR, and turned 13 proposals into 11.
+- **Three asks for one decision.** A37 and A38 were answered before the
+  review reshaped both.
+- **The driver closed the two gathering sessions at 16:09 and 16:22,**
+  while the review of their reports ran until 16:44.
+- **All eleven worker sessions opened from start notes in a session's
+  scratchpad under `/tmp`,** with a copy in `/tmp/b1110`.
+- **The planning sessions ran in the old batch,** because a new one would
+  have stopped a parked session's 09:00 wake; the driver then carried that
+  wake by a timer in the new batch.
+- **No file showed `drive open --snippet`,** and none of 98 open events on
+  mini2 used one (pattern not checked against the log's schema).
+- **A single session would not hold both sources:** the two 11-10 sessions
+  peaked near 455k tokens each and the one of 11-06 at 771k, by the index's
+  figure, unchecked against cache accounting.
+
+**Changed.**
+- New `PLANLAB-NEXT-BATCH.md`, routed from PLANLAB.md's opening and the
+  pipeline doc's stage 1; the four snippets are in planlab's
+  `.tabtype.local.toml` (`tabtype/EVIDENCE.md`, same date).
+- `brief` skips a folder whose name starts with an underscore (brief
+  `22534aa`), so `_batches/<date>/` travels in the shared handoffs clone
+  without reading as a route.
+- A critical question: the pipeline doc's § Who decides, NOTICE.md,
+  PLANLAB.md's checkpoint and a clause in ITELL.md.
+- **Cut:** PLANLAB.md's "Next-batch priorities go to onboarding as your
+  suggestion; onboarding decides the order and what runs in parallel." It
+  kept a driver from fixing the batch's order itself. The new file's step 1
+  sends the last batch's follow-ups after the key and its step 2 decides the
+  order. Bring it back if a driver picks a batch's contents with no
+  planning session when the user asked what it should be.
+- The size record rose by the new file, raised by hand.
+
+**Verified by replay** (`skill-evals` `cases/drive-step`, the files inlined
+as arms `fable-default` for the text before and `next-batch-2` after; Opus
+5.5, three judge passes, n=5 unless said):
+- `q-next-batch`: 0 of 5 before, 5 of 5 after. Before, the driver opened one
+  planning session with a prompt of its own in every run.
+- `q-critical-question`: 0 of 5 before (asked, but no message until the
+  combined report), 5 of 5 after.
+- `q-checkpoint-mixed` 5 of 5 both; `q-open-review` 3 of 3 after.
+- `q-inside-change` 4 of 5 before, 2 of 5 after, and `q-docs-pr` 3 and 2 of
+  5: the `told` check is lower after in both (1.00 to 0.73, 0.60 to 0.40),
+  each interval reaching 0. One run after asked a choice the case wants
+  told. Not distinguishable from noise at this count; open comparison 1
+  watches it.
+- Two cases were reshaped after a first run, both disclosed in the case
+  files: `q-next-batch`'s `notes` check asked for a mention the driver has
+  no reason to make when it sends the snippet by key, and
+  `q-critical-question` first required the build to wait.
+- The first baseline run (`runs/next-batch-1110`) installed the skill
+  without inlining it and is void: the driver had no instructions.
+
+**Verified by reading.** A fresh reader ran revise-prompt's pass over the
+new file, the four snippets and the pipeline sentence, with drive's and
+brief's help: about 35 findings, folded in except two the user had decided
+(a driver may adapt a snippet; a start note gives an early view on
+strategic review). It verified by running that every command example
+matches its help, that the four keys resolve, and two defects in the
+existing triage snippet.
+
+**Not verified.** The route from PLANLAB.md to the new file as a bot follows
+it from disk, since the replay inlines both; any session started from the
+three new snippets; `brief sync` publishing a `_batches/` folder; `drive
+--batch <old> close` after a new batch beyond the one close on record
+(11-10 20:56); a parked session joining a new batch by `--as`, which
+drive's `TestASessionAnotherDriverDrivesIsTheirs` covers for a send.
 
 ## 2026-11-10 — what three driven batches cost the user (improve-tool pass, mini2 `427f5995`)
 

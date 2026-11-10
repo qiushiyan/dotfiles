@@ -18,7 +18,9 @@ Once a session's design reply is in (it stands in for its recap), record
 its design questions as asks whose `--if-unanswered` says it builds as
 recommended and the merge waits, then send it on: `/write-spec Go with your
 recommendations.` or `--snippet implement-now`. A question it gives no
-recommendation for holds only the work that depends on it. The report gives, per session, the design
+recommendation for holds only the work that depends on it. A critical one
+(the pipeline doc's § Who decides) goes to the user at once, on its own,
+while the session builds on. The report gives, per session, the design
 in a few lines, what the spikes showed and your call on a spec; ask the
 design questions the pipeline doc's § Who decides names, each as one
 question with what it changes, and list the technical choices as the

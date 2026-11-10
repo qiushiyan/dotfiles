@@ -2,7 +2,9 @@
 
 Most drives are planlab batches: several `planlab-ai/main` sessions taken
 from onboarding through a polished PR, its merge and release, and the
-closeout.
+closeout. When the user names the sessions or their work, drive those; when
+they ask what the next batch should work on, follow
+[`PLANLAB-NEXT-BATCH.md`](PLANLAB-NEXT-BATCH.md) first.
 
 ## The design checkpoint
 
@@ -32,7 +34,12 @@ drive send summary-decisions@… --snippet implement-now 'I answer the design qu
 ```
 
 A question it gives no recommendation for holds only the work that depends
-on it; park the session once nothing else is left to build. Once all have
+on it; park the session once nothing else is left to build. A critical
+question, one later work will be built on or one that changes an important
+behaviour customers see in production, goes to the user at once, in a
+message of its own, whether the session marked it or you judge it so, and
+is never listed as a default taken. The session still builds on its
+recommendation, and its merge waits for that answer like any other. Once all have
 reached the checkpoint, report as SKILL.md § Report shapes it: per session,
 the design in a few lines, what the spikes showed, and each design question
 with what it changes for the person using the product. List every technical
@@ -55,8 +62,6 @@ done once this report is sent.
   production trace.
 - **Decisions** reach the user on one combined board, each with your
   recommendation.
-- **Next-batch priorities** go to onboarding as your suggestion; onboarding
-  decides the order and what runs in parallel.
 - **Work the user hands you** starts a new session in its own worktree.
   Planlab sessions open in a Rex session of their own, apart from other
   projects.
