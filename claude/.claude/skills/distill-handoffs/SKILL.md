@@ -62,8 +62,8 @@ moved.
 1. **Establish the branch and prove it landed.** Run `brief` first: every row
    reading `#N merged` is a second anchor. Then `brief closeout <branch>
    --json` returns the anchor (the brief named `<branch>` or `review-<branch>`,
-   live or retired, or `null`), the landed state from gh, the files the
-   branch changed, and every live brief that might belong, each with reasons:
+   live or retired, or `null`), the landed state, how many files changed,
+   and every live brief that might belong, each with reasons:
    `relation` (a lineage field on either side names the other), `path` (its
    `paths:` overlap the changed files, listed in the file for step 2), `prose` (it names the anchor outside a
    lineage field), and, only beside one of those, `domain` and `run`. Read it
@@ -72,23 +72,23 @@ moved.
    ```bash
    S=<your scratchpad directory>
    brief closeout <branch> --json > "$S/closeout.json"
-   jq -c '{anchor: .anchor.slug, merged: .landed.merged, pr: .landed.pr.number, files: .changed.files, complete: .changed.complete}' "$S/closeout.json"
+   jq -c '{anchor: .anchor.slug, landed, files: .changed.files, complete: .changed.complete}' "$S/closeout.json"
    jq -r '.candidates[] | [.slug, ([.reasons[].kind]|unique|join("+")), ([.reasons[]|select(.kind=="relation")|.detail]|join("; "))] | @tsv' "$S/closeout.json"
    ```
 
    ```
    # the shape, not today's folder
-   {"anchor":"feat/client-data-corpus-by-default","merged":true,"pr":5941,"files":26,"complete":true}
+   {"anchor":"feat/client-data-corpus-by-default","landed":{"merged":true,"source":"pr","pr":{"number":5941,"state":"MERGED","merged_at":"…","merge_commit":"…","head":"…"}},"files":26,"complete":true}
    feat/client-data-corpus-reuse-on-publish   domain+path+prose+relation+run   its rests-on: names the anchor (line 21)
-   infra/loopy-master-disk-throughput         domain+path+relation             anchor's collides-with names it; its rests-on: names the anchor (line 27)
    fix/ux-cut-turn-honesty                    path
    ```
 
    `complete: false` means some changed files went unread; the file's `list`
-   command prints them all. If gh reads the branch unmerged but the
-   invocation says it landed, run the command once more, since a merge clicked
+   command prints them all. `merged` is true only for a merged PR. If it reads false
+   but the invocation says it landed, run it once more, since a merge clicked
    seconds earlier reads open. Then do steps 2–4 on what it shows, hold the
-   writes, and end the report with `/distill-handoffs <branch>` to run once
+   writes, and end the report with what `note` names (a read to repeat, or
+   commands for the user), else with `/distill-handoffs <branch>` to run once
    the PR reads merged.
    Done when the landed state is read and the anchor is resolved or its
    absence explained.
