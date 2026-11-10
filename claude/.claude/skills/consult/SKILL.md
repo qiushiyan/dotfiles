@@ -127,17 +127,18 @@ model it started on.
      the user. Judge voices on different briefs each against its own, and
      where their claims overlap, compare the evidence.
    - **Traps.** A point naming a trap the build could fall into (an edge
-     case, a failure path, a contract that invites misuse) adds or sharpens
-     a planned case in the spec's test plan, starting the plan if needed.
-     With no spec yet, carry the case into the synthesis for `/write-spec`. Points
-     with nothing executable behind them are adopted as prose.
+     case, a failure path, a contract that invites misuse) sharpens an
+     obligation in the spec's § Verification when something reaches the
+     case, and is a non-goal when nothing does. With no spec yet, carry it
+     into the synthesis. Points with nothing executable behind them are
+     adopted as prose.
    - **Tenets** a voice returns meet the lesson's bar or count as tips.
      Revise survivors into the spec's `## Tenets` in place, or carry them in
      the synthesis for `/write-spec` when there is no spec; one left in the
      conversation is lost at compaction. The synthesis records each struck
-     tenet and why, beside the test-plan edits.
+     tenet and why, beside the obligation edits.
 
-   Done when every point is adopted (with its planned case where the trap
+   Done when every point is adopted (with its obligation where the trap
    was executable), rebutted with a reason, or escalated.
 
 6. **Round 2** opens only on one of these:
@@ -173,7 +174,7 @@ model it started on.
      leads, with what settled it. A confirmed problem is one line among the
      convergences.
    - Then the convergences, the deltas adopted and why, the findings
-     rejected and why, the test-plan edits, and any tenets adopted and where
+     rejected and why, the obligation edits, and any tenets adopted and where
      they were written.
    - Name the latest round and, for a fan-out, every member
      (`consult-r2/codex-gpt-6-astra`), and say which voice's position the

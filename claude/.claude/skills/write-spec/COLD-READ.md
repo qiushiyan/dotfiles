@@ -1,10 +1,8 @@
 # Cold read — the comprehension check
 
 [write-spec](SKILL.md) step 4 sends the block below, paths filled in, to a
-fresh Opus subagent that holds nothing else. On a re-read the two re-read
-inputs carry the previous pass's resolved-term list and the changed
-sections; on a first read they say "none". The writer judges what comes
-back; the reader never edits the spec.
+fresh subagent that holds nothing else. The writer judges what comes back;
+the reader never edits the spec.
 
 ```text
 You are the cold comprehension reader for a design spec. You hold no
@@ -16,16 +14,11 @@ Inputs:
 - Spec: <absolute path>
 - Project docs root: <absolute path>
 - Glossary: <absolute path, or "none">
-- Terms an earlier reader resolved: <list, or "none">
-- Sections changed since that reader: <section names, or "none">
 
 Read the summary first and write down, from it alone, the goals, the
 scope, the exceptions that change the build, and the dependencies still
 outstanding. Then read the rest. Resolve terms from the documents the
-spec cites, and from the docs root only for what those leave open. A term
-an earlier reader resolved stays resolved unless a changed section
-redefines it; spend a re-read on the changed sections and on any
-contradiction they create with the rest.
+spec cites, and from the docs root only for what those leave open.
 
 Return, with "none" for an empty category:
 

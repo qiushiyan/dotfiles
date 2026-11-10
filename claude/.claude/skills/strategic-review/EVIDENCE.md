@@ -670,3 +670,109 @@ making engineering calls instead of holding them (deferral was 3 of 3, but
 the cut version that carried it built more). **Next pass compares** live
 folds after this commit: faults CI or bots find after the fold's round,
 reports stating CI, and known limits that turn into incidents.
+
+## 2026-11-10 — a driven review folds on its own; the fold is read before the merge
+
+From an improve-tool pass over the session pipeline (mini2 `427f5995`; its
+scratchpad holds `ledger-A.md`, `ledger-C1.md`, `ledger-C2.md`).
+
+**Corpus.** Seven strategic reviews among 8 sampled PRs merged from drive
+batches 11-02, 11-06 and 11-09, read from the review sessions' reports and
+the PRs' commits; the bot's `sends/` in those batches; 13 hand-run reviews
+in planlab sessions 10-25 → 11-10.
+
+**Observed.**
+- **Yield.** A behaviour defect found in 5 of 7 runs and a reshape in 7 of
+  7; the fold is 13 to 41% of a PR's line changes, median 23%, and near
+  net-zero in lines (+1,363/−1,126, +942/−969). Median 40 minutes to the
+  report, 92 for the fold. Four reports say earlier rounds patched one
+  premise (#10555, #10468, #10800, #10453).
+- **Where the review round was skipped** (#10804, #10800, #11027) the
+  strategic review found the behaviour defects by probe: the bug the PR
+  exists to fix still occurring in a variant; a held draft disappearing
+  after an `ask`; a dead worker's text read as a reply.
+- **The stop before the fold.** Driven, it is always answered "Fold these
+  in": 15 sends across 12 sessions, each extended by hand with the same
+  riders (an independent review of substantive fixes, the applicable prompt
+  check, a docs pass, do not merge). By hand, 11 of 13 answered "fold … in",
+  7 bare and 4 with an amendment, and 2 did not fold; three declined the
+  published page.
+- **The fold's own check had gone stale.** The skill told the fold to wait
+  on `gh pr checks --watch` and judge each bot finding; since 11-05
+  PlanLab's CI and reviewers run only on a label, which the team's
+  `pl-land` adds.
+
+**Changed.**
+- A review whose first message says someone else sends its steps while the
+  user is away writes its report, then folds on its own recommendations. A
+  finding it can recommend nothing on stays unfolded and leads the report.
+  By hand the stop stays: the user steered or declined 6 of 13 times.
+- § Folding: the fold is read before it ships, by a `/review` round over
+  its substantive fixes, the prompt check where it changed text a model
+  reads, and the project's docs pass; then pushed and settled as the
+  project settles a PR, with the merge left as its own step.
+
+**A fresh reader's pass** (revise-prompt's, with none of this pass's
+reasoning) found three faults in the new text, all fixed: "write the report,
+then fold" would leave the fold's note as the newest reply, which is all a
+driver reads, so the turn now ends on the report as it stands after the
+fold; "in one round" contradicted `pl-land`'s loop; "the prompt check" was
+undefined here and is now revise-prompt's pass.
+
+**Cuts, with what each guarded.**
+- "The user opens it only for PRs big or consequential enough…": false
+  since strategic review became planlab's default.
+- "since past reports lost more findings this way than any other": a
+  receipt, kept in the 10-09 entry.
+- The Report section's restated `reaches:` line and its definitions of the
+  two lists: both are stated in the earned-handling lens. Bring back if
+  reports drop the `reaches:` line or the lists.
+
+**Not built: the ownership sentence.** Anthropic's Fable 5.2 guide measures
+"This codebase is yours: what it's for and how it's built are your call,
+and you'll keep building on it" at about half of tries merging repeated
+code against under a tenth, for 1.5 times the output, unrequested
+additions, and a changed existing behaviour in one try in six to ten. This
+skill opens on the opposite frame ("a pull request that someone else
+built"), which suits the report. The fold is where the sentence could help
+or hurt, just before a merge. Test it there before any live use: a replay
+whose request carries the away notice, so the review folds in the same
+turn, with and without the sentence in § Folding, scored on the fold's
+diff (reshapes made, behaviour changed outside a finding, tests green).
+
+**Effort on Fable 5.2: no difference once the replay runs as live reviews
+do.** The user runs strategic reviews on Fable. Replayed `pr-8948`
+(`~/dev/skill-evals`, the skill at the mini's HEAD, report only, Sonnet 5.5
+judge with three passes; the runner gained `--effort` and
+`--context-window` for this). Answer-key checks passed, of 10, per review:
+
+| the lead's context | `high` | `xhigh` |
+|---|---|---|
+| 200k, the runner's default: every lead compacted two or three times near 167k | 5, 6, 4 | 2, 2, 3 |
+| 1M (`claude-fable-5-2[1m]`, `--context-window 833000`): no lead compacted, peaks 360k to 475k | 4, 5, 2 | 5, 5, 3 |
+
+Live reviews run as the second row: of the 12 on planlab from 11-01 to
+11-10, six never compacted (peaks 479k to 748k) and the rest once, at 460k
+or more. So the first row's gap belongs to the replay. There every `xhigh`
+lead compacted once before it dispatched its areas and again before it
+wrote, and the reports were written from summaries: the area reviewers had
+found the ten defects 15 times against 13, and the reports carried 13
+against 8 (trace of all six in that session's scratchpad, `sr/funnel.md`).
+At the live window three runs a level cannot tell the levels apart (3.67
+against 4.33 a run); `xhigh` took 35 to 48 minutes against 37 to 38 and
+cost about a third more ($20.42 against $15.55 a review). Both rows found
+K2 and K3 every time and K19 never.
+
+On the first row alone the user set `claude-fable-5-2` to `high`, with
+`drive open --effort xhigh` for a review they want at `xhigh`. The second
+row neither supports that nor overturns it. Runs `sr-fable-high-1110`,
+`sr-fable-xhigh-1110`, `sr-smoke-window` (200k, `high`, one compaction: 5),
+`sr-smoke-window-1m` (the first `high` at 1M), `sr-fable-high-1m-1110`,
+`sr-fable-xhigh-1m-1110`.
+
+**Next pass compares** driven reviews that stopped before the fold (target:
+only on a finding with no recommendation); bot steps that still carry the
+fold riders (target none); and what the read of the fold found, against the
+unread folds of 10-28. And Fable's effort at the live window on a second
+and third replay (`pr-8858`, `pr-8959`): what `xhigh` finds beyond `high`,
+against a third more cost.

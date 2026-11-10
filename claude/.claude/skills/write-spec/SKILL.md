@@ -17,19 +17,17 @@ requires:
 
 # Write a spec
 
-Turn the direction this session settled into the document the user
-approves and this session builds from after compaction. The spec settles
-the unknowns the design turns on by running them, so the build starts from
-measured ground, and gives a model with no conversation the whole design in
-a length it reads whole.
+Turn the direction this session settled into the document this session
+builds from and returns to after each compaction. The spec settles the
+unknowns the design turns on by running them, so the build starts from
+measured ground, and gives a model with no conversation the whole design,
+each rule where it can be found again.
 
 Everything below is a bar, not a form. Arguments override the defaults
 and carry through the steps they touch:
 
 - "don't commit": the spec, its index row and its revisions stay
   uncommitted, and step 4 still reads them.
-- "let me read it first": the report comes after step 2, and step 4 waits
-  for the user's word.
 - "skip validation": step 4 keeps the cold read and drops the consult.
 - "skip the checks": step 4 is skipped and the run ends at the report.
 
@@ -65,15 +63,18 @@ and carry through the steps they touch:
    build's departures and the checks' growth diff against it.
 
 4. **Check it cold and validate it.** Dispatch both readers at once and fold
-   what they return into one revision.
+   what they return into one revision, once: a second cold read finds as
+   many gaps as the first, and the build's pickup is the spec's next
+   reader.
 
-   - **Cold read.** A fresh subagent on the `opus` model, a different model
-     from the writer's, gets the block in [COLD-READ.md](COLD-READ.md)
-     filled in and nothing else. It reports what a model with no
-     conversation could not reconstruct. Judge its reconstruction against
-     the design you meant. Resolve each material ambiguity at the rule's
-     home, and keep a term only when the spec or the project docs define
-     it.
+   - **Cold read.** A fresh subagent gets the block in
+     [COLD-READ.md](COLD-READ.md) filled in and nothing else. It reports
+     what a model with no conversation could not reconstruct. Judge its
+     reconstruction against the design you meant. Resolve an ambiguity at
+     the rule's home where a builder taking the reader's guess would build
+     the wrong thing, and keep a term only when the spec or the project
+     docs define it. The reader's task was the spec, so check what it says
+     the code does at the file before that enters the spec.
    - **Validation consult.** Continue a prior consult's latest job when it
      is in reach (this session's synthesis, or the handoff), by `/consult`
      step 6 with the spec as the updated proposal, so the voices judge
@@ -82,14 +83,11 @@ and carry through the steps they touch:
      technical unknown returns to step 1. A disagreement that needs the
      user's call is flagged in the report, and the run stops there.
 
-   Correct by the bar's closing rules. Checks add prose and rarely remove
-   it, so a fold that adds words pays with a cut from what the build owns
-   or what restates a decision. A finding's reason stays, stated without
-   the round. When the revision changes what a cold reader would
-   reconstruct, send it to a fresh reader with the block's re-read inputs
-   filled in; the summary reconstruction stays blind. Hold the final
-   revision to the bar's done condition, and commit a revision only when
-   the spec changed.
+   Correct by the bar's closing rules. A finding that asks the spec to
+   handle a case names what reaches it, a traced caller or production data;
+   a case nothing reaches becomes a non-goal with what would earn it. A
+   finding's reason stays, stated without the round. Hold the revision to
+   the bar's done condition, and commit it only when the spec changed.
 
 5. **Report and stop.** This message is the user's first look at the run.
    Lead with the outcome and whether the spec is ready. Then each open
@@ -99,10 +97,10 @@ and carry through the steps they touch:
    the answer. Then the identifiers: the spec path, the commit SHAs, the
    latest consult job, what settled, what the checks changed, and the
    spec's size with its growth since step 3's commit, when there is one
-   (`scripts/spec-stats.py <spec> --against <sha>`). A spec over 6,000
-   words names the decisions that earned it. Every status claim traces to a
-   tool result from this session; unresolved checks are reported apart; if
-   nothing is open, say so. The opening and one decision of such a report:
+   (`scripts/spec-stats.py <spec> --against <sha>`). Every status claim
+   traces to a tool result from this session; unresolved checks are
+   reported apart; if nothing is open, say so. The opening and one decision
+   of such a report:
 
    <example>
    The spec for the worker deaths on oversized script output is written,

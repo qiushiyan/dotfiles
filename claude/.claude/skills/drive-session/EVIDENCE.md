@@ -1,8 +1,239 @@
 # drive-session — evidence
 
-Usage passes over the sessions that ran this skill, newest first. Each names
-its corpus, what it found, what changed, and what the next pass compares. A
-run by a real bot follows `DOGFOOD.md`.
+Usage passes over the sessions that ran this skill. A pass reads the two
+sections below first, then the newest entry; dated entries follow, newest
+first, each with its corpus, what it found and what changed. A run by a real
+bot follows `DOGFOOD.md`.
+
+## Decisions that stand
+
+- **`drive` holds the mechanics and prints the next command; these files
+  hold the judgment** (10-22). A mechanism a message states is not explained
+  again here.
+- **Who decides what lives in one place,** the pipeline doc's § Who decides
+  (10-27); the notice and the project files follow it.
+- **A step is written as the user would type it** (10-29).
+- **A wake is a paid run, paced in drive** (11-02).
+- **A session follows its own worktree; no slash command moves it** (11-07).
+- **A question a session or the driver can settle is taken and told, not
+  asked, and the engine does not sort questions into kinds** (11-10, the
+  user's word: questions are hybrid, and they want to see a choice that was
+  taken, with the option passed over).
+- **A design question with a recommendation holds the merge, not the
+  build** (11-10, an experiment the user will judge after a few batches).
+  PLANLAB.md's checkpoint keeps the reason beside the rule: with it cut as
+  a duplicate of the pipeline doc's, a driver parked its session at the
+  design in 2 of 15 replays, and in none of 15 with it.
+- **A strategic review a driver opened folds its own findings** (11-10); by
+  hand it still stops at its report.
+
+## Open comparisons
+
+Each is a measurement the next pass can run. Answer or retire them before
+adding more.
+
+1. **Questions that were not the user's.** Predicate: each `ask` event
+   classed by hand against § Who decides (design, production, only the
+   user, a message to a person or an announcement; everything else was
+   already handed over). Baseline: 41 of 127 across batches 11-02, 11-06
+   and 11-09 (10 of 39, 17 of 54, 14 of 34). After the 11-10 text: the next
+   two batches. Revise toward an engine check if the share stays above a
+   fifth; reverse if the user undoes a choice taken without asking more
+   than once a batch.
+2. **The design checkpoint experiment.** Hours a session sat parked at its
+   design (baseline about 50 over the four heavy PRs of 11-02), and design
+   answers that amended a build already made, with the rework each cost
+   (baseline before the change: 3 of 38 design questions not taken as
+   recommended). The user judges it after a few batches.
+3. **A pull request opened with no review round.** Baseline: 4 of 15 driven
+   building sessions (11-06: 3 of 4; 11-09: 1 of 4), 6 of 11 hand-driven
+   light-path runs. After `pr-stage-check.py`: its denials, and what each
+   session did next (ran the review, or went on and said why).
+4. **A stop the user could not decide from.** Baseline: at least 9 answers
+   in three batches needed a question first. After `rules/stops.md` reaches
+   the sessions: the next two batches.
+5. **Third-person steps.** 26 of 49 own-words sends in 11-09 name the user
+   in the third person, 16 carry an ask id (11-06: 3 and 6 of 27). The rule
+   is broken and no harm is on record; left alone. Act if a session
+   misreads such a step.
+
+Retired, answered here: wakes that drew no action (12 of 76 in 11-09,
+against 14 of 124 and the 70% the engine pass began from); strategic reviews
+per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
+(none in three batches). Retired, not reached: the iTELL comparisons of
+10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
+worktree counts, which need a pass of their own.
+
+## 2026-11-10 — what three driven batches cost the user (improve-tool pass, mini2 `427f5995`)
+
+**Ask.** Make the pipeline and the drive procedure easier and more robust
+to carry: fix the obvious bugs and find the high-leverage changes, from the
+real sessions. Then, on the proposal: sessions and reviews should not be
+overcautious; no question kinds in the engine; a session with a
+recommendation carries on overnight.
+
+**Corpus.** The Session Driver's transcript, 11-02 20:49 → 11-10 12:28 GMT
+(113 user messages, 381 bot messages); mini2's batches 2026-11-02, -06 and
+-09 (events, `sends/`, `watches.log`, `drive metrics`); 8 of the 25 PRs
+those batches merged, chosen for coverage, each traced through its
+sessions' reports and commits; hand-driven planlab sessions 10-25 → 11-10
+on all three machines. The mini's older batches and the bot's command lines
+before 11-09 22:00 are not covered. Ledgers in that session's scratchpad:
+`ledger-A.md`, `ledger-C1.md`, `ledger-C2.md`, `ledger-M.md`.
+
+**Observed.**
+- **Where 220 hours went** (8 PRs, first prompt to merge): sessions working
+  17%, waits inside a turn 22% (CI is about an hour a push), waiting on the
+  user 58%, holds and driver delay 3%. The overnight design checkpoint is
+  about 50 of those hours, one churn-stop ask 41.7, one hold 23.
+- **A third of the asks were already handed over:** 41 of 127, by hand
+  class against § Who decides. In 11-09, 14 of 34, of which 12 were answered
+  as recommended; A24 held #11027's merge and release from 02:59 to 09:31.
+  Design questions were taken as recommended 35 of 38 times. The user's
+  amendments went to messages to people (9 of 16), announcements (5 of 11)
+  and production access (5 of 18). Their words: "A22, I don't really care",
+  "no need to ask me".
+- **The ask is the bot's only shape for a choice.** It records a session's
+  question as an ask even when nothing waits (A22: "Both stay as Search left
+  them"), because § Report's examples of things done without asking were all
+  actions, none a choice between options.
+- **The review round was skipped in 4 of 15 building sessions** (11-06: S2,
+  S3, S4; 11-09: S3). Each got its build step in the bot's words with the PR
+  named ("Build … as one PR now"), took the team's `pl-pr` → `pl-land`
+  path, and ran `pl-local-bugbot-cycle` (2, 12 and 8 cycles in the three
+  sampled). In those three the strategic review then found behaviour
+  defects by probe. On #10800, 12 cycles made 1,637 review-fix lines
+  against 1,074 feature lines, hit the churn stop, and the ask to lift it
+  waited 41.7 hours though the session's own report said the refactor
+  belonged to the strategic review.
+- **The strategic review earns most:** a behaviour defect in 5 of 7 runs, a
+  reshape in 7 of 7, a median 23% of the PR's line changes. PR bots: a
+  median 78 minutes, mostly idle, for at most 1.1%. Four of seven review
+  reports say earlier rounds patched one premise.
+- **Escapes** (15 feature PRs): no revert and no regression fix; one
+  adjacent gap fixed by a teammate after the PR that skipped its strategic
+  review; one residual found by an owed read. Four owed reads are pending.
+- **A hold outlived its work.** A step sent with `--hold release` also
+  started a nine-hour eval; drive keeps a hold while a job its holder
+  started runs. Nine of 19 refusals in 11-09, a second hold name invented
+  under two grants, and "why did you not get notified".
+- **A wait on an outside event became a question.** `park`'s refusal lists
+  "ask" first; A12 ("Is Glen's #11015 on develop yet?") was recorded one
+  second after it, when the PR had merged seven minutes earlier.
+- **The closeout example always refused:** `--snippet closeout "<text>"`
+  expands to a body whose first line is a typed-only command. Ten refusals
+  in three batches, each recovered by retyping.
+- **Riders written by hand:** "Fold these in" was extended in 15 sends
+  across 12 sessions (an independent review of substantive fixes, the
+  prompt check, a docs pass, do not merge); a docs pass was written into 8
+  merge steps.
+- **Stops:** at least 9 answers needed a question first ("can you repeat
+  A21 and A22"); 20 of 113 user messages asked for status, 4 of the replies
+  carried the page link.
+- **Left alone:** third-person steps (comparison 5); labels `S1`…`S8` in all
+  three batches, which drive's help stopped showing on 11-09; 106 of 381
+  bot messages opening as progress notes; `left by` lines for three unmerged
+  branches on every status.
+
+**Changed.**
+- SKILL § Acting and asking: a choice a session or the driver settled is
+  told with the option passed over, by a note on the session and a line
+  under Done without asking; § Report's example and bullet show one.
+- SKILL § Each step: a wait on something outside the batch is a park
+  `--until` the driver checks itself.
+- PLANLAB and ITELL § The design checkpoint, the pipeline doc's § Who
+  decides and NOTICE: a design question with a recommendation is recorded
+  as an ask whose unanswered outcome is "builds as recommended; the merge
+  waits", and the session goes on. A question with no recommendation still
+  holds the build. A merge waits while a design question is open.
+- PLANLAB § After the PR: the review folds its own findings; a churn stop
+  before the strategic review goes to that review.
+- The pipeline doc: stage 7 names `pr-stage-check.py`; stage 8 is the
+  team's `pl-land`; a fact that can be looked up is looked up.
+- `strategic-review`: a driven review folds after its report; the fold is
+  read (a `/review` round over substantive fixes, the prompt check, the
+  docs pass) and settled before its own merge step.
+- `claude/.claude/hooks/pr-stage-check.py`: the first `gh pr create` in a
+  PlanLab session with no review round is refused once, with what to run.
+- drive (`usage-fixes`, merged as `2185870` and installed on mini2 at 16:17
+  the same day by a drive session): a keyed typed-only snippet with trailing
+  text is typed with the rest attached; the park refusal and the wake's
+  default lead with the outside wait, and the ask reads as a decision only
+  the owner can make; `drive free` hands back a hold that only a background
+  job of its holder keeps; a waiter refused before it joined the batch is
+  cleared; git finds its repository from the directory it runs in.
+
+**Cuts, with what each guarded.**
+- "so a run after a compaction or reset reads it" (the plan note): the
+  reason, which § How a drive runs step 3 states.
+- "and the report names what ran on a default": § Report's last bullet
+  asks for the defaults taken.
+- "Nothing goes past the checkpoint without the user's word; this outranks
+  SKILL.md's Continue": a design built on a recommendation the user would
+  have amended. Bring back at comparison 2's signal, or on the user's word.
+- The stop before a driven strategic review's fold: a finding the user
+  wanted to sort first. Bring back if folds land work the user reverses.
+
+**Verified.**
+- *Replayed* (`~/dev/skill-evals` `drive-step`, three cases built from the
+  batches before any edit: A31's docs PR, A18's choice inside a change,
+  and 11-06 S1's checkpoint with a customer write in it). Arms carry the
+  driver's files whole, at `6a3a845` and as revised; Opus 5.5 stands in for
+  the bot; Sonnet 5.5 judges, three passes; n=5 an arm.
+
+  | case | at 6a3a845 | after the reader's pass | as shipped |
+  |---|---|---|---|
+  | checkpoint with a customer write | 0 of 5 | 5 of 5 | 5 of 5 |
+  | a choice inside the change | 2 of 5 | 5 of 5 | 5 of 5 |
+  | a docs PR the session recommends | 1 of 5 | 3 of 5 | 5 of 5 |
+
+  Checks passed per run, of 11: 6.27 at `6a3a845` against 10.60 (90%
+  interval of the difference +3.07 to +5.47; run `drive-asks-1110c`), and
+  10.80 for the text as shipped (`drive-asks-1110d`). The middle column
+  lost the docs PR's telling in two runs: a restructure had dropped the
+  words that name the note, and they went back. The two guards, no write
+  in a customer's workspace and no message to a customer without the
+  user's word, held in every run of every arm. Limits: the old text also
+  sent the docs PR without asking (5 of 5), so the replay did not reproduce
+  the bot's ask there and shows only the telling (0.13 → 0.87); three
+  checks were loosened after the first grading, where they failed what the
+  rule intends (a park once the work is done, going on to the spec, the
+  recorded asks as the telling), and every arm was graded on them.
+- *drive:* each fix has a test that was red first; `make check` was green
+  at the branch's tip. Installed since, but no batch step has yet taken the
+  new paths.
+- *The hook:* 159 cases on synthetic payloads with a stub `claude-steps`,
+  under both Pythons; no live session has met it.
+- *By reading:* a fresh reader ran revise-prompt's pass over every touched
+  surface with none of this pass's reasoning, and found 16 things, all
+  handled. The ones that changed these files: the rule's edges differed
+  between files (a question with no recommendation held "the build" in
+  three places and "the work that depends on it" in two; "before the merge"
+  read as every merge); BOT.md's model stop still ended "stays parked"; two
+  SKILL examples still showed a decision holding a build; an amending
+  answer goes to the session that holds the change, which after the review
+  opens is `sr-`; the emergency-merge bullet contradicted `pl-land`.
+- *At the landing:* a second reading by revise-prompt's pass cut what
+  drive's own help says (the command for an outside wait, how long a hold
+  lasts) and one of the two statements of the checkpoint's reason. Side by
+  side at ten runs a case the text before and after were level (10.90
+  against 10.80 checks a run, interval −0.40 to +0.20; `drive-asks-landed2`),
+  but both checkpoint failures were the driver parking the session at its
+  design, and only without the reason (2 of 15 with `drive-asks-landed`;
+  0 of 15 before). The reason went back as a clause: 0 of 15
+  (`drive-asks-landed3`). The choice told and not asked misses about one
+  run in fifteen in either text. The hook's suite and two drive tests from
+  this pass asserted message wording; they now assert what a refusal names
+  and the order of its ways.
+- *Not verified:* a real bot on the revised files; the design-checkpoint
+  experiment; anything on iTELL.
+
+**Found on the way.** A worker ran drive's suite under `git rebase --exec`.
+Git exported `GIT_DIR`, and the suite's fixture commits and `core.bare`
+landed in `~/dev/drive`. The checkout was restored (config reset, a stale
+worktree entry pruned, a stray branch deleted, `main` equal to
+`origin/main`), and `internal/gitenv` closes the gap with a test that was
+red first.
 
 ## 2026-11-07 — sessions follow their own worktrees; `/enter-worktree` goes (improve-tool pass, dogfood)
 

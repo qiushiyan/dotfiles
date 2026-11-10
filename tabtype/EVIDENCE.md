@@ -521,3 +521,59 @@ miscellaneous-fix session where small same-domain items exist? Does "what
 waits" shrink to items that need an answer or a product call? Revise if a
 misc session collides with a focused one in the same code, or if the user
 splits a proposed misc session or merges two focused ones by hand.
+
+## 2026-11-10 — the finish keys follow the team's landing skills; `implement-spec` rereads after a compaction
+
+From an improve-tool pass over the session pipeline (mini2 `427f5995`; its
+scratchpad holds `ledger-C1.md`, `ledger-D.md` and `ledger-M.md`).
+
+**Corpus.** Planlab Claude sessions 10-25 → 11-10 on all three machines:
+221 sessions, 1,428 user-role turns; with drive's sends, consult voices and
+headless probes set aside, 84 hand-driven sessions and 8 mixed, 728 hand
+turns, all read by their first 230 characters. `history.json` is a
+cumulative accept count per key per machine, so it shows "ever used by
+hand", not use in a window.
+
+**Observed.**
+- **The finish is typed as a sentence.** About 40 of 92 sessions typed the
+  docs sync or the PR ("/pl-loopy-handoff sync docs and create the pr"), 14
+  a review with the voice named, 13 "ci is failing / resolve merge
+  conflicts", 10 "merged, deploy taodesk". `land-pr`, `merge-when-ready`,
+  `review-then-closeout`, `recap`, `think-holistic` and
+  `elaborate-questions` have no hand use on any machine; the bot is their
+  only sender. The user's word (11-10): habit, and conciseness; the sentence
+  stays theirs.
+- **The sentence works.** Of 18 short turns asking to create or open the
+  PR, 15 loaded the team's `pl-pr` in the same turn and 10 the docs skill
+  (`ledger-M.md` § M1).
+- **The review is what goes missing.** A review round preceded 2 of those
+  18; of 11 hand `consult-then-build` runs that went on to a PR, 6 had no
+  review turn first.
+- **The planlab finish keys predate the team's flow.** Since 11-05 `pl-pr`
+  hands every PR to `pl-land`, CI runs only on the `ci` label and reviewers
+  only on `codereview`. `land-pr` and `review-then-closeout` still merged
+  develop, opened the PR by hand and waited on `gh pr checks --watch
+  --required`, which stays red until the label is added; `merge-when-ready`
+  did the same and had no docs step, which the bot hand-wrote into 8 merge
+  steps across three batches.
+- **After a compaction a build seldom rereads the spec's Summary or
+  Tenets:** 17 and 14 of 77 mid-build compactions (`ledger-D.md`).
+
+**Changed.**
+- planlab `land-pr` and `review-then-closeout`: the checks step hands the
+  PR to `pl-land` with no merge approval, so it ends at ready to merge. The
+  sync and PR steps stay the snippet's own: the whole of `pl-pr` tidies and
+  rebases commits, which loses the round names a strategic review reads
+  from commit bodies, and stops to ask on flagged commits.
+- planlab `merge-when-ready`: states the approval `pl-land` needs, runs the
+  docs pass again when the branch gained commits, keeps its own sync, then
+  lands through `pl-land`, releases and confirms.
+- `implement-spec`: one more sentence, "After each compaction, reread the
+  spec's Summary and Tenets before you go on."
+- No key was added for the typed sentences. The missing review is caught
+  where the PR opens instead (`claude/.claude/hooks/pr-stage-check.py`).
+
+**Next pass compares** hand `consult-then-build` runs that reach a PR with
+no review round, against 6 of 11; the hook's denials and what followed each;
+and reads covering § Summary or § Tenets after a mid-build compaction,
+against 17 and 14 of 77.

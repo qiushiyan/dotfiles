@@ -52,15 +52,14 @@ still makes sense is yours.
 2. **Plan in one message, and give the user five minutes to veto it.** A
    line per session, the defaults you take, what waits for them. Ask only
    what blocks a session, and hold that session only at the step that needs
-   the answer. Record the plan (`drive record note 'plan: …'`), so a run
-   after a compaction or reset reads it, post it, then wait five minutes in
-   the background (`sleep 300`; a bot arms BOT.md's veto timer) with nothing
-   sent. A later answer counts from then on, and the report names what ran
-   on a default.
+   the answer. Record the plan (`drive record note 'plan: …'`), post it,
+   then wait five minutes in the background (`sleep 300`; a bot arms
+   BOT.md's veto timer) with nothing sent. A later answer counts from then
+   on.
 
    <example>
-   - **1 · pool-drain** (heavy): onboarded → consult-design → design checkpoint, where it waits for your review; then /write-spec, build, review and verify, land-pr, code review, strategic review → merged and released. Defaults: Q1 oldest first, Q2 no flag.
-   - **2 · cache-hits**: review folded in → land-pr, code review, strategic review → merged and released.
+   - **1 · pool-drain** (heavy): onboarded → consult-design → /write-spec and the build on its recommendations, review and verify, land-pr, strategic review → merged and released once you have answered its design questions. Defaults: Q1 oldest first, Q2 no flag.
+   - **2 · cache-hits**: review folded in → land-pr, strategic review → merged and released.
    - **3 · zsh-faster** (dotfiles): built → review-then-closeout → merged and synced.
 
    **Needs you:** window 1's experiment wants workspaces loopy-drain-a and loopy-drain-b; it builds and reviews without them and stops before the experiment.
@@ -92,12 +91,15 @@ ready to build.
   ```
 - **Hold what is the user's at the step that needs it.** Something the
   pipeline doc's § Who decides asks the user stops only the work that depends on it,
-  so the step names what waits: `--snippet implement-spec "D3 and phase 4's
-  EC2 run wait for me: build the rest, commit, and stop before them."` For
+  so the step names what waits: `--snippet implement-spec "D3, which you
+  could not recommend on, and phase 4's EC2 run wait for me: build the rest,
+  commit, and stop before them."` For
   a session whose next step cannot go on without it, record the ask now,
   even for a later step's decision, since a parked session never gets
   there; then park it (`drive park pool-drain@… "<what it needs>"`) and keep
   driving the others.
+- **A wait on something outside the batch is yours to watch**, not the
+  user's to answer: park the session `--until` you should look again.
 - **A background job past its purpose is the session's to stop**, since only
   it knows whether its work still needs the job: send the step drive's
   `next:` gives, never a kill from your shell.
@@ -114,13 +116,13 @@ ready to build.
 
 ## Acting and asking
 
-The user is stopped only for the pipeline doc's two asks, design questions
-at the checkpoint and mutations of production data, and for what only they
-can do. What its § Who decides hands over is yours or a session's, cleanup,
-a gate's evidence and a strategic review included, and what it puts out of
-reach stays there. An ask they did not need holds its work until they next
-look, often hours later. Do the rest and list it under **Done without
-asking** so they can reverse it:
+The user is asked only the pipeline doc's two asks, design questions and
+mutations of production data, and what only they can do. What its § Who
+decides hands over is yours or a session's, cleanup, a gate's evidence and
+a strategic review included, and what it puts out of reach stays there. An
+ask they did not need holds its work until they next look, often hours
+later. Do the rest and list it under **Done without asking** so they can
+reverse it:
 
 - the closeout once the merge or deploy it waits on has happened, the
   follow-up cards sessions recommend, your own waits;
@@ -132,6 +134,14 @@ asking** so they can reverse it:
   tool's is its closeout);
 - once a session's last step has run, `drive cleanup`; a `left by` line is
   reported once, never asked.
+
+A choice you or a session settled is told the same way, not asked: note it
+on the session, where their page shows it, with the option passed over and
+what it would have cost:
+
+```bash
+drive record note --session search 'Decided: per-hit ranks stay out of this milestone, as Search recommends; building them now adds a day. Say so to bring them back.'
+```
 
 A prompt is a step too: approve what the pipeline doc's § Who decides hands
 to sessions, such as an edit in the session's own change or a read of
@@ -153,7 +163,7 @@ Ask once, standing alone (§ Report); every wake, act on `drive status`'s open a
 
 ```bash
 drive record ask pool-drain --question '…' --recommendation '…' --if-unanswered '…'    # → A3
-drive record answer A3 --source '<their words>' --took amended --explained 'I agree; write the spec.'   # the step goes to pool-drain as well
+drive record answer A3 --source '<their words>' --took amended --explained 'Keep the flag after all: rework what depends on it.'   # the step goes to pool-drain as well
 drive record answer A3 --took moot --source '<what showed it no longer holds>'
 ```
 
@@ -215,7 +225,9 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
 - **One closeout into a main checkout, and one release, at a time**, and so
   for anything else only one session may do, such as commits into a checkout
   others share. Name what it uses with `--hold`, by one name only, since a
-  step sent under a second runs beside the holder:
+  step sent under a second runs beside the holder, and on a step that
+  carries only that work, since a job the step starts keeps the hold after
+  its turn ends:
 
   ```bash
   drive send cache-hits@… --snippet closeout --hold planlab-main
@@ -243,6 +255,7 @@ decide from costs a round trip, so each item stands alone:
 **Done without asking**
 - Closed #9254's block and removed its worktree `run-state/adoption-and-parks`.
 - Filed QIU-280, a backlog card: importPlan charges each edit row a flat 1 KiB, about a third of its real size.
+- Kept per-hit ranks out of Search's first milestone, as it recommended. Building them now would add a day for a comparison the second round already explained. Say so to bring them back.
 - Left the `qiu-272` block open: its input box holds an unsent line.
 
 **Waiting on time**
@@ -253,8 +266,8 @@ decide from costs a round trip, so each item stands alone:
   or a merge the user held: what it is, why now, who using the product
   would notice each option, or that nobody would, the recommendation, and
   what happens unanswered. If nothing, say so.
-- **Done without asking:** what you did on your own authority, and what you
-  left in place and why.
+- **Done without asking:** what you did or decided on your own authority,
+  a choice with the option passed over, and what you left in place and why.
 - **Waiting on time:** reads or checks owed on a date.
 - **A section per session,** by window and label:
   - where it ended: finished (the PR, how its code review ended, the merge

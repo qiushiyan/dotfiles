@@ -5,6 +5,56 @@ found, what changed and how it was checked. This changelog is the short
 form, one line per change with the principle behind it, for a reader who
 wants the shape of the skill's history before the receipts.
 
+## Decisions that stand
+
+- **The bar owns the shape; the project owns placement** (09-18).
+- **Formats make a gap visible instead of forbidding it** (09-21): `Today:`
+  and `After:` lines, the state table, held-by lines, numbered obligations.
+- **Unknowns the design turns on are settled by running them before the
+  spec is ready** (09-18).
+- **Length is not a quality bar** (11-10, replacing 10-29's 4,000 and 6,000).
+  Across 49 builds from 1,959 to 12,797 words nothing measured got worse
+  with size. The bar asks that each binding rule sit under a heading that
+  names it or in a numbered obligation, which is how builds return to it.
+- **One cold read, then the build's pickup is the next reader** (11-10).
+  Re-reads never converged and seven of nine final revisions went unread
+  anyway.
+- **The validation consult stays** (11-10): 5 to 10 minutes, code-cited
+  defects, none of ten voices raising a foundational objection.
+- **The user does not read the spec** (their word, 11-10). Its readers are
+  the cold validator and the build after each compaction; the report is the
+  user's surface.
+
+## Open comparisons
+
+Each is a measurement the next pass can run. Answer or retire them before
+adding more.
+
+1. **Run time.** Predicate: invocation to the report turn, as in the 11-10
+   entry. Baseline: median 53 minutes (37 to 80, n=9), the checks 60 to 70%
+   of it. After the one-read rule: the next five runs. Expected about 30 to
+   35. Revise if the checks still take over 25 minutes.
+2. **What a second read would have caught.** Predicate: a build departure or
+   a review finding that traces to an ambiguity in the spec as built from.
+   Baseline: none traced in 8 builds, with two or three reads each. Reverse
+   the one-read rule at two in the next ten builds.
+3. **Rules the checks added that the build or its review removed.**
+   Baseline: 2 of 9 runs (`f9153d42`, `56d867aa`). After the reaches test
+   for folds and the check of a reader's claim at the file: the next nine.
+4. **Re-anchoring after a compaction.** Predicate: of mid-build compactions,
+   the share followed within 40 tool calls by a read covering § Summary or §
+   Tenets. Baseline: 17 and 14 of 77; rules forgotten by a build, 2 of 56,
+   both stated in the Summary. After `implement-spec` asks for the reread:
+   the next ten builds. If the share does not move, the line did not survive
+   compaction and the home is a hook at compaction.
+5. **Size, as telemetry.** First commit median 5,971 words, final 6,810
+   (n=9). No action is tied to it unless run time grows with it.
+
+Retired: "reports name what earned the words past 6,000" (10-29; 7 of 9 did,
+and the exit is gone); whole reads against ranges (answered 11-10: one whole
+read, then ranges, at every size); build-side discoveries against size
+(answered 11-10: no relation).
+
 ## Changelog
 
 - **2026-08-31 — founded from the snippet family.** The hand-typed
@@ -59,6 +109,17 @@ wants the shape of the skill's history before the receipts.
   limits. Unvalidated until runs support it. Principle: what a cold reader
   cannot pin is as often a decision the spec never made as a loose word,
   so the rule asks for the binding and sends an open one to its decider.
+
+- **2026-11-10 — one cold read, and size is no longer a bar.** Nine runs
+  since 10-29 took a median 53 minutes, most of it in two or three cold
+  reads that never converged; the consult found real defects in minutes.
+  Step 4 is one pass. A finding that asks for handling names what reaches
+  the case, and a reader's claim about code is checked at the file. The
+  word ceiling and its "earned" exit are gone: across 49 builds size
+  changed nothing measurable, and builds return by obligation number and
+  heading. `implement-spec` asks for § Summary and § Tenets again after
+  each compaction. Principle: a check that never comes back clean is not a
+  gate, and a number is a rule only when something degrades past it.
 
 Held constant through every pass: the premises section, the summary
 block, the situations and the ordered delivery, which carried every
@@ -1181,4 +1242,126 @@ the October median of 7,827 words before As built:
 **Revise or reverse if:** a build misses a binding decision the shorter
 spec dropped; the cold read starts returning gaps in Design that earlier
 specs covered; or reports name "earned" past 6,000 as a routine.
+
+## 2026-11-10 — one cold read; size against what builds do (improve-tool pass, mini2 `427f5995`)
+
+**Ask.** The user finds write-spec slower and more verbose than it should
+be, thinks writing answers back helps, and suspects the consult's revision
+rounds are mostly wording or conceptual. Later the same day: they never read
+the spec; its worth is as the anchor a long build returns to across
+compactions; is a size cap empirical or arbitrary?
+
+**Corpus.** Obelisk on all three machines. Runs: user turns holding
+`<command-name>/write-spec`, 9 since `31a662c` (10-29), 8 planlab and 1
+itell, 7 driven; the ten before it for timings. Specs at each commit from
+planlab's object store on mini2 (7 of 9; two sizes are the reports' own).
+Consult results from mini2's envoy store (10 voices, 5 runs). Builds: 56
+sessions sent `implement-spec` since 09-18, 49 with a size at the version
+the build read. Ledgers and raw files: that session's scratchpad,
+`ledger-B.md`, `ledger-D.md`.
+
+**Comparisons answered** (10-29's "next pass compares").
+- Size: first commit median 5,971, final 6,810, against October's 7,827.
+  None near 4,000. Growth through the checks: median +12%.
+- The report: 9 of 9 state the size, 8 of 9 the growth, 7 of 9 are over
+  6,000 and name what earned it; the other two sit at 5,904 and 5,999. The
+  10-29 reversal signal fired.
+- How builds read: whole once (9 of 9), then 111 `sed -n` ranges and 92
+  greps against 34 whole reads.
+- Build-side discoveries: review found a serious build bug in at least 3 of
+  8 builds traced; none traced to a spec gap.
+
+**Observed.**
+- **Where the time goes.** Invocation to first write: median 13 minutes.
+  Checks to report: median 37, which is 60 to 70% of a run. One cold read
+  takes 9 to 15 minutes; two cost 23 to 26 minutes of checks, three 37 to
+  42. The consult returns in 5 to 10, as a continuation of the design round.
+- **Cold reads do not converge.** Gaps per pass: 10 → 9 → 6, 12 → 4 → 6,
+  12 → 9 (floors; stored reports are capped). Seven of nine reports say the
+  last fold was never re-read. In the third-read folds of four runs about
+  21 of 59 hunks change a rule; the rest pin wording or cut.
+- **The reader's model.** Step 4 named `opus`, "a different model from the
+  writer's"; the writers ran Opus, and four reports flag it.
+- **The consult is not the wording round.** Its voices spend 55 to 75% of
+  their words on code-cited breaks and about 10% on tenet verdicts. Both
+  voices ran `4d9f0eae`'s proof method and broke it (fold
+  `251e4652701→8105c458db2`); `dab6cfd3`'s fold scoped a rule that would
+  have refused every in-process snapshot. Across six itemised runs the
+  design consult and the spec checks removed about 14 rules that would have
+  been built wrong (ledger C2).
+- **Checks also add what is later removed.** `f9153d42`: a cold read's
+  claim that the chat does not remount became a `Today:` line and a rule;
+  the build removed it ("I got this wrong in the spec"). `56d867aa`: folds
+  grew symlink handling from 3 to 9 mentions and added a frame re-proof;
+  review cut both ("production holds 0 in 40,283 rows").
+- **Write-back** took two minutes in each of the two runs that did it,
+  just before `/compact`.
+- **Size against use** (49 builds, 1,959 to 12,797 words). After 77
+  mid-build compactions: 3 whole re-reads, 47 range reads, 2 greps, 25 with
+  nothing in 40 calls, of which 20 came back before the next compaction.
+  Rank correlations with size are near zero (re-read share −0.02, spec
+  edits 0.13, departure mentions 0.13); the one correlate is the change's
+  own size (0.29). Rules forgotten: 2 of 56 builds, both in the Summary.
+  Builds name obligation numbers (509 mentions, 50 builds) and `§` headings
+  (325, 44 builds); tenets 52 mentions in 17 builds. One clean build sits
+  under 4,500 words, so a cap there cannot be tested either way.
+
+**Verdict on the hunch.** Slow and long: yes. The consult rounds as the
+cause: no. The cost is the cold-read loop, and a cap would cut binding
+design to no measured gain.
+
+**Changed.**
+- SKILL step 4: both readers once, one fold. An ambiguity is resolved where
+  a builder taking the reader's guess would build wrong. What the reader
+  says the code does is checked at the file. A finding that asks for
+  handling names what reaches the case, or the case becomes a non-goal.
+- The reader's model is no longer named.
+- SPEC-BAR Size: no ceiling. A binding rule sits under a heading that names
+  it or in a numbered obligation. Past about 6,000 words, cut what the
+  build owns before adding more. The done condition drops the word test.
+- SKILL step 5 drops "names the decisions that earned it".
+- The opening no longer says the user approves the document.
+- `implement-spec` (TabType): reread § Summary and § Tenets after each
+  compaction.
+
+**Cuts, with what each guarded.**
+- The re-read loop and COLD-READ's two re-read inputs: a fold that changed
+  the reconstruction going unread. Bring back at comparison 2's signal.
+- The 6,000-word done condition and "earned": drift back toward October's
+  sizes. Bring a number back if run time grows with size.
+- "let me read it first": a user who reads the spec before the checks. Not
+  used in the nine runs. Bring back on the user's word.
+- "on the `opus` model, a different model": a reader that shares the
+  writer's blind spots. No run shows it mattered either way.
+- "a fold that adds words pays with a cut": growth through the checks.
+  Bring back if run time grows with size.
+
+**Not established.** Whether a build with the code open would have caught
+the consult's findings itself. The first folds, hunk by hunk. Whether the
+`implement-spec` line survives a compaction. Tokens and cost.
+
+**Verified.**
+- *The existing guard case* (`~/dev/skill-evals` `write-spec/idempotency-spec`,
+  run `write-spec-cand-1110`, the revised skill as a directory, n=3, Opus
+  5.5, three judge passes): schema, resend, header, workers, cli, open,
+  committed and report-size all 3 of 3. Sizes 2,221, 2,653 and 2,613 words
+  against a median 3,193 at `31a662c`; Verification 325, 325 and 335 words
+  against 386. The judge marked build-owned down (0.17 over two decided
+  runs) from transcripts it says were truncated; read whole, the three kept
+  specs carry numbered obligations that name what is observed and no
+  per-case lists. The case runs with "skip the checks", so it does not
+  exercise step 4.
+- *Step 4 itself* is untested: no replay holds a consult and a cold read.
+  Its claim is comparison 1, measured on the next live runs.
+- *By reading:* a fresh reader ran revise-prompt's pass over every touched
+  surface with none of this pass's reasoning. For write-spec it found two
+  things, both fixed. Step 4 still said a fold that adds words pays with a
+  cut while the bar now asks for cuts only past about 6,000 words: the
+  step's sentence went (it guarded growth through the checks, median +12%;
+  bring it back if run time grows with size). And "the reader opens no
+  code" overstated COLD-READ, which only leaves code unrun: the reader in
+  `f9153d42` did cite a file. It also found consult's Traps bullet still
+  sending every trap to "the spec's test plan" as a planned case; consult
+  now sharpens a § Verification obligation when something reaches the
+  case, and names a non-goal when nothing does.
 

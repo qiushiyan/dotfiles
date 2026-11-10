@@ -5,9 +5,9 @@ merged PR that staging serves, and on to production under the user's grant.
 
 ## The design checkpoint
 
-A batch whose designs are unsettled holds every session at its design, in
-one report once all are in; a session handed over already past its design
-goes straight on. After onboarding, each gets the same design stage:
+A batch whose designs are unsettled shows the user every design in one
+report once all are in; a session handed over already past its design goes
+straight on. After onboarding, each gets the same design stage:
 
 ```bash
 drive send invite-links@… --snippet consult-design   # it ends with its decisions
@@ -15,14 +15,15 @@ drive send invite-links@… --snippet spike-check      # next, where the design 
 ```
 
 Once a session's design reply is in (it stands in for its recap), record
-its questions for the user as asks (with none, whether to go ahead) and
-park it. Until all are in, message the user only for a decision
-that holds a session. The report gives, per session, the design in a few lines, what the
-spikes showed and your call on a spec; ask the design questions the pipeline
-doc's § Who decides names, each as one question with what it changes, and
-list the technical choices as the defaults the sessions will take. Nothing
-builds past it without the user's word; the answers then go as
-`/write-spec @<answers>` or `--snippet implement-now '<answers>'`.
+its design questions as asks whose `--if-unanswered` says it builds as
+recommended and the merge waits, then send it on: `/write-spec Go with your
+recommendations.` or `--snippet implement-now`. A question it gives no
+recommendation for holds only the work that depends on it. The report gives, per session, the design
+in a few lines, what the spikes showed and your call on a spec; ask the
+design questions the pipeline doc's § Who decides names, each as one
+question with what it changes, and list the technical choices as the
+defaults taken. An answer that amends a design goes to its session at once,
+and a merge waits while a design question about its session is open.
 
 ## Opening a session
 
@@ -145,7 +146,7 @@ drive send invite-links@… --snippet strategic-review-brief   # the builder wri
 drive open sr-invite-links --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
 drive open sr-invite-links --model fable …                   # the same, when the user wants it on Fable
 drive send invite-links@… --snippet recap                    # then close invite-links
-drive send sr-invite-links@… 'Fold these in.'                # once the review reports
+drive send sr-invite-links@… "F2: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user
 ```
 
 Merging is yours once the stages have run with a passed verdict at the PR
