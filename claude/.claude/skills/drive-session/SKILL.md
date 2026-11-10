@@ -218,7 +218,7 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
 
   ```bash
   drive send cache-hits@… --snippet closeout --hold planlab-main
-  drive send cache-hits-review@… --snippet merge-when-ready --hold release
+  drive send sr-cache-hits@… --snippet merge-when-ready --hold release
   ```
 - **A message from another session waiting for approval stays undelivered**:
   delivering it wakes the session into work no step sent.

@@ -142,10 +142,10 @@ verifies in a lane of its own, folds the findings in and merges:
 
 ```bash
 drive send invite-links@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
-drive open invite-links-review --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
-drive open invite-links-review --model fable …               # the same, when the user wants it on Fable
+drive open sr-invite-links --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
+drive open sr-invite-links --model fable …                   # the same, when the user wants it on Fable
 drive send invite-links@… --snippet recap                    # then close invite-links
-drive send invite-links-review@… 'Fold these in.'            # once the review reports
+drive send sr-invite-links@… 'Fold these in.'                # once the review reports
 ```
 
 Merging is yours once the stages have run with a passed verdict at the PR
@@ -155,7 +155,7 @@ grant`). One session merges at a time, the review session where one ran, and
 it carries the PR to its end:
 
 ```bash
-drive send invite-links@… --snippet merge-when-ready --hold itell-main   # invite-links, or invite-links-review where a review ran: merge, follow staging, check what a visitor sees
+drive send invite-links@… --snippet merge-when-ready --hold itell-main   # invite-links, or sr-invite-links where a review ran: merge, follow staging, check what a visitor sees
 # the Browser Test bot runs the signed-in staging check
 drive send invite-links@… --file /tmp/invite-links-deploy.md             # under the grant: the release, § The production deploy
 drive send invite-links@… --snippet recap

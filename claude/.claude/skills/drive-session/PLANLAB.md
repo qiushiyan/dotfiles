@@ -114,13 +114,13 @@ and releasing are yours unless the user says "hold merges":
 
 ```bash
 drive send summary-decisions@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
-drive open summary-decisions-review --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
-drive open summary-decisions-review --model fable …               # the same, when the user wants it on Fable
+drive open sr-summary-decisions --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
+drive open sr-summary-decisions --model fable …                   # the same, when the user wants it on Fable
 drive send summary-decisions@… --snippet recap                    # then close summary-decisions; its branch and worktree wait for the cleanup after the merge
-drive send summary-decisions-review@… 'Fold these in.'            # once the review reports; the skill says how
-drive send summary-decisions-review@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
-drive send summary-decisions-review@… --snippet recap
-drive send summary-decisions-review@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
+drive send sr-summary-decisions@… 'Fold these in.'                # once the review reports; the skill says how
+drive send sr-summary-decisions@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
+drive send sr-summary-decisions@… --snippet recap
+drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
 ```
 
 - Once the stages the pipeline doc's § Who decides lists have run,
