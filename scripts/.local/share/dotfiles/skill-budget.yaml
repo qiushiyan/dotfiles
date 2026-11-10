@@ -43,7 +43,10 @@ skills:
   # and joined S1-S6 from examples that showed T1 and S1 (+21 body, +32 total)
   # raised 2026-11-09 on the user's word: a strategic review, or any session, runs on Fable
   # when the user asks, and the project files' review blocks show the open's --model (+32 total)
-  drive-session: {body: 2518, total: 9138}
+  # raised 2026-11-10 (batch 2026-11-09): a hold keeps one name; a driver got past a release
+  # an eval kept by sending under a second name, which 18 steps then took, so two releases
+  # could have run at once (+12 body, +12 total)
+  drive-session: {body: 2530, total: 9150}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it

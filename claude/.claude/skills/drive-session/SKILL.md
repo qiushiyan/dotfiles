@@ -98,9 +98,9 @@ ready to build.
   even for a later step's decision, since a parked session never gets
   there; then park it (`drive park pool-drain@… "<what it needs>"`) and keep
   driving the others.
-- **A background job past its purpose is the session's to stop**: send the
-  step drive's `next:` gives, never a kill from your own shell. The session
-  started the job and knows whether its work still needs it.
+- **A background job past its purpose is the session's to stop**, since only
+  it knows whether its work still needs the job: send the step drive's
+  `next:` gives, never a kill from your shell.
 - **A session back from a Rex restart** lost every background job and agent
   it ran, and a turn the restart cut short wakes `interrupted`. Its next
   step says so: `Rex restarted and ended this session mid-turn; any
@@ -214,7 +214,8 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
   one session's offer to do what another already does.
 - **One closeout into a main checkout, and one release, at a time**, and so
   for anything else only one session may do, such as commits into a checkout
-  others share. Name what it uses with `--hold`:
+  others share. Name what it uses with `--hold`, by one name only, since a
+  step sent under a second runs beside the holder:
 
   ```bash
   drive send cache-hits@… --snippet closeout --hold planlab-main
