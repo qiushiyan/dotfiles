@@ -230,8 +230,8 @@ define{
   end,
 }
 
--- prefix Z: a throwaway shell floating over the tab, in the pane's directory,
--- as tmux's prefix Z popup is. One per tab, toggled: pressed inside it, it
+-- ctrl+` (or prefix Z, as tmux's popup was): a throwaway shell floating over
+-- the tab, in the pane's directory. One per tab, toggled: pressed inside it, it
 -- hides (minimized, still running, so an nvim or a pull survives); pressed
 -- from a pane, it comes back focused. A shell idle at its prompt in another
 -- directory than the pane's is replaced by a fresh one there, since being

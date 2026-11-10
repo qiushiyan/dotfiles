@@ -110,6 +110,8 @@ r, q, e = press("scratch", A, SLEEP)
 local sw, sl, sb = scratch_layer()
 ok("scratch floats a shell in the pressed pane's tab", sb ~= nil and r.opened == sb and sw == w1.window_id
   and sl.kind ~= "tiled" and sl.state ~= "minimized", e or dump(r))
+ok("scratch floats it centred, three quarters of the tab", sl and sl.bounds and sl.bounds[1] == 0.125
+  and sl.bounds[2] == 0.125 and sl.bounds[3] == 0.75 and sl.bounds[4] == 0.75, dump(sl and sl.bounds))
 local proc = sb and rex.block.call("com.superlogical.terminal", "process", { session_id = S, block_id = sb, args = {} })
 local scwd = proc and (proc.foreground or proc.child or {}).cwd
 ok("scratch starts in the pane's directory", scwd == "/tmp" or scwd == "/private/tmp", dump(proc))

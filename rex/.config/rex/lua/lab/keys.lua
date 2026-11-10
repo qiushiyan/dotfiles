@@ -27,6 +27,9 @@ local root = {
   -- alt+cmd+.: the focused agent's floating status chip, beside the app's own
   -- cmd+. (Toggle Activity); shift+cmd+. is its Dismiss Notice.
   { "alt+cmd+.", "chip_toggle" },
+  -- ctrl+`: the scratch shell floating over the tab, in the pane's directory;
+  -- the same key inside it hides it (lab.panes). prefix Z does the same.
+  { "ctrl+`", "scratch" },
   -- ctrl+v: on another host's pane, the clipboard goes there first (lab.tools).
   { "ctrl+v", "paste_clipboard" },
 }
