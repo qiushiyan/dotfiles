@@ -98,9 +98,8 @@ ready to build.
   even for a later step's decision, since a parked session never gets
   there; then park it (`drive park pool-drain@… "<what it needs>"`) and keep
   driving the others.
-- **A wait on something outside the batch is yours to watch**: park the
-  session until you should look again (`drive park streaming@… --until 2h
-  "waits for #11015 to merge"`) and check it yourself then.
+- **A wait on something outside the batch is yours to watch**, not the
+  user's to answer: park the session `--until` you should look again.
 - **A background job past its purpose is the session's to stop**, since only
   it knows whether its work still needs the job: send the step drive's
   `next:` gives, never a kill from your shell.
@@ -227,8 +226,8 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
   for anything else only one session may do, such as commits into a checkout
   others share. Name what it uses with `--hold`, by one name only, since a
   step sent under a second runs beside the holder, and on a step that
-  carries only that work: a hold lasts while any job the step started runs,
-  so a release sent with an eval stays held until the eval ends.
+  carries only that work, since a job the step starts keeps the hold after
+  its turn ends:
 
   ```bash
   drive send cache-hits@… --snippet closeout --hold planlab-main

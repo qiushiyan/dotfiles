@@ -58,9 +58,10 @@ typeset -a HOOK_ENV=(HOME="$H" XDG_STATE_HOME="$STATE" PATH="$BIN:$BARE")
 # (3.9), the floor the hook must stay compatible with.
 typeset -aU PYS=(${commands[python3]} /usr/bin/python3(N))
 
-MSG='No review round has run in this session, and this command opens a pull request. For a change that alters behaviour, the review and the verification come first: read the `loopy-review-verify` entry in ~/dev/planlab/main/.tabtype.local.toml, do what it says, fix what you confirm, then run this command again. For a docs-only change, a review that ran in another session, or a review the user told you to skip, run the command again as it is and say in your report which it was.'
-PROMPTS='If the change touches text a model reads (a prompt, a tool'\''s description or result, a skill), the `loopy-prompt-check` entry in the same file comes before the pull request too.'
-BOTH="$MSG"$'\n\n'"$PROMPTS"
+# What a refusal must tell the session, from the hook's PROJECTS table: the
+# review snippet and the file that holds it, and the prompt check's snippet
+# when that has not run either. The message's wording is the hook's own.
+REVIEW='loopy-review-verify' FILE='~/dev/planlab/main/.tabtype.local.toml' PROMPTS='loopy-prompt-check'
 
 pass() { (( PASS++ )) || true; print -r -- "PASS ${1//$'\n'/⏎}" }
 fail() {
@@ -98,15 +99,18 @@ payload() {
 hook() { OUT=$(print -r -- "$2" | env -i $HOOK_ENV "$1" "$HOOK" 2>&1); RC=$? }
 newsid() { SID="prsc-test-$$-$(( ++NSID ))" }
 
-# refused <label> <cwd> <command> [<text>]: exit 2 with the message (exactly
-# <text> when given), a marker for the session, and claude-steps asked.
+# refused <label> <cwd> <command> [review]: exit 2 with a message that names
+# the review snippet and its file, and the prompt check's snippet unless
+# `review` says a prompt check ran; a marker for the session, and claude-steps
+# asked.
 refused() {
   local label="$1" cwd="$2" cmd="$3" py
   for py in $PYS; do
     newsid; hook "$py" "$(payload "$SID" "$cwd" "$cmd")"
     if (( RC != 2 )); then fail "want refused, got rc=$RC [$py]  $label" "$OUT"
-    elif (( $# > 3 )) && [[ "$OUT" != "$4" ]]; then fail "refused in other words [$py]  $label" "$OUT"
-    elif [[ "$OUT" != "$MSG"* ]]; then fail "refused in other words [$py]  $label" "$OUT"
+    elif [[ "$OUT" != *"$REVIEW"* || "$OUT" != *"$FILE"* ]]; then fail "refused without naming the review snippet and its file [$py]  $label" "$OUT"
+    elif [[ "${4-}" == review && "$OUT" == *"$PROMPTS"* ]]; then fail "names the prompt check though one ran [$py]  $label" "$OUT"
+    elif [[ "${4-}" != review && "$OUT" != *"$PROMPTS"* ]]; then fail "refused without naming the prompt check [$py]  $label" "$OUT"
     elif [[ ! -e "$MARKERS/$SID" ]]; then fail "refused without a marker [$py]  $label"
     elif ! asked "$SID"; then fail "refused without asking claude-steps [$py]  $label"
     else pass "(refused) $label"; fi
@@ -141,13 +145,13 @@ quiet() {
 
 # --- no review step: refused, and the message names what to run ----------------
 says ok
-refused "main checkout, no review and no prompt check: both paragraphs" "$MAIN" "gh pr create --fill" "$BOTH"
-refused "a worktree: both paragraphs" "$WT" "gh pr create --fill" "$BOTH"
-refused "below a worktree's root" "$WT/src" "gh pr create --fill" "$BOTH"
-refused "a cwd spelled through a symlink" "$SBX/link" "gh pr create --fill" "$BOTH"
+refused "main checkout, no review and no prompt check: both named" "$MAIN" "gh pr create --fill"
+refused "a worktree: both named" "$WT" "gh pr create --fill"
+refused "below a worktree's root" "$WT/src" "gh pr create --fill"
+refused "a cwd spelled through a symlink" "$SBX/link" "gh pr create --fill"
 says ok onboard spec build prompts
-refused "main checkout, a prompt check ran: the first paragraph alone" "$MAIN" "gh pr create --fill" "$MSG"
-refused "a worktree, a prompt check ran: the first paragraph alone" "$WT" "gh pr create --fill" "$MSG"
+refused "main checkout, a prompt check ran: the review alone" "$MAIN" "gh pr create --fill" review
+refused "a worktree, a prompt check ran: the review alone" "$WT" "gh pr create --fill" review
 
 # --- once per session ------------------------------------------------------------
 says ok
@@ -284,9 +288,9 @@ silent asked "a state directory that cannot be made" "$MAIN" "gh pr create --fil
 # Without XDG_STATE_HOME, or with it empty, the markers go under ~/.local/state.
 MARKERS="$H/.local/state/claude-hooks/pr-stage-check"
 HOOK_ENV=(HOME="$H" PATH="$BIN:$BARE")
-refused "XDG_STATE_HOME unset: the marker is under ~/.local/state" "$MAIN" "gh pr create --fill" "$BOTH"
+refused "XDG_STATE_HOME unset: the marker is under ~/.local/state" "$MAIN" "gh pr create --fill"
 HOOK_ENV=(HOME="$H" XDG_STATE_HOME= PATH="$BIN:$BARE")
-refused "XDG_STATE_HOME empty: the same" "$MAIN" "gh pr create --fill" "$BOTH"
+refused "XDG_STATE_HOME empty: the same" "$MAIN" "gh pr create --fill"
 
 # --- the real state directory ------------------------------------------------------
 leaked=("$REAL_STATE"/prsc-test-*$$*(N) "$REAL_STATE:h"/prsc-test-*$$*(N))

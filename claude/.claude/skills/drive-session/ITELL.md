@@ -146,7 +146,7 @@ drive send invite-links@… --snippet strategic-review-brief   # the builder wri
 drive open sr-invite-links --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
 drive open sr-invite-links --model fable …                   # the same, when the user wants it on Fable
 drive send invite-links@… --snippet recap                    # then close invite-links
-drive send sr-invite-links@… 'Fold these in. On F2, <the user's answer>.'   # only to a review that stopped on a finding it could not recommend on
+drive send sr-invite-links@… "F2: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user
 ```
 
 Merging is yours once the stages have run with a passed verdict at the PR

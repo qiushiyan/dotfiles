@@ -10,11 +10,9 @@ judgeable. The journey that produced the spec (job names, consult rounds and
 their finding counts, the scope cut's history, decision logs) goes in the
 report, not the spec; each decision's reason and evidence stay in.
 
-**Size.** A build reads the spec whole once, then comes back to it after
-each compaction by obligation number, heading and term, whatever its
-length. So a binding rule sits under a heading that names it or in a
-numbered obligation, where the build finds it again. Length costs writing
-and checking time, not build quality. The user asks for specs "high level,
+**Size.** The build comes back to the spec after each compaction by
+heading, obligation number and term, so a binding rule sits under a heading
+that names it or in a numbered obligation. The user asks for specs "high level,
 without implementation details": what § Before you finish leaves to the
 build, not the interfaces, states and wiring that bind. Past about 6,000
 words outside code blocks, cut what the build owns and what restates a

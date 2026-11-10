@@ -7,11 +7,10 @@ closeout.
 ## The design checkpoint
 
 When a batch starts sessions whose design is not settled, the user sees
-every design in one report, once all of them have reached it. They nearly
-always take the recommendation, and a night parked at the design costs more
-than the rare rebuild, so a session that recommends an answer builds on it,
-and only its merge waits for the user's word. A session handed over already
-past its design goes straight on.
+every design in one report, once all of them have reached it. A session
+that recommends an answer builds on it, and only its merge waits for the
+user's word (the pipeline doc's § Who decides). A session handed over
+already past its design goes straight on.
 
 After onboarding, every such session gets the same design stage, whatever
 its path:
@@ -119,7 +118,7 @@ drive open sr-summary-decisions --dir ~/dev/planlab/main --goal 'Review #9531 be
 drive open sr-summary-decisions --model fable …                   # the same, when the user wants it on Fable
 drive open sr-summary-decisions --model fable --effort xhigh …    # only when the user asks for xhigh; their settings run Fable at high
 drive send summary-decisions@… --snippet recap                    # then close summary-decisions; its branch and worktree wait for the cleanup after the merge
-drive send sr-summary-decisions@… 'Fold these in. On F3, <the user's answer>.'   # only to a review that stopped on a finding it could not recommend on
+drive send sr-summary-decisions@… "F3: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user
 drive send sr-summary-decisions@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
 drive send sr-summary-decisions@… --snippet recap
 drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
