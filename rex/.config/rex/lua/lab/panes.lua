@@ -230,26 +230,61 @@ define{
   end,
 }
 
--- prefix Z: a throwaway shell below the pane, in its directory; prefix Z
--- again (or exiting the shell) closes it. A split, since floating layers do
--- not take keys yet.
+-- prefix Z: a throwaway shell floating over the tab, in the pane's directory,
+-- as tmux's prefix Z popup is. One per tab, toggled: pressed inside it, it
+-- hides (minimized, still running, so an nvim or a pull survives); pressed
+-- from a pane, it comes back focused. A shell idle at its prompt in another
+-- directory than the pane's is replaced by a fresh one there, since being
+-- in the pane's directory is the point; one running a program comes back as
+-- it is. Exiting the shell closes it.
+local SCRATCH = "scratch"
+local SCRATCH_BOUNDS = { x = 0.125, y = 0.125, w = 0.75, h = 0.75 }
+local SHELLS = { zsh = true, bash = true, sh = true, fish = true, login = true }
+
+-- The scratch float's layer in WINDOW and its block, else nil.
+local function scratch_of(window)
+  for _, layer in ipairs((window and window.layers) or {}) do
+    if layer.kind ~= "tiled" then
+      for _, b in ipairs(layer.blocks or {}) do
+        if b.label == SCRATCH then return layer, b.block_id end
+      end
+    end
+  end
+end
+
 define{
   name = "scratch",
-  title = "Scratch Shell",
-  args = action.schema({}),
+  title = "Scratch Shell, Floating",
+  -- command: the argv to run instead of a login shell (the tests' stand-in).
+  args = action.schema({ command = { type = "array", items = { type = "string" } } }),
   run = function(ctx, args)
     local sid, bid = action.block(ctx, args)
     if not (sid and bid) then return { opened = false } end
-    local view = api.call("session.view", { session_id = sid })
-    for _, b in ipairs(layout.blocks(layout.window_of(view, bid))) do
-      if b.label == "scratch" then
-        api.call("block.close", { session_id = sid, block_id = b.block_id })
-        return { closed = b.block_id }
-      end
+    local window = layout.placement(api.view(sid), bid)
+    if not window then return { opened = false, reason = "the pane is in no tab" } end
+    local layer, float = scratch_of(window)
+    if float == bid then
+      api.call("session.set_layer_state", { session_id = sid, layer_id = layer.layer_id, state = "minimized" })
+      return { hidden = float }
     end
-    local block = api.split(sid, bid, { direction = "vertical", ratio = 0.65, label = "scratch",
-      cwd = api.cwd(sid, bid), focus = true })
-    return { opened = block }
+    local cwd = api.cwd(sid, bid)
+    if float then
+      local fg = api.foreground(sid, float)
+      local idle = fg and SHELLS[(fg.name or ""):gsub("^.*/", ""):gsub("^%-", "")]
+      if not (idle and cwd and fg.cwd and fg.cwd ~= cwd) then
+        api.call("session.set_layer_state", { session_id = sid, layer_id = layer.layer_id,
+          state = "normal", focus = true })
+        return { shown = float }
+      end
+      api.close(sid, float)
+    end
+    local r = api.call("session.new_layer", {
+      session_id = sid, window_id = window.window_id, bounds = SCRATCH_BOUNDS,
+      layout = rex.layout.block{ flavor = api.SHELL, label = SCRATCH,
+        options = { cwd = cwd, command = args.command, login = args.command and false or nil } },
+      focus = true,
+    })
+    return { opened = r.block_ids and r.block_ids[1], layer = r.layer_id, replaced = float }
   end,
 }
 

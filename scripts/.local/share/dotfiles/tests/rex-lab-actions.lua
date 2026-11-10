@@ -5,8 +5,8 @@
 --
 -- Every pane it opens runs a command with login = false. A pane with no
 -- command is the account's real login shell under the real HOME, whose
--- rex.zsh reaches the live server. So `scratch` and `window_new_here`, which
--- start one, are not pressed here.
+-- rex.zsh reaches the live server. So `window_new_here`, which starts one, is
+-- not pressed here, and `scratch` is pressed with a stand-in command.
 local SHELL = "com.superlogical.terminal.shell"
 local OSC = string.char(27) .. "]7501;state=blocked:kind=permission:id=claude:app=claude" .. string.char(27) .. "\\"
 local function blk(label, cmd)
@@ -92,6 +92,50 @@ ok("chip_toggle keeps the chip inside the window", bounds ~= nil and bounds[1] >
   and bounds[1] + bounds[3] <= 1.0001 and bounds[2] + bounds[4] <= 1.0001, dump(bounds))
 r = press("chip_toggle", A, {})
 ok("chip_toggle again closes it", r.closed == chip and layer_of(chip) == nil, dump(r))
+
+-- The scratch float: a layer in the pressed pane's tab, in its directory;
+-- pressed inside, it hides; pressed from the pane, it comes back focused.
+-- The stand-in is no shell, so it counts as busy and is never replaced.
+local function scratch_layer()
+  for _, w in ipairs(must("session.view", { session_id = S }).windows) do
+    for _, layer in ipairs(w.layers or {}) do
+      for _, b in ipairs(layer.blocks or {}) do
+        if b.label == "scratch" then return w.window_id, layer, b.block_id end
+      end
+    end
+  end
+end
+local SLEEP = { command = { "/bin/sleep", "3600" } }
+r, q, e = press("scratch", A, SLEEP)
+local sw, sl, sb = scratch_layer()
+ok("scratch floats a shell in the pressed pane's tab", sb ~= nil and r.opened == sb and sw == w1.window_id
+  and sl.kind ~= "tiled" and sl.state ~= "minimized", e or dump(r))
+local proc = sb and rex.block.call("com.superlogical.terminal", "process", { session_id = S, block_id = sb, args = {} })
+local scwd = proc and (proc.foreground or proc.child or {}).cwd
+ok("scratch starts in the pane's directory", scwd == "/tmp" or scwd == "/private/tmp", dump(proc))
+r = press("scratch", sb, SLEEP)
+sw, sl = scratch_layer()
+ok("scratch pressed inside the float hides it", r.hidden == sb and sl and sl.state == "minimized", dump(r))
+r = press("scratch", A, SLEEP)
+sw, sl = scratch_layer()
+ok("scratch from the pane brings the same float back", r.shown == sb and sl and sl.state ~= "minimized", dump(r))
+if sb then rex.call("block.close", { session_id = S, block_id = sb }) end
+ok("closing the float's block removes its layer", scratch_layer() == nil, "layer stayed")
+-- A float whose shell sits idle in another directory is replaced from a pane
+-- elsewhere; in its own session, so the tabs above keep their panes.
+local fs = must("session.create", { label = "float" }).session_id
+must("session.attach", { session_id = fs })
+local root = blk("root"); root.block.options.cwd = "/"
+local fw = must("session.new_window", { session_id = fs, layout = { split = { direction = "horizontal", before = blk("x"), after = root } } })
+local function fpress(block, args)
+  local res = rex.call("client.action", { action = "scratch", origin = "key", session_id = fs, block_id = block, args = args })
+  return (res and res.result) or {}
+end
+local first = fpress(fw.block_ids[1], { command = { "/bin/sh" } }).opened
+rex.sleep(0.3)
+r = fpress(fw.block_ids[2], { command = { "/bin/sh" } })
+ok("scratch replaces an idle float in another directory", first ~= nil and r.replaced == first and r.opened ~= first, dump(r))
+rex.call("session.destroy", { session_id = fs })
 
 r = press("pane_push", A, { direction = "right" }); ok("pane_push right swaps with the neighbour", r.swapped == B, dump(r))
 r = press("layout_toggle", A, {});                  ok("layout_toggle stacks a side-by-side tab", r.layout == "stacked", dump(r))
