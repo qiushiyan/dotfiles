@@ -499,7 +499,7 @@ in. This log: the two sections at its top.
 - *A trace may follow a symptom into the sessions it leads to; ask before a
   wider sweep.* The fresh reader found "ask before reaching into history the
   request does not cover" in conflict with tracing a cause into another
-  tool. A default taken here; the boundary is the owner's.
+  tool. The owner confirmed the default on 11-10.
 
 **Cut, to watch.**
 - *The Obelisk memory offer.* Bring back if a later session asks for a
