@@ -70,11 +70,11 @@ skills:
   # says not to, the one retry without --account the driver may make, when the user
   # chooses another model or the wait, and that a usage-credits prompt is never
   # approved (+69 body, +69 total)
-  # raised 2026-11-11 on the user's word: drive's record ask --replaces and the status
-  # since lines on asks a close or merge overtook; an ask that supersedes another
-  # replaces it, since lines are acted on, and whether a question still waits on the
-  # user is read before it is answered (+18 body, +18 total)
-  drive-session: {body: 2757, total: 11331}
+  # raised 2026-11-11 on the user's word: with drive's record ask --replaces, an ask
+  # that supersedes another replaces it, and whether a question still waits on the user
+  # is read before it is answered, even when their question assumes the answer, as
+  # the bot's agreed with the user's premise before reading (+22 body, +22 total)
+  drive-session: {body: 2761, total: 11335}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it

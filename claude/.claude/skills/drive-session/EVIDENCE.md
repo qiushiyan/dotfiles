@@ -124,19 +124,22 @@ replacement A41 said in its own question that it replaced A4's default,
 and A36 (11-09), whose merge had shipped. A1, A2 and A16 were live on
 purpose, each still holding a production repair or a message, and their
 `--if-unanswered` already said so; the page set nothing beside them to
-show it. The watchdog's six-hourly recheck had named the open asks four
-times on 11-07 alone without settling one.
+show it. In batch 11-06 the watchdog's six-hourly recheck named the open
+asks five times between 11-07 06:09 and 11-08 10:51, and no recheck
+recorded one moot.
 
 **Changed.** drive: `record ask --replaces`, `record restate`, and a
 `since` line under an open ask whose session closed or whose newest pull
 request merged after it stood, in status and on the page. Here: replace
-an ask that supersedes another as it is recorded, act on `since` lines,
-and read before telling the user whether a question still waits on them.
+an ask that supersedes another as it is recorded, and read before telling
+the user whether a question still waits on them, even when their question
+assumes the answer (the 14:10 reply agreed with the user's premise). The
+`since` line carries its own commands, so the body does not mention it.
 Left out of the bot's proposal: a closeout step that walks asks (the
 `since` line reaches the next wake after any close or merge) and a `drive
 close` that refuses on open asks (see Decisions that stand).
 
-**Verified.** drive's tests and contract (`TestAnAskThatReplacesAnotherRecordsItMoot`,
+**Verified.** drive `6bc6ab3` and `a944656`: tests of what status and the page hold, and the contract (`TestAnAskThatReplacesAnotherRecordsItMoot`,
 `TestAnAskOvertakenByACloseOrAMergeIsJudgedAgain`,
 `TestContractAsksOvertaken`). Not run: a live batch on this text; a merge
 is seen only for an open session's newest pull request in status, and for
