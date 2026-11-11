@@ -200,21 +200,21 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
 ```
 
 - A session's first step opens on the line the user would type: the
-  project's entry skill, then the task. Where it stops goes on the lines
-  below, which drive attaches: a session told its finish goes straight
-  there, past review and any hold. A planned session opens from its start
-  note (`--from`), and a brief the user names with `--brief`, in the brief's
-  worktree; beside either, write only where it stops, as drive adds the
-  rest. Every session carries a goal (a note's `goal:` line), for a user who
-  remembers the product but not the session; record it again only when its
-  purpose or scope changes. Its label names its Rex tab, so name its work,
-  never a number like `S1`; join a window under its tab's name.
+  project's entry skill, then the task. Where it stops goes below it: a
+  session told its finish goes straight there, past review and any hold. A
+  planned session opens from its start note (`--from`), and a brief the user
+  names with `--brief`, in the brief's worktree; beside either, write only
+  where it stops, as drive adds the rest. Every session carries a goal (a
+  note's `goal:` line), for a user who remembers the product but not the
+  session; record it again only when its purpose or scope changes. Its label
+  names its Rex tab, so name its work, never a number like `S1`; join a
+  window under its tab's name.
 
   ```bash
   drive open closing-reads --dir ~/dev/planlab/main --from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/closing-reads.md 'This turn is onboarding only.'
-  drive open sonnet-failover --dir ~/dev/planlab/main --brief model-failover-sonnet-5-5-first --goal '…'
+  drive open sonnet-failover --dir ~/dev/planlab/main --brief model-failover-sonnet-5-5-first --goal '…'   # a brief in ~/dev/.handoffs the user names
   drive open grep-blank-lines --dir ~/dev/planlab/main --goal '…' --file /tmp/grep-blank-lines-start.md   # first line: /pl-loopy-debug 4be17c02 — <what was reported>
-  drive record goal P0 '…'   # a session that joined on a send, or one drive status names as having none
+  drive record goal P0 '…'   # a session that joined on a send, or has none
   ```
 - A key that resolves to another project's file is a stop, not a fallback.
 - A brief one session wrote to start another is acted on before you get a
