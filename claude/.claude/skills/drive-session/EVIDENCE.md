@@ -53,6 +53,12 @@ bot follows `DOGFOOD.md`.
   given in chat from a question overtaken, and `drive close` does not wait
   on asks, since a builder closes at its review's handoff with its asks
   still live.
+- **drive refuses what would destroy work still under way, never what the
+  user already did** (11-11, the user's word: weigh practicality against
+  the state machine). A refusal that sends the driver to the user names
+  the command for each answer, and what the user did by hand, such as
+  closing a tab, can be put on record. No override flag: it would let a
+  driver skip the user, which is what the checks keep.
 
 ## Open comparisons
 
@@ -109,6 +115,38 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 (none in three batches). Retired, not reached: the iTELL comparisons of
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
+
+## 2026-11-11 — a close the user had already made (drive `bd86202`)
+
+**Ask.** The user, after closing sr-search-repair's tab by hand: analyse a
+fix for the close, keeping in mind that people step into a batch by hand,
+without loosening the state machine; then build it.
+
+**Corpus.** The Session Driver's chat 11-11 21:18 to 22:01 GMT and its
+command log, batch 11-10's events for sr-search-repair, and dotfiles
+`90b99ce` (11-09, sr-10800: a parked tab the user closed came back). The
+session finished with a stray "h" in its input box. The bot asked about it
+(A66), the user answered "close the tab", and `close` refused again: its
+next named only the ask and the park. The bot read `close --help`, told
+the user drive had no way past it, and parked the session until 09:00, though
+`respond … clear` existed. The user closed the tab; `close` then had nothing to
+act on, since a gone session has no view, and every gone line named only
+the reopen. Rest of the command set: a view moved by the user's typing is
+read again, `cleanup` records a branch removed by hand, `adopt` and
+`record answer` take what the user did. The four park refusals that evening
+("nothing on record ends") each recovered in one call and stay.
+
+**Changed.** drive: close's unsent-line refusal names the clear and close
+for once the user lets the line go; `close LABEL` records a gone session
+closed, closing a shell a restart left in its block; the gone line names
+that close before the open. Here: nothing, on the user's word: the bot
+needs no new instruction, only a `drive close` that works on a session
+whose tab they closed.
+
+**Verified.** drive `bd86202`: `TestALineTheOwnerLetsGoIsClearedAndTheSessionClosed`,
+`TestATabTheOwnerClosedIsClosedOnRecord`,
+`TestAGoneSessionsBlockIsClosedOnlyWhenOnlyAShellIsLeft`,
+`TestContractCloseAfterTheOwner`. Not run: a live batch on this text.
 
 ## 2026-11-11 — asks that outlived their sessions (drive `6bc6ab3`)
 
