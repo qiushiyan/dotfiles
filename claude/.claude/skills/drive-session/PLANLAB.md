@@ -25,8 +25,10 @@ drive send summary-decisions@… --snippet spike-check      # next, where the de
 A larger UI or UX change shows its design (the pipeline doc's stage 2):
 
 ```bash
-drive send reply-streaming@… --snippet emil-prototype 'Replies jump as they stream, and the final card flashes in.'   # variants on the Prototype Studio bar; it stops at them
-drive send reply-streaming@… --snippet emil-finish 'The checklist variant, with the count from the ledger one.'      # on the user's pick
+# after the key: what is wrong, as the user or the session's analysis put it; it builds variants on the Prototype Studio bar and stops at them
+drive send reply-streaming@… --snippet emil-prototype 'Replies jump as they stream, and the final card flashes in.'
+# the user's pick, in their words, blends included
+drive send reply-streaming@… --snippet emil-finish 'The checklist variant, with the count from the ledger one.'
 ```
 
 Its pick is a critical question, below: check that the preview link loads
@@ -50,8 +52,9 @@ work; park the session once nothing else is left to build:
 - **One with no recommendation.**
 - **A critical one,** by the pipeline doc's § Who decides, whether the
   session marked it or you judge it so. It goes to the user at once, in a
-  message of its own, and the session's step names it: `… Question 2 waits
-  for my agreement: build everything that does not depend on it.`
+  message of its own, and the session's step names it, in words such as
+  `… Question 2 waits for my agreement: build everything that does not
+  depend on it.`
 
 Once all have
 reached the checkpoint, report as SKILL.md § Report shapes it: per session,

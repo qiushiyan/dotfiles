@@ -12,8 +12,10 @@ straight on. After onboarding, each gets the same design stage:
 ```bash
 drive send invite-links@… --snippet consult-design   # it ends with its decisions
 drive send invite-links@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
-drive send org-homepage@… --snippet emil-prototype 'The org homepage reads as a list of links.'   # a larger UI or UX change: variants, and it stops at them
-drive send org-homepage@… --snippet emil-finish 'The second variant.'                              # on the user's pick
+# a larger UI or UX change: after the key, what is wrong in the user's words; it builds variants and stops at them
+drive send org-homepage@… --snippet emil-prototype 'The org homepage reads as a list of links.'
+# the user's pick, in their words
+drive send org-homepage@… --snippet emil-finish 'The second variant.'
 ```
 
 A prototype's pick is a critical question, below: check that its preview

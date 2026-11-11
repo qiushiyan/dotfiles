@@ -59,7 +59,10 @@ skills:
   # raised 2026-11-11 on the user's word: a critical question holds its work, stated as a
   # principle with examples in the notice every session gets, and a larger UI change
   # shows a prototype, in PLANLAB and ITELL (+253 total after the writing-for-agents pass)
-  drive-session: {body: 2670, total: 10964}
+  # raised 2026-11-11 on the user's word: the examples in PLANLAB-NEXT-BATCH and the
+  # prototype commands carry comments saying what each shows and what varies, so a
+  # driver reasons from them and writes its own words (+174 total)
+  drive-session: {body: 2670, total: 11138}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it

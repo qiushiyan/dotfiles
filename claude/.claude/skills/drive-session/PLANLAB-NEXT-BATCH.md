@@ -11,6 +11,10 @@ Every item that enters the batch rests on production data read today or a
 spike run today, or is marked as judged by eye. The snippets ask each
 session for that, so your steps need not.
 
+**The commands below are examples to reason from.** Each shows a shape and
+one batch's words. The labels, the goals and the text after a key are yours
+to write, from what the user said and what the sessions found.
+
 ## 1. Gather, in two sessions
 
 One session per source of work: what arrived, and what was planned. The user
@@ -19,24 +23,24 @@ new batch stops the wakes of the sessions still waiting in this one. With no
 batch live, start one as BOT.md does; step 4 then opens its sessions there.
 
 ```bash
+# what arrived; the window and what the user keeps for themselves are this batch's, in their words
 drive open slack-triage --dir ~/dev/planlab/main --goal 'Find what reached us since 6 Nov that the next batch should fix: Slack asks, bug reports and follow-up cards.' \
   --snippet loopy-slack-triage 'The window starts 6 Nov. Dev pool and changeability are mine already: leave them out.'
+# domain based initiatives check, user may ask for domains to skip or emphasize
 drive open initiatives-review --dir ~/dev/planlab/main --goal 'Find which milestones, owed reads and waiting briefs are worth starting now, and which briefs no longer hold.' \
   --snippet loopy-initiatives-review 'Dev pool and changeability are mine already: leave them out.'
 ```
 
-- **After the key goes what this batch changes,** in the user's words: the
-  window (theirs, else from the day the last batch started, which `drive
-  batch list` shows), what they keep for themselves, what they asked to
-  have looked at, and the follow-ups the last batch's record names. When a
-  step inside the snippet has to change, send an
+- **After the key** also go the follow-ups the last batch's record names.
+  A window the user did not give starts the day the last batch did (`drive
+  batch list`). When a step inside the snippet has to change, send an
   adapted copy with `--file`, starting from the text `drive snippet
   loopy-slack-triage ~/dev/planlab/main` prints.
 - **A source goes to one session.** Two sessions clustering the same items
   return two batches that disagree.
-- **A report that ranks on a lead goes back once:** `drive send
-  slack-triage@… 'Measure these before you rank them: the wiki links and
-  the js-exec faults.'`
+- **A report that ranks on a lead goes back once,** naming what it left
+  unmeasured, such as `drive send slack-triage@… 'Measure these before you
+  rank them: the wiki links and the js-exec faults.'`
 - **When the user names one source, or already knows most of the work,** one
   session gathers, by the snippet for that source, and its report goes
   straight to step 3.
@@ -48,11 +52,11 @@ as information: their pick comes in step 3.
 ## 2. Review both reports fresh
 
 A third session, which wrote neither report, turns the proposals into one
-batch. Open it as soon as step 1 is done. What the user has said by then
-goes after its key; what they say later goes to it as a step, in their
-words:
+batch. Open it as soon as step 1 is done; what the user says after that
+goes to it as a step, in their words:
 
 ```bash
+# after the key: where the reports are, and whatever the user has said about them so far
 drive open batch-review --dir ~/dev/planlab/main --goal 'Turn both reports into one batch: fewer, sharper sessions, each set up to get its problem right.' \
   --snippet loopy-batch-review 'The reports: <path> and <path>. Dev pool and changeability are mine already.'
 ```
@@ -67,6 +71,7 @@ The session that holds the batch, the review or step 1's one gathering
 session, writes a start note per session while the user reads:
 
 ```bash
+# one question for the whole batch, worded from the review's table; the folder is named for the day the notes are written
 drive record ask batch-review --question 'Start this batch of nine sessions? …' --recommendation '…' --if-unanswered 'The start notes are written meanwhile; nothing opens.'
 drive send batch-review@… --snippet loopy-batch-notes 'The folder is ~/dev/.handoffs/planlab-main/_batches/2026-11-12/.'
 ```
@@ -93,9 +98,9 @@ and the user has answered. Notes it could not publish go back to it.
 In this order, on the user's yes:
 
 1. **Retirements.** Send each session that proposed them its own, and wait
-   for those turns: `drive send initiatives-review@… 'Yes to the batch.
-   Retire the briefs you listed, except any the batch now takes, and
-   publish. Say what you retired.'`
+   for those turns, in words such as `drive send initiatives-review@… 'Yes
+   to the batch. Retire the briefs you listed, except any the batch now
+   takes, and publish. Say what you retired.'`
 2. **What the last batch still holds** (`drive status`), since the new
    batch stops its wakes and takes it off the user's page. A session parked
    on a date gets a `drive timer` in the new batch, its note naming the
@@ -105,6 +110,7 @@ In this order, on the user's yes:
 
    ```bash
    drive batch new 2026-11-12 …        # yours, as BOT.md starts one
+   # one open per session; its label, goal and path come from its note
    drive open skill-page-titles --dir ~/dev/planlab/main --goal '…' '/pl-loopy-onboarding Start from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/skill-page-titles.md. This checkout is shared: work in a worktree of your own, and install nothing in this one.'
    ```
 

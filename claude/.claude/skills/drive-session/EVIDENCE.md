@@ -142,6 +142,14 @@ stage 2; PLANLAB.md and ITELL.md keep the commands and what the driver does
 with the pick. `loopy-batch-notes` lets a note say a session starts at a
 prototype. Read only; no cold reader ran on the revision.
 
+**Examples marked as examples** (the user's word, with a comment of their
+own on the initiatives open): each command in `PLANLAB-NEXT-BATCH.md` and
+the prototype commands carries a comment saying what it shows and what
+varies, and the file says once that labels, goals and the text after a key
+are the driver's to write. Watch for sends that copy an example's words
+(`Dev pool and changeability`, `the wiki links and the js-exec faults`)
+into a batch they do not fit.
+
 **Not verified.** No replay: see open comparison 7. No driven session has
 been sent an `emil-` key.
 
