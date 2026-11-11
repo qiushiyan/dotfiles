@@ -65,7 +65,12 @@ skills:
   # raised 2026-11-11 on the user's word: the notice's critical principle carries
   # examples on both sides, since fresh readers marked 5 of 22 questions critical
   # without the anti-examples and 3, 3 and 2 with them (+106 total)
-  drive-session: {body: 2670, total: 11244}
+  # raised 2026-11-11 on the user's word: headroom now refuses a Fable launch with no
+  # account under 90% Fable, and drive's not-started next: says to reopen; the paragraph
+  # says not to, the one retry without --account the driver may make, when the user
+  # chooses another model or the wait, and that a usage-credits prompt is never
+  # approved (+69 body, +69 total)
+  drive-session: {body: 2739, total: 11313}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it
