@@ -37,10 +37,15 @@ bot follows `DOGFOOD.md`.
   notes live in the handoffs clone, and a claim older than today is a lead
   until it is measured. The session-facing words are planlab snippets, which
   a driver may adapt (the user's word).
-- **A critical design question is asked at once and on its own, and still
-  built on** (11-10, the user's word: fewer questions, but aware of the
-  important decisions). Holding its build was tried first and parked the
-  core of a fix in `q-checkpoint-mixed` (0 of 3, from 3 of 3).
+- **A critical design question holds the work that depends on it and is
+  asked at once, on its own** (11-11, the user's choice between the two
+  forms). Critical is a principle the session judges, with examples: an
+  answer people or later work will come to rely on, so that changing it
+  after it ships makes someone adapt. Landed unreplayed on the user's word;
+  see open comparison 7.
+- **A larger UI or UX change shows its design as a prototype** (11-11, the
+  user's word): `emil-prototype`, the user's pick, `emil-finish`, in planlab
+  and itell.
 
 ## Open comparisons
 
@@ -80,11 +85,15 @@ adding more.
    planned batches. Also count start notes a session found wrong at pickup.
    Drop the third session if its report changes nothing the user notices
    twice running.
-7. **Critical questions.** Predicate: asks a session or the driver marked
-   critical, against all design asks in the batch, and any design choice
-   the user amended that had been listed as a default. Revise the wording
-   if more than about a fifth of design asks are marked critical, or if the
-   share of open comparison 1 rises with it.
+7. **Critical questions.** Owed first: replay `q-critical-question` and its
+   counter-case `q-checkpoint-mixed` on the `critical-holds` arm
+   (`skill-evals`), which the mini's accounts had no room for on 11-11. An
+   earlier wording that held the build parked the core of a fix in the
+   counter-case (0 of 3, from 3 of 3). Then, per batch: asks marked
+   critical against all design asks, hours each held its session, and how
+   many the user took as recommended. Revise the wording if more than about
+   a fifth of design asks are marked critical; reconsider the hold if
+   nearly all are taken as recommended.
 
 Retired, answered here: wakes that drew no action (12 of 76 in 11-09,
 against 14 of 124 and the 70% the engine pass began from); strategic reviews
@@ -92,6 +101,36 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 (none in three batches). Retired, not reached: the iTELL comparisons of
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
+
+## 2026-11-11 — a critical question holds its work; UI changes show a prototype (same pass, mini2 `50c232d4`)
+
+**Ask.** The user chose the hold over ask-and-build-on, asked what should
+count as critical, then: the four kinds hold, add workflows people rely
+on, state one principle with examples and leave the judging to the model;
+and name the design skill for larger UI and UX work in planlab and itell.
+
+**Corpus.** The 131 answers recorded in batches 11-02, 11-06 and 11-09
+(`events.jsonl`, `took`): 40 amended or delegated, classed by hand. About
+half were who hears what, six production or credentials, seven fix-here-or-
+follow-up, and a handful design: what Loopy may do unasked (plugin
+approvals, subagents and the wiki), what every user sees (streaming), a
+definition a gate rests on (a planner rule, the pause threshold), standing
+machinery (a repository variable). Not critical by the user's own answers:
+how a fix repairs a failing case ("build the fix right now"), and
+reversing a teammate's written position ("do what it thinks is correct
+instead of waiting for him"). Design-skill use: user turns naming
+`emil-design/SKILL.md`, 13 sessions since 11-04 on mini2 and mac; variants
+then a pick in the permissions card, the Taodesk ticket page and the
+tool-language card, "no need to prototype this time" for a small one, a
+preview link that returned 404 in two, and streaming, which ran consult and
+spec and was shown only when the user asked mid-batch.
+
+**Changed.** The pipeline doc's § Who decides (the principle, its examples
+and counter-examples) and its design stage (the three `emil-` keys);
+NOTICE.md; PLANLAB.md's and ITELL.md's checkpoints.
+
+**Not verified.** No replay: see open comparison 7. No driven session has
+been sent an `emil-` key.
 
 ## 2026-11-10 — deciding the next batch, and critical design questions (improve-tool pass, mini2 `50c232d4`)
 

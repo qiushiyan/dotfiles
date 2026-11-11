@@ -61,6 +61,12 @@ then skips the merge.
    - **Heavy:** `consult-design`, or a freeform "consult with opus/codex" —
      the round settles the high-level design and the implementation tenets
      and comes back with decisions.
+   - **A larger change to how the product looks or feels** shows its design,
+     since that is decided by eye: `emil-prototype` builds variants and
+     stops at them for the user's pick, in planlab on the `pl-prototype-bar`
+     harness, and `emil-finish` builds the pick. `emil-improve` is for a
+     change the user already knows, with no prototype. All three follow
+     `claude/.claude/skills/emil-design/SKILL.md`.
 3. **Spec** (heavy). `/write-spec <answers to the consult's decisions>`. It
    runs the unknowns the design turns on (thin spikes), commits the spec,
    has it read cold and validated by a consult, and ends with any decisions
@@ -202,12 +208,17 @@ the user comes back to everything else done.
   The step that acts on the answer is the merge. A session that recommends
   an answer builds on it, since the user nearly always takes it and a
   rebuild costs less than a night parked; a question with no recommendation
-  holds the work that depends on it. A critical one, which later work will
-  be built on or which changes an important behaviour customers see in
-  production, is asked at once and on its own, however technical it looks
-  and whatever the session recommends, never listed as a default: the
-  session still builds on it, and the user agrees to it before the merge.
-  A design question that reopens later comes back the same
+  holds the work that depends on it. A critical question holds that work
+  too, whatever the session recommends, and is asked at once and on its own:
+  one whose answer people or later work will come to rely on, so that
+  changing it after it ships makes someone adapt. Whether subagents may
+  edit the wiki, a workflow customers have built their week around, how a
+  reply looks as it streams, what counts as a planner rule in a release
+  gate, a variable every release must then set: customers, later features or
+  the team would build on each. Making a schedule that refused to save work
+  again, or adding an agreed setting to a menu, asks nobody to adapt. These
+  are examples, not a list: the session judges each case, and one or two in
+  a batch is usual. A design question that reopens later comes back the same
   way: a review finding the session judges foundational, or a design
   objection it rebutted.
 - **Mutations of production data**: SQL, a script or a backfill run against
