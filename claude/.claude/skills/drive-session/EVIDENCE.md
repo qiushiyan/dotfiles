@@ -47,6 +47,12 @@ bot follows `DOGFOOD.md`.
 - **A larger UI or UX change shows its design as a prototype** (11-11, the
   user's word): `emil-prototype`, the user's pick, `emil-finish`, in planlab
   and itell.
+- **An open ask outlives its session and its merge only while it still
+  holds something; drive flags it, the driver judges it** (11-11). Nothing
+  moots an ask on a close or a merge, since drive cannot tell an answer
+  given in chat from a question overtaken, and `drive close` does not wait
+  on asks, since a builder closes at its review's handoff with its asks
+  still live.
 
 ## Open comparisons
 
@@ -103,6 +109,38 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 (none in three batches). Retired, not reached: the iTELL comparisons of
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
+
+## 2026-11-11 — asks that outlived their sessions (drive `6bc6ab3`)
+
+**Ask.** The user, on the drive page: many Needs You items sat on sessions
+already closed or pull requests already merged (A1, A2 on #11154): did they
+still need answering? Then: build the fix in drive and here.
+
+**Corpus.** The Session Driver's chat 11-11 14:10 to 14:21 GMT, the bot's
+note `/tmp/drive-asks-linger.md` (mini2), and the logs of batches 11-06,
+11-09 and 11-10. The bot first answered "the Needs You list is behind",
+then its own audit found two dead asks of the whole list: A4 (11-10), whose
+replacement A41 said in its own question that it replaced A4's default,
+and A36 (11-09), whose merge had shipped. A1, A2 and A16 were live on
+purpose, each still holding a production repair or a message, and their
+`--if-unanswered` already said so; the page set nothing beside them to
+show it. The watchdog's six-hourly recheck had named the open asks four
+times on 11-07 alone without settling one.
+
+**Changed.** drive: `record ask --replaces`, `record restate`, and a
+`since` line under an open ask whose session closed or whose newest pull
+request merged after it stood, in status and on the page. Here: replace
+an ask that supersedes another as it is recorded, act on `since` lines,
+and read before telling the user whether a question still waits on them.
+Left out of the bot's proposal: a closeout step that walks asks (the
+`since` line reaches the next wake after any close or merge) and a `drive
+close` that refuses on open asks (see Decisions that stand).
+
+**Verified.** drive's tests and contract (`TestAnAskThatReplacesAnotherRecordsItMoot`,
+`TestAnAskOvertakenByACloseOrAMergeIsJudgedAgain`,
+`TestContractAsksOvertaken`). Not run: a live batch on this text; a merge
+is seen only for an open session's newest pull request in status, and for
+closed ones on the page.
 
 ## 2026-11-11 — critical questions are flagged and built on, with examples on both sides (same pass, mini2 `50c232d4`)
 

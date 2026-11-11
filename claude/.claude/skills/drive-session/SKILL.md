@@ -166,7 +166,7 @@ changes: these files, not your memory, reach the next batch.
 drive record grant --source '"run the backfill on Acme" (02:08)' --scope "the backfill's --commit on Acme's workspace"
 ```
 
-Ask once, standing alone (§ Report); every wake, act on `drive status`'s open asks and its `park of` lines.
+Ask once, standing alone (§ Report); every wake, act on `drive status`'s open asks, `since` lines included, and its `park of` lines. An ask that supersedes an open one replaces it (`--replaces`).
 
 ```bash
 drive record ask pool-drain --question '…' --recommendation '…' --if-unanswered '…'    # → A3
@@ -288,7 +288,8 @@ decide from costs a round trip, so each item stands alone:
 A message before the end, such as a decision a session parked on, takes the
 same shape with only the sections that have something in them.
 
-When the user asks where a session stands or what it found, read the session
-first (`drive read`, its recap, `claude-steps show`) and answer from what it
-says: consults and spikes change course, so an answer from its brief or your
-plan can sound current and be wrong.
+When the user asks where a session stands, what it found, or whether a
+question still waits on them, read first (`drive read`, its recap,
+`claude-steps show`, `drive status`) and answer from that: consults
+and spikes change course, so an answer from a brief or your plan can sound
+current and be wrong.
