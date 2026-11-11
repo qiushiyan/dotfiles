@@ -15,6 +15,9 @@ bot follows `DOGFOOD.md`.
 - **A step is written as the user would type it** (10-29).
 - **A wake is a paid run, paced in drive** (11-02).
 - **A session follows its own worktree; no slash command moves it** (11-07).
+- **A session opens on the line the user would type, its skill first; a
+  planned one from its start note, whose opening drive composes, brief
+  placing a brief's worktree** (11-11).
 - **A question a session or the driver can settle is taken and told, not
   asked, and the engine does not sort questions into kinds** (11-10, the
   user's word: questions are hybrid, and they want to see a choice that was
@@ -115,6 +118,39 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 (none in three batches). Retired, not reached: the iTELL comparisons of
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
+
+## 2026-11-11 — first prompts: a start note's opening, composed by drive (brief `0171e56`, drive `7c0a2c5` `9e90af6`)
+
+**Ask.** The user: sessions the bot opens should start like theirs, the
+skill line first and a brief's session in its worktree, with the bot, the
+planner and brief each doing a job it understands; keep batches flexible.
+
+**Corpus.** drive's logs for batches 11-02 to 11-10 (33 sessions the bot
+opened) and Obelisk on mini2. Every first prompt was a bare `@sends/…-1.md`;
+the step's form changed by batch. 11-02: the bot ran `brief start` and
+opened in the worktree (8 of 9 onboarded at once). 11-10: "Onboard this
+task" pointing at the planner's scratchpad; 4 of 11 sessions learned `brief`
+from `--help` and ran it, 7 made worktrees by hand. 11-09: the bot retyped a
+pointer and lost its gate path. A slash line inside the file still ran first
+in all 18 that had one: the cost was legibility and placement, not the
+skill. Consult and a warm review: `consult-r1` and `review-r1+2`
+(claude-fable-5-2).
+
+**Changed.** brief: `start --json`. drive: `open --from NOTE` and `--brief
+SLUG`; a skill-led step is typed as its line for any skill the session has.
+Here: SKILL.md's first-step rule and examples, PLANLAB.md's ad hoc opening
+lines, PLANLAB-NEXT-BATCH.md step 4 (`--from`, and the bot never writes a
+note); planlab's `loopy-batch-notes` gives each note an `opens:` and `goal:`
+head and the README those lines.
+
+**Verified.** A real probe session (`probe-1111`) opened `--from` a note
+received `/probe-start alpha — … @file`, ran the skill with those arguments
+and read the note in the attachment. Replays with Sonnet 5.5 and Haiku 5.5
+as the bot (scratchpad `replay/`): planned notes opened one `--from` each;
+both added the worktree sentence beside `--brief` and wrote start notes
+themselves for old-style notes, which the r1 fixes and this text answer.
+Not run: a live batch, and `pl-loopy-onboarding` reading `Brief:` lines
+from the attachment.
 
 ## 2026-11-11 — a close the user had already made (drive `bd86202`)
 

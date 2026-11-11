@@ -51,8 +51,9 @@ then skips the merge.
    onboards: `loopy-slack-triage` for what arrived,
    `loopy-initiatives-review` for what was planned, `loopy-batch-review`
    for a fresh review of both, and `loopy-batch-notes` for the start note
-   each session opens from, which sets up the work and leaves its stages to
-   be sent. A driver's procedure is `PLANLAB-NEXT-BATCH.md` beside its
+   each session opens from: its `opens:` line names the brief that carries
+   the work or the line to type, and the note sets up the work and leaves
+   its stages to be sent. A driver's procedure is `PLANLAB-NEXT-BATCH.md` beside its
    skill.
 2. **Design.** The path decides the prompt (§ Choosing the path):
    - **Light:** `consult-then-build` — one consult round with the user's

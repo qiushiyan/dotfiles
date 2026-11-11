@@ -41,7 +41,10 @@ skill (`tmux/.config/tmux/scripts/worktree.md`). `make -C ~/dev/gwt install` ins
 
 `brief start <slug>` places the worktree and gives the receiving agent a
 pointer: invocation and goal, brief path, literal drift command, and pickup
-gate last. The agent reads the brief itself. Its paths are repo-relative so
+gate last. A driven session gets the same pointer without anyone retyping
+it: `drive open --brief`, or a start note's `opens: brief <slug>`, runs
+`brief start --json` and opens the session in the worktree on it. The
+agent reads the brief itself. Its paths are repo-relative so
 they survive the worktree switch; its prose calls itself "this brief" because
 it outlives its filename.
 
