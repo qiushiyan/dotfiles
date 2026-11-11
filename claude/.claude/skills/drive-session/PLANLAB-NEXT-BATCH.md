@@ -120,9 +120,8 @@ In this order, on the user's yes:
    The folder's `README.md` gives the start order; sessions it keeps apart
    open one after the other's merge. A start note sets up the work and you
    send its stages, so SKILL.md's rule for a brief that drops a stage
-   leaves it alone. You never write or rewrite a start note: one drive
-   refuses names what it lacks, which goes to the session that wrote the
-   notes.
+   leaves it alone. The notes are their planning session's to write: a note
+   drive refuses goes back to that session with what drive said it lacks.
 4. **The planning sessions, last:** `drive --batch 2026-11-09 close
    batch-review@…` for each, once every session that can start has: until
    then a note may be questioned, and its evidence sits with the session
