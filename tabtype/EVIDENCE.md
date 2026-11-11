@@ -639,3 +639,45 @@ about, and has it say so when it leaves that session out.
 
 **Next pass compares** planned batches with reads due and no closing-reads
 session, against the reason the review gave.
+
+## 2026-11-11 — the batch-shaping keys size a batch at five to ten (planlab)
+
+From the user's ask (improve-tool pass mini2 `50c232d4`): a rule of thumb
+for how many parallel sessions a batch holds, about five to ten, not a hard
+limit. Under five leaves capacity idle with about 30 candidates waiting;
+ten balances their attention against compute.
+
+**Receipts** (`drive metrics` per batch, read 11-11 13:30 GMT; building
+sessions counted from the labels, review and planning sessions apart):
+
+| Batch | Building | All sessions | Asks | Merged |
+|---|---|---|---|---|
+| 11-02 | 8 | 15 | 39 | 11 |
+| 11-06 | 4 | 8 | 54 | 5 |
+| 11-09 | 6, and 2 small | 13 | 39 | 11 |
+| 11-10 | 12 | 20 | 55, 26 open | 4 so far |
+
+- The 12-session batch raised 23 asks in its first hour and about 25
+  overnight; the user answered 22 in one sitting. Codex and Bugbot ran out
+  of quota that night, and the 11-02 batch hit the weekly account limit in
+  several sessions.
+- Asks per session run from 1 to 12, and the 4-session batch of customer-
+  facing fixes asked as much as the 12-session one, so the count is a
+  proxy; the text asks the session to weigh what each will ask of the user.
+  Confound: the text that reduced asks landed on 11-10.
+- The release slot refused a session 3 times on 11-10; sessions waited on
+  answers.
+
+**Changed** (planlab `.tabtype.local.toml`). `loopy-batch-review` gains a
+step, **Size the batch**, and its report a next-up list; `loopy-slack-triage`
+carries the same guidance in its Batch step and ranks what waits as next
+up. `loopy-initiatives-review` is unchanged: a gathering session ranks
+everything and the review trims.
+
+**Not built.** Opening the next item as a session closes, to keep about
+ten running: it weakens the one pick, and the user adds sessions by hand.
+Reconsider if they ask the driver for "the next one" more than twice a
+batch.
+
+**Next pass compares** building sessions per planned batch, asks in its
+first twelve hours, and next-up items the following batch took.
