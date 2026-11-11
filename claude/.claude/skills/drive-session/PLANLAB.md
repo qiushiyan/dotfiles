@@ -22,6 +22,19 @@ drive send summary-decisions@… --snippet consult-design   # astra and fable se
 drive send summary-decisions@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
 ```
 
+A larger UI or UX change shows its design, since the user decides look and
+feel by eye:
+
+```bash
+drive send reply-streaming@… --snippet emil-prototype 'Replies jump as they stream, and the final card flashes in.'   # variants on the Prototype Studio bar; it stops at them
+drive send reply-streaming@… --snippet emil-finish 'The checklist variant, with the count from the ledger one.'      # on the user's pick
+```
+
+The pick is a critical question: send the user the preview link at once,
+once you have checked that it loads, and park the session on the ask. A
+change the design already settles, such as an agreed setting, takes no
+prototype.
+
 The design reply stands in for a recap, so send no `recap`. Record each
 design question it leaves the user as an ask that says what runs meanwhile,
 then send the session on, by your call on a spec (`session-pipeline.md` §
@@ -34,12 +47,11 @@ drive send summary-decisions@… --snippet implement-now 'I answer the design qu
 ```
 
 A question it gives no recommendation for holds only the work that depends
-on it; park the session once nothing else is left to build. A critical
-question, one later work will be built on or one that changes an important
-behaviour customers see in production, goes to the user at once, in a
-message of its own, whether the session marked it or you judge it so, and
-is never listed as a default taken. The session still builds on its
-recommendation, and its merge waits for that answer like any other. Once all have
+on it, and so does a critical one (the pipeline doc's § Who decides),
+whether the session marked it or you judge it so. Send a critical one to
+the user at once, in a message of its own, and name it in the session's
+step (`… Question 2 waits for my agreement: build everything that does not
+depend on it.`). Park the session once nothing else is left to build. Once all have
 reached the checkpoint, report as SKILL.md § Report shapes it: per session,
 the design in a few lines, what the spikes showed, and each design question
 with what it changes for the person using the product. List every technical
