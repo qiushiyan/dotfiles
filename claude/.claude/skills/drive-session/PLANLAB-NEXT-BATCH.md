@@ -16,7 +16,7 @@ session for that, so your steps need not.
 One session per source of work: what arrived, and what was planned. The user
 asked for them, so open both at once, in the batch you drive now, since a
 new batch stops the wakes of the sessions still waiting in this one. With no
-batch live, start one as BOT.md does, and step 4 opens its sessions there.
+batch live, start one as BOT.md does; step 4 then opens its sessions there.
 
 ```bash
 drive open slack-triage --dir ~/dev/planlab/main --goal 'Find what reached us since 6 Nov that the next batch should fix: Slack asks, bug reports and follow-up cards.' \
@@ -25,30 +25,31 @@ drive open initiatives-review --dir ~/dev/planlab/main --goal 'Find which milest
   --snippet loopy-initiatives-review 'Dev pool and changeability are mine already: leave them out.'
 ```
 
-- **After the key goes what this batch changes,** in the user's words from
-  their request: the window (theirs, else from the day the last batch
-  started, which `drive batch list` shows), what they keep for themselves,
-  something they asked to have looked at, and the follow-ups the last
-  batch's record names. It can run to paragraphs. When a step inside the
-  snippet has to change, send an adapted copy with `--file`: `drive snippet
-  loopy-slack-triage ~/dev/planlab/main` prints the text to start from.
+- **After the key goes what this batch changes,** in the user's words: the
+  window (theirs, else from the day the last batch started, which `drive
+  batch list` shows), what they keep for themselves, what they asked to
+  have looked at, and the follow-ups the last batch's record names. When a
+  step inside the snippet has to change, send an
+  adapted copy with `--file`, starting from the text `drive snippet
+  loopy-slack-triage ~/dev/planlab/main` prints.
 - **A source goes to one session.** Two sessions clustering the same items
   return two batches that disagree.
 - **A report that ranks on a lead goes back once:** `drive send
   slack-triage@… 'Measure these before you rank them: the wiki links and
   the js-exec faults.'`
 - **When the user names one source, or already knows most of the work,** one
-  session gathers, `loopy-slack-triage` or `loopy-initiatives-review` by
-  where the work comes from, and its report goes straight to step 3.
+  session gathers, by the snippet for that source, and its report goes
+  straight to step 3.
 
-When both have reported, send the user the headlines in one message and ask
-nothing: the pick comes once, in step 3.
+This step is done when each report names its file and every item it ranks
+is measured or marked. Send the user the headlines of both in one message,
+as information: their pick comes in step 3.
 
 ## 2. Review both reports fresh
 
 A third session, which wrote neither report, turns the proposals into one
-batch. Open it as soon as both reports are in. What the user said before
-then goes after its key; anything later goes to it as a step, in their
+batch. Open it as soon as step 1 is done. What the user has said by then
+goes after its key; what they say later goes to it as a step, in their
 words:
 
 ```bash
@@ -57,8 +58,8 @@ drive open batch-review --dir ~/dev/planlab/main --goal 'Turn both reports into 
 ```
 
 Its report is the batch: a table in start order with each session's label
-and goal, which the ask and the opens are built from. It plans and you
-drive: it opens nothing.
+and goal, which the ask and the opens are built from. The session plans;
+opening and driving stay yours.
 
 ## 3. The start notes, and the one pick
 
@@ -73,43 +74,48 @@ drive send batch-review@… --snippet loopy-batch-notes 'The folder is ~/dev/.ha
 - **The ask carries** the sessions in start order with a line each, what
   the review merged, split or dropped, and what the batch would later need
   from the user: each customer write and message to a person. A yes starts
-  the batch and grants none of those; each is asked at its own step
-  (PLANLAB.md § Who can be hurt). It also lists the briefs and cards the
-  reports would retire or close, which wait for this yes because the pick
-  can bring one back.
-- **Name a folder in the handoffs clone,** `_batches/<today's date>/`, and
-  never one under `/tmp`: a session opens from its note days later, on any
-  machine. The snippet has Fable and Astra review the notes before it
-  publishes them, a round an adapted copy keeps. Notes its report says were
-  not published go back to it before anything opens.
+  the batch, and each of those is asked again at its own step (PLANLAB.md §
+  Who can be hurt). It also lists the briefs and cards the reports would
+  retire or close, which wait for this yes because the pick can bring one
+  back.
+- **The folder is in the handoffs clone,** `_batches/<today's date>/`: a
+  session opens from its note days later, on any machine. The snippet has
+  Fable and Astra review the notes before it publishes them, a round an
+  adapted copy keeps.
 - **An answer that amends the batch** goes to the same session in the
   user's words, to fold into the notes.
 
+This step is done when the session's report says the notes are published
+and the user has answered. Notes it could not publish go back to it.
+
 ## 4. Open the batch, then close the planning sessions
 
-On the user's yes, send each session its retirements and wait for those
-turns: `drive send initiatives-review@… 'Yes to the batch. Retire the briefs
-you listed, except any the batch now takes, and publish. Say what you
-retired.'` Then look at what the last batch still holds (`drive status`),
-since the new batch stops its wakes and takes it off the user's page: a
-session parked on a date gets a `drive timer` in the new batch, its note
-naming the session and what to read, and joins on its next step, sent by its
-block with `--as`; an open ask is recorded again.
+In this order, on the user's yes:
 
-```bash
-drive batch new 2026-11-12 …        # yours, as BOT.md starts one
-drive open skill-page-titles --dir ~/dev/planlab/main --goal '…' '/pl-loopy-onboarding Start from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/skill-page-titles.md. This checkout is shared: work in a worktree of your own, and install nothing in this one.'
-drive --batch 2026-11-09 close batch-review@…     # each planning session, last
-```
+1. **Retirements.** Send each session that proposed them its own, and wait
+   for those turns: `drive send initiatives-review@… 'Yes to the batch.
+   Retire the briefs you listed, except any the batch now takes, and
+   publish. Say what you retired.'`
+2. **What the last batch still holds** (`drive status`), since the new
+   batch stops its wakes and takes it off the user's page. A session parked
+   on a date gets a `drive timer` in the new batch, its note naming the
+   session and what to read, and joins on its next step, sent by its block
+   with `--as`. An open ask is recorded again.
+3. **The new batch and its sessions:**
 
-- **Every session opens from its note,** a bug included, since onboarding
-  hands an incident's ids to `pl-loopy-debug` first. Its `--goal` is the
-  note's goal in a sentence. The folder's `README.md` gives the start order;
-  sessions it keeps apart open one after the other's merge.
-- **A start note names no stages,** since you send them: it is not a brief
-  to return for dropping one. From its onboarding on, SKILL.md and
-  PLANLAB.md drive the session like any other.
-- **The planning sessions close last,** once every session that can start
-  has. Until then a note may still be questioned, and its evidence sits with
-  the session that gathered it. Their reports and the notes stand in for a
-  recap, so send no `recap`.
+   ```bash
+   drive batch new 2026-11-12 …        # yours, as BOT.md starts one
+   drive open skill-page-titles --dir ~/dev/planlab/main --goal '…' '/pl-loopy-onboarding Start from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/skill-page-titles.md. This checkout is shared: work in a worktree of your own, and install nothing in this one.'
+   ```
+
+   Every session opens from its note, a bug included, since onboarding
+   hands an incident's ids to `pl-loopy-debug` first. Its `--goal` is the
+   note's goal in a sentence. The folder's `README.md` gives the start
+   order; sessions it keeps apart open one after the other's merge. A start
+   note sets up the work and you send its stages, so SKILL.md's rule for a
+   brief that drops a stage leaves it alone.
+4. **The planning sessions, last:** `drive --batch 2026-11-09 close
+   batch-review@…` for each, once every session that can start has: until
+   then a note may be questioned, and its evidence sits with the session
+   that gathered it. Their reports and the notes are their recap, so close
+   them without one.

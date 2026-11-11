@@ -16,9 +16,8 @@ drive send org-homepage@… --snippet emil-prototype 'The org homepage reads as 
 drive send org-homepage@… --snippet emil-finish 'The second variant.'                              # on the user's pick
 ```
 
-A prototype's pick is a critical question: send the user its preview link
-at once, once you have checked that it loads, and park the session on the
-ask.
+A prototype's pick is a critical question, below: check that its preview
+link loads before you send it.
 
 Once a session's design reply is in (it stands in for its recap), record
 its design questions as asks whose `--if-unanswered` says it builds as
@@ -26,7 +25,8 @@ recommended and the merge waits, then send it on: `/write-spec Go with your
 recommendations.` or `--snippet implement-now`. A question it gives no
 recommendation for holds only the work that depends on it, and so does a
 critical one (the pipeline doc's § Who decides), which goes to the user at
-once, on its own. The report gives, per session, the design
+once, in a message of its own, with the session parked on it once nothing
+else is left to build. The report gives, per session, the design
 in a few lines, what the spikes showed and your call on a spec; ask the
 design questions the pipeline doc's § Who decides names, each as one
 question with what it changes, and list the technical choices as the

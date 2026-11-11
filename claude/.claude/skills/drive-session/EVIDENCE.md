@@ -86,8 +86,10 @@ adding more.
    Drop the third session if its report changes nothing the user notices
    twice running.
 7. **Critical questions.** Owed first: replay `q-critical-question` and its
-   counter-case `q-checkpoint-mixed` on the `critical-holds` arm
-   (`skill-evals`), which the mini's accounts had no room for on 11-11. An
+   counter-case `q-checkpoint-mixed` (`skill-evals` `cases/drive-step`) on
+   an arm rebuilt from the landed files, since the `critical-holds` arm
+   predates the examples and the revision; the mini's accounts had no room
+   for it on 11-11. An
    earlier wording that held the build parked the core of a fix in the
    counter-case (0 of 3, from 3 of 3). Then, per batch: asks marked
    critical against all design asks, hours each held its session, and how
@@ -128,6 +130,17 @@ spec and was shown only when the user asked mid-batch.
 **Changed.** The pipeline doc's § Who decides (the principle, its examples
 and counter-examples) and its design stage (the three `emil-` keys);
 NOTICE.md; PLANLAB.md's and ITELL.md's checkpoints.
+
+**Revised after landing,** by `writing-for-agents`, at the user's ask, over
+everything this pass wrote. `PLANLAB-NEXT-BATCH.md`: each step ends on what
+makes it done, step 4 became an ordered list, and prohibitions were restated
+as the target (the folder is in the handoffs clone; the reports are the
+planning sessions' recap). The critical rule got a paragraph and a lead of
+its own in the pipeline doc, NOTICE.md and PLANLAB.md, where it had sat
+mid-paragraph. The prototype route is described once, in the pipeline doc's
+stage 2; PLANLAB.md and ITELL.md keep the commands and what the driver does
+with the pick. `loopy-batch-notes` lets a note say a session starts at a
+prototype. Read only; no cold reader ran on the revision.
 
 **Not verified.** No replay: see open comparison 7. No driven session has
 been sent an `emil-` key.

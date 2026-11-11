@@ -22,18 +22,16 @@ drive send summary-decisions@… --snippet consult-design   # astra and fable se
 drive send summary-decisions@… --snippet spike-check      # next, where the design rests on an assumption reading cannot settle
 ```
 
-A larger UI or UX change shows its design, since the user decides look and
-feel by eye:
+A larger UI or UX change shows its design (the pipeline doc's stage 2):
 
 ```bash
 drive send reply-streaming@… --snippet emil-prototype 'Replies jump as they stream, and the final card flashes in.'   # variants on the Prototype Studio bar; it stops at them
 drive send reply-streaming@… --snippet emil-finish 'The checklist variant, with the count from the ledger one.'      # on the user's pick
 ```
 
-The pick is a critical question: send the user the preview link at once,
-once you have checked that it loads, and park the session on the ask. A
-change the design already settles, such as an agreed setting, takes no
-prototype.
+Its pick is a critical question, below: check that the preview link loads
+before you send it. A change the design already settles, such as an agreed
+setting, goes straight to its build.
 
 The design reply stands in for a recap, so send no `recap`. Record each
 design question it leaves the user as an ask that says what runs meanwhile,
@@ -46,12 +44,16 @@ drive send summary-decisions@… '/write-spec Go with your recommendations. I an
 drive send summary-decisions@… --snippet implement-now 'I answer the design questions before the merge.'                   # no spec: builds from the settled design
 ```
 
-A question it gives no recommendation for holds only the work that depends
-on it, and so does a critical one (the pipeline doc's § Who decides),
-whether the session marked it or you judge it so. Send a critical one to
-the user at once, in a message of its own, and name it in the session's
-step (`… Question 2 waits for my agreement: build everything that does not
-depend on it.`). Park the session once nothing else is left to build. Once all have
+Two kinds of question hold the work that depends on them, and only that
+work; park the session once nothing else is left to build:
+
+- **One with no recommendation.**
+- **A critical one,** by the pipeline doc's § Who decides, whether the
+  session marked it or you judge it so. It goes to the user at once, in a
+  message of its own, and the session's step names it: `… Question 2 waits
+  for my agreement: build everything that does not depend on it.`
+
+Once all have
 reached the checkpoint, report as SKILL.md § Report shapes it: per session,
 the design in a few lines, what the spikes showed, and each design question
 with what it changes for the person using the product. List every technical

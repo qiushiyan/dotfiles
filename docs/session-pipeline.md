@@ -46,13 +46,14 @@ then skips the merge.
    fix, and a fix goes on with `/pl-loopy-onboarding <the dossier's route>`.
    An iTELL learner's bug report enters at `/bug-report-triage <reportId>`,
    and a fix it recommends goes on with `/onboarding`.
-   In planlab, when the user has not said what the next batch holds, it is
-   decided before any of its sessions onboards, by sessions that change no
-   code: `loopy-slack-triage` for what arrived, `loopy-initiatives-review`
-   for what was planned, `loopy-batch-review` for a fresh review of both,
-   and `loopy-batch-notes` for the start note each session then opens from.
-   A start note names no stages, since they are sent one at a time. A driver
-   follows `PLANLAB-NEXT-BATCH.md` beside its skill.
+   In planlab, when the user has not said what the next batch holds,
+   sessions that change no code decide it before any of its sessions
+   onboards: `loopy-slack-triage` for what arrived,
+   `loopy-initiatives-review` for what was planned, `loopy-batch-review`
+   for a fresh review of both, and `loopy-batch-notes` for the start note
+   each session opens from, which sets up the work and leaves its stages to
+   be sent. A driver's procedure is `PLANLAB-NEXT-BATCH.md` beside its
+   skill.
 2. **Design.** The path decides the prompt (§ Choosing the path):
    - **Light:** `consult-then-build` — one consult round with the user's
      open questions on trial, a spike where the direction rests on an
@@ -208,19 +209,26 @@ the user comes back to everything else done.
   The step that acts on the answer is the merge. A session that recommends
   an answer builds on it, since the user nearly always takes it and a
   rebuild costs less than a night parked; a question with no recommendation
-  holds the work that depends on it. A critical question holds that work
-  too, whatever the session recommends, and is asked at once and on its own:
-  one whose answer people or later work will come to rely on, so that
-  changing it after it ships makes someone adapt. Whether subagents may
-  edit the wiki, a workflow customers have built their week around, how a
-  reply looks as it streams, what counts as a planner rule in a release
-  gate, a variable every release must then set: customers, later features or
-  the team would build on each. Making a schedule that refused to save work
-  again, or adding an agreed setting to a menu, asks nobody to adapt. These
-  are examples, not a list: the session judges each case, and one or two in
-  a batch is usual. A design question that reopens later comes back the same
-  way: a review finding the session judges foundational, or a design
-  objection it rebutted.
+  holds the work that depends on it. A design question that reopens later
+  comes back the same way: a review finding the session judges
+  foundational, or a design objection it rebutted.
+
+  **A critical question** holds that work too, whatever the session
+  recommends, and is asked at once, on its own. It is one whose answer
+  people or later work will come to rely on, so that changing it after it
+  ships makes someone adapt:
+
+  - whether subagents may edit the wiki, or what else the product does
+    without asking its user;
+  - a workflow customers have built their week around;
+  - how a reply looks as it streams, or another change to the look and feel
+    of the main surface;
+  - what counts as a planner rule in a release gate;
+  - a variable every release must then set.
+
+  Making a schedule that refused to save work again, or adding an agreed
+  setting to a menu, asks nobody to adapt. These are examples: the session
+  judges each case, and one or two in a batch is usual.
 - **Mutations of production data**: SQL, a script or a backfill run against
   a production database; a write in a customer's workspace or data; a change
   to production infrastructure, such as taking down or resizing a tier; and a
