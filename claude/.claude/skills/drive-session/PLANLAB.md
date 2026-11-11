@@ -78,7 +78,9 @@ done once this report is sent.
 - **A bug report** goes through `/pl-loopy-debug` against the real
   production trace: its session opens on `/pl-loopy-debug <ids> — <what
   was reported, where>`. Any other planlab session you open on the user's
-  word opens on `/pl-loopy-onboarding <their request>`.
+  word opens on `/pl-loopy-onboarding <their request>`, except a chore
+  that needs no model of Loopy, such as filing a card, which opens on its
+  sentence.
 - **Decisions** reach the user on one combined board, each with your
   recommendation.
 - **Work the user hands you** starts a new session in its own worktree.

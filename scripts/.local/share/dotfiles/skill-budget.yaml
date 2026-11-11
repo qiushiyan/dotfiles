@@ -77,7 +77,11 @@ skills:
   # raised 2026-11-11: a session's first step opens on the user's line, skill first, and
   # a planned one from its start note (--from) or a named brief (--brief), with one
   # example per case, replacing the prose-file example (+15 body, +72 total)
-  drive-session: {body: 2776, total: 11407}
+  # raised 2026-11-11 again: Sonnet and Haiku replays added the worktree sentence to a
+  # brief's open and wrote start notes themselves, so the first-step bullet says to add only
+  # where it stops beside --from or --brief, and the next-batch step that the bot never
+  # writes a note (+14 body, +36 total)
+  drive-session: {body: 2790, total: 11443}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it

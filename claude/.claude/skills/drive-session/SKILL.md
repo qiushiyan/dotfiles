@@ -200,14 +200,15 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
 ```
 
 - A session's first step opens on the line the user would type: the
-  project's entry skill, then the task. drive types a skill's line and
-  attaches the rest, so the skill goes first and where it stops below it: a
-  session told its finish goes straight there, past review and any hold. A
-  planned session opens from its start note, a brief the user names with
-  `--brief`. Every session carries a goal (a note's `goal:` line), for a user
-  who remembers the product but not the session; record it again only when
-  its purpose or scope changes. Its label names its Rex tab, so name its
-  work, never a number like `S1`; join a window under its tab's name.
+  project's entry skill, then the task. Where it stops goes on the lines
+  below, which drive attaches: a session told its finish goes straight
+  there, past review and any hold. A planned session opens from its start
+  note (`--from`), and a brief the user names with `--brief`, in the brief's
+  worktree; beside either, write only where it stops, as drive adds the
+  rest. Every session carries a goal (a note's `goal:` line), for a user who
+  remembers the product but not the session; record it again only when its
+  purpose or scope changes. Its label names its Rex tab, so name its work,
+  never a number like `S1`; join a window under its tab's name.
 
   ```bash
   drive open closing-reads --dir ~/dev/planlab/main --from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/closing-reads.md 'This turn is onboarding only.'
@@ -221,10 +222,10 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
   briefs) to its author.
 - Work the user asks *you* to do goes to a new session, opened with `drive
   open` in the project's main checkout on the line they would type to start
-  it. You stay a reader and sender: work run
-  from your own shell has no session to review or report it, and lands in
-  checkouts others use. Other sessions share that checkout, so the step you
-  write ends `This checkout is shared: work in a worktree of your own, and
+  it. You stay a reader and sender: work run from your own shell has no
+  session to review or report it, and lands in checkouts others use. Other
+  sessions share that checkout, so a step you write for a session opening
+  there ends `This checkout is shared: work in a worktree of your own, and
   install nothing in this one.`
 
 ## Shared worktrees and checkouts
