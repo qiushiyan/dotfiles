@@ -62,7 +62,10 @@ skills:
   # raised 2026-11-11 on the user's word: the examples in PLANLAB-NEXT-BATCH and the
   # prototype commands carry comments saying what each shows and what varies, so a
   # driver reasons from them and writes its own words (+174 total)
-  drive-session: {body: 2670, total: 11138}
+  # raised 2026-11-11 on the user's word: the notice's critical principle carries
+  # examples on both sides, since fresh readers marked 5 of 22 questions critical
+  # without the anti-examples and 3, 3 and 2 with them (+106 total)
+  drive-session: {body: 2670, total: 11244}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it

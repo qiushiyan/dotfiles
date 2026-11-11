@@ -31,9 +31,10 @@ drive send reply-streaming@… --snippet emil-prototype 'Replies jump as they st
 drive send reply-streaming@… --snippet emil-finish 'The checklist variant, with the count from the ledger one.'
 ```
 
-Its pick is a critical question, below: check that the preview link loads
-before you send it. A change the design already settles, such as an agreed
-setting, goes straight to its build.
+The session stops at its variants, since look and feel is decided by eye:
+check that the preview link loads, send it to the user at once, and park
+the session on the ask. A change the design already settles, such as an
+agreed setting, goes straight to its build.
 
 The design reply stands in for a recap, so send no `recap`. Record each
 design question it leaves the user as an ask that says what runs meanwhile,
@@ -46,15 +47,14 @@ drive send summary-decisions@… '/write-spec Go with your recommendations. I an
 drive send summary-decisions@… --snippet implement-now 'I answer the design questions before the merge.'                   # no spec: builds from the settled design
 ```
 
-Two kinds of question hold the work that depends on them, and only that
-work; park the session once nothing else is left to build:
+A question with no recommendation holds only the work that depends on it;
+park the session once nothing else is left to build.
 
-- **One with no recommendation.**
-- **A critical one,** by the pipeline doc's § Who decides, whether the
-  session marked it or you judge it so. It goes to the user at once, in a
-  message of its own, and the session's step names it, in words such as
-  `… Question 2 waits for my agreement: build everything that does not
-  depend on it.`
+**A critical question** (the pipeline doc's § Who decides, with its
+examples on both sides), whether the session marked it or you judge it so,
+goes to the user at once, in a message of its own that says it is critical.
+The session builds on its recommendation like any other, and its merge
+waits for that answer.
 
 Once all have
 reached the checkpoint, report as SKILL.md § Report shapes it: per session,

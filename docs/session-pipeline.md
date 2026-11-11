@@ -213,22 +213,28 @@ the user comes back to everything else done.
   comes back the same way: a review finding the session judges
   foundational, or a design objection it rebutted.
 
-  **A critical question** holds that work too, whatever the session
-  recommends, and is asked at once, on its own. It is one whose answer
-  people or later work will come to rely on, so that changing it after it
-  ships makes someone adapt:
+  **A critical question** is marked as one and asked at once, on its own.
+  The session still builds on its recommendation, and the merge waits for
+  the user's agreement. It is a question someone will have built on the
+  answer to by the time it could be changed: customers who form a habit or
+  a workflow around it, data stored in its shape, later work that assumes
+  it. The test: if the answer changed a month after it ships, who would
+  have to adapt? When that is nobody, or only the team editing code, it is
+  a default to take and tell.
 
-  - whether subagents may edit the wiki, or what else the product does
-    without asking its user;
-  - a workflow customers have built their week around;
-  - how a reply looks as it streams, or another change to the look and feel
-    of the main surface;
-  - what counts as a planner rule in a release gate;
-  - a variable every release must then set.
+  - **Critical, for example:** whether subagents may edit the wiki, or what
+    else the product does without asking its user; how a reply looks as it
+    streams; how table rows are stored for every PDF read from now on; how
+    a planner's "from now on" rule is saved; what counts as a planner rule
+    in a release gate; a variable every release must then set.
+  - **Not critical, for example:** making a schedule that refused to save
+    work again; which queue tells search, how often a slow page is retried,
+    how long deleted rows are kept; the wording of a notice or a report
+    line; one pull request or two, and which carries a fix; a known limit
+    accepted and recorded; behaviour on a path no customer takes yet.
 
-  Making a schedule that refused to save work again, or adding an agreed
-  setting to a menu, asks nobody to adapt. These are examples: the session
-  judges each case, and one or two in a batch is usual.
+  These are examples to reason from, on both sides: the session judges
+  each case, and one or two critical questions in a batch is usual.
 - **Mutations of production data**: SQL, a script or a backfill run against
   a production database; a write in a customer's workspace or data; a change
   to production infrastructure, such as taking down or resizing a tier; and a

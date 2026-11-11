@@ -37,12 +37,13 @@ bot follows `DOGFOOD.md`.
   notes live in the handoffs clone, and a claim older than today is a lead
   until it is measured. The session-facing words are planlab snippets, which
   a driver may adapt (the user's word).
-- **A critical design question holds the work that depends on it and is
-  asked at once, on its own** (11-11, the user's choice between the two
-  forms). Critical is a principle the session judges, with examples: an
-  answer people or later work will come to rely on, so that changing it
-  after it ships makes someone adapt. Landed unreplayed on the user's word;
-  see open comparison 7.
+- **A critical design question is marked, asked at once on its own, and
+  still built on; its merge waits** (11-11, the user's choice after batch
+  11-10 ran that way and a morning under the hold). Critical is a principle
+  the session judges, with examples on both sides: someone will have built
+  on the answer by the time it could be changed. The build stops only for a
+  question with no recommendation and at a prototype's variants. See open
+  comparison 7.
 - **A larger UI or UX change shows its design as a prototype** (11-11, the
   user's word): `emil-prototype`, the user's pick, `emil-finish`, in planlab
   and itell.
@@ -85,17 +86,16 @@ adding more.
    planned batches. Also count start notes a session found wrong at pickup.
    Drop the third session if its report changes nothing the user notices
    twice running.
-7. **Critical questions.** Owed first: replay `q-critical-question` and its
-   counter-case `q-checkpoint-mixed` (`skill-evals` `cases/drive-step`) on
-   an arm rebuilt from the landed files, since the `critical-holds` arm
-   predates the examples and the revision; the mini's accounts had no room
-   for it on 11-11. An
-   earlier wording that held the build parked the core of a fix in the
-   counter-case (0 of 3, from 3 of 3). Then, per batch: asks marked
-   critical against all design asks, hours each held its session, and how
-   many the user took as recommended. Revise the wording if more than about
-   a fifth of design asks are marked critical; reconsider the hold if
-   nearly all are taken as recommended.
+7. **Critical questions.** Per batch: asks marked critical against all
+   design asks, and how many the user took as recommended. Baseline, batch
+   11-10 on the wording before the principle: 8 marked of 51 asks, 7 kept as
+   built. Fresh readers on that batch's 22 design questions marked 5, 5 and
+   5 with the principle alone and 3, 3 and 2 with examples on both sides.
+   Revise the wording if a batch marks more than about three. Owed: a
+   replay of `q-critical-question` and `q-checkpoint-mixed` (`skill-evals`
+   `cases/drive-step`) on an arm rebuilt from the landed files; the mini's
+   accounts had no room on 11-11. The same behaviour on earlier wording
+   replayed 5 of 5 (`next-batch-2`).
 
 Retired, answered here: wakes that drew no action (12 of 76 in 11-09,
 against 14 of 124 and the 70% the engine pass began from); strategic reviews
@@ -103,6 +103,48 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 (none in three batches). Retired, not reached: the iTELL comparisons of
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
+
+## 2026-11-11 — critical questions are flagged and built on, with examples on both sides (same pass, mini2 `50c232d4`)
+
+**Ask.** Would anti-examples make the boundary clearer; look at the new
+transcript for what does not count, and reframe the principle if needed.
+Then the user's word: land the reframed principle with the anti-examples,
+and go back to flag and build on.
+
+**Corpus.** The Session Driver's chat, 11-10 20:52 to 11-11 10:28 GMT, and
+batch 2026-11-10's event log: 51 asks, 26 answered, 25 as recommended and
+one moot. That batch ran on the first landed wording (asked at once, built
+on). The bot marked 8 questions critical (A32, A36, A37, A42, A43, A44, A48,
+A49); the user kept 7 as built and questioned A49, where the options were
+unclear. Their words on the run: smoother, since it "does not stop too much
+at the design gate and just carries on with the built recommendations".
+
+**Reader test.** The batch's 22 design questions, labels removed, were
+classified by fresh subagents holding one rule each
+(`scratchpad/crit/` of this session; the lists are in this entry's commit
+only as counts). The principle alone: 5, 5 and 5 critical, always A32, A37,
+A43 and A48, the fifth A44 twice and A47 once. With the cost-to-change test
+and examples on both sides: 3, 3 and 2, always A32 and A48, A37 twice. A37
+(a staff-only switch a later phase builds on) is the boundary case, left to
+judgment. Limits: three runs a side, on one-paragraph summaries; which set
+is right is the user's to say.
+
+**What does not count,** each kept as built in that batch: something
+tunable later (A30, A34, A38), a notice's or report line's wording (A40,
+A15, A45), packaging (A17, A49), a recorded limit (A35, A50, A51), a path
+nobody takes yet (A36, A42), a one-line revert (A41).
+
+**Changed.** The principle reads: someone will have built on the answer by
+the time it could be changed, with the test "who would have to adapt a
+month after it ships", and examples on both sides, in the pipeline doc's §
+Who decides (planlab instances) and NOTICE.md (general ones). A critical
+question is marked and asked at once; the session builds on. The build
+stops for a question with no recommendation and at a prototype's variants.
+`q-critical-question` is back in its build-on form.
+
+**Not verified.** No replay on this wording (open comparison 7). The hold
+was live from about 10:40 to this landing; what it parked in that window
+was not read.
 
 ## 2026-11-11 — a critical question holds its work; UI changes show a prototype (same pass, mini2 `50c232d4`)
 
