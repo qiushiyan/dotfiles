@@ -139,10 +139,11 @@ An open headroom refused for want of Fable ends its screen with `Fable has
 room again <when>: …` or `nothing says when Fable has room again: …`.
 Close its block as `next:` says, but do not open it again as `next:` says.
 When that line offers `run it without --account`, open it once more
-without `--account`, and headroom takes an account with Fable room.
-Otherwise, or when that open is refused too, ask the user: another model
-now, or the wait until the time headroom names; what it was opened for
-waits with it. A prompt to continue on usage credits is flagged to them and
+without `--account`, and headroom takes an account with Fable room. When
+the line offers no such open, or that open ends the same way, ask the user:
+another model now, or the wait until the time headroom names; what it was
+opened for waits with it. An open refused for another reason is that
+reason's, as any failed open is. A prompt to continue on usage credits is flagged to them and
 never approved.
 
 A choice you or a session settled is told the same way, not asked: note it
