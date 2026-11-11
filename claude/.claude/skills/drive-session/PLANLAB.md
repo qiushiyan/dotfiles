@@ -150,6 +150,9 @@ drive send sr-summary-decisions@… --snippet recap
 drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
 ```
 
+- **A planned session's done-when is the bar for its merge step:** read
+  its report against its note's checks, and send back once a check it
+  names but did not run.
 - Once the stages the pipeline doc's § Who decides lists have run,
   `merge-when-ready` merges, releases (or confirms a release in flight
   shipped it), checks what production serves and writes the changelog,

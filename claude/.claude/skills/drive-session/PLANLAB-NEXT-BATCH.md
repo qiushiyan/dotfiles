@@ -62,11 +62,11 @@ drive open batch-review --dir ~/dev/planlab/main --goal 'Turn both reports into 
 ```
 
 Its report is the batch: a table in start order with each session's label,
-goal and done-when, which the ask and the opens are built from. The session
-plans; opening and driving stay yours. A goal steers its session's whole
-run, so one that reads as a task rather than an outcome for the person who
-meets the problem, or names no check for done, goes back once, as step 1's
-unmeasured lead does.
+goal, constraints and done-when, which the ask and the opens are built
+from. The session plans; opening and driving stay yours. These steer each
+session's whole run, so a goal that reads as a task rather than an outcome
+for the person who meets the problem, or a session with no check for done,
+goes back once, as step 1's unmeasured lead does.
 
 ## 3. The start notes, and the one pick
 

@@ -119,26 +119,33 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
 
-## 2026-11-12 — the batch review sets each session's goal and its done-when (planlab `loopy-batch-review`, `loopy-batch-notes`)
+## 2026-11-12 — the batch review settles each session by goal, constraints and done-when (planlab `loopy-batch-review`, `loopy-batch-notes`)
 
 **Ask.** The user: the finalizing planning session should sharpen each
 session's goal, ambitious and at the right scope, as a user and from first
 principles, with ways to verify it in the verify skill's terms, without
-overthinking it.
+overthinking it; then, after reading the prompting guides in
+`~/dotfiles/references/`, as goals, constraints and verifications.
 
 **Changed.** planlab's local snippets: `loopy-batch-review` gains a step
-setting each goal (the outcome, not the item; layered to one design; done
-when, in `pl-loopy-verify`'s terms), with one example pair, and its table
-carries goal and done-when; `loopy-batch-notes` carries them whole. Here:
-PLANLAB-NEXT-BATCH.md step 2 sends back once a goal that reads as a task or
-names no check.
+settling each session by its goal (the outcome, not the item, and what this
+PR delivers), its constraints (each named exactly, since a model applies a
+limit as written and vague caution holds back routine work: Fable 5.2's
+guide) and its done-when (in `pl-loopy-verify`'s terms: the completion
+condition stated up front, Opus 5.5's guide), with one example pair;
+`loopy-batch-notes` carries the three whole, what waits for the user among
+the constraints. Here: PLANLAB-NEXT-BATCH.md step 2 sends back once a goal
+that reads as a task or a session with no check; PLANLAB.md makes the
+done-when the bar the bot reads a report against before the merge step.
 
 **Verified.** An A/B on Sonnet 5.5 playing the review over three 11-10 cards
 (scratchpad `goals/`): the old text gave task statements with no checks; the
 new gave outcome, this PR, and done-when rows, a red-on-develop predicate for
 each bug and a post-merge read where only production can answer. The
-`skill-page-titles` row echoed the example, which is that card. Not run: a
-live planning session.
+`skill-page-titles` row echoed the example, which is that card. A third
+run on the three-part text named each constraint exactly (code, PRs, owner
+actions) and gave post-merge reads an expected value. Not run: a live
+planning session.
 
 ## 2026-11-11 — first prompts: a start note's opening, composed by drive (brief `0171e56`, drive `7c0a2c5` `9e90af6`)
 

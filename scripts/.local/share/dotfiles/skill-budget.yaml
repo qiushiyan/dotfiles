@@ -84,7 +84,10 @@ skills:
   # raised 2026-11-12: the batch review's report carries each session's goal and
   # done-when, and the bot sends back once a goal that reads as a task or names no check
   # (+0 body, +41 total)
-  drive-session: {body: 2788, total: 11481}
+  # raised 2026-11-12 again: a planned session is settled by goal, constraints and
+  # done-when, and its done-when is the bar the bot reads its report against before the
+  # merge step (+0 body, +34 total)
+  drive-session: {body: 2788, total: 11515}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it
