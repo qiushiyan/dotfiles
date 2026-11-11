@@ -617,3 +617,25 @@ more messages to add what the prompts lacked.
 **Next pass compares** the user's typed messages between asking for a batch
 and its sessions opening (11-10: six, five of them additions), and start
 notes a session found wrong at pickup.
+
+## 2026-11-11 — the batch-planning keys weigh a closing-reads session (planlab)
+
+From the user's ask (improve-tool pass mini2 `50c232d4`): owed production
+reads pile up and get forgotten, and a session that takes the due ones
+together has worked, so the sessions that plan a batch should consider one.
+
+**Receipts.** Batches 11-02 (`S6`, closing reads), 11-06 (the second
+batch's list) and 11-10 (`closing-reads`, #11155, from the brief
+`infra/closing-reads-third-batch`) each had one; that brief counts 87 reads
+open and says why they batch: "the same skills over the same production
+surfaces".
+
+**Changed** (planlab `.tabtype.local.toml`). `loopy-initiatives-review`'s
+Recommend step asks whether the reads now due should go to one
+closing-reads session; `loopy-batch-review`'s Re-cluster step puts them
+together unless a session in the batch already owns the change a read is
+about, and has it say so when it leaves that session out.
+`loopy-slack-triage` is unchanged: it does not read the owed reads.
+
+**Next pass compares** planned batches with reads due and no closing-reads
+session, against the reason the review gave.
