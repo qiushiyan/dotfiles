@@ -199,17 +199,20 @@ drive send pool-drain@… --file /tmp/pool-drain-fixups.md              # your o
 drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ attaches the file, as the user's would
 ```
 
-- A session's first step carries its task and says where it stops: a session
-  told its finish goes straight there, past review and any hold. A step
-  that has a session build asks for a worktree in its text. Every session
-  carries a `--goal`: what it sets out to solve, for a user who remembers
-  the product but not the session; record it again only when its purpose or
-  scope changes. Its label names its Rex tab, where the user finds it, so
-  name its work, never a number like `S1`; join a window under its tab's
-  name.
+- A session's first step opens on the line the user would type: the
+  project's entry skill, then the task. drive types a skill's line and
+  attaches the rest, so the skill goes first and where it stops below it: a
+  session told its finish goes straight there, past review and any hold. A
+  planned session opens from its start note, a brief the user names with
+  `--brief`. Every session carries a goal (a note's `goal:` line), for a user
+  who remembers the product but not the session; record it again only when
+  its purpose or scope changes. Its label names its Rex tab, so name its
+  work, never a number like `S1`; join a window under its tab's name.
 
   ```bash
-  drive open summary-decisions --dir ~/dev/planlab/main --goal "Make Loopy's running summary of long chats keep the decisions it already settled, instead of dropping them each time it is redone (QIU-295)." --file /tmp/summary-decisions-start.md   # "… Build it in a worktree of your own; commit and stop before the PR."
+  drive open closing-reads --dir ~/dev/planlab/main --from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/closing-reads.md 'This turn is onboarding only.'
+  drive open sonnet-failover --dir ~/dev/planlab/main --brief model-failover-sonnet-5-5-first --goal '…'
+  drive open grep-blank-lines --dir ~/dev/planlab/main --goal '…' --file /tmp/grep-blank-lines-start.md   # first line: /pl-loopy-debug 4be17c02 — <what was reported>
   drive record goal P0 '…'   # a session that joined on a send, or one drive status names as having none
   ```
 - A key that resolves to another project's file is a stop, not a fallback.
@@ -217,11 +220,12 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
   turn, so return one that drops a stage (the pipeline doc's rule for
   briefs) to its author.
 - Work the user asks *you* to do goes to a new session, opened with `drive
-  open` in the project's main checkout and started at stage 1 with their
-  request. You stay a reader and sender: work run from your own shell has no
-  session to review or report it, and lands in checkouts others use. Other
-  sessions share that checkout, so the first step ends `This checkout is
-  shared: work in a worktree of your own, and install nothing in this one.`
+  open` in the project's main checkout on the line they would type to start
+  it. You stay a reader and sender: work run
+  from your own shell has no session to review or report it, and lands in
+  checkouts others use. Other sessions share that checkout, so the step you
+  write ends `This checkout is shared: work in a worktree of your own, and
+  install nothing in this one.`
 
 ## Shared worktrees and checkouts
 

@@ -76,7 +76,9 @@ done once this report is sent.
   hand-written code, and a shared package for anything both the app and
   Taodesk need.
 - **A bug report** goes through `/pl-loopy-debug` against the real
-  production trace.
+  production trace: its session opens on `/pl-loopy-debug <ids> — <what
+  was reported, where>`. Any other planlab session you open on the user's
+  word opens on `/pl-loopy-onboarding <their request>`.
 - **Decisions** reach the user on one combined board, each with your
   recommendation.
 - **Work the user hands you** starts a new session in its own worktree.

@@ -110,16 +110,18 @@ In this order, on the user's yes:
 
    ```bash
    drive batch new 2026-11-12 …        # yours, as BOT.md starts one
-   # one open per session; its label, goal and path come from its note
-   drive open skill-page-titles --dir ~/dev/planlab/main --goal '…' '/pl-loopy-onboarding Start from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/skill-page-titles.md. This checkout is shared: work in a worktree of your own, and install nothing in this one.'
+   # one open per session, labelled as its note is named; after the note, where its first turn stops
+   drive open skill-page-titles --dir ~/dev/planlab/main --from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/skill-page-titles.md 'End on your diagnosis and the PR you would ship; build nothing yet.'
    ```
 
-   Every session opens from its note, a bug included, since onboarding
-   hands an incident's ids to `pl-loopy-debug` first. Its `--goal` is the
-   note's goal in a sentence. The folder's `README.md` gives the start
-   order; sessions it keeps apart open one after the other's merge. A start
-   note sets up the work and you send its stages, so SKILL.md's rule for a
-   brief that drops a stage leaves it alone.
+   Every session opens from its note, whether a brief carries its work or
+   not. The note's `opens:` and `goal:` lines decide how it starts and what
+   it is for, so the open needs no `--goal` and nothing about the brief.
+   The folder's `README.md` gives the start order; sessions it keeps apart
+   open one after the other's merge. A start note sets up the work and you
+   send its stages, so SKILL.md's rule for a brief that drops a stage
+   leaves it alone. An open drive refuses for the note names what the note
+   lacks: send that to the session that wrote the notes.
 4. **The planning sessions, last:** `drive --batch 2026-11-09 close
    batch-review@…` for each, once every session that can start has: until
    then a note may be questioned, and its evidence sits with the session
