@@ -119,6 +119,27 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
 
+## 2026-11-12 — the batch review sets each session's goal and its done-when (planlab `loopy-batch-review`, `loopy-batch-notes`)
+
+**Ask.** The user: the finalizing planning session should sharpen each
+session's goal, ambitious and at the right scope, as a user and from first
+principles, with ways to verify it in the verify skill's terms, without
+overthinking it.
+
+**Changed.** planlab's local snippets: `loopy-batch-review` gains a step
+setting each goal (the outcome, not the item; layered to one design; done
+when, in `pl-loopy-verify`'s terms), with one example pair, and its table
+carries goal and done-when; `loopy-batch-notes` carries them whole. Here:
+PLANLAB-NEXT-BATCH.md step 2 sends back once a goal that reads as a task or
+names no check.
+
+**Verified.** An A/B on Sonnet 5.5 playing the review over three 11-10 cards
+(scratchpad `goals/`): the old text gave task statements with no checks; the
+new gave outcome, this PR, and done-when rows, a red-on-develop predicate for
+each bug and a post-merge read where only production can answer. The
+`skill-page-titles` row echoed the example, which is that card. Not run: a
+live planning session.
+
 ## 2026-11-11 — first prompts: a start note's opening, composed by drive (brief `0171e56`, drive `7c0a2c5` `9e90af6`)
 
 **Ask.** The user: sessions the bot opens should start like theirs, the
