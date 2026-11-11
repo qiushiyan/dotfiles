@@ -135,12 +135,15 @@ reverse it:
 - once a session's last step has run, `drive cleanup`; a `left by` line is
   reported once, never asked.
 
-One relaunch is the user's: an open headroom refused for want of Fable,
-whose screen ends `Fable has room again <when>: run it on another model …`
-or `nothing says when Fable has room again: …`, stays closed whatever
-`next:` says, until the user picks another model now or the wait, and what
-it was opened for waits with it. A prompt to continue on usage credits is
-flagged to them and never approved.
+An open headroom refused for want of Fable ends its screen with `Fable has
+room again <when>: …` or `nothing says when Fable has room again: …`.
+Close its block as `next:` says, but do not open it again as `next:` says.
+When that line offers `run it without --account`, open it once more
+without `--account`, and headroom takes an account with Fable room.
+Otherwise, or when that open is refused too, ask the user: another model
+now, or the wait until the time headroom names; what it was opened for
+waits with it. A prompt to continue on usage credits is flagged to them and
+never approved.
 
 A choice you or a session settled is told the same way, not asked: note it
 on the session, where their page shows it, with the option passed over and
