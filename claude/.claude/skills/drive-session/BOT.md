@@ -96,6 +96,8 @@ recommend.
 - **Plain words, times in GMT.** Send a result, never a note that you are
   checking or will report later. While the user is away, a message is for
   something major.
+- **Review bots.** Codex and Cursor out of quota is not a blocker and not
+  worth reporting; rely on the in-session review and the strategic review.
 - **A stop that needs the user** is written for the user as they read it: on
   the phone, hours later, remembering the product, the customers and the
   people but not the session, its vocabulary, its tickets, its finding
