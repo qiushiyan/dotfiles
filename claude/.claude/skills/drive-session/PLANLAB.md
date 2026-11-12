@@ -50,6 +50,18 @@ drive send summary-decisions@… --snippet implement-now 'I answer the design qu
 A question with no recommendation holds only the work that depends on it;
 park the session once nothing else is left to build.
 
+A planned session's goal and checks are its own to revise at its design.
+When the reply moves either from its note, put that on its record before
+you send it on, since the merge step reads it from there:
+
+```bash
+drive record goal summary-decisions '…'    # a goal that moved
+drive record note --session summary-decisions 'Done when, as its design settled: …; in place of the note'"'"'s …, because …'
+```
+
+A better check for the same outcome is a default taken; a goal that
+changes what the user gets is a design question like any other.
+
 **A critical question** (the pipeline doc's § Who decides, with its
 examples on both sides), whether the session marked it or you judge it so,
 goes to the user at once, in a message of its own that says it is critical.
@@ -58,8 +70,9 @@ waits for that answer.
 
 Once all have
 reached the checkpoint, report as SKILL.md § Report shapes it: per session,
-the design in a few lines, what the spikes showed, and each design question
-with what it changes for the person using the product. List every technical
+the design in a few lines, what the spikes showed, where its goal or checks
+moved from its note, and each design question with what it changes for the
+person using the product. List every technical
 choice as the default taken, with any consequence for scope:
 technical-looking choices are where the user has amended scope before.
 
@@ -150,9 +163,11 @@ drive send sr-summary-decisions@… --snippet recap
 drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
 ```
 
-- **A planned session's done-when is the bar for its merge step:** read
-  its report against its note's checks, and send back once a check it
-  names but did not run.
+- **A planned session's done-when is the bar for its merge step:** the
+  checks its design settled, on its record, or its note's where the design
+  moved none. Send it back once for a settled check its report shows no
+  verdict for. A check dropped or swapped after its design goes to the user
+  as a design question, with what the old check showed.
 - Once the stages the pipeline doc's § Who decides lists have run,
   `merge-when-ready` merges, releases (or confirms a release in flight
   shipped it), checks what production serves and writes the changelog,

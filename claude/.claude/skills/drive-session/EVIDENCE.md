@@ -119,6 +119,32 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
 
+## 2026-11-12 — a session owns its goal and checks once it has read the code (consult `consult-r2`, claude-fable-5-2)
+
+**Ask.** The user: a planner that sees each domain from above can set a
+session on the wrong problem or the wrong metric; give the session the
+final say on its goal and checks, keeping the planner's start.
+
+**Consult.** Our position put the right in NOTICE.md; the voice moved it.
+The notice reaches review sessions, adopted windows and chores with no
+note, and its critical examples include "a definition that checks rest
+on", which would make a better check a stop. And the consult brief's fixed
+"The goal, and what must be true" section fences a goal given in the
+user's voice, so the design round never put it on trial; nor did any step
+before the build read the checks, which the verify loop re-derives from
+what was built. The spec bar's Verification section carries settled
+checks through `/compact`, so `write-spec` needs nothing.
+
+**Changed.** planlab's `loopy-batch-notes` ends each note's three parts with
+a fixed line handing the goal and checks to the session (the user's
+constraints stay), and `loopy-batch-review` calls them a start, not a
+contract. Global `consult-design` and `consult-then-build` (and planlab's
+copy) put the goal and checks on trial and end with them as held, with
+what moved. PLANLAB.md: the bot records a moved goal or checks, the design
+report says where they moved, and the merge bar reads the settled checks;
+a check dropped or swapped after the design goes to the user with what
+the old one showed.
+
 ## 2026-11-12 — the batch review settles each session by goal, constraints and done-when (planlab `loopy-batch-review`, `loopy-batch-notes`)
 
 **Ask.** The user: the finalizing planning session should sharpen each
