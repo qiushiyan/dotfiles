@@ -838,7 +838,7 @@ matched a pattern on a syntax check, a `git status` and a look for
 TypeScript in the real checkout's `node_modules`, none of later history;
 kept.
 
-**Next pass** tests a closing rule for the fold, built from the diff rather
-than from memory, on the same forks: `told` and `unasked-behaviour` against
-these `base` rows.
+**Not pursued (the user, 11-12):** a closing rule for the fold, built from
+the diff rather than from memory. If picked up, test it on the same forks:
+`told` and `unasked-behaviour` against these `base` rows.
 
