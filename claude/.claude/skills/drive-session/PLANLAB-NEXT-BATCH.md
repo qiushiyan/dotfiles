@@ -75,7 +75,7 @@ session, writes a start note per session while the user reads:
 
 ```bash
 # one question for the whole batch, worded from the review's table; the folder is named for the day the notes are written
-drive record ask batch-review --question 'Start this batch of nine sessions? …' --recommendation '…' --if-unanswered 'The start notes are written meanwhile; nothing opens.'
+drive record ask batch-review --question 'Start this batch of six sessions? …' --recommendation '…' --if-unanswered 'The start notes are written meanwhile; nothing opens.'
 drive send batch-review@… --snippet loopy-batch-notes 'The folder is ~/dev/.handoffs/planlab-main/_batches/2026-11-12/.'
 ```
 
