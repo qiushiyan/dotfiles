@@ -40,6 +40,10 @@ them from the environment.
 - Edits are live; no build. Use `make restow` after file additions or removals
   that require new links. `dotadd <path>` brings an unmanaged file under Stow.
 - Commit directly on the current branch without asking; push after milestone implementation has finished.
+- **Another repository's files are governed by its own instructions, which
+  a session here does not load.** `docs/repos.md` says what each repository
+  `twin` carries is for and what here depends on it. Read the target's
+  `CLAUDE.md` before the first edit there.
 - For shortcut or usage questions, read the tool's config and
   `tmux/.config/tmux/workflow.md`; treat the request as read-only.
 - For theme additions or ports, follow `.claude/skills/add-theme/SKILL.md`
