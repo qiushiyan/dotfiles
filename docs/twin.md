@@ -232,7 +232,7 @@ carry = [".env", "notes.local"]                   # gitignored paths, literal, f
 ```
 
 ```bash
-git add docs/repos.md                                   # its entry there: what it is, what here depends on it
+git add docs/repos.md                                   # with its entry written; test-repos-map.sh fails without one
 git commit -am "twin: register newproj" && git push    # in ~/dotfiles, on the machine that has it
 twin repos pull dotfiles && twin dotfiles apply         # on each other machine
 twin repos clone newproj                                # on each other machine

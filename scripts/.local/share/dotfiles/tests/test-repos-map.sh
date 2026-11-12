@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test-repos-map.sh — docs/repos.md has exactly one entry for each repository
-# twin's manifest lists, this one excepted. A repository added to the
-# manifest without an entry fails M1, and an entry left behind after a
-# repository leaves the manifest fails M2.
+# twin's manifest lists, except this one and those its `Left out ...:` line
+# names. A repository added to the manifest without an entry fails M1, and an
+# entry or left-out name that is not in the manifest fails M2.
 #
 # Usage: bash test-repos-map.sh [M1 M2]
 #
@@ -24,6 +24,8 @@ bad()  { FAIL=$((FAIL+1)); FAILED="$FAILED $1"; echo "FAIL $1: $2"; }
 
 listed=$(sed -nE 's/^\[repos\.([A-Za-z0-9_.-]+)\].*/\1/p' "$MANIFEST" | grep -vx dotfiles | sort)
 entries=$(sed -nE 's/^- \*\*([A-Za-z0-9_.-]+)(:\*\*|\*\* \().*/\1/p' "$DOC" | sort)
+omitted=$(sed -nE 's/^Left out[^:]*:(.*)/\1/p' "$DOC" | grep -oE '`[A-Za-z0-9_.-]+`' | tr -d '`' | sort)
+entries=$(printf '%s\n%s\n' "$entries" "$omitted" | grep -v '^$' | sort)
 
 if want M1; then
   missing=$(comm -23 <(echo "$listed") <(echo "$entries" | sort -u))

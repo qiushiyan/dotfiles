@@ -1,27 +1,19 @@
 # Repositories — what each one is and what here depends on it
 
-These are the repositories `twin` keeps on every machine. Its manifest,
-`twin/.config/twin/twin.toml`, holds each one's path and remote, and
-`twin repos clone <name>` brings a missing one in. This doc covers what the
-manifest cannot: what each repository is for and which parts of this one
-depend on it. A session here can use it to tell which repository owns a
-change before editing anything. Each repository lives at `~/dev/<name>`
-unless its entry gives another path.
+Before a session here changes another repository, or sends a change to
+one, this doc says which repository owns the change and what here depends
+on it. It covers the repositories `twin` keeps on every machine, except
+the ones its last line leaves out. Each lives at `~/dev/<name>` unless its
+entry gives another path. Paths and remotes are in
+`twin/.config/twin/twin.toml`, and `twin repos clone <name>` brings in a
+missing one.
 
 ## Changing another repository from here
 
-- **Read its own instructions before the first edit there:** its
-  `CLAUDE.md`, else `AGENTS.md`, else `README.md`. They set its commit
-  policy, its tests and how it installs, and those differ between
-  repositories: drive commits on `main`, while headroom gives each piece of
-  work its own branch. Claude Code loads another repository's `CLAUDE.md`
-  only when the session moves there with `/cd`, or when that directory was
-  added with `--add-dir` while `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD`
-  is set. Reading or editing a file there from a session started here, or
-  running `cd` in the shell, loads nothing.
-- **Commit each file in the repository that owns it.** A tool and the skill
-  or doc here that describes it change together but are committed in their
-  own repositories.
+A change that crosses repositories is done when both halves are committed.
+When a tool changes, the skill or doc here that describes it changes too,
+and each half is committed in its own repository under that repository's
+rules.
 
 ## Session tooling
 
@@ -39,8 +31,7 @@ along a skill or doc here.
   consult, review and improve-tool skills here dispatch through it.
 - **headroom:** picks the account with quota left and launches the vendor
   on it. The `x*` launchers in `zsh/.config/zsh/claude.zsh` and the quota
-  mod depend on it, and engine fixes belong there
-  (`docs/claude-accounts.md`).
+  mod depend on it (`docs/claude-accounts.md`).
 - **claude-steps:** shows what ran in each Claude Code session. The
   `prefix S` popup and its label config are here
   (`tmux/.config/tmux/scripts/steps.md`).
@@ -56,16 +47,12 @@ along a skill or doc here.
 - **clikit:** the invocation and help contract every Go CLI under `~/dev`
   builds on, so a change to it reaches each CLI that upgrades. The `go-cli`
   skill here owns how those CLIs are maintained.
-- **ccclean:** keeps `~/.claude` from growing without bound. The launchd
-  packages here schedule it.
 - **mailkit:** lets agents read mail and send it only after the person has
   seen it. The `read-email` skill is linked from it.
 - **slackkit:** the Slack engine and the apps built on it. The `slack` skill
   is linked from it.
 - **skill-evals:** runs a skill's test cases headless against chosen
   revisions (`docs/agent-skills.md` § Testing a skill by running it).
-- **explain-diff:** turns a branch's changes into a served, interactive
-  walkthrough. Its skill is linked from it.
 - **tabtype:** the macOS app behind `;;` snippet completion. The snippet text
   is in this repository's `tabtype/` package and the app is in that repo. A
   release reaches every user of the app (`docs/session-pipeline.md`).
@@ -80,7 +67,7 @@ along a skill or doc here.
   `apps/platform`, and work goes through branches and PRs.
 - **itell-cms:** iTELL's content management system.
 
-## Personal and dormant
+## Personal
 
 - **wiki** (`~/wiki`): the personal wiki behind the `wiki` skill.
 - **degit:** a Go port of degit, installed through the Brewfile.
@@ -88,5 +75,5 @@ along a skill or doc here.
   depends on it.
 - **raycast-tab-utils:** a Raycast extension for the current browser tab.
   Nothing here depends on it.
-- **greenflag:** a semi-AFK orchestrator for a two-worker workflow. It is no
-  longer maintained.
+
+Left out as unmaintained and unused: `ccclean`, `explain-diff`, `greenflag`.

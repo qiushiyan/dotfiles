@@ -23,13 +23,16 @@ Other homes:
 ## The stages
 
 In order; a stage the branch does not need is skipped, and a later fix can
-send the branch back through review and docs. Where a project builds on
-branches — planlab, itell, the tools under `~/dev` — a session starts on the
-main checkout and moves to a worktree before it installs or builds anything:
+send the branch back through review and docs. Where the work builds on a
+branch — planlab and itell always, a tool under `~/dev` for a change that
+runs these stages — a session starts on the main checkout and moves to a
+worktree before it installs or builds anything:
 `gwt` places it and the session follows with its context
 (`docs/claude-mods.md` § worktree). Other sessions run from the main checkout, so an install there
-changes what they run. `~/dotfiles` commits on `main`, and its `closeout`
-then skips the merge.
+changes what they run. Other work on a tool, such as a fix or the half of a
+change made in another repository, commits where the tool's `CLAUDE.md`
+says, which for most is `main`. `~/dotfiles` commits on `main`, and its
+`closeout` then skips the merge.
 
 1. **Onboard.** `/onboarding <goal>` (itell, duet), `/pl-loopy-onboarding
    <goal>` (planlab's Loopy), or a handoff brief's pointer. It ends in an
@@ -174,7 +177,7 @@ itell's `consult-then-build` says.
   deploy serves.
 - **Personal tools** (`~/dotfiles` and the tools under `~/dev` that `twin`
   installs): `closeout` merges to `main` locally, with no PR, installs on
-  both machines with `twin sync`, and removes the branch.
+  every machine with `twin sync`, and removes the branch.
 - **TabType:** as a personal tool, but its `closeout` publishes a release to
   every user.
 - **No PR** — a session that only onboards, triages or reports: its recap,
