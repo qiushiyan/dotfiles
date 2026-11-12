@@ -351,8 +351,8 @@ cases, fixtures, commands and how to read a report.
   reply asks for what the session would build and leave, and stops before
   any edit. Work whose value spans several of the user's turns (`consult`,
   the fold-in as built) stays with cold readers and later uses;
-  `drive-session`, which a chat bot runs over a night, is tried by a real bot
-  (its `DOGFOOD.md`). `improve-tool` routes its runtime claims here; a session
+  `drive-session`, which a driver runs over a night, is tried by a real one,
+  a bot or a Claude Code session (its `DOGFOOD.md`). `improve-tool` routes its runtime claims here; a session
   outside it reaches the tool by naming it ("run obelisk's skill-evals cases
   at HEAD").
 - **What it swaps:** the skill's text at a git revision, the working tree, or

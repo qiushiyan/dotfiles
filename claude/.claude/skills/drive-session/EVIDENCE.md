@@ -119,6 +119,40 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
 
+## 2026-11-12 — a Claude Code session drives, woken through drive listen (drive `d2fba59` `4485052`, consult `consult-r2`, review `review-r1`)
+
+**Ask.** The user: a Claude Code session started with `x` should drive as
+the Grok bot does, with the same skill and drive, talking to the user at its
+terminal; no launch command of drive's.
+
+**Corpus.** The Session Driver's chat 11-02 → 11-12 (405 turns, 240 woken):
+its failures were the platform's (reports that never reached the chat, two
+runs on one session, 183 unrecorded commands) and judgment's (a park with no
+ask, a merge without the user's yes after a reset). Probes on mini2 with
+Claude Code 2.1.322: the built-in `SendMessage` reaches only sessions on the
+same account, and a session took a peer's "commit it" as a suggestion and
+did not commit; a script's message through a session's messaging socket
+started a turn in an auto-mode session and was held behind a dialog in a
+bypass one; a background job's exit started an idle `x` session's turn.
+
+**Changed.** drive: a batch new from a Claude Code session in Rex is a
+session batch whose wakes wait in the log for the driver's one `drive
+listen`; the watchdog types a `[drive]` line into the driver when wakes wait
+with no listener; delivered, taken and heard stay three facts. Here: BOT.md's
+every-driver content became REPORTING.md, SESSION.md is the session driver's
+file, SKILL.md arms the veto with `drive timer` for both drivers.
+
+**Verified.** A live session batch driven from a Claude Code session: no
+`--driver` needed, and the background listener started the driver's next
+turn when the opened session's turn ended. A Sonnet cold reader on
+SESSION.md ran the loop as written. Not run: a night, the doorbell after a
+real Rex restart, compaction.
+
+**Next pass compares.** A first night driven by a session against a bot
+night: wakes taken per wake left, doorbell rings and what each recovered,
+asks the user found unneeded, and compactions and what the driver re-read
+after each.
+
 ## 2026-11-12 — a session owns its goal and checks once it has read the code (consult `consult-r2`, claude-fable-5-2)
 
 **Ask.** The user: a planner that sees each domain from above can set a
