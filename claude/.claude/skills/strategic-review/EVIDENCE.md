@@ -735,10 +735,7 @@ code against under a tenth, for 1.5 times the output, unrequested
 additions, and a changed existing behaviour in one try in six to ten. This
 skill opens on the opposite frame ("a pull request that someone else
 built"), which suits the report. The fold is where the sentence could help
-or hurt, just before a merge. Test it there before any live use: a replay
-whose request carries the away notice, so the review folds in the same
-turn, with and without the sentence in § Folding, scored on the fold's
-diff (reshapes made, behaviour changed outside a finding, tests green).
+or hurt, just before a merge. Tested there on 11-12: no effect (that entry).
 
 **Effort on Fable 5.2: no difference once the replay runs as live reviews
 do.** The user runs strategic reviews on Fable. Replayed `pr-8948`
@@ -776,3 +773,72 @@ fold riders (target none); and what the read of the fold found, against the
 unread folds of 10-28. And Fable's effort at the live window on a second
 and third replay (`pr-8858`, `pr-8959`): what `xhigh` finds beyond `high`,
 against a third more cost.
+
+## 2026-11-12 — the ownership sentence at the fold: no effect; every fold under-reports and repeats one fault
+
+**Ask.** The user: run the fold test the 11-10 entry deferred, shaped by
+our own view of the problem.
+
+**Design.** `~/dev/skill-evals` tool `strategic-review-fold`, run
+`srf-ownership-1112` on the mini. Each rollout forks one of the two Fable
+reviews of `pr-8948` from run `sr-fable-high-1m-1110` (`claude-fable-5-2[1m]`,
+`high`, 833k window) right after its report, and answers "Go ahead and fold
+all in." with the day's setup; the review, prompt and docs passes are cut,
+the same in every arm. Holding the report fixed measures the fold, not the
+review: rerunning the review per rollout, as the 11-10 plan had it, puts the
+spread between reviews into the arms. Case a's report asks no design
+question; case b's F1 asks to delete the pull reservation and its migration.
+Arms, words before the request: `base` none; `owner` the guide's sentence;
+`owner-change` "The code this pull request touches is yours: how it's built
+is your call, and you'll keep building on it." n=2 per arm per case. The
+runner gained `export` (commit `ea3672d`): each rollout's diff against the
+review's head is kept and read by the judge, `codex:gpt-6.1-terra` with three
+passes (the mini's Claude judge login had lapsed).
+
+**Result: the sentence moved nothing.** Per arm, mean over four rollouts:
+
+| | base | owner | owner-change |
+|---|---|---|---|
+| files touched (a / b) | 36 / 48 | 38 / 51 | 35 / 46 |
+| lines + / − (a) | 1188 / 861 | 1184 / 927 | 1215 / 896 |
+| lines + / − (b) | 1626 / 1696 | 1605 / 1736 | 1496 / 1634 |
+| output tokens | 344k | 364k | 372k |
+| agent $ (API estimate) | 41.71 | 47.07 | 41.48 |
+
+Checks, share of judge passes, cases a and b pooled: `beyond` (a change no
+finding asked for) 1.00 in every arm; `merged-unasked` 0.75, 0.92, 0.67;
+`unasked-behaviour` (no behaviour changed outside the findings) 0 in every
+arm; `told` (the closing message names every change) 0 in every arm;
+`fold-faults` 0 in every arm. Every 90% interval of a group against `base`
+spans or touches 0. Every b rollout took F1 (about 1,700 lines deleted) and
+said why. The guide's effect, merging repeated code in half of tries against
+under a tenth, does not appear because the baseline already merges: this
+skill's § Folding (reshapes and deletions first, every finding folded, one
+commit per owner) already does what the sentence does, so the sentence goes
+nowhere, here or in `drive-session/NOTICE.md`.
+
+**What every arm got wrong**, from the judge's evidence, checked against the
+diffs:
+- **The closing message leaves out changes, 12 of 12.** A new test file, an
+  extracted helper, a changed folder name in a result, a new queued note:
+  the guide's warning ("its closing summary named the larger changes but
+  often left out small ones"), with no ownership sentence needed.
+- **Behaviour changes outside the findings go unnamed, 12 of 12**: pull
+  consumption no longer stamping its turn index, `isDeliveryReceived`
+  accepting every `assigned` row, recollection limited to conversation runs.
+- **Every fold repeats r3 F2.** None of the 12 diffs passes a publication
+  budget into the lookup (the `settleWithinMs` fix that held); 11 add a grace
+  timer around a loop whose lookups each await `publishChildTerminal` with no
+  deadline. The `/review` round after the fold is what caught it in the real
+  PR, so that round is load-bearing.
+
+Not tested: a build from a spec, where the sentence might act where no
+fold instruction stands in for it; a second PR. Leaks: three rows each
+matched a pattern on a syntax check, a `git status` and a look for
+TypeScript in the real checkout's `node_modules`, none of later history;
+kept.
+
+**Next pass** tests a closing rule for the fold, built from the diff rather
+than from memory, on the same forks: `told` and `unasked-behaviour` against
+these `base` rows.
+

@@ -26,8 +26,10 @@ for a reader with none of your context.
 **New in the pages, and where each went.**
 - *Ownership.* "This codebase is yours" made Fable merge repeated code in
   about half of tries against under a tenth, at 1.5 times the output and a
-  changed existing behaviour in one try in six to ten. Not a house rule: a
-  test on the strategic review's fold comes first (`strategic-review`'s log).
+  changed existing behaviour in one try in six to ten. Not a house rule:
+  tested on the strategic review's fold on 11-12, it changed nothing, since
+  the fold's own instructions already act as ownership (`strategic-review`'s
+  log).
 - *Caution builds up.* Fable 5.2 follows cautions in notes, instruction
   files and other agents' messages closely; a "never" rule got an approved
   step taken one try in ten, "get a go-ahead first" nine in ten. Checked
