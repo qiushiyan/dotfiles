@@ -57,9 +57,6 @@ show now. A command your shell cuts short loses nothing: the next send,
 respond, park or close on that session settles it from the transcript. Send
 the step again only once `drive read search --user` shows it never arrived.
 
-Record what drive cannot see as you decide it (REPORTING.md § The record):
-the run the veto timer wakes starts from the record, not the chat.
-
 ## Your watchdog
 
 `drive watch --due-all` runs on the machine every five minutes (launchd's

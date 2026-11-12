@@ -32,7 +32,7 @@ drive status                                # every session: state, stage, PR, w
 drive read e8fec0                           # a window the user named, by its block: reply and view
 drive send e8fec0@3fa91c07 --as search --snippet land-pr   # the first send brings window 1 in as search
 drive read search                           # from then on, by label
-drive listen                                # in the background: ends when a session needs you
+drive listen                                # how a Claude Code driver is woken (SESSION.md)
 ```
 
 `drive --help` and each command's `--help` name the commands, flags and the
