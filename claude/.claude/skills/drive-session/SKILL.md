@@ -15,8 +15,9 @@ follows `~/dotfiles/docs/session-pipeline.md`, which owns the stages, the
 paths, each project's finish and who decides what. Read its § The stages, §
 Choosing the path, § Finishes and § Who decides before planning,
 [`PLANLAB.md`](PLANLAB.md) for planlab sessions and [`ITELL.md`](ITELL.md)
-for itell ones. A chat bot reads [`BOT.md`](BOT.md) for how it waits,
-remembers and reports.
+for itell ones. Your driver file says how you wait and remember
+([`SESSION.md`](SESSION.md) or [`BOT.md`](BOT.md));
+[`REPORTING.md`](REPORTING.md), how you write to the user.
 
 Done is every named session at its finish or parked on something only the
 user can give, and the report written.
@@ -31,7 +32,7 @@ drive status                                # every session: state, stage, PR, w
 drive read e8fec0                           # a window the user named, by its block: reply and view
 drive send e8fec0@3fa91c07 --as search --snippet land-pr   # the first send brings window 1 in as search
 drive read search                           # from then on, by label
-drive wait search                           # until its turn ends, in the background (a bot is woken instead: BOT.md)
+drive listen                                # in the background: ends when a session needs you
 ```
 
 `drive --help` and each command's `--help` name the commands, flags and the
@@ -53,9 +54,8 @@ still makes sense is yours.
    line per session, the defaults you take, what waits for them. Ask only
    what blocks a session, and hold that session only at the step that needs
    the answer. Record the plan (`drive record note 'plan: …'`), post it,
-   then wait five minutes in the background (`sleep 300`; a bot arms
-   BOT.md's veto timer) with nothing sent. A later answer counts from then
-   on.
+   then arm the five-minute veto (`drive timer 300 veto`) with nothing
+   sent. A later answer counts from then on.
 
    <example>
    - **1 · pool-drain** (heavy): onboarded → consult-design → /write-spec and the build on its recommendations, review and verify, land-pr, strategic review → merged and released once you have answered its design questions. Defaults: Q1 oldest first, Q2 no flag.

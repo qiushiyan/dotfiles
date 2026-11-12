@@ -20,7 +20,7 @@ to write, from what the user said and what the sessions found.
 One session per source of work: what arrived, and what was planned. The user
 asked for them, so open both at once, in the batch you drive now, since a
 new batch stops the wakes of the sessions still waiting in this one. With no
-batch live, start one as BOT.md does; step 4 then opens its sessions there.
+batch live, start one as your driver file (SESSION.md or BOT.md) does; step 4 then opens its sessions there.
 
 ```bash
 # what arrived; the window and what the user keeps for themselves are this batch's, in their words
@@ -112,7 +112,7 @@ In this order, on the user's yes:
 3. **The new batch and its sessions:**
 
    ```bash
-   drive batch new 2026-11-12 …        # yours, as BOT.md starts one
+   drive batch new 2026-11-12 …        # yours, as your driver file starts one
    # one open per session, labelled as its note is named; after the note, where its first turn stops
    drive open skill-page-titles --dir ~/dev/planlab/main --from ~/dev/.handoffs/planlab-main/_batches/2026-11-12/skill-page-titles.md 'End on your diagnosis and the PR you would ship; build nothing yet.'
    ```

@@ -1,16 +1,20 @@
-# Dogfooding with a real bot
+# Dogfooding with a real driver
 
-A change to `drive` or to this skill is tried end to end by a Grok bot that
-drives by `BOT.md`: it runs a small batch of real Sonnet sessions in a
-scratch repository, records each friction as it hits it, and reports where
+A change to `drive` or to this skill is tried end to end by a real driver,
+a Grok bot that drives by `BOT.md` or a Claude Code session that drives by
+`SESSION.md`: it runs a small batch of real Sonnet sessions in a scratch
+repository, records each friction as it hits it, and reports where
 the files and drive's messages failed it. A cold reader settles wording; this
 settles what only a night of real turns shows: wakes, holds, the watchdog,
 several runs acting at once, a report built after a reset. Done is an entry
 in `EVIDENCE.md` with each finding placed in its layer and fixed or kept.
 
 The bot is the Session Driver between its real drives, or a test bot set up
-the same way. This runbook is for whoever runs the dogfood; the bot reads
-only the brief and the files it names.
+the same way; a session driver is a fresh `x` session in a Rex tab of its
+own outside `work`, on the model under test. This runbook is for whoever
+runs the dogfood; the driver reads only the brief and the files it names.
+Steps 1 and 3 below are a bot's; a session driver names its batch's driver
+with `--driver claude-dogfood` while a real Claude Code driver drives one.
 
 ## Before the run
 
@@ -53,12 +57,12 @@ exists only there until it merges).
 You are dogfooding <what changed> before <it reaches the live bot>. <What the last run left untested.> Drive a small batch end to end by the skill alone, then tell me where it failed you.
 
 Read these in full at the start of every run, and trust them and drive's messages over what you remember of earlier runs:
-- <skill dir>/BOT.md (you are the bot it describes)
+- <skill dir>/BOT.md (you are the bot it describes), or <skill dir>/SESSION.md (you are the session it describes)
 - SKILL.md and NOTICE.md in the same folder
 - <dotfiles checkout>/docs/session-pipeline.md
 
 Your test world:
-- Start a batch as BOT.md shows, named dogfood-<today>, in the Rex session `dogfood`, with `--webhook <webhook>` and "<bot name>" in the after-wake command. Use drive's default config, and write no webhook or config file.
+- Start a batch as your driver file shows, named dogfood-<today>, in the Rex session `dogfood`: a bot with `--webhook <webhook>` and "<bot name>" in the after-wake command, a session with `--driver claude-dogfood`. Use drive's default config, and write no webhook or config file.
 - Open sessions in ~/dev/scratch/drive-dogfood on Sonnet, each with a small real task there, each first step stopping where its stage ends, so that the merge is a step you send.
 - The repository has no remote and no twin entry. When you send a session its closeout, add after the snippet key that its finish is the local merge into main, with no push, PR or `twin`.
 - <What earlier runs left in the repository, by name>: leave it alone.
@@ -99,7 +103,8 @@ The batch's record is the primary evidence: the bot's diagnosis of a
 friction can be wrong, and its chat reaches the mini only as the Grok Bot
 app syncs it, so its messages from an unattended run, the final report
 among them, can be missing from `grokbot-transcript` and from the archive
-alike.
+alike. A session driver's chat is its own transcript, whole: its session
+id is on the batch's `driver` event.
 
 ```bash
 B=dogfood-<today>
@@ -109,7 +114,8 @@ jq -r 'select(.kind == "note" and (.note | startswith("after_wake") | not)) | "\
   ~/.local/state/drive/batches/$B/events.jsonl
 # each session's id, for its transcript and claude-steps show
 jq -r 'select(.sid) | "\(.session) \(.sid)"' ~/.local/state/drive/batches/$B/events.jsonl | sort -u
-grokbot-transcript "<bot name>"
+grokbot-transcript "<bot name>"     # a bot's chat
+jq -r 'select(.kind == "driver") | .sid' ~/.local/state/drive/batches/$B/events.jsonl   # a session driver's, under ~/.claude-accounts/*/projects/
 ```
 
 `drive read <label> --batch $B` reads a closed session's transcript, recap

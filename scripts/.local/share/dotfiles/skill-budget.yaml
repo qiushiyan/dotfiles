@@ -90,7 +90,10 @@ skills:
   # raised 2026-11-12 a third time: a planned session owns its goal and checks once it
   # has read the code; the bot records where its design moved them and the merge bar
   # reads the settled checks (+0 body, +140 total)
-  drive-session: {body: 2788, total: 11655}
+  # raised 2026-11-12: a Claude Code session can drive as the Grok bot does (drive
+  # listen, consult-r2): SESSION.md is its driver file, and REPORTING.md holds what
+  # BOT.md kept for every driver (+583 total)
+  drive-session: {body: 2784, total: 12238}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it
