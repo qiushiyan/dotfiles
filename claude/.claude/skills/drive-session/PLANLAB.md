@@ -122,8 +122,7 @@ and the internal workspaces have no customer behind them (planlab
   check whether a teammate's release already shipped what it holds
   (`pl-check-deployed`, and who ran the last `release prod`): then it needs
   no override. Name an override, what it covered and why it was safe.
-- **A `#loopy` announcement**, posted by `pl-loopy-handoff-distill` § The
-  announcement's rule for who it notifies, untagged where that rule says so.
+- **A `#loopy` announcement**, by `pl-loopy-handoff-distill`.
 
 A workspace is internal when PlanLab's own organization owns it; the names
 above are the known ones. Some customer-looking workspaces are run by
@@ -142,6 +141,7 @@ Ask:
   `planlab-prod`.
 - **A message addressed to a person** in Slack: draft it for the user to
   send, and only once what it announces is live.
+- **An @channel tag** in `#loopy`: its post waits with the question.
 
 ## After the PR: strategic review, merge, release
 
