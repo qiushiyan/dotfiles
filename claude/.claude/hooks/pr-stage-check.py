@@ -45,7 +45,7 @@ PROJECTS = (
         "checkouts": ("~/dev/planlab/main", "~/dev/.worktrees/main"),
         "review": "loopy-review-verify",
         "prompt_check": "loopy-prompt-check",
-        "file": "~/dev/planlab/main/.tabtype.local.toml",
+        "file": "~/dev/planlab/main/.tabtype.toml",
     },
 )
 

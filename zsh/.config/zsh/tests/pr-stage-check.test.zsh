@@ -61,7 +61,7 @@ typeset -aU PYS=(${commands[python3]} /usr/bin/python3(N))
 # What a refusal must tell the session, from the hook's PROJECTS table: the
 # review snippet and the file that holds it, and the prompt check's snippet
 # when that has not run either. The message's wording is the hook's own.
-REVIEW='loopy-review-verify' FILE='~/dev/planlab/main/.tabtype.local.toml' PROMPTS='loopy-prompt-check'
+REVIEW='loopy-review-verify' FILE='~/dev/planlab/main/.tabtype.toml' PROMPTS='loopy-prompt-check'
 
 pass() { (( PASS++ )) || true; print -r -- "PASS ${1//$'\n'/⏎}" }
 fail() {
