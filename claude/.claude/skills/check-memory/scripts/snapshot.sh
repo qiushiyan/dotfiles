@@ -38,3 +38,7 @@ ps -xo pid=,ppid=,stat=,etime=,rss=,command= | awk '
 while read -r pid ppid stat etime rss cmd; do
   printf '%s ppid=%s stat=%s age=%s %dMB %s\n    cwd=%s\n' "$pid" "$ppid" "$stat" "$etime" $((rss/1024)) "${cmd:0:140}" "$(cwd_of "$pid")"
 done | head -40
+
+echo; echo "== fseventsd watchdog"
+W=$HOME/.local/bin/fseventsd-watchdog
+if [ -x "$W" ]; then "$W" status --brief; else echo "no fseventsd-watchdog on this machine (pull dotfiles, restow)"; fi

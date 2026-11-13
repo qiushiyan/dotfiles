@@ -12,19 +12,17 @@ before that answer.
 
 ## 1. Snapshot the machine asked about
 
-`~/.config/machine` names this machine (`mac` or `mini`). For the other one,
-pipe the same script over ssh: `ssh mac` from the mini, `ssh qiushi-mini`
-from the laptop.
+`~/.config/machine` names this machine (`mac`, `mini` or `mini2`); pipe the
+script over ssh for another.
 
 ```bash
 S=~/.agents/skills/check-memory/scripts/snapshot.sh
 bash $S                              # this machine
-ssh qiushi-mini 'bash -s' < $S       # or: ssh mac 'bash -s' < $S
+ssh qiushi-mini 'bash -s' < $S       # or: ssh mac / ssh qiushi-mini-2
 ```
 
-It prints totals, pressure, swap, compressed memory, load, the top processes
-by footprint, per-app sums, Lima/OrbStack VMs, live Claude sessions with
-their cwd, and suspects (orphaned dev processes and stopped ones).
+Besides totals and the top processes by footprint, it lists live Claude
+sessions with their cwd and suspects: orphaned dev processes and stopped ones.
 
 ## 2. Read it
 
@@ -49,6 +47,7 @@ The usual consumers, from past checks:
 | bench `task-watch-bootstrap.cjs` (~100 MB) | its cwd matches a live Claude session | no live session in that cwd, or the cwd is trashed | `kill <pid>` |
 | `loopy-master`, `next-server`, `dev-launcher`, `stub_worker`/`idle-worker` | a live session in the same worktree | `ppid 1` with the cwd under `~/dev/.worktrees/.trash/` or deleted | `kill <pid>` |
 | A Claude session in state `T` | — | suspended (Ctrl-Z) for days, often in a deleted worktree | `kill -KILL <pid>`: a stopped process ignores SIGTERM |
+| `fseventsd` (macOS, root) | tens of MB | past ~1 GB; it only grows (10–60 GB seen) | a watchdog restarts it past 2 GB (snapshot line; dotfiles `docs/fseventsd-watchdog.md`); else the user runs `sudo killall -KILL fseventsd` |
 | Desktop apps (Arc, Mail, Slack, Teams, Codex) | always | — | the user's call; offer, never quit one unasked |
 
 Live work stays, however large. When it is the problem, name the session

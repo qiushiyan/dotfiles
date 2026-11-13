@@ -11,7 +11,9 @@ description_words:
 # growth fails the check: an addition replaces something, or the record is
 # raised here by hand with a comment saying why.
 skills:
-  check-memory: {body: 630, total: 630}
+  # raised 2026-11-13: fseventsd joined the usual consumers (10–60 GB on every
+  # machine) with the watchdog that frees it, after the rest was cut to fit
+  check-memory: {body: 649, total: 649}
   claude-accounts: {body: 296, total: 296}
   clean-worktrees: {body: 467, total: 467}
   consult: {body: 1484, total: 3905}

@@ -71,8 +71,9 @@ The daemon answers a status only after a cookie file it writes comes back
 through FSEvents, and neither that wait nor the client's read has a timeout.
 When `fseventsd` stalls, every `git status`, and all that runs on one, hangs
 silently for as long as the stall lasts; the laptop and the mini have both
-done this. What the daemon saves is one lstat per tracked file, which is not
-much: without it a status takes about 0.09s in every worktree while the vnode
+done this. The watchdog in `docs/fseventsd-watchdog.md` restarts a growing
+`fseventsd` before it reaches that state. What the daemon saves is one lstat
+per tracked file, which is not much: without it a status takes about 0.09s in every worktree while the vnode
 cache holds them, because the untracked cache still skips the walk.
 
 ## Adding a clone

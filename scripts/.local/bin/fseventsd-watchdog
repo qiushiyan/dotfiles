@@ -1,0 +1,257 @@
+#!/bin/zsh
+# fseventsd-watchdog — restart macOS's fseventsd when its memory footprint
+# passes a limit, before it drags the machine into swap.
+#
+# A healthy fseventsd stays in the tens of megabytes however long it runs.
+# Every episode seen here grew from about a gigabyte to tens of gigabytes
+# within days, with CPU pegged, file events lost and swap full, and never
+# came back without a restart (docs/fseventsd-watchdog.md has the readings).
+#
+# Usage:
+#   fseventsd-watchdog status [--brief]   read-only, as you
+#   sudo fseventsd-watchdog install       copy this script root-owned, write
+#                                         and load the LaunchDaemon
+#   sudo fseventsd-watchdog uninstall     unload and remove both; logs stay
+#   fseventsd-watchdog check              one pass; the LaunchDaemon runs it
+#                                         as root every five minutes
+#
+# check: reads fseventsd's footprint from top's MEM, which counts compressed
+# and swapped pages (RSS does not: 768 MB RSS was a 37 GB footprint), and
+# appends it to samples.tsv. Over LIMIT_MB it sends SIGTERM, waits up to
+# TERM_WAIT_S for the exit, then SIGKILL; launchd starts a fresh fseventsd.
+# A shutdown from a large footprint pages everything back in first, which is
+# why the limit is low and the KILL fallback exists. Within HOLD_S of the
+# last restart it only logs that the restart was held, so whatever drives
+# the growth shows up as a run of held lines instead of a restart loop.
+#
+# The LaunchDaemon runs a root-owned copy under /usr/local/libexec, never
+# the checkout: a root job running a file your user can edit hands root to
+# anything that can write it. So an edit here reaches a machine only through
+# `sudo fseventsd-watchdog install` there; status says when the copy differs.
+#
+# Logs, readable without sudo, under /Library/Logs/fseventsd-watchdog/:
+#   events.log    one line per restart, held restart or failure
+#   samples.tsv   epoch, pid, footprint MB per check; the last 30 days
+#
+# Test lever: FSEVENTSD_WATCHDOG_TEST_ROOT, an existing absolute directory,
+# prefixes every path this script writes and puts its bin/ first on PATH,
+# so stubs stand in for pgrep, top, kill, sleep and launchctl. sudo resets
+# the environment and the plist sets none, so it never reaches the daemon.
+emulate -L zsh
+setopt extendedglob
+set -u
+zmodload zsh/datetime zsh/mathfunc
+
+LABEL=com.qiushi.fseventsd-watchdog
+LIMIT_MB=2048
+HOLD_S=3600
+TERM_WAIT_S=30
+RESPAWN_WAIT_S=15
+INTERVAL_S=300
+KEEP_SAMPLES=8640   # 30 days at INTERVAL_S
+
+root=${FSEVENTSD_WATCHDOG_TEST_ROOT:-}
+if [[ -n $root ]]; then
+  [[ $root == /* && -d $root ]] || { print -u2 "FSEVENTSD_WATCHDOG_TEST_ROOT must be an existing absolute directory"; exit 2; }
+  export PATH=$root/bin:/usr/bin:/bin:/usr/sbin:/sbin
+else
+  export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+fi
+INSTALLED=$root/usr/local/libexec/fseventsd-watchdog
+PLIST=$root/Library/LaunchDaemons/$LABEL.plist
+LOGDIR=$root/Library/Logs/fseventsd-watchdog
+EVENTS=$LOGDIR/events.log
+SAMPLES=$LOGDIR/samples.tsv
+LAST=$LOGDIR/last-restart
+
+need_root() {
+  [[ -n $root ]] || (( EUID == 0 )) || { print -u2 "fseventsd-watchdog $1 runs as root: sudo fseventsd-watchdog $1"; exit 1; }
+}
+
+now() { strftime '%Y-%m-%d %H:%M:%S' $EPOCHSECONDS; }
+event() { print -r -- "$(now)  $*" >> $EVENTS; }
+
+# fsev_pid prints the running fseventsd's pid, or nothing.
+fsev_pid() { pgrep -x fseventsd 2>/dev/null | head -1; }
+
+# footprint_mb prints top's MEM for a pid in whole megabytes, or nothing when
+# top gave no value it can read. top writes 6512K, 48M, 37G, 10G+ and 1024B.
+footprint_mb() {
+  local v n
+  v=$(top -l 1 -pid $1 -stats mem 2>/dev/null | tail -1)
+  v=${${v//[[:space:]]/}%[+-]}
+  [[ $v == (#b)([0-9.]##)([BKMGT]) ]] || return
+  n=$match[1]
+  case $match[2] in
+    B) print $(( int(n / 1048576) )) ;;
+    K) print $(( int(n / 1024) )) ;;
+    M) print $(( int(n) )) ;;
+    G) print $(( int(n * 1024) )) ;;
+    T) print $(( int(n * 1048576) )) ;;
+  esac
+}
+
+# size prints megabytes as "48 MB" or "2.1 GB".
+size() { (( $1 < 1024 )) && print -r -- "$1 MB" || printf '%.1f GB\n' $(( $1 / 1024.0 )); }
+
+alive() { command kill -0 $1 2>/dev/null; }
+
+check() {
+  need_root check
+  mkdir -p $LOGDIR
+  local pid mb
+  pid=$(fsev_pid)
+  [[ -n $pid ]] || return 0
+  mb=$(footprint_mb $pid)
+  [[ -n $mb ]] || return 0
+  print -r -- "$EPOCHSECONDS	$pid	$mb" >> $SAMPLES
+  if (( $(wc -l < $SAMPLES) > KEEP_SAMPLES * 11 / 10 )); then
+    tail -n $KEEP_SAMPLES $SAMPLES > $SAMPLES.tmp && mv $SAMPLES.tmp $SAMPLES
+  fi
+  (( mb > LIMIT_MB )) || return 0
+
+  local last=0
+  [[ -r $LAST ]] && last=$(< $LAST)
+  [[ $last == <-> ]] || last=0
+  if (( EPOCHSECONDS - last < HOLD_S )); then
+    event "pid $pid at $(size $mb), over $(size $LIMIT_MB): restart held, the last was $(( (EPOCHSECONDS - last) / 60 )) min ago"
+    return 0
+  fi
+
+  print -r -- $EPOCHSECONDS > $LAST
+  local sig=TERM waited=0
+  command kill -TERM $pid 2>/dev/null
+  while alive $pid && (( waited < TERM_WAIT_S )); do
+    command sleep 1
+    (( waited++ ))
+  done
+  if alive $pid; then
+    sig=KILL
+    command kill -KILL $pid 2>/dev/null
+    command sleep 1
+  fi
+  if alive $pid; then
+    event "pid $pid at $(size $mb): still running after SIGKILL"
+    return 1
+  fi
+
+  local new= w=0
+  while (( w < RESPAWN_WAIT_S )); do
+    new=$(fsev_pid)
+    [[ -n $new && $new != $pid ]] && break
+    new=
+    command sleep 1
+    (( w++ ))
+  done
+  local how="exited on SIGTERM in ${waited} s"
+  [[ $sig == KILL ]] && how="ignored SIGTERM for ${TERM_WAIT_S} s, killed"
+  event "restarted: pid $pid at $(size $mb) $how; new pid ${new:-not seen yet}"
+}
+
+plist() {
+  cat <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$LABEL</string>
+  <!-- Written by fseventsd-watchdog install from ~/dotfiles; edit the script there. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/libexec/fseventsd-watchdog</string>
+    <string>check</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>$INTERVAL_S</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>WorkingDirectory</key>
+  <string>/</string>
+  <key>StandardOutPath</key>
+  <string>/Library/Logs/fseventsd-watchdog/daemon.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Library/Logs/fseventsd-watchdog/daemon.log</string>
+</dict>
+</plist>
+EOF
+}
+
+install_daemon() {
+  need_root install
+  local self=${${(%):-%x}:A}
+  mkdir -p ${INSTALLED:h} ${PLIST:h} $LOGDIR
+  cp $self $INSTALLED.tmp && chmod 755 $INSTALLED.tmp && mv $INSTALLED.tmp $INSTALLED
+  plist > $PLIST.tmp && chmod 644 $PLIST.tmp && mv $PLIST.tmp $PLIST
+  if [[ -z $root ]]; then
+    chown root:wheel $INSTALLED $PLIST
+    chmod 755 $LOGDIR
+  fi
+  launchctl bootout system/$LABEL 2>/dev/null
+  launchctl bootstrap system $PLIST || { print -u2 "launchctl bootstrap failed"; return 1; }
+  print "installed $INSTALLED and $PLIST; it checks every $(( INTERVAL_S / 60 )) min"
+}
+
+uninstall_daemon() {
+  need_root uninstall
+  launchctl bootout system/$LABEL 2>/dev/null
+  rm -f $PLIST $INSTALLED
+  print "removed $PLIST and $INSTALLED; logs stay in $LOGDIR"
+}
+
+# peak prints the largest sample since an epoch as "<size> at <time>".
+peak() {
+  [[ -r $SAMPLES ]] || return
+  awk -F'\t' -v since=$1 '$1 >= since && $3 > m { m = $3; t = $1 } END { if (m) print m "\t" t }' $SAMPLES |
+    while IFS=$'\t' read -r m t; do print -r -- "$(size $m) at $(strftime '%m-%d %H:%M' $t)"; done
+}
+
+status() {
+  local brief=0
+  [[ ${1:-} == --brief ]] && brief=1
+  local self=${${(%):-%x}:A} inst
+  if [[ ! -e $PLIST ]]; then
+    inst="not installed: sudo fseventsd-watchdog install"
+  elif [[ ! -e $INSTALLED ]]; then
+    inst="broken: the plist is there but $INSTALLED is not; sudo fseventsd-watchdog install"
+  elif ! cmp -s $self $INSTALLED; then
+    inst="installed, but the copy differs from $self: sudo fseventsd-watchdog install"
+  else
+    inst="installed and current"
+  fi
+  local pid mb now_line
+  pid=$(fsev_pid)
+  if [[ -n $pid ]]; then
+    mb=$(footprint_mb $pid)
+    [[ -n $mb ]] && mb=$(size $mb) || mb="footprint unreadable"
+    now_line="pid $pid, $mb, up $(ps -o etime= -p $pid | tr -d ' ')"
+  else
+    now_line="not running"
+  fi
+  local p1 p7
+  p1=$(peak $(( EPOCHSECONDS - 86400 )))
+  p7=$(peak $(( EPOCHSECONDS - 7 * 86400 )))
+  if (( brief )); then
+    print -r -- "fseventsd watchdog: $inst; fseventsd $now_line; 7-day peak ${p7:-no samples}; limit $(size $LIMIT_MB)"
+    [[ -r $EVENTS ]] && tail -3 $EVENTS | sed 's/^/  /'
+    return 0
+  fi
+  print -r -- "watchdog   $inst"
+  print -r -- "fseventsd  $now_line"
+  print -r -- "limit      $(size $LIMIT_MB); a restart at most every $(( HOLD_S / 60 )) min"
+  print -r -- "peak       24 h: ${p1:-no samples}   7 d: ${p7:-no samples}"
+  if [[ -r $EVENTS ]]; then
+    print "recent events ($EVENTS):"
+    tail -8 $EVENTS | sed 's/^/  /'
+  else
+    print "no events logged"
+  fi
+}
+
+case ${1:-} in
+  check) check ;;
+  install) install_daemon ;;
+  uninstall) uninstall_daemon ;;
+  status) status ${2:-} ;;
+  *) sed -n '2,/^emulate/p' ${${(%):-%x}:A} | sed '$d; s/^# \{0,1\}//'; exit 2 ;;
+esac
