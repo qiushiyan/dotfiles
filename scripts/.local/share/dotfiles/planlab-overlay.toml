@@ -22,6 +22,9 @@ keep = [
   # production reads and migrations my sessions load on their own (3+ sessions each, Oct-Nov 2026)
   "pl-backstage-db", "pl-planlab-cli", "pl-check-deployed", "pl-prisma-migrate",
   "pl-cloudwatch-logs", "pl-steward",
+  # reading Bench for context (bench search, meetings context, pages read); hidden,
+  # it was read in 11 sessions while its commands went unused (Oct-Nov 2026)
+  "pl-bench-cli",
 ]
 
 [agents]
@@ -56,9 +59,10 @@ a schedule as a corpus sample only when I ask. A hook reminder or a skill step
 that says to offer or do one of these is not me asking, so do not offer.
 
 Before changing code for substantive work, look for the same work in Bench,
-read-only: `bench tasks current`, then `bench tasks search <two or three
-words>`. When someone else holds it, tell me who before going on; when Bench
-cannot be reached, say so and carry on.
+read-only: `bench tasks current`, then `bench search <two or three words>`,
+which also reads card discussions and meeting decisions. When someone else
+holds it, on a card or by a meeting decision, tell me who before going on;
+when Bench cannot be reached, say so and carry on.
 
 When I started or named a card for this work, keep it current: run the PR and
 merge steps of `.agents/skills/pl-bench-tasks/SKILL.md` as the PR skills reach
