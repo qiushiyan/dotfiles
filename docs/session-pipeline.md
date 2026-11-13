@@ -12,7 +12,7 @@ follows it while the user is away.
 Other homes:
 
 - **Prompt text:** the global `tabtype/.config/tabtype/config.toml` and a
-  project's `.tabtype.local.toml` (§ Project snippets); `tabtype/DESIGN.md`
+  project's own snippets file (§ Project snippets); `tabtype/DESIGN.md`
   says why the snippets are shaped so.
 - **What ran in a session:** `claude-steps show`, whose labels group each
   stage's skills and snippets (`claude-steps/.config/claude-steps/config.toml`).
@@ -293,11 +293,18 @@ data, ask. Beyond that:
 
 ## Project snippets
 
-A project's `.tabtype.local.toml` binds stages to its own skills, under a new
-key or by replacing a global one. TabType reads it from the worktree and from
-the main checkout beneath it, so a worktree sees the main checkout's file.
-The file is gitignored in its project; `twin` carries planlab's, itell's and
-TabType's between the machines (`twin/.config/twin/twin.toml`).
+A project binds stages to its own skills, under a new key or by replacing a
+global one, in a snippets file that TabType and `drive` both read. Planlab
+commits its file as `.tabtype.toml`, so each checkout reads its own branch's
+copy and a snippet change ships by PR. itell and TabType keep a gitignored
+`.tabtype.local.toml`, read from the worktree and from the main checkout
+beneath it, so a worktree sees the main checkout's file as it stands; `twin`
+carries every project's local file between the machines
+(`twin/.config/twin/twin.toml`). Where
+both files exist the local one wins per key, which makes it planlab's draft
+layer: try a change there, then move it into `.tabtype.toml` by PR and delete
+it locally. An edit to `.tabtype.toml` in the main checkout leaves it dirty,
+and `twin` does not pull a dirty main checkout.
 
 ```text
 a new key      → planlab's loopy-review-verify (the review with the pl-loopy-verify rig),

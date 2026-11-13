@@ -54,7 +54,7 @@ Run a maintenance pass over this tool: read ~/dotfiles/claude/.claude/skills/go-
 # ── UI design ──────────────────────────────────────────
 # One key per route of the emil-design skill, which owns everything each route
 # does. They read the skill by path, so they work mid-message, after a
-# /compact, and in Codex. ~/dev/planlab/main/.tabtype.local.toml replaces
+# /compact, and in Codex. ~/dev/planlab/main/.tabtype.toml replaces
 # emil-prototype there, naming that repo's prototype harness.
 [[snippets]]
 key = "emil-prototype"
@@ -77,7 +77,7 @@ key = "consult-design"
 expand = '''
 Agreeing with the general direction. Now run consult with astra and fable; settle the high-level design, the implementation tenets and what done means. The goal and the checks I started you with are on trial in the round with the rest, not fixed. For important decisions you can ask them as open ended questions with my preference. End with the goal and the checks as you now hold them, and what moved from where you started and why. $0'''
 
-# ~/dev/planlab/main/.tabtype.local.toml replaces this key there, naming that
+# ~/dev/planlab/main/.tabtype.toml replaces this key there, naming that
 # repo's spike toolkit; the rest of the text is the same in both.
 [[snippets]]
 key = "consult-then-build"

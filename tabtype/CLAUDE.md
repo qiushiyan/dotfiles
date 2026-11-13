@@ -57,7 +57,7 @@ Names describe direction:
 consult-X / implement-X → what the agent does next; X says from what, or where it stops
 X-check / X-verify      → a pass that proves or revises before moving on
 X-then-Y                → X, then Y unless X leaves a decision that is the user's
-<project>-X             → a key in that project's .tabtype.local.toml
+<project>-X             → a key in that project's snippets file
 a global key, reused    → that project's replacement for the global entry
 ```
 

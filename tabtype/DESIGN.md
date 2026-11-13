@@ -99,7 +99,7 @@ as settled, and a merge is the wrong place to settle one unheard.
 
 `claude-steps` recognises a pasted snippet by the opening of its text, its
 first 80 characters, in the files its `snippets` key names: the global
-config and each project's `.tabtype.local.toml` listed there. It groups keys
+config and each project snippets file listed there. It groups keys
 under the labels in `claude-steps/.config/claude-steps/config.toml`, where
 both are set.
 
