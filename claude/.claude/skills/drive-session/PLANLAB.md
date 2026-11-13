@@ -141,7 +141,7 @@ Ask:
   `planlab-prod`.
 - **A message addressed to a person** in Slack: draft it for the user to
   send, and only once what it announces is live.
-- **An @channel tag** in `#loopy`: its post waits with the question.
+- **An @channel tag** in `#loopy`: its post waits with it.
 
 ## After the PR: strategic review, merge, release
 
