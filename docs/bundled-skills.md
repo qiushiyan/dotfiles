@@ -2,10 +2,15 @@
 
 Claude maintains the bundled artifact skills and their supporting files.
 `claude/.claude/settings.json` owns the selection: artifact design and
-diagramming are model-invocable; workshop and dataviz are user-invocable
-only. The other bundled skills have explicit `off` overrides. Built-in
-prompt commands and doctor remain manual-only, matching their availability
-under the global kill switch.
+diagramming are model-invocable; dataviz and deep-research are
+user-invocable only. The other bundled skills have explicit `off` overrides.
+Built-in prompt commands and doctor remain manual-only, matching their
+availability under the global kill switch.
+
+`slides`, `whiteboard` and `design` stay off although the Artifact types they
+accompany are in use: each type (Slides, Whiteboard, Design, …) ships its own
+instructions, which arrive when Claude starts an artifact from it, so a deck
+or board needs no bundled skill.
 
 ## Settings boundary
 
@@ -18,13 +23,25 @@ scoped to the bundled source. Use the canonical `code-review` name to hide
 that bundled skill; `review` belongs to our personal skill. Plugin skills
 are controlled through plugins and can be invoked by their qualified name.
 
-`workshop` and `dataviz` stay out of the model's skill listing until explicitly
-invoked with `/workshop` or `/dataviz`. The upstream artifact instructions can
-still mention them — artifact-design can direct Claude to dataviz when a
-feature flag is enabled — but that reference does not bypass the manual-only
-override, so invoke `/dataviz` explicitly when chart guidance is needed.
-Feature-gated skills remain subject to their upstream availability gates even
-when an override permits invocation.
+`dataviz` stays out of the model's skill listing until invoked with
+`/dataviz`. The upstream artifact instructions can still mention it —
+artifact-design can direct Claude to dataviz when a feature flag is enabled —
+but that reference does not bypass the manual-only override. Feature-gated
+skills remain subject to their upstream availability gates even when an
+override permits invocation.
+
+`/deep-research` (fan-out search, three-vote claim checks, a cited report)
+runs only through the Workflow tool, so it exists only in a session launched
+with workflows on:
+
+```bash
+claude --settings '{"disableWorkflows":false}'   # then /deep-research <question>
+```
+
+Its override is `user-invocable-only` rather than `off`, since `off` would
+hide it from that launch too. Denying `Workflow` by name in such a launch
+keeps the command but not the pipeline: the model runs a few plain searches
+inline instead.
 
 ## Tools and claude.ai skills
 
@@ -33,13 +50,16 @@ global settings also cut what this setup never uses:
 
 - **Tools:** a bare name in `permissions.deny` removes the tool's definition;
   a scoped rule such as `Skill(name)` only blocks calls and saves nothing.
-  `disableWorkflows` removes `Workflow` and `feedbackDrafts: "off"` removes
-  `SendFeedback`. `ListAgents` is denied beside `SendMessage`, since it only
-  finds sessions to message.
+  `disableWorkflows` removes `Workflow` (about 23K characters) with every
+  workflow command, and `feedbackDrafts: "off"` removes `SendFeedback`.
+  `ListAgents` is denied beside `SendMessage`, since it only finds sessions
+  to message.
 - **Kept on purpose:** `ScheduleWakeup` is the fallback heartbeat while
   background agents run; denying it left sessions inventing their own waits
   (`lessons/.config/lessons/agent-tooling/usage-lessons.md`). The Artifact
-  tool and Remote Control stay on.
+  tool and Remote Control stay on, though the Artifact tool is the largest
+  definition a request carries (about 39K characters) and only a bare deny
+  removes it.
 - **claude.ai skills:** `syncClaudeAiSkills: false` keeps the account's
   claude.ai skills (office formats, desktop browser and computer use, a second
   `skill-creator`) out of every session, and `syncClaudeAiPlugins: false` does
@@ -53,11 +73,25 @@ global settings also cut what this setup never uses:
 Keep bundled skill names out of the personal skill directory: a personal copy
 shadows the native one.
 
-After a Claude Code upgrade, inspect `/skills` in a fresh session and set new
-unwanted bundled names to `off` in the global settings. `/context` there shows
-whether the tool total grew; `~/.claude/cache/changelog.md` names new tools
-and the setting that turns each off. Unlisted names default
-to `on`; there is no supported bundled-only wildcard or allowlist. The `/skills`
+After a Claude Code upgrade, compare a fresh session's inventory with the
+stock one, from a scratch directory, and set new unwanted bundled names to
+`off` in the global settings:
+
+```bash
+CLAUDE_CODE_ARTIFACT=1 claude -p --output-format stream-json --verbose ok </dev/null > ours.jsonl
+CLAUDE_CODE_ARTIFACT=1 claude -p --setting-sources project --output-format stream-json --verbose ok </dev/null > stock.jsonl
+```
+
+Each file's `"subtype":"init"` line lists `tools`, `skills` and
+`slash_commands`. Those lists omit model-only skills such as artifact-design
+and include slash-only ones, so what the model sees comes from the session's
+transcript (`<session_id>.jsonl` under the account's `projects/`): its
+`skill_listing` attachment, and its `api-request-shape` record, which holds
+every tool definition and so its size.
+`~/.claude/cache/changelog.md` names new tools and the setting that turns
+each off. Overrides for names an upgrade stopped shipping stay: they cost
+nothing and hold if the name returns. Unlisted names default to `on`; there
+is no supported bundled-only wildcard or allowlist. The `/skills`
 menu saves overrides to project-local settings, so use the global file for
 machine-wide policy.
 
@@ -65,8 +99,9 @@ machine-wide policy.
 
 In a fresh session, confirm the artifact skills use the bundled source and no
 personal artifact-design directory exists. Check that unwanted skills are off,
-`/workshop` and `/dataviz` remain manual-only when available, and personal
-`/review` plus project overrides still work. A skill-loading check should
+`/dataviz` remains manual-only, `/deep-research` appears only in a
+workflows-on launch, and personal `/review` plus project overrides still
+work. A skill-loading check should
 confirm native artifact-design instructions load without publishing an artifact.
 For a headless check, opt that process into artifacts with
 `CLAUDE_CODE_ARTIFACT=1`; the SDK default otherwise withholds the Artifact

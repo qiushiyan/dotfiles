@@ -238,7 +238,7 @@ or an entry in `docs/skill-customizations.md` identifies a customization.
 
 | tier | tell | edit policy | where our own lessons about it go |
 |---|---|---|---|
-| **Managed** — installed from upstream and kept current (`writing-for-agents`, `codebase-design`, `research`, …) | in the lockfile, no `.upstream/` | never edit the body; `skills update` reverts it silently. Behaviour changes go through `skillOverrides` (above) | a lesson under `lessons/` that the consuming skill points at (`agent-tooling/usage-lessons.md` is the rulebook's companion) |
+| **Managed** — installed from upstream and kept current (`writing-for-agents`, `codebase-design`, `find-docs`, …) | in the lockfile, no `.upstream/` | never edit the body; `skills update` reverts it silently. Behaviour changes go through `skillOverrides` (above) | a lesson under `lessons/` that the consuming skill points at (`agent-tooling/usage-lessons.md` is the rulebook's companion) |
 | **Customized** — upstream-derived with local changes (`obelisk`, `tailwind-best-practices`) | a pin or documented provenance and local changes; absent from the lock | edit freely; upgrade by hand, using `PINNED.txt` and `LESSONS.md` where present | in the skill's own lessons and body |
 | **Original** — ours (`review`, `consult`, `improve-tool`, `handoff`, …) | authored here, no managed upstream | edit freely | in the body, or in a lesson when several skills share the rule |
 
