@@ -63,6 +63,10 @@ carry = [
 ]
 
 # ---- Repositories ----
+# Only what two machines or more work on: a repository worked on one
+# machine is an ordinary clone there, and a dormant one keeps one copy on
+# mini2, the machine Time Machine backs up (docs/repos.md § Kept on one
+# machine). twin lists such a clone in `twin repos status` as unregistered.
 # carry lists gitignored paths in the main checkout, files or directories.
 # branch, when set, is the only branch `repos pull` will fast-forward.
 
@@ -102,26 +106,6 @@ path = "~/dev/.handoffs/planlab-main"
 url = "https://github.com/planlab-ai/handoffs.git"
 branch = "main"
 
-[repos.itell]
-path = "~/dev/itell"
-url = "https://github.com/learlab/itell.git"
-carry = [
-  ".husky/_/reference-transaction",
-  "apps/platform/.env",
-  "apps/platform/.env.local",
-  "apps/platform/.env.production",
-  ".tabtype.local.toml",
-  "apps/platform/examples.local/dashboard/.env.local",
-  "legacy/demo/.env",
-  "legacy/demo/.env.production",
-  "legacy/preview/.env",
-]
-
-[repos.itell-cms]
-path = "~/dev/itell-cms"
-url = "https://github.com/learlab/itell-cms.git"
-carry = [".env", ".env.production", ".githooks/reference-transaction"]
-
 [repos.brief]
 path = "~/dev/brief"
 url = "https://github.com/qiushiyan/brief.git"
@@ -142,10 +126,6 @@ url = "https://github.com/qiushiyan/clikit.git"
 path = "~/dev/cout"
 url = "https://github.com/qiushiyan/cout.git"
 
-[repos.degit]
-path = "~/dev/degit"
-url = "https://github.com/qiushiyan/degit.git"
-
 [repos.drive]
 path = "~/dev/drive"
 url = "https://github.com/qiushiyan/drive.git"
@@ -155,21 +135,9 @@ branch = "main"
 path = "~/dev/envoy"
 url = "https://github.com/qiushiyan/envoy.git"
 
-[repos.explain-diff]
-path = "~/dev/explain-diff"
-url = "https://github.com/qiushiyan/explain-diff.git"
-carry = ["resources"]
-
 [repos.gopen]
 path = "~/dev/gopen"
 url = "https://github.com/qiushiyan/gopen.git"
-
-# .greenflag holds working documents its own .gitignore ignores, beside two
-# files git tracks; the tracked ones stay git's.
-[repos.greenflag]
-path = "~/dev/greenflag"
-url = "https://github.com/qiushiyan/greenflag.git"
-carry = [".greenflag"]
 
 [repos.gwt]
 path = "~/dev/gwt"
@@ -179,18 +147,9 @@ url = "https://github.com/qiushiyan/gwt.git"
 path = "~/dev/headroom"
 url = "https://github.com/qiushiyan/headroom.git"
 
-[repos.jev-openrouter-gallery]
-path = "~/dev/jev-openrouter-gallery"
-url = "https://github.com/qiushiyan/jev-openrouter-gallery.git"
-carry = [".env"]
-
 [repos.mailkit]
 path = "~/dev/mailkit"
 url = "https://github.com/qiushiyan/mailkit.git"
-
-[repos.raycast-tab-utils]
-path = "~/dev/raycast-tab-utils"
-url = "https://github.com/qiushiyan/raycast-tab-utils.git"
 
 # fixtures/ holds copies of session transcripts the evals search; they stay
 # off the remote and travel between the machines only through twin.

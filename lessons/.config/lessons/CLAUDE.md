@@ -64,8 +64,8 @@ for "refactor it later". A reason that only restates the rule is a no-op.
   memory: `vitest.md`'s `aroundEach` looks invented and is real (Vitest
   4.1). Deleting correct content costs more than keeping a weak line.
 - **Keep every named term and heading consumers cite**, or rename it
-  everywhere: grep this tree, `~/dotfiles/claude/.claude/skills`, the tabtype
-  snippets, and `~/dev/greenflag/snippets`.
+  everywhere: grep this tree, `~/dotfiles/claude/.claude/skills` and the
+  tabtype snippets.
 - **Provenance stays below the fold.** The closing `> _Lesson · …_` line is the
   maintainer's diff anchor, not the reader's opening.
 - **Size.** `skill-sync --check` records every lesson at its word count and
@@ -87,14 +87,12 @@ names its source files.
 - `~/dotfiles/tabtype` snippets cite these paths literally; tabtype has no
   token expansion, so a snippet that quotes a lesson is re-pasted after an
   edit.
-- `~/dev/greenflag` vendors a frozen snapshot into `greenflag/lessons/` and
-  cites it through a `{{lessons_dir}}` token. Refresh it with
-  `pnpm vendor-lessons` there.
+- `greenflag` is dormant (`~/dotfiles/docs/repos.md` § Kept on one
+  machine): its vendored snapshot in `greenflag/lessons/` stays as it is.
+  An edit here is never carried into it.
 - The `review`, `consult` and `delegate` skills cite these paths; the
   dispatched voice reads the live files.
 
 **A new lesson needs a citation, not just a copy.** Only a snippet citing its
 path makes an agent read it. Add it to the roadmap in `README.md`, the topic
-`README.md`, and every snippet that should hand it over (in greenflag, the
-`{{lessons_dir}}` lines in `snippets/*.toml`: makers read deeply, reviewers
-skim the bar).
+`README.md`, and every snippet that should hand it over.
