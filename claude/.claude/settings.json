@@ -56,7 +56,7 @@
     "cowork-plugin": "off",
     "dataviz": "user-invocable-only",
     "debug": "off",
-    "deep-research": "off",
+    "deep-research": "user-invocable-only",
     "design": "off",
     "design-sync": "off",
     "doc": "off",
