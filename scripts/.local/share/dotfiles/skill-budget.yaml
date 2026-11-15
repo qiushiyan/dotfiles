@@ -158,7 +158,7 @@ skills:
 lessons:
   root: lessons/.config/lessons
   files:
-    CLAUDE.md: 803
+    CLAUDE.md: 794
     README.md: 439
     SYNTHESIS.md: 1369
     agent-tooling/README.md: 148
