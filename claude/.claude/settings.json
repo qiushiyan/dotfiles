@@ -56,6 +56,7 @@
     "cowork-plugin": "off",
     "dataviz": "user-invocable-only",
     "debug": "off",
+    "deep-research": "off",
     "design": "off",
     "design-sync": "off",
     "doc": "off",
@@ -76,6 +77,7 @@
     "security-review": "user-invocable-only",
     "setup-claude": "off",
     "simplify": "off",
+    "slides": "off",
     "statusline": "user-invocable-only",
     "team-onboarding": "user-invocable-only",
     "update-config": "off",
@@ -217,8 +219,6 @@
     "refreshInterval": 60
   },
   "enabledPlugins": {
-    "feature-dev@claude-code-plugins": true,
-    "code-review@claude-code-plugins": true,
     "typescript-lsp@claude-plugins-official": false,
     "lua-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": false,
