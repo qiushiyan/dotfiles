@@ -37,6 +37,14 @@ repositories every machine holds, each one's carried paths, the tools each
 machine builds, the packages a machine stows. `~/.config/machine` (`mac`,
 `mini` or `mini2`) tells `twin` where it is; without it `twin` refuses to run.
 
+The manifest registers a repository that two machines or more work on. One
+worked on a single machine, iTELL's on the laptop (`docs/repos.md`), is an
+ordinary clone there, which `twin repos status` lists as unregistered; with
+one machine there is nothing to carry or pull between. A dormant project
+keeps one copy on mini2, the machine Time Machine backs up
+(`docs/recovery.md`), when it holds files its remote lacks, and none when
+it holds none.
+
 ## Status
 
 ```bash
@@ -53,7 +61,7 @@ twin tools status           # only tools
 attention: 3
   mac dotfiles: unpublished — main is 2 ahead of origin/main. Clear: git push
   mini planlab: behind — develop is 10 behind origin/develop as of the fetch at 2026-10-05 14:02. Clear: twin repos pull planlab
-  mini (recorded 2026-10-05 09:12) itell: uncommitted — 3 paths in ~/dev/itell. Clear: commit or discard
+  mini (recorded 2026-10-05 09:12) wiki: uncommitted — 3 paths in ~/wiki. Clear: commit or discard
 ```
 
 The attention block is the last thing every command prints. Each line is
@@ -243,13 +251,13 @@ twin files enroll newproj --copy-missing                # then send the files th
 ### A repository gains a carried path
 
 ```toml
-[repos.itell]
-carry = ["apps/platform/.env", "apps/platform/.env.new"]   # added
+[repos.planlab]
+carry = ["application/.env.development.local", "application/.env.new"]   # added
 ```
 
 ```bash
 # commit, push, pull and apply dotfiles on every machine first, then:
-twin files enroll itell --copy-missing    # a path the enrollment does not cover blocks the target
+twin files enroll planlab --copy-missing    # a path the enrollment does not cover blocks the target
 ```
 
 ### A new tool, or a new version of one
@@ -379,7 +387,7 @@ machine reaches every other, whichever it was. What cannot be decided stops
 and waits. The mini, the manifest's `reconciles`, runs Unison with each
 other machine in turn, and a change a later pair brings is carried back
 through the earlier pairs in the same run; each pair is enrolled and
-reported on its own (`mini and mini2 itell: …`).
+reported on its own (`mini and mini2 planlab: …`).
 
 ```bash
 twin files enroll <target>                    # first reconciliation: list, then reconcile
@@ -388,10 +396,11 @@ twin files sync <target>                      # every later run
 ```
 
 ```text
-· mini and mac itell: equal on both: apps/platform/.env
-· mini and mac itell: differs: apps/platform/.env.local              -> needs resolving
-· mini and mini2 itell: on mini only, held: legacy/demo/.env         -> held until resolved or --copy-missing
-· mini and mac itell: same content, modes differ: … (mini 644, mac 600)  -> chmod one to match, then sync
+· mini and mac planlab: equal on both: application/.env.development.local
+· mini and mac planlab: differs: .tabtype.local.toml                                -> needs resolving
+· mini and mini2 planlab: on mini only, held: application/tests/e2e/loopy-stress/.env.smoke.local
+                                                                     -> held until resolved or --copy-missing
+· mini and mac planlab: same content, modes differ: … (mini 644, mac 600)  -> chmod one to match, then sync
 ```
 
 ### Changed on two machines, or deleted on one
@@ -412,7 +421,7 @@ or `--keep` the machine that still has it to bring it back.
 ```text
 blocked — the enrollment is incomplete: a receipt or a reconciler record is missing   -> twin files enroll <target>
 blocked — the manifest lists X, which the enrollment does not cover                   -> twin files enroll <target>
-blocked — the two machines declare itell differently: dotfiles is at a1b2c3d on mac
+blocked — the two machines declare planlab differently: dotfiles is at a1b2c3d on mac
           and 9f8e7d6 on mini; mini is behind                                          -> pull and apply dotfiles there
 blocked — on mini, notes: holds a file git neither tracks nor ignores, notes/x.md     -> ignore or commit it
 blocked — on mini2, HANDOFF.md: is not gitignored in the checkout                     -> the clone's .git/info/exclude line
@@ -429,7 +438,7 @@ so it is enrolled again rather than run.
 ```toml
 # each line is its own example
 carry = [".env"]               # ok: a literal path that git ignores
-carry = [".greenflag"]         # ok: a directory; files git tracks inside it stay git's
+carry = ["sources"]            # ok: a directory; files git tracks inside it stay git's
 carry = ["*.env"]              # refused: no wildcard
 carry = ["README.md"]          # refused: a tracked file
 carry = ["node_modules"]       # refused: build output, at any depth

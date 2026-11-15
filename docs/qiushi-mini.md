@@ -78,7 +78,7 @@ and the laptop's. What Homebrew alone does not set up:
 | Postgres | 18.6 + pgvector 0.8.6 | `brew install postgresql@18 pgvector`, run by `brew services`; `ALTER SYSTEM` sets `file_copy_method = 'clone'` and `max_connections = 160`, planlab's lane settings | `brew upgrade`; a formula upgrade can drop pgvector (planlab `running-cases.md`) |
 | agent-browser | 0.38.1 | pnpm global + `agent-browser install` (Chrome under `~/.agent-browser`), per `docs/agent-skills.md` | same doc |
 | obelisk | the manifest's pin | pnpm global `@obelisk-apps/cli`, for the `obelisk` skill; index `~/.obelisk` holds the mini's own sessions, and the skill asks every machine's together (`docs/claude-sessions-store.md`) | change the pin, then `twin tools install obelisk` (`docs/twin.md`) |
-| portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install --tld localhost --tld local.itell.ai` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
+| portless | 0.15.6 | `pnpm add -g portless@0.15.6`, the version planlab's `local-dev.md` pins; `sudo portless service install --tld localhost` + `sudo portless trust` from the mini's screen (§ planlab checkout) | follow that pin |
 
 Personal CLIs are built here, from the clones in `~/dev`, by
 `twin tools install` (`docs/twin.md`); Ghostty and its fonts are in § Ghostty
@@ -385,13 +385,11 @@ carried env file, so its own is kept as `.env.development.local.bootstrap`.
 credentials, and an evidence bundle read without it silently lacks its
 master-journal slice.
 
-itell's verify lanes need the Portless HTTPS proxy on 443, and so does
-planlab's `lane up --portless`; a plain planlab lane serves on `localhost`. As
-on the laptop, the proxy runs as the boot service
-`/Library/LaunchDaemons/sh.portless.proxy.plist`, which `sudo portless service
-install --tld localhost --tld local.itell.ai` writes with the current nvm
-node's absolute path: itell's lanes refuse a proxy without `local.itell.ai`,
-and a node upgrade needs the install re-run. The proxy's CA
+planlab's `lane up --portless` needs the Portless HTTPS proxy on 443; a
+plain lane serves on `localhost`. As on the laptop, the proxy runs as the
+boot service `/Library/LaunchDaemons/sh.portless.proxy.plist`, which `sudo
+portless service install --tld localhost` writes with the current nvm node's
+absolute path, so a node upgrade needs the install re-run. The proxy's CA
 (`~/.portless/ca.pem`) is trusted in the System keychain, which agent-browser's
 Chrome requires (without it: `ERR_CERT_AUTHORITY_INVALID`).
 `sudo portless trust` works only from the mini's own screen (Screen Sharing

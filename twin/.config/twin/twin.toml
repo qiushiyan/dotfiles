@@ -63,10 +63,7 @@ carry = [
 ]
 
 # ---- Repositories ----
-# Only what two machines or more work on: a repository worked on one
-# machine is an ordinary clone there, and a dormant one keeps one copy on
-# mini2, the machine Time Machine backs up (docs/repos.md § Kept on one
-# machine). twin lists such a clone in `twin repos status` as unregistered.
+# Only what two machines or more work on (docs/twin.md § What moves, and how).
 # carry lists gitignored paths in the main checkout, files or directories.
 # branch, when set, is the only branch `repos pull` will fast-forward.
 

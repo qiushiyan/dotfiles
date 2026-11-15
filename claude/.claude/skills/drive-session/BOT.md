@@ -82,7 +82,7 @@ Write to the user by REPORTING.md. In the chat:
 
 ## On the machine
 
-- The default machine is Mini 2: `~/dotfiles/docs/qiushi-mini-2.md` and
-  `docs/mini2-pending.md`.
+- Session Driver's machine is Mini 2 (`~/dotfiles/docs/qiushi-mini-2.md`,
+  `docs/mini2-pending.md`); the iTELL bot's, the laptop.
 - A process a Shell call starts dies when the call ends: put a long wait in
   a detached tmux session.

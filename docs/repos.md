@@ -2,9 +2,9 @@
 
 Before a session here changes another repository, or sends a change to
 one, this doc says which repository owns the change and what here depends
-on it. It covers the repositories `twin` keeps on every machine, then the
-ones kept on one machine. Each lives at `~/dev/<name>` unless its entry
-gives another path. Paths and remotes are in
+on it. It covers the repositories `twin` keeps on every machine, then
+iTELL's, which live on the laptop only. Each lives at `~/dev/<name>` unless
+its entry gives another path. Paths and remotes are in
 `twin/.config/twin/twin.toml`, and `twin repos clone <name>` brings in a
 missing one.
 
@@ -71,20 +71,11 @@ along a skill or doc here.
 
 - **wiki** (`~/wiki`): the personal wiki behind the `wiki` skill.
 
-## Kept on one machine
+## On the laptop only
 
-`twin` registers what two machines or more work on. These are ordinary
-clones on one machine each, which `twin repos status` lists there as
-unregistered; nothing here depends on them.
-
-- `itell` and `itell-cms` (learlab's iTELL platform and its CMS), on the
-  laptop only: iTELL work belongs to the laptop. mini2 keeps the gitignored
-  files twin used to carry for them in `~/archive/itell-carried`.
-- `greenflag`, `explain-diff`, `jev-openrouter-gallery`, `degit` and
-  `raycast-tab-utils`, dormant, on mini2 only, the machine Time Machine
-  backs up: greenflag's `.greenflag/`, explain-diff's `resources/` and the
-  gallery's `.env` exist nowhere else. degit's binary comes from the
-  Brewfile, not this clone.
-
-Bringing one back to another machine is registering it again
-(`docs/twin.md` § A new repository on every machine).
+iTELL work belongs to the laptop, so `twin` registers neither of its
+repositories: `itell`, learlab's iTELL platform, where sessions start in
+`apps/platform` and work goes through branches and PRs, and `itell-cms`, its
+content management system. The `drive-session` skill's `ITELL.md` drives
+sessions there. The laptop has no backup (`docs/recovery.md`), so mini2
+keeps a copy of their gitignored env files in `~/archive/itell-carried`.
