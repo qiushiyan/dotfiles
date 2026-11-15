@@ -46,15 +46,6 @@
       "installedAt": "2026-07-09T09:15:16.263Z",
       "updatedAt": "2026-11-04T12:42:29.602Z"
     },
-    "research": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/mattpocock/skills.git",
-      "skillPath": "skills/engineering/research/SKILL.md",
-      "skillFolderHash": "2f8f36af48796faed5c687c75bb650071631a984",
-      "installedAt": "2026-07-09T09:15:20.822Z",
-      "updatedAt": "2026-11-04T12:42:29.637Z"
-    },
     "writing-for-agents": {
       "source": "mattpocock/skills",
       "sourceType": "github",
