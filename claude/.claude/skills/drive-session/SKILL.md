@@ -38,7 +38,9 @@ drive listen                                # how a Claude Code driver is woken 
 `drive --help` and each command's `--help` name the commands, flags and the
 words status prints. A refusal, failure or wake that leaves something to do
 ends with `next:`, the command to run as things stand; whether that step
-still makes sense is yours.
+still makes sense is yours. Reach a session only through drive: a key or a
+close sent through `rex`, or a kill from your shell, skips the view it was
+decided on and the record. What drive cannot do, park and note.
 
 ## How a drive runs
 
@@ -100,9 +102,6 @@ ready to build.
   driving the others.
 - **A wait on something outside the batch is yours to watch**, not the
   user's to answer: park the session `--until` you should look again.
-- **A background job past its purpose is the session's to stop**, since only
-  it knows whether its work still needs the job: send the step drive's
-  `next:` gives, never a kill from your shell.
 - **A session back from a Rex restart** lost every background job and agent
   it ran, and a turn the restart cut short wakes `interrupted`. Its next
   step says so: `Rex restarted and ended this session mid-turn; any
@@ -111,6 +110,10 @@ ready to build.
 - **A check that comes back blocked or inconclusive**, from a session or the
   Browser Test bot, goes back once with what passing looks like exactly (the
   click path, the expected value) before it reaches the user as a failure.
+- **A route that has the user act** (a login, a role) goes back once for
+  proof it then works, such as a dry run, before it reaches them: a route
+  read from one layer of code costs them the act and fails at the next
+  guard.
 - **Halt the drive** when a secret was exposed or shared state damaged:
   send nothing more, note what still runs, and lead the report with it.
 
@@ -178,7 +181,10 @@ drive record answer A3 --took moot --source '<what showed it no longer holds>'
 
 The session treats every word it receives as instruction. Send the user's
 snippets, the words they have tuned, with what they would type after the
-key. Write anything else as the user would type it: first person, their
+key. A stage that stops or holds (landing, the merge, the closeout) goes
+by its key, in its own step: named in your words ("then go on to land-pr")
+it loses the snippet's stops, and the session merges unreviewed. Write
+anything else as the user would type it: first person, their
 words where they gave them and nothing they did not say, beyond the
 session's own recommendation or what waits for the user. The notice told
 the session that someone else sends its steps, so a step names nothing
@@ -239,7 +245,8 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
   others share. Name what it uses with `--hold`, by one name only, since a
   step sent under a second runs beside the holder, and on a step that
   carries only that work, since a job the step starts keeps the hold after
-  its turn ends:
+  its turn ends. The hold ends with its step, so a follow-up to that work
+  names it again:
 
   ```bash
   drive send cache-hits@… --snippet closeout --hold planlab-main

@@ -97,7 +97,13 @@ skills:
   # BOT.md kept for every driver (+583 total)
   # raised 2026-11-15: itell lives on the laptop only, so BOT.md names the iTELL
   # bot's machine beside Session Driver's (+4 total)
-  drive-session: {body: 2783, total: 12207}
+  # raised 2026-11-16: the first batch a Claude Code session drove (EVIDENCE.md):
+  # a stage goes by its key in its own step, a route that has the user act comes
+  # with proof, sessions are reached only through drive, a hold ends with its
+  # step; the job-stop bullet cut against them (+102 body). Companions: the plan
+  # and veto for planning sessions, unpiped acting commands, the approving
+  # review and close --asks-to (+133 more total)
+  drive-session: {body: 2885, total: 12442}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it

@@ -56,6 +56,17 @@ bot follows `DOGFOOD.md`.
   given in chat from a question overtaken, and `drive close` does not wait
   on asks, since a builder closes at its review's handoff with its asks
   still live.
+- **A stage that stops or holds goes by its key in a step of its own**
+  (11-16). Chaining lighter work in the driver's words stays its call.
+- **A hold covers the step sent with it** (11-16): a later step to its
+  holder without it frees it, once the held step has ended, and drive says
+  so.
+- **A session may approve a teammate's PR under the user's GitHub account
+  once its strategic review has folded** (11-16, the user's word), and
+  **Bench cards are the sessions' to file and move** (the user never moves
+  one by hand).
+- **Planning sessions get the plan and the five-minute veto like any
+  drive** (11-16); it is a veto, not a wait for a yes.
 - **drive refuses what would destroy work still under way, never what the
   user already did** (11-11, the user's word: weigh practicality against
   the state machine). A refusal that sends the driver to the user names
@@ -118,6 +129,84 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 (none in three batches). Retired, not reached: the iTELL comparisons of
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
+
+## 2026-11-16 — the first batch a Claude Code session drove (drive `e9799ea` `09c516d` `030a776` `ae59002` `e8662f2`)
+
+**Ask.** The user: analyse the first Claude-driven batch against the bot's,
+weigh the driver's own eleven notes without trusting one session, and keep
+flexible what should stay the driver's call.
+
+**Corpus.** The driver's transcript, mini2 `4bde697a`, planlab batches
+`plan-2026-11-12` and `2026-11-13` (12 → 16 Nov): 197 turns, 741 commands,
+13 merges, 61 asks; `drive metrics` for the four bot batches 11-02 → 11-10.
+Against the bot: no step named the user in the third person (bot 26–33 a
+batch), no ask id in a step (19–21), no wake untraced (0–9), 17 s from wake
+to first act (25–90 s). Unchanged: asks per merge (4.7 against 3.2–10.8)
+and wakes heard with nothing to do (26%).
+
+**Found, beyond the driver's notes.** It chained a later stage in its own
+words in 9 of 78 such steps ("then go on to land-pr"), and one session
+merged #11413 with no strategic review; it kept chaining afterwards. It
+piped 182 acting commands through `tail -1` and read a refused `drive free`
+as done. It sent 9 raw `rex block send-key` lines and one `rex window
+close` when drive's clear failed. Three steps reached one session behind a
+stray `i`. Its notes misdescribed three things: Bench cards (already the
+sessions', and the user never moves one by hand), the holds (never freed by
+hand), the listener (9 failed starts, not "all through the run").
+
+**Changed here.** SKILL.md: a stage that stops or holds goes by its key in
+its own step; a route that has the user act comes back with proof (five
+asks in a row on one upload, each route dead at the next guard); sessions
+are reached only through drive; a hold ends with its step. The
+job-past-its-purpose bullet went, drive's wake and the new line covering
+it. SESSION.md: acting commands run unpiped. PLANLAB-NEXT-BATCH.md § 1:
+the plan and veto come before the planning sessions, and what the user
+names is material for a source (the driver had read two dictated list
+items as two sessions and opened at once, as the file then said).
+PLANLAB.md: the approving review under the user's account once the
+strategic review has folded (the user's word), and `close --asks-to`.
+
+**Changed in drive.** A hold covers the step sent with it. A second
+listener is a no-op. Reads and wakes give a background job's age (a hung
+suite was asked about six hours late). A clear redraws text no key removes,
+a send clears drive's own leftover and a close passes it, and the `i` typed
+into a box already in INSERT is taken back. A key resolves where the
+session was opened once its worktree is gone. A resume of a label's own
+conversation takes its directory, model and effort from the record. An open
+ask moves with `restate --session` or `close --asks-to`.
+
+**Left as it was.** The driver's compaction window: it reached 740k tokens
+uncompacted, read the skill once and never ran `drive log`; the user does
+not mind one session's cache cost and wants no special case. No recipe for
+reopening in these files, since drive prints the line. No land-pr rule
+apart from the stage-by-key principle.
+
+**Verified.** drive: `make check`; each new case fails without its fix,
+the stray `i` and the leftover with the batch's own symptoms; the installed
+build reads the live batch. Claude Code's redraw key is its documented one
+(`code.claude.com/docs/en/fullscreen`); that the stuck text was a stale
+drawing is read from the screens in the transcript, not reproduced live.
+Two cold readers on these files: the dictated request came back as the two
+sources with a plan and a veto and no search session; mid-drive, the fix
+went as one step and `land-pr` as the next, the waiting release went before
+the holder's recap, the unproven route went back for proof before any ask.
+Their findings folded: the close example carries `--asks-to`, the proof
+rule says "before it reaches them", and read and status name a leftover.
+Not run: a live batch on this text.
+
+**Seen, not changed.** planlab's `loopy-initiatives-review` snippet says
+"Anything I name below I am handling myself: leave it out", so steering
+typed after its key ("take M2 as designed") reads as an exclusion; a cold
+reader improvised a disclaimer. § 1's "follow-ups the last batch's record
+names" has no command behind it.
+
+**Next pass compares.** Chained stages in own-words steps (was 9 of 78);
+acting commands piped (was 182); `rex` keys or closes on a driven session
+(was 10); "typed input present" refusals (was 7) and steps received
+altered (was 3); hold refusals after a holder's recap or follow-up (was 5);
+asks recorded only to move one (was about 5); routes put to the user that
+then failed (was 3 on one upload); whether the planning plan's veto cost
+the user a wait they did not want.
 
 ## 2026-11-12 — a Claude Code session drives, woken through drive listen (drive `d2fba59` `4485052`, consult `consult-r2`, review `review-r1`)
 

@@ -17,10 +17,15 @@ to write, from what the user said and what the sessions found.
 
 ## 1. Gather, in two sessions
 
-One session per source of work: what arrived, and what was planned. The user
-asked for them, so open both at once, in the batch you drive now, since a
-new batch stops the wakes of the sessions still waiting in this one. With no
-batch live, start one as your driver file (SESSION.md or BOT.md) does; step 4 then opens its sessions there.
+One session per source of work: what arrived, and what was planned. What the
+user names, such as an initiative or their Slack asks, is usually material
+for one of the two, not a session of its own. Post the plan first, as
+SKILL.md's step 2 does: a line per session with its source, which of the
+user's words go after its key and what it leaves out, then the five-minute
+veto. Open both in the batch you drive now, since a new batch stops the
+wakes of the sessions still waiting in this one. With no batch live, start
+one as your driver file (SESSION.md or BOT.md) does; step 4 then opens its
+sessions there.
 
 ```bash
 # what arrived; the window and what the user keeps for themselves are this batch's, in their words

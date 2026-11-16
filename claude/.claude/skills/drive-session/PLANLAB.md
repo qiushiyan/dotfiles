@@ -118,6 +118,10 @@ and the internal workspaces have no customer behind them (planlab
   checkout once its PR has merged; `drive cleanup` leaves it.
 - **Leave a Bench card's verifier unnamed:** the card closes itself after a
   quiet week. Say so under **Done without asking**.
+- **An approving review under the user's GitHub account** on a teammate's
+  PR the batch reworked, which the automatic approver skips: once its
+  strategic review has folded, never before. Say so under **Done without
+  asking**.
 - **A release's migration gate**, by the pipeline doc's § Who decides. First
   check whether a teammate's release already shipped what it holds
   (`pl-check-deployed`, and who ran the last `release prod`): then it needs
@@ -156,7 +160,8 @@ model. Merging and releasing are yours unless the user says "hold merges":
 drive send summary-decisions@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
 drive open sr-summary-decisions --model fable --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the prompt file>'
 drive open sr-summary-decisions --model fable --effort xhigh …    # only when the user asks; their settings run Fable at high
-drive send summary-decisions@… --snippet recap                    # then close summary-decisions; its branch and worktree wait for the cleanup after the merge
+drive send summary-decisions@… --snippet recap
+drive close summary-decisions@… --asks-to sr-summary-decisions    # its open asks follow the change; its branch and worktree wait for the cleanup after the merge
 drive send sr-summary-decisions@… "F3: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user
 drive send sr-summary-decisions@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
 drive send sr-summary-decisions@… --snippet recap
@@ -190,7 +195,7 @@ drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #
   reports after the fold. Relay a finding to the user only when the review
   calls it foundational or could recommend nothing on it; that one holds the
   merge.
-  Close the builder once its `sr-<PR>` session opens. The fold counts toward
+  Close the builder once its `sr-` session opens, as above. The fold counts toward
   the code review's churn budget, so the merge step after it adds `If the
   review stops on churn, that's my fold: continue with --churn-ok.`
 - **A builder that stops on churn before its strategic review** goes to the

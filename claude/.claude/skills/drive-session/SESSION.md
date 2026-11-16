@@ -14,6 +14,10 @@ driver `claude`'s; name another with `--driver` only when another Claude
 Code session drives a batch now (`drive batch list`). Start one per drive;
 after a compaction, `drive batch` names the one you have.
 
+Run a command that acts on a session or the record unpiped. Its first line
+says whether it happened; behind `| tail -1` a refusal shows only its
+`next:`, which reads like the step having gone.
+
 ## The listener
 
 Each wake waits in the batch until your listener takes it, so a turn of
