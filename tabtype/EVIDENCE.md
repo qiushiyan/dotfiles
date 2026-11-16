@@ -719,8 +719,8 @@ for. Briefed against bare reviews by yield was not measured.
 - `strategic-review-brief` gains a bullet for the shapes the change sets,
   each by name, and its limit goes from 250 to 300 words: the one brief
   written with that list ran about 280.
-- Planlab PR #11580 moves the sentence into the committed `.tabtype.toml`.
-  The local draft carries it until that merges and is deleted then.
+- Planlab PR #11580 moved the sentence into the committed `.tabtype.toml`
+  (merged 11-16); the local draft key is deleted.
 
 **Not changed.** `think-holistic`: no hand-typed ask followed it.
 
