@@ -3,6 +3,63 @@
 One entry per pass. Counts carry their predicates so the next pass can re-run
 them; raw outputs lived in the named session's scratchpad and are not durable.
 
+## Decisions that stand
+
+Each with the entry that holds its evidence. A pass that would undo one
+reads that entry first.
+
+- **The standards are read in full and the report carries every problem the
+  reviewer can point at code for**, with no "fewer, heavier findings"
+  stance (10-07: the paraphrased version found 14 where the manual review
+  found 36).
+- **The Tests lens weighs both ways**, and a fold builds its tests from the
+  lens, not one per finding (10-09: 0 of 3 → 3 of 3).
+- **No second model consulted from inside the review, and no lens of
+  outside fields** (10-14, 10-17: replays flat on the defects aimed at).
+- **The build session writes the review's opening prompt**
+  (`strategic-review-brief`; 10-14: its paragraph about doubled the hard
+  misses found).
+- **No report before every area has returned**, and no wakeup prompted with
+  the skill command (10-14).
+- **Earned handling reads both ways**: `reaches:`, Investigate, Known
+  limits (10-23).
+- **The fold is read before it ships.** A wholesale cut of the body to
+  1,615 words regressed its cases and was reverted (10-28).
+- **A driven review folds on its own recommendations; by hand it stops at
+  the report** (11-10).
+- **No ownership sentence at the fold** (11-12: no effect), and no closing
+  rule for the fold (the user, 11-12).
+- **The opening read is one script** (11-16).
+- **A lens on what the next change copies**, with the steering lesson
+  (11-16, the last entry).
+
+## Open comparisons
+
+Each is a measurement a pass can run. The first is this log's newest.
+
+1. **Steering, after 11-16.** Reports that walk a later change (the lexical
+   predicate in the last entry) among reviews of PRs that set a shape,
+   against 0 of 80 unasked; what the fold did with each such finding; and
+   design-key sends that still carry a typed paragraph about patterns,
+   against 4 of 113. Registries, guards or lint rules that the lens asks
+   for and a later review deletes as unearned would reverse it.
+2. **Live folds since 10-28:** faults CI or the bots find after the fold's
+   own round, and known limits that later turned into incidents.
+3. **Driven reviews since 11-10:** how many stopped before the fold (target:
+   only on a finding with no recommendation), and what the read of the fold
+   found, against the unread folds of 10-28.
+4. **Fable at `xhigh` against `high`** on `pr-8858` and `pr-8959`: what the
+   extra third of cost finds (11-10).
+5. **Review-driven lines classified unearned** on PRs merged after 10-23,
+   by that entry's definition, against 15%.
+
+Retired: 10-07's yield against the manual prompt and 10-09's measures
+(answered on 10-09 and 10-14); 10-14's briefed-against-bare comparison on
+live uses (the replay's builder arm answered it, and the brief is now sent
+by default, so live bare reviews are no longer a fair control); 10-17's
+field charters as subagents (not adopted, untested); whether the 11-16
+script changes what reviews find (it changed the opening read only).
+
 ## 2026-10-07 — the skill's origin, and two rehearsals against the manual prompt
 
 Session `mini:8ae01ce4` (an `/improve-tool` pass, then `/consult`, then a
