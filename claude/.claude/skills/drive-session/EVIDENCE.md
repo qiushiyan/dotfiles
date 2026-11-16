@@ -201,12 +201,17 @@ them, and no test closed anything; the proof rule forced a round trip even
 where the act itself blocks every check (an expired login), so it now asks
 for what follows the act checked or named unprovable, and goes back once
 only with neither (cold reader: the staff-role route went back once, the
-expired login went straight to the user). Open with the user: the reviewer
-would drop the test that tells drive's or the terminal's leftover from a
-typed line, and redraw before judging any typed text instead. Reproduced
-that day in a scratch session: text painted into the input row from outside
-survives `end ctrl+u`, and ctrl+l removes it while keeping a typed line, in
-INSERT and in NORMAL.
+expired login went straight to the user). Its design objection, which the
+user took (drive `6dd1f46`): looking like drive's text does not make a line
+no one's, since a step the user recalls to edit is a line drive sent. So
+drive no longer tells its own or the terminal's leftover from a typed line;
+a send, a close and a clear have the screen drawn again first, and what is
+left is in the box. This replaces "a send clears drive's own leftover and a
+close passes it" above. Reproduced that day in a scratch session: text
+painted into the input row survives `end ctrl+u`, and ctrl+l removes it
+while keeping a typed line, in INSERT and in NORMAL; on the new build a
+clear and a close went over painted text, and a close was refused over a
+typed `?25h`.
 
 **Seen, not changed.** planlab's `loopy-initiatives-review` snippet says
 "Anything I name below I am handling myself: leave it out", so steering
