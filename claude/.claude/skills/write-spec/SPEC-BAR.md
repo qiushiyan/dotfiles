@@ -163,8 +163,10 @@ blocks. Give only the views that settle the design:
   each at its path before building on it. `After:` lines give the proposed
   path.
 - **The next change** — where the change sets a shape later changes will
-  repeat: the next one of its kind, what its author finds and copies with
-  none of this spec, and which of its steps fail until done.
+  repeat: the next change of this kind, what that change's author finds
+  and copies with none of this spec, and what fails when a step is
+  skipped. Each such failure is held as an invariant is, by its mechanism
+  or its obligation; a step nothing forces is named, with why.
 
 Behaviours, ownership, invariants and the distinctions callers rely on
 bind. Symbol names and file placement are sketches the build may change
@@ -220,6 +222,13 @@ Wiring — the changed path:
     selection with nothing carried over.
   After: a failure in the reuse probe falls back to the full build, which
     keeps its ordinary failure semantics. Reuse is advisory.
+
+The next change — a third reader of the artifact:
+  A search for "artifact" lands on the publication module, and its author
+    copies the eager planner's call to the one selection function.
+  A selector of its own fails obligation 2. Nothing forces it to tell
+    absent from store-mismatch: the result type offers both, and a reader
+    may fold them, as the eager planner rightly does.
 </example>
 
 **Design it twice.** Two or three shapes different in kind, each

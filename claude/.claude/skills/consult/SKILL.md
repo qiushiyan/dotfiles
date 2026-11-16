@@ -3,6 +3,7 @@ name: consult
 description: Second opinions from fresh codex or claude sessions on the problem and the approach. Use when the user asks for a consult or a consult round.
 requires:
   - lessons:codebase-design/deep-modules.md
+  - lessons:codebase-design/steering.md
   - lessons:collaboration/tenets.md
 ---
 

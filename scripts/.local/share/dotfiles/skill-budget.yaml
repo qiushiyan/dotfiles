@@ -16,7 +16,9 @@ skills:
   check-memory: {body: 649, total: 649}
   claude-accounts: {body: 296, total: 296}
   clean-worktrees: {body: 467, total: 467}
-  consult: {body: 1484, total: 3905}
+  # raised 2026-11-16: a voice reads the steering lesson where the change sets a shape
+  # later changes repeat (+11 total)
+  consult: {body: 1484, total: 3916}
   delegate: {body: 742, total: 1432}
   distill-docs: {body: 2236, total: 2236}
   distill-handoffs: {body: 2766, total: 2766}
@@ -143,9 +145,9 @@ skills:
   update-docs: {body: 456, total: 456}
   wiki: {body: 324, total: 324}
   # raised 2026-11-16: the spec bar reads the steering lesson and gains the view of the
-  # next change, which the user had typed by hand at design in 5 sessions (strategic-review
+  # next change with its lines in the Design example, which the user had typed by hand at design in 5 sessions (strategic-review
   # EVIDENCE.md, 2026-11-16)
-  write-spec: {body: 1197, total: 6122}
+  write-spec: {body: 1197, total: 6211}
   add-theme: {body: 1437, total: 2035}
   rex: {body: 65, total: 65}
   # raised 2026-11-06: routes for work with no prototype (2 of 7 uses) and the closing
@@ -180,7 +182,7 @@ lessons:
     agent-tooling/onboarding-auto-routing.md: 2295
     agent-tooling/usage-lessons.md: 3697
     # raised 2026-11-16: the topic row for steering.md
-    codebase-design/README.md: 255
+    codebase-design/README.md: 249
     codebase-design/composition.md: 1769
     codebase-design/deep-modules.md: 1058
     codebase-design/deepening.md: 522
@@ -195,4 +197,6 @@ lessons:
     testing/tdd-loop.md: 923
     testing/test-quality.md: 1961
     testing/vitest.md: 2867
-    codebase-design/steering.md: 1282
+    # raised 2026-11-16, the day it was written: its first outside reader found two
+    # prefer sides that did not hold and a gate with no example; the fixes added a pair
+    codebase-design/steering.md: 1383
