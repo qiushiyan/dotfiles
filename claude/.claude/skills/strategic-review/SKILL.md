@@ -30,8 +30,10 @@ any finding you could recommend nothing on, which stays unfolded.
 
 ## How to work
 
-1. **Intent first.** Read the PR description, the spec or issue it links,
-   and its commits, and its CI status (`gh pr checks`): a red check is a
+1. **Intent first.** Run this skill's `scripts/pr-context.sh <pr>
+   <scratchpad>` from a checkout of the PR's repository, then read what it
+   shows, the spec or issue the PR links, and the commit messages in the
+   context file it writes. A red check is a
    finding, or a flake shown by a rerun or the same failure on the base.
    Then read the project's map of the area the PR touches.
    In PlanLab (`planlab-ai/main`), a PR touching Loopy or the steward has
@@ -61,7 +63,7 @@ any finding you could recommend nothing on, which stays unfolded.
      "What the model is told" lens with it.
 3. **Review.** A PR too large to read whole in one pass splits into two to
    four broad areas, each read completely by a subagent. Hand each one the
-   intent, the area's files and diff base, the lenses below, the standards'
+   intent, the context file's path, the area's files and diff base, the lenses below, the standards'
    paths, and anything you already suspect there. They are read-only, may
    run focused tests and throwaway probes in your scratchpad, and say for
    each finding whether a probe confirmed it or it was read from the source.

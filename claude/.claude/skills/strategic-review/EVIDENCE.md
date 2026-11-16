@@ -842,3 +842,53 @@ kept.
 the diff rather than from memory. If picked up, test it on the same forks:
 `told` and `unasked-behaviour` against these `base` rows.
 
+
+## 2026-11-16 — the opening read becomes one script
+
+Session `mini2:443dcb52` (an informal pass at the user's ask, not an
+`/improve-tool` loop).
+
+**Request.** The first call of a review is usually a wide `gh pr view`
+dumped through `head -c 20000`; the user asked for a tailored snippet that is
+easier to read and cheaper, and for any other friction in the review.
+
+**Corpus.** Obelisk, Claude sessions since 10-25 whose user turns hold
+`<command-name>/strategic-review`: 34 on mini2, 19 on mini (mac not reached).
+Main thread only (`is_sidechain` 0); stored results cap at 10k characters,
+so character counts are floors.
+- The opening, gh and git calls before the first read of a standard or the
+  onboarding map: median 5 calls (2 to 11), median 28.9k characters (12.8k
+  to 71.2k), over the 52 sessions with more than 10 calls.
+- 20 of 53 ran `gh pr view … commits … | head -c` in their first six calls.
+  gh prints JSON keys in alphabetical order, so on PRs of 20 to 100 commits
+  (commit JSON 22k to 107k characters, about 350 of them author metadata per
+  commit) the cut lands inside `commits` and drops `files`, `headRefName`,
+  `title` and `url`; the next two or three calls refetch them.
+- 24 of 53 read the file list through `gh pr view --json files`, which stops
+  at 100 (PR 11443: 100 of 145), with no sign of the cut.
+- `gwt --help` ran 29 times and `git worktree list` 148 across both machines,
+  finding where the branch is checked out.
+- Area subagents ran 116 `gh pr view`/`gh pr diff`/merge-base calls in 63
+  subagents (mini2, since 11-01), mostly refetching the description their
+  brief summarized.
+
+**Change.** `scripts/pr-context.sh <pr> <out-dir>`: one call prints the
+description (HTML comments stripped), commit subjects from git (GitHub cuts a
+headline near 70 characters), the files with their counts (every one, from
+`git diff --numstat` against the merge-base, or the paginated files API off a
+checkout; by directory past 120), CI at the head as counts plus each failing
+or pending job's link, review activity by author, specs in the diff, the
+merge-base and any worktree on the branch. It writes every commit message
+and file to `<out-dir>/pr-<N>.md`, whose path step 3 now hands each area
+subagent. Measured: PR 11512 9.8k characters in one call against about 41k
+over the three calls its session made; 11447 (97 commits, 82 files) 23.8k;
+11443 (145 files, by directory) 15.9k.
+
+Not tested: whether reviews find more or less with it; only size and
+completeness of the opening were measured.
+
+**Seen, not changed.** Pre-report tool errors are incidental (grep exit 1,
+zsh no-match globs, two reads of a whole diff over the 25k-token limit).
+PlanLab's `pnpm -s review-engine check <pr>` gives CI and open bot findings
+in about 900 characters, but only the outstanding ones, so the rounds lens
+still reads the threads.
