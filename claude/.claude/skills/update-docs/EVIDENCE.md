@@ -99,3 +99,59 @@ measured from the kept repositories.
 **Next pass compares** live runs after this commit: doc growth per pass
 against the 109-of-128 baseline, user trims after a pass, reshapes made
 without asking that the user then reverts, and whether `doc-check` runs.
+
+## 2026-11-16 — a change earns a doc edit only for what a later change owes
+
+From planlab's Loopy pass (session `8b256d49`, mini2; the planlab entry in
+`.agents/skills/pl-loopy-handoff/EVIDENCE.md` carries the corpus). The
+standard already said inventories and mechanism do not earn documentation,
+and the per-change sync produced them anyway: 36 of 50 sampled hunks added to
+planlab's infra docs were names, lists, status or mechanism; live docs grew
+0.49 → 5.08 MB in 3.5 months; a deleted route stayed described on the
+always-read page for 3.5 months. The rule existed and was broken, so this pass
+changed the trigger and added checks rather than restating it.
+
+**Changed in the standard:** § When docs need updating (tiers indexed by code
+change: "a new function, flow, or option") became § When a change touches the
+docs: an edit only for a moved boundary or owner, an invariant, a decision or
+a route, found in what the work learned (review findings, guards, the user's
+decisions, the first wrong attempt); a sentence a behaviour-preserving
+refactor could falsify is cut, never brought up to date. "Code read aloud"
+joined what does not earn documentation; a binding may no longer ask for
+content the standard gives to code; a doc/code disagreement over a
+description resolves by cutting the description.
+
+**Changed in update-docs:** the same trigger and default ("no doc change,
+because …" is complete; owed records are still written). `doc-check` now fails
+(exit 1) on: a live doc that grew without `--grew '<doc>=<kind>: <why>'`
+(printing a `Doc-Change:` trailer), a dead backticked repo path or code
+identifier, a broken `§` reference (wrapped lines, heading leads and numbered
+entries resolve), and a heading removed while code, a skill or a live doc
+still cites it. `--stale` lists doc lines naming what the branch removed;
+`--since REF` measures growth from the merge-base. Identifier lookup reads the
+tracked sources once (a 180-file diff checks in about 50 s). Suite: 25 cases.
+
+**Verified:** in planlab, six cold sessions planned the same merged-PR tasks
+on the trimmed tree with the same constraint score (30/32) and 22.7% fewer doc
+bytes read. A fresh reader's pass on these texts found the no-change path
+skipping the cut step and doc-check missing Markdown citers and PascalCase
+names; all three fixed with cases.
+
+**Then shortened** (same day, at the owner's ask): the standard went from
+2,177 to 956 words — what to document, what good docs look like (one worked
+avoid/prefer pair), when a change touches the docs, and each anti-pattern
+beside what replaces it; the grep block is doc-check's. update-docs is three
+steps (record, cut, check). Checked by a cold reader on a real `brief` commit
+(it drafted the right invariant and decision and stopped to ask a decision's
+reason; four gaps fixed) and a parity read against the long text (six
+accidental losses restored: --stale on uncommitted work, the gap sweep, never
+silently matching code, stable numbering, routing a new doc, a stated reason
+for each kept candidate). Deliberately dropped: the default 100 KB hot-path
+budget (each project's bindings set ceilings), the spine/satellite and
+live-initiative shapes (planlab's bindings), and the rules for editing the
+standard itself. Bring one back if a project without that binding regrows it.
+
+**Next pass compares:** across the projects that take this standard, the share
+of update-docs runs ending "no doc change"; `Doc-Change:` trailers read by
+kind; and doc-check false positives the user had to `--allow` (more than one
+per run means the identifier rule is too eager).

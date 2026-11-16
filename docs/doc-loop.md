@@ -13,7 +13,7 @@ The skills never fire themselves.
 ```
 /onboarding <project input>  ← project-specific context and first-turn contract
     …the stages…             ← docs/session-pipeline.md
-/update-docs                 ← docs reconciled with the diff (may run mid-session too)
+/update-docs                 ← what the work taught that the code cannot show (may run mid-session too)
 /handoff [next: …]           ← lessons + a brief in ~/dev/.handoffs, itself the next first prompt
   → brief start <slug> places the worktree and hands over the pointer
 /distill-handoffs            ← after the merge: the spent brief deleted, its siblings settled
@@ -58,8 +58,8 @@ which repo owns which half: `docs/handoff.md`.
 
 ## The doc shape that keeps onboarding cheap
 
-`docs/documentation-standards.md` is the shared standard: the spine/satellite
-model, the hot-path budget, the writing rules and the check block. It is
+`docs/documentation-standards.md` is the shared standard: what to document,
+what good docs look like, the anti-patterns, and the checks `doc-check` runs. It is
 maintained here and copied verbatim into each project by `skill-sync`
 (`docs/agent-skills.md` § Synchronizing Codex invocation), so a rule changes
 here and nowhere else. This loop supplies the cadence: `/update-docs`
@@ -110,7 +110,7 @@ afterwards — it serves, a production read confirmed — stays with the running
 system and the PR's thread, and a closeout opens a docs PR only when a read
 overturned something.
 
-Update-docs is diff-scoped; distill-docs catches tree-wide duplication, stale
+Update-docs is change-scoped; distill-docs catches tree-wide duplication, stale
 proposals, and misplaced mechanism. Run it when the hot-path budget flags an
 overrun and otherwise in the weekly standing slot:
 
@@ -134,7 +134,7 @@ remeasured in later uses. Shared lessons belong in
 ```text
 session knowledge → docs (durable model) or handoff (next-session state)
 artifact boundary → compact or hand off
-changed behavior → update-docs
+a moved boundary, invariant, decision or route → update-docs
 merged branch → distill-handoffs
 ```
 

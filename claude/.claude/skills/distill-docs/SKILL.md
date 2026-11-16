@@ -8,7 +8,7 @@ argument-hint: [optional scope, e.g. "docs/agents" — default the whole docs tr
 
 # Distill the doc tree
 
-You're running the periodic distillation pass over a project's documentation — the whole-tree complement to the per-change update-docs skill. Update-docs is diff-scoped: it reads only the docs a change overlaps, so duplication *across* docs, rot in files no recent diff touched, and structure that drifted over many small edits accumulate in the seams. This pass reads the tree whole, consolidates and prunes it, and patches the standards so the same rot can't come back. Typical triggers: the update-docs budget check flagged an overrun, or the weekly standing slot came round. At that cadence many runs will find little — reporting a clean tree is a real result, not a wasted pass.
+You're running the periodic distillation pass over a project's documentation — the whole-tree complement to the per-change update-docs skill. Update-docs is change-scoped: it reads only the docs one change touches, so duplication *across* docs, rot in files no recent diff touched, and structure that drifted over many small edits accumulate in the seams. This pass reads the tree whole, consolidates and prunes it, and patches the standards so the same rot can't come back. Typical triggers: a budget overrun, or the weekly slot. Many runs find little, and a clean tree is a real result.
 
 **The project's standards define "good".** Before anything else, read its `documentation-standards.md` (anywhere under the docs home), or the global `~/dotfiles/docs/documentation-standards.md` when it has none, and then the project's **bindings** — the section its documentation entry point (update-docs or handoff skill, docs index; in dotfiles `docs/doc-loop.md`) devotes to the standard. The standard supplies the writing rules and the spine/satellite shape; the bindings supply what is load-bearing and local: the **protected set** (sanctioned echoes, evidence-tag conventions), the ceilings, and whether shipped proposals are pruned or retained. What counts as rot and what counts as protected both come from those two; this skill only carries the process and the catalogue.
 
@@ -22,7 +22,7 @@ Three tiers, in descending certainty:
 2. **Onboarding-mandated** — whatever the project's onboarding or bootstrap skill reads unconditionally. Open that skill and take its list rather than inferring one.
 3. **Landing pages** — a `docs/README.md`, an index, a root map: hot because a reader arrives there first and reads down.
 
-**The tier sets the bar, and the same prose can be right in one and wrong in the other.** A hot doc is judged on *bytes per session*: it carries the mental model — vocabulary, load-bearing invariants, and a map of where the rest lives — and states each conclusion without the reasoning that reached it. An on-demand doc is judged on *findability and completeness*, where the full mechanism walkthrough that would be rot on the hot path is exactly the point.
+**The tier sets the bar, and the same prose can be right in one and wrong in the other.** A hot doc is judged on *bytes per session*: it carries the mental model — vocabulary, load-bearing invariants, and a map of where the rest lives — and states each conclusion without the reasoning that reached it. An on-demand doc is judged on *findability and completeness*: it may go deeper into what its reader acts on, but code read aloud is rot at every tier.
 
 ## 1 — Scope and baseline
 
@@ -111,7 +111,7 @@ Reference for steps 3–4: the classes **no grep finds**, each needing the map's
 |---|---|---|
 | Cross-doc duplication | One concept described in two-plus docs — a config block in both a design doc and the README, a policy restated per workflow | Pick the owning home; the others point |
 | Shipped proposal in place | A spec or plan whose feature shipped, still sitting beside the design docs as if live | Distill its surviving decisions into the design doc, then prune it |
-| Altitude creep | Mechanism piling up in a hot-path doc — paid by every session, needed by few | §The split — the model stays, the mechanism moves out |
+| Altitude creep | Mechanism piling up in a hot-path doc — paid by every session, needed by few | Code read aloud is cut to the rule it carries; live content only some sessions need moves by §The split |
 | Settled topic on the hot path | A self-contained subject neither it nor its doc has moved in months | §The split — demote to a standalone topic with a greppable name |
 | Structural rot | Reading order gone disjoint; sibling sections describing one thing | Merge, reorder, or re-home |
 | Inventory the environment owns | A doc restating what a config file, directory listing or `--help` already says | Delete it and point at the source; cache only what a lookup cannot reach |

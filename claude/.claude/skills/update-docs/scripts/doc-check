@@ -1,21 +1,44 @@
 #!/usr/bin/env python3
 """Check the staged docs of a change against documentation-standards.md
-§ Before you commit a doc change, and show how much each doc grew.
+§ Checks.
 
-usage: doc-check [LIVE_PATHSPEC ...]
+usage: doc-check [--grew 'PATH=KIND: why'] [--allow NAME] [LIVE_PATHSPEC ...]
+       doc-check --stale [--base REF] [LIVE_PATHSPEC ...]
 
 Run from inside the repository after staging the docs the change touched
 (git add -- <paths>). LIVE_PATHSPEC names the project's live docs, each as its
-own argument; the default is docs/**/*.md, CLAUDE.md and AGENTS.md. Every hit
-is a candidate, not a verdict: the standard's "What a hit means" says which
-ones stand. Exit 0 after a report, 2 when nothing is staged or git fails."""
+own argument; the default is docs/**/*.md, CLAUDE.md and AGENTS.md.
 
+Fails (exit 1) on what a reader would be misled by:
+  growth     a live doc gained words with no --grew naming the obligation it
+             carries; KIND is boundary, invariant, decision, route or new-doc.
+             Each --grew prints a Doc-Change: trailer for the commit message.
+  dead-path  an added backticked repo path that does not exist
+  dead-name  an added backticked code identifier found nowhere outside the
+             docs (--allow NAME for an external API's name)
+  broken-§   an added `doc.md` § Heading that matches no heading there
+  inbound    a heading or doc this change removes that a file outside the
+             docs still cites
+Prints candidates without failing: the standard's wording checks, and a line
+that reads code aloud; each is a candidate to weigh, not a verdict.
+
+--stale lists live-doc lines that name a path or identifier the change
+removed, committed or not (the working tree against the merge-base with REF,
+default origin/HEAD; pass the commit before the change for one already on
+the default branch): the sentences to cut to their rule or delete.
+
+Exit 0 clean, 1 on a failing check, 2 when nothing is staged or git fails."""
+
+import argparse
+import functools
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
 DEFAULT_LIVE = [":(glob)docs/**/*.md", "CLAUDE.md", "AGENTS.md"]
+KINDS = ("boundary", "invariant", "decision", "route", "new-doc")
 # The patterns are the standard's check block; keep the two in step.
 CHECKS = [
     ("cardinal", re.compile(r"\b(two|three|four|five|six|seven) [a-z]+")),
@@ -28,49 +51,196 @@ OWED = re.compile(r"read owed", re.I)
 OWED_MARKER = re.compile(r"\*\*Closing read owed\*\* \(#([0-9]+|PR|N)")
 PROPOSAL = re.compile(r"(specs|plans|proposals|issues|records|research|adr)/[^ )`]*\.md")
 SECTION_REF = re.compile(r"`([^`]+\.md)` § ([^`\n]+)")
+TICKED = re.compile(r"`([^`\n]+)`")
+# A code identifier: camelCase, snake_case or SCREAMING_CASE, optionally called.
+IDENT = re.compile(r"^(?:[a-z]+[A-Z][A-Za-z0-9]*|[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+|[A-Z][a-z]+[A-Z][A-Za-z0-9]*)(?:\(\))?$")
+PATHLIKE = re.compile(r"^[\w.@-]+(/[\w.@\[\]-]+)+/?$")
+FILE_EXT = re.compile(r"\.(ts|tsx|js|mjs|cjs|py|go|rs|sh|json|ya?ml|md|prisma|sql|tf|toml)$")
 
 
-def git(*args):
+def git(*args, ok=(0,)):
     r = subprocess.run(["git", *args], capture_output=True, text=True)
-    if r.returncode:
+    if r.returncode not in ok:
         sys.exit(f"doc-check: git {' '.join(args)} failed: {r.stderr.strip()}")
     return r.stdout
 
 
-def added_lines(paths):
-    """(path, line number, text) for every line the staged diff adds."""
-    out, path, line = [], None, 0
-    for raw in git("diff", "--cached", "-U0", "--", *paths).splitlines():
-        if raw.startswith("+++ "):
-            path = raw[6:] if raw.startswith("+++ b/") else None
+def diff_lines(spec, paths, sign):
+    """(path, line number, text) for every line a diff adds ('+') or removes ('-')."""
+    out, path, line, header = [], None, 0, False
+    for raw in git("diff", *spec, "-U0", "--", *paths).splitlines():
+        if raw.startswith("diff --git "):
+            header, path = True, None
+        elif header and raw.startswith(("+++ ", "--- ")):
+            if raw[0] == sign:
+                path = raw[6:] if raw[4:6] in ("a/", "b/") else None
         elif raw.startswith("@@"):
-            line = int(re.search(r"\+(\d+)", raw).group(1))
-        elif raw.startswith("+") and path:
+            header = False
+            line = int(re.search(r"\+(\d+)" if sign == "+" else r"-(\d+)", raw).group(1))
+        elif raw.startswith(sign) and path:
             out.append((path, line, raw[1:]))
             line += 1
     return out
 
 
 def words(rev_path):
-    """Word count of a file at a revision; 0 when it does not exist there."""
     r = subprocess.run(["git", "show", rev_path], capture_output=True, text=True)
     return len(r.stdout.split()) if r.returncode == 0 else 0
 
 
+def headings_of(text):
+    return [m.group(1).strip() for m in re.finditer(r"^#+\s+(.+)$", text, re.M)]
+
+
+def heading_matches(headings, text):
+    """The cited text begins with a heading, or with a heading's lead before
+    " — ", or (cut by a line wrap) is itself the start of one."""
+    text = text.split(")")[0].strip().strip("`*").rstrip(".:")
+    for h in headings:
+        for form in {h, h.split(" — ")[0], h.split(": ")[0], h.split(", ")[0]}:
+            form = form.strip().strip("`*")
+            if text == form or (text.startswith(form) and not text[len(form)].isalnum()):
+                return True
+            if len(text) >= 12 and form.startswith(text):
+                return True
+    return False
+
+
+def bases(root, doc):
+    """The doc's directory, each directory above it, then the repository root."""
+    out, d = [], (root / doc).parent
+    while d != root and root in d.parents:
+        out.append(d)
+        d = d.parent
+    return out + [root]
+
+
 def heading_exists(root, doc, cited, text):
-    """Whether some heading of the cited doc begins the text after `§`, ending
-    at a word boundary; None when the cited file is not in this repository."""
-    for base in (root, (root / doc).parent):
+    """Whether some heading of the cited doc begins the text after `§`; None
+    when the cited file is not in this repository."""
+    for base in bases(root, doc):
         target = base / cited
         if target.is_file():
-            headings = [m.group(1).strip() for m in re.finditer(r"^#+\s+(.+)$", target.read_text(), re.M)]
-            return any(text == h or (text.startswith(h) and not text[len(h)].isalnum())
-                       for h in headings)
+            body = target.read_text()
+            num = re.match(r"([A-Z]?\d+(?:\.\d+)*)\b", text.strip())
+            if num:  # a numbered entry: a heading, list item or bold lead with that number
+                k = re.escape(num.group(1))
+                return bool(re.search(rf"^(#+\s*(§\s*)?{k}\b|{k}\.\s|\*\*{k}\b|[-*]\s+\*\*{k}\b|\|\s*\*\*{k}\*\*)", body, re.M))
+            return heading_matches(headings_of(body), text)
     return None
 
 
+_TOKENS = None
+SOURCE_EXT = re.compile(r"\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|sh|sql|prisma|tf|json|ya?ml|toml|swift|kt|java|rb|css|html)$")
+
+
+def code_tokens():
+    """Every identifier in the tracked source files outside the docs, read once."""
+    global _TOKENS
+    if _TOKENS is None:
+        _TOKENS = set()
+        word = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+        for f in git("ls-files", "-z", "--", ".", ":!*.md").split("\0"):
+            if not f or not (SOURCE_EXT.search(f) or "." not in os.path.basename(f)):
+                continue
+            try:
+                if os.path.getsize(f) > 2_000_000:
+                    continue
+                with open(f, errors="ignore") as fh:
+                    _TOKENS.update(word.findall(fh.read()))
+            except OSError:
+                continue
+    return _TOKENS
+
+
+def in_code(name):
+    """Whether a name occurs in a tracked source file outside the docs."""
+    return name.rstrip("()") in code_tokens()
+
+
+def path_state(root, doc, p):
+    """True when the path exists from the root or a directory above the doc;
+    None when its first segment is anchored nowhere (shorthand inside a doc
+    about one package), which the check cannot judge."""
+    p = p.rstrip("/")
+    bs = bases(root, doc)
+    if any((b / p).exists() for b in bs):
+        return True
+    first = p.split("/")[0]
+    # A doc path may be written from a docs base above the doc; a code path is
+    # written from the repository root, so only the root anchors it.
+    anchors = bs if p.endswith(".md") else [root]
+    if first in ("..", ".") or any((b / first).exists() for b in anchors):
+        return False
+    return None
+
+
+@functools.lru_cache(maxsize=None)
+def code_citers(needle):
+    """file:line text of tracked non-Markdown files containing needle."""
+    r = subprocess.run(["git", "grep", "-n", "-F", needle, "--", ".", ":!*.md"],
+                       capture_output=True, text=True)
+    return r.stdout.splitlines() if r.returncode == 0 else []
+
+
+def citers(root, path, live):
+    """(citer, text) for every line outside the doc that cites it: code by its
+    repository path; live docs and instruction files by any path that
+    resolves to it."""
+    out = [(c.split(":", 1)[0], c) for c in code_citers(path)]
+    md = set(git("ls-files", "--", *live).split()) | set(git(
+        "ls-files", "--", ":(glob)**/AGENTS.md", ":(glob)**/CLAUDE.md", ":(glob).agents/**/*.md",
+        ":(glob).claude/**/*.md").split())
+    name = Path(path).name
+    r = subprocess.run(["git", "grep", "-n", "-F", name, "--", *sorted(md)], capture_output=True, text=True)
+    for c in r.stdout.splitlines():
+        f = c.split(":", 1)[0]
+        if f == path:
+            continue
+        for ref in re.findall(r"[\w./@-]*" + re.escape(name), c):
+            if any((b / ref).resolve() == (root / path).resolve() for b in bases(root, f)):
+                out.append((f, c))
+                break
+    return out
+
+
+def stale(args, live):
+    base = git("merge-base", "HEAD", args.base).strip()
+    removed_paths = set()
+    for row in git("diff", "--name-status", "-M", base, "--", ".", ":!*.md").splitlines():
+        parts = row.split("\t")
+        if parts[0].startswith(("D", "R")):
+            removed_paths.add(parts[1])
+    names = set()
+    for _, _, text in diff_lines([base], [".", ":!*.md"], "-"):
+        names.update(t for t in re.findall(r"\b[A-Za-z_][A-Za-z0-9_]{3,}\b", text) if IDENT.match(t))
+    names = {n for n in names if not in_code(n)}
+    docs = git("ls-files", "--", *live).split()
+    hits = []
+    for doc in docs:
+        for n, text in enumerate(Path(doc).read_text().splitlines(), 1):
+            gone = [p for p in removed_paths if p in text or Path(p).name in text]
+            gone += [m for m in names if re.search(rf"\b{re.escape(m)}\b", text)]
+            if gone:
+                hits.append(f"  {doc}:{n}: names {', '.join(sorted(set(gone)))[:80]}: {text.strip()[:120]}")
+    print(f"stale ({len(hits)} line{'s' if len(hits) != 1 else ''} name what this branch removed since {base[:10]}):")
+    print("\n".join(hits) if hits else "  none")
+    return 0
+
+
 def main():
-    live = sys.argv[1:] or DEFAULT_LIVE
+    ap = argparse.ArgumentParser(add_help=True)
+    ap.add_argument("--grew", action="append", default=[])
+    ap.add_argument("--allow", action="append", default=[])
+    ap.add_argument("--stale", action="store_true")
+    ap.add_argument("--base", default="origin/HEAD")
+    ap.add_argument("--since", help="measure growth from the merge-base with this ref, so doc edits committed earlier on the branch count")
+    ap.add_argument("live", nargs="*")
+    args = ap.parse_args()
+    live = args.live or DEFAULT_LIVE
+    if args.stale:
+        return stale(args, live)
+
     root = Path(git("rev-parse", "--show-toplevel").strip())
     staged = [p for p in git("diff", "--cached", "--name-only", "--", "*.md").split() if p]
     if not staged:
@@ -80,35 +250,100 @@ def main():
     live_set = set(git("ls-files", "--", *live).split()) | set(
         git("diff", "--cached", "--name-only", "--diff-filter=A", "--", *live).split())
 
+    since = git("merge-base", "HEAD", args.since).strip() if args.since else "HEAD"
+    reasons = {}
+    for g in args.grew:
+        path, _, why = g.partition("=")
+        kind = why.split(":", 1)[0].strip()
+        if kind not in KINDS:
+            sys.exit(f"doc-check: --grew '{g}': the kind is one of {', '.join(KINDS)}")
+        reasons[path.strip()] = why.strip()
+
+    fails, hits = [], []
     # Words, not lines: a rewrapped paragraph changes every line and no words.
     print("growth in words (HEAD -> staged):")
     total = 0
     for path in staged:
-        before, after = words("HEAD:" + path), words(":" + path)
+        before, after = words(f"{since}:" + path), words(":" + path)
         total += after - before
-        note = "   (grew: say why in the report)" if after > before else ""
+        note = ""
+        if after > before and path in live_set:
+            note = f"   ({reasons[path]})" if path in reasons else "   (grew: rerun with --grew)"
+            if path not in reasons:
+                fails.append(("growth", path, 0, f"+{after - before} words with no --grew '{path}=<kind>: <why>'"))
         print(f"  {path}: {before} -> {after} ({after - before:+d}){note}")
     print(f"  total {total:+d}")
 
-    hits = []
-    for path, n, text in added_lines(staged):
+    staged_text = {}
+
+    def with_next(path, n, text):
+        if not re.search(r"§\s*\S*\s*\S*$", text):
+            return text
+        if path not in staged_text:
+            r = subprocess.run(["git", "show", ":" + path], capture_output=True, text=True)
+            staged_text[path] = r.stdout.splitlines() if r.returncode == 0 else []
+        lines = staged_text[path]
+        nxt = lines[n].strip() if n < len(lines) else ""
+        return text + " " + re.sub(r"^[>*#\s-]+", "", nxt)
+
+    added = diff_lines(["--cached"], staged, "+")
+    for path, n, text in added:
         for name, pattern in CHECKS:
             if pattern.search(text):
                 hits.append((name, path, n, text))
         if OWED.search(text) and not OWED_MARKER.search(text):
             hits.append(("owed-marker", path, n, text))
-        if path in live_set and PROPOSAL.search(text):
+        if path not in live_set:
+            continue
+        if PROPOSAL.search(text):
             hits.append(("proposal-ref", path, n, text))
-        for cited, after in SECTION_REF.findall(text):
+        for cited, after in SECTION_REF.findall(with_next(path, n, text)):
             if heading_exists(root, path, cited, after.strip()) is False:
                 shown = " ".join(after.split()[:6])
-                hits.append(("broken-§", path, n, f"`{cited}` § {shown}… matches no heading there"))
-    print(f"\nchecks ({len(hits)} candidate{'s' if len(hits) != 1 else ''}):")
+                fails.append(("broken-§", path, n, f"`{cited}` § {shown}… matches no heading there"))
+        ticked = TICKED.findall(text)
+        if sum(1 for t in ticked if IDENT.match(t)) >= 3:
+            hits.append(("read-aloud", path, n, text))
+        for t in ticked:
+            if PATHLIKE.match(t) and FILE_EXT.search(t.rstrip("/")) and path_state(root, path, t) is False:
+                fails.append(("dead-path", path, n, f"`{t}` does not exist"))
+            elif IDENT.match(t) and t.rstrip("()") not in args.allow and not in_code(t):
+                fails.append(("dead-name", path, n, f"`{t}` occurs nowhere outside the docs (--allow it if external)"))
+
+    # Inbound: headings and docs this change removes that code still cites.
+    for path in staged:
+        after_text = subprocess.run(["git", "show", ":" + path], capture_output=True, text=True)
+        before_text = subprocess.run(["git", "show", "HEAD:" + path], capture_output=True, text=True)
+        if before_text.returncode:
+            continue
+        if after_text.returncode:
+            for _, c in citers(root, path, live):
+                fails.append(("inbound", path, 0, f"removed, still cited: {c[:140]}"))
+            continue
+        kept = headings_of(after_text.stdout)
+        gone = set(headings_of(before_text.stdout)) - set(kept)
+        if not gone:
+            continue
+        name = re.escape(Path(path).name)
+        for _, c in citers(root, path, live):
+            for m in re.finditer(name + r"`?\)?\s*§\s*([^`;,)\n]+)", c):
+                cited = m.group(1).strip()
+                if heading_matches(sorted(gone), cited) and not heading_matches(kept, cited):
+                    fails.append(("inbound", path, 0, f"§ {cited[:40]} removed, still cited: {c[:140]}"))
+
+    print(f"\ncandidates ({len(hits)}):")
     for name, path, n, text in hits:
         print(f"  {name}: {path}:{n}: {text.strip()[:160]}")
     if not hits:
         print("  none")
-    return 0
+    print(f"\nfailing ({len(fails)}):")
+    for name, path, n, text in fails:
+        print(f"  {name}: {path}:{n}: {text.strip()[:200]}")
+    if not fails:
+        print("  none")
+    for path, why in reasons.items():
+        print(f"Doc-Change: {path} — {why}")
+    return 1 if fails else 0
 
 
 if __name__ == "__main__":

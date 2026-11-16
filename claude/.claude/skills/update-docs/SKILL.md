@@ -5,58 +5,42 @@ description: Use when the user wants docs updated to reflect recent or shipped c
 
 # Update the docs
 
-Leave the project's docs so a capable reader, human or agent, holds the
-system's present design: what it is for, how its parts relate, the
-constraints that bite, and why it is shaped this way. Code, config, and
-`--help` carry the rest. Done is the doc edits committed with the change,
-each touched doc read whole and no longer than it needs to be, and a report.
+Leave the docs so the next agent knows what the code cannot tell it. Read the
+repo's `documentation-standards.md` and its bindings first, or
+`~/dotfiles/docs/documentation-standards.md` where it has none. Done is the
+docs true and no longer than they need to be, any edits committed on the
+change's branch (a new commit when the change is already committed), and a
+report.
 
-The standard is the repo's own `documentation-standards.md` (anywhere under
-`docs/`) with its bindings, or `~/dotfiles/docs/documentation-standards.md`
-where the repo has none. Read it before writing.
+1. **Record what the work learned.** Ask what this change taught that the code
+   does not show: a moved boundary or owner, an invariant created or found
+   unguarded, a decision (what it beat, what reopens it), a changed route into
+   the code. Look in the review findings fixed, the guards added, what the
+   user decided, and what the first attempt got wrong. Each answer is one
+   entry, folded into the section that owns it; a part the work did not
+   establish, such as a decision's reason, is asked of the user, never
+   inferred. With no answers, the result
+   is "no doc change, because …"; records the bindings name are still
+   written.
+2. **Cut what the change made false.**
+   `~/.agents/skills/update-docs/scripts/doc-check --stale --base <the commit
+   before the change>` lists doc lines that name what the change removed,
+   committed or not; grep the docs too for any gap the change closed or term
+   it replaced. Cut each such line to the rule it carried, or delete it.
+   Where a doc states an obligation the code now breaks, ask whether the code
+   or the design is wrong.
+3. **Check.** Stage the docs and run
+   `~/.agents/skills/update-docs/scripts/doc-check --since <default branch>`
+   from the repository, with the bindings' live-doc pathspecs as separate
+   arguments, then any check the bindings add. Fix each failure, and fix each
+   candidate or say why it stands. A new doc gets a route from the index. A
+   doc that grew reruns with `--grew '<doc>=<kind>: <why>'`, and its
+   `Doc-Change:` line goes in the commit message.
 
-## Scope
+Asked to reshape the docs, the scope is the docs named. Make the reshapes the
+work calls for (fold a shipped spec into its doc, create, merge or split a
+doc, add or drop an instruction-file line) and report each; ask first where
+docs and code disagree on the design itself, or where the bindings say to.
 
-- **A change landed:** diff the working tree against the merge-base with
-  the default branch, so committed and uncommitted work both count; for a
-  merged branch, diff the merge. Read every doc the change overlaps, whole.
-- **The user asks to reshape** ("simplify the docs", "set up a lean docs
-  tree"): the scope is the docs they name, not the diff.
-- **An implementation-level change** (a fix, a refactor, tests): say no doc
-  needs an edit, and stop.
-
-## Writing
-
-Docs grow one sync at a time, and each addition looks small where it lands:
-most past passes here left the docs longer, and the user has asked for
-"concise", "high level", "bare minimum" again and again. So fold a new fact
-into the section that owns it, cut what the change made stale or what code
-now says, and prefer a short worked command over prose describing it. A doc
-that grew needs a reason in the report.
-
-## Authority
-
-Make the reshapes the change calls for without asking: fold a shipped spec
-into the doc that owns it and prune the spec, add or remove a `CLAUDE.md` or
-`AGENTS.md` line the change makes true or stale, create a doc a new
-subsystem needs, merge or split docs. The commit is the undo, so report each
-one. Ask first only where docs and code disagree on the design itself, since
-the user decides whether the doc or the code is wrong. A repo's own bindings
-that require asking win.
-
-## Before committing
-
-Stage the docs, then run `scripts/doc-check` from this skill's directory
-inside the repo, passing the bindings' live-doc pathspecs as separate
-arguments when they differ from `docs/`, `CLAUDE.md`, and `AGENTS.md`. It
-prints each doc's growth and the standard's check hits, broken `§`
-references included. Fix each hit or say why it stands, then re-read every
-changed doc as one narrative.
-
-If the project has an onboarding or bootstrap skill, check that its routing
-still reaches any doc you created, renamed, or removed.
-
-## Report
-
-What changed in which doc and why; each doc that grew and why; the reshapes
-you made; what you left alone and why.
+**Report:** what was recorded and where, or "no doc change" and why; what was
+cut; each `Doc-Change:` reason; the reshapes.
