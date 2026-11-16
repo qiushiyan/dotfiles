@@ -8,9 +8,9 @@ change.
 `~/dev/skill-evals` (private, a clone on each machine: pull before reading
 its cases) replays a skill headless against chosen revisions; its README
 covers cases, fixtures and commands, including which judge grades by
-default. Subscription rollouts run on the mini, the one machine whose
-accounts hold headless tokens: from another machine start the run there over
-ssh and collect it with `skill-eval wait`. A judge that cannot authenticate
+default. Subscription rollouts run on mini2, where the evals' headless tokens,
+fixtures and earlier runs are: from another machine start the run there over
+ssh (`ssh mini2`) and collect it with `skill-eval wait`. A judge that cannot authenticate
 leaves rows unresolved, not failed: copy the run to a machine with a working
 Claude login and regrade it there.
 

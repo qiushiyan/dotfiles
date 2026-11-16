@@ -162,5 +162,10 @@ and runs `launchd-mini2/`'s agents. What is its own:
   iTELL's repositories live on the laptop only (`docs/repos.md`).
 - **Rex** serves over Tailscale as `qiushi-mini-2-rex`
   (`docs/rex.md` § Several machines).
+- **Skill evals run here.** headroom's headless tokens
+  (`~/.claude-accounts/headless.json`), skill-evals' `local-fixtures/` and
+  `runs/`, and the cut transcripts some fixtures build from
+  (`~/.local/share/skill-evals-forks`) live only here and on the mini, whose
+  steward spends the same tokens; `twin` carries none of them.
 
 What is still open is in `docs/mini2-pending.md`.
