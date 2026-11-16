@@ -885,3 +885,93 @@ zsh no-match globs, two reads of a whole diff over the 25k-token limit).
 PlanLab's `pnpm -s review-engine check <pr>` gives CI and open bot findings
 in about 900 characters, but only the outstanding ones, so the rounds lens
 still reads the threads.
+
+## 2026-11-16 — what a change leaves for the next session to copy: asked by hand, never raised unasked (design proposed, nothing built)
+
+Session `mini2:a00a379e` (an `/improve-tool` pass over this skill and the
+`strategic-review-brief` snippet; findings and a design, stopped before any
+edit to instructions).
+
+**Request.** The user keeps asking sessions, by hand, what code a refactor,
+a fix or a redesigned entry point should leave so that later coding
+sessions follow it without reading the design: illegal states made
+unrepresentable, logic in one home, a layout that shows the layering, entry
+points where the composition is evident, lint where it helps. Where should
+that live, in this review and beyond it? Verification harnesses were out of
+scope.
+
+**Corpus.** Obelisk, all three machines, Claude sessions, main thread, user
+turns by MINE.md's predicate. Lexical predicates; each hit read before it
+was counted.
+- **The ask, typed by hand:** 10 turns in 9 sessions, 10-01 → 11-16, read
+  from hits on `future session|future agent|future coding|naturally
+  follow|pattern … follow|oxlint|unrepresentable` (mini and mini2 by `LIKE`;
+  mac by FTS only, after the `LIKE` sweep timed out there, so mac is a
+  floor). Where it was typed:
+  - at design, on or beside a consult snippet: `ea20fe91`, `e9437249`,
+    `56790c82`, `507b5185`, `mac:a255066d`;
+  - framing an initiative or a brief for another session: `d4f11c70`,
+    `f15adeac`, `4f5dddcd`;
+  - on the strategic-review brief: `e9437249` (appended to the snippet),
+    which produced the opening prompt of `091dc313`;
+  - inside a strategic review, while it ran: `c49b138a` (#10244).
+- **Design-snippet sends** (`Agreeing with the general direction`, since
+  10-01, continuations excluded): 113 (mini2 49, mac 27, mini 37); 5 match
+  the steering words, 4 confirmed by reading. The user adds it to about one
+  design round in thirty, the ones that set a pattern.
+- **Reviews:** 103 invocations in 98 sessions since 10-07 (mini 56, mini2
+  37, mac 10); 82 sessions hold a report (assistant text over 3,000
+  characters with "erdict"). Reports that read the change as a later
+  session would meet it (`future session|future agent|next agent|cold
+  agent|would copy|will copy|next tool|next author|teaches the|session
+  adding`): 2 of 82, `091dc313` and `c49b138a`, both asked for by the user.
+  Unasked: 0 of 80. The predicate is lexical: reports do file
+  `second-mechanism` and `structure` findings, which look back at the join;
+  none walks the next change.
+- **Brief snippet:** 20 sends in 19 sessions; 1 carried a typed addition
+  about patterns. Of the 103 review openings, 2 hold the word "pattern".
+
+**Findings.**
+- **Asked, the answer is specific and gets built.** `091dc313` read each of
+  five named patterns "as a future session would meet it", defeated one
+  compile guard by relabelling a kind (the guard and its type assertion
+  still passed), and its reshape of the one family with a second shape went
+  into the fix-before-merge list; the user folded all. `ea20fe91`'s consult
+  came back with done-checks grouped "so future code can't reintroduce it"
+  (a key without a declared home fails type-check; no exported function
+  builds the unsafe value; lint refuses the direct write). `e9437249`
+  declined a lint rule because a type and a render test fail in the files
+  an author already edits.
+- **The standards the review reads hold the pieces, not the reader.**
+  `composition.md` prices the next change and names the lava layer;
+  `deep-modules.md` has illegal states; thermo-nuclear has the canonical
+  layer. None takes the view of a session that searches a name, copies the
+  code beside its edit and stops at green, so none is applied that way.
+- **The view exists, in one project's docs.** PlanLab's
+  `docs/loopy/changeability/README.md` § Where a change is steered orders
+  eight moments from the landing site to the docs, with tenets 8 and 9 and
+  lens 9 (forced and discretionary steps, the cold probe). It reaches
+  sessions on Loopy's routes only.
+- **Outside practice agrees on the order and adds removal.** pstack's
+  `/correct` (read at `cursor/plugins`; `backnotprop/pstack`, which the
+  10-23 pass cloned, is its port): architecture, then types, then a lint
+  whose error names the fix, then tests, docs last, "prove each check fails
+  on a real past mistake", and delete the old way an agent would copy.
+  OpenAI's harness-engineering post and five other first-hand accounts were
+  read by a subagent, not by this session. No source offers controlled
+  evidence on which of two coexisting shapes an agent copies.
+
+**Proposed, not built.** A lesson, `codebase-design/steering.md`, cited
+where the question is asked today by hand: the `consult-design` and
+`consult-then-build` keys, the spec bar's design views, a lens here read
+both ways (a pattern left weak; a guard nothing earns), and a bullet in
+`strategic-review-brief` naming the patterns the change sets. No finding
+class is added before real findings name one.
+
+**Open comparisons.** If built: reviews of pattern-setting PRs after the
+change against the 0 of 80 above, same predicate, plus what the fold did
+with each such finding; and design-snippet sends that still carry a typed
+steering paragraph against 4 of 113. A rise in guards, registries or lint
+rules the earned-handling lens then deletes would reverse the design-stage
+clause. The comparisons promised on 10-28 and 11-10 were not reached by
+this corpus and stay open.
