@@ -166,6 +166,9 @@ and runs `launchd-mini2/`'s agents. What is its own:
   (`~/.claude-accounts/headless.json`), skill-evals' `local-fixtures/` and
   `runs/`, and the cut transcripts some fixtures build from
   (`~/.local/share/skill-evals-forks`) live only here and on the mini, whose
-  steward spends the same tokens; `twin` carries none of them.
+  steward spends the same tokens; `twin` carries none of them. The token file
+  keys the primary as `.primary` and every other account by its dir, so a
+  copy to a machine with another primary needs those keys renamed, or
+  `headless place` picks an account whose `headless token` then refuses.
 
 What is still open is in `docs/mini2-pending.md`.
