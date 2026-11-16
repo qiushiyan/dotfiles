@@ -67,6 +67,10 @@ bot follows `DOGFOOD.md`.
   one by hand).
 - **Planning sessions get the plan and the five-minute veto like any
   drive** (11-16); it is a veto, not a wait for a yes.
+- **The PR hook asks a session for the review or verification it has not
+  run, and says when each pays; the session decides** (11-16, the user's
+  word: not every session deserves both, so guide rather than ask for the
+  snippet blindly). `loopy-verify` is the verification alone.
 - **drive refuses what would destroy work still under way, never what the
   user already did** (11-11, the user's word: weigh practicality against
   the state machine). A refusal that sends the driver to the user names
@@ -92,10 +96,18 @@ adding more.
    answers that amended a build already made, with the rework each cost
    (baseline before the change: 3 of 38 design questions not taken as
    recommended). The user judges it after a few batches.
-3. **A pull request opened with no review round.** Baseline: 4 of 15 driven
-   building sessions (11-06: 3 of 4; 11-09: 1 of 4), 6 of 11 hand-driven
-   light-path runs. After `pr-stage-check.py`: its denials, and what each
-   session did next (ran the review, or went on and said why).
+3. **What a PR-hook refusal leads to.** Each refusal's marker now names
+   what was missing (`~/.local/state/claude-hooks/pr-stage-check/<id>`,
+   `{"missing": [...]}`). Predicate: per refusal, what the session ran
+   before its next `gh pr create` (the review skill; `pl-loopy-verify` or
+   its file; neither, with the reason it gave), against what the change
+   was (the 11-16 entry's size and kind classes). Baseline, 11-10 → 11-16
+   on the text before: 28 refusals, 12 went on and said why, 9 ran both, 7
+   the review alone. Revise the guidance if sessions still skip
+   verification on changes whose kind the 11-16 entry found it paying for
+   (model behaviour, data shape, wiring, restarts), or run it on pure
+   engine or refactor changes; reverse the verify half if you undo it
+   twice as noise.
 4. **A stop the user could not decide from.** Baseline: at least 9 answers
    in three batches needed a question first. After `rules/stops.md` reaches
    the sessions: the next two batches.
@@ -129,6 +141,94 @@ per PR (7 of 8 sampled, one skipped on a grant); "holds typed text" refusals
 (none in three batches). Retired, not reached: the iTELL comparisons of
 10-30 (no iTELL batch on mini2 since); a Rex restart's reopen; the 11-07
 worktree counts, which need a pass of their own.
+
+## 2026-11-16 — when review and verification pay, and the PR hook that asks for them (improve-tool pass)
+
+**Ask.** The user: what the designed way is to trigger review and
+verification in a manual planlab session; a standalone verify snippet; and
+from the record, when each one earns its cost, to guide sessions in the PR
+hook instead of sending them to the snippet blindly. Their reading: review
+for reasonably systematic changes, verification only where it proves
+something outside tests on a real lane.
+
+**Corpus.**
+- The hook's refusals on every machine since it shipped (11-10 → 11-16):
+  28, all on mini2, 18 in hand-run sessions and 10 driven. Predicate: a
+  tool result holding "No review round has run in this session"; what
+  followed is the review skill, `pl-loopy-verify` (call, file, `lane up`,
+  `pipe-stories`), or another `gh pr create`, before the next one.
+- 66 planlab review rounds from mini2's envoy store (11-01 → 11-16), each
+  joined to its branch's non-test code size (its PR's files, else git
+  from develop's merge-base). Severities are the reviewer's, parsed from
+  the `**F<n>` lines; the session's verdicts read by hand for the 18 small
+  rounds. Script and table:
+  `scratchpad/rounds.py`, `rounds-mini2.json` (session be59d3bf).
+- 54 sessions that verified a built branch (10-20 → 11-16; 41 mini2, 13
+  mini; 16 excluded: spikes, closing reads, other uses), read by a
+  subagent from each verification report and the commits after it;
+  classifications partly inferred, marked so in its ledger
+  (`scratchpad/verify-ledger.md`, same session).
+- drive's sends in batches 11-02 → 11-13.
+
+**Comparison answered** (open comparison 3, before this pass): after a
+refusal 12 sessions went on and said why (docs-only, or the user had said
+skip), 9 ran the review and the verification, 7 the review alone (2 had
+verified by hand, 1 on the user's "no verify is needed"). The hook read the
+`review` label only, so a review alone, or planlab's `review-then-closeout`,
+which has no verification, passed it.
+
+**Findings.**
+- **Review finds serious defects in proportion to the logic changed.**
+  Rounds with a critical: 2 of 14 under 200 lines of non-test code, 9 of
+  12 at 200–1000, 16 of 26 above. Small rounds still bought fixes, of
+  another class: model-facing text left stale (a tool description and a
+  skill teaching the removed behaviour on a 79-line fix), claims the code
+  did not back (a residency line, a repair receipt reporting delivery
+  whatever happened), unpinned behaviour. A contained fix with its own
+  failing test drew minors only.
+- **Verification found what tests missed in 22 of 47 decided runs,**
+  median about 95 minutes whether or not it found anything. Why tests
+  missed them: a real model's behaviour 9, data shape or size 5, wiring or
+  an unrendered path 4, restart or stop paths 2, a reader outside the repo
+  1, real-clock timing 1. By kind: infra 6 of 7 decided, agent 8 of 17,
+  backend 5 of 11, UI 2 of 6, sandbox engine 1 of 4, refactor 0 of 2.
+- **"A real lane" is too strong:** 4 of the 22 were found without one (in
+  process with a real model, a replay, two production reads). The costly
+  empties were infra drills that could not reach production's shape.
+- **They overlap little:** in 4 sessions review found the serious bug while
+  verification confirmed; one restart defect both found.
+- **The user lost track by hand:** "follow the review-verify process as
+  well", "go follow review-verify now in tabtype.toml", "can you now use
+  pl-loopy-verify to prove the behavior", "skip review-verify for this".
+
+**Changed.**
+- `claude/.claude/hooks/pr-stage-check.py`: reads the `verify` label too
+  and refuses once for whichever is missing, with a paragraph per missing
+  one saying what it catches and when a change needs it; the snippet that
+  runs both is named only when both are missing, so a session that verified
+  is not sent to verify again; the marker records what was missing. Tests:
+  `pr-stage-check.test.zsh`, new cases first, red on the old hook, 169 of
+  169 green after under both Pythons.
+- planlab `.tabtype.local.toml` (draft layer, to move into `.tabtype.toml`
+  by PR): `loopy-verify`, the verification half of `loopy-review-verify`,
+  ending at its report; `review-then-closeout` with a verification beside
+  its review where the branch's tests cannot reach what it promises (the
+  session judges, and says why it skipped), its gate and report covering
+  the verification, its opening 80 characters kept so claude-steps still
+  tells it apart.
+- A fresh reader's revise-prompt pass over the hook text and both
+  snippets found 7 and 7 points, all folded: the review paragraph sent a
+  verified session to the snippet that verifies again; "docs-only" in the
+  closing contradicted the review paragraph; no way back to the PR after
+  running a step; the prompt-check line after "run it again"; the verify
+  skill assumed for every change; the snippet's gate and report ignored
+  the verification.
+- `claude-steps` config: `loopy-verify` under `verify`.
+- Owed to the docs pass: `docs/planlab.md`'s hook row and the pipeline
+  doc's stages 5 and 7 and § Project snippets.
+
+**Not tested.** No replay of a session meeting the new message: whether
+sessions choose well is open comparison 3.
 
 ## 2026-11-16 — the first batch a Claude Code session drove (drive `e9799ea` `09c516d` `030a776` `ae59002` `e8662f2`)
 

@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 """PreToolUse(Bash) hook: stop the first `gh pr create` of a session that has
-run no review round, once, and say what to run first.
+run no review round or no verification, once, and say when each one pays.
 
-In a project listed in PROJECTS a pull request follows a review round. When a
-Bash command run from one of the project's checkouts opens a pull request,
-the hook asks claude-steps what the session has run
+In a project listed in PROJECTS a pull request follows a review round and a
+verification where the change needs them, and the session decides which it
+does. When a Bash command run from one of the project's checkouts opens a
+pull request, the hook asks claude-steps what the session has run
 (`claude-steps show <session id> --json`). If the session was read whole
-(`status` is ok) and its `review` label has no step, the call is refused with
-a message that names the project's review snippet, and its prompt check too
-when the `prompts` label has no step either.
+(`status` is ok) and its `review` or `verify` label has no step, the call is
+refused with a message that says, for each one missing, what it catches and
+when the change needs it, and names the prompt check too when the `prompts`
+label has no step either. A label the view lacks says nothing either way.
 
 Advisory. It speaks once per session: a marker file named by the session id,
 under ${XDG_STATE_HOME:-~/.local/state}/claude-hooks/pr-stage-check/, lets
 every later `gh pr create` of that session through, so the second attempt
-passes. Whatever it cannot establish passes in silence: a payload without a
-session id or a cwd, no claude-steps on PATH, an answer slower than LIMIT
-seconds or one that is not the JSON `claude-steps show --help` documents, a
-view that is partial, unreadable or missing, labels without a `review`, and a
-marker that cannot be written, since a refusal it could not remember would
-repeat.
+passes. The marker holds JSON naming what was missing, so a later pass can
+count the refusals by kind. Whatever it cannot establish passes in silence: a
+payload without a session id or a cwd, no claude-steps on PATH, an answer
+slower than LIMIT seconds or one that is not the JSON `claude-steps show
+--help` documents, a view that is partial, unreadable or missing, labels
+without a `review` or a `verify`, and a marker that cannot be written, since a
+refusal it could not remember would repeat.
 
 The shell reading is block-dangerous-git.py's lexer, loaded from beside this
 file, so `gh pr create` counts wherever the shell would run it (behind
@@ -38,13 +41,15 @@ import sys
 
 # One entry per project. The session is in the project when its cwd is one of
 # `checkouts` or below it. `review` and `prompt_check` are the keys of TabType
-# snippets in `file`, which the message prints as it is written here.
+# snippets in `file`, which the message prints as it is written here; `verify`
+# is the skill that verifies a branch.
 PROJECTS = (
     {
         "name": "PlanLab",
         "checkouts": ("~/dev/planlab/main", "~/dev/.worktrees/main"),
         "review": "loopy-review-verify",
         "prompt_check": "loopy-prompt-check",
+        "verify": "pl-loopy-verify",
         "file": "~/dev/planlab/main/.tabtype.toml",
     },
 )
@@ -53,19 +58,57 @@ LIMIT = 5   # seconds claude-steps has to answer
 SESSION_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")  # a file name, and never an option
 HERE = os.path.dirname(os.path.realpath(__file__))
 
-MESSAGE = (
-    "No review round has run in this session, and this command opens a pull "
-    "request. For a change that alters behaviour, the review and the "
-    "verification come first: read the `{review}` entry in {file}, do what it "
-    "says, fix what you confirm, then run this command again. For a docs-only "
-    "change, a review that ran in another session, or a review the user told "
-    "you to skip, run the command again as it is and say in your report which "
-    "it was.\n"
+# What the opening says has not run, by what is missing. The hook knows only
+# what claude-steps saw load, so it names the skill, not the work.
+NOT_RUN = {
+    ("review", "verify"): "neither a review round with the review skill nor a verification with {verify}",
+    ("review",): "no review round with the review skill",
+    ("verify",): "no verification with {verify}",
+}
+OPENING = (
+    "This command opens a pull request, and this session has run {not_run}. "
+    "Decide what this change needs before the pull request opens, and say in "
+    "your report what you ran and why you skipped the rest.\n"
+)
+# Each one's text says what it catches that the other does not, and when a
+# change needs it (the evidence is in drive-session/EVIDENCE.md, 2026-11-16).
+WHEN = {
+    "review": (
+        "\nA review (the review skill, as `fable full review`) catches what a "
+        "careful reader of the code can: a defect in logic that spans modules, "
+        "behaviour no test pins, and text that no longer matches the code, such "
+        "as a skill or tool description a model reads, a doc, or a claim in the "
+        "pull request. It pays for logic across several modules or a few "
+        "hundred lines, a pattern later code will copy, text a model reads, or "
+        "claims about production. A contained fix whose test fails without it "
+        "rarely needs one.\n"
+    ),
+    "verify": (
+        "\nA verification ({verify} for a change it covers, in the mode that "
+        "fits it; for anything else, drive the change where it runs) shows what "
+        "tests cannot reach: how a real model behaves with the new prompt or "
+        "tool, real data's shape and size, the wiring between the app, the "
+        "master and its workers, a restart or deploy in the middle of a run, "
+        "timing on a real clock. Use the cheapest check that answers the "
+        "question: a run with a real model in process often needs no lane, and "
+        "a read of production gives real data's shape and size. When the tests "
+        "already exercise what the change promises, as for a pure function, an "
+        "engine change with its comparison tests, or a refactor that keeps "
+        "behaviour, skip it.\n"
+    ),
+}
+BOTH = "\nWhen both pay, the `{review}` entry in {file} starts them together.\n"
+CLOSING = (
+    "\nRun what this change needs, fix what it confirms, then run this command "
+    "again. When none of it applies, as for a docs change that makes no new "
+    "claim about the code or a model's behaviour, a step that ran in another "
+    "session, a check you already ran here that answers it, or one the user "
+    "told you to skip, run the command again as it is.\n"
 )
 PROMPT_CHECK = (
     "\nIf the change touches text a model reads (a prompt, a tool's "
-    "description or result, a skill), the `{prompt_check}` entry in the same "
-    "file comes before the pull request too.\n"
+    "description or result, a skill), the `{prompt_check}` entry in {file} "
+    "comes before the pull request too.\n"
 )
 
 
@@ -136,15 +179,28 @@ def refusal(payload):
         stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         timeout=LIMIT, check=True,
     ).stdout)
-    if view["status"] != "ok" or has_step(view, "review") is not False:
+    if view["status"] != "ok":
         return None
-    message = MESSAGE.format(**project)
-    if has_step(view, "prompts") is False:
+    missing = tuple(name for name in ("review", "verify") if has_step(view, name) is False)
+    if not missing:
+        return None
+    prompts = has_step(view, "prompts")
+    message = OPENING.format(not_run=NOT_RUN[missing].format(**project))
+    message += "".join(WHEN[name].format(**project) for name in missing)
+    if len(missing) == 2:
+        message += BOTH.format(**project)
+    if prompts is False:
         message += PROMPT_CHECK.format(**project)
+    message += CLOSING
     # The marker is the last step that can fail, so the hook never remembers a
     # refusal it did not make. O_EXCL raises when the marker is already there.
+    record = json.dumps({"missing": list(missing), "prompt_check": prompts is not False})
     os.makedirs(os.path.dirname(marker), exist_ok=True)
-    os.close(os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644))
+    fd = os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    try:
+        os.write(fd, record.encode() + b"\n")
+    finally:
+        os.close(fd)
     return message
 
 

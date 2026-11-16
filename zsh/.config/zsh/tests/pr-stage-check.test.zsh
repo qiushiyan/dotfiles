@@ -1,6 +1,7 @@
 #!/usr/bin/env zsh
 # Pins claude/.claude/hooks/pr-stage-check.py, the PreToolUse(Bash) hook that
-# stops the first `gh pr create` of a session with no review round, once.
+# stops the first `gh pr create` of a session that ran no review round or no
+# verification, once, naming what is missing.
 # Drives the WORKING-TREE hook with synthetic PreToolUse payloads on stdin.
 # Exit 2 = the hook refused the call (Claude Code shows the model the stderr
 # text), exit 0 with nothing printed = passed through.
@@ -59,9 +60,12 @@ typeset -a HOOK_ENV=(HOME="$H" XDG_STATE_HOME="$STATE" PATH="$BIN:$BARE")
 typeset -aU PYS=(${commands[python3]} /usr/bin/python3(N))
 
 # What a refusal must tell the session, from the hook's PROJECTS table: the
-# review snippet and the file that holds it, and the prompt check's snippet
-# when that has not run either. The message's wording is the hook's own.
+# review skill's round when no review ran, the verify skill when no
+# verification ran, the review snippet and its file (which starts both) only
+# when neither ran, and the prompt check's snippet when that has not run
+# either. The message's wording is the hook's own.
 REVIEW='loopy-review-verify' FILE='~/dev/planlab/main/.tabtype.toml' PROMPTS='loopy-prompt-check'
+VERIFY='pl-loopy-verify' ROUND='fable full review'
 
 pass() { (( PASS++ )) || true; print -r -- "PASS ${1//$'\n'/⏎}" }
 fail() {
@@ -99,19 +103,29 @@ payload() {
 hook() { OUT=$(print -r -- "$2" | env -i $HOOK_ENV "$1" "$HOOK" 2>&1); RC=$? }
 newsid() { SID="prsc-test-$$-$(( ++NSID ))" }
 
-# refused <label> <cwd> <command> [review]: exit 2 with a message that names
-# the review snippet and its file, and the prompt check's snippet unless
-# `review` says a prompt check ran; a marker for the session, and claude-steps
-# asked.
+# refused <label> <cwd> <command> [ran ...]: exit 2 with a message that names
+# what did not run, among the review (its snippet and file), the verification
+# (its skill) and the prompt check (its snippet), and nothing that ran; a
+# marker for the session that records what was missing; claude-steps asked.
 refused() {
   local label="$1" cwd="$2" cmd="$3" py
+  local -a ran=("${@[4,-1]}") missing=()
+  (( ${ran[(Ie)review]} )) || missing+=(review)
+  (( ${ran[(Ie)verify]} )) || missing+=(verify)
+  local want=$(jq -cn '$ARGS.positional' --args $missing)
   for py in $PYS; do
     newsid; hook "$py" "$(payload "$SID" "$cwd" "$cmd")"
     if (( RC != 2 )); then fail "want refused, got rc=$RC [$py]  $label" "$OUT"
-    elif [[ "$OUT" != *"$REVIEW"* || "$OUT" != *"$FILE"* ]]; then fail "refused without naming the review snippet and its file [$py]  $label" "$OUT"
-    elif [[ "${4-}" == review && "$OUT" == *"$PROMPTS"* ]]; then fail "names the prompt check though one ran [$py]  $label" "$OUT"
-    elif [[ "${4-}" != review && "$OUT" != *"$PROMPTS"* ]]; then fail "refused without naming the prompt check [$py]  $label" "$OUT"
+    elif (( ${missing[(Ie)review]} )) && [[ "$OUT" != *"$ROUND"* ]]; then fail "no review ran, and the review round is not named [$py]  $label" "$OUT"
+    elif (( ! ${missing[(Ie)review]} )) && [[ "$OUT" == *"$ROUND"* ]]; then fail "names the review round though a review ran [$py]  $label" "$OUT"
+    elif (( $#missing == 2 )) && [[ "$OUT" != *"$REVIEW"* || "$OUT" != *"$FILE"* ]]; then fail "neither ran, and the snippet that starts both or its file is not named [$py]  $label" "$OUT"
+    elif (( $#missing == 1 )) && [[ "$OUT" == *"$REVIEW"* ]]; then fail "one ran, yet the snippet that runs both is named [$py]  $label" "$OUT"
+    elif (( ${missing[(Ie)verify]} )) && [[ "$OUT" != *"$VERIFY"* ]]; then fail "no verification ran, and the verify skill is not named [$py]  $label" "$OUT"
+    elif (( ! ${missing[(Ie)verify]} )) && [[ "$OUT" == *"$VERIFY"* ]]; then fail "names the verify skill though a verification ran [$py]  $label" "$OUT"
+    elif (( ${ran[(Ie)prompts]} )) && [[ "$OUT" == *"$PROMPTS"* ]]; then fail "names the prompt check though one ran [$py]  $label" "$OUT"
+    elif (( ! ${ran[(Ie)prompts]} )) && [[ "$OUT" != *"$PROMPTS"* ]]; then fail "refused without naming the prompt check [$py]  $label" "$OUT"
     elif [[ ! -e "$MARKERS/$SID" ]]; then fail "refused without a marker [$py]  $label"
+    elif ! jq -e --argjson w "$want" '.missing == $w' "$MARKERS/$SID" >/dev/null 2>&1; then fail "the marker does not record $want as missing [$py]  $label" "$(cat "$MARKERS/$SID")"
     elif ! asked "$SID"; then fail "refused without asking claude-steps [$py]  $label"
     else pass "(refused) $label"; fi
   done
@@ -143,15 +157,25 @@ quiet() {
   done
 }
 
-# --- no review step: refused, and the message names what to run ----------------
+# --- no review, no verification: refused, and the message names what to run ----
 says ok
-refused "main checkout, no review and no prompt check: both named" "$MAIN" "gh pr create --fill"
-refused "a worktree: both named" "$WT" "gh pr create --fill"
+refused "main checkout, nothing ran: review, verification and prompt check named" "$MAIN" "gh pr create --fill"
+refused "a worktree: all three named" "$WT" "gh pr create --fill"
 refused "below a worktree's root" "$WT/src" "gh pr create --fill"
 refused "a cwd spelled through a symlink" "$SBX/link" "gh pr create --fill"
 says ok onboard spec build prompts
-refused "main checkout, a prompt check ran: the review alone" "$MAIN" "gh pr create --fill" review
-refused "a worktree, a prompt check ran: the review alone" "$WT" "gh pr create --fill" review
+refused "main checkout, a prompt check ran: review and verification" "$MAIN" "gh pr create --fill" prompts
+refused "a worktree, a prompt check ran: review and verification" "$WT" "gh pr create --fill" prompts
+
+# --- one of the two ran: refused, naming the other alone --------------------------
+says ok review
+refused "a review ran: verification and prompt check named" "$WT" "gh pr create --fill" review
+says ok build review prompts
+refused "a review and a prompt check ran: verification alone" "$WT" "gh pr create --fill" review prompts
+says ok verify
+refused "a verification ran: review and prompt check named" "$WT" "gh pr create --fill" verify
+says ok verify prompts
+refused "a verification and a prompt check ran: review alone" "$MAIN" "gh pr create --fill" verify prompts
 
 # --- once per session ------------------------------------------------------------
 says ok
@@ -169,12 +193,12 @@ for py in $PYS; do
   fi
 done
 
-# --- a review step: silent -------------------------------------------------------
-says ok review
-silent asked "main checkout, a review step" "$MAIN" "gh pr create --fill"
-silent asked "a worktree, a review step" "$WT" "gh pr create --fill"
-says ok build review prompts
-silent asked "a review step and a prompt check" "$WT/src" "gh pr create --fill"
+# --- a review step and a verify step: silent --------------------------------------
+says ok review verify
+silent asked "main checkout, a review and a verification" "$MAIN" "gh pr create --fill"
+silent asked "a worktree, a review and a verification" "$WT" "gh pr create --fill"
+says ok build review verify prompts
+silent asked "a review, a verification and a prompt check" "$WT/src" "gh pr create --fill"
 
 # --- gh pr create wherever the shell runs it -------------------------------------
 says ok
@@ -247,6 +271,8 @@ stub "echo '[]'"
 silent asked "JSON that is not an object" "$MAIN" "gh pr create --fill"
 stub "echo '{\"status\":\"ok\",\"labels\":[{\"name\":\"build\"},{\"name\":\"prompts\"}]}'"
 silent asked "labels without a review" "$MAIN" "gh pr create --fill"
+stub "echo '{\"status\":\"ok\",\"labels\":[{\"name\":\"review\",\"latest\":{\"at\":\"x\"}},{\"name\":\"prompts\"}]}'"
+silent asked "a review step and no verify label: the verification is unknown" "$MAIN" "gh pr create --fill"
 stub "echo '{\"status\":\"ok\",\"labels\":[{\"name\":\"review\"},\"prompts\"]}'"
 silent asked "a label it cannot read after the review: no refusal, and none remembered" "$MAIN" "gh pr create --fill"
 stub "echo 'claude-steps: error: no session matches' >&2; exit 1"
