@@ -258,7 +258,10 @@ data, ask. Beyond that:
   about the change is open: review and verification, the prompt check where
   it applies, the PR settled, the strategic review with its findings folded
   in (planlab's default; elsewhere where the change earned one), and
-  required checks green. The strategic review's fold is change the user
+  required checks green. An approving review the branch rule requires and
+  the project's approver skips, as on a teammate's pull request the session
+  reworked, the session submits under the user's account once that
+  strategic review has folded, and reports. The strategic review's fold is change the user
   asked for, so the code review's churn stop after it is no reason to hold:
   the merge goes on with `--churn-ok`. A churn stop before that review goes
   to the review, which reads the whole change.
