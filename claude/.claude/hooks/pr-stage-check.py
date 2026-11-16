@@ -152,10 +152,15 @@ def opens_pull_request(command):
 
 def has_step(view, name):
     """True or False for a label of the view; None when it has no such label,
-    which says nothing either way."""
+    which says nothing either way. A latest step that is only a prompt naming
+    the label's skill (kind `mention`) ran nothing, so it counts as none. The
+    view holds a label's latest step alone, so a run followed by a later
+    mention also reads as none: one extra advisory stop, which the session
+    answers with the run it made."""
     for label in view["labels"]:
         if label["name"] == name:
-            return label.get("latest") is not None
+            latest = label.get("latest")
+            return latest is not None and latest.get("kind") != "mention"
     return None
 
 

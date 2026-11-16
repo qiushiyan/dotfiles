@@ -177,6 +177,12 @@ refused "a verification ran: review and prompt check named" "$WT" "gh pr create 
 says ok verify prompts
 refused "a verification and a prompt check ran: review alone" "$MAIN" "gh pr create --fill" verify prompts
 
+# A label whose latest step is only a prompt naming its skill ran nothing.
+stub "echo '{\"status\":\"ok\",\"labels\":[{\"name\":\"review\",\"latest\":{\"at\":\"x\",\"kind\":\"skill\"}},{\"name\":\"verify\",\"latest\":{\"at\":\"x\",\"kind\":\"mention\"}},{\"name\":\"prompts\",\"latest\":{\"at\":\"x\",\"kind\":\"snippet\"}}]}'"
+refused "a verification only mentioned: verification named" "$WT" "gh pr create --fill" review prompts
+stub "echo '{\"status\":\"ok\",\"labels\":[{\"name\":\"review\",\"latest\":{\"at\":\"x\",\"kind\":\"mention\"}},{\"name\":\"verify\",\"latest\":{\"at\":\"x\",\"kind\":\"mention\"}},{\"name\":\"prompts\",\"latest\":{\"at\":\"x\",\"kind\":\"mention\"}}]}'"
+refused "all three only mentioned: all three named" "$MAIN" "gh pr create --fill"
+
 # --- once per session ------------------------------------------------------------
 says ok
 for py in $PYS; do

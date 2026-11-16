@@ -227,6 +227,13 @@ which has no verification, passed it.
 - Owed to the docs pass: `docs/planlab.md`'s hook row and the pipeline
   doc's stages 5 and 7 and § Project snippets.
 
+- The hook's first live refusal (this pass's own planlab PR, #11633)
+  named only the review: claude-steps had counted the user's prompt naming
+  `pl-loopy-verify` (an event of kind `mention`) as the label's step. The
+  hook now counts a mention as no step; the view holds a label's latest
+  step alone, so a run followed by a later mention costs one extra stop.
+  Cases first, red, then 173 of 173.
+
 **Not tested.** No replay of a session meeting the new message: whether
 sessions choose well is open comparison 3.
 
