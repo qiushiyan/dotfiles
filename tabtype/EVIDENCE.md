@@ -704,14 +704,18 @@ for. Briefed against bare reviews by yield was not measured.
 **Changed.**
 - `consult-design` and `consult-then-build` (and its copies in planlab's
   `.tabtype.local.toml` draft and itell's file) gain one sentence: where the
-  change sets a shape later changes will repeat, the round settles what
-  holds the next one to it, by `~/.config/lessons/codebase-design/steering.md`.
-  The condition is in the sentence because 109 of 113 sends did not need it.
+  change sets a shape later changes will repeat, the session reads
+  `~/.config/lessons/codebase-design/steering.md` and adds to the checks
+  what holds the next such change to that shape. The condition is in the
+  sentence because 109 of 113 sends did not need it. In `consult-then-build`
+  it sits ahead of the round: a second cold read found it after convergence,
+  where a check added there is never put on trial. Itell's key names no
+  checks, so there it says "settle in the round".
 - `strategic-review-brief` gains a bullet for the shapes the change sets,
   each by name, and its limit goes from 250 to 300 words: the one brief
   written with that list ran about 280.
-- Planlab's committed `.tabtype.toml` still holds the earlier text; the
-  draft wins until a PR moves it.
+- Planlab PR #11580 moves the sentence into the committed `.tabtype.toml`.
+  The local draft carries it until that merges and is deleted then.
 
 **Not changed.** `think-holistic`: no hand-typed ask followed it.
 
