@@ -1069,6 +1069,14 @@ could be probed. Per check, share of judge passes over the runs:
   pass, and the first lens run read the lesson before its first reader's
   fixes (it passed the same checks as the third).
 
+**After a pass by revise-prompt and writing-for-agents** (the user's prompt
+check, same day). The gate says "pattern", the user's word, where it said
+"shape"; the lens drops a reason the lesson gives and splits a two-part
+sentence. Two rollouts of the skill at `3988acd5` (arm `head`, same run and
+judge): the walk and the second shape in 2 of 2, the kept checks 3.0 a run,
+$19.76 a run. A cold read then added "or a second way beside an old one" to
+the gate's kinds (`3203ab3a`), which no rollout has read.
+
 **Read by a fresh reader** (a subagent given revise-prompt and the touched
 surfaces, none of this reasoning). It ran the lesson's pairs through a type
 checker and found the small-door and registry pairs failing the lesson's own
