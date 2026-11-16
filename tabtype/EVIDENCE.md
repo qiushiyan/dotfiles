@@ -681,3 +681,42 @@ batch.
 
 **Next pass compares** building sessions per planned batch, asks in its
 first twelve hours, and next-up items the following batch took.
+
+## 2026-11-16 — the design keys and the review brief ask what the next change will copy
+
+Session `mini2:a00a379e`; counts and predicates are in the strategic-review
+skill's evidence log, same date
+(`claude/.claude/skills/strategic-review/EVIDENCE.md`).
+
+**Typed by hand.** Since 10-01 the user typed, in 9 sessions, a paragraph
+asking that the code a change leaves serve as the pattern later sessions
+follow without reading the design. Five were at design, on or beside a
+consult key (`ea20fe91`, `e9437249`, `56790c82`, `507b5185`, `mac:a255066d`);
+one was appended to `strategic-review-brief` (`e9437249`). Of 113 sends of a
+consult key (`Agreeing with the general direction`, continuations excluded;
+mini2 49, mac 27, mini 37), 4 carried it, so the user adds it only where the
+change sets a pattern.
+
+**10-15's comparison, answered.** `strategic-review-brief` was sent 20 times
+in 19 sessions (mini2 12, mini 6, mac 2), past the three that entry asked
+for. Briefed against bare reviews by yield was not measured.
+
+**Changed.**
+- `consult-design` and `consult-then-build` (and its copies in planlab's
+  `.tabtype.local.toml` draft and itell's file) gain one sentence: where the
+  change sets a shape later changes will repeat, the round settles what
+  holds the next one to it, by `~/.config/lessons/codebase-design/steering.md`.
+  The condition is in the sentence because 109 of 113 sends did not need it.
+- `strategic-review-brief` gains a bullet for the shapes the change sets,
+  each by name, and its limit goes from 250 to 300 words: the one brief
+  written with that list ran about 280.
+- Planlab's committed `.tabtype.toml` still holds the earlier text; the
+  draft wins until a PR moves it.
+
+**Not changed.** `think-holistic`: no hand-typed ask followed it.
+
+**Next pass compares** consult-key sends that still carry a typed paragraph
+about patterns against 4 of 113, and consult reports on such changes that
+name what forces the next change (a type, a check, a deleted second way)
+against the three read on 11-16. Guards or registries the strategic review
+then files as unearned would say the sentence over-applies.
