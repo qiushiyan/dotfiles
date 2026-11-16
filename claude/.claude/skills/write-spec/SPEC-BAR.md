@@ -36,6 +36,8 @@ trim only for a contained change:
 - `codebase-design/deepening.md`: when the change restructures a cluster
   or crosses a seam you don't own.
 - `codebase-design/composition.md`: when the change extends existing code.
+- `codebase-design/steering.md`: when the change sets a shape later
+  changes will repeat.
 - `testing/tdd-loop.md` and `testing/mocking-and-fixtures.md`: `## The bar`
   of each.
 - `collaboration/tenets.md`: the form a tenet takes.
@@ -160,6 +162,9 @@ blocks. Give only the views that settle the design:
   each read from the file it names while writing, since the build re-reads
   each at its path before building on it. `After:` lines give the proposed
   path.
+- **The next change** — where the change sets a shape later changes will
+  repeat: the next one of its kind, what its author finds and copies with
+  none of this spec, and which of its steps fail until done.
 
 Behaviours, ownership, invariants and the distinctions callers rely on
 bind. Symbol names and file placement are sketches the build may change

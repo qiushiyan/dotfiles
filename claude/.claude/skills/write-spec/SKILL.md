@@ -9,6 +9,7 @@ requires:
   - lessons:codebase-design/design-it-twice.md
   - lessons:codebase-design/deepening.md
   - lessons:codebase-design/composition.md
+  - lessons:codebase-design/steering.md
   - lessons:testing/tdd-loop.md
   - lessons:testing/mocking-and-fixtures.md
   - lessons:collaboration/pr-boundaries.md

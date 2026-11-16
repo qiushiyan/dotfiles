@@ -142,7 +142,10 @@ skills:
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}
   update-docs: {body: 456, total: 456}
   wiki: {body: 324, total: 324}
-  write-spec: {body: 1197, total: 6070}
+  # raised 2026-11-16: the spec bar reads the steering lesson and gains the view of the
+  # next change, which the user had typed by hand at design in 5 sessions (strategic-review
+  # EVIDENCE.md, 2026-11-16)
+  write-spec: {body: 1197, total: 6122}
   add-theme: {body: 1437, total: 2035}
   rex: {body: 65, total: 65}
   # raised 2026-11-06: routes for work with no prototype (2 of 7 uses) and the closing
