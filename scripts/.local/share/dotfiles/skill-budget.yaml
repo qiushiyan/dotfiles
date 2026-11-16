@@ -141,7 +141,7 @@ skills:
   # raised 2026-11-16 on the user's go: a lens on what the next change copies, with one
   # example finding, after the user had asked for that read by hand in 9 sessions. No cut
   # paid for it: the 10-28 cut regressed this skill's cases. Replay sr-steering-1116: the
-  # walk in 2 of 3 runs against 0 of 3, kept checks level (+230 body)
+  # walk in 3 of 3 runs against 0 of 3, kept checks level (+230 body)
   strategic-review: {body: 2395, total: 2395}
   tailwind-best-practices: {body: 699, total: 699}
   test-audit: {body: 1129, total: 1974}

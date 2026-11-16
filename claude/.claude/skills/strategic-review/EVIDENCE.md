@@ -1037,7 +1037,8 @@ with an avoid/prefer pair; then "go ahead").
 
 **Replay** (`~/dev/skill-evals`, case `pr-11512-steering`, run
 `sr-steering-1116` on the mini; Fable 5.2 at the 1M window; judge
-`codex:gpt-6.1-terra`, 3 passes, after the Claude judge's login had expired).
+`codex:gpt-6.1-sol`, 3 passes, at the user's word, after the Claude judge's
+login had expired and a first grading by `codex:gpt-6.1-terra`).
 PR #11512 at the head its review read, opened from the builder's brief with
 the user's paragraph about patterns removed; dependencies absent, so nothing
 could be probed. Per check, share of judge passes over the runs:
@@ -1046,23 +1047,25 @@ could be probed. Per check, share of judge passes over the runs:
 |---|---|---|---|
 | second-shape (subagent placed apart from the promotion table) | 1.00 | 0.67 | 1.00 |
 | guard-weak (the compile guard passes under a relabel) | 1.00 | 0.00 | 0.00 |
-| restated-rule (readers restate the promotion rule) | 1.00 | 0.89 | 1.00 |
-| next-change-walk (judges a pattern as a later author meets it) | 1.00 | 0.00 | 0.78 |
+| restated-rule (readers restate the promotion rule) | 1.00 | 1.00 | 1.00 |
+| next-change-walk (judges a pattern as a later author meets it) | 1.00 | 0.00 | 1.00 |
 | kept: failed-push, refused-row, file-size (summed) | 2.00 | 2.00 | 2.00 |
 | verdict | 1 of 1 | 2 of 3 | 3 of 3 |
 | agent cost a run | $12.10 | $11.98 | $18.20 |
 
 - **The count above undersold the skill.** Unasked, it already finds the
-  second shape in 2 of 3 runs and a restated rule in nearly all, under the
+  second shape in 2 of 3 runs and a restated rule in all three, under the
   design lens. The lexical 0 of 80 measured the walk, not those findings.
-- **What the lens adds here:** the walk in 2 of 3 runs against 0 of 3, and
-  the second shape in 3 of 3. The steering checks rose 1.22 a run (90%
-  interval +0.67 to +1.78); the kept checks did not move.
+- **What the lens adds here:** the walk in 3 of 3 runs against 0 of 3, and
+  the second shape in 3 of 3. The steering checks rose 1.33 a run (90%
+  interval +1.00 to +1.67); the kept checks did not move. Terra had read the
+  walk in 2 of 3 lens runs and the restated rule in 0.89 of the runs before;
+  the two judges agree on every other check.
 - **What it did not add:** the weak guard, which the real review showed by a
   probe this rig cannot run.
 - **Cost:** half as much again a run, on three runs each; rollouts have
   ranged $7 to $25, so this may be noise.
-- **Limits:** one PR, one judge of another family, checks written by this
+- **Limits:** one PR, two judges of one other family, checks written by this
   pass, and the first lens run read the lesson before its first reader's
   fixes (it passed the same checks as the third).
 
