@@ -30,11 +30,11 @@ any finding you could recommend nothing on, which stays unfolded.
 
 ## How to work
 
-1. **Intent first.** Run this skill's `scripts/pr-context.sh <pr>
-   <scratchpad>` from a checkout of the PR's repository, then read what it
-   shows, the spec or issue the PR links, and the commit messages in the
-   context file it writes. A red check is a
-   finding, or a flake shown by a rerun or the same failure on the base.
+1. **Intent first.** From a checkout of the PR's repository, run
+   `~/dotfiles/claude/.claude/skills/strategic-review/scripts/pr-context.sh
+   <pr> <scratchpad>`, then read the spec or issue the PR links. A red
+   check is a finding, or a flake shown by a rerun or the same failure on
+   the base.
    Then read the project's map of the area the PR touches.
    In PlanLab (`planlab-ai/main`), a PR touching Loopy or the steward has
    its map in `.agents/skills/pl-loopy-onboarding/`: read its `SKILL.md`,
@@ -63,10 +63,11 @@ any finding you could recommend nothing on, which stays unfolded.
      "What the model is told" lens with it.
 3. **Review.** A PR too large to read whole in one pass splits into two to
    four broad areas, each read completely by a subagent. Hand each one the
-   intent, the context file's path, the area's files and diff base, the lenses below, the standards'
-   paths, and anything you already suspect there. They are read-only, may
-   run focused tests and throwaway probes in your scratchpad, and say for
-   each finding whether a probe confirmed it or it was read from the source.
+   intent, the context file's path, the area's files and diff base, the
+   lenses below, the standards' paths, and anything you already suspect
+   there. They are read-only, may run focused tests and throwaway probes in
+   your scratchpad, and say for each finding whether a probe confirmed it or
+   it was read from the source.
    Keep for yourself the read no single area shows: how the change joins the
    existing code, whether it duplicates a mechanism that already exists,
    which reshape would delete a concept, and where earlier review rounds
@@ -127,10 +128,11 @@ any finding you could recommend nothing on, which stays unfolded.
   non-positive limit, and nothing else calls the helper. Fix: delete the
   clamp; the boundary owns it.
   </example>
-- **Rounds that patched the same place.** Commit bodies name the round
-  that asked for them ("review-r2 F10", "Codex P1 on #8860"), and the bot
-  threads are on the PR. They show where review fixed one area more than
-  once: a later fix repairs an earlier one, or each round adds machinery
+- **Rounds that patched the same place.** Commit messages, in the context
+  file, name the round that asked for them ("review-r2 F10", "Codex P1 on
+  #8860"), and the bot threads are on the PR. They show where review fixed
+  one area more than once: a later fix repairs an earlier one, or each round
+  adds machinery
   for one more case. Read that area's accumulated diff and ask what
   premise the fixes shared. When you can name it and test it, the pile is
   one finding whose fix is the reshape that removes the condition, and the
