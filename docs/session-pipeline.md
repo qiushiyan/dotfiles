@@ -83,7 +83,8 @@ says, which for most is `main`. `~/dotfiles` commits on `main`, and its
    `itell-review-verify` in itell (its `verify` skill's lane), `review-verify`
    elsewhere: a `/review` round while the session proves the intended
    behaviour on the running stack. Confirmed findings are folded in ("fold
-   it in"); substantive fixes get a second round.
+   it in"); substantive fixes get a second round. A branch may need only
+   one; planlab's `loopy-verify` is the verification alone.
 6. **Prompt check**, when the branch's diff touches model-facing text —
    prompts, skill bodies, snippets, tool descriptions and results, a
    `CLAUDE.md`: `loopy-prompt-check` in planlab, `prompt-check` elsewhere.
@@ -92,10 +93,9 @@ says, which for most is `main`. `~/dotfiles` commits on `main`, and its
    verdicts in the PR body; a personal tool `closeout`.
    `review-then-closeout` is stages 5 and 7 in one prompt, for a branch
    nothing has reviewed yet; sent after a review, it would start another.
-   In planlab a session's first `gh pr create` is refused when stage 5 has
-   not run in it, with what to run
-   (`claude/.claude/hooks/pr-stage-check.py`), so a build step that names
-   the PR does not skip the review.
+   In planlab a session's first `gh pr create` is refused once when stage 5
+   has not run in it, with when review and verification each pay
+   (`claude/.claude/hooks/pr-stage-check.py`); the session decides.
 8. **Settle the PR** (planlab). `land-pr` hands the PR to the team's
    `pl-land`, which asks for CI by label, handles red CI and what reviewers
    post, and ends at ready to merge or at a churn stop. It merges only on
@@ -310,11 +310,13 @@ it locally. An edit to `.tabtype.toml` in the main checkout leaves it dirty,
 and `twin` does not pull a dirty main checkout.
 
 ```text
-a new key      → planlab's loopy-review-verify (the review with the pl-loopy-verify rig),
+a new key      → planlab's loopy-review-verify (the review with the pl-loopy-verify rig)
+                 and loopy-verify (that verification alone),
                  itell's itell-review-verify (the review with a verify lane);
                  in both, land-pr (stage 7 without the review) and merge-when-ready
                  (planlab: merge, release and confirm; itell: merge and follow it to staging)
 a global key   → planlab's and itell's consult-then-build (each one's spike rig),
-                 review-then-closeout (ends at a ready PR) and closeout (the post-merge distill);
+                 review-then-closeout (ends at a ready PR; planlab's verifies beside the review)
+                 and closeout (the post-merge distill);
                  TabType's closeout and review-then-closeout (a release)
 ```

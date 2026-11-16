@@ -93,7 +93,8 @@ default: stopping on those is the failure the snippet exists to prevent.
 `review-then-closeout` continues only when the review skill's report would
 open on nothing needing the user. A finding judged foundational stops it, and
 so does a design objection the session rebutted: the skill counts a rebuttal
-as settled, and a merge is the wrong place to settle one unheard.
+as settled, and a merge is the wrong place to settle one unheard. Planlab's
+version verifies beside the review, and a red it could not fix stops it too.
 
 ## The session board reads the opening
 
