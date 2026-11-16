@@ -51,9 +51,10 @@ any finding you could recommend nothing on, which stays unfolded.
      for code quality and the "code judo" reshape;
    - `~/dotfiles/claude/.claude/skills/codebase-design/SKILL.md` with
      `~/.config/lessons/codebase-design/composition.md`, for design, and
-     `steering.md` beside it when the PR sets a shape later changes repeat:
-     an entry point, a registry, a kind that keeps growing, a move between
-     two shapes, the fix for a fault that came back;
+     `steering.md` beside it when the PR sets a pattern later changes will
+     copy: an entry point, a registry, a kind that keeps growing, a
+     migration, the fix for a fault that came back or sits in several
+     places;
    - `~/.config/lessons/testing/test-quality.md`, for tests: what earns a
      place in a suite, the shapes of a test that cannot fail for a real
      reason, and why review drifts toward asking for more tests;
@@ -170,14 +171,14 @@ any finding you could recommend nothing on, which stays unfolded.
   unrelated flows, copied helpers, leaking types, a second mechanism beside
   an existing owner, and the reshape that would make the code smaller and
   the problem disappear.
-- **What the next change copies**, when step 2 read `steering.md`. Later
-  sessions read the code, not the design. Name the next change of that
-  kind and walk it as one of them: what its search finds, what it copies,
-  what fails when it skips a step. Where you can, take the easy wrong path
+- **What the next change copies**, when step 2 read `steering.md`. Name
+  the next change of that kind and walk it as a session that read none of
+  the design: what its search finds, what it copies, what fails when it
+  skips a step. Where you can, take the easy wrong path
   in your scratch copy and read the failure. A second live shape is the
   design lens's finding; say here which one a search finds first. A fix
-  asked for here is earned by the next change, not a runtime case: its
-  `reaches:` line cites what shows the kind growing, and it names its
+  asked for here is earned by the next change, not a runtime case, so its
+  `reaches:` line cites what shows the kind growing. It names its
   mechanism and why a stronger one could not hold. A registry or guard for
   a kind nothing shows growing is speculative generality, fixed by leaving
   the code direct.

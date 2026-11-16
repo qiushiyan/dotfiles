@@ -203,4 +203,4 @@ lessons:
     testing/vitest.md: 2867
     # raised 2026-11-16, the day it was written: its first outside reader found two
     # prefer sides that did not hold and a gate with no example; the fixes added a pair
-    codebase-design/steering.md: 1383
+    codebase-design/steering.md: 1377

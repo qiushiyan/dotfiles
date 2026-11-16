@@ -29,8 +29,8 @@ different in kind, compared on depth, locality, and seam placement, landing on
 the winner plus a line per discard. A change that restructures an existing
 cluster is read with `~/.config/lessons/codebase-design/deepening.md`; one
 that joins an existing call path, with
-`~/.config/lessons/codebase-design/composition.md`; one that sets a shape
-later changes will repeat, with
+`~/.config/lessons/codebase-design/composition.md`; one that sets a pattern
+later changes will copy, with
 `~/.config/lessons/codebase-design/steering.md`.
 
 When the brief asks where the work can be better, name at most two small,

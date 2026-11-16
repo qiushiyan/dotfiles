@@ -6,14 +6,14 @@ The **next author** is a session with a one-line request and none of the design.
 
 ## The bar
 
-These apply where a change sets a shape later changes repeat: an entry point, a registry, a kind that keeps growing, a move between two shapes, the fix for a fault that came back or sits in several places. Each is earned by a next change the code already shows: members added before, several authors, a recurrence. For a one-off, leave the code direct.
+These apply where a change sets a pattern, a shape later changes will copy: an entry point, a registry, a kind that keeps growing, a migration, the fix for a fault that came back or sits in several places. Each is earned by a next change the code already shows: members added before, several authors, a recurrence. For a one-off, leave the code direct.
 
 - **One way to do the job.** Two live shapes means later changes copy either (composition's *lava layer*).
 - **One declaration per fact.** Lists that name a thing are derived from where it is declared (*information leakage*).
 - **The wrong version does not compile.** An omitted step is an error where the decision belongs (*illegal states*, in deep-modules).
 - **Decide once, at the top.** Which mode, host or capability applies is settled in the entry point and passed down as data.
 - **A small door, and nothing else to import.** The shortcut that compiles becomes the interface.
-- **One name, one path.** Each thing has one specific name and one place it is imported from: no alias, re-export chain or generic name.
+- **One name, one path.** Each thing has one specific name and one place it is imported from.
 - **A failure names the fix.** Its reader is a session in the middle of a task.
 
 ## What it looks like
@@ -26,7 +26,7 @@ avoid   api/projects.ts  getProject()    12 uses
 prefer  api/projects.ts  getProject()    52 uses
 ```
 
-**One declaration per fact.** Adding an instance is copying a sibling file and adding it to one list. The declaration is typed and found by search, never wired by filename magic or an import's side effect.
+**One declaration per fact.** Adding an instance is copying a sibling file and adding it to one list. The declaration is a typed value a search finds; registration by filename convention or an import's side effect hides it.
 
 ```ts
 // avoid: a new tool means finding every table that spells its name
@@ -96,7 +96,7 @@ export function writeViewState(state: ViewState) {
 }
 ```
 
-**One name, one path.** One door per package is its interface. A re-export of a re-export, an alias or a generic name hides where a thing lives.
+**One name, one path.** One door per package is its interface; past that, a name is imported from where it is declared.
 
 ```ts
 // avoid
@@ -140,7 +140,7 @@ Two things weigh more than they did when people wrote the code. One odd file is 
 
 ## Checking it
 
-- **Walk the next change** (composition prices it; this follows its author). Name it (the next tool, the next key, the next caller) and follow a session making it: what its search returns, what it copies, what fails when it skips a step. A step nothing forces is the finding.
+- **Walk the next change** (composition prices it; this follows its author). Name it (the next tool, the next key, the next caller) and follow a session making it through every step it owes: what its search returns, what it copies, what fails when it skips one. A step nothing forces is the finding.
 - **Take the wrong path.** Relabel it, cast it, skip the registration, import the internal. A guard that still passes was checking its own declaration.
 
 ---

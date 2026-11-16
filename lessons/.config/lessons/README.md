@@ -22,7 +22,7 @@ The order a planning model should read these, with gates. The snippet's include 
 | 4 | [`testing/test-quality.md`](testing/test-quality.md) | The bar the planned tests must clear — and the shapes to reject | always |
 | 5 | [`testing/vitest.md`](testing/vitest.md) | Vitest API/CLI specifics | **TS-Vitest projects only** |
 | 6 | [`codebase-design/composition.md`](codebase-design/composition.md) | The call path between modules — what each hop adds, and whether a change joins the design or accretes beside it. Read forward when choosing an interface, backward when judging one | **when the change joins existing code**; always at review time |
-| 7 | [`codebase-design/steering.md`](codebase-design/steering.md) | What the change leaves for later sessions to copy, and which mechanism holds them to it | **when the change sets a shape later changes repeat** |
+| 7 | [`codebase-design/steering.md`](codebase-design/steering.md) | What the change leaves for later sessions to copy, and which mechanism holds them to it | **when the change sets a pattern later changes copy** |
 | 8 | [`codebase-design/deepening.md`](codebase-design/deepening.md) | Deepen an existing cluster of shallow modules | **only when restructuring** |
 | 9 | [`codebase-design/design-it-twice.md`](codebase-design/design-it-twice.md) | Explore alternative interfaces | **only when the interface is uncertain** |
 
