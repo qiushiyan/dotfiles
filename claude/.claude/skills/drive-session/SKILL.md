@@ -39,8 +39,8 @@ drive listen                                # how a Claude Code driver is woken 
 words status prints. A refusal, failure or wake that leaves something to do
 ends with `next:`, the command to run as things stand; whether that step
 still makes sense is yours. Reach a session only through drive: a key or a
-close sent through `rex`, or a kill from your shell, skips the view it was
-decided on and the record. What drive cannot do, park and note.
+close sent through `rex`, or a kill, skips the view it was decided on and
+the record. What drive cannot do, park and note.
 
 ## How a drive runs
 
@@ -110,10 +110,10 @@ ready to build.
 - **A check that comes back blocked or inconclusive**, from a session or the
   Browser Test bot, goes back once with what passing looks like exactly (the
   click path, the expected value) before it reaches the user as a failure.
-- **A route that has the user act** (a login, a role) goes back once for
-  proof it then works, such as a dry run, before it reaches them: a route
-  read from one layer of code costs them the act and fails at the next
-  guard.
+- **A route that has the user act** (a login, a role) reaches them with
+  what follows it checked (a dry run) or named unprovable until then; else
+  it goes back once: a route read from one layer of code costs them the
+  act and fails at the next guard.
 - **Halt the drive** when a secret was exposed or shared state damaged:
   send nothing more, note what still runs, and lead the report with it.
 
