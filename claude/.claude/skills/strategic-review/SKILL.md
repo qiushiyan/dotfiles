@@ -6,6 +6,7 @@ argument-hint: "[PR number or URL] [optional: a question this PR raises]"
 requires:
   - lessons:collaboration/finding-classes.md
   - lessons:codebase-design/composition.md
+  - lessons:codebase-design/steering.md
   - lessons:testing/test-quality.md
 ---
 
@@ -49,7 +50,10 @@ any finding you could recommend nothing on, which stays unfolded.
    - `~/dotfiles/claude/.claude/skills/thermo-nuclear-code-quality-review/SKILL.md`,
      for code quality and the "code judo" reshape;
    - `~/dotfiles/claude/.claude/skills/codebase-design/SKILL.md` with
-     `~/.config/lessons/codebase-design/composition.md`, for design;
+     `~/.config/lessons/codebase-design/composition.md`, for design, and
+     `steering.md` beside it when the PR sets a shape later changes repeat:
+     an entry point, a registry, a kind that keeps growing, a move between
+     two shapes, the fix for a fault that came back;
    - `~/.config/lessons/testing/test-quality.md`, for tests: what earns a
      place in a suite, the shapes of a test that cannot fail for a real
      reason, and why review drifts toward asking for more tests;
@@ -70,8 +74,9 @@ any finding you could recommend nothing on, which stays unfolded.
    it was read from the source.
    Keep for yourself the read no single area shows: how the change joins the
    existing code, whether it duplicates a mechanism that already exists,
-   which reshape would delete a concept, and where earlier review rounds
-   patched the same place twice. Start the report only once every
+   which reshape would delete a concept, what the next change of the same
+   kind would copy, and where earlier review rounds patched the same place
+   twice. Start the report only once every
    area has returned, and wait on their completion notices rather than a
    scheduled wakeup: a wakeup prompted with `/strategic-review` fires later
    as a request for a second review.
@@ -165,6 +170,25 @@ any finding you could recommend nothing on, which stays unfolded.
   unrelated flows, copied helpers, leaking types, a second mechanism beside
   an existing owner, and the reshape that would make the code smaller and
   the problem disappear.
+- **What the next change copies**, when step 2 read `steering.md`. Later
+  sessions read the code, not the design. Name the next change of that
+  kind and walk it as one of them: what its search finds, what it copies,
+  what fails when it skips a step. Where you can, take the easy wrong path
+  in your scratch copy and read the failure. A second live shape is the
+  design lens's finding; say here which one a search finds first. A fix
+  asked for here is earned by the next change, not a runtime case: its
+  `reaches:` line cites what shows the kind growing, and it names its
+  mechanism and why a stronger one could not hold. A registry or guard for
+  a kind nothing shows growing is speculative generality, fixed by leaving
+  the code direct.
+
+  <example>
+  **moderate · other (unforced step)** — `routes/index.ts:12`. A route file
+  missing from `ROUTES` compiles and every suite stays green (probe).
+  reaches: evidence — six routes added by four authors since October.
+  Fix: a check that lists the directory, since no type sees a file nothing
+  imports.
+  </example>
 - **Product scope.** Name any behaviour the PR changes outside what it
   describes, and who it reaches: another upload flow, another consumer of a
   shared type.

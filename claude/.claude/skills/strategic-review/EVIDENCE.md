@@ -39,7 +39,8 @@ Each is a measurement a pass can run. The first is this log's newest.
 
 1. **Steering, after 11-16.** Reports that walk a later change (the lexical
    predicate in the last entry) among reviews of PRs that set a shape,
-   against 0 of 80 unasked; what the fold did with each such finding; and
+   against 0 of 80 unasked before; what the fold did with each such
+   finding; cost a review against the replay's half as much again; and
    design-key sends that still carry a typed paragraph about patterns,
    against 4 of 113. Registries, guards or lint rules that the lens asks
    for and a later review deletes as unearned would reverse it.
@@ -943,11 +944,11 @@ PlanLab's `pnpm -s review-engine check <pr>` gives CI and open bot findings
 in about 900 characters, but only the outstanding ones, so the rounds lens
 still reads the threads.
 
-## 2026-11-16 — what a change leaves for the next session to copy: asked by hand, never raised unasked (design proposed, nothing built)
+## 2026-11-16 — a lens on what the next change copies, and the steering lesson
 
 Session `mini2:a00a379e` (an `/improve-tool` pass over this skill and the
-`strategic-review-brief` snippet; findings and a design, stopped before any
-edit to instructions).
+`strategic-review-brief` snippet: findings, a design the user approved, then
+the build and a replay).
 
 **Request.** The user keeps asking sessions, by hand, what code a refactor,
 a fix or a redesigned entry point should leave so that later coding
@@ -1018,17 +1019,65 @@ was counted.
   read by a subagent, not by this session. No source offers controlled
   evidence on which of two coexisting shapes an agent copies.
 
-**Proposed, not built.** A lesson, `codebase-design/steering.md`, cited
-where the question is asked today by hand: the `consult-design` and
-`consult-then-build` keys, the spec bar's design views, a lens here read
-both ways (a pattern left weak; a guard nothing earns), and a bullet in
-`strategic-review-brief` naming the patterns the change sets. No finding
-class is added before real findings name one.
+**Built** (the user: a lesson, shorter than the first draft, each principle
+with an avoid/prefer pair; then "go ahead").
+- `~/.config/lessons/codebase-design/steering.md`: seven principles with a
+  pair each, a pair for the one-off left direct, the order of mechanisms,
+  and how to check a claim. A second research pass (a subagent's read of
+  matklad, King, Metz, Ronacher and agent-era posts) gave the facts-against-
+  look-alike-code split and what weighs differently when agents write.
+- Here: step 2 reads the lesson when the PR sets a shape later changes
+  repeat, step 3 keeps that read for the lead, and the lens "What the next
+  change copies" asks for the walk, the wrong-path probe, a `reaches:` line
+  citing what shows the kind growing, and one example finding tagged
+  `other (unforced step)`. No class was added.
+- Elsewhere: `consult-design`, `consult-then-build` (with planlab's local
+  draft and itell's file), `strategic-review-brief`, `consult/VOICE.md` and
+  the spec bar's Design views (`tabtype/EVIDENCE.md`, same date).
 
-**Open comparisons.** If built: reviews of pattern-setting PRs after the
-change against the 0 of 80 above, same predicate, plus what the fold did
-with each such finding; and design-snippet sends that still carry a typed
-steering paragraph against 4 of 113. A rise in guards, registries or lint
-rules the earned-handling lens then deletes would reverse the design-stage
-clause. The comparisons promised on 10-28 and 11-10 were not reached by
-this corpus and stay open.
+**Replay** (`~/dev/skill-evals`, case `pr-11512-steering`, run
+`sr-steering-1116` on the mini; Fable 5.2 at the 1M window; judge
+`codex:gpt-6.1-terra`, 3 passes, after the Claude judge's login had expired).
+PR #11512 at the head its review read, opened from the builder's brief with
+the user's paragraph about patterns removed; dependencies absent, so nothing
+could be probed. Per check, share of judge passes over the runs:
+
+| check | control (hinted, n=1) | before (n=3) | lens (n=3) |
+|---|---|---|---|
+| second-shape (subagent placed apart from the promotion table) | 1.00 | 0.67 | 1.00 |
+| guard-weak (the compile guard passes under a relabel) | 1.00 | 0.00 | 0.00 |
+| restated-rule (readers restate the promotion rule) | 1.00 | 0.89 | 1.00 |
+| next-change-walk (judges a pattern as a later author meets it) | 1.00 | 0.00 | 0.78 |
+| kept: failed-push, refused-row, file-size (summed) | 2.00 | 2.00 | 2.00 |
+| verdict | 1 of 1 | 2 of 3 | 3 of 3 |
+| agent cost a run | $12.10 | $11.98 | $18.20 |
+
+- **The count above undersold the skill.** Unasked, it already finds the
+  second shape in 2 of 3 runs and a restated rule in nearly all, under the
+  design lens. The lexical 0 of 80 measured the walk, not those findings.
+- **What the lens adds here:** the walk in 2 of 3 runs against 0 of 3, and
+  the second shape in 3 of 3. The steering checks rose 1.22 a run (90%
+  interval +0.67 to +1.78); the kept checks did not move.
+- **What it did not add:** the weak guard, which the real review showed by a
+  probe this rig cannot run.
+- **Cost:** half as much again a run, on three runs each; rollouts have
+  ranged $7 to $25, so this may be noise.
+- **Limits:** one PR, one judge of another family, checks written by this
+  pass, and the first lens run read the lesson before its first reader's
+  fixes (it passed the same checks as the third).
+
+**Read by a fresh reader** (a subagent given revise-prompt and the touched
+surfaces, none of this reasoning). It ran the lesson's pairs through a type
+checker and found the small-door and registry pairs failing the lesson's own
+wrong-path probes, a gate worded six ways, and this lens sending every fix
+it asks for to the known limits under Earned handling's `reaches:` rule.
+All fixed before the replay's lens runs, except as noted above.
+
+**Not cut.** The body grew 2,165 → 2,395 words and nothing paid for it: the
+10-28 wholesale cut regressed this skill's cases. The example finding is the
+first candidate if the body must shrink; it guards the class tag and the
+`reaches:` form, and reports scattering such findings across classes would
+bring it back.
+
+**Open comparisons** are the first item in the list that opens this log. The
+comparisons promised on 10-28 and 11-10 were not reached by this corpus.
