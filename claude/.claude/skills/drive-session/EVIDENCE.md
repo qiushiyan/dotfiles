@@ -194,6 +194,20 @@ Their findings folded: the close example carries `--asks-to`, the proof
 rule says "before it reaches them", and read and status name a leftover.
 Not run: a live batch on this text.
 
+**Goal review** (`review-driver-r1` in drive's store, astra, 11-16; drive
+`8696ed5` `75e903e`). Verdict: partly landed. Fixed: `close --asks-to`
+moved the asks before the close was admitted, so a refused close had moved
+them, and no test closed anything; the proof rule forced a round trip even
+where the act itself blocks every check (an expired login), so it now asks
+for what follows the act checked or named unprovable, and goes back once
+only with neither (cold reader: the staff-role route went back once, the
+expired login went straight to the user). Open with the user: the reviewer
+would drop the test that tells drive's or the terminal's leftover from a
+typed line, and redraw before judging any typed text instead. Reproduced
+that day in a scratch session: text painted into the input row from outside
+survives `end ctrl+u`, and ctrl+l removes it while keeping a typed line, in
+INSERT and in NORMAL.
+
 **Seen, not changed.** planlab's `loopy-initiatives-review` snippet says
 "Anything I name below I am handling myself: leave it out", so steering
 typed after its key ("take M2 as designed") reads as an exclusion; a cold
