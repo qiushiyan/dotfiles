@@ -53,8 +53,8 @@ any finding you could recommend nothing on, which stays unfolded.
      `~/.config/lessons/codebase-design/composition.md`, for design, and
      `steering.md` beside it when the PR sets a pattern later changes will
      copy: an entry point, a registry, a kind that keeps growing, a
-     migration, the fix for a fault that came back or sits in several
-     places;
+     migration or a second way beside an old one, the fix for a fault that
+     came back or sits in several places;
    - `~/.config/lessons/testing/test-quality.md`, for tests: what earns a
      place in a suite, the shapes of a test that cannot fail for a real
      reason, and why review drifts toward asking for more tests;

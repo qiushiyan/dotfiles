@@ -30,7 +30,8 @@ the winner plus a line per discard. A change that restructures an existing
 cluster is read with `~/.config/lessons/codebase-design/deepening.md`; one
 that joins an existing call path, with
 `~/.config/lessons/codebase-design/composition.md`; one that sets a pattern
-later changes will copy, with
+later changes will copy, adds a second way beside an old one, or fixes a
+fault that came back or sits in several places, with
 `~/.config/lessons/codebase-design/steering.md`.
 
 When the brief asks where the work can be better, name at most two small,

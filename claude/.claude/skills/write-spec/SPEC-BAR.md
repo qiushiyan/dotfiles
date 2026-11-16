@@ -37,7 +37,8 @@ trim only for a contained change:
   or crosses a seam you don't own.
 - `codebase-design/composition.md`: when the change extends existing code.
 - `codebase-design/steering.md`: when the change sets a pattern later
-  changes will copy.
+  changes will copy, adds a second way beside an old one, or fixes a fault
+  that came back or sits in several places.
 - `testing/tdd-loop.md` and `testing/mocking-and-fixtures.md`: `## The bar`
   of each.
 - `collaboration/tenets.md`: the form a tenet takes.

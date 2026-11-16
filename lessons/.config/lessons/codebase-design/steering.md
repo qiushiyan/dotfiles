@@ -6,7 +6,7 @@ The **next author** is a session with a one-line request and none of the design.
 
 ## The bar
 
-These apply where a change sets a pattern, a shape later changes will copy: an entry point, a registry, a kind that keeps growing, a migration, the fix for a fault that came back or sits in several places. Each is earned by a next change the code already shows: members added before, several authors, a recurrence. For a one-off, leave the code direct.
+These apply where a change sets a pattern, a shape later changes will copy: an entry point, a registry, a kind that keeps growing, a migration or a second way beside an old one, the fix for a fault that came back or sits in several places. Each is earned by a next change the code already shows: members added before, several authors, a recurrence. For a one-off, leave the code direct.
 
 - **One way to do the job.** Two live shapes means later changes copy either (composition's *lava layer*).
 - **One declaration per fact.** Lists that name a thing are derived from where it is declared (*information leakage*).
@@ -96,7 +96,7 @@ export function writeViewState(state: ViewState) {
 }
 ```
 
-**One name, one path.** One door per package is its interface; past that, a name is imported from where it is declared.
+**One name, one path.** Across packages a name comes through the package's door; inside one, from the file that declares it.
 
 ```ts
 // avoid
@@ -140,7 +140,7 @@ Two things weigh more than they did when people wrote the code. One odd file is 
 
 ## Checking it
 
-- **Walk the next change** (composition prices it; this follows its author). Name it (the next tool, the next key, the next caller) and follow a session making it through every step it owes: what its search returns, what it copies, what fails when it skips one. A step nothing forces is the finding.
+- **Walk the next change** (composition prices it; this follows its author). Name it (the next tool, the next key, the next caller) and follow a session through every step that change owes: what its search returns, what it copies, what fails when it skips one. A step nothing forces is the finding.
 - **Take the wrong path.** Relabel it, cast it, skip the registration, import the internal. A guard that still passes was checking its own declaration.
 
 ---

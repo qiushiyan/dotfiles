@@ -18,7 +18,8 @@ skills:
   clean-worktrees: {body: 467, total: 467}
   # raised 2026-11-16: a voice reads the steering lesson where the change sets a shape
   # later changes repeat (+11 total)
-  consult: {body: 1484, total: 3916}
+  # the trigger names its three cases, since a voice decides without the lesson loaded (+20)
+  consult: {body: 1484, total: 3936}
   delegate: {body: 742, total: 1432}
   distill-docs: {body: 2236, total: 2236}
   distill-handoffs: {body: 2766, total: 2766}
@@ -142,7 +143,8 @@ skills:
   # example finding, after the user had asked for that read by hand in 9 sessions. No cut
   # paid for it: the 10-28 cut regressed this skill's cases. Replay sr-steering-1116: the
   # walk in 3 of 3 runs against 0 of 3, kept checks level (+230 body)
-  strategic-review: {body: 2395, total: 2395}
+  # 11-16, later: the gate names a second way beside an old one (+8)
+  strategic-review: {body: 2403, total: 2403}
   tailwind-best-practices: {body: 699, total: 699}
   test-audit: {body: 1129, total: 1974}
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}
@@ -151,7 +153,8 @@ skills:
   # raised 2026-11-16: the spec bar reads the steering lesson and gains the view of the
   # next change with its lines in the Design example, which the user had typed by hand at design in 5 sessions (strategic-review
   # EVIDENCE.md, 2026-11-16)
-  write-spec: {body: 1197, total: 6211}
+  # 11-16, later: the Read-first trigger names its three cases (+20)
+  write-spec: {body: 1197, total: 6231}
   add-theme: {body: 1437, total: 2035}
   rex: {body: 65, total: 65}
   # raised 2026-11-06: routes for work with no prototype (2 of 7 uses) and the closing
@@ -180,13 +183,13 @@ lessons:
   files:
     CLAUDE.md: 794
     # raised 2026-11-16: the roadmap row for codebase-design/steering.md, a new lesson
-    README.md: 471
+    README.md: 480
     SYNTHESIS.md: 1369
     agent-tooling/README.md: 148
     agent-tooling/onboarding-auto-routing.md: 2295
     agent-tooling/usage-lessons.md: 3697
     # raised 2026-11-16: the topic row for steering.md
-    codebase-design/README.md: 249
+    codebase-design/README.md: 254
     codebase-design/composition.md: 1769
     codebase-design/deep-modules.md: 1058
     codebase-design/deepening.md: 522
@@ -203,4 +206,4 @@ lessons:
     testing/vitest.md: 2867
     # raised 2026-11-16, the day it was written: its first outside reader found two
     # prefer sides that did not hold and a gate with no example; the fixes added a pair
-    codebase-design/steering.md: 1377
+    codebase-design/steering.md: 1383
