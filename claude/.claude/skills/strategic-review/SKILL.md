@@ -132,9 +132,8 @@ any finding you could recommend nothing on, which stays unfolded.
   file, name the round that asked for them ("review-r2 F10", "Codex P1 on
   #8860"), and the bot threads are on the PR. They show where review fixed
   one area more than once: a later fix repairs an earlier one, or each round
-  adds machinery
-  for one more case. Read that area's accumulated diff and ask what
-  premise the fixes shared. When you can name it and test it, the pile is
+  adds machinery for one more case. Read that area's accumulated diff and
+  ask what premise the fixes shared. When you can name it and test it, the pile is
   one finding whose fix is the reshape that removes the condition, and the
   machinery with it; fixes that guard different obligations stay separate
   findings.
