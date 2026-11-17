@@ -120,6 +120,7 @@ end
 
 if DESK
   # === Desk: tools for a person at the screen ===
+  cask "antigravity-cli"  # agy, Gemini models on the Ultra plan; signs in by browser
   brew "create-dmg"   # TabType's release script
   brew "duti"
   brew "herdr"
