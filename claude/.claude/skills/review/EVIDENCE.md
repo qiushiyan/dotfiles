@@ -527,3 +527,9 @@ round and any the user asks to revert (revise if more than about one in
 ten); goal rounds that hold a confirmed defect; built ideas that are not
 small. Revise if a revert request or a "why did you build that" appears in
 two sessions.
+
+## 2026-11-17 — voices reshaped with consult
+
+See `../consult/EVIDENCE.md`, same date: the voice section is the three
+names the user dispatches by, with opus, sol and finer controls in a table
+at the end; Carbon is a review voice too.

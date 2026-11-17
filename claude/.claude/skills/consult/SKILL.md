@@ -15,24 +15,24 @@ user. Each voice first checks the problem (confirms it, sharpens it, or finds
 we defined the wrong one), then judges the approach against whatever problem
 survives. A voice is a peer, not an authority.
 
-## Resolving the voice
+## Voices
 
-Resolve the voice from the user's words, with the model written out, and the
-effort on codex and agy, so the job records what ran:
+The user names the voice after the word: "consult with fable", "one round
+with astra", "consult astra and fable".
+
+| name | `--with` | member name |
+|---|---|---|
+| **astra**, "codex", or none named | `codex:gpt-6.2-astra:high` | `codex-gpt-6.2-astra` |
+| **fable**, "claude" | `claude:claude-fable-5-2` | `claude-claude-fable-5-2` |
+| **carbon**, "gemini" | `agy:gemini-4-carbon:high` | `agy-gemini-4-carbon` |
 
 ```sh
---with codex:gpt-6.2-astra:high   # the default: no voice named, "codex", or "astra"
---with codex:gpt-6.2-sol:xhigh    # "sol"
---with claude:claude-fable-5-2    # "claude", "fable"
---with claude:claude-opus-5-5     # "opus"
---with agy:gemini-4-carbon:high   # "carbon", "gemini"
---with codex:gpt-6.2-astra:xhigh  # another effort only when the user asks: "astra on xhigh"
+envoy run consult-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> \
+  --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
 ```
 
-A model id the user spells out goes through as written, on `high` for Astra
-or Carbon (Carbon alone runs Medium) and `xhigh` for another codex model,
-unless they name an effort. A warm voice (`@<job>/<member>`) keeps the model
-it started on.
+Two names are one job with two `--with`. Any other model, effort or brief
+split: § More control.
 
 ## Process
 
@@ -51,15 +51,18 @@ it started on.
    Done when both parts exist and every "because" is marked.
 
 2. **Write the brief**: one self-contained file in the session scratchpad,
-   from [BRIEF.md](BRIEF.md). Decide step 6's withhold first, since it removes
-   our position from this round's brief.
+   from [BRIEF.md](BRIEF.md). [VOICE.md](VOICE.md) rides beside it with
+   every voice's standing rules, so the brief carries only the problem.
+   Decide step 6's withhold first, since it removes our position from this
+   round's brief.
 
    - **One file per question.** A voice sent only to pin the cause gets the
      brief without the shape: the read's second item ("The shape"), "What
      we propose", and output items 4 to 6. A voice sent only to judge the
      shape gets it without the ranked causes and the falsifying observation.
      A survey voice gets its own research brief naming the scope, the
-     evidence to cite, and the deliverable.
+     evidence to cite, and the deliverable. Voices with different briefs
+     stay one job (§ More control).
    - **What we observe** holds observations only; one inference there spends
      the round's independence. Delete it only when the position rests on
      reasoning alone.
@@ -77,39 +80,14 @@ it started on.
    nothing above the voice's read states a cause, fix, or design, and every
    count has its query on disk.
 
-3. **Dispatch** as one job: one background Bash task with a 30-minute cap,
-   named for the round (`consult-r1`, then `consult-r2`). Return as soon as
-   it is running; the task completing is the signal, and nothing the dispatch
-   prints needs relaying. With no voice named, the round is one turn on the
-   default:
+3. **Dispatch** the round's command (§ Voices) as one background Bash task,
+   the job named for the round (`consult-r1`, then `consult-r2`), and
+   return. The task completing is the signal; nothing the dispatch prints
+   needs relaying.
 
-   ```sh
-   envoy run consult-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> \
-     --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
-   ```
-
-   [VOICE.md](VOICE.md) holds every voice's standing rules, so the brief
-   carries only the problem. If envoy refuses it beside a warm voice that
-   started without it, drop the flag and open the brief with that path.
-
-   Take the voices the user names, one `--with` each. Voices
-   with different jobs each take their own file as `<voice>=<brief>`, still
-   one job with one collect, since a voice reads past an assignment paragraph
-   inside a shared brief. A voice without its own file takes `--prompt-file`:
-
-   ```sh
-   envoy run consult-r1 --with claude:claude-fable-5-2=<critique-brief> --with codex:gpt-6.2-astra:high=<survey-brief> \
-     --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
-   ```
-
-   If the completion notice is lost to a compaction or restart, `envoy
-   pending` says what still needs attention.
-
-4. **Collect** on the completion notice: `envoy collect consult-r1` prints the
-   status and `result.md`, one section per member for a fan-out. Any other
-   status prints a `next:` line; follow it. Done when every voice is
-   collected or accounted for. A `partial` fan-out means one voice returned
-   nothing, and its section says what to do.
+4. **Collect** on the completion notice: `envoy collect consult-r1` prints
+   every voice's result. Any other status prints a `next:` line; follow it.
+   Done when every voice is collected or accounted for.
 
 5. **Judge every point.** Adopt it, or rebut it with the reason (missing
    context, wrong target, or technically wrong). A disagreement you cannot
@@ -158,31 +136,44 @@ it started on.
    - **From outside:** `/write-spec` continues a finished round with its spec
      as the proposal under critique.
 
-   Send the payload into the same sessions, which keep their round-1 context,
-   with the `resume:` command the collect printed, a fresh name
-   (`consult-r2`), and the payload as its prompt file: still one task and one
-   collect. Done when the trigger
-   is answered: the observation reported, the withheld position judged, or
-   the conflict resolved to one position or an explicit fork.
+   The payload goes into the same sessions, which keep their round-1
+   context: the `resume:` command the collect printed, named `consult-r2`.
+   Done when the trigger is answered: the observation reported, the withheld
+   position judged, or the conflict resolved to one position or an explicit
+   fork.
 
 7. **Synthesize** for the user, who did not watch the round and decides from
    this message alone.
 
-   - Lead with each unresolved judgment call as its own question: why it
-     matters now, what it means in product terms, the options and what each
-     implies for the person using the product, and your recommendation. Use
-     none of the round's vocabulary, and never refer the user back to
-     earlier questions.
+   - Lead with each unresolved judgment call, in none of the round's
+     vocabulary.
    - A problem the voice replaced or found unsupported is a decision, so it
      leads, with what settled it. A confirmed problem is one line among the
      convergences.
    - Then the convergences, the deltas adopted and why, the findings
      rejected and why, the obligation edits, and any tenets adopted and where
      they were written.
-   - Name the latest round and, for a fan-out, every member
-     (`consult-r2/codex-gpt-6.2-astra`), and say which voice's position the
-     design followed. A later `/review` seats that voice warm
-     (`--with @consult-r2/codex-gpt-6.2-astra`).
+   - Name the latest round and, for a fan-out, every member by its member
+     name (`consult-r2/codex-gpt-6.2-astra`), and say which voice's position
+     the design followed. A later `/review` seats that voice warm.
 
    Done when every open decision stands on its own, and a cause the round
    could not settle names the observation that would settle it.
+
+## More control
+
+| the user asks for | what to pass |
+|---|---|
+| opus | `--with claude:claude-opus-5-5` |
+| sol | `--with codex:gpt-6.2-sol:xhigh` |
+| an effort ("astra on xhigh") | that effort in the voice: `codex:gpt-6.2-astra:xhigh` |
+| a model id spelled out | as written, on `high` for Astra or Carbon and `xhigh` for another codex model (Carbon given no effort runs Medium) |
+| one member of a fan-out | `--with @consult-r1/<member name>` |
+
+Voices with different briefs each take theirs as `<voice>=<brief>`, and a
+voice without one takes `--prompt-file`; still one job and one collect:
+
+```sh
+envoy run consult-r1 --with claude:claude-fable-5-2=<critique-brief> --with codex:gpt-6.2-astra:high=<survey-brief> \
+  --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
+```

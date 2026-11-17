@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review committed work with a fresh codex or claude session, then apply what survives. Use when the user asks for a review round, or a goal or full review.
+description: Review committed work with a fresh model session, then apply what survives. Use when the user asks for a review round, or a goal or full review.
 requires:
   - lessons:collaboration/review-lens.md
   - lessons:collaboration/finding-classes.md
@@ -23,22 +23,34 @@ collapsed call path), not tweaks inside the implementation's frame. The
 round is done when every finding has a verdict, the fixes are green, and
 the user has a report they can decide from alone.
 
-## Resolving the voice
+## Voices
 
-Name the model on every cold voice, and the effort on a codex one, so the
-job records what ran. Resolve it from the user's words:
+The user names the voice after the word: "review with fable", "astra full
+review", "fable full review, then closeout".
+
+| name | `--with` | member name |
+|---|---|---|
+| **astra**, "codex", or none named | `codex:gpt-6.2-astra:high` | `codex-gpt-6.2-astra` |
+| **fable**, "claude" | `claude:claude-fable-5-2` | `claude-claude-fable-5-2` |
+| **carbon**, "gemini" | `agy:gemini-4-carbon:high` | `agy-gemini-4-carbon` |
+
+One cold voice is a goal round (45-minute cap) or a full round with no
+consult this session (60):
 
 ```sh
---with codex:gpt-6.2-astra:high   # the default: no voice named, "codex", or "astra"
---with codex:gpt-6.2-sol:xhigh    # "sol"
---with claude:claude-fable-5-2    # "claude", "fable"
---with claude:claude-opus-5-5     # "opus"
---with codex:gpt-6.2-astra:xhigh  # another effort only when the user asks: "astra on xhigh"
+envoy run review-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> \
+  --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
 ```
 
-A model ID the user spells out goes through as written, an Astra one on
-`high` and another codex one on `xhigh` unless they name an effort. A warm
-voice (`@<job>/<member>`) keeps the model it started on.
+A full round after a consult seats the consult's voice warm beside a cold
+voice of another family (step 4):
+
+```sh
+envoy run review-r1 --with @consult-r1/codex-gpt-6.2-astra --with claude:claude-fable-5-2 --prompt-file <brief> \
+  --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
+```
+
+Any other model, effort or brief split: § More control.
 
 ## 1. Fix the range
 
@@ -103,7 +115,7 @@ Both modes carry **the standards the work was built to**: any rulebook this
 session read before building, by path. A range that rests on a number this
 session measured (a report, a spec, a threshold in the diff) keeps the
 template's data section and method item, filled to
-`~/.claude/skills/consult/DATA-BLOCK.md`, with the queries and raw outputs
+`~/.agents/skills/consult/DATA-BLOCK.md`, with the queries and raw outputs
 saved beside the brief. Otherwise delete both.
 
 ## 3. Write the brief
@@ -120,74 +132,48 @@ directions:
   never why a decision was made, which would hand back the design the round
   exists to judge.
 
-Every voice's standing rules ride beside the brief as `--instructions-file
-~/.agents/skills/consult/VOICE.md`. If envoy refuses it beside a warm voice
-that started without it, drop the flag and open the brief with that path.
+`~/.agents/skills/consult/VOICE.md` rides beside the brief with every
+voice's standing rules, so the brief carries only the review.
 
 Each «slot» in a template says when its section stays and how to fill
 it.
 
 ## 4. Dispatch
 
-Run one background Bash task, the job named for the round (`review-r1`, then
-`review-r2`), and return. The task completing is the signal; nothing the
-dispatch prints needs relaying. If the notification is lost to a compaction
-or a restart, `envoy pending` says what still needs attention.
+Run the mode's command (§ Voices) as one background Bash task, the job named
+for the round (`review-r1`, then `review-r2`), and return. The task
+completing is the signal; nothing the dispatch prints needs relaying.
 
-**goal** is one cold voice, single turn, 45-minute cap, never a fan-out on
-its own. A warm voice holds the design, which is what goal must judge
-without.
+**goal** is one cold voice, single turn, never a fan-out on its own. A warm
+voice holds the design, which is what goal must judge without.
 
-```sh
-envoy run review-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 45
-```
-
-**full** has a 60-minute cap, and its shape follows one question: did a
-consult in this session weigh the design this range implements? With no
-consult, one cold reviewer:
-
-```sh
-envoy run review-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
-```
-
-With a consult, one fan-out: the consult session continued beside a cold
-voice.
-
-```sh
-envoy run review-r1 --with @consult-r1/codex-gpt-6.2-astra --with claude:claude-fable-5-2 --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
-```
+**full** follows one question: did a consult in this session weigh the
+design this range implements? With no consult, one cold voice. With one, the
+consult session continued beside a cold voice:
 
 - **Name the member** whose position the implementation followed, as the
-  consult's synthesis recorded it. A one-voice consult is `@consult-r1`
-  alone. A fan-out consult holds one session per member, named `<provider>`
-  or `<provider>-<model>` as its collect block prints them
-  (`codex:gpt-6.2-astra:high` is member `codex-gpt-6.2-astra`), and
-  `@consult-r1` alone there would continue every member and seat no cold
-  voice. Name the latest round: after a round 2, `@consult-r2/…`. Seating
-  every member warm is the user's call, one `--with @<member>` each.
-- **The cold voice is the warm voice's other family.** Two voices of one
-  model mostly find the same things. A warm codex voice, whether a one-voice
-  consult or a member, takes `claude:claude-fable-5-2` cold; a warm Claude
-  one (member `claude-claude-fable-5-2`) takes `codex:gpt-6.2-astra:high`. This outranks the stock
-  words "codex" and "astra"; a voice the user picks beyond them is the cold
-  voice as typed.
+  consult's synthesis recorded it: `@consult-r1` for a one-voice consult,
+  `@consult-r1/<member name>` from a fan-out, where `@consult-r1` alone
+  would continue every member and seat no cold voice. Name the latest round:
+  after a round 2, `@consult-r2/…`. Seating every member warm is the user's
+  call, one `--with` each.
+- **The cold voice comes from another family than the warm one**, since
+  two voices of one model mostly find the same things: fable beside a warm astra or
+  carbon, astra beside a warm fable. A voice the user names is the cold
+  voice as named.
 - **Warm judges follow-through**: did the build integrate what was agreed
   and dodge the traps its rounds discussed. It is a poor judge of the design
   it committed to, and it takes only a full brief. When the user wants the
   design re-judged too, add a cold voice on a goal brief to the same job,
   each brief attached to its voice, so the cold voice never sees the full
-  brief:
+  brief (§ More control).
 
-  ```sh
-  envoy run review-r1 --with @consult-r1/codex-gpt-6.2-astra=<full-brief> --with claude:claude-fable-5-2=<goal-brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
-  ```
-
-Collapse to the single cold turn when the user asks for one voice, when the
-consult weighed a different design than this range implements, or when the
-user prefers the cheaper dispatch. Warm-only, the user asking the consult
+Collapse to the single cold turn when the user asks for that voice alone,
+when the consult weighed a different design than this range implements, or
+when the user prefers the cheaper dispatch. Warm-only, the user asking the consult
 voice itself to review, is a follow-through check rather than an independent
 review: run it and call it that in the report. Add more cold voices only
-when the user asks, each resolved as in **Resolving the voice**.
+when the user asks.
 
 ## 5. Judge every finding
 
@@ -304,11 +290,8 @@ fixes, the tests that pinned them are the cheap substitute.
 ## 8. Report
 
 The user did not watch the round and decides from this message alone. Lead
-with what needs them: each foundational objection or design decision as its
-own question, with why it matters now, what it means in plain product
-terms, the options and what each means for the person using the product,
-and your recommendation, in none of the round's vocabulary. Where nothing
-needs them, say so in the first line.
+with what needs them, each foundational objection or design decision in none
+of the round's vocabulary; where nothing does, say so in the first line.
 
 Then the question the round bought and its mode; the verdict per finding
 (fixed, rebutted with the reason, or escalated); what the fixes changed and
@@ -317,3 +300,20 @@ struck; and the job name, so the session stays continuable. Ideas come
 last, after anything the caller's ask appends: one line for each idea
 built, then one for each left unbuilt with your reason. They never count
 as something that needs the user.
+
+## More control
+
+| the user asks for | what to pass |
+|---|---|
+| opus | `--with claude:claude-opus-5-5` |
+| sol | `--with codex:gpt-6.2-sol:xhigh` |
+| an effort ("astra on xhigh") | that effort in the voice: `codex:gpt-6.2-astra:xhigh` |
+| a model id spelled out | as written, on `high` for Astra or Carbon and `xhigh` for another codex model (Carbon given no effort runs Medium) |
+
+A warm voice beside a cold one on a goal brief takes each brief as
+`<voice>=<brief>`, still one job:
+
+```sh
+envoy run review-r1 --with @consult-r1/codex-gpt-6.2-astra=<full-brief> --with claude:claude-fable-5-2=<goal-brief> \
+  --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
+```

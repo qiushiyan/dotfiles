@@ -38,19 +38,22 @@ duet instead. Don't grow the engine.
 - **Human at every boundary.** Dispatch, collection, round 2, verdicts — a
   person (or the host acting in front of one) sits between every stage.
   That is what lets the engine stay judgment-free.
-- **The skills resolve the model; the engine never does.** Each dispatching
-  skill carries a **Resolving the voice** block — user words to exact
-  model IDs, with that skill's own default — so every voice is dispatched with the model
+- **The skills resolve the model; the engine never does.** consult and
+  review open on a **Voices** table: the three names the user dispatches by
+  (astra, fable, carbon), each with its exact voice and member name, the
+  default, and the command to type; every other model and control sits in a
+  **More control** table at the end, since the user names little else
+  (`../consult/EVIDENCE.md`, 2026-11-17). delegate keeps its own
+  **Resolving the voice** block. So every voice is dispatched with the model
   written out, and a job's record never depends on whatever the provider's
   config held that day. Effort follows the provider: codex and agy voices
-  carry their block's effort (`xhigh` for sol; `high` for astra and Carbon,
+  carry the effort their row names (`xhigh` for sol; `high` for astra and Carbon,
   which alone runs Medium) unless the user names another; a claude voice
   passes one only when the user asks, and otherwise the provider's
   configured level governs. The engine stays default-free: a bare provider
   still means the provider's config, and envoy never substitutes a model. A
-  model roll is one edit per skill block (consult, review, delegate), made
-  together; only consult's block offers Carbon, since the user wants Gemini
-  as a consultant alone.
+  model roll is one edit per skill (consult, review, delegate), made
+  together.
 - **Independence picks the default provider.** The host is usually Claude
   Code, so a codex sidekick buys cross-family review for free; both bill a
   flat subscription, so cost isn't the tiebreaker. Default codex; claude is

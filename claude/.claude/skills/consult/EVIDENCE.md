@@ -400,3 +400,44 @@ See `../review/EVIDENCE.md`, same date. Consult's follow-ups since 10-06:
 before the 10-28 rewrite); sampled decisions are product calls the user
 often answers against the recommendation, so they stay with the user.
 `VOICE.md`'s small now excludes a new command.
+
+## 2026-11-17 — the voice section becomes the three names the user dispatches by
+
+**Question**, the user's: make consult and review thinner and tailored to how
+they are actually called — the word "consult" or "review" plus a model name,
+typed or carried by a tabtype snippet (`consult-then-build`,
+`consult-design`, `review-verify`, `review-then-closeout`, all of which name
+fable or astra) — with Fable, Astra and the new Carbon up front and finer
+controls below.
+
+**Corpus.** Obelisk on mac, mini and mini2, self excluded. Skill calls with
+`skill IN ('consult','review')` since 09-01: 665 (354 consult, 311 review).
+The user's last text before each call since 09-15, matched on whole words;
+the voices in `envoy run --with` commands over the same window.
+
+- Named before a consult: astra 133, fable 81, codex 69, claude 56, opus 46,
+  sol 1. Before a review: none named 118, codex 87, claude 31, astra 26,
+  fable 23, opus 11, sol 1.
+- Since 10-27: consult astra 56, fable 48, opus 0; review fable 21, astra 15,
+  opus 4.
+- Dispatched, every skill's runs together: astra 459, fable 240, opus 212,
+  sol 114.
+
+**Change.** Both skills open on a **Voices** table — astra (also "codex",
+and the default), fable (also "claude"), carbon (also "gemini") — with the
+exact `--with`, the member name a warm seat types, and the command; opus,
+sol, efforts, spelled-out ids and brief splits move to a **More control**
+table at the end. Carbon joins review too: the user now names three models
+for both. Cut as caches of envoy's own output or rules: `envoy pending`, a
+warm voice keeping its model, the VOICE.md refusal fallback (every consult
+since VOICE.md passes it), and the decision-question format the user's
+always-loaded rules already give.
+
+**Read-checked.** A fresh agent given only the two skills typed the intended
+command for eight asks shaped like the corpus's, member names and the
+family rule included; the four ambiguities it named (a Carbon effort note
+that read as "a lone Carbon", a goal cap shown only as 60, "asks for one
+voice" against "review with carbon", two home paths for one folder) were
+fixed before commit. **Next pass compares:** asks naming a model outside the
+table (opus, sol) since this commit, and rounds where the agent typed a
+voice or member name that is not in the table.
