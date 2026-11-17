@@ -121,7 +121,8 @@ Additional routes beyond the feature docs above:
 - Auto-compaction settings: `docs/claude-autocompact.md`.
 - Claude Code mods, in-session hooks with UI such as the quota toasts, and how
   one settings line loads them on every account: `docs/claude-mods.md`.
-- AWS SSO sessions and the `aws-login` wrapper: `docs/aws-sso.md`.
+- Signing the AWS CLI in to a profile: `aws-login [profile]`
+  (`~/dev/aws-login/README.md`).
 - What protects uncommitted and gitignored state, local snapshots, recovery
   after a loss, bringing back a dead tmux server and its Claude sessions, and
   reading or editing the VPN credentials in 1Password: `docs/recovery.md`.

@@ -109,7 +109,7 @@ The `zsh`, `tmux` and `ohmyposh` packages are stowed as on the laptop
   default flow redirects to a localhost listener on the mini that a laptop
   browser can't reach. Over SSH, `BROWSER` sends the URL to the laptop
   clipboard. For a session with the full 8 hours, run `aws-login --renew`
-  (`docs/aws-sso.md`).
+  (`~/dev/aws-login/README.md`).
 - **Locale on reattach:** the laptop's ssh sends no `LANG`, and tmux decides
   per client, when it attaches, whether the client is UTF-8. A client attached
   from a shell without a UTF-8 locale draws every non-ASCII glyph
