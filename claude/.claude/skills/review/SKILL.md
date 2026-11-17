@@ -29,16 +29,16 @@ Name the model on every cold voice, and the effort on a codex one, so the
 job records what ran. Resolve it from the user's words:
 
 ```sh
---with codex:gpt-6-astra:high    # the default: no voice named, "codex", or "astra"
---with codex:gpt-6.1-sol:xhigh   # "sol"
---with claude:claude-fable-5-2   # "claude", "fable"
---with claude:claude-opus-5-5    # "opus"
---with codex:gpt-6-astra:xhigh   # another effort only when the user asks: "astra on xhigh"
+--with codex:gpt-6.2-astra:high   # the default: no voice named, "codex", or "astra"
+--with codex:gpt-6.2-sol:xhigh    # "sol"
+--with claude:claude-fable-5-2    # "claude", "fable"
+--with claude:claude-opus-5-5     # "opus"
+--with codex:gpt-6.2-astra:xhigh  # another effort only when the user asks: "astra on xhigh"
 ```
 
-A model ID the user spells out goes through as written, a codex one on
-`xhigh` unless they name an effort. A warm voice (`@<job>/<member>`) keeps
-the model it started on.
+A model ID the user spells out goes through as written, an Astra one on
+`high` and another codex one on `xhigh` unless they name an effort. A warm
+voice (`@<job>/<member>`) keeps the model it started on.
 
 ## 1. Fix the range
 
@@ -139,7 +139,7 @@ its own. A warm voice holds the design, which is what goal must judge
 without.
 
 ```sh
-envoy run review-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 45
+envoy run review-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 45
 ```
 
 **full** has a 60-minute cap, and its shape follows one question: did a
@@ -147,28 +147,28 @@ consult in this session weigh the design this range implements? With no
 consult, one cold reviewer:
 
 ```sh
-envoy run review-r1 --with codex:gpt-6-astra:high --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
+envoy run review-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
 ```
 
 With a consult, one fan-out: the consult session continued beside a cold
 voice.
 
 ```sh
-envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-fable-5-2 --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
+envoy run review-r1 --with @consult-r1/codex-gpt-6.2-astra --with claude:claude-fable-5-2 --prompt-file <brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
 ```
 
 - **Name the member** whose position the implementation followed, as the
   consult's synthesis recorded it. A one-voice consult is `@consult-r1`
   alone. A fan-out consult holds one session per member, named `<provider>`
   or `<provider>-<model>` as its collect block prints them
-  (`codex:gpt-6-astra:high` is member `codex-gpt-6-astra`), and
+  (`codex:gpt-6.2-astra:high` is member `codex-gpt-6.2-astra`), and
   `@consult-r1` alone there would continue every member and seat no cold
   voice. Name the latest round: after a round 2, `@consult-r2/…`. Seating
   every member warm is the user's call, one `--with @<member>` each.
 - **The cold voice is the warm voice's other family.** Two voices of one
   model mostly find the same things. A warm codex voice, whether a one-voice
   consult or a member, takes `claude:claude-fable-5-2` cold; a warm Claude
-  one (member `claude-claude-fable-5-2`) takes `codex:gpt-6-astra:high`. This outranks the stock
+  one (member `claude-claude-fable-5-2`) takes `codex:gpt-6.2-astra:high`. This outranks the stock
   words "codex" and "astra"; a voice the user picks beyond them is the cold
   voice as typed.
 - **Warm judges follow-through**: did the build integrate what was agreed
@@ -179,7 +179,7 @@ envoy run review-r1 --with @consult-r1/codex-gpt-6-astra --with claude:claude-fa
   brief:
 
   ```sh
-  envoy run review-r1 --with @consult-r1/codex-gpt-6-astra=<full-brief> --with claude:claude-fable-5-2=<goal-brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
+  envoy run review-r1 --with @consult-r1/codex-gpt-6.2-astra=<full-brief> --with claude:claude-fable-5-2=<goal-brief> --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
   ```
 
 Collapse to the single cold turn when the user asks for one voice, when the

@@ -5,8 +5,7 @@
 # (codex_runtime_tables in ../twin.toml). ~/.codex/config.toml is never a
 # link: an edit made there is reported as drift, and belongs here.
 
-disable_response_storage = true
-model = "gpt-6.1-sol"
+model = "gpt-6.2-astra"
 model_reasoning_effort = "high"
 model_reasoning_summary = "concise"
 model_verbosity = "low"
@@ -22,9 +21,6 @@ command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
 startup_timeout_sec = 40
 
-[tools]
-view_image_tool = true
-
 [features]
 collaboration_modes = true
 goals = true
@@ -32,7 +28,6 @@ js_repl = false
 
 [notice]
 hide_gpt5_1_migration_prompt = true
-suppress_unstable_features_warning = true
 hide_rate_limit_model_nudge = true
 
 [tui]

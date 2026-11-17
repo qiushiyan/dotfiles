@@ -21,16 +21,16 @@ Name the model on every cold voice, and the effort on a codex one, so the job
 records what ran. Resolve it from the user's words:
 
 ```sh
---with codex:gpt-6-astra:high    # the default: no voice named, "codex", or "astra"
---with codex:gpt-6.1-sol:xhigh   # "sol"
---with claude:claude-fable-5-2   # "claude", "fable"
---with claude:claude-opus-5-5    # "opus"
---with codex:gpt-6-astra:xhigh   # another effort only when the user asks: "astra on xhigh"
+--with codex:gpt-6.2-astra:high   # the default: no voice named, "codex", or "astra"
+--with codex:gpt-6.2-sol:xhigh    # "sol"
+--with claude:claude-fable-5-2    # "claude", "fable"
+--with claude:claude-opus-5-5     # "opus"
+--with codex:gpt-6.2-astra:xhigh  # another effort only when the user asks: "astra on xhigh"
 ```
 
-A model id the user spells out goes through as written, a codex one on
-`xhigh` unless they name an effort. A warm voice (`@<job>/<member>`) keeps the
-model it started on.
+A model id the user spells out goes through as written, an Astra one on
+`high` and another codex one on `xhigh` unless they name an effort. A warm
+voice (`@<job>/<member>`) keeps the model it started on.
 
 ## Process
 
@@ -82,7 +82,7 @@ model it started on.
    default:
 
    ```sh
-   envoy run consult-r1 --with codex:gpt-6-astra:high --prompt-file <brief> \
+   envoy run consult-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> \
      --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
    ```
 
@@ -96,7 +96,7 @@ model it started on.
    inside a shared brief. A voice without its own file takes `--prompt-file`:
 
    ```sh
-   envoy run consult-r1 --with claude:claude-fable-5-2=<critique-brief> --with codex:gpt-6-astra:high=<survey-brief> \
+   envoy run consult-r1 --with claude:claude-fable-5-2=<critique-brief> --with codex:gpt-6.2-astra:high=<survey-brief> \
      --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
    ```
 
@@ -178,9 +178,9 @@ model it started on.
      rejected and why, the obligation edits, and any tenets adopted and where
      they were written.
    - Name the latest round and, for a fan-out, every member
-     (`consult-r2/codex-gpt-6-astra`), and say which voice's position the
+     (`consult-r2/codex-gpt-6.2-astra`), and say which voice's position the
      design followed. A later `/review` seats that voice warm
-     (`--with @consult-r2/codex-gpt-6-astra`).
+     (`--with @consult-r2/codex-gpt-6.2-astra`).
 
    Done when every open decision stands on its own, and a cause the round
    could not settle names the observation that would settle it.
