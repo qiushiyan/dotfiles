@@ -103,6 +103,10 @@ path = "~/dev/.handoffs/planlab-main"
 url = "https://github.com/planlab-ai/handoffs.git"
 branch = "main"
 
+[repos.aws-login]
+path = "~/dev/aws-login"
+url = "https://github.com/qiushiyan/aws-login.git"
+
 [repos.brief]
 path = "~/dev/brief"
 url = "https://github.com/qiushiyan/brief.git"
@@ -167,6 +171,10 @@ carry = ["HANDOFF.md", "espanso-docs", "screenshots.local", ".tabtype.local.toml
 
 # ---- Tools: what each machine installs for itself ----
 # A method, never a command line: the build lives in the tool's repository.
+
+[tools.aws-login]
+method = "make-install"
+repo = "aws-login"
 
 [tools.brief]
 method = "make-install"

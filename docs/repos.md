@@ -64,6 +64,9 @@ along a skill or doc here.
 
 - **planlab** (`~/dev/planlab/main`): the team's repository, worked on in
   worktrees. This repository's layer over it is `docs/planlab.md`.
+- **aws-login:** signs the AWS CLI in to planlab's Identity Center
+  session. `docs/aws-sso.md` describes it, and the laptop's Codex
+  automation that keeps planlab-prod signed in runs it.
 - **planlab-handoffs** (`~/dev/.handoffs/planlab-main`): the team's handoff
   briefs, which `brief` indexes.
 
