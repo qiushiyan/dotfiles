@@ -50,9 +50,10 @@ at runtime would start landing inside this repo:
 The repo is public, so `~/.codex/auth.json` alone makes this a credential leak.
 Nothing errors at the time; the files simply appear as untracked additions.
 
-`~/.codex/config.toml` is the one config file that is not a link: Codex
-writes into it as it runs, so each machine renders its own
-(`docs/twin.md` § Codex config).
+Two config files are rendered, not linked, because their tools write into
+them as they run: `~/.codex/config.toml` (`docs/twin.md` § Codex config) and
+the Antigravity CLI's `~/.gemini/antigravity-cli/settings.json`, which `agy`
+replaces whenever it starts (`docs/antigravity-cli.md`).
 
 **Defense in depth:** each of these packages' `.gitignore` block ignores the
 app's directory wholesale and then allow-lists only the config that belongs in

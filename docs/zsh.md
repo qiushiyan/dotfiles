@@ -83,6 +83,7 @@ zsh/.config/zsh/
   cwd-guard.zsh    # deleted-cwd defenses: _cwd_guard at startup, zshreload (tests/ has its harness)
   claude.zsh       # multi-account launchers (x, x-<name>) — see claude-accounts.md
   codex.zsh        # Codex accounts through headroom (cx, cx-<name>); plain `codex` stays the vendor default
+  agy.zsh          # agy() trusts the launch folder for that session (antigravity-cli.md)
   xcode.zsh
   tmux-utils.zsh   # Codex border wrapper, prompt agent-status sweep
   rex.zsh          # inside Rex: starts rexd, reports long commands as status (docs/rex.md)

@@ -16,7 +16,8 @@ reaching them, their toolchains, the jobs they host.
 tracked content            git: commit, push, pull on each other machine
 carried paths              twin: gitignored files the manifest lists, reconciled through the mini
 CLIs, apps, stow links,    never move: each machine builds from its own clone
-  Codex config, agents
+  Codex and agy settings,
+  agents
 uncommitted work,          nothing: commit and push, or it stays where it is
   branches with no upstream
 OAuth logins, ~/.secrets,  nothing: per machine by design
@@ -87,7 +88,8 @@ exit 2   the command itself failed
 - **absent:** registered in the manifest, no clone on that machine.
 - **not registered:** another machine's manifest does not list the
   repository; pull and apply dotfiles there.
-- **tool behind, activation behind, codex config behind:** the checkout moved
+- **tool behind, activation behind, codex config behind, agy settings
+  behind:** the checkout moved
   and what is installed or stowed did not.
 - **tool differs:** each machine built the tool from a different commit,
   usually because their checkouts are on different branches. Each is current
@@ -184,7 +186,7 @@ A pull refuses a dirty or diverged worktree and says why; nothing is changed.
 
 ```bash
 twin repos pull dotfiles
-twin dotfiles apply                   # restow, render ~/.codex/config.toml, re-read tmux.conf
+twin dotfiles apply                   # restow, render the Codex and agy settings, re-read tmux.conf
 twin dotfiles apply --load-agents     # also load this machine's launchd agents not yet loaded
 ```
 
@@ -505,6 +507,10 @@ twin dotfiles apply --replace-codex-config                           # or discar
 
 `skill-sync` writes its generated block into the shared source, so its
 changes reach Codex at the next apply.
+
+The Antigravity CLI's settings are rendered the same way from
+`twin/.config/twin/agy/`, except that the source owns only the keys it sets
+(`docs/antigravity-cli.md` § Settings: rendered by twin, never a link).
 
 ## Why it is shaped this way
 
