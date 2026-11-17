@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
-# aws-login — start a fresh IAM Identity Center session for the AWS CLI.
+# aws-login — sign the AWS CLI in to an IAM Identity Center session.
 #
-# Usage: aws-login [profile] [--use-device-code] [--no-browser]
+# Usage: aws-login [profile] [--renew] [--use-device-code] [--no-browser]
 #        aws-login [profile] --status
 #   profile            an SSO profile from ~/.aws/config (default: planlab-prod)
+#   --renew            sign out and start a new session even when the profile
+#                      already works; restarts the session's clock
 #   --use-device-code  device-code flow instead of the browser redirect; the
 #                      default on the office minis, where the laptop's browser
 #                      cannot reach their localhost listener
 #   --no-browser       print the sign-in URL instead of opening a browser
 #   --status           report the current session and exit 1 when the profile
 #                      has no working credentials; signs nothing in or out
+#
+# A profile that already gets credentials is left alone: profiles on one
+# [sso-session] share its sign-in, so while the session lives, any of them
+# works without signing the others out. Only a profile without credentials,
+# or --renew, goes through the sign-out and sign-in below.
 #
 # Why sign out first: `aws sso login` on its own reuses an Identity Center
 # session that is still alive, and the new token inherits that session's end
@@ -18,8 +25,9 @@
 # Center concepts). `aws sso logout` ends the session on AWS's side, so the
 # login that follows starts a new one with the full duration. docs/aws-sso.md.
 #
-# Exit codes: 0 signed in and verified; 1 login or verification failed, or
-# --status found no credentials; 2 bad arguments or unknown profile.
+# Exit codes: 0 signed in and verified, or already signed in; 1 login or
+# verification failed, or --status found no credentials; 2 bad arguments or
+# unknown profile.
 set -uo pipefail
 
 DEFAULT_PROFILE=planlab-prod
@@ -28,13 +36,14 @@ DEFAULT_PROFILE=planlab-prod
 SESSION_HOURS=${AWS_LOGIN_SESSION_HOURS:-8}
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/aws-login"
 
-usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; }
 
-profile="" status=0 device_code=0 no_browser=0
+profile="" status=0 renew=0 device_code=0 no_browser=0
 for arg in "$@"; do
   case $arg in
     -h|--help) usage; exit 0 ;;
     --status) status=1 ;;
+    --renew) renew=1 ;;
     --use-device-code) device_code=1 ;;
     --no-browser) no_browser=1 ;;
     -*) echo "aws-login: unknown option: $arg" >&2; usage >&2; exit 2 ;;
@@ -68,14 +77,7 @@ fmt() {  # fmt <epoch>: local time; BSD date here, GNU date as a fallback
 
 identity() { aws sts get-caller-identity --profile "$profile" --output text --query Arn 2>/dev/null; }
 
-if (( status )); then
-  echo "profile:    $profile${session:+ (sso-session $session)}"
-  arn=$(identity)
-  if [[ -z $arn ]]; then
-    echo "credentials: none — run: aws-login $profile"
-    exit 1
-  fi
-  echo "identity:   $arn"
+session_times() {  # when the session began and ends, from the stamp
   if [[ -r $stamp ]]; then
     started=$(tr -d '[:space:]' < "$stamp")
     ends=$(( started + SESSION_HOURS * 3600 ))
@@ -89,7 +91,29 @@ if (( status )); then
   else
     echo "signed in:  unknown (last sign-in was not through aws-login)"
   fi
+}
+
+if (( status )); then
+  echo "profile:    $profile${session:+ (sso-session $session)}"
+  arn=$(identity)
+  if [[ -z $arn ]]; then
+    echo "credentials: none — run: aws-login $profile"
+    exit 1
+  fi
+  echo "identity:   $arn"
+  session_times
   exit 0
+fi
+
+if (( ! renew )); then
+  arn=$(identity)
+  if [[ -n $arn ]]; then
+    echo "already signed in; nothing signed out${session:+ (every profile on sso-session $session shares this sign-in)}"
+    echo "identity:   $arn"
+    session_times
+    echo "run 'aws-login $profile --renew' to sign out and start a new ${SESSION_HOURS}-hour session"
+    exit 0
+  fi
 fi
 
 if (( ! device_code )) && [[ -r $HOME/.config/machine ]] \
