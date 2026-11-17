@@ -1,6 +1,6 @@
 ---
 name: consult
-description: Second opinions from fresh codex or claude sessions on the problem and the approach. Use when the user asks for a consult or a consult round.
+description: Second opinions from fresh model sessions on the problem and the approach. Use when the user asks for a consult or a consult round.
 requires:
   - lessons:codebase-design/deep-modules.md
   - lessons:codebase-design/steering.md
@@ -17,8 +17,8 @@ survives. A voice is a peer, not an authority.
 
 ## Resolving the voice
 
-Name the model on every cold voice, and the effort on a codex or agy one, so
-the job records what ran. Resolve it from the user's words:
+Resolve the voice from the user's words, with the model written out, and the
+effort on codex and agy, so the job records what ran:
 
 ```sh
 --with codex:gpt-6.2-astra:high   # the default: no voice named, "codex", or "astra"
@@ -29,10 +29,10 @@ the job records what ran. Resolve it from the user's words:
 --with codex:gpt-6.2-astra:xhigh  # another effort only when the user asks: "astra on xhigh"
 ```
 
-A model id the user spells out goes through as written, an Astra or Carbon
-one on `high` and another codex one on `xhigh` unless they name an effort;
-Carbon without one runs Medium. A warm voice (`@<job>/<member>`) keeps the
-model it started on.
+A model id the user spells out goes through as written, on `high` for Astra
+or Carbon (Carbon alone runs Medium) and `xhigh` for another codex model,
+unless they name an effort. A warm voice (`@<job>/<member>`) keeps the model
+it started on.
 
 ## Process
 
