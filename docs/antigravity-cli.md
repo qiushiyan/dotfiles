@@ -51,7 +51,9 @@ Two traps:
 - **Effort is part of the model's name.** `agy` 1.5.10 rejects an `effort`
   key (`--settings: unknown setting "effort"`), so the source sets
   `"model": "Gemini 4 Carbon (High)"`. High is Carbon's top effort, and
-  `agy models` lists the names.
+  `agy models` lists the names. The command line takes model and effort
+  apart (`--model gemini-4-carbon --effort high`), and the model without an
+  effort runs Medium, not the settings' High.
 
 A change made inside `agy`, `/model` or `/config` on an owned key, is drift
 and stops the next apply:
@@ -90,7 +92,8 @@ So `agy()` in `zsh/.config/zsh/agy.zsh` passes the launch folder as trusted
 through `--settings`. That flag applies to one session and `agy` never saves
 it, so nothing piles up in the settings file. The function covers shells only.
 A headless run (`agy -p`) never asks, so a program that calls the binary
-directly needs nothing.
+directly needs nothing. envoy is one: it runs `agy` as a provider, which the
+consult skill dispatches as a Carbon voice (`~/dev/envoy/docs/providers.md`).
 
 ## What stays out of the repository
 
