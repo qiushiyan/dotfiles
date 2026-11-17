@@ -36,129 +36,84 @@ split: § More control.
 
 ## Process
 
-1. **Take a position.** Work the user's latest input through and land on
-   what you would defend if no voice replied. Open questions go into the
-   brief; an undigested pile of answers buys back an answer you cannot judge.
+1. **Take a position**: what you would defend if no voice replied, worked
+   through from the user's latest input; open questions go into the brief.
 
-   - **The problem**: what is wrong or needed and why, as a chain of links.
-     Mark each link observed or inferred, and list what you never checked. A
-     cause read in the code is observed. A cause reached from an incident, a
-     log, or a correlation is inferred, however sure you are. For a need,
-     what someone reported, and who, is observed; what to build is inferred.
+   - **The problem**: what is wrong or needed and why, as a chain of links,
+     each marked observed or inferred, plus what you never checked. A cause
+     read in the code is observed; one reached from an incident, a log or a
+     correlation is inferred, however sure you are. For a need, what someone
+     reported, and who, is observed; what to build is inferred.
    - **The approach**: the shape you would ship tomorrow, the shape you
      discarded, and which earlier conclusions the new input broke.
 
-   Done when both parts exist and every "because" is marked.
+   Done when every "because" is marked.
 
-2. **Write the brief**: one self-contained file in the session scratchpad,
-   from [BRIEF.md](BRIEF.md). [VOICE.md](VOICE.md) rides beside it with
-   every voice's standing rules, so the brief carries only the problem.
-   Decide step 6's withhold first, since it removes our position from this
-   round's brief.
+2. **Write the brief** from [BRIEF.md](BRIEF.md), which says what each
+   section holds; [VOICE.md](VOICE.md) rides beside it with every voice's
+   standing rules. Decide step 5's withhold first, since it removes our
+   position from this round's brief. A voice with one job gets a brief cut
+   to it: one sent only to pin the cause loses the shape (the read's second
+   item, "What we propose", output items 4 to 6), one sent only to judge the
+   shape loses the ranked causes and the falsifying observation, and a
+   survey voice gets its own research brief naming the scope, the evidence
+   to cite and the deliverable. Done when a cold reader could act on the
+   brief without this conversation, and nothing above the voice's read
+   states a cause, fix or design.
 
-   - **One file per question.** A voice sent only to pin the cause gets the
-     brief without the shape: the read's second item ("The shape"), "What
-     we propose", and output items 4 to 6. A voice sent only to judge the
-     shape gets it without the ranked causes and the falsifying observation.
-     A survey voice gets its own research brief naming the scope, the
-     evidence to cite, and the deliverable. Voices with different briefs
-     stay one job (§ More control).
-   - **What we observe** holds observations only; one inference there spends
-     the round's independence. Delete it only when the position rests on
-     reasoning alone.
-   - **Fences.** A brief may fence off what something outside this session
-     already judged: a spec the user approved, a decision they made, a
-     platform constraint. This session's own analysis is not settled, even
-     when the user agreed with it; it goes under "What we believe", where a
-     voice can attack it. A fence over it gets the wrong problem approved.
-   - **A measured number.** When the position rests on a count this session
-     measured, put [DATA-BLOCK.md](DATA-BLOCK.md)'s bullets in "What we
-     observe", keep the output's method item, and save the queries and raw
-     outputs beside the brief. With no such number, delete the method item.
+3. **Dispatch** the round's command (§ Voices) as one background Bash task
+   named for the round (`consult-r1`, then `consult-r2`), and return. On the
+   completion notice, `envoy collect consult-r1` prints every voice's
+   result.
 
-   Done when a cold reader could act on the brief without this conversation,
-   nothing above the voice's read states a cause, fix, or design, and every
-   count has its query on disk.
+4. **Judge every point.** Adopt it, or rebut it with the reason (missing
+   context, wrong target, technically wrong); one you cannot resolve goes to
+   the user with both positions. Silently deferring to a voice and silently
+   overriding it are the same failure.
 
-3. **Dispatch** the round's command (§ Voices) as one background Bash task,
-   the job named for the round (`consult-r1`, then `consult-r2`), and
-   return. The task completing is the signal; nothing the dispatch prints
-   needs relaying.
-
-4. **Collect** on the completion notice: `envoy collect consult-r1` prints
-   every voice's result. Any other status prints a `next:` line; follow it.
-   Done when every voice is collected or accounted for.
-
-5. **Judge every point.** Adopt it, or rebut it with the reason (missing
-   context, wrong target, or technically wrong). A disagreement you cannot
-   resolve goes to the user with both positions. Silently deferring to a
-   voice and silently overriding it are the same failure.
-
-   - **Order.** Judge the voice's method first: settle a disputed count by
-     running its variant, and revise the position if it changes. Then its
-     read and its problem verdict, before any design point. Independent
-     convergence on our problem is the strongest evidence a round gives; a
-     different problem is settled before the shape.
+   - **Order.** The voice's method first: settle a disputed count by running
+     its variant, and revise the position if it changes. Then its read and
+     its problem verdict, before any design point. Independent convergence on
+     our problem is the strongest evidence a round gives; a different problem
+     is settled before the shape.
    - **Causes.** Adopt a cause by running its falsifying observation, never
      by agreeing with it. A problem the evidence does not carry stays
      unsettled, and the next move is that observation, not a build.
-   - **Several voices.** Judge each point before looking at who said it.
-     Agreement is not evidence, since voices share the brief's framing, and a
-     point one voice raised can be the best one. A real conflict is a fork for
-     the user. Judge voices on different briefs each against its own, and
-     where their claims overlap, compare the evidence.
-   - **Traps.** A point naming a trap the build could fall into (an edge
-     case, a failure path, a contract that invites misuse) sharpens an
+   - **Several voices.** Agreement is not evidence, since voices share the
+     brief's framing: judge each point before looking at who said it, and
+     voices on different briefs each against its own. A real conflict is a
+     fork for the user.
+   - **Traps.** A point naming a trap the build could fall into sharpens an
      obligation in the spec's § Verification when something reaches the
-     case, and is a non-goal when nothing does. With no spec yet, carry it
-     into the synthesis. Points with nothing executable behind them are
-     adopted as prose.
+     case, and is a non-goal when nothing does; with no spec yet, it goes
+     into the synthesis.
    - **Tenets** a voice returns meet the lesson's bar or count as tips.
      Revise survivors into the spec's `## Tenets` in place, or carry them in
      the synthesis for `/write-spec` when there is no spec; one left in the
-     conversation is lost at compaction. The synthesis records each struck
-     tenet and why, beside the obligation edits.
+     conversation is lost at compaction.
 
-   Done when every point is adopted (with its obligation where the trap
-   was executable), rebutted with a reason, or escalated.
-
-6. **Round 2** opens only on one of these:
+5. **Round 2** opens only on one of these, into the same sessions through
+   the `resume:` command the collect printed, named `consult-r2`:
 
    - **The falsifying observation came back.** Run the cheapest one the voice
-     named and send what you saw. That round decides whether the cause holds.
+     named and send what you saw; that round decides whether the cause holds.
    - **A wrong answer would cost a whole implementation cycle**: withhold
      across two turns. Round 1 sends the brief without "What we believe" and
      "Where we doubt it", asking for the voice's own method, read, problem,
-     falsifier, and approach. Round 2 sends those two sections and the output
+     falsifier and approach. Round 2 sends those two sections and the output
      items that judge ours, against a reading the voice already committed to.
    - **A split fan-out.** Send both positions back and ask each voice to
      argue against the other's.
-   - **From outside:** `/write-spec` continues a finished round with its spec
-     as the proposal under critique.
 
-   The payload goes into the same sessions, which keep their round-1
-   context: the `resume:` command the collect printed, named `consult-r2`.
-   Done when the trigger is answered: the observation reported, the withheld
-   position judged, or the conflict resolved to one position or an explicit
-   fork.
-
-7. **Synthesize** for the user, who did not watch the round and decides from
-   this message alone.
-
-   - Lead with each unresolved judgment call, in none of the round's
-     vocabulary.
-   - A problem the voice replaced or found unsupported is a decision, so it
-     leads, with what settled it. A confirmed problem is one line among the
-     convergences.
-   - Then the convergences, the deltas adopted and why, the findings
-     rejected and why, the obligation edits, and any tenets adopted and where
-     they were written.
-   - Name the latest round and, for a fan-out, every member by its member
-     name (`consult-r2/codex-gpt-6.2-astra`), and say which voice's position
-     the design followed. A later `/review` seats that voice warm.
-
-   Done when every open decision stands on its own, and a cause the round
-   could not settle names the observation that would settle it.
+6. **Synthesize** for the user. A problem the voice replaced or found
+   unsupported is a decision for them, with what settled it; a confirmed
+   problem is one line among the convergences. Then the deltas adopted and
+   why, the findings rejected and why, the obligation edits, and the tenets
+   adopted or struck and where they were written. Name the latest round and,
+   for a fan-out, each member (`consult-r2/codex-gpt-6.2-astra`), and say
+   which voice's position the design followed; a later `/review` seats it
+   warm. Done when a cause the round could not settle names the observation
+   that would settle it.
 
 ## More control
 

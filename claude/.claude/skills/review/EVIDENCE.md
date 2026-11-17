@@ -533,3 +533,9 @@ two sessions.
 See `../consult/EVIDENCE.md`, same date: the voice section is the three
 names the user dispatches by, with opus, sol and finer controls in a table
 at the end; Carbon is a review voice too.
+
+## 2026-11-17 — the procedure trimmed with consult's
+
+See `../consult/EVIDENCE.md`, same date: the brief step folded into the mode
+step; what the templates and the always-loaded closing rule already say is
+gone; the verify-and-fix discipline stays.

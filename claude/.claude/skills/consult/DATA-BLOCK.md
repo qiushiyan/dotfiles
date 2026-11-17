@@ -1,8 +1,8 @@
 # The data behind a position — the block a brief carries when numbers do
 
-Reached from `consult/SKILL.md` step 2 and `review/SKILL.md` step 2. One
-home for the rule; each brief template carries the section's slot and the
-output item that consumes it.
+Reached from `consult/BRIEF.md` § What we observe and `review/SKILL.md`
+step 2. One home for the rule; each brief template carries the section's
+slot and the output item that consumes it.
 
 ## When it fires
 

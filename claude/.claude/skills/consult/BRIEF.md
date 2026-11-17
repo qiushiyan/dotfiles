@@ -25,10 +25,10 @@ this is settled — and, where something is going wrong, the symptom as a user
 or a log sees it. No cause, no fix. Then what any answer has to satisfy: the
 constraints from outside this session — compatibility, operational limits, a
 decision the user made, work already committed elsewhere. This session's own
-analysis is not a constraint; it goes under "What we believe", where the voice
-is meant to attack it. A ticket's priority or a requested delivery date is not
-one either: leave it out, since the voice judges the design, not the
-schedule.»
+analysis is not a constraint, even when the user agreed with it; it goes under
+"What we believe", where the voice is meant to attack it. A ticket's priority
+or a requested delivery date is not one either: leave it out, since the voice
+judges the design, not the schedule.»
 
 Those constraints are fixed; on them your job is defects in the *execution* —
 internal consistency, gaps, edge cases. If you believe one is fatally flawed,
@@ -46,7 +46,7 @@ code. One inference here spends what the round was bought for; causes and
 suspicions go under "What we believe". Where a count, a rate or a timing is
 this session's own measurement, add DATA-BLOCK.md's bullets here: the queries
 and raw outputs by absolute path, and what the voice can run. Delete the
-section only when the position rests on reasoning alone (SKILL.md step 2).»
+section only when the position rests on reasoning alone.»
 
 ## Your read, before reading on
 
@@ -86,7 +86,7 @@ and why, and where it aims — at the cause, at a link in the chain, or at the
 symptom. When the proposal is a file,
 its path and one line on what it decides.
 
-Delete this section and "Where we doubt it" when SKILL.md step 6 withholds
+Delete this section and "Where we doubt it" when SKILL.md step 5 withholds
 our position for round 2.»
 
 ## Where we doubt it

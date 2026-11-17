@@ -429,9 +429,11 @@ exact `--with`, the member name a warm seat types, and the command; opus,
 sol, efforts, spelled-out ids and brief splits move to a **More control**
 table at the end. Carbon joins review too: the user now names three models
 for both. Cut as caches of envoy's own output or rules: `envoy pending`, a
-warm voice keeping its model, the VOICE.md refusal fallback (every consult
-since VOICE.md passes it), and the decision-question format the user's
-always-loaded rules already give.
+warm voice keeping its model, and the decision-question format the user's
+always-loaded rules already give. The VOICE.md refusal fallback, cut too,
+came back to review the same day: a warm voice whose consult ran before a
+VOICE.md edit is refused the current file, and leaving the flag off as envoy
+says leaves the cold voice without the rules.
 
 **Read-checked.** A fresh agent given only the two skills typed the intended
 command for eight asks shaped like the corpus's, member names and the
@@ -441,3 +443,36 @@ voice" against "review with carbon", two home paths for one folder) were
 fixed before commit. **Next pass compares:** asks naming a model outside the
 table (opus, sol) since this commit, and rounds where the agent typed a
 voice or member name that is not in the table.
+
+## 2026-11-17 — the procedures trimmed to what nothing else carries
+
+**Question**, the user's: after the voice reshape, make the procedures
+thinner too, cutting by evidence rather than by feel.
+
+**Method.** Each rule in both procedures was mapped to the entries in this
+log and `../review/EVIDENCE.md` that bought it: consult 34 rows, 1 bought by
+a failure seen in real sessions (the measured-number rule, 09-22), the rest
+by a decision or measurement or by nothing; review 64 rows, 11 by a failure,
+26 by a decision or measurement, 27 by nothing. Every failure-bought rule
+stayed. Cut: what `BRIEF.md` and `../review/GOAL-BRIEF.md` already say
+(observations only, fences, the data block, the facts block, what goes in
+"already judged", the standards, the two goal slots that leak), what the
+user's always-loaded closing rule says, and no-ops (the background task as
+the signal, following `next:`, done-whens that repeat their step). Review's
+brief step folded into its mode step. The verify-and-fix discipline of
+review's steps 4 and 5 stayed, compressed, though most of it has no entry:
+a model does not do it by default. Consult 1,431 → 1055 words, review
+2,749 → 2320.
+
+**Read-checked.** A fresh agent walked a consult and a review through the
+trimmed skills. Of what it found unclear, two came from this trim and were
+fixed: the synthesis lost "for a fan-out" before the member address, and
+`BRIEF.md` lacked the clause that this session's analysis stays open "even
+when the user agreed with it". The rest predate it: a user's "one round,
+build without waiting" against a disputed count, the warm reviewer having
+no brief slot for follow-through, and whether a new metric is a product
+decision.
+
+**Next pass compares:** briefs written after this commit that put the
+session's own analysis under the goal's constraints, synthesis messages
+that misname a one-voice consult, and review rounds that skip a step-4 pin.
