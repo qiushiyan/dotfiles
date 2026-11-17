@@ -13,7 +13,12 @@
 # Repository skills the model sees; every other one stays a / command only.
 # Globs. A skill hidden by its own frontmatter (pl-close) stays hidden.
 keep = [
-  "pl-loopy-*", "pl-deploy-*",
+  # Loopy work, by name: pl-loopy-debug-daily, pl-loopy-debug-workspace and
+  # pl-loopy-skill-review stay / commands, since no session loaded one on its
+  # own (one read in all, Oct 1 - Nov 17 2026); a new pl-loopy-* skill starts hidden
+  "pl-loopy-debug", "pl-loopy-handoff", "pl-loopy-handoff-distill", "pl-loopy-instrumentation",
+  "pl-loopy-onboarding", "pl-loopy-skill", "pl-loopy-verify",
+  "pl-deploy-*",
   # the PR workflow
   "pl-commit", "pl-tidy", "pl-merge-develop", "pl-squash-migrations", "pl-pr",
   "pl-handle-code-review", "pl-local-bugbot-cycle", "pl-bugbot", "pl-land", "pl-close",
