@@ -5,8 +5,11 @@ The AWS CLI signs in to planlab's IAM Identity Center through the
 and the mini; `docs/qiushi-mini.md` § Toolchain). The organisation's session
 limit is 8 hours and not mine to change, so an agent that needs CloudWatch or
 S3 for longer than that depends on someone signing in again.
-`scripts/.local/bin/aws-login` is that sign-in, for a human at the terminal
-and for the Codex automation alike.
+`aws-login`, the Go CLI in `~/dev/aws-login` that twin builds on every
+machine, is that sign-in, for a human at the terminal and for the Codex
+automation alike. Its `--help` owns what it does and its exit codes;
+`~/dev/aws-login/docs/design.md` owns its design and the behaviour this
+repository relies on.
 
 ## Three clocks, and which one `aws sso login` resets
 
@@ -32,27 +35,28 @@ after it is a real one, with the full duration. Sources, read 2026-09-28: the
 AWS CLI user guide `cli-configure-sso-concepts` (the reuse rule) and the SSO
 Portal API `Logout` reference (the server-side end).
 
-## What `aws-login` does
+## Using `aws-login`
 
 ```bash
-aws-login                     # planlab-prod
-aws-login planlab-dev         # any profile in ~/.aws/config
+aws-login                     # planlab-prod, signed in only if it has no credentials
+aws-login planlab-personal    # any profile in ~/.aws/config
+aws-login --renew             # a new session with the full 8 hours
 aws-login --status            # what the CLI has now; exit 1 when nothing works
 ```
 
-It signs out (ending the session on AWS's side and clearing every profile's
-cached credentials), signs in with the device-code flow on the minis, verifies
-with `aws sts get-caller-identity`, and only then stamps the sign-in time,
-which `--status` reads back; the script's header has the details.
-
+- **A profile that already works is never signed out.** The planlab SSO
+  profiles all use the one `[sso-session planlab]`, so while that session lives
+  each of them gets credentials, and signing in to a second account must not
+  cost the first one its session. `aws-login` signs out and in only when the
+  named profile has no credentials, or with `--renew`; the sign-out is there
+  only to restart the second clock, and it ends the session for every
+  profile until the sign-in succeeds.
 - **Expect the passkey prompt.** After the sign-out the portal is signed out
   too. A run that only asks "Allow access" is the reuse case above: the logout
   did not reach the server, so check the network before trusting the new
   token's clock.
 - **A failed login leaves the CLI with nothing**, since the old session is
   already gone; exit 1 tells an agent to escalate rather than retry blindly.
-  Exit 2 is a bad argument or a profile not in `~/.aws/config`, checked before
-  anything is signed out.
 
 ## Machines
 
@@ -60,11 +64,10 @@ which `--status` reads back; the script's header has the details.
   localhost. The Codex Desktop automation "Refresh planlab-prod AWS SSO"
   (`~/.codex/automations/`, runtime state, not tracked) runs every 8 hours
   and drives 1Password and the "Allow access" button by computer use. Its
-  prompt must call `aws-login` rather than `aws sso login`, or the run
-  refreshes the token on the old session whenever it fires while the portal
-  is still signed in.
-- **Minis:** the `scripts` package is stowed on both, so the script is on
-  PATH as on the laptop. Over SSH the device-code URL goes to
+  prompt must call `aws-login --renew`: plain `aws-login` does nothing while
+  the session lives, and `aws sso login` refreshes the token on the old
+  session, so either leaves the 8 hours running from the last real sign-in.
+- **Minis:** twin builds the tool on each, as on the laptop. Over SSH the device-code URL goes to
   the laptop clipboard through `BROWSER=browser-clip`; paste it in any
   browser and approve. Each machine keeps its own token cache and stamp,
   since refresh tokens rotate and two machines cannot share one.
@@ -90,9 +93,6 @@ Enterprise support, so open issues are read in the console.
 
 The access portal lists the user's own active sessions with their start
 times (IAM Identity Center user guide, "Viewing and ending your active
-session"). After `aws-login`, the list should show one session started at
-the time the script printed; a login that reused the session leaves the old
+session"). After a run that signed in, the list should show one session
+started at the time `aws-login` printed; a login that reused the session leaves the old
 start time in place. `aws-login --status` then keeps the answer local.
-
-Pinned by `scripts/.local/share/dotfiles/tests/test-aws-login.sh`
-(`docs/testing.md`).
