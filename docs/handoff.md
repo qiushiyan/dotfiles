@@ -82,9 +82,10 @@ one brief visible from every worktree, whatever branch it is on.
 
 A project folder takes one of two shapes, and the folder itself says which.
 Flat: `<slug>.md` files and no notes, small enough to read whole. With a root
-`README.md`: briefs in domain folders, `<domain>/<slug>.md`, the root README
-holding the order and each domain's README what its briefs are about — Planlab's domains
-are its onboarding routes. A folder that is a git clone is shared across
+`README.md`: briefs in domain folders, `<domain>/<slug>.md`, each domain's
+README listing its briefs in working order with what each is for, and the root
+README what crosses domains; no order spans them (`~/dev/brief/docs/corpus.md`).
+Planlab's domains are its onboarding routes. A folder that is a git clone is shared across
 machines and teammates (Planlab's is `planlab-ai/handoffs`, cloned at the same
 path on the Mac mini): `brief start` pulls it first, and the handoff and sweep
 skills end on `brief sync`. Evidence over 256 KB, nested repositories and
