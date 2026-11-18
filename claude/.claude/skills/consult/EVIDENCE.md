@@ -476,3 +476,50 @@ decision.
 **Next pass compares:** briefs written after this commit that put the
 session's own analysis under the goal's constraints, synthesis messages
 that misname a one-voice consult, and review rounds that skip a step-4 pin.
+
+## 2026-11-18 — Carbon's numbers are the lead's to check, and a round's cap is 45 minutes
+
+**Question**, the user's: after one design round, replay more past rounds on
+Astra and Carbon across kinds, and try a Carbon-only instruction ("Be
+extremely concise. Sacrifice grammar for the sake of concision.", and label
+numbers it did not measure).
+
+**Method.** Six past rounds from mini2's job store, two per kind: design
+(Bench context search, the streaming-frame instrument), refactor (twin's
+restructure, envoy's state machines), bug (drive's forgotten parked session,
+the slow first model call). Each brief and `VOICE.md` ran unchanged against
+a standalone clone holding only the history up to the commit the round
+read, under a `sandbox-exec` profile denying the live checkouts, the session
+stores and `~/.ssh`. A first wave in plain worktrees was discarded: Astra
+read past the frozen commit on its own (`git rev-list 4b1b268..main`, the
+installed CLI from a newer checkout). Arms: Astra, Carbon, Carbon with the
+user's rule appended to `VOICE.md`, and on three cases a sharper rule (a
+2,000-word cap, a path:line beside every number). Two blind judges per case
+(Opus 5.5, Sol on xhigh) checked five central claims per answer in the code,
+counted unsourced numbers and ranked.
+
+| per answer | Astra | Carbon | Carbon + rule |
+|---|---|---|---|
+| minutes | 5 (4–7) | 20 (14–29) | 19 (18–23) |
+| words; words per sentence | 2,190; 16 | 3,580; 33 | 3,000; 30 |
+| central claims fully right | 54/55 | 40/55 | 37/55 |
+| unsourced numbers per verdict | 0 | 2.4 | 2.75 |
+
+Sol ranked Astra first in all six. Opus split three and three: Carbon where
+the round was a defect hunt in code (drive, envoy, Bench), Astra where it
+turned on measurement or proof. Fresh judges reproduced every
+Astra-versus-Carbon order on three cases. Neither rule moved the unsourced
+numbers. The sharper one overran its cap on every answer (2,500–2,900
+words), and its fully right claims fell to 15 of 30 against plain Carbon's
+22 on the same cases: terseness cost qualifiers, not guesses. 2 of 18
+Carbon dispatches failed (a stream error at 28 minutes, the 30-minute cap),
+none of 8 Astra.
+
+**Changed.** Step 4 carries the Carbon numbers line in place of a Carbon
+instruction; agy's global rules file (`~/.gemini/GEMINI.md`) would also load
+into every round. The cap is 45 minutes. `consult-design` asks all three
+voices, and planlab's batch-notes snippet asks fable and astra, since
+checking notes for what would mislead is a precision job.
+
+**Next pass compares:** syntheses that adopt a Carbon number unchecked, and
+Carbon members capped at 45 minutes.

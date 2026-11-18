@@ -28,7 +28,7 @@ with astra", "consult astra and fable".
 
 ```sh
 envoy run consult-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> \
-  --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
+  --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 45
 ```
 
 Two names are one job with two `--with`. Any other model, effort or brief
@@ -76,6 +76,8 @@ split: § More control.
      its problem verdict, before any design point. Independent convergence on
      our problem is the strongest evidence a round gives; a different problem
      is settled before the shape.
+   - **Carbon's numbers.** Carbon states unmeasured numbers as fact; check
+     any a decision rests on.
    - **Causes.** Adopt a cause by running its falsifying observation, never
      by agreeing with it. A problem the evidence does not carry stays
      unsettled, and the next move is that observation, not a build.
@@ -130,5 +132,5 @@ voice without one takes `--prompt-file`; still one job and one collect:
 
 ```sh
 envoy run consult-r1 --with claude:claude-fable-5-2=<critique-brief> --with codex:gpt-6.2-astra:high=<survey-brief> \
-  --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 30
+  --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 45
 ```
