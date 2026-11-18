@@ -56,7 +56,8 @@ to, else its domain's next unstarted brief, else nothing; the folder note,
 the reconcile worklist and § What waits read each domain note's rows as its
 order, since the engine (`brief` `0a613f1`) dropped the cross-folder rank.
 Case set `skill-evals/cases/pl-loopy-closeout-next`: the old text passed 4.78
-of 9 checks per run, this text (`8922a57e`) 9 of 9. Paid for within the
+of 9 checks per run, this text (`8922a57e`) 9 of 9, and after a fresh
+reader's fixes (`2e92de65`) 9 of 9 again. Paid for within the
 2,766-word budget by cuts: a second state-in-notes bullet, the wave-list
 line, a repeated `brief mv` pointer, the README-missing clause the worklist
 already holds. Any returns if a sweep writes state or wave dates into a note,
