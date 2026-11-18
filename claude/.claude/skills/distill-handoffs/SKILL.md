@@ -64,7 +64,8 @@ moved.
    --json` returns the anchor (the brief named `<branch>` or `review-<branch>`,
    live or retired, or `null`), the landed state, how many files changed,
    and every live brief that might belong, each with reasons:
-   `relation` (a lineage field on either side names the other), `path` (its
+   `relation` (a lineage field on either side names the other, or cites the
+   merged PR), `path` (its
    `paths:` overlap the changed files, listed in the file for step 2), `prose` (it names the anchor outside a
    lineage field), and, only beside one of those, `domain` and `run`. Read it
    through this digest:
@@ -116,13 +117,12 @@ moved.
    Done when `brief check <slug>` is clean on every brief you touched and
    `brief sync` has printed its outcome.
 
-6. **Remove the checkout.** Step 5 changed the order the file recorded, so
-   write it again and read the cleanup and the order from it:
+6. **Remove the checkout.** Step 5 changed what the file holds, so write it
+   again for the cleanup:
 
    ```bash
    brief closeout <branch> --json > "$S/closeout.json"
    jq -r '.cleanup[]? | (.command // ("hold: " + .hold)) + (if .note then "   # " + .note else "" end)' "$S/closeout.json"
-   jq -r '.next[] | .command + (if .gated then "  (gated)" else "" end)' "$S/closeout.json"   # next first
    ```
 
    A `gwt remove` line is a verdict the repo backs, so run it without asking.
@@ -140,7 +140,12 @@ moved.
    scope and unread. Under their own heading, the items that wait, each with
    the one word that releases it, or a line saying nothing waits. End on what
    the user would otherwise ask: what gwt removed or why it refused, the
-   cleanup left to them, then the `next` commands.
+   cleanup left to them, then what to start next: the brief this work hands
+   to (one this session wrote, or a `relation` citing this PR), else the next
+   unstarted brief in its domain (the anchor's folder, else the work's area:
+   `brief ls <domain>`), else that nothing queued follows it. Leave out
+   other domains' briefs unless this work hands to one: the user wants this
+   work's next step, and asks `brief` for the folder's.
 
 ## Reconcile
 
@@ -151,8 +156,8 @@ view: run steps 1 and 3, and report the verdicts alone.
 1. **State.** `brief` and `brief --json` join every brief against the repo
    and decorate each gate with its PR's state. Add the reads the join is too
    shallow for (the state rule above). The listing ends on what the folder
-   owes: a retired or unknown slug a note names, a live brief nobody placed
-   in the order, a domain folder with no README. Those are the worklist.
+   owes: a retired or unknown slug a note names, a live brief its domain's
+   note does not list, a domain folder with no README. Those are the worklist.
    Done when every branch or PR the folder implies has a state you read.
 
 2. **Read** it yourself, since a delegated summary drops the file and path
@@ -197,8 +202,8 @@ so spend that reading rather than repeating it.
   The briefs are the documents the user is asking you to doubt.
 - Derive only the cross-brief view the question needs: domains, collisions
   from the diffs rather than the declared fields, the gates, and the order
-  they imply. Weigh the note's ordering properties rather than re-ranking from
-  scratch, and treat any state it asserts as a claim to measure.
+  they imply. Weigh the notes' stated ordering reasons rather than re-ranking from
+  scratch, and treat any state they assert as a claim to measure.
 - Answer plainly, "no" included, naming what would change the answer and what
   you could not verify.
 
@@ -217,8 +222,8 @@ with the one word that releases it:
   deletes the branch on origin when `brief start` published one (`git push
   origin --delete <branch>`, the slug or `<domain>/<slug>`), since a branch
   there reads `started` on every machine;
-- a change to the **order** beyond slotting an unplaced brief or dropping a
-  retired name, and a domain coined or removed.
+- a change to a note's **order** beyond listing an unlisted brief or dropping
+  a retired name, and a domain coined or removed.
 
 ## Verdicts
 
@@ -274,34 +279,29 @@ the issue or spec record. Once the work lands the view shows nothing more.
 ## The folder note
 
 The notes hold what the listing cannot derive: what each group of briefs
-means, and the order to work the live briefs in, with the properties that
-order rests on. They exist only in a folder with a root `README.md`, which
-keeps its briefs in domain folders. The root README carries the order and
-what crosses domains; each domain folder's `README.md` says what its briefs
-are about and why each sits where it does. Membership, goals and state live
-in the listing; a copy in a note is stale by the next merge.
+means and the order to work them in. They exist only in a folder with a root
+`README.md`, which keeps its briefs in domain folders and carries what
+crosses them. Each domain's `README.md` lists its live briefs in working
+order, one row each opening on the backticked slug, with what it is for and
+why it sits there. Goals and state live in the listing, and what a landed
+branch settled in its docs and PRs; a note line about either is stale by the
+next merge, so delete it at the next amend.
 
-- Notes name live briefs only. A retirement removes the slug in the same
-  write, and `brief check` flags a retired or unknown name and a domain
-  folder with no README.
-- A live brief `brief check` reports unplaced, in scope or not, is slotted
-  from its listing row where the order's stated properties put it, in the
-  same pass, and the report says where and why. A rank the user wants
-  elsewhere is one word back; a deferred slot is the same warning on every
-  pass.
-- A note says nothing about which briefs are in flight or landed; delete such
-  a line at the next amend. What a landed branch settled, deployed or
-  measured lives in the docs and PRs.
+- Notes name live briefs only: a retirement removes the slug in the same
+  write, and `brief check` flags a retired or unknown name.
+- A live brief `brief check` reports unlisted, in scope or not, gets its
+  row in its domain's note where that note's reasoning puts it, in the same
+  pass, and the report says where and why. A place the user wants elsewhere
+  is one word back; a deferred row is the same warning on every pass.
 - A date or identifier appears only as an unresolved constraint on a live
   brief ("run `<slug>` before the vendor cutoff on 2026-09-01"). A watch that
   needs action gets a brief; one that needs none lives in its issue or
   runbook.
 
-Amend a note when a group's meaning shifts, a name is coined or retired, or an
-ordering property proves wrong. A flat folder has no notes: the listing is its
+Amend a note when a group's meaning shifts, a name is coined or retired, or its
+order proves wrong. A flat folder has no notes: the listing is its
 whole view. A folder that has grown groups worth naming moves into domain
-folders under a root `README.md` (`brief mv <slug> --domain <folder>`). A
-wave list with dates is the listing's job, and goes stale in days.
+folders under a root `README.md`.
 
 ## Escalation: session history
 
