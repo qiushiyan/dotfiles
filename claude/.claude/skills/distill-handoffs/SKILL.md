@@ -117,8 +117,8 @@ moved.
    Done when `brief check <slug>` is clean on every brief you touched and
    `brief sync` has printed its outcome.
 
-6. **Remove the checkout.** Step 5 changed what the file holds, so write it
-   again for the cleanup:
+6. **Remove the checkout.** Step 5's writes change closeout's cleanup list,
+   so run it again:
 
    ```bash
    brief closeout <branch> --json > "$S/closeout.json"
@@ -140,13 +140,14 @@ moved.
    scope and unread. Under their own heading, the items that wait, each with
    the one word that releases it, or a line saying nothing waits. End on what
    the user would otherwise ask: what gwt removed or why it refused, the
-   cleanup left to them, then what to start next: the brief this work hands
-   to (one this session wrote, or one whose `rests-on` or `blocked-by` names
-   the anchor or cites this PR), else its domain's first unstarted, ungated
-   brief (the anchor's folder, else the work's area: `brief ls <domain>`),
-   else that nothing queued follows it. Leave out
-   other domains' briefs unless this work hands to one: the user wants this
-   work's next step, and asks `brief` for the folder's.
+   cleanup left to them, then **what to start next**: this work's own next
+   step (`brief` lists the rest of the folder), the first of
+
+   - the brief this work hands to: one this session wrote, or one whose
+     `rests-on` or `blocked-by` names the anchor or cites this PR;
+   - the first unstarted, ungated brief in its domain, the anchor's folder or
+     the area the work was in (`brief ls <domain>`);
+   - a line saying nothing queued follows it.
 
 ## Reconcile
 
@@ -283,8 +284,7 @@ The notes hold what the listing cannot derive: what each group of briefs
 means and the order to work them in. They exist only in a folder with a root
 `README.md`, which keeps its briefs in domain folders and carries what
 crosses them. Each domain's `README.md` lists its live briefs in working
-order, one row each opening on the backticked slug, with what it is for and
-why it sits there. Goals and state live in the listing, and what a landed
+order, one row each: `` - `<slug>` — <what it is for; why it sits here> ``. Goals and state live in the listing, and what a landed
 branch settled in its docs and PRs; a note line about either is stale by the
 next merge, so delete it at the next amend.
 
