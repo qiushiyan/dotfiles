@@ -57,7 +57,10 @@ the reconcile worklist and § What waits read each domain note's rows as its
 order, since the engine (`brief` `0a613f1`) dropped the cross-folder rank.
 Case set `skill-evals/cases/pl-loopy-closeout-next`: the old text passed 4.78
 of 9 checks per run, this text (`8922a57e`) 9 of 9, and after a fresh
-reader's fixes (`2e92de65`) 9 of 9 again. Paid for within the
+reader's fixes (`2e92de65`) 9 of 9 again. A prompt pass (`214d59b6`) stated
+the closing as the first of three cases and dropped the "leave out other
+domains" prohibition: 9 of 9 without it (`closeout-next-pass2-1118`). It
+returns if a closeout offers another domain's brief the work does not hand to. Paid for within the
 2,766-word budget by cuts: a second state-in-notes bullet, the wave-list
 line, a repeated `brief mv` pointer, the README-missing clause the worklist
 already holds. Any returns if a sweep writes state or wave dates into a note,
