@@ -12,7 +12,8 @@ each written by a session that saw only its own PR. What a brief asks for
 usually survives; what it says about the world drifts. The sweep owns the
 cross-brief view (a premise that shipped, a gate that discharged, two briefs
 on one seam) and keeps the folder a task board: the notes (§ The folder note)
-and the listing say what to do next, and finished work is gone.
+give each domain's meaning and order, the listing its state, and finished
+work is gone.
 
 **Defer to the project first.** If the repo ships its own sweep skill (look in
 `.claude/skills/` for one that names this skill), run that. It carries what
@@ -43,8 +44,7 @@ passes:
   `git diff --stat <default>...<branch>`; do not infer them.
 - **Write in the same turn.** A verdict the repo already backs (a merged
   branch deletes, a discharged gate is noted, a retired name leaves the note)
-  is applied when reached. Only § What waits goes to the human, and the report
-  records what was written.
+  is applied when reached, and the report records what was written.
 - **Work on a current copy, and publish what you wrote.** A folder that is a
   git clone is written from other machines and by teammates. Pull before the
   first read (`git -C <folder> pull --ff-only`, the command `brief`'s header
@@ -141,9 +141,10 @@ moved.
    the one word that releases it, or a line saying nothing waits. End on what
    the user would otherwise ask: what gwt removed or why it refused, the
    cleanup left to them, then what to start next: the brief this work hands
-   to (one this session wrote, or a `relation` citing this PR), else the next
-   unstarted brief in its domain (the anchor's folder, else the work's area:
-   `brief ls <domain>`), else that nothing queued follows it. Leave out
+   to (one this session wrote, or one whose `rests-on` or `blocked-by` names
+   the anchor or cites this PR), else its domain's first unstarted, ungated
+   brief (the anchor's folder, else the work's area: `brief ls <domain>`),
+   else that nothing queued follows it. Leave out
    other domains' briefs unless this work hands to one: the user wants this
    work's next step, and asks `brief` for the folder's.
 
