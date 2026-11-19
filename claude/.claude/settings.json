@@ -92,6 +92,7 @@
     "archify": "user-invocable-only",
     "keep-codex-fast": "user-invocable-only",
     "skill-creator": "user-invocable-only",
+    "socratic-tutor": "user-invocable-only",
     "writing-for-agents": "user-invocable-only"
   },
   "disableBundledSkills": false,
