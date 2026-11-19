@@ -1,14 +1,17 @@
 #!/bin/sh
 # rex: the CLI Rex.app ships inside its bundle, put on PATH. App build 1069
 # moved it into Rex Server.app, and build 1497 renamed that Rex Server.rex;
-# the older paths serve a machine not yet updated. A pane first runs the CLI
-# Rex put on its PATH (REX_BIN_DIR), the one this wrapper would otherwise shadow.
+# the older paths serve a machine not yet updated. The app itself was renamed
+# from Rex Beta.app to Rex.app; the old name serves the same machines. A pane
+# first runs the CLI Rex put on its PATH (REX_BIN_DIR), the one this wrapper
+# would otherwise shadow.
 if [ -n "${REX_BIN_DIR:-}" ] && [ -x "$REX_BIN_DIR/rex" ]; then
   exec "$REX_BIN_DIR/rex" "$@"
 fi
-app="/Applications/Rex Beta.app/Contents/Helpers"
-for cli in "$app/Rex Server.rex/Contents/MacOS/rex" "$app/Rex Server.app/Contents/MacOS/rex" "$app/rex"; do
-  [ -x "$cli" ] && exec "$cli" "$@"
+for app in "/Applications/Rex.app/Contents/Helpers" "/Applications/Rex Beta.app/Contents/Helpers"; do
+  for cli in "$app/Rex Server.rex/Contents/MacOS/rex" "$app/Rex Server.app/Contents/MacOS/rex" "$app/rex"; do
+    [ -x "$cli" ] && exec "$cli" "$@"
+  done
 done
-echo "rex: no CLI found in $app" >&2
+echo "rex: no CLI found in /Applications/Rex.app or /Applications/Rex Beta.app" >&2
 exit 127

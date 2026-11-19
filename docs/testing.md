@@ -35,7 +35,7 @@ python3 scripts/.local/share/dotfiles/tests/test_workspace_trust.py [W1 W4 …] 
 python3 scripts/.local/share/dotfiles/tests/test_claude_planlab_overlay.py [O1 O4 …]
 bash scripts/.local/share/dotfiles/tests/test-toclip.sh         [K1 K5 …]
 bash scripts/.local/share/dotfiles/tests/test-rex-agent.sh      [R1 R5 …]
-bash scripts/.local/share/dotfiles/tests/test-rex-resume.sh     [R1 R5 …]   # requires Rex Beta.app, about 2 min
+bash scripts/.local/share/dotfiles/tests/test-rex-resume.sh     [R1 R5 …]   # requires Rex.app, about 2 min
 bash scripts/.local/share/dotfiles/tests/test-rex-clipshare.sh  [C1 C4 … R1 R2 H1 T1 T2]  # R1 and R2 require rex, H1 lua
 bash scripts/.local/share/dotfiles/tests/test-rex-open.sh      [O1 O4 … P1 V1]  # V1 requires rex
 bash scripts/.local/share/dotfiles/tests/test-rex-lab.sh       [L1 L2 L3]       # requires rex, jq
