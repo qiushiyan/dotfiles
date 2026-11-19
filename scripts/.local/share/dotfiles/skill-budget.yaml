@@ -155,7 +155,9 @@ skills:
   # regressed this skill's cases, so no lens was cut (EVIDENCE.md 2026-11-19) (+65 body, +291 total)
   # 11-19, later: emil-ui-review joins step 2's conditional standards, handed to the UI code's
   # reviewer as well as any walk, after the user asked a live review (#11858) whether it used it (+65 body, +29 total)
-  strategic-review: {body: 2533, total: 2723}
+  # 11-19, the user: a non-trivial UI or UX change gets the emil design skills, asked for by the
+  # brief; its findings fold by emil-design's Finish route (+29 body, +29 total)
+  strategic-review: {body: 2562, total: 2752}
   tailwind-best-practices: {body: 699, total: 699}
   test-audit: {body: 1129, total: 1974}
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}

@@ -67,10 +67,11 @@ any finding you could recommend nothing on, which stays unfolded.
      `docs/loopy/prompting-guide.md` and the onboarding's
      `routes/prompting.md`). A PR with no such change skips it, and the
      "What the model is told" lens with it;
-   - `~/dev/aiforui-skills/emil-ui-review/SKILL.md`, when the PR changes
-     what a person sees on a screen, with that repository's README § Using
-     them in a project with its own design system for this project's
-     exceptions. The project's own design rules win over its values, and
+   - the emil design skills' review,
+     `~/dev/aiforui-skills/emil-ui-review/SKILL.md`, when the PR makes a
+     non-trivial UI or UX change, which the brief usually names, with that
+     repository's README § Using them in a project with its own design
+     system for this project's exceptions. The project's own design rules win over its values, and
      findings keep this report's severity and class tag. Hand it to the
      reviewer of that code and to any walk of the screen.
 3. **Review.** A PR too large to read whole in one pass splits into two to
@@ -247,7 +248,10 @@ item nothing in reach could run stays under investigate, with what stopped
 it and where it can run, such as staging or a real device; one the verdict
 rests on holds the merge. The known limits
 stay unbuilt unless the user names one; that a fix is cheap does not earn
-it a place.
+it a place. Findings on a non-trivial UI or UX change are built by
+`emil-design`'s Finish route
+(`~/dotfiles/claude/.claude/skills/emil-design/SKILL.md`), closing on its
+step 6.
 
 Tests follow the Tests lens, not the finding list: pin the fragile
 behaviours it named, and any fix that changes what a caller depends on, at
