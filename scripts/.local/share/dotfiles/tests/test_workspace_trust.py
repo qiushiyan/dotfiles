@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """test_workspace_trust.py — workspace-trust's contract: the roots and every
-repository under them are trusted in each Claude Code account and in Codex, a
+repository under them are trusted in each Claude Code account and in Codex,
+claude-planlab-overlay's cache in each Claude Code account alone, a
 settled state is never rewritten, --prune removes only what its rule names,
 and a file it cannot handle is left byte for byte.
 
@@ -120,11 +121,15 @@ def home(case):
     return h
 
 
-def run(h, *args):
+def run(h, *args, env=None):
     return subprocess.run(
         [sys.executable, str(SCRIPT), *args], capture_output=True, text=True,
-        env={"HOME": str(h), "PATH": "/usr/bin:/bin"}, cwd=SANDBOX,
+        env={"HOME": str(h), "PATH": "/usr/bin:/bin", **(env or {})}, cwd=SANDBOX,
     )
+
+
+def overlay_cache(h):
+    return str(h / ".cache" / "claude-planlab-overlay")
 
 
 def claude(h, account=None):
@@ -167,7 +172,8 @@ if want("W1"):  # a plain run trusts the roots and their repositories everywhere
     hand = [str(h / "dev" / "deleted"), str(h / "elsewhere"), "/Volumes/unplugged/project"]
     for account in (None, "b@example.com"):
         data = claude(h, account)
-        ok(f"W1 claude trusted {account}", sorted(want_dirs + hand), trusted(data["projects"]))
+        ok(f"W1 claude trusted {account}", sorted(want_dirs + hand + [overlay_cache(h)]),
+           trusted(data["projects"]))
         ok(f"W1 claude other state {account}",
            (7, "a@example.com", 1.25),
            (data["numStartups"], data["oauthAccount"]["emailAddress"],
@@ -196,7 +202,7 @@ if want("W3"):  # --prune removes the gone and takes back trust outside the root
     r = run(h, "--prune")
     ok("W3 exit", 0, r.returncode)
     data = claude(h, "b@example.com")
-    ok("W3 claude trusted", sorted(expected_dirs(h) + ["/Volumes/unplugged/project"]),
+    ok("W3 claude trusted", sorted(expected_dirs(h) + ["/Volumes/unplugged/project", overlay_cache(h)]),
        trusted(data["projects"]))
     ok("W3 claude gone entry deleted", False, str(h / "dev" / "deleted") in data["projects"])
     ok("W3 claude outside keeps its state",
@@ -278,6 +284,20 @@ if want("W8"):  # nothing is created: no account file, no debris
        sorted(p.name for p in (h / ".claude-accounts" / "b@example.com").iterdir()))
     ok("W8 codex home holds its file alone", ["config.toml"],
        sorted(p.name for p in (h / ".codex").iterdir()))
+
+if want("W10"):  # the overlay's cache: Claude Code alone, kept by a prune before it exists, under XDG_CACHE_HOME when set
+    h = home("W10")
+    run(h, "--prune")
+    ok("W10 cache trusted before it exists", (False, True),
+       (Path(overlay_cache(h)).exists(), claude(h)["projects"][overlay_cache(h)]["hasTrustDialogAccepted"]))
+    ok("W10 codex never gets it", False, overlay_cache(h) in codex_projects(h))
+    before = stamps(h)
+    r = run(h, "--prune")
+    ok("W10 a second prune changes nothing", (before, ""), (stamps(h), r.stderr))
+    xdg = h / "xdg"
+    run(h, env={"XDG_CACHE_HOME": str(xdg)})
+    ok("W10 XDG_CACHE_HOME moves it", True,
+       claude(h, "b@example.com")["projects"][str(xdg / "claude-planlab-overlay")]["hasTrustDialogAccepted"])
 
 if want("W9"):  # the real homes were never reached
     ok("W9 real codex config unchanged", REAL_CODEX_BEFORE, digest(REAL_CODEX))

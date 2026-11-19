@@ -26,6 +26,9 @@ What the rewritten launch changes, for that session and its subagents:
              CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1 in its settings).
              That is project memory, as the team's file is, so subagents read
              it too; an appended system prompt reaches the main session alone.
+             Claude Code asks about an added directory nothing trusts, at
+             every launch, so workspace-trust trusts this cache in every
+             account.
              A cut that no longer matches leaves its text in and is named on
              stderr.
   skills     Every skill in the checkout's .claude/skills outside the config's

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """workspace-trust — record ~/dev, ~/dotfiles and ~/wiki as trusted workspaces
-in every Claude Code account and in Codex, so neither asks at launch.
+in every Claude Code account and in Codex, so neither asks at launch, and
+claude-planlab-overlay's cache in every Claude Code account, so its --add-dir
+does not ask either.
 
 Usage:
   workspace-trust              trust the roots and every repository under them
@@ -21,7 +23,13 @@ Codex 0.160.0):
                 plain directory is never asked about.
 
 So the trusted set is each root plus every repository found up to MAX_DEPTH
-levels under it, written to every account that exists. A run that finds
+levels under it, written to every account that exists. Claude Code's set
+also holds OVERLAY_CACHE, where claude-planlab-overlay writes the directory a
+PlanLab launch adds with --add-dir: Claude Code asks about an added directory
+at every launch unless it or a directory above it is trusted (seen on Claude
+Code 2.1.328), and the overlay names a new one whenever the team's AGENTS.md
+changes. The entry is written whether or not the cache exists yet, and a prune
+keeps it. A run that finds
 everything recorded writes nothing, which is what lets claude.zsh and
 codex.zsh call it before each launch: a new clone or a new account is
 covered by the launch that first uses it.
@@ -64,6 +72,9 @@ SKIP_DIRS = {"node_modules"}
 LOCK_WAIT = 2.0  # seconds to wait for a Claude Code session holding the lock
 
 HOME = os.path.realpath(os.path.expanduser("~"))
+# claude-planlab-overlay's cache, computed as that script computes it.
+OVERLAY_CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"),
+                             "claude-planlab-overlay")
 PROJECTS_HEADER = re.compile(r"^\s*\[\s*projects\s*[.\]]")
 TABLE_HEADER = re.compile(r"^\s*\[")
 
@@ -189,7 +200,7 @@ def plan_claude(data, roots, trusted, prune):
             entry = projects[path]
             if not prunable(path) or not isinstance(entry, dict):
                 continue
-            if not os.path.isdir(path):
+            if not os.path.isdir(path) and path not in trusted:
                 del projects[path]
                 changes.append(("removed", path))
             elif not under(path, roots) and entry.get("hasTrustDialogAccepted") is True:
@@ -326,7 +337,8 @@ def update_codex(path, roots, trusted, prune, dry_run):
 def main():
     parser = argparse.ArgumentParser(
         prog="workspace-trust",
-        description="Trust ~/dev, ~/dotfiles and ~/wiki in every Claude Code account and in Codex.",
+        description="Trust ~/dev, ~/dotfiles and ~/wiki in every Claude Code account and in Codex, "
+                    "and the PlanLab overlay's cache in every Claude Code account.",
     )
     parser.add_argument("--prune", action="store_true",
                         help="also drop entries for missing directories and trust outside the roots")
@@ -337,11 +349,12 @@ def main():
 
     roots, trusted = trusted_dirs()
     failed = changed = False
-    jobs = [("claude", p, update_claude) for p in claude_files()]
-    jobs += [("codex", p, update_codex) for p in codex_files()]
-    for vendor, path, update in jobs:
+    claude_roots, claude_trusted = roots + [OVERLAY_CACHE], sorted(trusted + [OVERLAY_CACHE])
+    jobs = [("claude", p, update_claude, claude_roots, claude_trusted) for p in claude_files()]
+    jobs += [("codex", p, update_codex, roots, trusted) for p in codex_files()]
+    for vendor, path, update, vendor_roots, vendor_trusted in jobs:
         try:
-            changes = update(path, roots, trusted, args.prune, args.dry_run)
+            changes = update(path, vendor_roots, vendor_trusted, args.prune, args.dry_run)
         except Refused as err:
             failed = True
             print(f"workspace-trust: {tilde(path)} {err}; left as it was", file=sys.stderr)

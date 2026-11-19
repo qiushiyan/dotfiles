@@ -121,8 +121,9 @@ _headroom_required() {  # <vendor>
 # Neither vendor has a switch for trusting every workspace: each records it
 # per repository, and Claude Code per account as well. workspace-trust
 # (scripts/) records ~/dev, ~/dotfiles and ~/wiki in every account's state,
-# and every launch runs it first, so a new clone or a new account is never
-# asked about. It writes only when something is missing, and a launch never
+# and the PlanLab overlay's cache in every Claude account's, and every launch
+# runs it first, so a new clone, a new account or the overlay's --add-dir is
+# never asked about. It writes only when something is missing, and a launch never
 # depends on its outcome; its header owns the rule and the cleanup (--prune).
 #
 # A run that had nothing to write still starts Python and walks ~/dev, 65 ms
