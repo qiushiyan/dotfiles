@@ -177,7 +177,11 @@ Everything derives from that tree:
   them as trusted in each account's `.claude.json` and in Codex's
   `config.toml`, unless a clean run is remembered for the directory it is
   launched from (for a day, and until the account directories change); Claude Code keeps trust per account, so without it each
-  repository asks once on each. Trust given at a prompt elsewhere lasts until
+  repository asks once on each. It also trusts the PlanLab overlay's cache in
+  each Claude account: Claude Code asks about a folder a launch adds with
+  `--add-dir` at every launch until something above it is trusted. The
+  remembered run hides a change to these rules for up to a day; run
+  `workspace-trust` once after pulling one. Trust given at a prompt elsewhere lasts until
   `workspace-trust --prune`, the cleanup that also drops entries for
   directories that are gone (`-n` previews it). The roots, the search depth
   and each vendor's rule are in the script's header
