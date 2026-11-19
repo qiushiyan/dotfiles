@@ -192,9 +192,9 @@ drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #
 - **Owed reads and gated checks** run as soon as there is enough data, not
   at their deadline; when clean, go straight on to the merge.
 - **The strategic review folds its own findings** when you opened it, and
-  reports after the fold. Relay a finding to the user only when the review
-  calls it foundational or could recommend nothing on it; that one holds the
-  merge.
+  reports after the fold. Relay to the user only a finding the review calls
+  foundational or could recommend nothing on, or an unrun check its verdict
+  rests on; each holds the merge.
   Close the builder once its `sr-` session opens, as above. The fold counts toward
   the code review's churn budget, so the merge step after it adds `If the
   review stops on churn, that's my fold: continue with --churn-ok.`

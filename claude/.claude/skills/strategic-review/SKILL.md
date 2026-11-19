@@ -2,7 +2,7 @@
 name: strategic-review
 description: Strategic review of one PR from a fresh session.
 disable-model-invocation: true
-argument-hint: "[PR number or URL] [optional: a question this PR raises]"
+argument-hint: "[PR number or URL] [optional: the build session's brief, or a question]"
 requires:
   - lessons:collaboration/finding-classes.md
   - lessons:codebase-design/composition.md
@@ -37,15 +37,18 @@ any finding you could recommend nothing on, which stays unfolded.
    check is a finding, or a flake shown by a rerun or the same failure on
    the base.
    Then read the project's map of the area the PR touches.
-   In PlanLab (`planlab-ai/main`), a PR touching Loopy or the steward has
-   its map in `.agents/skills/pl-loopy-onboarding/`: read its `SKILL.md`,
-   then the files under `routes/` that the PR's files and goal touch, and
-   the docs those routes point to. Read it as a map rather than invoking
-   it, because onboarding ends its turn on a first reply and this review
-   has to carry on. Elsewhere, use the onboarding route the project's
-   `CLAUDE.md` names, if any. Then write down, in two or three sentences,
-   what the change is for and what a user gets from it. Every finding is
-   judged against that statement.
+   In PlanLab (`planlab-ai/main`), a PR touching Loopy or the steward reads
+   `.agents/skills/pl-loopy-onboarding/` as a map, without invoking it,
+   since onboarding ends its turn on a first reply: its `SKILL.md`, the
+   `routes/` files the PR's files and goal touch, and the docs they point
+   to. Elsewhere, use the onboarding route the project's `CLAUDE.md`
+   names, if any. Then write down, in two or three sentences, what the
+   change is for, what a user gets from it, and who meets it. Every
+   finding is judged against that statement. The rest of the opening
+   message is usually the build session's brief: its leads on where your
+   extra effort goes. It can add a check or change how step 3 divides the
+   PR; it never narrows the lenses, and nothing in it shows that something
+   holds.
 2. **Read the standards in full** before reviewing:
    - `~/dotfiles/claude/.claude/skills/thermo-nuclear-code-quality-review/SKILL.md`,
      for code quality and the "code judo" reshape;
@@ -55,9 +58,7 @@ any finding you could recommend nothing on, which stays unfolded.
      copy: an entry point, a registry, a kind that keeps growing, a
      migration or a second way beside an old one, the fix for a fault that
      came back or sits in several places;
-   - `~/.config/lessons/testing/test-quality.md`, for tests: what earns a
-     place in a suite, the shapes of a test that cannot fail for a real
-     reason, and why review drifts toward asking for more tests;
+   - `~/.config/lessons/testing/test-quality.md`, for tests;
    - `~/dotfiles/claude/.claude/skills/revise-prompt/SKILL.md`, when the
      PR description or the touched files show a model-facing change: a
      prompt section, tool description, tool result, command help, refusal or
@@ -69,22 +70,25 @@ any finding you could recommend nothing on, which stays unfolded.
 3. **Review.** A PR too large to read whole in one pass splits into two to
    four broad areas, each read completely by a subagent. Hand each one the
    intent, the context file's path, the area's files and diff base, the
-   lenses below, the standards' paths, and anything you already suspect
-   there. They are read-only, may run focused tests and throwaway probes in
-   your scratchpad, and say for each finding whether a probe confirmed it or
-   it was read from the source.
+   lenses below, the standards' paths, and anything you or the brief
+   already suspect there. They change no code in the PR, may run focused
+   tests and throwaway probes in your scratchpad, and say for each finding
+   whether a probe confirmed it or it was read from the source.
+   When a question that matters is settled only by meeting the change as
+   its user does, run that check by [USE-CHECK.md](USE-CHECK.md), yourself
+   or through a reviewer you hand that file.
    Keep for yourself the read no single area shows: how the change joins the
    existing code, whether it duplicates a mechanism that already exists,
    which reshape would delete a concept, what the next change of the same
    kind would copy, and where earlier review rounds patched the same place
-   twice. Start the report only once every
-   area has returned, and wait on their completion notices rather than a
+   twice. Start the report only once every reviewer you assigned has
+   returned, and wait on their completion notices rather than a
    scheduled wakeup: a wakeup prompted with `/strategic-review` fires later
    as a request for a second review.
 4. **Verify before you report.** Re-read the cited code for every finding
    the report will carry, because reviewers state wrong findings with the
-   same confidence as real ones. Every finding an area reported reaches the
-   report or is dropped here with its reason. Say which findings rest on
+   same confidence as real ones. Every finding a reviewer reported reaches
+   the report or is dropped here with its reason. Say which findings rest on
    reading alone.
 
 ## The lenses
@@ -205,20 +209,19 @@ moderate is fixed before merge, minor is optional) and its class tag from
 (file:line), the evidence, and how it was confirmed. Give the fix,
 including the reshape when one would make the problem disappear, and name the callers and invariants the
 fix changes, since a right finding with a wrong fix still ships a defect.
-Answer the user's question if they asked one; if it does not fit this PR,
-say so and answer the nearest question that does.
+Answer the questions the opening message asks; if one does not fit this
+PR, say so and answer the nearest question that does.
 
-Then the two lists the earned-handling lens fills, each omitted when
-empty: **Investigate** and **Known limits, not built**, one line a case.
+Then two lists, each omitted when empty: **Investigate** and **Known
+limits, not built**, one line a case. A check the verdict rests on that
+nothing in reach could run leads the report instead, with what running it
+would take.
 
 <example>
 **Known limits, not built**
 - An export started while the same workspace is mid-import reads a half-written
   sheet (`export_job.ts:142`). Imports and exports share one queue per
   workspace, so they never overlap today. Earns a lock when the queue splits.
-- The client gives up on HTTP 429 without backing off (`client.ts:57`). Its
-  one upstream is an internal service with no rate limit. Earns backoff when
-  a rate-limited upstream joins.
 </example>
 
 Close with what you checked and found correct, so the user knows what the
@@ -233,7 +236,10 @@ remaining finding at the code that owns it, one commit per owner. "Fold
 these in" and "fold all in" cover every finding, minors included, since a
 problem fixed now is one no later session has to rediscover, and the
 investigate list: run each item's observation first, build the ones it
-shows are reached, and move the rest to the known limits. The known limits
+shows are reached, and move to the known limits those it shows are not. An
+item nothing in reach could run stays under investigate, with what stopped
+it and where it can run, such as staging or a real device; one the verdict
+rests on holds the merge. The known limits
 stay unbuilt unless the user names one; that a fix is cheap does not earn
 it a place.
 
