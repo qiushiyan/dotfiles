@@ -31,27 +31,47 @@ reads that entry first.
   rule for the fold (the user, 11-12).
 - **The opening read is one script** (11-16).
 - **A lens on what the next change copies**, with the steering lesson
-  (11-16, the last entry).
+  (11-16). It stays on every kind of PR: 7 of 9 reports after it carry
+  next-change findings, UI PRs included (11-19).
+- **The build session's brief guides; it does not classify.** No kind or
+  surface label in the brief, the digest or the report; the skill reads the
+  brief as leads that can add a check and never narrow the lenses (11-19,
+  the user's call: PRs are hybrid).
+- **A check that meets the change as its user does** runs by `USE-CHECK.md`
+  beside the area reads, and a non-trivial UI or UX change gets the emil
+  design skills, asked for by the brief (11-19).
+- **An unrun check is not a known limit.** It stays under investigate; one
+  the verdict rests on leads the report and holds the merge (11-19).
 
 ## Open comparisons
 
 Each is a measurement a pass can run. The first is this log's newest.
 
-1. **Steering, after 11-16.** Reports that walk a later change (the lexical
-   predicate in the last entry) among reviews of PRs that set a shape,
-   against 0 of 80 unasked before; what the fold did with each such
-   finding; cost a review against the replay's half as much again; and
-   design-key sends that still carry a typed paragraph about patterns,
-   against 4 of 113. Registries, guards or lint rules that the lens asks
-   for and a later review deletes as unearned would reverse it.
-2. **Live folds since 10-28:** faults CI or the bots find after the fold's
+1. **Use checks, after 11-19.** Briefs that ask for a check meeting the
+   change as its user does, reviews that run it, and what only it found
+   (first live use, #11858: the preview master's missing S3 grants, a
+   driven focus bug). Baselines: the user's hand asks for a UI, Emil or
+   dogfood pass after a report, about 7 of 106 review sessions; typed
+   additions to a hand-sent brief, 4 of 31; Emil asked for mid-review, once
+   on 11-19. Reverse the step-3 check if ten that ran find nothing the area
+   reads did not.
+2. **Brief length and pointing.** New-snippet briefs ran 289–360 words
+   against a 300 cap, and one of two judges saw them point at one fewer of
+   five real-review findings (11-19). Watch what later rounds find on
+   briefed reviews; tighten the snippet if misses rise.
+3. **Unrun checks that lead a report:** how many, whether the driver relayed
+   them (`PLANLAB.md`) or merged past them.
+4. **Steering, after 11-16:** registries, guards or lint rules the lens asks
+   for that a later review deletes as unearned would reverse it. (Reports
+   carrying next-change findings, answered 11-19: 7 of 9.)
+5. **Live folds since 10-28:** faults CI or the bots find after the fold's
    own round, and known limits that later turned into incidents.
-3. **Driven reviews since 11-10:** how many stopped before the fold (target:
+6. **Driven reviews since 11-10:** how many stopped before the fold (target:
    only on a finding with no recommendation), and what the read of the fold
    found, against the unread folds of 10-28.
-4. **Fable at `xhigh` against `high`** on `pr-8858` and `pr-8959`: what the
+7. **Fable at `xhigh` against `high`** on `pr-8858` and `pr-8959`: what the
    extra third of cost finds (11-10).
-5. **Review-driven lines classified unearned** on PRs merged after 10-23,
+8. **Review-driven lines classified unearned** on PRs merged after 10-23,
    by that entry's definition, against 15%.
 
 Retired: 10-07's yield against the manual prompt and 10-09's measures
@@ -1092,3 +1112,140 @@ bring it back.
 
 **Open comparisons** are the first item in the list that opens this log. The
 comparisons promised on 10-28 and 11-10 were not reached by this corpus.
+
+## 2026-11-19 — the builder's brief as guidance, a check that meets the change as its user does
+
+Session `mini2:9635e033` (an `/improve-tool` pass, a consult round with
+Fable, Carbon and Astra, then the build on the user's go). Its scratchpad
+held the ledger, the consult data (`consult/`) and the fork test
+(`forks/`); not durable.
+
+**Request.** Make the brief and the review fit the change: different
+implementations need different focus, and the steering lens seemed suited to
+fixes and refactors more than UI. After a first proposal (a kind / surfaces /
+repeats line), the user set the frame: PRs are hybrid, the build session has
+the best context on what the review needs, and the snippet inspires rather
+than classifies. Later, live: a non-trivial UI or UX change gets the emil
+design skills, and a brief that does not ask for them is the snippet's
+problem.
+
+**Corpus.** Obelisk, mac, mini and mini2 (all reached), Claude, main thread,
+2026-10-07 → 11-19. Reviews: user turns starting
+`<command-message>strategic-review</command-message>` or holding
+`<command-name>/strategic-review</command-name>`: 114 rows, 109 sessions
+(mac 11, mini 53, mini2 45). Report: the longest main-thread assistant text
+with "erdict" over 2,500 characters before the next user turn; 77 recovered
+(driven folds and interrupted runs under-represented). Brief sends: user
+turns holding "going to run /strategic-review on this PR in a fresh
+session": 31, 28 texts; hand-sent only, since driven sends live in drive's
+files (at least 25 on mini2). 89 PlanLab PRs labelled by one rater by the
+part most at risk.
+
+**Findings.**
+- **What reviews find already shifts with the change.** Model-facing is 22%
+  of findings on agent-behaviour PRs, 1–2% on UI and runtime ones; ordering
+  is 13% on runtime PRs. One rater, a tag parser that drops grouped
+  findings, and a disabled dedup: a direction, not a measure.
+- **Steering pays where it fires**, UI PRs included: 7 of 9 finished reports
+  after `fa27b414` carry next-change findings, most probe-confirmed (#11512,
+  #469, #11602, #11785, #11706, #11583, #11863). The user's example of a
+  lens unsuited to UI did not hold.
+- **The brief was filled as a form.** A patterns paragraph in 9 of 12
+  hand-sent briefs once its bullet landed; #469's filed an undriven checkout
+  under it; #10969's put every paragraph outside the fence.
+- **The skill never said what the brief is** ("a question this PR raises").
+- **Reviewers parked what needed running.** About 15–17 of 77 reports list
+  under Investigate a check needing a lane, browser, phone, screen reader or
+  staging (#10670's iOS Safari at 375px, #11244, #469's checkout), and the
+  fold moved what nothing showed reached to the known limits. 0 of 7 UI
+  reviews drove the app before the report (#10136's 5 browser calls drove a
+  capture controller, not the app).
+- **The user supplied use by hand:** Emil at #10670's fold (one fix, a
+  phone tap flash), UI/UX typed into #11858's brief, the visual pass on
+  #11244; dogfood asks after #11376, #8994 and iTELL #411. #11376's pass
+  found two defects present at the reviewed head (`20ff0831421`: the page
+  reader printed only a page's entry; meeting "Decided:" lines unrelated to
+  the query) and one the fold introduced (`1d7f4a2e74e`: a card-key search
+  past `--limit`).
+- **Fix PRs are already re-checked by probe** (11-10 entry); nothing added.
+
+**Consult** (`consult-r1`, `consult-r2`; members `codex-gpt-6.2-astra`,
+`claude-claude-fable-5-2`, `agy-gemini-4-carbon`; round 1 the data alone,
+round 2 our design). All three converged on: no router; the brief as a
+form; the skill silent on the brief; use checks not a first-class move.
+Round 2 changed the design: an unrun check stays unverified rather than
+waiting on the user; the app's bring-up rule contradicted itself;
+emil-ui-review is read whole with the README's project exceptions; no
+`experience` class (all three; the `other` labels cluster on access more
+than UI); the brief names the one check worth most; the test gained a
+negative control, #11376 and #10969.
+
+**Changed** (`c5cd0162`, `10a4eeb2`, `993b52fe`; committed locally first and
+used live on mini2 while the replays ran).
+- `strategic-review-brief`: same opening; everything inside the fence,
+  commands in inline backticks; what the reviewer reads anyway; what costs
+  most and is least sure; who meets the change and the one check worth
+  most, how to exercise it and what stopped the builder; for a non-trivial
+  UI or UX change, the emil design skills.
+- Step 1: who meets the change; what the brief is. Step 2: emil-ui-review
+  on a non-trivial UI or UX change, handed to the UI code's reviewer and any
+  walk. Step 3: a check meeting the change as its user does, by the new
+  `USE-CHECK.md`; the wait covers every reviewer assigned. Report: an unrun
+  check the verdict rests on leads it. Fold: an unrun check stays under
+  investigate; UI findings build by `emil-design`'s Finish route.
+- `drive-session/PLANLAB.md`: the driver relays such a check.
+- Cuts: the test-quality lesson's one-line summary in step 2 (the lesson is
+  read whole); the second Known-limits example (the first carries the
+  shape); a shorter PlanLab onboarding sentence. Bring the summary back if
+  the Tests lens stops weighing the PR's own tests. Budget raised by hand,
+  2,403 → 2,562 body, 2,752 total.
+- A first fresh reader (revise-prompt's pass) found twelve faults, a second
+  one walking #11858's phone check found nine; all fixed but two left to
+  the project's rules (CI reruns, the Loopy engine on a lane).
+
+**Verified.**
+- **Briefs, by fork** (`forks/`): five build sessions cut at the snippet's
+  send (#11858 before the user's typed UI line, #11376, #469, #10969,
+  #11785), resumed with `--fork-session` in a throwaway config, tools off,
+  Opus 5.5 at 1M; old and new snippet, plus four historical briefs; 20
+  briefs judged blind by Astra and Fable against each real review's
+  fix-before-merge list. A use check asked for: new 10 of 10, old 0 of 10,
+  both judges. Padding 0.2–0.3 against 1.0–1.6; mean rank 1.8–2.0 against
+  3.0–3.2 of 4. Real-review findings pointed at: Fable 4.7 against 5.7, Astra
+  4.0 against 3.9. Every fork kept its focus inside the fence; the
+  historical #10969 brief was the one loss. New briefs ran 289–360 words.
+- **Parity replays** (`~/dev/skill-evals`, `sr-tailored-1119-*` with the
+  first candidate, `sr-shipped-1119-*` at `10a4eeb2`, `sr-red-1119-pr-8948`;
+  Fable 5.2 at 1M, high; judge Claude Sonnet 5.5, three passes).
+  #9567-earned: 2 of 2 against 1 of 2, checks level or up, a third cheaper.
+  #11512-steering: 2 of 2 both; walk, second shape and restated rule held;
+  refused-row 0 → 1.00, guard-weak 0.67 → 0 (0 in both 11-16 arms).
+  weighs-added-tests: 2 of 2 both. #8948: red 1 of 2 at 2.2 checks a run,
+  candidate 2 of 3 at 3.0 and 5 (one `head` rollout retried after the local
+  commit moved HEAD and was excluded). Every weighs-added-tests rollout in
+  both arms read the real checkout's git objects through alternates: a
+  harness leak shared by the arms. At `10a4eeb2`, one rollout each: every
+  case passed (#11512's steering checks 3 of 4 and kept 2 of 3; #9567 3 of 4;
+  weighs-added-tests; #8948 5 checks). Parity held; n of one or two per arm
+  sees a large regression, not a small one.
+- **Live, #11858** (`mini2:d42df2ac`): the brief asked for two use checks;
+  the review ran both beside five area reads. Its report led with the check
+  the verdict rests on: the preview master's role lacks
+  `s3:ListBucketVersions` and `s3:DeleteObjectVersion`, so no conversation's
+  files publish on any preview (84 overdue publications in 14 days). A
+  driven walk found the sheet's close sending focus to `<body>` in four of
+  five ways it opens. The first walk met a lane the cleanup had stopped
+  when its starting session ended, and the lead's brief forbade `lane up`;
+  the lead brought it up and reran. Emil ran only after the user asked
+  mid-review, because the standard then rode with the walk alone: fixed in
+  `10a4eeb2` and `993b52fe`.
+- **Not run:** a re-review of #11376 at its reviewed head. The dogfood's data
+  copy was deleted; it needs a local Bench on a fresh production copy at a
+  six-day-old head, unsandboxed where the merged PR is one command away,
+  and both new briefs named production as the realistic route, which now
+  serves the merged code. The next agent-facing tool PR measures it live.
+
+**Not built:** the classification line, path hints and the report's
+classification line (the user); an `experience` class (the consult);
+splitting reviewers by question (Astra), kept as the lead's choice of who
+runs the use check.

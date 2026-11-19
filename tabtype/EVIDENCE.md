@@ -729,3 +729,38 @@ about patterns against 4 of 113, and consult reports on such changes that
 name what forces the next change (a type, a check, a deleted second way)
 against the three read on 11-16. Guards or registries the strategic review
 then files as unearned would say the sentence over-applies.
+
+## 2026-11-19 — `strategic-review-brief` asks for guidance, not a form
+
+Session `mini2:9635e033`; counts, the consult and the fork test are in the
+strategic-review skill's evidence log, same date
+(`claude/.claude/skills/strategic-review/EVIDENCE.md`).
+
+**Observed.** Builders filled the key's five bullets one for one: once the
+patterns bullet landed on 11-16, 9 of 12 hand-sent briefs carried a patterns
+paragraph, and one filed an undriven checkout under it. One brief (#10969)
+put every paragraph outside the fence, where a driver's saved block loses
+it. The user typed an addition after the key in 4 of 31 sends (patterns,
+UI/UX, a feedback path, a new repository), and asked for Emil or a dogfood
+pass by hand after reviews of UI and agent-facing PRs.
+
+**Changed** (dotfiles `c5cd0162`, `993b52fe`). The opening sentence stays,
+so the session board's first-80-character match holds. The key now says the
+reviewer reads the whole diff anyway, asks for what costs most and what the
+builder is least sure of, then who meets the change and the one check worth
+running as they do, with how to exercise it and what stopped the builder;
+for a non-trivial UI or UX change, a review with the emil design skills.
+Everything goes inside the fence, commands in inline backticks. "Name
+doubts, not reassurances" keeps its ban and lets a run be mentioned to show
+what is still open.
+
+**Verified by fork.** Five build sessions resumed at the key's send, old and
+new key: a use check asked for in 10 of 10 new briefs against 0 of 10, less
+padding, ranked higher by two blind judges; one judge saw one fewer of five
+real-review findings pointed at, the other none. New briefs ran 289–360
+words against the 300 cap. Live on 11-19, #11858's brief asked for a
+preview run and a browser walk, and the review ran both.
+
+**Next pass compares** typed additions after this key against 4 of 31, the
+user's Emil or dogfood asks after a report, and brief length against what
+later review rounds still find.
