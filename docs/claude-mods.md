@@ -143,6 +143,17 @@ the worktree at once.
   fork, a `gwt` refusal, or a refused move each print what happened and what
   to type.
 
+## themes
+
+`claude/.claude/mods/themes` has no hooks module: it ships `/theme` color
+themes as `themes/<slug>.json`, found through `experimental.themes` in its
+manifest. A theme is a built-in `base` plus `overrides` keyed by color token
+([terminal-config](https://code.claude.com/docs/en/terminal-config.md#create-a-custom-theme));
+a misspelled token is ignored without an error. It is a plugin, not
+`~/.claude/themes/`, because that folder belongs to one config dir and so
+reaches one account. A pick is stored as `custom:themes:<slug>`, so the
+file's name is the reference the shared settings hold.
+
 ## Sessions already running
 
 `CLAUDE_CODE_PLUGIN_DIRS` is read when a process starts, so a session that

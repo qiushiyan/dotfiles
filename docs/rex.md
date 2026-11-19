@@ -428,6 +428,9 @@ one exists.
   server, so a server-side `set_theme` is overwritten (it only sets what
   programs see when they query colours). Following our theme means switching
   the app's theme by name, which knows Ghostty themes only once imported.
+  The import is each machine's app setting, made on its local app client:
+  `rex do -C <client> client.theme.import path=<ghostty theme file>`, the
+  client found as `rex-theme` finds it.
 - **A Rex terminal does not inherit the Claude account choice.** Launch
   Claude with the `x` launchers or an explicit `CLAUDE_CONFIG_DIR`.
 - **Claude reports SessionStart before it writes its sessions file,** so a

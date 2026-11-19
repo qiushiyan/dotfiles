@@ -145,6 +145,15 @@ in a running Codex CLI to preview and select it, or edit
 until it is moved there). It colors code blocks and diffs; terminal colors
 still supply the surrounding UI. See [Codex CLI customization](https://learn.chatgpt.com/docs/cli-customization).
 
+## Claude Code's own colors
+
+Claude Code's interface theme is apart from the statusline: `theme-set` does
+not change it. Its custom themes ship in the `themes` mod
+(`docs/claude-mods.md` § themes), and the `/theme` pick is saved as `theme`
+in the shared `claude/.claude/settings.json`. So one pick applies to every
+account and, once committed and pulled, to every machine, where a terminal
+theme is each machine's own. The terminal still paints the background.
+
 ## Neovim specifics
 
 - Colorschemes come from two places: **plugin themes** (catppuccin, gruvbox) and

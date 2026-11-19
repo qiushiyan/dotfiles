@@ -277,7 +277,7 @@
   "fastModePerSessionOptIn": true,
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "auto",
+  "theme": "custom:themes:gruber-darker",
   "editorMode": "vim",
   "verbose": true,
   "autoCompactEnabled": true,
