@@ -1,0 +1,6 @@
+{
+  "name": "themes",
+  "version": "0.1.0",
+  "description": "Color themes for /theme that match the terminal themes in this dotfiles repo.",
+  "experimental": { "themes": "./themes/" }
+}
