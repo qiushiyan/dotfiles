@@ -66,7 +66,13 @@ any finding you could recommend nothing on, which stays unfolded.
      tools does. Read it with the project's prompting guide (PlanLab:
      `docs/loopy/prompting-guide.md` and the onboarding's
      `routes/prompting.md`). A PR with no such change skips it, and the
-     "What the model is told" lens with it.
+     "What the model is told" lens with it;
+   - `~/dev/aiforui-skills/emil-ui-review/SKILL.md`, when the PR changes
+     what a person sees on a screen, with that repository's README § Using
+     them in a project with its own design system for this project's
+     exceptions. The project's own design rules win over its values, and
+     findings keep this report's severity and class tag. Hand it to the
+     reviewer of that code and to any walk of the screen.
 3. **Review.** A PR too large to read whole in one pass splits into two to
    four broad areas, each read completely by a subagent. Hand each one the
    intent, the context file's path, the area's files and diff base, the

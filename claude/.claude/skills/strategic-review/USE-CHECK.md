@@ -12,12 +12,9 @@ file, the intent, the PR's head, and the brief's steps for the check.
   starting one. Never the main checkout's app or another branch's, nor
   their databases; a deployed preview only where the project lets a
   session write.
-- **A screen** is held to `~/dev/aiforui-skills/emil-ui-review/SKILL.md`,
-  read whole; read a skill it names, by path, when a finding needs its
-  rule. The project's own design rules win over its values, and so do the
-  exceptions recorded for this project in that repository's README §
-  Using them in a project with its own design system. Findings carry this
-  review's severity and class tag, not that skill's verdicts. When the app
-  cannot come up, apply it to the source.
+- **A screen** is held to the screen standard step 2 of the review names,
+  `~/dev/aiforui-skills/emil-ui-review/SKILL.md` read whole; read a skill
+  it names, by path, when a finding needs its rule. When the app cannot
+  come up, apply it to the source.
 - **What it could not settle**, such as touch or a screen reader, goes
   under investigate with what stopped it.
