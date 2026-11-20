@@ -768,7 +768,8 @@ later review rounds still find.
 ## 2026-11-20 — `loopy-review-verify` becomes `review-verify`, verified through `planlab-verify` (planlab)
 
 Session `mini2:5b25b85e`; the evidence and the consult are in the
-planlab-verify skill's log (`claude/.claude/skills/planlab-verify/EVIDENCE.md`).
+planlab-verify skill's log, now the team skill `pl-verify`'s
+(`.agents/skills/pl-verify/EVIDENCE.md` in the Planlab repository).
 The planlab keys `review-verify` (shadowing the global one) and `verify`
 replace `loopy-review-verify` and `loopy-verify`; `review-verify` is numbered
 steps with no leading slash command, on the user's word, so the review and
