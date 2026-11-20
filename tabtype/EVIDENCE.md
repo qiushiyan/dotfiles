@@ -777,3 +777,17 @@ opening; the old keys stay in its labels so earlier sessions still show.
 Next pass compares typed additions after these keys ("cover … in the
 browser too", "include the live run you skipped") against the 11-02 → 11-13
 driver sends, where 3 of 19 carried one.
+
+## 2026-11-20 — which model a snippet names, and planlab's snippets in one file
+
+On the user's word (session `mini2:5b25b85e`). A snippet that names one
+voice names fable for a consult and astra for a review; two voices are fable
+and astra; three are fable, astra and carbon. The review and consult skills
+keep fable when no voice is named. Global `review-verify` and
+`review-then-closeout`, TabType's closeout and planlab's two review keys
+(#12099) now name astra; the board keeps the fable openings in
+`claude-steps/.config/claude-steps/retired-snippets.toml`. Planlab's
+`.tabtype.local.toml` is retired on every machine: every planlab key,
+personal ones included, lives in the committed `.tabtype.toml` and ships by
+PR, at the cost of a worktree older than a key's merge expanding the global
+key of that name.
