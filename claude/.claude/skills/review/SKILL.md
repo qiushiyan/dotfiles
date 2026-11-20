@@ -26,19 +26,20 @@ the user has a report they can decide from alone.
 ## Voices
 
 The user names the voice after the word: "review with fable", "astra full
-review", "fable full review, then closeout".
+review", "fable full review, then closeout". With no voice named, it is fable,
+or astra as the cold voice beside a warm fable (step 3).
 
 | name | `--with` | member name |
 |---|---|---|
-| **astra**, "codex", or none named | `codex:gpt-6.2-astra:high` | `codex-gpt-6.2-astra` |
-| **fable**, "claude" | `claude:claude-fable-5-2` | `claude-claude-fable-5-2` |
+| **fable**, "claude", or none named | `claude:claude-fable-5-2` | `claude-claude-fable-5-2` |
+| **astra**, "codex" | `codex:gpt-6.2-astra:high` | `codex-gpt-6.2-astra` |
 | **carbon**, "gemini" | `agy:gemini-4-carbon:high` | `agy-gemini-4-carbon` |
 
 One cold voice is a goal round (45-minute cap) or a full round with no
 consult this session (60):
 
 ```sh
-envoy run review-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> \
+envoy run review-r1 --with claude:claude-fable-5-2 --prompt-file <brief> \
   --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
 ```
 

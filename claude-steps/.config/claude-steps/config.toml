@@ -49,8 +49,9 @@ snippets = ["implement-spec", "implement-now", "consult-then-build"]
 count_commits = true
 color = "blue"
 
-# loopy-review-verify asks for the review and the verification in one paste,
-# so it stands under both; review-then-closeout likewise, under closeout.
+# review-verify asks for the review and the verification in one paste, so it
+# stands under both; loopy-review-verify is its name before 2026-11-20, kept
+# so earlier sessions still show. review-then-closeout likewise, under closeout.
 [[label]]
 name = "review"
 skills = ["review"]
@@ -59,13 +60,14 @@ jobs = ["review-"]
 count_commits = true
 color = "magenta"
 
-# loopy-verify is the verification alone; planlab's review-then-closeout
-# verifies too, but its key is shared with the global one that does not, so it
-# shows here only when its verification loads the skill.
+# verify (loopy-verify before 2026-11-20) is the verification alone;
+# planlab's review-then-closeout verifies too, but its key is shared with the
+# global one that does not, so it shows here only when its verification loads
+# the skill.
 [[label]]
 name = "verify"
-skills = ["pl-loopy-verify", "verify"]
-snippets = ["loopy-review-verify", "itell-review-verify", "loopy-verify"]
+skills = ["planlab-verify", "pl-loopy-verify", "verify"]
+snippets = ["review-verify", "verify", "loopy-review-verify", "itell-review-verify", "loopy-verify"]
 count_commits = true
 color = "cyan"
 

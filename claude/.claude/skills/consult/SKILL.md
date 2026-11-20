@@ -18,16 +18,16 @@ survives. A voice is a peer, not an authority.
 ## Voices
 
 The user names the voice after the word: "consult with fable", "one round
-with astra", "consult astra and fable".
+with astra", "consult astra and fable". With no voice named, it is fable.
 
 | name | `--with` | member name |
 |---|---|---|
-| **astra**, "codex", or none named | `codex:gpt-6.2-astra:high` | `codex-gpt-6.2-astra` |
-| **fable**, "claude" | `claude:claude-fable-5-2` | `claude-claude-fable-5-2` |
+| **fable**, "claude", or none named | `claude:claude-fable-5-2` | `claude-claude-fable-5-2` |
+| **astra**, "codex" | `codex:gpt-6.2-astra:high` | `codex-gpt-6.2-astra` |
 | **carbon**, "gemini" | `agy:gemini-4-carbon:high` | `agy-gemini-4-carbon` |
 
 ```sh
-envoy run consult-r1 --with codex:gpt-6.2-astra:high --prompt-file <brief> \
+envoy run consult-r1 --with claude:claude-fable-5-2 --prompt-file <brief> \
   --instructions-file ~/.agents/skills/consult/VOICE.md --timeout-min 45
 ```
 

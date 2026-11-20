@@ -523,3 +523,11 @@ checking notes for what would mislead is a precision job.
 
 **Next pass compares:** syntheses that adopt a Carbon number unchecked, and
 Carbon members capped at 45 minutes.
+
+## 2026-11-20 — fable is the voice when none is named (consult and review)
+
+On the user's word (session `mini2:5b25b85e`): both skills' Voices sections
+now say so, and their tables and first command put fable first. In review a
+full round after a fable consult still seats astra cold, by the other-family
+rule. Before a review the user named no voice 118 times since 09-15 (the
+2026-11-04 entry above), so the default decides most rounds.

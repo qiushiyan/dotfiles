@@ -64,8 +64,8 @@ typeset -aU PYS=(${commands[python3]} /usr/bin/python3(N))
 # verification ran, the review snippet and its file (which starts both) only
 # when neither ran, and the prompt check's snippet when that has not run
 # either. The message's wording is the hook's own.
-REVIEW='loopy-review-verify' FILE='~/dev/planlab/main/.tabtype.toml' PROMPTS='loopy-prompt-check'
-VERIFY='pl-loopy-verify' ROUND='fable full review'
+REVIEW='review-verify' FILE='~/dev/planlab/main/.tabtype.toml (a key in .tabtype.local.toml beside it wins)' PROMPTS='loopy-prompt-check'
+VERIFY='planlab-verify' ROUND='full review'
 
 pass() { (( PASS++ )) || true; print -r -- "PASS ${1//$'\n'/⏎}" }
 fail() {

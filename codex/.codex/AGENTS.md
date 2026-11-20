@@ -58,7 +58,10 @@ again and you continue.
 
 When you drive Loopy or write anything on a deployed workspace (a
 conversation, a replay, an eval case, a file, a skill), use my sandbox
-workspace, `planlab-dev-qiushi`. The others belong to customers or serve demos,
-and experimenting on one has already broken a demo. Ask me before writing to
-any other workspace, including a replay, which lands on the original thread's
-workspace. Reading them needs no permission.
+workspace, `planlab-dev-qiushi`: write there without asking, and list in your
+report what you wrote. The others belong to customers or serve demos, and
+experimenting on one has already broken a demo. Ask me before writing to any
+other workspace, a demo or internal one included, and including a replay,
+which lands on the original thread's workspace; when only a write there can
+show what you are proving, ask naming the workspace, the write, and why the
+sandbox cannot show it. Reading them needs no permission.

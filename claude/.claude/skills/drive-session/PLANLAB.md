@@ -108,10 +108,10 @@ and the internal workspaces have no customer behind them (planlab
 
 - **Read production:** `planlab` backstage reads and read-only SQL
   (`pl-planlab-cli`), `pl-backstage-db`, CloudWatch logs.
-- **Use internal workspaces:** `loopy-os-demo`, the `planlab-dev-*` ones,
-  `qiushi-lab`, the demo workspaces and the user's personal ones. Reads and
+- **Use the user's sandbox workspace,** `planlab-dev-qiushi`: reads and
   writes there go ahead, including `planlab loopy`, `replay` and `case run`,
-  and a demo check after a release.
+  and the session's report lists what it wrote. Every internal workspace
+  can be read.
 - **Use internal systems:** file and update Bench cards, and create, rename
   and sync briefs in the handoffs repository.
 - **Clean up a review branch** such as `pr-<N>-review` in the main
@@ -134,6 +134,11 @@ staff, so when you cannot tell, treat it as a customer's.
 
 Ask:
 
+- **A write in any other internal workspace:** `loopy-os-demo`, the other
+  `planlab-dev-*` ones, `qiushi-lab`, the demo workspaces, a demo check
+  after a release included. The sandbox is the default; send the ask when
+  only a write there can show what the session is proving, naming the
+  workspace, the write and why the sandbox cannot show it.
 - **A write in a customer's workspace or data:** a replay or `case run`
   there, an `--as-user` support session, an `aperture` switch for a
   customer, or a backfill's `--commit` against the production database.

@@ -47,10 +47,10 @@ PROJECTS = (
     {
         "name": "PlanLab",
         "checkouts": ("~/dev/planlab/main", "~/dev/.worktrees/main"),
-        "review": "loopy-review-verify",
+        "review": "review-verify",
         "prompt_check": "loopy-prompt-check",
-        "verify": "pl-loopy-verify",
-        "file": "~/dev/planlab/main/.tabtype.toml",
+        "verify": "planlab-verify",
+        "file": "~/dev/planlab/main/.tabtype.toml (a key in .tabtype.local.toml beside it wins)",
     },
 )
 
@@ -74,7 +74,7 @@ OPENING = (
 # change needs it (the evidence is in drive-session/EVIDENCE.md, 2026-11-16).
 WHEN = {
     "review": (
-        "\nA review (the review skill, as `fable full review`) catches what a "
+        "\nA review (the review skill, as `full review`) catches what a "
         "careful reader of the code can: a defect in logic that spans modules, "
         "behaviour no test pins, and text that no longer matches the code, such "
         "as a skill or tool description a model reads, a doc, or a claim in the "
@@ -84,8 +84,8 @@ WHEN = {
         "rarely needs one.\n"
     ),
     "verify": (
-        "\nA verification ({verify} for a change it covers, in the mode that "
-        "fits it; for anything else, drive the change where it runs) shows what "
+        "\nA verification (the {verify} skill, which drives the change where "
+        "it runs) shows what "
         "tests cannot reach: how a real model behaves with the new prompt or "
         "tool, real data's shape and size, the wiring between the app, the "
         "master and its workers, a restart or deploy in the middle of a run, "

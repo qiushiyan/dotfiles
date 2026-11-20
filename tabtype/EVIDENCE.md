@@ -764,3 +764,16 @@ preview run and a browser walk, and the review ran both.
 **Next pass compares** typed additions after this key against 4 of 31, the
 user's Emil or dogfood asks after a report, and brief length against what
 later review rounds still find.
+
+## 2026-11-20 — `loopy-review-verify` becomes `review-verify`, verified through `planlab-verify` (planlab)
+
+Session `mini2:5b25b85e`; the evidence and the consult are in the
+planlab-verify skill's log (`claude/.claude/skills/planlab-verify/EVIDENCE.md`).
+The planlab keys `review-verify` (shadowing the global one) and `verify`
+replace `loopy-review-verify` and `loopy-verify`; `review-verify` is numbered
+steps with no leading slash command, on the user's word, so the review and
+the verification read as two steps of one message. The board matches either
+opening; the old keys stay in its labels so earlier sessions still show.
+Next pass compares typed additions after these keys ("cover … in the
+browser too", "include the live run you skipped") against the 11-02 → 11-13
+driver sends, where 3 of 19 carried one.
