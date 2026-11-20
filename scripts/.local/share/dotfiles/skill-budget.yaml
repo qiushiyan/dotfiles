@@ -197,7 +197,7 @@ skills:
   write-prompt: {body: 709, total: 709}
   # raised 2026-11-20, the day it was born: a fresh reader found no route for a fix that shows
   # only on real data (production runs the deployed build) and no in-process rig (+104)
-  planlab-verify: {body: 1066, total: 1066}
+  planlab-verify: {body: 1022, total: 1022}
 # Every lesson file at its word count, under the same ratchet: the consult and
 # review voices read these each round. Dot-directories (the pinned upstream
 # copies) are skipped; skill-sync records a new file and drops a removed one.

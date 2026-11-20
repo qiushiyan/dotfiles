@@ -14,14 +14,15 @@ knowledge base).
 ## In process, before a lane
 
 A claim about one function, or about Loopy's loop on inputs you give it,
-needs no lane: a unit or Postgres test (§ Other proofs), or the loop itself
-against real Bedrock on a schedule on disk,
-`pnpm --filter @planlab/loopy run debug:run -- …` (the header of
-`packages/loopy/scripts/debug_loopy_run.ts` gives its options). It cannot
+needs no lane: a unit test, a Postgres test
+(`pnpm exec dotenv -e .env.development.local -- pnpm exec vitest run --config vitest.pg.config.ts <file>`,
+a throwaway database per run), or the loop itself against real Bedrock on a
+schedule on disk, `pnpm --filter @planlab/loopy run debug:run -- …` (the
+header of `packages/loopy/scripts/debug_loopy_run.ts` gives its options). It cannot
 show what the app, the master and its workers add: staging, wakes, a real
 model's timing through the pool.
 
-## Up, and fresh
+## Up, and current
 
 ```bash
 pnpm run lane up      # JSON: url, head, session, loopy; started:true means you stop it afterwards
@@ -90,12 +91,10 @@ pnpm run lane baseline rm
 
 ## Other proofs on a lane
 
-- Postgres-backed tests:
-  `pnpm exec dotenv -e .env.development.local -- pnpm exec vitest run --config vitest.pg.config.ts <file>`
-- A browser suite on a fresh database: `pnpm run lane smoke -- …`; what a
-  Loopy turn costs the main thread: `pnpm run lane bench -- …`.
-- A Loopy OS change: the registered stories,
-  `pnpm run pipe-stories --list`, run in both worktrees.
+`lane smoke` runs a browser suite on a fresh database and `lane bench`
+measures what a Loopy turn costs the main thread (`docs/technical/local-dev.md`).
+A Loopy OS change runs the registered stories, `pnpm run pipe-stories --list`,
+in both worktrees.
 
 ## Tear down
 

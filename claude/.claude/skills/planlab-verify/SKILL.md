@@ -1,6 +1,6 @@
 ---
 name: planlab-verify
-description: (PlanLab) Verify a PlanLab branch by driving it where it runs, on the rig that reaches it. Use when a PlanLab branch or fix needs proving beyond its tests.
+description: (PlanLab) Verify a branch by driving it where it runs. Use when a PlanLab branch or fix needs proving beyond its tests.
 ---
 
 # Verify a PlanLab branch where it runs
@@ -32,8 +32,8 @@ bare error, an instruction nobody can follow, or output naming something its
 reader never receives is a finding, whatever the verdict.
 
 When the branch's own tests already settle a claim (a pure function, a
-refactor with parity tests, docs), say so and do not drive it: a drive costs
-about an hour and a half when it finds nothing.
+refactor with parity tests, docs), say so and spend the drive elsewhere: a
+drive costs about an hour and a half when it finds nothing.
 
 ## Where to run it
 
@@ -51,11 +51,10 @@ cannot tell you.
 | Production data, configuration or a deployed build | production, read-only, and your sandbox workspace | [production](patterns/production.md) |
 | Loopy's prompts, tool text and skills | prompt checks, replays of real asks, blind judges | [model-facing](patterns/model-facing.md) |
 
-Use the rigs that exist. When a claim needs one that does not, say in the
-report what would reach it; building rig tooling is its own piece of work,
-not part of this verification. A throwaway driver is fine: an untracked
-`application/scripts.local/` script or one in your scratchpad, deleted or
-left there afterwards.
+Use the rigs that exist. When a claim needs one that does not, report what
+would reach it: rig tooling is built as its own work. A throwaway driver
+belongs in an untracked `application/scripts.local/` script or your
+scratchpad.
 
 A Loopy incident with a dossier from `pl-loopy-debug` is proved and closed
 by `pl-loopy-verify`'s steps, which record the outcome the dossier needs.
@@ -79,11 +78,9 @@ repeated runs; say how many.
 
 ## Writes, spend, and other sessions
 
-- **Production and deployed workspaces:** the rule is `CLAUDE.local.md`'s.
-  Write freely in your sandbox workspace `planlab-dev-qiushi` and list what
-  you wrote in the report. A write anywhere else (a demo, an internal or lab
-  workspace) needs the owner's word: ask, naming the workspace and the
-  write, and say why the sandbox cannot show it.
+- **Deployed workspaces,** by `CLAUDE.local.md`: your sandbox
+  `planlab-dev-qiushi` freely, listed in the report; any other (a demo, an
+  internal or lab workspace) on the owner's word.
 - **AWS:** the personal account only. Launch the smallest shape the claim
   needs, tag it with the branch, and tear it down before you report. An
   expired sign-in stops you: signing in is the owner's.
