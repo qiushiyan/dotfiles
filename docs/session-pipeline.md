@@ -79,12 +79,13 @@ says, which for most is `main`. `~/dotfiles` commits on `main`, and its
 4. **Build.** Heavy: `/compact`, then `implement-spec`, which rebuilds the
    model from the committed spec. `implement-now` builds from decisions
    settled in the conversation. Commits land at milestones.
-5. **Review and verify.** `loopy-review-verify` in planlab,
-   `itell-review-verify` in itell (its `verify` skill's lane), `review-verify`
-   elsewhere: a `/review` round while the session proves the intended
-   behaviour on the running stack. Confirmed findings are folded in ("fold
-   it in"); substantive fixes get a second round. A branch may need only
-   one; planlab's `loopy-verify` is the verification alone.
+5. **Review and verify.** `review-verify`, which planlab replaces with its
+   own (the verification through `planlab-verify`, which picks the rig each
+   claim needs), and `itell-review-verify` in itell (its `verify` skill's
+   lane): a review round while the session proves the intended behaviour
+   where it runs. Confirmed findings are folded in ("fold it in");
+   substantive fixes get a second round. A branch may need only one;
+   planlab's `verify` is the verification alone.
 6. **Prompt check**, when the branch's diff touches model-facing text —
    prompts, skill bodies, snippets, tool descriptions and results, a
    `CLAUDE.md`: `loopy-prompt-check` in planlab, `prompt-check` elsewhere.
@@ -158,10 +159,10 @@ cannot, before the build commits to it, and it may kill the approach
 heavy path, `consult-then-build` after its consult round on the light one,
 `go-cli-maintain` throughout its pass, and `spike-check` asks for them on
 their own and ends at their verdicts: by hand the build waits for the user
-to read them, and in a driven batch the next step sends it on. In planlab they run on the real stack:
-`pl-loopy-verify`'s rungs where they hold the question, otherwise an
-OrbStack container or EC2 on the `planlab-personal` AWS profile, cleaned up
-afterwards; planlab's `consult-then-build` says so. In itell they run in the
+to read them, and in a driven batch the next step sends it on. In planlab they run on the real stack,
+on the rig `planlab-verify`'s patterns give for the question (the lane, a
+container, the personal AWS account's kits), cleaned up afterwards;
+planlab's `consult-then-build` says so. In itell they run in the
 worktree's verification lane (`pnpm verify`) where it holds the question, as
 itell's `consult-then-build` says.
 
@@ -274,10 +275,12 @@ data, ask. Beyond that:
   checkouts and scratch files the sessions recommend; a branch that is not
   merged stays, stated plainly and not asked about; a spent brief is
   retired by the project's distill (planlab's `closeout` key), never by hand.
-- **Reads of production, and writes to the user's own, internal or demo
-  workspaces and to internal systems** such as an issue tracker or the
-  handoffs repository. A project says which of its spaces are internal
-  (planlab: AGENTS.md, "Size caution to who can be hurt").
+- **Reads of production, and writes to the user's own sandbox workspace
+  and to internal systems** such as an issue tracker or the handoffs
+  repository; the report lists what was written. A write to a demo or any
+  other internal workspace waits for the user's word, asked for only when
+  the sandbox cannot show what the session is proving (planlab:
+  `CLAUDE.local.md`; a demo broke under an experiment).
 - **Announcements in a channel**, by the project's own rule for who they
   notify (planlab: `pl-loopy-handoff-distill` § The announcement). A message
   addressed to a person goes as a draft the user sends.
@@ -306,16 +309,19 @@ carries every project's local file between the machines
 (`twin/.config/twin/twin.toml`). Where
 both files exist the local one wins per key, which makes it planlab's draft
 layer: try a change there, then move it into `.tabtype.toml` by PR and delete
-it locally. An edit to `.tabtype.toml` in the main checkout leaves it dirty,
+it locally. A key that replaces a global one stays local until no live
+worktree predates its merge: a worktree reads its own branch's
+`.tabtype.toml`, and an older one would quietly expand the global key
+instead. An edit to `.tabtype.toml` in the main checkout leaves it dirty,
 and `twin` does not pull a dirty main checkout.
 
 ```text
-a new key      → planlab's loopy-review-verify (the review with the pl-loopy-verify rig)
-                 and loopy-verify (that verification alone),
+a new key      → planlab's verify (the verification alone, through planlab-verify),
                  itell's itell-review-verify (the review with a verify lane);
                  in both, land-pr (stage 7 without the review) and merge-when-ready
                  (planlab: merge, release and confirm; itell: merge and follow it to staging)
-a global key   → planlab's and itell's consult-then-build (each one's spike rig),
+a global key   → planlab's review-verify (the verification through planlab-verify),
+                 planlab's and itell's consult-then-build (each one's spike rig),
                  review-then-closeout (ends at a ready PR; planlab's verifies beside the review)
                  and closeout (the post-merge distill);
                  TabType's closeout and review-then-closeout (a release)

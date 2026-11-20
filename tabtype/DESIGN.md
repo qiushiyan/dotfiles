@@ -21,6 +21,13 @@ a snippet departs from the skill it says so in words, as `spike-check` does
 when it asks for every assumption the approach fails without, against the
 skill's default of the costliest one.
 
+Planlab's `review-verify` and `verify` are the exception that keeps text: the
+target-and-risk paragraph won its replays as request text, so it stays in
+the message and `planlab-verify` holds the rigs. `review-verify` is
+numbered steps with no leading slash command, so the review and the
+verification read as two steps of one request rather than one skill's
+arguments.
+
 `go-cli-maintain` is a pointer and a stop alone: `go-cli/MAINTAIN.md` owns
 the pass, so the method changes there without touching the key.
 
