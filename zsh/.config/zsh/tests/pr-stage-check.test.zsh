@@ -116,10 +116,10 @@ refused() {
   for py in $PYS; do
     newsid; hook "$py" "$(payload "$SID" "$cwd" "$cmd")"
     if (( RC != 2 )); then fail "want refused, got rc=$RC [$py]  $label" "$OUT"
-    elif (( ${missing[(Ie)review]} )) && [[ "$OUT" != *"$ROUND"* ]]; then fail "no review ran, and the review round is not named [$py]  $label" "$OUT"
-    elif (( ! ${missing[(Ie)review]} )) && [[ "$OUT" == *"$ROUND"* ]]; then fail "names the review round though a review ran [$py]  $label" "$OUT"
-    elif (( $#missing == 2 )) && [[ "$OUT" != *"$REVIEW"* || "$OUT" != *"$FILE"* ]]; then fail "neither ran, and the snippet that starts both or its file is not named [$py]  $label" "$OUT"
-    elif (( $#missing == 1 )) && [[ "$OUT" == *"$REVIEW"* ]]; then fail "one ran, yet the snippet that runs both is named [$py]  $label" "$OUT"
+    elif (( ${missing[(Ie)review]} )) && [[ "$OUT" != *"\`$ROUND\`"* ]]; then fail "no review ran, and the review round is not named [$py]  $label" "$OUT"
+    elif (( ! ${missing[(Ie)review]} )) && [[ "$OUT" == *"\`$ROUND\`"* ]]; then fail "names the review round though a review ran [$py]  $label" "$OUT"
+    elif (( $#missing == 2 )) && [[ "$OUT" != *"\`$REVIEW\`"* || "$OUT" != *"$FILE"* ]]; then fail "neither ran, and the snippet that starts both or its file is not named [$py]  $label" "$OUT"
+    elif (( $#missing == 1 )) && [[ "$OUT" == *"\`$REVIEW\`"* ]]; then fail "one ran, yet the snippet that runs both is named [$py]  $label" "$OUT"
     elif (( ${missing[(Ie)verify]} )) && [[ "$OUT" != *"$VERIFY"* ]]; then fail "no verification ran, and the verify skill is not named [$py]  $label" "$OUT"
     elif (( ! ${missing[(Ie)verify]} )) && [[ "$OUT" == *"$VERIFY"* ]]; then fail "names the verify skill though a verification ran [$py]  $label" "$OUT"
     elif (( ${ran[(Ie)prompts]} )) && [[ "$OUT" == *"$PROMPTS"* ]]; then fail "names the prompt check though one ran [$py]  $label" "$OUT"
@@ -323,6 +323,24 @@ HOOK_ENV=(HOME="$H" PATH="$BIN:$BARE")
 refused "XDG_STATE_HOME unset: the marker is under ~/.local/state" "$MAIN" "gh pr create --fill"
 HOOK_ENV=(HOME="$H" XDG_STATE_HOME= PATH="$BIN:$BARE")
 refused "XDG_STATE_HOME empty: the same" "$MAIN" "gh pr create --fill"
+
+# --- the labels it reads ---------------------------------------------------------
+# The hook knows a step ran only through the session board's labels, so each
+# project's verify skill must be under the real config's `verify` label and
+# its review key under `review` and `verify`: a name missing there refuses
+# every session that ran it.
+labels_out=$(python3 - "$HOOK" "$DOT/claude-steps/.config/claude-steps/config.toml" <<'PY' 2>&1
+import importlib.util, sys, tomllib
+spec = importlib.util.spec_from_file_location("hook", sys.argv[1]); hook = importlib.util.module_from_spec(spec); spec.loader.exec_module(hook)
+labels = {l["name"]: l for l in tomllib.load(open(sys.argv[2], "rb"))["label"]}
+for p in hook.PROJECTS:
+    if p["verify"] not in labels["verify"].get("skills", []): print(f'{p["name"]}: {p["verify"]} is not a verify skill')
+    for name in ("review", "verify"):
+        if p["review"] not in labels[name].get("snippets", []): print(f'{p["name"]}: {p["review"]} is not a {name} snippet')
+PY
+)
+if [[ $? == 0 && -z "$labels_out" ]]; then pass "the board's labels hold every name the hook prints"
+else fail "the board's labels and the hook's names disagree" "$labels_out"; fi
 
 # --- the real state directory ------------------------------------------------------
 leaked=("$REAL_STATE"/prsc-test-*$$*(N) "$REAL_STATE:h"/prsc-test-*$$*(N))

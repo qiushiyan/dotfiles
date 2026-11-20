@@ -18,17 +18,25 @@ SELECT ...
 SQL
 planlab backstage db describe LoopyRun          # a table's columns before you guess one
 planlab backstage loopy evidence <runId> --bundle -o <scratchpad>/<slug>
-planlab --workspace <ws> schedules export <schedule-id> --out <file.xer>   # a schedule as saved, edits included
+planlab backstage schedules download_uploaded_raw <schedule-id> -o <file>   # a schedule as uploaded
 ```
 
 The production logs are CloudWatch Logs Insights through
 `aws --profile planlab-prod logs start-query …`.
 
+A schedule with its saved edits comes through the workspace route instead
+(lane patterns, § Data in), which needs a workspace token.
+
 ## Drive the deployed build
+
+From the repo root. A workspace command needs a workspace token; when none
+is configured, the CLI's refusal says how to mint one (`--writable` for
+`loopy` and `case run`).
 
 ```bash
 planlab --workspace planlab-dev-qiushi loopy --single -- "<the planner's words>"
 planlab --workspace planlab-dev-qiushi case run packages/loopy-eval/cases/<id>.yaml
+planlab --workspace planlab-dev-qiushi case clean <the result dir it printed>
 ```
 
 `planlab replay <thread>` re-sends a thread on the thread's own workspace,

@@ -28,8 +28,14 @@ systemd on a real boot needs a host: see aws.
 
 ## Loopy's S3 staging (staged-objects mode)
 
-The lane runs Loopy with local directories. A claim about runs whose inputs
-cross hosts through S3 needs a store: MinIO in a container.
+The lane runs Loopy with local directories, and it cannot run staged-objects
+yet: with `LOOPY_STAGING_S3_BUCKET` set, `lane status` calls the master's
+staging a mismatch, marks Loopy unavailable and suggests `lane master
+restart`, which changes nothing, and `planlab --lane` refuses every turn. So
+drive a staged-objects claim end to end on `infra/loopy-smoke`'s `two-host`
+topology (aws), which stages through real S3. MinIO in a container serves
+the claims a test can reach: the master's S3 client against a real
+S3-compatible store.
 
 ```bash
 N=<branch-slug>-minio; P=<free port>
@@ -40,14 +46,10 @@ env -u AWS_PROFILE AWS_ACCESS_KEY_ID=verify AWS_SECRET_ACCESS_KEY=verify-secret 
   aws --endpoint-url http://127.0.0.1:$P --region us-east-1 s3 mb s3://<bucket>
 ```
 
-The app and the master both read `LOOPY_STAGING_S3_BUCKET` (setting it is
-what turns staged-objects mode on), `LOOPY_STAGING_S3_ENDPOINT`,
-`LOOPY_STAGING_S3_PREFIX`, `LOOPY_STAGING_S3_REGION`, and the SDK's
-`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-(`packages/loopy-master-host/src/staging_identity.ts`). Both must see the
-same values: the store's identity includes the endpoint, and dispatch refuses
-a mismatch. `lane up` hands its own environment to the processes it starts,
-so export them, then `lane stop` and `lane up`. The lane has no switch for
-this, and it has been done by hand once: confirm from the master's log that
-it staged to the bucket before trusting a verdict, and stop and remove the
-container afterwards (`docker rm -f $N`).
+Point the code under test at it with `LOOPY_STAGING_S3_BUCKET`,
+`LOOPY_STAGING_S3_ENDPOINT` (`http://127.0.0.1:$P`), `LOOPY_STAGING_S3_PREFIX`
+and `LOOPY_STAGING_S3_REGION`, as
+`packages/loopy-master-host/src/staging_identity.ts` reads them, with the
+container's keys passed to the test alone: exported into `lane up`, they
+would also replace the AWS credentials the lane's Bedrock calls use. Remove
+the container afterwards (`docker rm -f $N`).

@@ -1,0 +1,31 @@
+# Openings of snippets that were renamed or reworded, read by claude-steps
+# alone (TabType and drive never list this file), so sessions that pasted
+# the earlier text still show their step. Each holds only the head the board
+# matches on. loopy-review-verify and loopy-verify became review-verify and
+# verify on 2026-11-20 (planlab PR #12089); the three batch-planning keys
+# were respelled "Planlab" the same day.
+
+[[snippets]]
+key = "loopy-review-verify"
+expand = """
+/review fable full review. While you are waiting, verify this branch with pl-loopy-verify in the mode that fits it, and report its verdicts on two fronts. First, the target: the behaviours this branch"""
+
+[[snippets]]
+key = "loopy-verify"
+expand = """
+Verify this branch with pl-loopy-verify in the mode that fits it, and report its verdicts on two fronts. First, the target: the behaviours this branch exists to deliver, each driven end to end on the """
+
+[[snippets]]
+key = "loopy-slack-triage"
+expand = """
+/pl-loopy-onboarding Gather what reached me on PlanLab's Slack and triage it into clusters of problems, so I can pick a batch of parallel sessions to fix them. The window is the last 2 days unless I s"""
+
+[[snippets]]
+key = "loopy-initiatives-review"
+expand = """
+/pl-loopy-onboarding Where are we across PlanLab's live initiatives, and what should the next batch of parallel sessions start? What I add at the end says which work I am handling myself, to leave out"""
+
+[[snippets]]
+key = "loopy-batch-review"
+expand = """
+/pl-loopy-onboarding Review the proposals for PlanLab's next batch of parallel sessions with a fresh eye, and turn them into one batch that makes the engineering easier to get right. The reports that """

@@ -15,17 +15,18 @@ eval "$AB"
 ```
 
 Later commands name the same `--session lane-<n>`; the header carried by the
-first `open` keeps the browser signed in. Read the origin from `lane status`
-rather than guessing a port.
+first `open` keeps the browser signed in. Take the app's address from
+`lane status` rather than guessing a port: `.app.url` already ends in `/app`.
 
 ```bash
-B="agent-browser --session lane-<n>"
-$B open "<origin>/app?ws=s-<purpose>"
-$B open "<origin>/app?ws=s-<purpose>&chat=true&aithread=<thread id>"   # a Loopy thread, chat open
+B="agent-browser --session lane-<n>"; APP=$(pnpm run -s lane status | jq -r .app.url)
+$B open "$APP?ws=s-<purpose>"
+$B open "$APP?ws=s-<purpose>&chat=true&aithread=<thread id>"   # a Loopy thread, chat open
 $B wait --text "<text the page shows when ready>"
 $B snapshot -i -c                      # what is on the page, with refs to click
 $B screenshot <scratchpad>/<name>.png  # evidence the report can name
 $B set viewport 390 844                # a phone width
+$B close                               # at teardown
 ```
 
 A Loopy thread to open: drive one with `planlab --lane . loopy` first (lane

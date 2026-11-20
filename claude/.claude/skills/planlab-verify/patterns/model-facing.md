@@ -21,7 +21,8 @@ A diff that changes a prompt the branch did not mean to change is a finding.
 
 1. **Take real asks.** Sample what planners actually sent that this change
    touches, from production (`planlab backstage db query`), with each
-   thread's id. The planner's words go in as they were, not an instruction
+   thread's id; `planlab backstage skill-cases asks <workspace> "<skill>"`
+   lists the real asks behind a skill. The planner's words go in as they were, not an instruction
    to use the changed skill: whether the model reaches for it on its own is
    part of the verdict.
 2. **Run each on both builds,** the baseline lane and this one

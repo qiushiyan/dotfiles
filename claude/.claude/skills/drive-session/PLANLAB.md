@@ -129,7 +129,7 @@ and the internal workspaces have no customer behind them (planlab
 - **A `#loopy` announcement**, by `pl-loopy-handoff-distill`.
 
 A workspace is internal when Planlab's own organization owns it; the names
-above are the known ones. Some customer-looking workspaces are run by
+here are the known ones. Some customer-looking workspaces are run by
 staff, so when you cannot tell, treat it as a customer's.
 
 Ask:

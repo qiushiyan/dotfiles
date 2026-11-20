@@ -40,7 +40,7 @@ generated-file change, `lane stop` then `lane up`. The master's warnings:
 pnpm run lane ws new <purpose>      # scratch workspace s-<purpose>, deleted with the worktree
 planlab --lane . --workspace s-<purpose> loopy --single -- "<the planner's own words>"
 planlab --lane . --workspace s-<purpose> case run ../packages/loopy-eval/cases/<id>.yaml
-planlab case clean <the result dir it printed>
+planlab --lane . --workspace s-<purpose> case clean <the result dir it printed>
 ```
 
 Read the whole result block: `target` is the build that answered and
@@ -56,10 +56,18 @@ SQL
 
 ## Data in
 
-- A workspace's real schedule, read from production (no permission
-  needed): `planlab --workspace <ws> schedules export <schedule-id> --out <file.xer>`,
-  edits included; then upload it as below. Files and rows the claim needs
-  come the same way: read them, then load them here.
+- A workspace's real schedule, read from production: the file as it was
+  uploaded, `planlab backstage schedules download_uploaded_raw <schedule-id> -o <file>`,
+  needs no workspace access. With its saved edits,
+  `planlab --workspace <ws> schedules export <schedule-id> --out <file.xer>`
+  needs a workspace token, which the CLI says how to mint on a workspace you
+  belong to; on a customer's workspace that leaves only `--as-user`, an
+  audited support session the owner approves first. Load the file here as
+  below; rows the claim needs come the same way.
+- A file into a conversation, as the composer sends it:
+  `planlab --lane . --workspace s-<purpose> loopy --attach <file> -- "…"`
+  (`--schedule <id|name>` attaches a workspace schedule;
+  `planlab fs put <thread> <file> --attach` attaches without a message).
 - The `fixtures` workspace (`/app?ws=fixtures`) already holds the named test
   files (PDFs past each limit, two P6 schedules, a spreadsheet);
   `pnpm run lane fixtures` uploads any that are missing.
@@ -68,8 +76,8 @@ SQL
   pnpm run lane run -- tsx scripts/local-repro/upload-case-schedules.ts \
     --xer <file.xer> --name "<name>" --workspace s-<purpose>
   ```
-  It takes XER only; for another format or file type, write a throwaway
-  driver that posts to the same route.
+  It takes XER only; for another schedule format, write a throwaway driver
+  that posts to the same route.
 - A throwaway driver against the lane's database and app: put it in
   `application/scripts.local/<name>.ts` (untracked) and run
   `pnpm run lane run -- tsx scripts.local/<name>.ts`, which supplies the

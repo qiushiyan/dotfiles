@@ -19,6 +19,7 @@ snippets = [
   "~/dev/planlab/main/.tabtype.local.toml",
   "~/dev/itell/.tabtype.local.toml",
   "~/dev/tabtype/.tabtype.local.toml",
+  "~/.config/claude-steps/retired-snippets.toml",
 ]
 
 # The session's first stage: onboarding, the triage a Loopy incident starts at,
@@ -50,8 +51,8 @@ count_commits = true
 color = "blue"
 
 # review-verify asks for the review and the verification in one paste, so it
-# stands under both; loopy-review-verify is its name before 2026-11-20, kept
-# so earlier sessions still show. review-then-closeout likewise, under closeout.
+# stands under both; loopy-review-verify is its name before 2026-11-20, whose
+# opening retired-snippets.toml keeps so earlier sessions still show. review-then-closeout likewise, under closeout.
 [[label]]
 name = "review"
 skills = ["review"]

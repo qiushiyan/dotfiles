@@ -91,11 +91,11 @@ toward the review's second round. Split, decided by the user: invocable
 - Planlab snippets: `review-verify` and `verify` in the main checkout's
   `.tabtype.local.toml`; the same keys, with `review-then-closeout`,
   `consult-then-build` and `loopy-batch-review` pointing here, committed on
-  branch `tooling/review-verify` (not pushed).
+  branch `tooling/review-verify`, PR #12089.
 - PR guard (`claude/.claude/hooks/pr-stage-check.py`): keys `review-verify`
   and `planlab-verify`, the review named as `full review`; its test.
-  Session board: `planlab-verify` and `spike` under verify, the new keys
-  beside the old ones.
+  Session board: `planlab-verify` under verify, the new keys beside the
+  old ones, whose openings `retired-snippets.toml` keeps.
 - Review and consult: fable is the voice when none is named.
 - Workspace writes (user's word): the sandbox freely, listed in the report;
   any other workspace on the owner's word: `CLAUDE.local.md` (both copies),
@@ -103,7 +103,7 @@ toward the review's second round. Split, decided by the user: invocable
 - `~/.aws/config`: profile `planlab-personal-deploy` (DeploymentCreator in
   the personal account), checked with `sts get-caller-identity`.
 - Handoffs: `infra/remote-workers-branch-rig`, `infra/lane-verify-frictions-ranked`.
-- Left for the docs pass: `docs/session-pipeline.md` (stage 5, project
+- The docs pass (`08b31e03`): `docs/session-pipeline.md` (stage 5, project
   snippets, spikes, § Who decides on workspace writes), `docs/planlab.md`,
   `tabtype/DESIGN.md`.
 
@@ -144,3 +144,46 @@ snippets` resolves `review-verify` to the new text in an old worktree, in
 the new branch's worktree, and to the global key in dotfiles. `brief check`
 clean on both briefs. `skill-sync --check` clean. The new AWS profile
 answers `sts get-caller-identity` as DeploymentCreator.
+
+## 2026-11-20 — review r1: the consult's voices on the build
+
+Session `mini2:5b25b85e`, job `review-r1` (`@consult-r1` Fable and Carbon,
+warm only, a follow-through check on the user's ask, not an independent
+review). Both found the round's agreements built; eleven findings between
+them, each verified against the code before acting.
+
+**Fixed.**
+- The shell's default AWS profile is production, and `loopy-smoke` takes the
+  default when its config names none and checks no account: `patterns/aws.md`
+  now sets the profile in the stack's config and stops unless
+  `get-caller-identity` names the personal account.
+- The MinIO recipe on a lane leads into a refusal loop (the lane's
+  `describeLoopy` assumes local directories, so Loopy reads unavailable and
+  `planlab --lane` refuses): staged-objects claims go to `loopy-smoke`'s
+  two-host topology, MinIO to tests, and the frictions brief names the gate.
+- `schedules export` is a workspace route needing a workspace token; a raw
+  upload comes through `backstage schedules download_uploaded_raw`, and
+  `--as-user` waits for the owner. `--attach`/`--schedule` replace a
+  hand-written uploader for conversations; `case clean` takes its target.
+- The browser opens `.app.url` (already ending in `/app`) and closes at
+  teardown.
+- A fixed red is guarded by a committed test or case (pl-loopy-verify § The
+  artifact for Loopy); the report opens with a one-line count and names the
+  build each verdict ran on (both reviewers' ideas).
+- The board: `retired-snippets.toml` keeps the openings of the renamed and
+  respelled keys, so past sessions still show; the PR guard's test now
+  matches the review key and round as printed (a revert of either was green)
+  and checks the real labels hold the hook's names. Reverting each in a
+  scratch clone: 54, 58 and 1 failures.
+- Small text: PLANLAB.md's "names above", the batch-review section pointer,
+  repo-root paths in production patterns, thread ids instead of names, one
+  word for the owner, the briefs' personal paths.
+
+**Not changed.**
+- Counting `patterns/` in the size ratchet (Fable F5): the ratchet counts
+  top-level files by design, and handoff, prompt-engineering and test-audit
+  keep subfolders too; extending it is a policy change for every skill.
+- A path check for the patterns (Fable's idea): the frictions brief will
+  move several of them; worth building once it settles.
+- Which cold voice a full review seats after a Fable consult (both voices'
+  F4): the user's call, put to them.

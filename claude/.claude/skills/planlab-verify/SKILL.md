@@ -71,9 +71,11 @@ which needs no permission, and load it onto the lane
 ([lane](patterns/lane.md) § Data in). A write in that workspace would test
 only the deployed build, so it belongs to a check after the deploy.
 
-A fix is red on a baseline (the build before it) and green here; for a new
-capability the baseline's red proves nothing, so run the existing flows on
-both instead, which should agree. A claim about timing or concurrency gets
+A fix is red on a baseline (the build before it) and green here, and a
+committed test or case that fails without the fix keeps it green; for a
+Loopy fix, `pl-loopy-verify` § The artifact says which rung holds it. For a
+new capability the baseline's red proves nothing, so run the existing flows
+on both instead, which should agree. A claim about timing or concurrency gets
 repeated runs; say how many.
 
 ## Writes, spend, and other sessions
@@ -85,8 +87,9 @@ repeated runs; say how many.
   needs, tag it with the branch, and tear it down before you report. An
   expired sign-in stops you: signing in is the owner's.
 - **Other sessions:** several run on this machine at once. A lane is yours
-  alone; a container, a port, a bucket, a browser session and a sandbox
-  thread are not, so name each after the branch.
+  alone; a container, a port, a bucket and a browser session are not, so
+  name each after the branch, and list the sandbox threads you created by
+  id.
 - **Traffic:** nobody else sends to your lane, your sandbox or a lab
   workspace. An experiment names before it starts what sends its traffic,
   and how it makes sure a run is in progress when the event it tests
@@ -94,14 +97,17 @@ repeated runs; say how many.
 
 ## Report
 
-Lead with the target: each behaviour, VERIFIED or NOT VERIFIED, the rig it
-ran on, and the output that decides it, quoted so a reader who never saw
+Open with one line: behaviours verified of how many, the rigs used, claims
+not driven, writes outside the lane, and whether everything is torn down.
+Then the target: each behaviour, VERIFIED or NOT VERIFIED, the rig and the
+build it ran on (the commit; a lane's result block names it), and the output
+that decides it, quoted so a reader who never saw
 the run reaches the same verdict. VERIFIED covers only what was driven. The
 risk front follows apart, each probe with what it showed. Then what was not
 driven, each with what would drive it: a rig that does not exist yet, or a
 check owed after the deploy and when it can run. Then what waits for the
 owner's word, such as a write you asked for. Last, what you wrote outside
-your lane and what you tore down.
+your lane, what guards each red you fixed, and what you tore down.
 
 Fix what you can within the branch, drive each red again once it is fixed,
-and leave the decision to the user where the fix would change the design.
+and leave the decision to the owner where the fix would change the design.

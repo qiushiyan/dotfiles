@@ -15,6 +15,14 @@ aws sts get-caller-identity --profile planlab-personal          # PowerUserAcces
 aws sts get-caller-identity --profile planlab-personal-deploy   # DeploymentCreator: also IAM roles and instance profiles
 ```
 
+This shell's default profile is production (`AWS_PROFILE=planlab-prod`),
+and `infra/loopy-smoke/provision.sh` takes the default when its config names
+none and checks no account. So put `AWS_PROFILE=planlab-personal` (or
+`-deploy`) in the stack's config, pass `--profile` on every call of your
+own, and before provisioning stop unless
+`aws sts get-caller-identity --profile <it> --query Account --output text`
+prints 288947333156.
+
 When either fails on an expired sign-in, stop and tell the owner: signing in
 is theirs (`aws-login <profile>` in their terminal). Use the profiles
 rather than digging credentials out of the SSO cache yourself; a kit's own
