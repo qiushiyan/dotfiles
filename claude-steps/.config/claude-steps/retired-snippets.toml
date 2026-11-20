@@ -29,3 +29,23 @@ expand = """
 key = "loopy-batch-review"
 expand = """
 /pl-loopy-onboarding Review the proposals for PlanLab's next batch of parallel sessions with a fresh eye, and turn them into one batch that makes the engineering easier to get right. The reports that """
+
+[[snippets]]
+key = "review-verify"
+expand = """
+/review fable full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read ~/dotfiles/claude/.claude/skills/spike/SKILL.md and treat this as its verification moment."""
+
+[[snippets]]
+key = "review-then-closeout"
+expand = """
+/review fable full review, then close the branch out if the round leaves nothing for me to decide: docs updated, main pushed, the new build installed on both machines, the feature branch gone. This is"""
+
+[[snippets]]
+key = "review-then-closeout"
+expand = """
+/review fable full review, then close the branch out with a release if the round leaves nothing for me to decide: docs updated, main pushed, the new version published and installed on both machines, t"""
+
+[[snippets]]
+key = "review-then-closeout"
+expand = """
+/review fable full review, then take the branch to a ready-to-merge PR if the round and the verification leave nothing for me to decide: docs synced, PR open against develop and settled. Stop there: a"""

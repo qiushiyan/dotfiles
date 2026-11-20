@@ -50,7 +50,7 @@ PROJECTS = (
         "review": "review-verify",
         "prompt_check": "loopy-prompt-check",
         "verify": "planlab-verify",
-        "file": "~/dev/planlab/main/.tabtype.toml (a key in .tabtype.local.toml beside it wins)",
+        "file": "~/dev/planlab/main/.tabtype.toml",
     },
 )
 
@@ -74,7 +74,7 @@ OPENING = (
 # change needs it (the evidence is in drive-session/EVIDENCE.md, 2026-11-16).
 WHEN = {
     "review": (
-        "\nA review (the review skill, as `full review`) catches what a "
+        "\nA review (the review skill, as `astra full review`) catches what a "
         "careful reader of the code can: a defect in logic that spans modules, "
         "behaviour no test pins, and text that no longer matches the code, such "
         "as a skill or tool description a model reads, a doc, or a claim in the "

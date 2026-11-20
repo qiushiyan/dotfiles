@@ -302,18 +302,14 @@ data, ask. Beyond that:
 A project binds stages to its own skills, under a new key or by replacing a
 global one, in a snippets file that TabType and `drive` both read. Planlab
 commits its file as `.tabtype.toml`, so each checkout reads its own branch's
-copy and a snippet change ships by PR. itell and TabType keep a gitignored
-`.tabtype.local.toml`, read from the worktree and from the main checkout
-beneath it, so a worktree sees the main checkout's file as it stands; `twin`
-carries every project's local file between the machines
-(`twin/.config/twin/twin.toml`). Where
-both files exist the local one wins per key, which makes it planlab's draft
-layer: try a change there, then move it into `.tabtype.toml` by PR and delete
-it locally. A key that replaces a global one stays local until no live
-worktree predates its merge: a worktree reads its own branch's
-`.tabtype.toml`, and an older one would quietly expand the global key
-instead. An edit to `.tabtype.toml` in the main checkout leaves it dirty,
-and `twin` does not pull a dirty main checkout.
+copy and a snippet change ships by PR, with no local layer beside it: a
+worktree older than a key's merge expands the global key of that name, or
+nothing. itell and TabType keep a gitignored `.tabtype.local.toml`, read from
+the worktree and from the main checkout beneath it, so a worktree sees the
+main checkout's file as it stands; `twin` carries those local files between
+the machines (`twin/.config/twin/twin.toml`). An edit to `.tabtype.toml` in
+the main checkout leaves it dirty, and `twin` does not pull a dirty main
+checkout.
 
 ```text
 a new key      → planlab's verify (the verification alone, through planlab-verify),

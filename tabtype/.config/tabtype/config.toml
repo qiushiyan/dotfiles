@@ -104,7 +104,7 @@ Decisions are settled as above; where I left one open, take your recommendation.
 [[snippets]]
 key = "review-verify"
 expand = '''
-/review fable full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read ~/dotfiles/claude/.claude/skills/spike/SKILL.md and treat this as its verification moment. Report its verdicts with the review's findings.'''
+/review astra full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read ~/dotfiles/claude/.claude/skills/spike/SKILL.md and treat this as its verification moment. Report its verdicts with the review's findings.'''
 
 [[snippets]]
 key = "strategic-review-brief"
@@ -160,7 +160,7 @@ Work already on main skips the merge in step 2 and all of step 4, and its docs p
 [[snippets]]
 key = "review-then-closeout"
 expand = '''
-/review fable full review, then close the branch out if the round leaves nothing for me to decide: docs updated, main pushed, the new build installed on both machines, the feature branch gone. This is one of my own tools, so it merges locally with no PR.
+/review astra full review, then close the branch out if the round leaves nothing for me to decide: docs updated, main pushed, the new build installed on both machines, the feature branch gone. This is one of my own tools, so it merges locally with no PR.
 
 Fix what you confirm and build the ideas you would take, as the skill says, and run its second round first when the fixes were substantive. The closeout runs only if the skill's report would open by saying nothing needs me: a finding you judge foundational stops you at that report, and so does an objection to the design that you rebutted, which I should hear before a merge settles it. With nothing for me, continue:
 

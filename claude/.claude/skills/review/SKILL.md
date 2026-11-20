@@ -26,8 +26,7 @@ the user has a report they can decide from alone.
 ## Voices
 
 The user names the voice after the word: "review with fable", "astra full
-review", "fable full review, then closeout". With no voice named, it is fable,
-or astra as the cold voice beside a warm fable (step 3).
+review", "fable full review, then closeout". With no voice named, it is fable.
 
 | name | `--with` | member name |
 |---|---|---|
@@ -44,10 +43,10 @@ envoy run review-r1 --with claude:claude-fable-5-2 --prompt-file <brief> \
 ```
 
 A full round after a consult seats the consult's voice warm beside a cold
-voice of another family (step 3):
+voice (step 3), here a fable consult with astra named for the review:
 
 ```sh
-envoy run review-r1 --with @consult-r1/codex-gpt-6.2-astra --with claude:claude-fable-5-2 --prompt-file <brief> \
+envoy run review-r1 --with @consult-r1/claude-claude-fable-5-2 --with codex:gpt-6.2-astra:high --prompt-file <brief> \
   --instructions-file ~/.agents/skills/consult/VOICE.md --baseline <base-sha> --timeout-min 60
 ```
 
@@ -122,10 +121,9 @@ consult session continued beside a cold voice:
   would continue every member and seat no cold voice. Name the latest round:
   after a round 2, `@consult-r2/…`. Seating every member warm is the user's
   call, one `--with` each.
-- **The cold voice comes from another family than the warm one**, since
-  two voices of one model mostly find the same things: fable beside a warm
-  astra or carbon, astra beside a warm fable. A voice the user names is the
-  cold voice as named.
+- **The cold voice is the one the user names, or fable with none named.**
+  Two voices of one model mostly find the same things, so the stage
+  snippets name astra for a review after a fable consult.
 - **Warm judges follow-through**: did the build integrate what was agreed
   and dodge the traps its rounds discussed. It is a poor judge of the design
   it committed to, and it takes only a full brief. When the user wants the
