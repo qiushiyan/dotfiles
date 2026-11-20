@@ -38,6 +38,7 @@
 #                         when the local part is unique (and isn't the
 #                         primary's name or a reserved word) a short alias
 #                         exists too (x-yan, …)
+#   x-fable               ≡ x --model claude-fable-5-2
 #   x-accounts / x-acc    account board (headroom accounts --compact): one
 #                         row per account, refreshing while it is open; it
 #                         records nothing and starts no session
@@ -105,7 +106,7 @@ fi
 # Local parts that never get a short launcher alias: x-<these> are utilities.
 # Purely this file's concern — headroom advertises only the guaranteed
 # x-<email> identities, so there is no naming policy to keep in sync anymore.
-typeset -ga CLAUDE_X_RESERVED=(usage account account-add accounts acc check)
+typeset -ga CLAUDE_X_RESERVED=(usage account account-add accounts acc check fable)
 
 # The launch layer both vendors share; codex.zsh, sourced after this file,
 # uses it too.
@@ -380,6 +381,8 @@ _claude_x() {
 
 # Bypassed permissions on the least-loaded account: headroom places it.
 x() { _claude_x "" "$@" }
+# x on Fable, placed the same way.
+x-fable() { x --model claude-fable-5-2 "$@" }
 
 # Prompted (no bypass) session on the account named.
 claude-account() {
