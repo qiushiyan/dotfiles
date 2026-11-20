@@ -293,7 +293,7 @@ run on the revised briefs; the measures above are pending.
 ## 2026-10-07 — what fresh strategic reviews kept finding after full rounds
 
 **Request.** The user had started running a separate fresh-session review on
-big PlanLab PRs, and asked how the in-session round could do better on the
+big Planlab PRs, and asked how the in-session round could do better on the
 first attempt. Pass `mini:8ae01ce4`. The full record is in
 `../strategic-review/EVIDENCE.md`, the skill this pass created for those
 fresh-session reviews.
@@ -304,7 +304,7 @@ fresh-session reviews.
   rounds plus round 2. Pooled and verified, they found 33 and 37 real
   problems, none wrong, and the author acted on most of them.
 - **What was found, by class.** One subagent classified the envoy store's 33
-  PlanLab full rounds (2026-09-24 → 10-06, 354 findings).
+  Planlab full rounds (2026-09-24 → 10-06, 354 findings).
   - Model-facing findings were 10 of 354.
   - The late reviews found 7–14 model-facing problems on each PR.
   - In both PR briefs the host-written "docs outside the spec" line fenced
@@ -361,7 +361,7 @@ fresh-session reviews.
 
 **Fixed after the commit, with the user's approval.** The mini's account `config.toml` now links to `~/.codex/config.toml`, with `AGENTS.md` and `themes` linked beside it and the old file kept as `config.toml.pre-share-2026-10-07`. A codex voice dispatched through envoy then wrote a file and ran `go test`. The laptop's account was already linked, so the drift was the mini's alone.
 
-**Next comparison.** Full rounds after this commit on PlanLab agent ranges:
+**Next comparison.** Full rounds after this commit on Planlab agent ranges:
 - the model-facing share of confirmed findings (today 10 of 354);
 - `scope` findings;
 - findings by the cold Opus voice that the warm codex member missed;

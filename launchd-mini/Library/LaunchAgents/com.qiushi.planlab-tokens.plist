@@ -5,7 +5,7 @@
   <key>Label</key>
   <string>com.qiushi.planlab-tokens</string>
 
-  <!-- PlanLab's Backstage tokens expire 30 days after they are minted: a
+  <!-- Planlab's Backstage tokens expire 30 days after they are minted: a
        Slack DM for any due within a week, daily until it is replaced.
        scripts/.local/bin/planlab-tokens. -->
   <key>ProgramArguments</key>

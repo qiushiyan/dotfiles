@@ -1,11 +1,11 @@
-# What a PlanLab session launched through x (or any launcher that runs
+# What a Planlab session launched through x (or any launcher that runs
 # claude-planlab-overlay) reads instead of the team's AGENTS.md and skill list;
 # its subagents read the same.
 #
 # The team's text is cut, never rewritten, so its later edits still arrive. A
 # cut that stops matching leaves that text in and is named when the session
 # starts. To see what a session reads, run `claude-planlab-overlay --show` in
-# a PlanLab checkout.
+# a Planlab checkout.
 #
 # An unreadable file leaves the launch with the team's setup whole, and says so.
 

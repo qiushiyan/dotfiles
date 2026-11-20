@@ -12,7 +12,7 @@
 #
 # ISOLATION. curl, slack, aws and pbpaste are stubs on PATH that log every
 # call and answer from sandbox files, and HOME is a temporary directory, so
-# nothing reaches PlanLab, Slack or AWS. P8 asserts no secret was ever on a
+# nothing reaches Planlab, Slack or AWS. P8 asserts no secret was ever on a
 # command line; Z1 asserts the real state, env and Slack files are untouched.
 
 set -uo pipefail
@@ -76,7 +76,7 @@ cat > "$SANDBOX/bin/slack" <<'EOF'
 #!/bin/sh
 printf 'slack %s\n' "$*" >> "$STUB_ARGV"
 case $1 in
-  whoami) echo "planlab: qiushi (UTEST) at PlanLab · planlab.example · bot token registered" ;;
+  whoami) echo "planlab: qiushi (UTEST) at Planlab · planlab.example · bot token registered" ;;
   post) cat > "$STUB_SLACK_POSTED" ;;
   *) echo "stub slack: unexpected: $*" >&2; exit 99 ;;
 esac

@@ -86,7 +86,7 @@ script changes what reviews find (it changed the opening read only).
 Session `mini:8ae01ce4` (an `/improve-tool` pass, then `/consult`, then a
 replay and two rehearsals).
 
-**Request.** The user had begun opening a fresh session for the few PlanLab PRs
+**Request.** The user had begun opening a fresh session for the few Planlab PRs
 big enough to warrant it, with a short prompt: read what the PR is for, then
 review it against prompt-engineering, thermo-nuclear and codebase-design. They
 asked where that belongs, how to make reviews better on the first attempt, and
@@ -95,7 +95,7 @@ this review stays manual and selective (the user's decision).
 
 **Corpus.**
 - Obelisk, both machines, first user turns since 08-01 that ask for a review of
-  a PR or branch: two PlanLab PR reviews of this kind, both on 2026-10-06.
+  a PR or branch: two Planlab PR reviews of this kind, both on 2026-10-06.
   - `d51febff` (PR 8616, zip archives) and `1a990a25` (PR 8620, bounded
     search) both ran after the branch's codex full review and round 2 had
     converged.
@@ -104,7 +104,7 @@ this review stays manual and selective (the user's decision).
     deleted the codex-round fix `e773533ab4` (`3535c15246`, −700 lines in
     `archive_view.ts`).
   - 8620's manual review was followed by 11 fix commits (`3690cbf8cd..f637d4981d`).
-- Envoy job store on the mini, 2026-09-24 → 10-06: 33 PlanLab code-review
+- Envoy job store on the mini, 2026-09-24 → 10-06: 33 Planlab code-review
   rounds on 30 branches, 354 findings, 329 confirmed.
   - Classified by one subagent into the classes now in
     `~/.config/lessons/collaboration/finding-classes.md`.
@@ -247,7 +247,7 @@ Kept:
   constraint belongs to the rehearsal harness.
 
 **At the user's request, after the pass.**
-- **PlanLab map.** Intent first now names PlanLab's map: read
+- **Planlab map.** Intent first now names Planlab's map: read
   `pl-loopy-onboarding`'s `SKILL.md` and the `routes/` files the PR touches,
   as both manual sessions did, rather than invoking the skill. Onboarding
   ends its turn on a first reply.
@@ -265,7 +265,7 @@ Session `mini:88b18cbd` (an `/improve-tool` pass, dogfooding `~/dev/skill-evals`
 - Obelisk, both machines: user messages starting
   `<command-message>strategic-review</command-message>`, this session excluded.
   9 sessions, all on the mini, 2026-10-07 → 10-09; mac 0.
-  - 8 PlanLab PRs (8677 8680 8675 8758 8806 8809 8859 8857) and gazette.
+  - 8 Planlab PRs (8677 8680 8675 8758 8806 8809 8859 8857) and gazette.
   - Report = the longest assistant text between the invocation and the next
     user turn, read in full with `raw()`. For 8809 that is `d517b218`, plus
     the revision `cdb60526`.
@@ -540,7 +540,7 @@ many of those fixes are genuine.
   (`7cd316ae`), plus the new `drive` repo.
 - Review-driven code changes, classified as earned / unearned / unclear under
   one written definition, by four subagents and two consult voices:
-  - 37 PlanLab PRs merged 09-23 → 10-22;
+  - 37 Planlab PRs merged 09-23 → 10-22;
   - the population was the user's 110 merged PRs of ≥1,000 added lines in that
     month, of the 229 the search API reported (200 fetched).
 - Bot denominator: 128 inline bot threads on the user's last 40 merged PRs.
@@ -601,7 +601,7 @@ each on its own half of the 99 PRs not yet classified).
     preventing;
   - Comment Sicko's deletion under doubt, against astra's #8913 counterexample.
 - Escalated: whether `pl-handle-code-review` gets the same rule. It is
-  PlanLab's skill, in a repository shared with teammates.
+  Planlab's skill, in a repository shared with teammates.
 
 **Changed.**
 - **The skill.** A new **Earned handling** lens reads both ways:
@@ -697,7 +697,7 @@ Revise if a known limit later proves reachable and costly, if real findings
 drop below the v2 yield, or if the lists grow past the findings.
 
 **Pending.**
-- `pl-handle-code-review` (PlanLab) has no "real but unreached" disposition.
+- `pl-handle-code-review` (Planlab) has no "real but unreached" disposition.
   Its "pin it red first" accepts a constructed input, and 11 threads merged
   untriaged in #9126 and #9128. This is the user's decision, as above.
 - The Grok `drive-session-test` dogfood: this terminal has no Accessibility
@@ -708,7 +708,7 @@ drop below the v2 yield, or if the lists grow past the findings.
 ## 2026-10-28 — the fold-in gets read; a wholesale cut that did not hold
 
 **Mined** (obelisk, both machines, every use since the 10-23 change: 16
-completed, 12 PlanLab and 4 itell, 8 driver-sent; scratch scripts): reports
+completed, 12 Planlab and 4 itell, 8 driver-sent; scratch scripts): reports
 followed the skill closely (`reaches:` and known limits 15/15, investigate
 14/15, no report before its areas returned 0/15, known limits never built
 0/16). Median 39 minutes, about 360 subagent tool calls, 4,088-word reports.
@@ -777,7 +777,7 @@ in planlab sessions 10-25 → 11-10.
   published page.
 - **The fold's own check had gone stale.** The skill told the fold to wait
   on `gh pr checks --watch` and judge each bot finding; since 11-05
-  PlanLab's CI and reviewers run only on a label, which the team's
+  Planlab's CI and reviewers run only on a label, which the team's
   `pl-land` adds.
 
 **Changed.**
@@ -960,7 +960,7 @@ whether reviews find more or less with it.
 
 **Seen, not changed.** Pre-report tool errors are incidental (grep exit 1,
 zsh no-match globs, two reads of a whole diff over the 25k-token limit).
-PlanLab's `pnpm -s review-engine check <pr>` gives CI and open bot findings
+Planlab's `pnpm -s review-engine check <pr>` gives CI and open bot findings
 in about 900 characters, but only the outstanding ones, so the rounds lens
 still reads the threads.
 
@@ -1025,7 +1025,7 @@ was counted.
   `deep-modules.md` has illegal states; thermo-nuclear has the canonical
   layer. None takes the view of a session that searches a name, copies the
   code beside its edit and stops at green, so none is applied that way.
-- **The view exists, in one project's docs.** PlanLab's
+- **The view exists, in one project's docs.** Planlab's
   `docs/loopy/changeability/README.md` § Where a change is steered orders
   eight moments from the landing site to the docs, with tenets 8 and 9 and
   lens 9 (forced and discretionary steps, the cold probe). It reaches
@@ -1138,7 +1138,7 @@ with "erdict" over 2,500 characters before the next user turn; 77 recovered
 (driven folds and interrupted runs under-represented). Brief sends: user
 turns holding "going to run /strategic-review on this PR in a fresh
 session": 31, 28 texts; hand-sent only, since driven sends live in drive's
-files (at least 25 on mini2). 89 PlanLab PRs labelled by one rater by the
+files (at least 25 on mini2). 89 Planlab PRs labelled by one rater by the
 part most at risk.
 
 **Findings.**
@@ -1196,7 +1196,7 @@ used live on mini2 while the replays ran).
 - `drive-session/PLANLAB.md`: the driver relays such a check.
 - Cuts: the test-quality lesson's one-line summary in step 2 (the lesson is
   read whole); the second Known-limits example (the first carries the
-  shape); a shorter PlanLab onboarding sentence. Bring the summary back if
+  shape); a shorter Planlab onboarding sentence. Bring the summary back if
   the Tests lens stops weighing the PR's own tests. Budget raised by hand,
   2,403 → 2,562 body, 2,752 total.
 - A first fresh reader (revise-prompt's pass) found twelve faults, a second

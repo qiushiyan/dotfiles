@@ -54,9 +54,9 @@ real cases.
 ---
 
 > _Lesson · collaboration. Distilled 2026-10-07 from a classification of
-> 354 findings in 33 PlanLab review rounds (2026-09-24 → 10-06) and two
+> 354 findings in 33 Planlab review rounds (2026-09-24 → 10-06) and two
 > fresh-session PR reviews (`~/dotfiles/claude/.claude/skills/strategic-review/EVIDENCE.md`).
 > The classes are that corpus's own, with `structure` and `other` added;
 > `low-value-test` came 2026-10-09 from grading the tests three of those PRs
 > added (same evidence log); `unearned-handling` 2026-10-23 from classifying
-> the review-driven changes of 37 PlanLab PRs (same evidence log)._
+> the review-driven changes of 37 Planlab PRs (same evidence log)._

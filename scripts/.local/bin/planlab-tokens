@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# planlab-tokens — PlanLab's Backstage tokens expire 30 days after they are
+# planlab-tokens — Planlab's Backstage tokens expire 30 days after they are
 # minted and nothing renews them. This reads when each one expires and, on
 # the mini's weekday morning run, DMs a reminder for any due within a week,
 # so a token is replaced before what uses it starts failing.
@@ -215,7 +215,7 @@ check() {
   log "due:"
   printf '%s' "$due"
   [[ $notify == 1 ]] || return 0
-  dm "PlanLab tokens to replace. Mint each under the same label at https://$HOST/backstage?tab=apiTokens"$'\n'"${due%$'\n'}" ||
+  dm "Planlab tokens to replace. Mint each under the same label at https://$HOST/backstage?tab=apiTokens"$'\n'"${due%$'\n'}" ||
     die "the reminder was not sent"
 }
 

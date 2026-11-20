@@ -100,7 +100,7 @@ Report three kinds of evidence separately:
 
 Platform measured the shared foundation at 57,430 → 10,100 bytes and the final main skill, pickup reference, and routes at 20,504 bytes. Scenario readers retained relevant constraints across CMS reads, analytics, invitations, public typography, SCORM reporting, and simulated pickup ordering. Opus verified the major fixes and caught remaining ADR and maintenance issues. These results do not establish runtime token savings or improved proposal quality; the pickup simulation did not exercise a real brief.
 
-## Apply the lessons to PlanLab
+## Apply the lessons to Planlab
 
 **Carry the judgment rules across; derive the workflow locally.** Inspect the current Loopy skill, route documents, evidence-producing tools, and pickup consumers before choosing a replacement contract.
 
@@ -108,7 +108,7 @@ The inspected `pl-loopy-onboarding` sends concrete incidents to `pl-loopy-debug`
 
 Loopy also distinguishes its loop, run hosts, tools, triage, evaluation, and surface behavior. Derive shared context and conditional crossings from those dependencies, including current and legacy behavior. Route count alone says nothing about the appropriate read budget.
 
-Audit pickup ordering against the actual shared gate before porting platform's adapter. At inspection, Loopy's skill described reading the brief and drift before reading the gate; the shared gates require drift before post-onboarding reads. That difference needs reconciliation in the migration, not preservation by copying either sequence unexamined. PlanLab was not changed or end-to-end evaluated by this experiment.
+Audit pickup ordering against the actual shared gate before porting platform's adapter. At inspection, Loopy's skill described reading the brief and drift before reading the gate; the shared gates require drift before post-onboarding reads. That difference needs reconciliation in the migration, not preservation by copying either sequence unexamined. Planlab was not changed or end-to-end evaluated by this experiment.
 
 ## What this says about the writing rulebook
 
@@ -122,4 +122,4 @@ For future reflection, tie each correction to a failing artifact, identify its o
 
 The source record is the `learlab/itell` repository, `apps/platform/.claude/skills/onboarding/EVIDENCE.md`, entries dated 2026-09-11. The first rewrite is `49ef2884`; the sufficient-context redesign is `0c3a4e62`; follow-up fixes are `1a1cc2a4`. Those entries carry invocation receipts, review dispositions, scenario limits, and deferred diagnostic work. The controlling corrections and approval are in Codex session `01a08fae-2a4e-7cf2-948b-47ef172ad679`.
 
-PlanLab observations are from its `.claude/skills/pl-loopy-onboarding/SKILL.md`. Shared pickup gates live under `claude/.claude/skills/handoff/pickup/` in dotfiles; `docs/doc-loop.md` owns the knowledge loop and `docs/session-pipeline.md` the stages between. Recheck those current sources during a migration. Keep new project-specific results in that project's evidence record; amend this guide only when they change a transferable decision or expose a new trap.
+Planlab observations are from its `.claude/skills/pl-loopy-onboarding/SKILL.md`. Shared pickup gates live under `claude/.claude/skills/handoff/pickup/` in dotfiles; `docs/doc-loop.md` owns the knowledge loop and `docs/session-pipeline.md` the stages between. Recheck those current sources during a migration. Keep new project-specific results in that project's evidence record; amend this guide only when they change a transferable decision or expose a new trap.

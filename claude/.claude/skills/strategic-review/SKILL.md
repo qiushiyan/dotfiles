@@ -37,7 +37,7 @@ any finding you could recommend nothing on, which stays unfolded.
    check is a finding, or a flake shown by a rerun or the same failure on
    the base.
    Then read the project's map of the area the PR touches.
-   In PlanLab (`planlab-ai/main`), a PR touching Loopy or the steward reads
+   In Planlab (`planlab-ai/main`), a PR touching Loopy or the steward reads
    `.agents/skills/pl-loopy-onboarding/` as a map, without invoking it,
    since onboarding ends its turn on a first reply: its `SKILL.md`, the
    `routes/` files the PR's files and goal touch, and the docs they point
@@ -63,7 +63,7 @@ any finding you could recommend nothing on, which stays unfolded.
      PR description or the touched files show a model-facing change: a
      prompt section, tool description, tool result, command help, refusal or
      error a model reads, a skill an agent loads, or what one of the agent's
-     tools does. Read it with the project's prompting guide (PlanLab:
+     tools does. Read it with the project's prompting guide (Planlab:
      `docs/loopy/prompting-guide.md` and the onboarding's
      `routes/prompting.md`). A PR with no such change skips it, and the
      "What the model is told" lens with it;
@@ -267,7 +267,7 @@ what reaches it, and a probe you built is not a real caller. The fold is
 code you wrote, and unread folds have shipped faults, so have it read: a
 `/review` round over its substantive fixes, revise-prompt's pass where it
 changed text a model reads, and the project's docs pass. Then push and
-settle the PR as the project does (PlanLab: `pl-land`, with no merge),
+settle the PR as the project does (Planlab: `pl-land`, with no merge),
 judging what its reviewers post by these lenses. The merge is its own step.
 Without push rights or network, say the fold is unpushed and name its
 commits.

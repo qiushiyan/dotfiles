@@ -91,7 +91,7 @@ A blocked risk story is a limit for the report.
 
 ## Lanes are shared machine state
 
-- The machine runs at most four lanes, beside PlanLab's stack on the same
+- The machine runs at most four lanes, beside Planlab's stack on the same
   Postgres. A start on a full machine waits up to 20 minutes for room, so
   sessions verifying together queue on their own; one whose `up` gave up
   ("stayed full") gets its step again once others are through.

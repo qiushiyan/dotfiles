@@ -1,9 +1,9 @@
 ---
 name: planlab-verify
-description: (PlanLab) Verify a branch by driving it where it runs. Use when a PlanLab branch or fix needs proving beyond its tests.
+description: (Planlab) Verify a branch by driving it where it runs. Use when a Planlab branch or fix needs proving beyond its tests.
 ---
 
-# Verify a PlanLab branch where it runs
+# Verify a Planlab branch where it runs
 
 You are proving that a branch does what it is for, by running it the way
 the person or program that meets it does, and finding where it is fragile.

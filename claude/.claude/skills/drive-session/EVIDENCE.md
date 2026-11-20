@@ -798,7 +798,7 @@ before 11-09 22:00 are not covered. Ledgers in that session's scratchpad:
   read (a `/review` round over substantive fixes, the prompt check, the
   docs pass) and settled before its own merge step.
 - `claude/.claude/hooks/pr-stage-check.py`: the first `gh pr create` in a
-  PlanLab session with no review round is refused once, with what to run.
+  Planlab session with no review round is refused once, with what to run.
 - drive (`usage-fixes`, merged as `2185870` and installed on mini2 at 16:17
   the same day by a drive session): a keyed typed-only snippet with trailing
   text is typed with the rest attached; the park refusal and the wake's

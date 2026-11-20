@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# planlab-login-all — renew the PlanLab Backstage login on every machine at
+# planlab-login-all — renew the Planlab Backstage login on every machine at
 # once. `planlab backstage login` binds its token to the machine that asked
 # for it (its tailnet node), so each machine keeps its own token in its own
 # ~/.planlab/.env, which twin does not carry. This starts that login on every

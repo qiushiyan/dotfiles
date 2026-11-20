@@ -8,15 +8,15 @@
   never tested, so `review-verify` and `verify` keep it and the skill holds a
   compact copy for when it is reached without them. Reverse if a replay arm
   with the fronts in the skill alone scores like the request-text arm.
-- **Model-invocable, with a "(PlanLab)" description.** A pasted snippet
+- **Model-invocable, with a "(Planlab)" description.** A pasted snippet
   already counts as a verify step for the PR guard, but a driver's own
   wording ("go on to review and verify") or the guard's refusal reaches only
   a skill that loads on its own. It costs about 25 words in every project's
-  listing. Reverse if it fires outside PlanLab or crowds out pl-loopy-verify
+  listing. Reverse if it fires outside Planlab or crowds out pl-loopy-verify
   on an incident with a dossier.
 - **Patterns hold what works today, by domain, outside the body.** Building
   rig tooling is other work (`infra/lane-verify-frictions-ranked` and
-  `infra/remote-workers-branch-rig` in the PlanLab handoffs); a patterns file
+  `infra/remote-workers-branch-rig` in the Planlab handoffs); a patterns file
   changes when a tool does, and names what it cannot show.
 - **Self-contained for the owner's workflows:** it points at tools (the
   lane, the `planlab` CLI, the AWS kits) and not at the team's QA skills,
@@ -25,7 +25,7 @@
 ## Open comparisons
 
 1. **Undriven claims that a mapped rig reaches.** Predicate: in verification
-   reports after 2026-11-20 (sends of `review-verify` or `verify` in PlanLab),
+   reports after 2026-11-20 (sends of `review-verify` or `verify` in Planlab),
    each "not driven" item classified as reachable by a rig the patterns name,
    by a rig that does not exist, or by no rig. Baseline (2026-11-20, 30
    reports, rough): about half were honest limits, and the reachable ones
@@ -53,7 +53,7 @@ sessions keep rebuilding.
 2026-10-14 → 11-20. Sends: user text holding `verify this branch with
 pl-loopy-verify`, 30 sessions' windows (14 sent by the driver as a file; the
 consult found two more driver sends typed as a slash command). Window: the
-send to the next typed turn. Wide counts over all PlanLab sessions since
+send to the next typed turn. Wide counts over all Planlab sessions since
 10-01 (about 1,650): `LIKE` matches over tool input, upper bounds. Ledger and
 raw JSON in the session's scratchpad (`ledger.md`).
 
@@ -88,7 +88,7 @@ toward the review's second round. Split, decided by the user: invocable
 **Changed.**
 - New: this skill, `SKILL.md` and `patterns/` (lane, browser, containers,
   aws, production, model-facing).
-- PlanLab snippets: `review-verify` and `verify` in the main checkout's
+- Planlab snippets: `review-verify` and `verify` in the main checkout's
   `.tabtype.local.toml`; the same keys, with `review-then-closeout`,
   `consult-then-build` and `loopy-batch-review` pointing here, committed on
   branch `tooling/review-verify` (not pushed).

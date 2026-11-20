@@ -59,7 +59,7 @@ export HEADROOM_CODEX_LAUNCHER_FORMAT="cx-%s"
 if whence -p headroom >/dev/null; then
   export ENVOY_CODEX_CMD="headroom launch --vendor codex --"
 fi
-# The PlanLab team's hooks run under Codex too and read these to stay quiet;
+# The Planlab team's hooks run under Codex too and read these to stay quiet;
 # Codex has no settings env, so they ride the shell. Claude gets them from
 # claude/.claude/settings.json's env, which also covers launches from no shell.
 export PLANLAB_BENCH_REMINDERS=off PLANLAB_CORPUS_REMINDERS=off

@@ -8,7 +8,7 @@
   <!-- Every 15 minutes: perform the owed effects that are due, such as a
        research PR whose last try failed. It never reads the site's inbox;
        the 02:00 night does. A settle that finds the night (or another
-       settle) holding the effects lock leaves it to finish. PlanLab's
+       settle) holding the effects lock leaves it to finish. Planlab's
        settle runs first, with ";" so a failed one still settles qiushi's.
        ~/dev/gazette/docs/operations.md. -->
   <key>ProgramArguments</key>

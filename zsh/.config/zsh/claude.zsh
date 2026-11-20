@@ -122,7 +122,7 @@ _headroom_required() {  # <vendor>
 # Neither vendor has a switch for trusting every workspace: each records it
 # per repository, and Claude Code per account as well. workspace-trust
 # (scripts/) records ~/dev, ~/dotfiles and ~/wiki in every account's state,
-# and the PlanLab overlay's cache in every Claude account's, and every launch
+# and the Planlab overlay's cache in every Claude account's, and every launch
 # runs it first, so a new clone, a new account or the overlay's --add-dir is
 # never asked about. It writes only when something is missing, and a launch never
 # depends on its outcome; its header owns the rule and the cleanup (--prune).
@@ -159,7 +159,7 @@ _workspace_trust() {
   return 0
 }
 
-# Inside a PlanLab checkout, claude-planlab-overlay (scripts/) rewrites a
+# Inside a Planlab checkout, claude-planlab-overlay (scripts/) rewrites a
 # launch's args to this operator's view of the checkout: AGENTS.md without the
 # team's Bench tracking and transcript text, and only the skills it keeps; its
 # header owns the rule. It prints the args NUL-ended; anywhere else, or on any

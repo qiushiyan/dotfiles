@@ -25,7 +25,7 @@ Codex 0.160.0):
 So the trusted set is each root plus every repository found up to MAX_DEPTH
 levels under it, written to every account that exists. Claude Code's set
 also holds OVERLAY_CACHE, where claude-planlab-overlay writes the directory a
-PlanLab launch adds with --add-dir: Claude Code asks about an added directory
+Planlab launch adds with --add-dir: Claude Code asks about an added directory
 at every launch unless it or a directory above it is trusted (seen on Claude
 Code 2.1.328), and the overlay names a new one whenever the team's AGENTS.md
 changes. The entry is written whether or not the cache exists yet, and a prune
@@ -338,7 +338,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog="workspace-trust",
         description="Trust ~/dev, ~/dotfiles and ~/wiki in every Claude Code account and in Codex, "
-                    "and the PlanLab overlay's cache in every Claude Code account.",
+                    "and the Planlab overlay's cache in every Claude Code account.",
     )
     parser.add_argument("--prune", action="store_true",
                         help="also drop entries for missing directories and trust outside the roots")

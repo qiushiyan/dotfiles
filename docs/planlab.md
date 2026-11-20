@@ -1,6 +1,6 @@
-# PlanLab: my setup around the team's repository
+# Planlab: my setup around the team's repository
 
-PlanLab's monorepo (`~/dev/planlab/main`, worktrees under
+Planlab's monorepo (`~/dev/planlab/main`, worktrees under
 `~/dev/.worktrees/main/<branch>`) ships configuration that every engineer's
 agents load: a root `AGENTS.md`, about 90 skills, and hooks. This repository
 adds a layer that changes what my own sessions get and leaves my colleagues'

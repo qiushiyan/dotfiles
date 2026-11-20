@@ -45,7 +45,7 @@ import sys
 # is the skill that verifies a branch.
 PROJECTS = (
     {
-        "name": "PlanLab",
+        "name": "Planlab",
         "checkouts": ("~/dev/planlab/main", "~/dev/.worktrees/main"),
         "review": "review-verify",
         "prompt_check": "loopy-prompt-check",

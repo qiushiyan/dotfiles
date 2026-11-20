@@ -11,7 +11,7 @@
 #
 # ISOLATION. ssh, zsh and planlab are stubs on PATH: ssh runs the remote
 # command here through the stub zsh, and planlab prints a login transcript
-# without reaching PlanLab. HOME is a temporary directory holding a copy of
+# without reaching Planlab. HOME is a temporary directory holding a copy of
 # the working tree's twin.toml; Z1 asserts the real ~/.planlab/.env is
 # untouched.
 

@@ -41,7 +41,7 @@ Restoring needs sudo; `snapshot --help` has the mount command to hand the user.
 The next two rules apply in the planlab repository (`~/dev/planlab/main` and
 its worktrees under `~/dev/.worktrees/main/`).
 
-My AWS CLI is signed in to PlanLab's production account (586794487474,
+My AWS CLI is signed in to Planlab's production account (586794487474,
 eu-central-1). When a question turns on what production
 holds or did, query it yourself and answer from what comes back, rather than
 asking me or inferring from code. Reads need no go-ahead; anything that changes

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""claude-planlab-overlay — this operator's own view of a PlanLab checkout, for
+"""claude-planlab-overlay — this operator's own view of a Planlab checkout, for
 one interactive Claude Code launch.
 
 Usage:
@@ -12,7 +12,7 @@ Usage:
 What it keeps, cuts and adds is ~/.local/share/dotfiles/planlab-overlay.toml
 (CLAUDE_PLANLAB_OVERLAY_CONFIG overrides it).
 
-Inside a PlanLab checkout it prints the launch's args rewritten, each ended by
+Inside a Planlab checkout it prints the launch's args rewritten, each ended by
 a NUL, says on stderr in one line what it did, and exits 0. Outside one it
 prints nothing and exits 1. On any failure inside one it says why on stderr
 and exits 1. Either way the launch keeps its args: a session gets the team's
@@ -105,7 +105,7 @@ def config():
 
 
 def checkout(start):
-    """The PlanLab checkout holding start: the nearest .claude/CLAUDE.md, when it is the one-line import of
+    """The Planlab checkout holding start: the nearest .claude/CLAUDE.md, when it is the one-line import of
     AGENTS.md beside the team's Bench skill.
 
     claude.zsh's _claude_overlay does not run this program at all when no directory above the launch holds
@@ -259,7 +259,7 @@ def switch_states(root):
 def show(cwd):
     root = checkout(cwd)
     if root is None:
-        raise Refusal("not a PlanLab checkout")
+        raise Refusal("not a Planlab checkout")
     _, text, misses, hidden = session_view(root)
     team = (root / "AGENTS.md").read_text()
     out = list(difflib.unified_diff(team.splitlines(keepends=True), text.splitlines(keepends=True),
@@ -277,7 +277,7 @@ def overlay(args, cwd):
     """(the rewritten args, the one line saying what changed)."""
     root = checkout(cwd)
     if root is None:
-        raise Refusal("not a PlanLab checkout", quiet=True)
+        raise Refusal("not a Planlab checkout", quiet=True)
     given, rest = split_args(args)
     memory, _, misses, hidden = session_view(root)
     # The checkout as the shell names it too, when a symlink makes that differ from the resolved path.

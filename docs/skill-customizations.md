@@ -129,7 +129,7 @@ strategic-review reads the lesson directly rather than this skill.
 
 **Preserve:** the lesson as the standard, and the risk map as the first
 step: fragile wiring no test guards is the half of "tests too literal" that
-coverage hides, and in graded PlanLab PRs it was the costlier half
+coverage hides, and in graded Planlab PRs it was the costlier half
 (`claude/.claude/skills/strategic-review/EVIDENCE.md`).
 
 **Adopt:** new low-value patterns, retention cases and campaign lessons,

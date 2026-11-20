@@ -6,10 +6,10 @@
   <string>com.qiushi.gazette-night</string>
 
   <!-- 02:00, after the 01:30 mirror refresh: gazette's nightly run for
-       PlanLab (served on the tailnet by com.qiushi.gazette-planlab-site),
+       Planlab (served on the tailnet by com.qiushi.gazette-planlab-site),
        then for his own instance (gazette.qiushiyan.dev). Each drains its
        site's inbox, then runs the feeds, the editor, its evaluations, the
-       edition and research PRs. ";" so a failed PlanLab night still runs
+       edition and research PRs. ";" so a failed Planlab night still runs
        qiushi's. Run records: ~/.local/share/gazette-planlab/runs and
        ~/.local/share/gazette/runs. ~/dev/gazette/docs/operations.md. -->
   <key>ProgramArguments</key>

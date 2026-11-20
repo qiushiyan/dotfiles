@@ -86,10 +86,10 @@ Everything derives from that tree:
   repo. With it, a mid-session `/fast` stays in its session. How the flag
   reaches Claude Code, and why it refuses beside `--settings`: the comment
   above `_claude_fast_args` in `claude.zsh`.
-- **A PlanLab session without the team's Bench workflow**: a launch inside a
-  PlanLab checkout runs `claude-planlab-overlay` before headroom, and its
+- **A Planlab session without the team's Bench workflow**: a launch inside a
+  Planlab checkout runs `claude-planlab-overlay` before headroom, and its
   args go to headroom like any other launch's. What it changes, the rest of
-  my PlanLab setup, and what it does not reach: `docs/planlab.md`.
+  my Planlab setup, and what it does not reach: `docs/planlab.md`.
 - **Which lane is a running session on, and how much is left in it?** Its
   tmux context chip leads with the account, then the model and the lane's
   5-hour and 7-day usage (`yan opus-5[1m]:high 5h:23 7d:41 ✳ 37%`); `x-acc`
@@ -177,7 +177,7 @@ Everything derives from that tree:
   them as trusted in each account's `.claude.json` and in Codex's
   `config.toml`, unless a clean run is remembered for the directory it is
   launched from (for a day, and until the account directories change); Claude Code keeps trust per account, so without it each
-  repository asks once on each. It also trusts the PlanLab overlay's cache in
+  repository asks once on each. It also trusts the Planlab overlay's cache in
   each Claude account: Claude Code asks about a folder a launch adds with
   `--add-dir` at every launch until something above it is trusted. The
   remembered run hides a change to these rules for up to a day; run
@@ -199,7 +199,7 @@ Everything derives from that tree:
   it, not to headroom, which stays read-only against the vendors' state. A
   wrapper only invokes the script — resolved from PATH at each launch, as
   headroom is — and launches whatever it returns.
-- The PlanLab overlay only rewrites a launch's arguments, and any failure
+- The Planlab overlay only rewrites a launch's arguments, and any failure
   leaves them as they were: a session gets the team's instructions whole,
   never part of the overlay. What the team's hooks say is decided by their own
   switch, never by the overlay.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """test_claude_planlab_overlay.py — claude-planlab-overlay's contract: inside a
-PlanLab checkout a launch's args come back with one merged --settings (the
+Planlab checkout a launch's args come back with one merged --settings (the
 team AGENTS.md excluded, skills outside the keep-set hidden, the operator's
 own skill names untouched, the added directory's CLAUDE.md loaded) and a
 directory whose CLAUDE.md is the filtered AGENTS.md; outside one it prints
@@ -105,7 +105,7 @@ def want(case):
 
 
 def world(case, agents=AGENTS):
-    """A fresh HOME with the operator's own skills, and a PlanLab-shaped checkout under it."""
+    """A fresh HOME with the operator's own skills, and a Planlab-shaped checkout under it."""
     home = SANDBOX / case / "home"
     root = home / "dev" / "planlab" / "main"
     (root / ".claude" / "skills").mkdir(parents=True)

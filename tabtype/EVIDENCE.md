@@ -186,7 +186,7 @@ evidence log, 2026-10-14 entry
 
 **Why the key exists.** The user ends a large build by asking the session,
 in their own words, what the coming strategic review should look at. A
-replay of four PlanLab PRs measured the answer itself:
+replay of four Planlab PRs measured the answer itself:
 - The build session was forked at the moment each review opened, and its
   paragraph was handed to the reviewer.
 - The paragraph found 3.9 of the 18 checked defects the real reviews had
