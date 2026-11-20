@@ -65,7 +65,7 @@ typeset -aU PYS=(${commands[python3]} /usr/bin/python3(N))
 # when neither ran, and the prompt check's snippet when that has not run
 # either. The message's wording is the hook's own.
 REVIEW='review-verify' FILE='~/dev/planlab/main/.tabtype.toml' PROMPTS='loopy-prompt-check'
-VERIFY='planlab-verify' ROUND='astra full review'
+VERIFY='pl-verify' ROUND='astra full review'
 
 pass() { (( PASS++ )) || true; print -r -- "PASS ${1//$'\n'/⏎}" }
 fail() {

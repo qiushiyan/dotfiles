@@ -23,7 +23,7 @@ skill's default of the costliest one.
 
 Planlab's `review-verify` and `verify` are the exception that keeps text: the
 target-and-risk paragraph won its replays as request text, so it stays in
-the message and `planlab-verify` holds the rigs. `review-verify` is
+the message and `pl-verify` holds the rigs. `review-verify` is
 numbered steps with no leading slash command, so the review and the
 verification read as two steps of one request rather than one skill's
 arguments.

@@ -80,7 +80,7 @@ says, which for most is `main`. `~/dotfiles` commits on `main`, and its
    model from the committed spec. `implement-now` builds from decisions
    settled in the conversation. Commits land at milestones.
 5. **Review and verify.** `review-verify`, which planlab replaces with its
-   own (the verification through `planlab-verify`, which picks the rig each
+   own (the verification through `pl-verify`, which picks the rig each
    claim needs), and `itell-review-verify` in itell (its `verify` skill's
    lane): a review round while the session proves the intended behaviour
    where it runs. Confirmed findings are folded in ("fold it in");
@@ -160,7 +160,7 @@ heavy path, `consult-then-build` after its consult round on the light one,
 `go-cli-maintain` throughout its pass, and `spike-check` asks for them on
 their own and ends at their verdicts: by hand the build waits for the user
 to read them, and in a driven batch the next step sends it on. In planlab they run on the real stack,
-on the rig `planlab-verify`'s patterns give for the question (the lane, a
+on the rig `pl-verify`'s patterns give for the question (the lane, a
 container, the personal AWS account's kits), cleaned up afterwards;
 planlab's `consult-then-build` says so. In itell they run in the
 worktree's verification lane (`pnpm verify`) where it holds the question, as
@@ -312,11 +312,11 @@ the main checkout leaves it dirty, and `twin` does not pull a dirty main
 checkout.
 
 ```text
-a new key      → planlab's verify (the verification alone, through planlab-verify),
+a new key      → planlab's verify (the verification alone, through pl-verify),
                  itell's itell-review-verify (the review with a verify lane);
                  in both, land-pr (stage 7 without the review) and merge-when-ready
                  (planlab: merge, release and confirm; itell: merge and follow it to staging)
-a global key   → planlab's review-verify (the verification through planlab-verify),
+a global key   → planlab's review-verify (the verification through pl-verify),
                  planlab's and itell's consult-then-build (each one's spike rig),
                  review-then-closeout (ends at a ready PR; planlab's verifies beside the review)
                  and closeout (the post-merge distill);
