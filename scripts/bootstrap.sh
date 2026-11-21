@@ -313,6 +313,13 @@ step_macos_defaults() {
     defaults write com.google.Chrome NSUserKeyEquivalents -dict-add "New Tab to the Right" '^t'
     ok "Chrome: ctrl+t opens a tab after the current one (restart Chrome to apply)"
 
+    # The vertical tab strip's collapse has a menu item but no key. Its title
+    # flips between "Collapse Tabs" and "Expand Tabs" with the strip's state,
+    # so binding both makes ctrl+e a toggle.
+    defaults write com.google.Chrome NSUserKeyEquivalents -dict-add "Collapse Tabs" '^e'
+    defaults write com.google.Chrome NSUserKeyEquivalents -dict-add "Expand Tabs" '^e'
+    ok "Chrome: ctrl+e collapses and expands the vertical tabs (restart Chrome to apply)"
+
     # Power management. Stock macOS / a config profile can leave system
     # sleep absurdly low (seen: sleep=1 min, so the Mac naps after a
     # minute idle). pmset values are in MINUTES, 0 = never. Needs sudo
