@@ -76,7 +76,8 @@ local prefix = {
   { "escape", "client.mode.exit" },
   { "ctrl+a", "pane.send_key", { key = "ctrl+a" } },
   -- panes
-  { "shift+\\", "pane.split.right" }, { "\\", "pane.split.right" }, { "-", "pane.split.down" },
+  { "shift+\\", "split_here", { direction = "right" } }, { "\\", "split_here", { direction = "right" } },
+  { "-", "split_here", { direction = "down" } },
   { "h", "pane.focus.left" }, { "j", "pane.focus.down" }, { "k", "pane.focus.up" }, { "l", "pane.focus.right" },
   { "z", "pane.zoom" }, { "shift+x", "pane.close" }, { "space", "layout_toggle" },
   { "b", "pane.move_to_new_tab" }, { "p", "client.mode.enter", { name = "panes" } },

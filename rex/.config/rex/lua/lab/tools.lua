@@ -13,7 +13,8 @@ local define = action.group("Tools")
 
 -- prefix y / Y: copy the focused file's path when nvim runs in the block
 -- (nvim writes it to a file named for the block, config/autocmds.lua), else
--- the directory the block's front process runs in. rel = true gives the
+-- the directory the block works in (api.cwd: for Claude Code, the checkout
+-- its agent works in). rel = true gives the
 -- path relative to nvim's cwd. The copy lands on the clipboard of the
 -- machine you are looking from (host.copy).
 define{
@@ -30,7 +31,7 @@ define{
       local abs, rel = (body or ""):match("^([^\n]+)\n?([^\n]*)")
       path = args.rel and rel ~= "" and rel or abs
     end
-    path = path or (fg and fg.cwd)
+    path = path or (fg and api.cwd(sid, bid, fg))
     if not path then
       feedback.toast(sid, bid, "warn", "Copy path", "nothing to copy here")
       return { copied = false, reason = "no path" }

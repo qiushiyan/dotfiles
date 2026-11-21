@@ -18,6 +18,7 @@
 
 set -u
 [ -n "${REX_BLOCK:-}" ] || exit 0
+PWD_SEQ="" # a working-directory report (OSC 7) to send ahead of the status
 
 b64() { printf '%s' "$1" | base64 | tr -d '\n'; }
 
@@ -27,7 +28,7 @@ b64() { printf '%s' "$1" | base64 | tr -d '\n'; }
 # or its having none (a headless or driven session), is the answer. Without
 # that variable, the nearest ancestor's tty.
 emit() {
-  local seq=$'\e]7501;'"$1"$'\e\\' pid ppid tty
+  local seq="$PWD_SEQ"$'\e]7501;'"$1"$'\e\\' pid ppid tty
   if { printf '%s' "$seq" > /dev/tty; } 2>/dev/null; then return 0; fi
   if [ -n "${CLAUDE_PID:-}" ]; then
     tty=$(ps -o tty= -p "$CLAUDE_PID" 2>/dev/null)
@@ -112,6 +113,30 @@ chip_clear() {
   ( trap '' HUP; "$tool" clear "$REX_BLOCK" </dev/null >/dev/null 2>&1 & )
 }
 
+# The checkout the session works in, reported as the terminal's working
+# directory (OSC 7, in PWD_SEQ): the nearest directory holding .git at or
+# above DIR, the hook's cwd, else DIR itself. Claude Code's own process stays
+# in the directory it started in until the session moves, and its shell
+# wanders the checkout's subdirectories, so this report is what the Rex lab
+# reads as where the pane works (rexkit.api cwd: prefix y, the splits, a new
+# tab here). Built-ins only, and the path percent-encoded byte by byte (bash
+# 3.2 reads a byte past 127 as negative, hence the mask).
+pwd_report() {
+  local dir=$1 d out="" c i LC_ALL=C
+  case "$dir" in /*) ;; *) return 0 ;; esac
+  d=$dir
+  while [ -n "$d" ] && [ ! -e "$d/.git" ]; do d=${d%/*}; done
+  [ -n "$d" ] && dir=$d
+  for (( i = 0; i < ${#dir}; i++ )); do
+    c=${dir:i:1}
+    case "$c" in
+      [A-Za-z0-9/._~-]) out+=$c ;;
+      *) printf -v c '%d' "'$c"; printf -v c '%%%02X' $(( c & 255 )); out+=$c ;;
+    esac
+  done
+  PWD_SEQ=$'\e]7;file://'"${HOSTNAME:-}$out"$'\e\\'
+}
+
 # Claude Code hook events -> states. The title is the project the session works
 # in; the message is what the human would want to read first.
 #
@@ -120,9 +145,11 @@ chip_clear() {
 # so each text is made one line, cut to a length that fits, and base64-encoded
 # where it was parsed. A base64 field never reads "-", and an empty text comes
 # out as "-" because tab is IFS whitespace and empty fields would collapse.
+# A subagent's events (agent_id set) report no directory: one may work in a
+# checkout of its own, and the pane is the main session's.
 claude_hook() {
-  local event title message prompt ran kind ntype error sid reason
-  IFS=$'\t' read -r event title message prompt ran kind ntype error sid reason < <(
+  local event title message prompt ran kind ntype error sid reason cwd sub
+  IFS=$'\t' read -r event title message prompt ran kind ntype error sid reason cwd sub < <(
     jq -r '
       def line($n): gsub("[[:cntrl:]]"; " ") | .[0:$n];
       def b64: if . == "" then "-" else @base64 end;
@@ -139,11 +166,14 @@ claude_hook() {
         .notification_type // "-",
         .error // "-",
         .session_id // "-",
-        .reason // "-"
+        .reason // "-",
+        (.cwd // "" | if . == "" then "-" else . end),
+        (if (.agent_id // "") == "" then "-" else "sub" end)
       ] | @tsv' 2>/dev/null
   )
   [ "$title" = - ] && title=""; [ "$message" = - ] && message=""
   [ "$prompt" = - ] && prompt=""
+  [ "$sub" = - ] && [ "$event" != SessionEnd ] && pwd_report "$cwd"
   remember "$event" "$sid" "$reason"
   case "$event" in
     SessionStart) send idle "" claude claude "" "$title" "" ;;

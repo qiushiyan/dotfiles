@@ -21,6 +21,12 @@
 # control characters made spaces (R9), the title under 192 bytes (R10), and a
 # prompt that is just "-" still sent (R11).
 #
+# The lab reads a Claude pane's working directory from the OSC 7 report sent
+# with each status: the checkout holding the agent's directory, whatever
+# subdirectory it is in, percent-encoded (R12); a directory in no checkout as
+# itself (R13); and nothing for a subagent's event, which may work in another
+# checkout, while its status still goes (R14).
+#
 # ISOLATION. Each hook in R1-R4 and R8-R11 runs under script(1), whose pty
 # stands in for the block's terminal and keeps the OSC 7501 sequence
 # rex-agent writes to it. R5-R7 start every process tree detached (a new
@@ -48,8 +54,9 @@ ok() {  # ok <name> <expected> <actual>
 want() { [ ${#ONLY[@]} -eq 0 ] && return 0; case " ${ONLY[*]} " in *" $CASE "*) return 0;; esac; return 1; }
 ONLY=("$@")
 
-# hook JSON [BLOCK] [title]: the status rex-agent reports for one hook, as
-# state[:kind=K] msg=TEXT, or nothing; with "title", its title and length.
+# hook JSON [BLOCK] [title|pwd]: the status rex-agent reports for one hook,
+# as state[:kind=K] msg=TEXT, or nothing; with "title", its title and length;
+# with "pwd", the directory its OSC 7 report names, decoded, or "none".
 hook() {
     printf '%s' "$1" > "$SANDBOX/in.json"
     : > "$SANDBOX/tty"
@@ -57,12 +64,17 @@ hook() {
     reported "$SANDBOX/tty" ${3:+"$3"}
 }
 
-# reported FILE [title]: the report recorded in FILE, as hook prints it, or
-# with "title" the title's text and its length in bytes.
+# reported FILE [title|pwd]: the report recorded in FILE, as hook prints it,
+# with "title" the title's text and its length in bytes, or with "pwd" the
+# path of the OSC 7 report that comes before it.
 reported() {
     /usr/bin/python3 - "$@" <<'PY'
-import base64, re, sys
+import base64, re, sys, urllib.parse
 raw = open(sys.argv[1], "rb").read().decode("utf-8", "replace")
+if sys.argv[2:] == ["pwd"]:
+    p = re.search(r"\x1b\]7;file://[^/\x1b]*(/[^\x1b\x07]*)\x1b\\\x1b\]7501;", raw)
+    print(urllib.parse.unquote(p.group(1)) if p else "none")
+    sys.exit()
 m = re.search(r"\x1b\]7501;([^\x1b\x07]*)", raw)
 if m:
     fields = dict(f.split("=", 1) for f in m.group(1).split(":") if "=" in f)
@@ -183,6 +195,25 @@ fi
 CASE=R11; if want; then
     ok "R11 a prompt that is just a dash is still sent" 'working msg=-' \
         "$(hook '{"hook_event_name":"UserPromptSubmit","cwd":"/w/main","prompt":"-"}')"
+fi
+
+CASE=R12; if want; then
+    repo="$SANDBOX/a repo é"
+    mkdir -p "$repo/.git" "$repo/packages/loopy/src"
+    ok "R12 the checkout holding the agent's directory is reported, encoded" "$repo" \
+        "$(hook "{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$repo/packages/loopy/src\",\"tool_name\":\"Bash\"}" block:test pwd)"
+fi
+
+CASE=R13; if want; then
+    mkdir -p "$SANDBOX/loose/dir"
+    ok "R13 a directory in no checkout is reported as itself" "$SANDBOX/loose/dir" \
+        "$(hook "{\"hook_event_name\":\"Stop\",\"cwd\":\"$SANDBOX/loose/dir\"}" block:test pwd)"
+fi
+
+CASE=R14; if want; then
+    in="{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$SANDBOX\",\"tool_name\":\"Bash\",\"agent_id\":\"a1\",\"agent_type\":\"Explore\"}"
+    ok "R14 a subagent's event reports no directory, and its status still goes" "none|working msg=ran Bash" \
+        "$(hook "$in" block:test pwd)|$(hook "$in")"
 fi
 
 echo "rex-agent: $PASS passed, $FAIL failed${FAILED:+ —$FAILED}"

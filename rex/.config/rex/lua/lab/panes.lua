@@ -50,6 +50,26 @@ local MOVE = {
   up = { direction = "vertical", side = "before" }, down = { direction = "vertical", side = "after" },
 }
 
+-- prefix | and -: a shell split that way, in the directory the pane works in
+-- (tmux's split-window -c '#{pane_current_path}'). The app's own pane.split
+-- starts in the directory the pane's shell last reported, which in a Claude
+-- pane is where Claude was launched (api.cwd says why). command is the argv
+-- to run instead of a login shell (the tests' stand-in).
+define{
+  name = "split_here",
+  title = "Split Pane, Here",
+  args = action.schema({ direction = action.args.direction,
+    command = { type = "array", items = { type = "string" } } }, { "direction" }),
+  run = function(ctx, args)
+    local how = MOVE[args.direction]
+    local sid, bid = action.block(ctx, args)
+    if not (how and sid and bid) then return { opened = false } end
+    local block = api.split(sid, bid, { direction = how.direction, side = how.side, ratio = 0.5,
+      cwd = api.cwd(sid, bid), command = args.command, login = args.command and false or nil, focus = true })
+    return { opened = block }
+  end,
+}
+
 define{
   name = "pane_push",
   title = "Push Pane",

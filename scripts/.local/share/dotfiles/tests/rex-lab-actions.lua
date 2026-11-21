@@ -59,6 +59,34 @@ r, q = press("window_goto", A, { index = 9 });    ok("window_goto past the last 
 r, q = press("clear_all", A, {});                 ok("clear_all clears and queues ctrl+l", r.cleared == A and steps(q) == "pane.send_key", dump(r))
 r, q = press("copy_path", A, {});                 ok("copy_path copies the pane's directory", r.copied == "/tmp" or r.copied == "/private/tmp", dump(r))
 
+-- A pane whose front process reported a directory (OSC 7, as rex-agent does
+-- for Claude Code) works there, not where the process sits; a report whose
+-- process is no longer in front counts for nothing. The reporters sit in
+-- /tmp and report /usr/lib, one character percent-encoded.
+local function proc_cwd(block)
+  local p = block and rex.block.call("com.superlogical.terminal", "process", { session_id = S, block_id = block, args = {} })
+  return p and (p.foreground or p.child or {}).cwd
+end
+local OSC7 = string.char(27) .. "]7;file://h/usr/%6Cib" .. string.char(27) .. "\\"
+local w4 = must("session.new_window", { session_id = S, layout = { split = { direction = "horizontal",
+  before = blk("reporter", { "/bin/sh", "-c", "printf '%s' \"$1\"; /bin/sleep 3600; :", "sh", OSC7 }),
+  after = blk("stale", { "/bin/sh", "-c", "printf '%s' \"$1\"; exec /bin/sleep 3600", "sh", OSC7 }) } } })
+must("session.focus_window", { session_id = S, window_id = w2.window_id })
+local REP, STALE = w4.block_ids[1], w4.block_ids[2]
+rex.sleep(0.3)
+r = press("copy_path", REP, {});    ok("copy_path copies the directory the front process reported", r.copied == "/usr/lib", dump(r))
+r = press("copy_path", STALE, {});  ok("copy_path ignores a report from a process no longer in front", r.copied == "/tmp" or r.copied == "/private/tmp", dump(r))
+r, q, e = press("split_here", REP, { direction = "right", command = { "/bin/sleep", "3600" } })
+ok("split_here opens in the pressed pane's tab, in the reported directory", r.opened ~= nil
+  and window_of(r.opened) == w4.window_id and proc_cwd(r.opened) == "/usr/lib", e or (dump(r) .. " cwd " .. tostring(proc_cwd(r.opened))))
+if r.opened then rex.call("block.close", { session_id = S, block_id = r.opened }) end
+r, q, e = press("split_here", A, { direction = "down", command = { "/bin/sleep", "3600" } })
+local acwd = proc_cwd(r.opened)
+ok("split_here down from a plain pane opens beside it, in its directory", r.opened ~= nil
+  and window_of(r.opened) == w1.window_id and (acwd == "/tmp" or acwd == "/private/tmp"), e or (dump(r) .. " cwd " .. tostring(acwd)))
+if r.opened then rex.call("block.close", { session_id = S, block_id = r.opened }) end
+must("session.close_window", { session_id = S, window_id = w4.window_id })
+
 -- Splits land beside the pane the key was pressed in, whatever tab is active.
 for _, case in ipairs({ { "label_pane", "rename" }, { "urls", "urls" }, { "worktrees", "worktrees" } }) do
   r, q, e = press(case[1], A, {})

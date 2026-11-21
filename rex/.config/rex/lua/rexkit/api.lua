@@ -90,20 +90,38 @@ local function bind(K, server, label)
     return proc and (proc.foreground or proc.child)
   end
 
-  function K.cwd(session_id, block_id)
-    local fg = K.foreground(session_id, block_id)
-    return fg and fg.cwd
+  -- The directory a block works in: the one its front process reported
+  -- (OSC 7, the `pwd` method) when that process is still in front, else the
+  -- front process's own. Claude Code reports nothing itself; its hooks report
+  -- the checkout its agent works in (rex-agent), which Claude's own process
+  -- reaches only when the session moves. A report through ssh names another
+  -- machine's directory, so there the process's own is taken. FG is the front
+  -- process when the caller has it.
+  local REMOTE = { ssh = true, ["mosh-client"] = true, et = true }
+
+  function K.cwd(session_id, block_id, fg)
+    fg = fg or K.foreground(session_id, block_id)
+    if not fg then return nil end
+    if not REMOTE[(fg.name or ""):match("[^/]*$")] then
+      local r = K.block(session_id, block_id, "pwd")
+      local owner = r and r.owner
+      local path = r and r.pwd and (r.pwd:match("^file://[^/]*(/.*)$") or r.pwd:match("^/.*"))
+      if path and owner and owner.pid == fg.pid and owner.name == fg.name then
+        return (path:gsub("%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end))
+      end
+    end
+    return fg.cwd
   end
 
   -- A terminal split beside ANCHOR: spec has direction ("horizontal" side
   -- by side, "vertical" stacked), side ("after" by default), ratio, focus,
-  -- and the new block's label, cwd and command. Returns its block id.
+  -- and the new block's label, cwd, command and login. Returns its block id.
   function K.split(session_id, anchor, spec)
     local r = K.call("session.new_split", {
       session_id = session_id, anchor_id = anchor,
       direction = spec.direction, side = spec.side or "after", ratio = spec.ratio,
       layout = rex.layout.block{ flavor = M.SHELL, label = spec.label,
-        options = { cwd = spec.cwd, command = spec.command } },
+        options = { cwd = spec.cwd, command = spec.command, login = spec.login } },
       focus = spec.focus or false,
     })
     return r.block_ids[1]
