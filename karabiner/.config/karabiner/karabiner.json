@@ -339,7 +339,7 @@
                         ]
                     },
                     {
-                        "description": "Chrome: ctrl+/ searches the open tabs, through Chrome's own cmd+shift+a",
+                        "description": "Chrome: ctrl+/ and cmd+/ search the open tabs, through Chrome's own cmd+shift+a; pages no longer see cmd+/, which editors use to toggle a comment",
                         "manipulators": [
                             {
                                 "type": "basic",
@@ -357,6 +357,66 @@
                                         "modifiers": [
                                             "left_command",
                                             "left_shift"
+                                        ]
+                                    }
+                                ],
+                                "conditions": [
+                                    {
+                                        "type": "frontmost_application_if",
+                                        "bundle_identifiers": [
+                                            "^com\\.google\\.Chrome$"
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "basic",
+                                "from": {
+                                    "key_code": "slash",
+                                    "modifiers": {
+                                        "mandatory": [
+                                            "command"
+                                        ]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "a",
+                                        "modifiers": [
+                                            "left_command",
+                                            "left_shift"
+                                        ]
+                                    }
+                                ],
+                                "conditions": [
+                                    {
+                                        "type": "frontmost_application_if",
+                                        "bundle_identifiers": [
+                                            "^com\\.google\\.Chrome$"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "description": "Chrome: ctrl+l focuses the address bar, as cmd+l does",
+                        "manipulators": [
+                            {
+                                "type": "basic",
+                                "from": {
+                                    "key_code": "l",
+                                    "modifiers": {
+                                        "mandatory": [
+                                            "control"
+                                        ]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "l",
+                                        "modifiers": [
+                                            "left_command"
                                         ]
                                     }
                                 ],

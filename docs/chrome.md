@@ -42,7 +42,8 @@ Custom keys:
 | `ctrl+shift+i` | Open DevTools | Karabiner, sends `cmd+option+i` |
 | `ctrl+shift+r` | Force reload | Karabiner, sends `cmd+shift+r` |
 | `ctrl+e` | Collapse or expand the vertical tabs | Karabiner, sends `cmd+shift+l` |
-| `ctrl+/` | Search open tabs | Karabiner, sends `cmd+shift+a` |
+| `ctrl+/`, `cmd+/` | Search open tabs | Karabiner, sends `cmd+shift+a` |
+| `ctrl+l` | Focus the address bar | Karabiner, sends `cmd+l` |
 
 Chrome's own keys worth keeping in hand:
 
@@ -128,6 +129,9 @@ nothing useful there.
   around the cursor and moving to the end of the line. `ctrl+f` and `ctrl+e` lose
   that in Chrome's text fields and the address bar, and `ctrl+d` and `ctrl+t`
   should too.
+- **`cmd+/` no longer reaches the page.** Code editors on the web use it to
+  toggle a comment, and Google Docs to list its shortcuts. To give it back,
+  delete its manipulator from `karabiner.json`; `ctrl+/` still searches tabs.
 - **`cmd+d` does not bookmark.** The star in the address bar does.
 - **Karabiner only acts on keyboards it manages.** A keyboard set to `ignore` in
   `karabiner.json`'s `devices` keeps Chrome's own keys, so the Karabiner rows
