@@ -41,10 +41,13 @@ Custom keys:
 | `ctrl+f` | Find in page | Karabiner, sends `cmd+f` |
 | `ctrl+shift+i` | Open DevTools | Karabiner, sends `cmd+option+i` |
 | `ctrl+shift+r` | Force reload | Karabiner, sends `cmd+shift+r` |
+| `ctrl+e` | Collapse or expand the vertical tabs | Karabiner, sends `cmd+shift+l` |
 
 Chrome's own keys worth keeping in hand:
 
 - **Address bar:** `cmd+l`
+- **Search open tabs:** `cmd+shift+a`, which also lists recently closed tabs
+- **Collapse or expand the vertical tabs:** `cmd+shift+l`
 - **New tab at the end of the strip:** `cmd+t`
 - **Back and forward:** `cmd+left` and `cmd+right`, or `cmd+[` and `cmd+]`. The
   page sees the arrow keys first, so in a text field they move the cursor, and a
@@ -106,6 +109,11 @@ nothing useful there.
   defaults delete com.google.Chrome NSUserKeyEquivalents
   ```
 
+- **An App Shortcut reaches only the menu bar.** A title from a right-click
+  menu does nothing: the tab strip's **Collapse Tabs** is **View > Collapse
+  Vertical Tabs** in the menu bar. Check the menu bar first, and the key beside
+  the item, or a button's tooltip, may show that Chrome already has a key for
+  Karabiner to send.
 - **An item's title must match exactly,** including the `…` character in `Open
   Location…`. Some titles follow the tab layout: with horizontal tabs, **New Tab
   Below** reads **New Tab to the Right**, so `bootstrap.sh` binds both.
@@ -114,10 +122,11 @@ nothing useful there.
   system state on each machine, off in **System Settings > Keyboard > Dictation >
   Shortcut** on the laptop and mini2. A new machine that shows the prompt needs
   the same setting.
-- **`ctrl+f`, `ctrl+d` and `ctrl+t` are also text-editing keys on a Mac,** for
-  moving the cursor forward, deleting forward and swapping the characters around
-  the cursor. `ctrl+f` loses that in Chrome's text fields, and `ctrl+d` and
-  `ctrl+t` should too.
+- **`ctrl+f`, `ctrl+d`, `ctrl+t` and `ctrl+e` are also text-editing keys on a
+  Mac,** for moving the cursor forward, deleting forward, swapping the characters
+  around the cursor and moving to the end of the line. `ctrl+f` and `ctrl+e` lose
+  that in Chrome's text fields and the address bar, and `ctrl+d` and `ctrl+t`
+  should too.
 - **`cmd+d` does not bookmark.** The star in the address bar does.
 - **Karabiner only acts on keyboards it manages.** A keyboard set to `ignore` in
   `karabiner.json`'s `devices` keeps Chrome's own keys, so the Karabiner rows
