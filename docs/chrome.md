@@ -42,6 +42,7 @@ Custom keys:
 | `ctrl+shift+i` | Open DevTools | Karabiner, sends `cmd+option+i` |
 | `ctrl+shift+r` | Force reload | Karabiner, sends `cmd+shift+r` |
 | `ctrl+e` | Collapse or expand the vertical tabs | Karabiner, sends `cmd+shift+l` |
+| `ctrl+/` | Search open tabs | Karabiner, sends `cmd+shift+a` |
 
 Chrome's own keys worth keeping in hand:
 
