@@ -1249,3 +1249,26 @@ used live on mini2 while the replays ran).
 classification line (the user); an `experience` class (the consult);
 splitting reviewers by question (Astra), kept as the lead's choice of who
 runs the use check.
+
+## 2026-11-22 — the reviewer reads the build session for its decisions
+
+**Asked** by the user: the brief carries the build session's id, and the
+review reads that session with obelisk to judge the decisions in context.
+
+**Changed.**
+- `strategic-review-brief`: the fence's second line is `Build session:
+  <id>`, read from the environment. Claude Code sets
+  `CLAUDE_CODE_SESSION_ID`; Codex sets `CODEX_THREAD_ID` in its shell
+  (checked with `codex exec`, 0.171.0), indexed by obelisk as
+  `codex:<thread-id>`.
+- Step 1: once the intent is written, the build session is read with
+  obelisk for which decisions the user made, the alternatives rejected,
+  what was measured and what review rounds argued. It is leads, like the
+  brief; a finding against such a decision names the session's reason and
+  why it fails. Read after the intent statement so the build's framing is
+  not the reviewer's starting point.
+
+**Not run:** a replay or live review with the session read. The next driven
+strategic review is the first measure: whether its findings against
+deliberate decisions cite the session's reason, and whether it drops real
+findings because the session argued them away.

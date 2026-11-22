@@ -109,7 +109,7 @@ expand = '''
 [[snippets]]
 key = "strategic-review-brief"
 expand = '''
-I'm going to run /strategic-review on this PR in a fresh session before it merges. Write the prompt I'll open that session with: one fenced block, starting `/strategic-review <PR number>`, with everything you want the reviewer to read inside it, commands written in inline backticks. You know this change better than that reviewer will, so tell it what you would tell a peer about to review it cold.
+I'm going to run /strategic-review on this PR in a fresh session before it merges. Write the prompt I'll open that session with: one fenced block, starting `/strategic-review <PR number>`, with everything you want the reviewer to read inside it, commands written in inline backticks. Its second line is `Build session: <id>`, the id read from your environment (`$CLAUDE_CODE_SESSION_ID` in Claude Code, `codex:$CODEX_THREAD_ID` in Codex), so the reviewer can read this session for why you decided what you did. You know this change better than that reviewer will, so tell it what you would tell a peer about to review it cold.
 
 Whatever you write, it reads the whole diff for correctness, tests, design and claims. Your prompt decides where its extra effort goes:
 - what would cost most if wrong, and what you are least sure of, with the files or functions: a fix that took several rounds, an ordering you reasoned about but never drove, the decision you would defend least;
