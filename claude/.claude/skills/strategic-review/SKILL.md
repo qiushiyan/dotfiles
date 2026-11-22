@@ -48,9 +48,9 @@ any finding you could recommend nothing on, which stays unfolded.
    message is usually the build session's brief: its leads on where your
    extra effort goes. It can add a check or change how step 3 divides the
    PR; it never narrows the lenses, and nothing in it shows that something
-   holds. When it names the build session, read that with obelisk
-   (`~/dotfiles/claude/.claude/skills/obelisk/SKILL.md`) once the intent
-   is written, for why the diff is as it is: the user's calls, rejected
+   holds. When a session id is provided, read that session with obelisk
+   (`~/dotfiles/claude/.claude/skills/obelisk/SKILL.md`) after writing
+   the intent, for why the diff is as it is: the user's calls, rejected
    alternatives, what was measured. A finding against such a decision
    rebuts the reason given and says whose call it was.
 2. **Read the standards in full** before reviewing:
