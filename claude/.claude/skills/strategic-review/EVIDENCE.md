@@ -1262,11 +1262,11 @@ review reads that session with obelisk to judge the decisions in context.
   (checked with `codex exec`, 0.171.0), indexed by obelisk as
   `codex:<thread-id>`.
 - Step 1: once the intent is written, the build session is read with
-  obelisk for which decisions the user made, the alternatives rejected,
-  what was measured and what review rounds argued. It is leads, like the
-  brief; a finding against such a decision names the session's reason and
-  why it fails. Read after the intent statement so the build's framing is
-  not the reviewer's starting point.
+  obelisk for the user's calls, rejected alternatives and what was
+  measured; a finding against such a decision rebuts the reason given and
+  says whose call it was. Read after the intent statement so the build's
+  framing is not the reviewer's starting point. Tightened the same day at
+  the user's ask (both texts, −19 body words).
 
 **Not run:** a replay or live review with the session read. The next driven
 strategic review is the first measure: whether its findings against

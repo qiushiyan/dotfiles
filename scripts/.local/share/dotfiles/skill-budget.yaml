@@ -165,8 +165,8 @@ skills:
   # 11-19, the user: a non-trivial UI or UX change gets the emil design skills, asked for by the
   # brief; its findings fold by emil-design's Finish route (+29 body, +29 total)
   # raised 2026-11-22 on the user's word: the brief names the build session, and step 1 reads
-  # it with obelisk for the decisions behind the diff (+67 body, +67 total)
-  strategic-review: {body: 2629, total: 2819}
+  # it with obelisk for the decisions behind the diff (+67, then tightened to +48)
+  strategic-review: {body: 2610, total: 2800}
   tailwind-best-practices: {body: 699, total: 699}
   test-audit: {body: 1129, total: 1974}
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}

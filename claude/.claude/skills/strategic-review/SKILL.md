@@ -48,13 +48,11 @@ any finding you could recommend nothing on, which stays unfolded.
    message is usually the build session's brief: its leads on where your
    extra effort goes. It can add a check or change how step 3 divides the
    PR; it never narrows the lenses, and nothing in it shows that something
-   holds. When the brief names the build session, read it once the intent
-   is written, with the obelisk skill
-   (`~/dotfiles/claude/.claude/skills/obelisk/SKILL.md`), for the
-   decisions behind the diff: which the user made, the alternatives
-   rejected and why, what was measured, what review rounds argued. Those
-   are leads too. A finding against a decision taken there names the
-   session's reason and why it fails, and says when the user made it.
+   holds. When it names the build session, read that with obelisk
+   (`~/dotfiles/claude/.claude/skills/obelisk/SKILL.md`) once the intent
+   is written, for why the diff is as it is: the user's calls, rejected
+   alternatives, what was measured. A finding against such a decision
+   rebuts the reason given and says whose call it was.
 2. **Read the standards in full** before reviewing:
    - `~/dotfiles/claude/.claude/skills/thermo-nuclear-code-quality-review/SKILL.md`,
      for code quality and the "code judo" reshape;
