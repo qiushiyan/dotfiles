@@ -1266,7 +1266,9 @@ review reads that session with obelisk to judge the decisions in context.
   measured; a finding against such a decision rebuts the reason given and
   says whose call it was. Read after the intent statement so the build's
   framing is not the reviewer's starting point. Tightened the same day at
-  the user's ask (both texts, −19 body words).
+  the user's ask (both texts, −19 body words). Later, the user: each reason
+  is judged as critically as the code, since the session argued for what it
+  built (+9 body).
 
 **Not run:** a replay or live review with the session read. The next driven
 strategic review is the first measure: whether its findings against

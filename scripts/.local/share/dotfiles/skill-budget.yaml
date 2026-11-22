@@ -166,7 +166,8 @@ skills:
   # brief; its findings fold by emil-design's Finish route (+29 body, +29 total)
   # raised 2026-11-22 on the user's word: the brief names the build session, and step 1 reads
   # it with obelisk for the decisions behind the diff (+67, then tightened to +48)
-  strategic-review: {body: 2610, total: 2800}
+  # 11-22, later, the user: the session's reasons are judged as critically as the code (+9)
+  strategic-review: {body: 2619, total: 2809}
   tailwind-best-practices: {body: 699, total: 699}
   test-audit: {body: 1129, total: 1974}
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}

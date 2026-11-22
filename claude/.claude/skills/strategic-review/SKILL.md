@@ -50,9 +50,10 @@ any finding you could recommend nothing on, which stays unfolded.
    PR; it never narrows the lenses, and nothing in it shows that something
    holds. When a session id is provided, read that session with obelisk
    (`~/dotfiles/claude/.claude/skills/obelisk/SKILL.md`) after writing
-   the intent, for why the diff is as it is: the user's calls, rejected
-   alternatives, what was measured. A finding against such a decision
-   rebuts the reason given and says whose call it was.
+   the intent, for the reasons behind the diff: the user's calls, rejected
+   alternatives, what was measured. Judge each as critically as the code,
+   since the session argued for what it built; a finding against one
+   rebuts it and says whose call it was.
 2. **Read the standards in full** before reviewing:
    - `~/dotfiles/claude/.claude/skills/thermo-nuclear-code-quality-review/SKILL.md`,
      for code quality and the "code judo" reshape;
