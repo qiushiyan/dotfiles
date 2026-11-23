@@ -5,6 +5,7 @@
 local action = require("lab.action")
 local client = require("lab.client")
 local api = require("rexkit.api")
+local layout = require("rexkit.layout")
 local shell = require("rexkit.shell")
 
 local define = action.group("Tabs")
@@ -42,6 +43,30 @@ define{
     local to = (at - 1 + (tonumber(args.step) or 1)) % #windows + 1
     client.go_to_tab(ctx, sid, view, to)
     return { moved = windows[to].label }
+  end,
+}
+
+-- prefix Tab: the tab of this session you were in before this one, as tmux's
+-- last-window. The app's client.tab.recent.in_session is in some builds and
+-- gone from others (snapshot.2087 has client.navigate.back instead), and a
+-- binding to an action the app lacks is a config problem on every reload; the
+-- server's focus history serves every build. It moves focus back to the last
+-- block of another tab in this session, which makes that tab the session's
+-- active one, and the app is asked to show it.
+define{
+  name = "tab_back",
+  title = "Back to the Last Tab in This Session",
+  args = action.schema({}),
+  run = function(ctx, args)
+    local sid = action.session(ctx, args)
+    local view = sid and api.view(sid)
+    if not view then return { moved = false, reason = "no session" } end
+    local here = ctx.block_id and layout.window_of(view, ctx.block_id)
+    local wid = here and here.window_id or view.active_window_id
+    local r = api.try("focus_history.reverse", { session_id = sid, not_window_id = wid })
+    if not (r and r.reversed and r.window_id) then return { moved = false, reason = "no earlier tab" } end
+    client.show(ctx, sid, r.window_id)
+    return { moved = r.window_id }
   end,
 }
 

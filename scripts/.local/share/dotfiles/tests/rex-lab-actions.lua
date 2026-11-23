@@ -223,6 +223,31 @@ r, q = press("session_back", A, {})
 ok("session_back goes to the session focus was in before", r.moved == back and steps(q) == "session.select", dump(r) .. " " .. dump(q))
 rex.call("session.destroy", { session_id = back })
 
+-- prefix Tab: back to the tab of this session focus was last in, from the
+-- server's focus history, never to another session's. A session of its own,
+-- since the cases above move panes between S's tabs; each focus_block changes
+-- the tab, as one that changes nothing is not history.
+local ts = must("session.create", { label = "tabs" }).session_id
+must("session.attach", { session_id = ts })
+local t1 = must("session.new_window", { session_id = ts, layout = blk("t1") })
+local t2 = must("session.new_window", { session_id = ts, layout = blk("t2") })
+local t3 = must("session.new_window", { session_id = ts, layout = blk("t3") })
+local T1, T2, T3 = t1.block_ids[1], t2.block_ids[1], t3.block_ids[1]
+local function press_in(block)
+  local x = rex.call("client.action", { action = "tab_back", origin = "key", session_id = ts, block_id = block, args = {} })
+  return (x and x.result) or {}, (x and x.client_actions) or {}
+end
+must("session.focus_block", { session_id = ts, block_id = T3 })
+must("session.focus_block", { session_id = ts, block_id = T2 })
+must("session.focus_block", { session_id = ts, block_id = T1 })
+r, q = press_in(T1)
+ok("tab_back goes to the tab focus was in before", r.moved == t2.window_id and steps(q) == "session.select", dump(r) .. " " .. dump(q))
+must("session.focus_block", { session_id = S, block_id = AG })
+must("session.focus_block", { session_id = ts, block_id = T2 })
+r, q = press_in(T2)
+ok("tab_back never leaves the session", r.moved == t1.window_id, dump(r) .. " " .. dump(q))
+rex.call("session.destroy", { session_id = ts })
+
 -- An action run with no block (rex do NAME, the palette) acts on the focused one.
 local r2 = rex.call("client.action", { action = "copy_path", origin = "api", args = { session_id = S } })
 ok("an action given no block finds the focused one", r2 and r2.result and r2.result.reason ~= "no focused block", dump(r2 and r2.result))

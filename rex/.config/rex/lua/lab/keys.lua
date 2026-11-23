@@ -91,7 +91,7 @@ local prefix = {
   { "c", "client.tab.new" }, { "n", "client.tab.new" }, { "shift+n", "window_new_here" },
   { "ctrl+h", "window_cycle", { step = -1 } }, { "ctrl+l", "window_cycle", { step = 1 } },
   { "ctrl+p", "window_cycle", { step = -1 } }, { "ctrl+n", "window_cycle", { step = 1 } },
-  { "tab", "client.tab.recent.in_session" }, { "shift+tab", "session_back" },
+  { "tab", "tab_back" }, { "shift+tab", "session_back" },
   { "x", "client.mode.enter", { name = "close-tab", once = true } }, { "m", "client.tab.rename" }, { "shift+4", "session.rename" },
   { "shift+t", "session.switch" }, { "shift+9", "session.previous" }, { "shift+0", "session.next" },
   -- tools
