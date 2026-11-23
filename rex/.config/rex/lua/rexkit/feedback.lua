@@ -1,8 +1,6 @@
--- rexkit.feedback: what an action can say back. Rex draws little of it yet
--- (docs/rex.md, § What the app does not show): an escape written to a
--- block's terminal reaches the app as an event (OSC 52 a copy, OSC 9 a
--- notification), a macOS notification needs the app's own machine, and the
--- toast layer is off.
+-- rexkit.feedback: what an action can say back: a copy through a block's
+-- terminal (OSC 52), which reaches the app as an event, a macOS
+-- notification on the app's own machine, and the toast layer, which is off.
 
 local api = require("rexkit.api")
 local layout = require("rexkit.layout")
@@ -28,14 +26,6 @@ function M.osc52(session_id, block_id, text, fg)
     .. " | base64 | tr -d '\\n')\"", fg)
 end
 
--- A desktop notification from the terminal in a block (OSC 9), as a program
--- in it would send one: Rex turns it into a desktop_notification event for
--- the app.
-function M.osc9(session_id, block_id, text, fg)
-  text = tostring(text):gsub("[%c]", " ")
-  return emit(session_id, block_id, "printf '\\033]9;%s\\007' " .. shell.quote(text), fg)
-end
-
 -- A macOS notification on this machine.
 function M.notify(title, text)
   local script = "display notification " .. string.format("%q", text) .. " with title " .. string.format("%q", title)
@@ -48,9 +38,9 @@ end
 -- (rex-toast draws it). The layer is sized in cells from the block's own grid
 -- and rect, takes no focus, and closes when the toast's process exits. A new
 -- toast replaces one still showing.
--- Off: the app paints no floating layer, and neither a block or window label
--- nor a desktop notification (OSC 9, osascript) reached the screen in our
--- tests (docs/rex.md). Callers keep calling it; true turns layers back on.
+-- Off since the app painted no floating layer. It paints them now (the
+-- scratch shell floats), but toasts have not been tried since; callers keep
+-- calling it, and true turns them back on.
 M.LAYER_TOASTS = false
 
 -- The window a block is placed in, with the block's normalized rect there.

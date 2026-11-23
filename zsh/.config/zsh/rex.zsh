@@ -27,6 +27,22 @@ if [[ -o interactive && -n $REX_BLOCK && -e $_rex_pane_record ]]; then
 fi
 unset _rex_pane_record
 
+# xr: bring this pane's last Claude conversation back, in the directory it had
+# moved to, on its account and with its flags (rex-resume last): after a quit
+# by mistake, a crash, or a restart that did not resume it. `x --resume` lists
+# only this checkout's conversations until Ctrl+A shows every project.
+if [[ -n $REX_BLOCK ]]; then
+  xr() {
+    local -a out
+    out=("${(@f)$($HOME/.local/bin/rex-resume last)}") || return
+    (( $#out == 3 )) || return 1
+    builtin cd -q -- $out[1] || return
+    [[ -n $out[2] ]] && export $out[2]
+    print -s -- $out[3]
+    eval $out[3]
+  }
+fi
+
 # Claude Code does not know TERM_PROGRAM=rex, so it prints URLs as plain text
 # unless told the terminal takes OSC 8 links. .zshenv takes it back out of the
 # shells Claude Code runs its tools in.
@@ -48,10 +64,10 @@ if [[ -o interactive && -n $REX_BLOCK ]]; then
 fi
 
 # Commands as program status (OSC 7501, id=shell), as agents report theirs: a
-# command shows as working on its tab's badge and the board while it runs; one
-# that ran REX_JOB_MIN seconds or more stays done or error until the next
-# command, so prefix a and the board find a finished build as they find an
-# agent, and rexd notifies when its tab is out of view. Interactive programs
+# command shows as working on its tab's badge while it runs; one that ran
+# REX_JOB_MIN seconds or more stays done or error until the next command, so
+# the app's Activity sidebar lists a finished build as it lists an agent, and
+# the app notifies when its tab is out of view. Interactive programs
 # (editors, agents, pagers, ssh) report nothing. zsh hands every precmd hook
 # the command's status, so this one disturbs no other.
 if [[ -o interactive && -n $REX_BLOCK ]]; then

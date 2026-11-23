@@ -5,8 +5,8 @@
 local action = require("lab.action")
 local api = require("rexkit.api")
 local feedback = require("rexkit.feedback")
+local host = require("rexkit.host")
 local layout = require("rexkit.layout")
-local shell = require("rexkit.shell")
 local state = require("rexkit.state")
 
 local define = action.group("Panes")
@@ -179,37 +179,12 @@ define{
   end,
 }
 
--- Pane mode w: pick another tab of the session and move the pane there, as
--- tmux's pick does, without walking to it with a hold. The picker
--- (rex-pane-pick) runs in a split below the pane, since the app sends no
--- keys to a floating layer, so the action leaves pane mode for it. It is
--- handed the app that pressed the key, so pane mode comes back once it is
--- done. On another host's session ctx.client_id names the app on this
--- machine's server, which the picker on that host cannot reach, so there it
--- gets none and the mode stays closed.
-define{
-  name = "pane_pick",
-  title = "Move Pane to a Tab…",
-  args = action.schema({}),
-  run = function(ctx, args)
-    local sid, bid = action.block(ctx, args)
-    if not (sid and bid) then return { opened = false } end
-    local view = api.call("session.view", { session_id = sid })
-    if not layout.window_of(view, bid) then
-      feedback.toast(sid, bid, "warn", "Move pane", "a floating pane cannot move between tabs", 2)
-      return { opened = false, reason = "not tiled" }
-    end
-    if #(view.windows or {}) < 2 then
-      feedback.toast(sid, bid, "info", "Move pane", "no other tab in this session (b breaks it into a new one)", 2)
-      return { opened = false, reason = "one tab" }
-    end
-    rex.client.queue("client.mode.exit", {})
-    local client = (not ctx.server and ctx.origin == "key" and ctx.client_id) or ""
-    local block = api.split(sid, bid, { direction = "vertical", ratio = 0.4, label = "move pane",
-      command = shell.bin("rex-pane-pick", sid, bid, client), focus = true })
-    return { opened = block }
-  end,
-}
+-- Pane mode w: pick another tab of the session in the command palette and
+-- move the pane there, beside that tab's focused pane, as tmux's pick does,
+-- without walking to it with a hold. The tab is shown and pane mode stays on,
+-- so hjkl places the pane, as after a put. window_id, given as an arg, skips
+-- the question (`rex do`, the tests). A floating pane, or a session with one
+-- tab, is refused before asking, and the app reports why.
 
 -- The pane a move into window W lands beside: its focused pane when that is
 -- tiled, else its first tiled one.
@@ -221,22 +196,35 @@ local function landing(w)
   return tiled[1] and tiled[1].block_id
 end
 
--- What rex-pane-pick runs on enter: move the pane into tab WINDOW_ID beside
--- its focused pane, and show that tab (the app follows the server's active
--- window in the session it shows, on any host). reenter = true puts the app
--- back in pane mode, so hjkl places the pane, as after a put; the picker
--- sets it only when it runs the action as that app (rex -C).
 define{
-  name = "pane_place",
-  title = "Move Pane to Tab",
-  args = action.schema({ window_id = { type = "string" }, reenter = { type = "boolean" } }, { "window_id" }),
-  run = function(ctx, args)
+  name = "pane_pick",
+  title = "Move Pane to a Tab…",
+  args = action.schema({ window_id = { type = "string" } }),
+  ask = function(ctx, args)
+    if args.window_id then return args.window_id end
+    local sid, bid = action.block(ctx, args)
+    if not (sid and bid) then return nil, "no focused block" end
+    local view = api.call("session.view", { session_id = sid })
+    local here = layout.window_of(view, bid)
+    if not here then error("a floating pane cannot move between tabs", 0) end
+    local items = {}
+    for _, w in ipairs(view.windows or {}) do
+      if w.window_id ~= here.window_id then
+        local n = #layout.tiled(w)
+        items[#items + 1] = { id = w.window_id, title = w.label, icon = "terminal",
+          detail = n .. (n == 1 and " pane" or " panes") }
+      end
+    end
+    if #items == 0 then error("no other tab in this session (b breaks the pane into a new one)", 0) end
+    return rex.ui.pick{ title = "Move pane to", placeholder = "Filter tabs", items = items }
+  end,
+  run = function(ctx, args, window_id)
     local sid, bid = action.block(ctx, args)
     if not (sid and bid) then return { placed = false } end
     local view = api.call("session.view", { session_id = sid })
     local target
     for _, w in ipairs(view.windows or {}) do
-      if w.window_id == args.window_id then target = w end
+      if w.window_id == window_id then target = w end
     end
     local here = layout.window_of(view, bid)
     local anchor = target and landing(target)
@@ -245,7 +233,6 @@ define{
     if reason then return { placed = false, reason = reason } end
     api.call("session.focus_window", { session_id = sid, window_id = target.window_id })
     land(sid, bid, anchor)
-    if args.reenter then rex.client.queue("client.mode.enter", { name = "panes" }) end
     return { placed = bid, window = target.window_id }
   end,
 }
@@ -323,17 +310,43 @@ define{
   end,
 }
 
--- prefix M: name the pane (rex-label) in a small prompt below it. The label
--- shows in the pane header and on the board; an empty name clears it.
+-- prefix M: name the pane in the command palette, starting from its current
+-- name. The name shows in the pane header and names the tab (rexd); an empty
+-- one gives the pane the name "shell". A pane wearing a Claude status chip
+-- has the chip as its label, so its own name is rex-chip's to keep: the
+-- rename goes through rex-chip on the pane's host, which draws the chip
+-- again after it. label, given as an arg, skips the question.
+local function chip_base(ctx, sid, bid)
+  return host.read_state(ctx, sid, "chip/" .. bid:gsub(":", "_") .. ".base")
+end
+
 define{
   name = "label_pane",
-  title = "Rename Pane",
-  args = action.schema({}),
-  run = function(ctx, args)
+  title = "Rename Pane…",
+  args = action.schema({ label = { type = "string" } }),
+  ask = function(ctx, args)
+    if args.label then return args.label end
     local sid, bid = action.block(ctx, args)
-    if not (sid and bid) then return { opened = false } end
-    local block = api.split(sid, bid, { direction = "vertical", ratio = 0.85, label = "rename",
-      cwd = api.cwd(sid, bid), command = shell.bin("rex-label", sid, bid), focus = true })
-    return { opened = block }
+    if not (sid and bid) then return nil, "no focused block" end
+    local current = chip_base(ctx, sid, bid)
+    if not current then
+      for _, b in ipairs(api.terminals(sid)) do
+        if b.block_id == bid then current = b.label end
+      end
+    end
+    return rex.ui.input{ title = "Rename pane", value = current or "", confirm = "Rename" }
+  end,
+  run = function(ctx, args, label)
+    local sid, bid = action.block(ctx, args)
+    if not (sid and bid) then return { renamed = false } end
+    label = label:gsub("^%s+", ""):gsub("%s+$", "")
+    if label == "" then label = "shell" end
+    if chip_base(ctx, sid, bid) then
+      host.run_there(ctx, sid, 'REX_SESSION="$1" rex-chip rename "$2" "$3" >/dev/null 2>&1; echo done',
+        { sid, bid, label })
+      return { renamed = label, chip = true }
+    end
+    api.call("session.set_block_label", { session_id = sid, block_id = bid, label = label })
+    return { renamed = label }
   end,
 }

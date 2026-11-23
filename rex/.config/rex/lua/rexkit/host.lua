@@ -38,29 +38,14 @@ function M.viewer(ctx)
   return name and name ~= "" and name or "unknown"
 end
 
--- Put TEXT on the clipboard of the machine you are looking from: published
--- here (and so on every machine) when the app is here and the block is
--- another host's (no tty of it here), else through the block's terminal
--- (OSC 52), which that host's rexd publishes. FG is the block's front
--- process when the caller has it.
+-- Put TEXT on the clipboard of the machine you are looking from: this
+-- machine's pasteboard when the app is here and the block is another host's
+-- (no tty of it here), else through the block's terminal (OSC 52), which the
+-- app showing it copies. FG is the block's front process when the caller has
+-- it.
 function M.copy(ctx, session_id, block_id, text, fg)
-  if ctx.server then
-    return shell.publish(text) or shell.pbcopy(text)
-  end
+  if ctx.server then return shell.pbcopy(text) end
   return feedback.osc52(session_id, block_id, text, fg)
-end
-
--- Put this machine's clipboard, text or image, on the pasteboard of SERVER,
--- a host's label in `rex hosts`, which is also its ssh alias. Returns true
--- and what went, or false and why. tomini reads it all before it touches the
--- far side, so a failure leaves that pasteboard as it was. The timeout bounds
--- a key press on a host that stopped answering.
-function M.send_clipboard(server)
-  local r, err = rex.exec({ os.getenv("HOME") .. "/.local/bin/tomini" },
-    { env = { MINI_HOST = server }, timeout = 6 })
-  if not r then return false, err end
-  if r.ok then return true, (r.stdout:gsub("%s+$", "")) end
-  return false, r.timed_out and "timed out" or (r.stderr:gsub("%s+$", ""))
 end
 
 -- The output of a shell command run on the host the session's calls go to,

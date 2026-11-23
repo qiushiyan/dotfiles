@@ -11,7 +11,7 @@
 #                                   rex-agent, and a prompt returning, rex.zsh)
 #   rex-chip label BLOCK            print the label sync would set
 #   rex-chip rename BLOCK NAME      the pane's own name while it wears a chip
-#                                   (rex-label, prefix M)
+#                                   (the label_pane action, prefix M)
 #   rex-chip render BLOCK [COLS]    print the chip once, in terminal colours
 #   rex-chip draw BLOCK             INTERNAL: the floating chip, redrawn when
 #                                   the state changes; it ends with the session

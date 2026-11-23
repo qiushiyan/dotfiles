@@ -196,7 +196,7 @@ CASE=K5; if want; then
   fresh
   render 31 '' '' >/dev/null; chip clear block:t1
   ok "K5 an unnamed pane goes back to shell" "shell" "$(label)"
-  ok "K5 rename without a chip is refused, for rex-label to set the label itself" "1" "$(chip rename block:t1 x; echo $?)"
+  ok "K5 rename without a chip is refused, for label_pane to set the label itself" "1" "$(chip rename block:t1 x; echo $?)"
 fi
 
 CASE=K6; if want; then

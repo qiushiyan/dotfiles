@@ -2,8 +2,8 @@
 # rex-agent: publish an agent's state to the Rex terminal it runs in, through
 # the Program Status Protocol (OSC 7501). Rex keeps one record per id on the
 # block, readable with `rex block call program_status` and announced as a
-# program_status_changed block event; the agents board and the
-# agents_next action read them.
+# program_status_changed block event; the app's tab badges, Activity
+# sidebar and notifications show them, and the steps sidecar redraws on them.
 #
 #   rex-agent STATE [--kind K] [--id ID] [--app A] [--title T] [--msg M] [--progress N]
 #   rex-agent claude              # a Claude Code hook: reads the hook JSON on stdin

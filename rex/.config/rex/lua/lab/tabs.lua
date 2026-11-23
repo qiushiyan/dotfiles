@@ -5,10 +5,7 @@
 local action = require("lab.action")
 local client = require("lab.client")
 local api = require("rexkit.api")
-local feedback = require("rexkit.feedback")
-local layout = require("rexkit.layout")
 local shell = require("rexkit.shell")
-local state = require("rexkit.state")
 
 local define = action.group("Tabs")
 
@@ -45,62 +42,6 @@ define{
     local to = (at - 1 + (tonumber(args.step) or 1)) % #windows + 1
     client.go_to_tab(ctx, sid, view, to)
     return { moved = windows[to].label }
-  end,
-}
-
--- prefix Tab: the tab of this session a key was last pressed in before this
--- one, as tmux's last-window, stepped to with the app's own tab actions so it
--- works on any host's session. prefix shift+Tab (session = true): the
--- session a key was last pressed in before this one, as tmux's
--- switch-client -l; the app selects it, which it does only for this host's
--- sessions.
-local function last_session(ctx, sid, keys)
-  for i = #keys, 1, -1 do
-    local k = keys[i]
-    if k.server == nil and k.session_id ~= sid then
-      local other = api.view(k.session_id)
-      if other then
-        client.show(ctx, k.session_id, other.active_window_id)
-        return { moved = k.session_id }
-      end
-    end
-  end
-end
-
-local function last_tab(ctx, sid, view, keys)
-  local at = client.tab_index(ctx, view)
-  for i = #keys, 1, -1 do
-    local k = keys[i]
-    if k.server == ctx.server and k.session_id == sid then
-      local w = layout.window_of(view, k.block_id)
-      local to = w and layout.index_of(view, w.window_id)
-      if to and at and to ~= at then
-        client.step_tabs(at, to)
-        return { moved = view.windows[to].label }
-      end
-    end
-  end
-end
-
-define{
-  name = "window_last",
-  title = "Last Tab or Last Session",
-  args = action.schema({ session = { type = "boolean" } }),
-  run = function(ctx, args)
-    local sid = action.session(ctx, args)
-    local view = sid and api.view(sid)
-    if not view then return { moved = false } end
-    local keys = state.keys()
-    local moved
-    if args.session then
-      moved = not ctx.server and last_session(ctx, sid, keys)
-    else
-      moved = last_tab(ctx, sid, view, keys)
-    end
-    if moved then return moved end
-    feedback.toast(sid, ctx.block_id or api.focused_block(sid), "info",
-      args.session and "Last session" or "Last tab", "nothing earlier yet", 1.5)
-    return { moved = false }
   end,
 }
 

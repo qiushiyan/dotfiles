@@ -19,23 +19,12 @@
 -- keeps its own record (rexkit.state's here): the actions note the session of
 -- each key they take, and this watcher the session whose active tab changed.
 --
--- Out of view: when an agent turns blocked, errored or done (OSC 7501) away
--- from the tab you are on, its terminal sends a desktop notification (OSC 9),
--- which the app shows as one.
---
--- The pasteboards: a terminal's clipboard write (OSC 52, such as Claude
--- Code's copy on selection or nvim's y) reaches only the clipboard of the
--- app showing the pane, the laptop's when you look from there. Nvim's p in a
--- Rex pane reads its own host's pbpaste, so rexd publishes the text
--- (shell.publish): onto this machine's pasteboard and every other
--- machine's, so a yank on one host pastes with p on another. When that
--- fails it still copies here, and says so in the actions log.
+-- Notifications are the app's own: it raises one when an agent reports
+-- blocked, failed or done in a tab you are not looking at, and a copy made
+-- in a pane (OSC 52) lands on the clipboard of the Mac you look from.
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
 local api = require("rexkit.api")
-local feedback = require("rexkit.feedback")
-local layout = require("rexkit.layout")
-local shell = require("rexkit.shell")
 local state = require("rexkit.state")
 
 local DEFAULT = "^Window %x+$" -- the label Rex gives a window nobody named
@@ -46,7 +35,7 @@ local function strip_number(label)
 end
 
 -- Labels that say nothing about a pane: Rex's default and our own helpers'.
-local GENERIC = { shell = true, rexd = true, toast = true, worktrees = true, ["move pane"] = true }
+local GENERIC = { shell = true, rexd = true, toast = true }
 
 -- AUTO maps window id to the name rexd gave that tab, kept across restarts.
 -- On the first run there is no record, so a name that already matches its
@@ -157,57 +146,8 @@ rex.on("active_window_changed", function(target, ev)
   if sid then state.note_here(sid, select(2, state.here())) end
 end)
 
--- Out of view ----------------------------------------------------------------
-
-local NOTIFY = { blocked = true, error = true, done = true }
-local last_state = {}    -- block/id -> the state last seen
-
--- Whether BLOCK_ID is in the tab you are on: the active tab of the session
--- you are in (rexkit.state's here).
-local function in_view(session_id, block_id)
-  if state.here() ~= session_id then return false end
-  local view = api.view(session_id)
-  local w = view and layout.window_of(view, block_id)
-  return w ~= nil and w.window_id == view.active_window_id
-end
-
--- A copy too large for its event arrives without text; the server keeps it
--- for about a minute under the event's id, read back in parts.
-local function copied_text(target, ev)
-  if type(ev.text) == "string" then return ev.text end
-  if not ev.id or (ev.bytes or 0) == 0 then return nil end
-  local parts, offset = {}, 0
-  repeat
-    local r = api.block(target.session_id, target.block_id, "clipboard_read",
-      { id = ev.id, offset = offset, max_bytes = 983040 })
-    if not r then return nil end
-    parts[#parts + 1] = r.data
-    offset = offset + #r.data
-  until r.eof or r.data == ""
-  return table.concat(parts)
-end
-
 rex.on("block_event", function(target, ev)
   if ev.name == "process_changed" then return on_process(target, ev) end
-  if ev.name == "clipboard_written" then
-    local text = copied_text(target, ev)
-    if text and text ~= "" and not shell.publish(text) then
-      state.log("rexd: rex-clipshare failed; the copy reached this machine only")
-      shell.pbcopy(text)
-    end
-    return
-  end
-  if ev.name ~= "program_status_changed" or not ev.record then return end
-  local r = ev.record
-  local k = target.block_id .. "/" .. (r.id or "")
-  local before = last_state[k]
-  last_state[k] = r.state
-  if not NOTIFY[r.state] or before == r.state then return end
-  if in_view(target.session_id, target.block_id) then return end
-  local what = r.state == "blocked" and ("needs you" .. (r.kind and (" (" .. r.kind .. ")") or ""))
-    or (r.state == "error" and "failed" or "finished")
-  local text = (r.title or r.app or "agent") .. " " .. what .. ((r.msg and r.msg ~= "") and (": " .. r.msg) or "")
-  feedback.osc9(target.session_id, target.block_id, text)
 end)
 
 -- Number every tab, then forget the names of tabs that closed while rexd

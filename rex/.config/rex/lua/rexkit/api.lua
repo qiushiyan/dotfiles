@@ -3,8 +3,8 @@
 -- Rex hands Lua the same helpers for each server: `rex` for this one,
 -- `rex.server(label)` for a host in `rex hosts` (the mini, seen from the
 -- laptop). bind wraps one of them in the guards the lab relies on; the module
--- is this server's, and api.remote(label) another's. The wire reference is
--- the server's own /llms.txt (docs/rex.md, § Where Rex's truth lives).
+-- is this server's. The wire reference is the server's own /llms.txt
+-- (docs/rex.md, § Where Rex's truth lives).
 
 local M = {}
 
@@ -131,24 +131,5 @@ local function bind(K, server, label)
 end
 
 bind(M, rex, nil)
-
--- Another host's server, by its label in `rex hosts`.
-function M.remote(label) return bind({}, rex.server(label), label) end
-
--- Every other host's server this one can reach, as M.remote gives them,
--- leaving out a host that is this server under another name. A host that
--- does not answer is left out, so a sleeping laptop costs one failed call.
-function M.remotes()
-  local out = {}
-  if not rex.servers then return out end
-  local me = M.try("server.status")
-  me = me and me.instance_id
-  for _, label in ipairs(rex.servers() or {}) do
-    local ok, K = pcall(M.remote, label)
-    local status = ok and K.try("server.status")
-    if status and status.instance_id and status.instance_id ~= me then out[#out + 1] = K end
-  end
-  return out
-end
 
 return M

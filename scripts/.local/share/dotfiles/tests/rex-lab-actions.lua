@@ -88,7 +88,7 @@ if r.opened then rex.call("block.close", { session_id = S, block_id = r.opened }
 must("session.close_window", { session_id = S, window_id = w4.window_id })
 
 -- Splits land beside the pane the key was pressed in, whatever tab is active.
-for _, case in ipairs({ { "label_pane", "rename" }, { "urls", "urls" }, { "worktrees", "worktrees" } }) do
+for _, case in ipairs({ { "urls", "urls" } }) do
   r, q, e = press(case[1], A, {})
   local win, label = window_of(r.opened)
   ok(case[1] .. " opens its split in the pressed pane's tab", win == w1.window_id and label == case[2], e or ("landed in " .. tostring(win == w2.window_id and "the ACTIVE tab instead" or win)))
@@ -173,31 +173,40 @@ r = press("layout_toggle", A, {});                  ok("layout_toggle again puts
 r, q = press("pane_hold", A, {});                   ok("pane_hold holds and leaves pane mode", r.held == A and steps(q) == "client.mode.exit", dump(r))
 r = press("pane_put", C, {});                       ok("pane_put moves the held pane to the other tab", r.put == A and window_of(A) == w2.window_id, dump(r))
 
--- Pane mode w: the picker opens below the pressed pane after leaving the
--- mode, and its enter (pane_place) moves the pane into the picked tab, shows
--- that tab, and with reenter queues pane mode again.
+-- Pane mode w asks in the command palette. No app is connected here, so the
+-- question comes back unanswered and the action ends cancelled, moving
+-- nothing; given window_id, as the answer, it moves the pane into that tab
+-- and shows it, leaving pane mode on.
 r, q, e = press("pane_pick", B, {})
-ok("pane_pick leaves pane mode and opens the picker in the pressed pane's tab",
-  steps(q) == "client.mode.exit" and select(2, window_of(r.opened)) == "move pane" and window_of(r.opened) == w1.window_id, e or dump(r))
-if r.opened then rex.call("block.close", { session_id = S, block_id = r.opened }) end
-r, q = press("pane_place", B, { window_id = w2.window_id, reenter = true })
+ok("pane_pick with no app to ask moves nothing", r.cancelled == true and window_of(B) == w1.window_id and #q == 0, e or dump(r))
+r, q = press("pane_pick", B, { window_id = w2.window_id })
 local active = must("session.view", { session_id = S }).active_window_id
-ok("pane_place moves the pane to the picked tab and shows it",
-  r.placed == B and window_of(B) == w2.window_id and active == w2.window_id, dump(r))
-ok("pane_place with reenter queues pane mode", steps(q) == "client.mode.enter", dump(q))
-r, q = press("pane_place", B, { window_id = w2.window_id })
-ok("pane_place into the pane's own tab moves nothing", r.reason == "same tab" and #q == 0, dump(r))
+ok("pane_pick moves the pane to the picked tab and shows it",
+  r.placed == B and window_of(B) == w2.window_id and active == w2.window_id and #q == 0, dump(r))
+r, q = press("pane_pick", B, { window_id = w2.window_id })
+ok("pane_pick into the pane's own tab moves nothing", r.reason == "same tab" and #q == 0, dump(r))
 local lone = must("session.create", { label = "lone" }).session_id
 must("session.attach", { session_id = lone })
 local lw = must("session.new_window", { session_id = lone, layout = blk("solo") })
-r, q = rex.call("client.action", { action = "pane_pick", origin = "key", session_id = lone, block_id = lw.block_ids[1] })
-r, q = (r and r.result) or {}, (r and r.client_actions) or {}
-ok("pane_pick in a one-tab session opens nothing and stays in the mode", r.reason == "one tab" and #q == 0, dump(r))
+r, e = rex.call("client.action", { action = "pane_pick", origin = "key", session_id = lone, block_id = lw.block_ids[1] })
+ok("pane_pick in a one-tab session refuses, saying why", r == nil and tostring(e):find("no other tab", 1, true) ~= nil, dump(r) .. " " .. tostring(e))
 rex.call("session.destroy", { session_id = lone })
 
-rex.sleep(0.3)
-r, q = press("agents_next", C, {})
-ok("agents_next jumps to the blocked agent", r.jumped == true and r.state == "blocked" and steps(q) == "session.select", dump(r))
+-- prefix M asks too; given label, it names the pane, and an empty name is "shell".
+r, q, e = press("label_pane", C, {})
+ok("label_pane with no app to ask renames nothing", r.cancelled == true and select(2, window_of(C)) == "c", e or dump(r))
+r = press("label_pane", C, { label = "  build  " })
+ok("label_pane names the pane, trimmed", r.renamed == "build" and select(2, window_of(C)) == "build", dump(r))
+r = press("label_pane", C, { label = "" })
+ok("label_pane with an empty name gives it shell", select(2, window_of(C)) == "shell", dump(r))
+
+-- prefix W lists gwt's worktrees (the sandbox's gwt prints one) and asks;
+-- given the path of a checkout a pane already works in, it goes to that pane.
+r, q, e = press("worktrees", A, {})
+ok("worktrees with no app to ask opens nothing", r.cancelled == true, e or dump(r))
+local cwd = proc_cwd(A)
+r = press("worktrees", A, { path = cwd })
+ok("worktrees on a checkout a pane works in focuses that pane", cwd ~= nil and r.focused ~= nil and r.opened == nil, dump(r))
 
 -- An action run with no block (rex do NAME, the palette) acts on the focused one.
 local r2 = rex.call("client.action", { action = "copy_path", origin = "api", args = { session_id = S } })

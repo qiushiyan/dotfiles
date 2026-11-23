@@ -4,7 +4,7 @@
 -- rex.action:
 --   - A key press first notes where it was pressed (rexkit.state's here and
 --     keys): the app does not tell the server which session it shows, and
---     the out-of-view notifications and prefix Tab need to know.
+--     rexd and the steps sidecar need to know.
 --   - A failure is written, with the ctx it ran under and a traceback, to
 --     actions.log before the app reports it: the app's own report is all that
 --     is left otherwise.
@@ -12,6 +12,12 @@
 --     laptop's app) every call travels through the app to that host, so the
 --     result is logged too, as the only view of what the action did.
 --   - ctx and args are never nil inside run.
+--   - An action that asks the person something (rex.ui.input, rex.ui.pick)
+--     asks in `ask`, which runs before run and unprotected: Rex refuses a
+--     prompt inside pcall or xpcall. ask returns the answer, which run gets
+--     as its third argument, or nil, and the action ends there as cancelled.
+--     An action that asks also takes the answer as an arg, so a script or a
+--     test runs it with no one there; ask then returns that arg.
 --
 -- ctx carries origin ("key", "palette", "api", "cli"), session_id, block_id,
 -- client_id, and server when the session is another host's (llms.txt,
@@ -24,15 +30,19 @@ local state = require("rexkit.state")
 local M = {}
 
 function M.define(spec)
-  local run, name = spec.run, spec.name
+  local run, ask, name = spec.run, spec.ask, spec.name
+  spec.ask = nil
   spec.run = function(ctx, args)
     ctx, args = ctx or {}, args or {}
-    if ctx.origin == "key" then
-      if not ctx.server then state.note_here(ctx.session_id, ctx.client_id) end
-      state.note_key(ctx)
+    if ctx.origin == "key" and not ctx.server then state.note_here(ctx.session_id, ctx.client_id) end
+    local answer
+    if ask then
+      local why
+      answer, why = ask(ctx, args)
+      if answer == nil then return { cancelled = true, reason = why } end
     end
     local started = os.clock() -- wall time in Rex's Lua (gopher-lua)
-    local result = { xpcall(function() return run(ctx, args) end, debug.traceback) }
+    local result = { xpcall(function() return run(ctx, args, answer) end, debug.traceback) }
     if not result[1] then
       state.log(name .. " failed: " .. tostring(result[2]) .. "\n  ctx " .. state.dump(ctx))
       error(result[2], 0)

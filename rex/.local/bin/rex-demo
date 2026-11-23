@@ -2,16 +2,16 @@
 # rex-demo: a Rex session of simulated agents, to watch the agent experiments
 # work without spending real Claude turns. Each agent works through a few
 # steps, stops for permission (press y in its tab), finishes, and starts over
-# on a key press, publishing every state with rex-agent. The first window runs
-# the agents board; the last runs a real Claude with its steps sidecar; the
-# links window before it is the click check for the OSC 8 links Claude Code
-# draws in Rex (rex.zsh's FORCE_HYPERLINK), worth repeating after a Rex update.
+# on a key press, publishing every state with rex-agent. The last window runs
+# a real Claude with its steps sidecar; the links window before it is the
+# click check for the OSC 8 links Claude Code draws in Rex (rex.zsh's
+# FORCE_HYPERLINK), worth repeating after a Rex update.
 #
 #   rex-demo         create the "agents-demo" session (replacing an old one)
 #   rex-demo stop    remove it
 #
-# Then in Rex: watch the tab badges and the board, press ⌘⇧J to jump to the
-# agent waiting longest, ⌘⇧A for the board as a popup.
+# Then in Rex: watch the tab badges and the app's Activity sidebar (⌘.), which
+# lists the agents by urgency.
 set -u
 SESSION=agents-demo
 BIN="$HOME/.local/bin"
@@ -70,12 +70,11 @@ links() {
 start() {
   "$REX" kill "$SESSION" >/dev/null 2>&1
   local session
-  session=$("$REX" new "$SESSION" --window board --shell none --json -- "$BIN/rex-board" | jq -r .session_id)
-  [ -n "$session" ] || exit 1
   local self
   self=$(command -v "$0" || printf '%s' "$0")
-  "$REX" run -s "$SESSION" --focus=false --shell none --label api -- "$self" agent api 2 \
-    "reading src/routes/billing.ts" "planning the refund endpoint" "editing 3 files" >/dev/null
+  session=$("$REX" new "$SESSION" --window api --shell none --json -- "$self" agent api 2 \
+    "reading src/routes/billing.ts" "planning the refund endpoint" "editing 3 files" | jq -r .session_id)
+  [ -n "$session" ] || exit 1
   "$REX" run -s "$SESSION" --focus=false --shell none --label web -- "$self" agent web 8 \
     "reading the checkout page" "fixing the coupon input" "updating snapshots" >/dev/null
   "$REX" run -s "$SESSION" --focus=false --shell none --label docs -- "$self" agent docs 15 \
@@ -94,7 +93,7 @@ start() {
   else
     printf 'no claude window: rex run said %s\n' "$created" >&2
   fi
-  printf 'session %s: a board, three simulated agents (api, web, docs), a links\n' "$SESSION"
+  printf 'session %s: three simulated agents (api, web, docs), a links\n' "$SESSION"
   printf 'click check, and a real Claude with its steps sidecar. Press y in a\n'
   printf 'blocked tab to let that agent go on; give the Claude a task to watch it\n'
   printf 'report; Cmd-click both lines in the links tab.\n'

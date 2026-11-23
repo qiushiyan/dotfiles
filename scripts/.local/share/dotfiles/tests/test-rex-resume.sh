@@ -11,8 +11,10 @@
 # and a crash clears the record (R3); a conversation running elsewhere gets no
 # second copy (R4); after a real server restart each pane keeps its block id and
 # its shell enters the resume on the right account, once (R5); a sidecar's
-# command comes back the same way (R6); seed records what runs now (R7); rex-run
-# and rex-export read past the 1 MiB one control reply carries (R8); rexd starts
+# command comes back the same way (R6); seed records what runs now (R7); a
+# conversation the stopped server's Claude Code is still leaving is resumed
+# once it has gone (R12); a person's exit keeps the conversation for xr (R2);
+# rex-export reads past the 1 MiB one control reply carries (R8); rexd starts
 # once, also after a start that died (R10).
 #
 # ISOLATION. A scratch Rex server under a short temporary HOME, with REX_*
@@ -47,7 +49,7 @@ export HEADROOM_PRIMARY_NAME=tester
 export PATH="$SB/.local/bin:$PATH"
 mkdir -p "$SB/.config/rex" "$SB/.local/bin" "$SB/w1" "$SB/w2" "$SB/w3" "$SB/w4"
 for f in init.lua lua scripts; do ln -s "$TREE/.config/rex/$f" "$SB/.config/rex/$f"; done
-for t in rex rex-agent rex-resume rex-run rex-export; do ln -s "$BIN/$t" "$SB/.local/bin/$t"; done
+for t in rex rex-agent rex-resume rex-export; do ln -s "$BIN/$t" "$SB/.local/bin/$t"; done
 cat > "$SB/.zshenv" <<ZE
 export PATH="$SB/.local/bin:\$PATH"
 ZE
@@ -166,7 +168,13 @@ CASE=R2; if want; then
     C=$(claude_pane "$SB/.claude" sid-c "$SB/w3"); sleep 0.5
     hook "$C" SessionStart sid-c; until_true 8 has_record "$C"
     hook "$C" SessionEnd sid-c prompt_input_exit
-    ok "R2 a person's exit forgets" "no" "$(has_record "$C" && echo yes || echo no)"
+    ok "R2 a person's exit is not restored" "no" "$(has_record "$C" && echo yes || echo no)"
+    ok "R2 while it runs, xr refuses a second copy" "" "$(env REX_BLOCK="$C" "$BIN/rex-resume" last 2>/dev/null)"
+    for f in "$SB"/.claude/sessions/*.json; do grep -q sid-c "$f" && kill -9 "$(basename "$f" .json)" 2>/dev/null; done
+    sleep 0.3
+    ok "R2 but xr brings it back" "$SB/w3||x-tester --resume sid-c" \
+        "$(env REX_BLOCK="$C" "$BIN/rex-resume" last | tr '\n' '|' | sed 's/|$//')"
+    ok "R2 as often as asked" "x-tester --resume sid-c" "$(env REX_BLOCK="$C" "$BIN/rex-resume" last | sed -n 3p)"
     drop "$C"
 fi
 
@@ -187,6 +195,19 @@ CASE=R4; if want; then
     ok "R4 a conversation running elsewhere gets no second copy" "" "$(line_in "$E")"
     ok "R4 and the record stays" "yes" "$(has_record "$E" && echo yes || echo no)"
     rm -f "$(record "$E")"; drop "$E"
+fi
+
+# R12: the restored shell asks while the old server's Claude Code is still
+# exiting, as after a real restart: line waits for it to go, then resumes.
+CASE=R12; if want; then
+    E=$(rx run -s "$SID" --focus=false --keep-open --shell none --json -- /bin/sleep 600 | jq -r '.block_ids[0]')
+    /usr/bin/env -i /usr/bin/perl "$SB/.local/bin/claude-stub.pl" "$SB/.claude" sid-r "$SB/w3" & stub=$!
+    until_true 5 registered sid-r
+    jq -n --arg d "$SB/w3" --arg c "$SB/.claude" '{instance: "gone", kind: "claude", sid: "sid-r", dir: $d, config: $c, env: "", extra: []}' > "$(record "$E")"
+    ( sleep 1.5; kill -9 "$stub" 2>/dev/null ) &
+    ok "R12 a conversation still exiting is resumed once it has gone" "x-tester --resume sid-r" "$(line_in "$E" | sed -n 3p)"
+    ok "R12 and the record is spent" "no" "$(has_record "$E" && echo yes || echo no)"
+    wait; drop "$E"
 fi
 
 CASE=R7; if want; then
@@ -239,9 +260,6 @@ fi
 CASE=R8; if want; then
     P=$(rx run -s "$SID" --focus=false --keep-open --shell none --json -- /usr/bin/python3 -c 'for i in range(40000): print("line %06d https://example.com/x/%d abcdefghijklmnopqrstuvwxyz0123456789" % (i, i))' | jq -r '.block_ids[0]')
     sleep 3
-    env REX_SESSION="$SID" REX_BLOCK="$P" "$BIN/rex-run" -l big -n 1 -- /bin/sh -c '/usr/bin/python3 -c "for i in range(40000): print(\"big %06d abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz\" % i)"; exit 4' > "$SB/run.out" 2>&1; code=$?
-    ok "R8 rex-run hands back status and output past 1 MiB" "4 big 039999" "$code $(tail -1 "$SB/run.out" | cut -c1-10)"
-    ok "R8 rex-run tail too" "big 039999" "$(env REX_SESSION="$SID" REX_BLOCK="$P" "$BIN/rex-run" tail big -n 1 | cut -c1-10)"
     env XDG_STATE_HOME="$SB/.local/state" "$BIN/rex-export" "$SID" "$P" > "$SB/export.out" 2> "$SB/export.err"
     page=$(cat "$SB/export.out")
     ok "R8 rex-export writes the whole coloured page" "yes yes" "$(grep -q 'line 039999' "$page" 2>/dev/null && echo yes || echo no) $(grep -q 'vt-palette\|<span\|<div' "$page" 2>/dev/null && echo yes || echo no)"

@@ -14,10 +14,11 @@
 # now at the mini's own screen, must still open URLs there (K10). A Rex pane
 # carries the SSH variables of whatever shell started the server, with or
 # without them: its copies go through the terminal either way, which Rex hands
-# to the app showing the pane (K15, K17), and nothing lands on this machine's
-# pasteboard, where the app's viewer may not be (K16). A tmux client running in
-# a Rex pane is such a terminal too (K19), and tmux inside Rex still picks the
-# client last typed at (K18).
+# to the app showing the pane, and land on this machine's pasteboard too, for
+# what reads it, as nvim's p does (K15, K17); a copy too large for the
+# terminal is refused outright, since the viewer may be elsewhere (K16). A
+# tmux client running in a Rex pane is such a terminal too (K19), and tmux
+# inside Rex still picks the client last typed at (K18).
 #
 # ISOLATION. tmux runs on a private socket (every toclip call gets $TMUX
 # pointed at it), pbcopy and open are stubs on PATH that record what they were
@@ -253,7 +254,7 @@ fi
 
 CASE=K15; if want; then
     # Whatever SSH variables the server handed the pane, a copy goes through
-    # the terminal, never to this machine's pasteboard.
+    # the terminal, and onto this machine's pasteboard too, for nvim's p.
     fresh
     SSH_CONNECTION='10.0.0.1 1 10.0.0.2 22' rex rex-ssh "$TOCLIP" -q 'rex-with-ssh'
     ok "K15 server started over ssh: succeeds" 0 "$?"
@@ -261,7 +262,7 @@ CASE=K15; if want; then
     ok "K15 server started locally: succeeds" 0 "$?"
     ok "K15 server started over ssh: OSC 52 to the pane" 1 "$(osc52_in rex-ssh rex-with-ssh)"
     ok "K15 server started locally: OSC 52 to the pane" 1 "$(osc52_in rex-bare rex-without-ssh)"
-    ok "K15 not this machine's pasteboard" "" "$(pbcopied)"
+    ok "K15 this machine's pasteboard too" "rex-without-ssh" "$(pbcopied)"
 fi
 
 CASE=K16; if want; then
@@ -283,7 +284,7 @@ CASE=K17; if want; then
     ok "K17 Rex URL from a detached opener: succeeds" 0 "$?"
     ok "K17 Rex URL: not opened here" "" "$(opened)"
     ok "K17 Rex URL: OSC 52 to the pane" 1 "$(osc52_in rex-url https://github.com/o/r/pull/3)"
-    ok "K17 Rex URL: not this machine's pasteboard" "" "$(pbcopied)"
+    ok "K17 Rex URL: this machine's pasteboard too" "https://github.com/o/r/pull/3" "$(pbcopied)"
 fi
 
 CASE=K18; if want; then

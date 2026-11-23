@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-rex-agent.sh — rex-agent's mapping from Claude Code hooks to the state
-# Rex keeps for a block, which drive, the agents board and every other reader
-# take as where a session stands.
+# Rex keeps for a block, which drive, the app's Activity sidebar and every
+# other reader take as where a session stands.
 #
 # Usage: bash test-rex-agent.sh [R1 R3 ...]
 #

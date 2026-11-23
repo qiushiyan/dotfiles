@@ -3,7 +3,7 @@
 # rex/.config/rex loads clean, every server call it makes matches the schemas
 # that server publishes, and its actions do what their keys promise.
 #
-# Usage: bash test-rex-lab.sh [L1 L2 L3 L4]     # requires rex and jq
+# Usage: bash test-rex-lab.sh [L1 L2 L3 L4 L5]  # requires rex and jq; L5 lua or nvim
 #
 # What this pins: `rex config check` passes and the keymap has no diagnostics
 # (L1); rex-doctor's contract check finds every call's method, payload keys
@@ -14,6 +14,9 @@
 # (L3, rex-lab-actions.lua, whose header says which actions it leaves out).
 # rexd names a tab for its pane's directory or the pane's own label, never
 # for the status chip the pane wears as its label (L4).
+# rexkit.host.copy puts a copy made for another host's session on this
+# machine's pasteboard and any other through the block's terminal (L5, plain
+# Lua with its dependencies stubbed).
 #
 # The server is the CLI the installed app bundles (REX_BIN_DIR is dropped, so
 # the wrapper does not pick an older running server's CLI): the build the next
@@ -60,9 +63,15 @@ RH=$(mktemp -d /tmp/rxl.XXXX)
 mkdir -p "$RH/.config" "$RH/.local/bin"
 cp -R "$REPO/rex/.config/rex" "$RH/.config/rex"
 echo lab-test > "$RH/.config/machine"
-for t in rex-label rex-urls rex-worktree rex-pane-pick rex-steps rex-board rex-toast rex-chip rex-clipshare tomini gopen; do
+for t in rex-urls rex-steps rex-toast rex-chip gopen; do
   printf '#!/bin/sh\nexec /bin/sleep 30\n' > "$RH/.local/bin/$t"; chmod +x "$RH/.local/bin/$t"
 done
+# gwt lists one worktree, for the worktrees action's question.
+cat > "$RH/.local/bin/gwt" <<'EOF'
+#!/bin/sh
+echo '{"worktrees":[{"path":"/tmp","branch":"main","main":true,"current":true}]}'
+EOF
+chmod +x "$RH/.local/bin/gwt"
 R() { "${CLEAN[@]}" HOME="$RH" "$REX" --autostart=false "$@"; }
 ( exec "${CLEAN[@]}" HOME="$RH" "$REX" server run ) >"$RH/server.log" 2>&1 &
 SERVER_PID=$!
@@ -130,6 +139,26 @@ CASE=L4; if want; then
   rm -f "$RH/.local/state/rex-lab/chip/${TB//:/_}.base"
   R api call -s "$TS" session.set_block_label "$(jq -nc --arg b "$TB" '{block_id: $b, label: "worker"}')" >/dev/null
   ok "L4 without a chip the pane's label names the tab, as before" "1 worker" "$(tab_becomes "1 worker")"
+fi
+
+CASE=L5; if want; then
+  # Any Lua will do: lua when installed, else the one inside nvim.
+  if command -v lua >/dev/null; then LUA=(lua); elif command -v nvim >/dev/null; then LUA=(nvim -l); else LUA=(); fi
+  if [ ${#LUA[@]} -eq 0 ]; then echo "  skip L5: no lua or nvim"; else
+    cat > "$RH/l5.lua" <<'LUA'
+package.path = arg[1] .. "/?.lua;" .. package.path
+local calls = {}
+package.loaded["rexkit.api"] = {}
+package.loaded["rexkit.feedback"] = { osc52 = function(_, _, t) calls[#calls + 1] = "osc52:" .. t; return true end }
+package.loaded["rexkit.shell"] = { pbcopy = function(t) calls[#calls + 1] = "pbcopy:" .. t; return true end }
+local host = require("rexkit.host")
+host.copy({ server = "mini" }, "s", "b", "a")
+host.copy({}, "s", "b", "c")
+io.stdout:write(table.concat(calls, " "), "\n")
+LUA
+    out=$("${CLEAN[@]}" HOME="$RH" "${LUA[@]}" "$RH/l5.lua" "$REPO/rex/.config/rex/lua" 2>&1)
+    ok "L5 another host's session copies here, any other through its terminal" "pbcopy:a osc52:c" "$out"
+  fi
 fi
 
 echo "rex-lab: $PASS passed, $FAIL failed${FAILED:+ —$FAILED}"

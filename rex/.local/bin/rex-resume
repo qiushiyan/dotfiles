@@ -10,22 +10,29 @@
 #   rex-resume note SID            INTERNAL, a hook: record the Claude Code in
 #                                  this pane, once its registry names SID
 #   rex-resume note-command LINE   INTERNAL: this pane runs LINE; exec it again
-#   rex-resume forget SID          INTERNAL, a hook: SID ended on purpose
+#   rex-resume forget SID          INTERNAL, a hook: SID ended on purpose, so
+#                                  no restore brings it back; kept as the pane's
+#                                  last conversation for `xr`
 #   rex-resume line                INTERNAL, rex.zsh: the directory and the line
 #                                  to run; nothing unless this pane was restored
+#   rex-resume last                INTERNAL, rex.zsh's xr: the same for the
+#                                  pane's last conversation, however it ended
 #   rex-resume seed                record every Claude Code running now, which a
 #                                  session started before this tool needs once
-#   rex-resume list                the records on this machine
+#   rex-resume list                the records on this machine; a pane's
+#                                  kept last conversation reads `last`
 #
 # A record holds the server instance it was written under, so a shell starting
 # in a pane resumes only after that server is gone: a Claude Code that crashed
 # back to a shell stays down instead of looping. A conversation already running
-# elsewhere gets no second copy.
+# elsewhere gets no second copy, but one whose server just stopped is still
+# exiting when the restored shell asks, so after a restart line waits for it.
 set -u
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 DIR="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/panes"
 
 record_of() { printf '%s/%s.json' "$DIR" "${1//:/_}"; }
+last_of() { printf '%s/%s.last.json' "$DIR" "${1//:/_}"; }
 
 # rex probes a terminal on stderr, and the answer would arrive as input.
 rx() { rex --autostart=false "$@" 2>/dev/null; }
@@ -109,7 +116,7 @@ forget() {
   local sid=${1:?usage: rex-resume forget SID} f
   [ -n "${REX_BLOCK:-}" ] || return 0
   f=$(record_of "$REX_BLOCK")
-  [ "$(jq -r '.sid // empty' "$f" 2>/dev/null)" = "$sid" ] && rm -f "$f"
+  [ "$(jq -r '.sid // empty' "$f" 2>/dev/null)" = "$sid" ] && mv -f "$f" "$(last_of "$REX_BLOCK")"
   return 0
 }
 
@@ -138,37 +145,74 @@ launcher() {  # CONFIG DIR
   fi
 }
 
-# What a restored pane runs: its directory, an assignment to export or an empty
-# line, and the line. Claimed by moving the record away first, so a line that
-# fails is never tried again by the next shell in this pane.
+# The three lines a pane runs to bring back the record in FILE: its
+# directory, an assignment to export or an empty line, and the line.
+emit() {  # FILE
+  local f=$1 kind sid cmd
+  kind=$(jq -r .kind "$f")
+  jq -r .dir "$f"
+  case "$kind" in
+    claude)
+      sid=$(jq -r .sid "$f")
+      jq -r '.env // ""' "$f"
+      cmd=$(launcher "$(jq -r .config "$f")")
+      while IFS= read -r t; do [ -n "$t" ] && cmd+=" $(printf '%q' "$t")"; done < <(jq -r '.extra[]?' "$f")
+      printf '%s --resume %s\n' "$cmd" "$(printf '%q' "$sid")" ;;
+    command)
+      printf '\n'
+      printf 'exec %s\n' "$(jq -r .line "$f")" ;;
+  esac
+}
+
+# What a restored pane runs (emit). Claimed by moving the record away first,
+# so a line that fails is never tried again by the next shell in this pane.
 line() {
-  local block=${REX_BLOCK:-} f sid kind
+  local block=${REX_BLOCK:-} f sid kind inst try
   [ -n "$block" ] || return 0
   f=$(record_of "$block")
   [ -f "$f" ] || return 0
   kind=$(jq -r .kind "$f" 2>/dev/null) || { rm -f "$f"; return 0; }
   sid=$(jq -r '.sid // empty' "$f")
-  # Running: a shell opened beside it, as in a tmux client in this pane.
-  if [ -n "$sid" ] && running "$sid"; then return 0; fi
-  if [ "$(jq -r .instance "$f")" = "$(instance)" ]; then
+  inst=$(instance)
+  if [ "$(jq -r .instance "$f")" = "$inst" ]; then
+    # Running: a shell opened beside it, as in a tmux client in this pane.
+    if [ -n "$sid" ] && running "$sid"; then return 0; fi
     rm -f "$f"  # the same server: this program ended, and nothing restored the pane
     return 0
   fi
+  # Another server wrote it, so the pane was restored. Its program may still
+  # be exiting from the server that stopped a moment ago: wait up to 10
+  # seconds before taking it for a copy running elsewhere.
+  if [ -n "$sid" ]; then
+    for try in $(seq 40); do running "$sid" || break; sleep 0.25; done
+    running "$sid" && return 0
+  fi
   local claimed
   claimed=$(mktemp "$DIR/.claim.XXXXXX") && mv -f "$f" "$claimed" || return 0
-  jq -r .dir "$claimed"
-  case "$kind" in
-    claude)
-      jq -r '.env // ""' "$claimed"
-      local cmd
-      cmd=$(launcher "$(jq -r .config "$claimed")")
-      while IFS= read -r t; do [ -n "$t" ] && cmd+=" $(printf '%q' "$t")"; done < <(jq -r '.extra[]?' "$claimed")
-      printf '%s --resume %s\n' "$cmd" "$(printf '%q' "$sid")" ;;
-    command)
-      printf '\n'
-      printf 'exec %s\n' "$(jq -r .line "$claimed")" ;;
-  esac
+  emit "$claimed"
   rm -f "$claimed"
+}
+
+# The pane's last conversation (emit), whether its Claude Code crashed, was
+# quit or the server restarted: the live record when its conversation is not
+# running, else the one kept when it ended on purpose. Nothing is claimed, so
+# it can be asked again. A conversation running elsewhere is refused.
+last() {
+  local block=${REX_BLOCK:-} f sid
+  [ -n "$block" ] || { echo "rex-resume: not in a Rex pane" >&2; return 1; }
+  for f in "$(record_of "$block")" "$(last_of "$block")"; do
+    [ -f "$f" ] || continue
+    [ "$(jq -r .kind "$f" 2>/dev/null)" = claude ] || continue
+    sid=$(jq -r '.sid // empty' "$f")
+    if running "$sid"; then
+      echo "rex-resume: $sid is running already" >&2
+      return 1
+    fi
+    emit "$f"
+    return 0
+  done
+  echo "rex-resume: no conversation recorded in this pane" >&2
+  return 1
 }
 
 seed() {
@@ -189,7 +233,9 @@ list() {
   local f
   for f in "$DIR"/*.json; do
     [ -f "$f" ] || continue
-    jq -r --arg f "${f##*/}" '[($f | rtrimstr(".json")[-6:]), .kind, (.sid // .line), .dir] | @tsv' "$f"
+    jq -r --arg f "${f##*/}" '($f | rtrimstr(".json")) as $n
+      | [($n | rtrimstr(".last")[-6:]), (if ($n | endswith(".last")) then "last" else .kind end),
+         (.sid // .line), .dir] | @tsv' "$f"
   done
 }
 
@@ -198,7 +244,8 @@ case "${1:-}" in
   note-command) shift; note_command "$@" ;;
   forget) shift; forget "$@" ;;
   line) line ;;
+  last) last ;;
   seed) seed ;;
   list) list ;;
-  *) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+  *) sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac

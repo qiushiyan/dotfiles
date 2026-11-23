@@ -1,6 +1,6 @@
 -- rexkit.state: the lab's files in ~/.local/state/rex-lab, and the records
--- kept there: where you are (here), where keys were pressed (keys), the
--- held pane (held), and the actions log.
+-- kept there: where you are (here), the held pane (held), and the actions
+-- log.
 --
 -- Rex's Lua cannot make a directory without a shell, so the directory is
 -- made once, when this module loads, and again only when a write finds it
@@ -78,33 +78,6 @@ end
 function M.here()
   local sid, cid = (M.read("here") or ""):match("^(%S+) (%S+)")
   return sid, cid ~= "-" and cid or nil
-end
-
--- Where each key was pressed, newest last: "<host> <session> <block>", the
--- host "-" for this server. prefix Tab reads it. The record lives with the
--- config that ran the action, so it covers another host's sessions too,
--- which that host's own watcher cannot report here.
-local KEEP_KEYS = 100
-
-function M.note_key(ctx)
-  if not (ctx.session_id and ctx.block_id) then return end
-  local line = (ctx.server or "-") .. " " .. ctx.session_id .. " " .. ctx.block_id
-  local lines = {}
-  for l in (M.read("keys") or ""):gmatch("[^\n]+") do lines[#lines + 1] = l end
-  if lines[#lines] == line then return end
-  lines[#lines + 1] = line
-  local first = math.max(1, #lines - KEEP_KEYS + 1)
-  M.write("keys", table.concat(lines, "\n", first) .. "\n")
-end
-
--- The key records, oldest first: { server = label or nil, session_id, block_id }.
-function M.keys()
-  local out = {}
-  for line in (M.read("keys") or ""):gmatch("[^\n]+") do
-    local host, s, b = line:match("^(%S+) (%S+) (%S+)$")
-    if host then out[#out + 1] = { server = host ~= "-" and host or nil, session_id = s, block_id = b } end
-  end
-  return out
 end
 
 -- The held pane (pane mode g), a file so it survives a config reload.

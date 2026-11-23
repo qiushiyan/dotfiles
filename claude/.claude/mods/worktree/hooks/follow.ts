@@ -3,7 +3,7 @@
 
 export type Tree = { path: string; branch?: string }
 
-/** A Bash command worth listing worktrees around. `rex-worktree` opens one for another session. */
+/** A Bash command worth listing worktrees around. */
 export const mayCreate = (command: string): boolean => /(^|[^\w-])gwt\b|\bworktree\s+add\b/.test(command)
 
 export function parseTrees(porcelain: string): Tree[] {
