@@ -96,6 +96,14 @@ named() {
   case "$1" in ''|shell|Block\ ????????) return 1 ;; esac
 }
 
+# Whether LABEL is a chip, not a name: a pane Rex restores keeps the label it
+# had, so after a restart a pane can still wear the last session's chip when
+# the next one starts. Every chip holds the model's 💠 or the context bar.
+is_chip() {
+  case "$1" in *💠*|*⬜*) return 0 ;; esac
+  return 1
+}
+
 # compose BASE: the header label for the loaded state, in LABEL.
 compose() {
   local base=$1 parts=() model="" cells=10 out="" p
@@ -162,9 +170,12 @@ sync() {
     seen=$STATE
     if [ ! -e "$f.base" ]; then
       base=$(current_label "$block") || return 1
+      is_chip "$base" && base=shell
       printf '%s\n' "$base" > "$f.base"
     fi
     base=""; IFS= read -r base < "$f.base"
+    # A chip saved as the name before is_chip guarded it: repaired here.
+    is_chip "$base" && { base=shell; printf '%s\n' "$base" > "$f.base"; }
     compose "$base"
     last=""; [ -r "$f.label" ] && IFS= read -r last < "$f.label"
     chip_line 0; printf '%s\n' "${#PLAIN}" > "$f.width"
@@ -191,6 +202,7 @@ clear() {
   rm -f "$f.chip"
   if [ -e "$f.label" ] && [ -n "${REX_SESSION:-}" ]; then
     [ -r "$f.base" ] && IFS= read -r base < "$f.base"
+    is_chip "$base" && base=shell
     set_label "$block" "${base:-shell}"
   fi
   rm -f "$f.base" "$f.label" "$f.width"

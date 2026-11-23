@@ -60,11 +60,15 @@ local cwds = {}
 -- A pane's own label. While it wears a status chip the block's label is the
 -- chip, and its own is in the file rex-chip wrote before setting that
 -- (rex-chip's .base), so this never reads a chip as a name. No fork.
+-- A base that is itself a chip (a pane restored wearing the last session's,
+-- rex-chip's is_chip) is no name.
 local function own_label(block, label)
   local key = block:gsub(":", "_")
   local base = state.read("chip/" .. key .. ".base")
   if not base then return label end
-  return (base:gsub("%s+$", ""))
+  base = base:gsub("%s+$", "")
+  if base:find("💠", 1, true) or base:find("⬜", 1, true) then return nil end
+  return base
 end
 
 -- The name a tab's focused pane gives it, or nil. LABELS maps block id to

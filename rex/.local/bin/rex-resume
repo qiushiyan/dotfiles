@@ -211,7 +211,7 @@ last() {
     emit "$f"
     return 0
   done
-  echo "rex-resume: no conversation recorded in this pane" >&2
+  echo "rex-resume: no conversation recorded in this pane: x --resume lists this checkout's, and Ctrl+A there every project's" >&2
   return 1
 }
 

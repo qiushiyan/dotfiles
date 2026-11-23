@@ -23,7 +23,8 @@
 # marked in the last ten and when cold, and a cache that warns stays on a
 # narrow pane (K10). A float sized just after it starts paints once, at its
 # real width, and a later resize repaints at once, not at the next tick (K11).
-# Nothing here
+# A chip a restored pane still wears, or one saved as its name before, is
+# never taken for the pane's name (K12). Nothing here
 # reaches the live state or the live server (Z1).
 #
 # ISOLATION. A throwaway HOME holds the state directory and a stub `rex` that
@@ -280,6 +281,22 @@ CASE=K11; if want; then
   render 31 12 58 >/dev/null
   ok "K11 a float sized as it starts paints once at its real width, and a resize repaints at once" "1 55 fast 70" \
     "$("${CLEAN[@]}" "${IN_REX[@]}" /usr/bin/python3 "$HERE/chip-resize.py" "$CHIP" block:t1)"
+fi
+
+# K12: a pane Rex restored still wears the last session's chip as its label
+# when the next session renders: that chip is no name.
+CASE=K12; if want; then
+  fresh 'old@example.com · 💠 opus-5-5:high · 🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜ 4%'
+  render 31 '' '' >/dev/null
+  ok "K12 a stale chip is not taken as the pane's name" "yan@planlab.ai · 💠 fable-5-2:xhigh · 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 31%" "$(label)"
+  ok "K12 its own name is shell" "shell" "$(cat "$STATE/block_t1.base")"
+  # A chip saved as the name before the guard: repaired at the next render.
+  printf '%s\n' 'old@example.com · 💠 opus-5-5:high · 🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜ 4%' > "$STATE/block_t1.base"
+  render 32 '' '' >/dev/null
+  ok "K12 a chip saved as the name is repaired" "shell" "$(cat "$STATE/block_t1.base")"
+  printf '%s\n' 'old@example.com · 💠 opus-5-5:high · 🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜ 4%' > "$STATE/block_t1.base"
+  chip clear block:t1
+  ok "K12 clear never puts a chip back as the label" "shell" "$(label)"
 fi
 
 CASE=Z1; if want; then

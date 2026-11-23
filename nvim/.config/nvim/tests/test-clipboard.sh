@@ -6,7 +6,9 @@
 # (OSC 52) wherever the screen may be another machine's: over ssh, and in any
 # Rex pane, whatever SSH variables the Rex server handed it. Cmd+V, which the
 # Rex app hands nvim as the key <D-v>, pastes the pasteboard rather than
-# typing "<D-v>" (config/keymaps.lua).
+# typing "<D-v>" (config/keymaps.lua). In a Rex pane nvim marks its block
+# while it runs, for Rex's ctrl+v (lua/config/options.lua), and a pasted image
+# path in Markdown becomes its link in insert mode too (plugins/img-clip.lua).
 # Runs whole: bash test-clipboard.sh
 #
 # The case that bought this suite: a Rex pane carries SSH_CONNECTION without
@@ -118,6 +120,28 @@ case_ rex-ssh yes REX_BLOCK=block:t 'SSH_CONNECTION=10.0.0.1 1 10.0.0.2 22' 'SSH
 case_ rex-bare yes REX_BLOCK=block:t
 case_ ssh yes 'SSH_CONNECTION=10.0.0.1 1 10.0.0.2 22' 'SSH_CLIENT=10.0.0.1 1 22' SSH_TTY=/dev/ttys999
 case_ screen no
+
+# In a Rex pane nvim keeps a file named for the block while it runs, which is
+# how Rex's ctrl+v knows to hand the key to nvim's own paste; and a pasted
+# path to an image becomes its Markdown link, in insert mode too, as the Rex
+# app pastes a screenshot and as img-clip writes the link.
+MARK="$T/state/rex-lab/nvim/block_mk"
+printf 'png' >"$T/shot.png"
+# paste_in <filetype> <text>: the buffer after <text> is pasted in insert mode.
+paste_in() {
+  R "execute('enew! | setfiletype $1')" >/dev/null
+  R 'nvim_input("i")' >/dev/null; sleep 0.2
+  R "nvim_paste('$2', v:true, -1)" >/dev/null; sleep 0.3
+  R 'nvim_input("<Esc>")' >/dev/null; sleep 0.2
+  R 'trim(join(getline(1, "$"), " "))'
+}
+start rex-mark REX_BLOCK=block:mk
+check "rex-mark: nvim marks the block while it runs" "$(R 'getpid()')" "$(cat "$MARK" 2>/dev/null)"
+check "rex-mark: an image path pasted in Markdown becomes its link" "![]($T/shot.png)" "$(paste_in markdown "$T/shot.png")"
+check "rex-mark: text pastes as it is" "just text" "$(paste_in markdown "just text")"
+stop
+check "rex-mark: quitting nvim removes the mark" "gone" "$([ -e "$MARK" ] && echo there || echo gone)"
+check "screen: no mark outside Rex" "none" "$(ls "$T/state/rex-lab/nvim" 2>/dev/null | grep -v block_mk || echo none)"
 
 check "the real pasteboard is untouched" "$REAL_CLIP_BEFORE" "$(/usr/bin/pbpaste | shasum)"
 exit "$FAIL"

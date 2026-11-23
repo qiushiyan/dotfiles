@@ -16,6 +16,13 @@ return {
       dir_path = tmp_dir,
       use_absolute_path = true,
       prompt_for_file_name = false,
+      -- A pasted path to an image becomes its link (in Markdown, the
+      -- template below) in insert mode too: the Rex app pastes a copied
+      -- screenshot as the path of a file it saved, and Claude Code's Ctrl+G
+      -- editor is in insert mode when it opens.
+      drag_and_drop = {
+        insert_mode = true,
+      },
     },
     filetypes = {
       markdown = {

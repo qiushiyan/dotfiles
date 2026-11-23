@@ -54,6 +54,30 @@ vim.api.nvim_create_autocmd("VimEnter", {
   end,
 })
 
+-- Inside Rex, ctrl+v reaches Neovim only while this file exists: Rex's paste
+-- action (rex/.config/rex/lua/lab/tools.lua) sends the key here, to the
+-- image-aware paste in config/keymaps.lua, and gives every other program the
+-- app's own paste. Nothing else can tell Rex that Neovim is in front, since in
+-- Claude Code's Ctrl+G editor the pane's front process is Claude's. Written
+-- here, not with the autocmds (VeryLazy), so a ctrl+v pressed as the editor
+-- opens finds it; removed synchronously, as the yank-path file is.
+if vim.env.REX_BLOCK then
+  local mark = vim.fn.stdpath("state"):gsub("/nvim$", "") .. "/rex-lab/nvim/" .. vim.env.REX_BLOCK:gsub(":", "_")
+  local function set_mark()
+    vim.fn.mkdir(vim.fs.dirname(mark), "p")
+    vim.fn.writefile({ tostring(vim.fn.getpid()) }, mark)
+  end
+  set_mark()
+  local group = vim.api.nvim_create_augroup("RexNvimMark", { clear = true })
+  vim.api.nvim_create_autocmd("VimResume", { group = group, callback = set_mark })
+  vim.api.nvim_create_autocmd({ "VimLeavePre", "VimSuspend" }, {
+    group = group,
+    callback = function()
+      os.remove(mark)
+    end,
+  })
+end
+
 -- TypeScript LSP: tsgo (typescript-go native port; global install via pnpm,
 -- @typescript/native-preview). LazyVim's typescript extra wires it up and
 -- disables vtsls/tsserver.

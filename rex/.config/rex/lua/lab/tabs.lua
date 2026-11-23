@@ -45,6 +45,26 @@ define{
   end,
 }
 
+-- prefix S-Tab: the session you were in before this one, as tmux's
+-- switch-client -l. The app's session.recent says it "isn't available here"
+-- yet; the server keeps each user's focus history (focus_history.reverse,
+-- preview.22), which moves focus back to the last block of another session
+-- and names it, and the app is then asked to show that session. Only for this
+-- host's sessions, which the app can select.
+define{
+  name = "session_back",
+  title = "Back to the Last Session",
+  args = action.schema({}),
+  run = function(ctx, args)
+    local sid = action.session(ctx, args)
+    if ctx.server or not sid then return { moved = false, reason = "another host's session" } end
+    local r = api.try("focus_history.reverse", { not_session_id = sid })
+    if not (r and r.reversed and r.session_id) then return { moved = false, reason = "no earlier session" } end
+    client.show(ctx, r.session_id, r.window_id)
+    return { moved = r.session_id }
+  end,
+}
+
 -- prefix N: a new tab right after this one, in the directory of the pane the
 -- key was pressed in (tmux's new-window -a -c).
 define{

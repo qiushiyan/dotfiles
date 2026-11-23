@@ -31,8 +31,9 @@ local root = {
   -- the same key inside it hides it (lab.panes). prefix Z does the same.
   { "ctrl+`", "scratch" },
   -- ctrl+v: the app's own paste, as cmd+v, which also uploads copied files
-  -- and screenshots to a pane on another host and types their paths.
-  { "ctrl+v", "pane.paste" },
+  -- and screenshots to a pane on another host and types their paths; to
+  -- Neovim, where it is in front, its own image-aware paste (lab.tools).
+  { "ctrl+v", "paste" },
 }
 -- ctrl+h/j/k/l: pane focus that passes the key to nvim and fzf (lab.panes nav).
 for _, dir in ipairs(DIRECTIONS) do root[#root + 1] = { "ctrl+" .. HJKL[dir], "nav", { direction = dir } } end
@@ -42,7 +43,9 @@ bind_all(nil, root)
 
 rex.mode("panes", { exclusive = true })
 local panes = {
-  { "escape", "client.mode.exit" }, { "enter", "client.mode.exit" }, { "q", "client.mode.exit" },
+  -- Two ways out, not three: each binding is a row of the mode's key panel,
+  -- which Rex cuts off when it runs long.
+  { "escape", "client.mode.exit" }, { "q", "client.mode.exit" },
   { "g", "pane_hold" }, { "p", "pane_put" }, { "shift+g", "pane_release" }, { "w", "pane_pick" },
   { "b", "pane.move_to_new_tab" }, { "e", "pane.balance" }, { "z", "pane.zoom" },
   { "space", "layout_toggle" },
@@ -88,13 +91,12 @@ local prefix = {
   { "c", "client.tab.new" }, { "n", "client.tab.new" }, { "shift+n", "window_new_here" },
   { "ctrl+h", "window_cycle", { step = -1 } }, { "ctrl+l", "window_cycle", { step = 1 } },
   { "ctrl+p", "window_cycle", { step = -1 } }, { "ctrl+n", "window_cycle", { step = 1 } },
-  { "tab", "client.tab.recent.in_session" }, { "shift+tab", "session.recent" },
+  { "tab", "client.tab.recent.in_session" }, { "shift+tab", "session_back" },
   { "x", "client.mode.enter", { name = "close-tab", once = true } }, { "m", "client.tab.rename" }, { "shift+4", "session.rename" },
   { "shift+t", "session.switch" }, { "shift+9", "session.previous" }, { "shift+0", "session.next" },
   -- tools
   { "y", "copy_path" }, { "shift+y", "copy_path", { rel = true } },
-  { "g", "gopen" }, { "shift+w", "worktrees" }, { "ctrl+w", "worktrees", { claude = true } },
-  { "u", "urls" }, { "e", "export_pane" }, { "shift+s", "steps_sidecar" },
+  { "g", "gopen" }, { "u", "urls" }, { "e", "export_pane" }, { "shift+s", "steps_sidecar" },
   { "i", "chip_toggle" },
   { "t", "client.theme.change" }, { "r", "client.config.reload" }, { "/", "client.find.open" },
 }

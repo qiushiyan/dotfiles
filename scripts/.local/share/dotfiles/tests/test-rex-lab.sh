@@ -13,7 +13,8 @@
 # server's active one, move, split, swap, hold and jump where they should
 # (L3, rex-lab-actions.lua, whose header says which actions it leaves out).
 # rexd names a tab for its pane's directory or the pane's own label, never
-# for the status chip the pane wears as its label (L4).
+# for the status chip the pane wears as its label, nor for a chip saved as
+# its own name (L4).
 # rexkit.host.copy puts a copy made for another host's session on this
 # machine's pasteboard and any other through the block's terminal (L5, plain
 # Lua with its dependencies stubbed).
@@ -66,12 +67,6 @@ echo lab-test > "$RH/.config/machine"
 for t in rex-urls rex-steps rex-toast rex-chip gopen; do
   printf '#!/bin/sh\nexec /bin/sleep 30\n' > "$RH/.local/bin/$t"; chmod +x "$RH/.local/bin/$t"
 done
-# gwt lists one worktree, for the worktrees action's question.
-cat > "$RH/.local/bin/gwt" <<'EOF'
-#!/bin/sh
-echo '{"worktrees":[{"path":"/tmp","branch":"main","main":true,"current":true}]}'
-EOF
-chmod +x "$RH/.local/bin/gwt"
 R() { "${CLEAN[@]}" HOME="$RH" "$REX" --autostart=false "$@"; }
 ( exec "${CLEAN[@]}" HOME="$RH" "$REX" server run ) >"$RH/server.log" 2>&1 &
 SERVER_PID=$!
@@ -136,6 +131,10 @@ CASE=L4; if want; then
   ok "L4 a named pane that wears a chip names its tab by its own name" "1 api" "$(tab_becomes "1 api")"
   wear shell 'a@b.example · 💠 fable-5-2:high · 🟩🟩⬜⬜⬜ 31%'
   ok "L4 an unnamed pane that wears a chip keeps the directory" "1 tmp" "$(tab_becomes "1 tmp")"
+  R api call -s "$TS" session.set_block_label "$(jq -nc --arg b "$TB" '{block_id: $b, label: "worker"}')" >/dev/null
+  tab_becomes "1 worker" >/dev/null
+  wear 'a@b.example · 💠 fable-5-2:high · 🟩⬜⬜⬜⬜ 9%' 'a@b.example · 💠 fable-5-2:high · 🟩🟩⬜⬜⬜ 31%'
+  ok "L4 a pane whose own name is a stale chip keeps the directory" "1 tmp" "$(tab_becomes "1 tmp")"
   rm -f "$RH/.local/state/rex-lab/chip/${TB//:/_}.base"
   R api call -s "$TS" session.set_block_label "$(jq -nc --arg b "$TB" '{block_id: $b, label: "worker"}')" >/dev/null
   ok "L4 without a chip the pane's label names the tab, as before" "1 worker" "$(tab_becomes "1 worker")"

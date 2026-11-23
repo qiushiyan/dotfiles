@@ -61,6 +61,12 @@ if [[ -o interactive && -n $REX_BLOCK ]]; then
   }
   autoload -Uz add-zsh-hook
   add-zsh-hook precmd _rex_chip_precmd
+  # A prompt also means Neovim is not in front, unless the shell runs inside
+  # it ($NVIM, its :terminal): the file a Neovim that crashed left would send
+  # ctrl+v to the shell (lab.tools' paste). One file test.
+  typeset -g _rex_nvim_mark="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/nvim/${REX_BLOCK//:/_}"
+  _rex_nvim_precmd() { [[ -z $NVIM && -e $_rex_nvim_mark ]] && rm -f -- $_rex_nvim_mark; return 0; }
+  add-zsh-hook precmd _rex_nvim_precmd
 fi
 
 # Commands as program status (OSC 7501, id=shell), as agents report theirs: a

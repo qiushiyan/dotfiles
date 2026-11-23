@@ -102,7 +102,7 @@ define{
 -- moved beside the one before it, taking its share of what is left.
 define{
   name = "layout_toggle",
-  title = "Toggle Side by Side / Stacked",
+  title = "Toggle Stacked",
   args = action.schema({}),
   run = function(ctx, args)
     local sid, bid = action.block(ctx, args)
@@ -310,9 +310,9 @@ define{
   end,
 }
 
--- prefix M: name the pane in the command palette, starting from its current
--- name. The name shows in the pane header and names the tab (rexd); an empty
--- one gives the pane the name "shell". A pane wearing a Claude status chip
+-- prefix M: name the pane in the command palette, in an empty field. The name
+-- shows in the pane header and names the tab (rexd); an empty one gives the
+-- pane the name "shell". A pane wearing a Claude status chip
 -- has the chip as its label, so its own name is rex-chip's to keep: the
 -- rename goes through rex-chip on the pane's host, which draws the chip
 -- again after it. label, given as an arg, skips the question.
@@ -326,15 +326,7 @@ define{
   args = action.schema({ label = { type = "string" } }),
   ask = function(ctx, args)
     if args.label then return args.label end
-    local sid, bid = action.block(ctx, args)
-    if not (sid and bid) then return nil, "no focused block" end
-    local current = chip_base(ctx, sid, bid)
-    if not current then
-      for _, b in ipairs(api.terminals(sid)) do
-        if b.block_id == bid then current = b.label end
-      end
-    end
-    return action.input{ title = "Rename pane", value = current or "", confirm = "Rename" }
+    return action.input{ title = "Rename pane", placeholder = "New name (empty: shell)", confirm = "Rename" }
   end,
   run = function(ctx, args, label)
     local sid, bid = action.block(ctx, args)

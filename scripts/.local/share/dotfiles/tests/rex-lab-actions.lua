@@ -200,13 +200,28 @@ ok("label_pane names the pane, trimmed", r.renamed == "build" and select(2, wind
 r = press("label_pane", C, { label = "" })
 ok("label_pane with an empty name gives it shell", select(2, window_of(C)) == "shell", dump(r))
 
--- prefix W lists gwt's worktrees (the sandbox's gwt prints one) and asks;
--- given the path of a checkout a pane already works in, it goes to that pane.
-r, q, e = press("worktrees", A, {})
-ok("worktrees with no app to ask opens nothing", r.cancelled == true, e or dump(r))
-local cwd = proc_cwd(A)
-r = press("worktrees", A, { path = cwd })
-ok("worktrees on a checkout a pane works in focuses that pane", cwd ~= nil and r.focused ~= nil and r.opened == nil, dump(r))
+-- ctrl+v: the app's paste, unless the pane's Neovim left its file (the
+-- nvim config writes it while it runs); then the key goes to Neovim.
+local mark = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/rex-lab/nvim/" .. A:gsub(":", "_")
+r, q = press("paste", A, {})
+ok("paste without Neovim is the app's paste", r.pasted == true and steps(q) == "pane.paste", dump(q))
+rex.exec({ "/bin/mkdir", "-p", (mark:gsub("/[^/]+$", "")) })
+local f = io.open(mark, "w")
+if f then f:write("1\n"); f:close() end
+r, q = press("paste", A, {})
+ok("paste with Neovim in front passes ctrl+v to it", f ~= nil and r.passed == "nvim" and steps(q) == "pane.send_key", dump(q))
+os.remove(mark)
+
+-- prefix S-Tab: back to the session focus was last in, from the server's
+-- focus history; in a session with no other to go back to, nothing.
+local back = must("session.create", { label = "back" }).session_id
+must("session.attach", { session_id = back })
+local bw = must("session.new_window", { session_id = back, layout = blk("other") })
+must("session.focus_block", { session_id = back, block_id = bw.block_ids[1] })
+must("session.focus_block", { session_id = S, block_id = A })
+r, q = press("session_back", A, {})
+ok("session_back goes to the session focus was in before", r.moved == back and steps(q) == "session.select", dump(r) .. " " .. dump(q))
+rex.call("session.destroy", { session_id = back })
 
 -- An action run with no block (rex do NAME, the palette) acts on the focused one.
 local r2 = rex.call("client.action", { action = "copy_path", origin = "api", args = { session_id = S } })
