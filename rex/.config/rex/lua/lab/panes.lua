@@ -216,7 +216,7 @@ define{
       end
     end
     if #items == 0 then error("no other tab in this session (b breaks the pane into a new one)", 0) end
-    return rex.ui.pick{ title = "Move pane to", placeholder = "Filter tabs", items = items }
+    return action.pick{ title = "Move pane to", placeholder = "Filter tabs", items = items }
   end,
   run = function(ctx, args, window_id)
     local sid, bid = action.block(ctx, args)
@@ -334,7 +334,7 @@ define{
         if b.block_id == bid then current = b.label end
       end
     end
-    return rex.ui.input{ title = "Rename pane", value = current or "", confirm = "Rename" }
+    return action.input{ title = "Rename pane", value = current or "", confirm = "Rename" }
   end,
   run = function(ctx, args, label)
     local sid, bid = action.block(ctx, args)

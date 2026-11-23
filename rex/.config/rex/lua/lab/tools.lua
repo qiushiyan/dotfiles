@@ -168,7 +168,7 @@ define{
     local sid, bid = action.block(ctx, args)
     local dir = sid and bid and api.cwd(sid, bid)
     if not dir then return nil, "no directory" end
-    local pick, why = rex.ui.pick{
+    local pick, why = action.pick{
       title = args.claude and "Open Claude in a worktree" or "Go to a worktree",
       placeholder = "Filter, or name a new branch",
       items = worktree_items(ctx, sid, dir),

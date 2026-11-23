@@ -39,6 +39,12 @@ function M.define(spec)
     if ask then
       local why
       answer, why = ask(ctx, args)
+      -- Closed by the person, or nobody there to ask (no app, as under `rex
+      -- do`): the action just ends. Any other reason, such as an app or a
+      -- server too old to show a prompt, is raised for the app to report.
+      if answer == nil and why ~= nil and why ~= "cancelled" and why ~= "no_client" and why ~= "timeout" then
+        error(name .. ": the question could not be asked (" .. tostring(why) .. ")", 0)
+      end
       if answer == nil then return { cancelled = true, reason = why } end
     end
     local started = os.clock() -- wall time in Rex's Lua (gopher-lua)
@@ -54,6 +60,18 @@ function M.define(spec)
     return unpack(result, 2)
   end
   return rex.action(spec)
+end
+
+-- rex.ui's questions, for an ask: nil and "unsupported" on a server too old
+-- to have them, which define then raises.
+function M.pick(spec)
+  if not (rex.ui and rex.ui.pick) then return nil, "unsupported" end
+  return rex.ui.pick(spec)
+end
+
+function M.input(spec)
+  if not (rex.ui and rex.ui.input) then return nil, "unsupported" end
+  return rex.ui.input(spec)
 end
 
 -- define for one domain: its actions share a palette category.
