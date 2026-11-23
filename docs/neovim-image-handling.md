@@ -32,7 +32,7 @@ This macOS has no `/etc/periodic` tmp-cleanup, so the img-clip spec purges its o
 
 `<C-v>` here has never been vim's visual block — `config/keymaps.lua` maps it (with `<C-c>`/`<C-x>`/`<C-z>`) to system-clipboard paste, and `<D-v>` (Cmd+V, which the Rex app delivers as a key) the same way. The mapping is an expression map: it asks img-clip's `content_is_image()` (a `pngpaste` probe, a few ms) and resolves to `<Cmd>PasteImage<CR>` for an image, or the plain `"+p` text paste otherwise.
 
-The probe reads the pasteboard of the machine nvim runs on. In a Rex pane on another host, Ctrl+V sends the screenshot there first (`docs/rex.md` § Several machines); Cmd+V does not, and a pane reached over ssh needs `tomini` first (`docs/qiushi-mini.md` § Clipboard and attach). The file and the path it inserts are that host's, which is what Claude Code there reads, so nothing has to sync the file.
+The probe reads the pasteboard of the machine nvim runs on. In Rex, Ctrl+V reaches this mapping only while nvim marks its pane (`docs/rex.md` § Several machines), so on a pane's own host it works as here. In a pane on another host, the Rex app pastes instead: it uploads the screenshot to that host and pastes its path, and img-clip's drag-and-drop turns a pasted image path into the same link, in insert mode too (`plugins/img-clip.lua`). A pane reached over ssh needs `tomini` first (`docs/qiushi-mini.md` § Clipboard and attach). Either way the file and the path are that host's, which is what Claude Code there reads, so nothing has to sync the file.
 
 Quirk: some apps (Excel, rich-text editors) put *both* a text and an image representation on the clipboard — those paste as an image. Use `"+p` directly when you want the text.
 

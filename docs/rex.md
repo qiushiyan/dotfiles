@@ -18,11 +18,18 @@ action, a `rex do` script).
 This doc carries what the trial learned, so the next agent builds on it
 instead of re-deriving it: how Rex is shaped, where its truth lives, which of
 its protocols carry agent work, how the machines meet in it, and the
-traps. Each tool under `rex/` explains itself in its header. Everything here
-was established against CLI build `c50b257` and app build 1026; app build
-1069 (CLI `7b5bf3e`) added to the API, and 1497 took the shell out of its Lua.
-Rex moves fast: after an update, restart the server and run `rex-doctor`
-(§ Lessons).
+traps. Each tool under `rex/` explains itself in its header. What is here was
+last checked against server preview.22 and app builds 2061 (preview) and 2083
+(snapshot). Rex moves fast: after an update, restart the server, run
+`rex-doctor`, and read the release notes for what Rex now does itself; the
+lab drops a piece the moment Rex does its job.
+
+**The release notes are behind Discord sign-in,** in the community MCP
+(`https://www.superlogical.com/rex/community-mcp`), registered as
+`superlogical` on the `yqs@planlab.ai` account. A headless session reads them:
+`claude -p "<list_changelog, read_changelog, search_feedback …>"
+--allowedTools 'mcp__superlogical__*'`. Signing in (`claude mcp login
+superlogical`) needs an interactive terminal.
 
 ## Where Rex's truth lives
 
@@ -124,9 +131,12 @@ These are Rex's, not ours, and they are what make Rex better than tmux for
 agents; a new integration should reach for them first.
 
 - **Program status, OSC 7501.** A program reports its own state to its
-  terminal; Rex keeps one record per `id` on the block, draws a badge on the
-  tab ("Show status badges"), answers `program_status`, and emits
-  `program_status_changed` with the record and the process that reported it.
+  terminal; Rex keeps one record per `id` on the block, draws it on the tab,
+  lists it in the Activity sidebar (⌘.) by urgency, raises the app's own
+  notification for one that finishes or blocks out of view, answers
+  `program_status`, and emits `program_status_changed` with the record and the
+  process that reported it. So the lab draws no board and sends no
+  notification of its own.
   The grammar is Superlogical's spec
   (`https://www.superlogical.com/rex/docs/build/program-status.md`).
   Claude Code's hooks publish through it (`id=claude`), and so does every
@@ -137,21 +147,18 @@ agents; a new integration should reach for them first.
   prompt with a `\r` or a multi-line command would leave the badge stale. Both
   emitters make the text one line, every control character a space, and cut
   it to fit before encoding.
-- **The clipboard, OSC 52.** Written to a terminal, it becomes a
-  `clipboard_written` event and the app showing that session copies it: the
-  clipboard of the machine you are looking from, with no ssh-aware routing.
-  Neovim's `p` in a Rex pane reads its own host's `pbpaste`, so rexd
-  publishes the event's text (a copy too large for the event is read back
-  with `clipboard_read`) through `rex-clipshare`, the one place a Rex copy is
-  published: onto this machine's pasteboard and, over ssh, every other
-  machine's in twin's manifest, where the newest copy wins. A yank on one
-  host pastes with `p` on any. A copy made outside Rex, such as a screenshot or a URL from the
-  laptop's browser, reaches no other machine this way; Ctrl+V sends it on
-  demand (§ Several machines). Since a pane cannot
-  say where you are, the shared copy tools send it this way in every Rex
-  pane: `toclip` (so `browser-clip` copies a URL rather than open it on the
-  host), Neovim's `y`, and tmux's `load-buffer -w` for a tmux client running
-  in a Rex pane. `docs/qiushi-mini.md` § Clipboard and attach owns the
+- **Copy and paste cross machines in the app.** A copy written to a
+  terminal (OSC 52) lands on the clipboard of the Mac you look from, whatever
+  host the pane is on. The app's paste (Cmd+V, `pane.paste`) types text, and
+  for a copied screenshot or file it saves the file and types its path: on
+  this Mac a temporary file, in a pane on another host one it uploads there
+  first. Since a pane cannot say where you are, the copy tools copy through
+  the terminal in every Rex pane, and also onto the pane host's own
+  pasteboard, which is what Neovim's `p` reads there: `toclip` (so
+  `browser-clip` copies a URL rather than open it on the host), Neovim's `y`,
+  and tmux's `load-buffer -w` for a tmux client running in a Rex pane. A copy
+  made on one host reaches another host's `p` only through the Mac you look
+  from, by pasting. `docs/qiushi-mini.md` § Clipboard and attach owns the
   routing.
 - **The foreground process and its cwd** come from the OS through the
   `process` block method, right while nvim or Claude runs: tmux's
@@ -159,7 +166,7 @@ agents; a new integration should reach for them first.
   so `process` reports Claude while it is open.
 - **A terminal's whole scrollback** comes back as text, HTML (palette slots as
   CSS variables) or VT from `rex capture`, in parts past one control reply
-  (§ Lessons). The URL picker, the pane export and `rex-run` read it.
+  (§ Lessons). The URL picker and the pane export read it.
 - **A block's raw bytes** come from the data protocol (`/api/data`,
   `rex.data.terminal.v1`): a ticket from `data.connect` on a control
   connection attached to the session, then HELLO (`0x01` and the ticket's 16
@@ -216,21 +223,23 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
   `read_state` reads the lab's state there, `copy` copies on the app's
   machine; `rexkit.shell`'s `bin` names a tool for a pane by the pane host's
   `$HOME`.
-- **Ctrl+V in another host's pane sends this machine's clipboard there first.**
-  Programs read the pasteboard of the machine they run on (Claude Code's
-  paste, Neovim's `<C-v>`) and a paste event carries only text, so the key is
-  the one moment that knows where the person is. `paste_clipboard` runs `tomini`
-  whatever the pane holds, then queues the key; the log records what went. A
-  failed send raises its reason and withholds the key, since the key would
-  paste whatever that pasteboard last held. It rests on every host's label
-  being its ssh alias on the app's machine.
-- **`prefix u` opens a pane's URL or file on the machine you are at.** A click
-  cannot: the app handles it with no hook, on a path its machine does not have,
-  and Claude Code's own click runs on the host. The action names the app's
-  machine and the picker, on the pane's host, hands the pick to `rex-open`, which
-  copies a file there and opens the copy. Fullscreen Claude Code's capture is its
-  current screen, broken mid-word by its renderer with no link targets in it, so
-  scroll to the path first; the picker rejoins a path only if the result exists.
+- **Ctrl+V is the app's paste, except to Neovim.** Elsewhere it is Cmd+V
+  (§ Protocols that carry agent work). Neovim pastes an image itself
+  (img-clip: a file under `/tmp/img-clip`, and in Markdown its link), so
+  while Neovim is in front the key goes to it. Rex cannot see that in Claude
+  Code's Ctrl+G editor, whose front process is Claude's, so Neovim keeps a
+  file named for its block while it runs and the `paste` action reads it
+  (`rex/.config/rex/lua/lab/tools.lua`). A pane on another host keeps its
+  file there, so it gets the app's paste, whose path img-clip turns into the
+  same link (`docs/neovim-image-handling.md`).
+- **The app opens a remote pane's links on the Mac you look from.** ⌘-click
+  downloads a file from the pane's host into Downloads › Rex and opens it,
+  forwards a port for a localhost link, and ⌘Y previews every link on screen.
+  `prefix u` is the keyboard picker over the pane's scrollback, which hands
+  the pick to `rex-open` on the pane's host; it reaches what is off screen.
+  Fullscreen Claude Code's capture is its current screen, broken mid-word by
+  its renderer, so scroll to the path first; the picker rejoins a path only
+  if the result exists.
 - **The app cannot be sent to another host's session.** `session.select`
   queued by an action waits five seconds and gives up ("no host lists it" in
   the app's log). Moving between tabs is therefore the app's own
@@ -246,36 +255,61 @@ sessions beside its own in one sidebar, as `mini` attached tmux over ssh.
 
 The server saves its sessions. A restart, an update or a reboot brings back
 every session, window and block id, with their labels and layout, each block
-running a plain login shell in its directory. No running program comes back,
-scrollback did not in a scratch restart, and program status starts empty.
-Rex's server log says `restored saved sessions`.
+running a plain shell in its directory; no program comes back, and program
+status starts empty.
 
-- **An update has two steps.** The app's updater replaces the app, and the
-  server keeps the old build until it restarts: the app's `Restart Server…`
-  (`client.server.restart`), or a reboot. A machine with no screen takes both
-  from another machine's Screen Sharing.
+- **An update has two steps:** the app's updater replaces the app, and the
+  server keeps the old build until `Restart Server…`
+  (`client.server.restart`) or a reboot. Each app follows its channel
+  (`client.update.set_channel`): snapshot on mini2, preview, a few days
+  behind, on the laptop and the mini. `rex-doctor` names a server too old for
+  a call the lab makes.
+- **From another machine,** `rex -C <app> do client.server.restart` works
+  with Remote Control on, unless the app did not start the running server
+  ("isn't available here right now"); AppleScript over ssh waits on a
+  permission nobody can grant. Then stop the server and start the app's
+  bundled build with the flags the running one shows in `ps` (Tailscale is a
+  saved setting). The app reconnects, but never restarts a server stopped
+  under it:
+
+  ```bash
+  rex --autostart=false server stop
+  S="$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/<build>/Rex Server.app/Contents/MacOS/rex"
+  nohup "$S" server run --listen "unix://$HOME/Library/Application%20Support/rex/server.sock" \
+    --websocket-origin-pattern https://rex.superlogical.com --log-max-size 50MiB --max-sessions 64 \
+    --max-blocks 1024 --max-windows 64 --max-panes 64 --log-format text </dev/null >/dev/null 2>&1 & disown
+  ```
+
+- **An app that stopped updating is replaced by hand** from the newest item
+  of its `SUFeedURL` feed, after `codesign --verify --deep --strict`, the
+  installed app's `TeamIdentifier`, and `spctl --assess` saying Notarized
+  Developer ID: stop the server, quit the app, swap the bundle under its
+  installed name, `open` it.
 - **Conversations come back through `rex-resume`.** `rex-agent` records each
-  pane's conversation, directory, account and flags under its block id in
-  `~/.local/state/rex-lab/panes`, and `rex.zsh` enters the resume at a restored
-  shell's first prompt, as if typed. It runs for a crash or a reboot as for a
-  planned restart, and resuming starts no turn. `rex-steps` records its own line
-  the same way. A session started before this tool has no record until its next
-  prompt; `rex-resume seed` records every Claude Code running now.
-- **Only a person's exit forgets.** A `SessionEnd` reason of
-  `prompt_input_exit` or `logout` removes the record, while a stopping server
-  and a killed Claude Code both report `other`. A record holds the server
-  instance that wrote it, so a shell starting under the same server resumes
-  nothing and clears the record: Claude Code that crashed back to a shell stays
-  down.
+  pane's conversation, directory, account and flags under its block id; a
+  restored shell's first prompt asks `rex-resume`, and Rex types the line
+  into the pane (`rex send`), so it runs as if typed and starts no turn.
+  `rex-steps` records its own line the same way, and `rex-resume seed`
+  records every Claude Code running now. The hook is a precmd: `rex.zsh`
+  loads from `.zshenv`, and Oh My Zsh's `lib/key-bindings.zsh` later
+  replaces `zle-line-init` outright, dropping any hook hung there
+  (`test-rex-resume.sh` R5). An old Claude Code can still be exiting when
+  the restored shell asks, so `rex-resume` waits up to ten seconds before
+  taking it for a copy running elsewhere.
+- **Only a person's exit is not restored.** `prompt_input_exit` or `logout`
+  keeps the record aside as the pane's last conversation; a stopping server
+  and a killed Claude Code report `other`. A record holds the server instance
+  that wrote it, so Claude Code that crashed back to a shell under the same
+  server stays down. `xr` brings back the pane's last conversation, however
+  it ended, in the directory it had moved to.
 - **A restart interrupts what is mid-turn,** and nothing waits for a quiet
   moment. Pick it while batches run; `drive status` shows what is working. A
   driven session wakes `interrupted` (`~/dev/drive/docs/batches.md` § When Rex
-  restarts); any other shows its interrupted turn on resuming. Its background
-  jobs and subagents are gone.
-- **A restored pane's first shell is the account's real one,** since it starts
-  through login(1), which resets `HOME`. A scratch server's restored panes read
-  the real `~/.zshrc`, with `REX_SERVER` naming the scratch server;
-  `test-rex-resume.sh` replaces that shell with a sandboxed one.
+  restarts); any other shows its interrupted turn on resuming.
+- **A restored pane's first shell can be the account's real one** (preview.21
+  starts it through login(1), which resets `HOME`), so a scratch server's
+  restored panes may read the real `~/.zshrc`; `test-rex-resume.sh` replaces
+  that shell with a sandboxed one.
 
 ## Memory
 
@@ -308,23 +342,20 @@ long-running script; the layout and idle blocks are nearly free.
 Each is a trap the Rex environment does not reveal; the guard is named where
 one exists.
 
-- **A new build serves only after the server restarts** (§ Restarting). The
-  server starts every terminal through its own executable. The app runs the server it starts from its own copy
-  under `~/Library/Application Support/com.superlogical.rex/RexServer/Versions/<build>`,
-  which outlives the bundle, but `rex server start` from the bundle's CLI
-  runs it from the bundle: once that bundle is replaced, each split and new
-  tab fails (`posix_spawn … no such file or directory` in the server log)
-  while the keys still resolve. Updates also move the CLI inside the bundle:
-  `rex/.local/bin/rex` puts it on PATH, a pane's `REX_BIN_DIR` first, then each
-  layout it knows.
+- **A server must not run from the app bundle.** It starts every terminal
+  through its own executable, so one `rex server start` ran from the bundle's
+  CLI fails each split and new tab (`posix_spawn … no such file or
+  directory`) once an update replaces the bundle. The app runs its server
+  from its own copy under
+  `~/Library/Application Support/com.superlogical.rex/RexServer/Versions/<build>`,
+  as § Restarting does. `rex/.local/bin/rex` finds the CLI wherever an update
+  moved it, a pane's `REX_BIN_DIR` first.
 - **Any `rex` call with no server running starts one.** `--autostart`
-  defaults to true and no setting turns it off. From build 1497 the server
-  keeps only a short list of the caller's variables (`PATH`, `HOME`, `SHELL`,
-  the locale, the user), so a Claude Code tool shell's `NO_COLOR=1
-  FORCE_COLOR=0` or an ssh login's `SSH_CONNECTION` never reaches its panes;
-  an older build hands the caller's whole environment to every pane,
-  and nothing colours. A tool that only looks passes `--autostart=false`, as
-  drive does on every call.
+  defaults to true and no setting turns it off. The server keeps only a short
+  list of the caller's variables (`PATH`, `HOME`, `SHELL`, the locale, the
+  user), so a Claude Code tool shell's `NO_COLOR=1` never reaches its panes.
+  A tool that only looks passes `--autostart=false`, as drive does on every
+  call.
 - **A command the API starts with `shell: none` runs under login(1) unless
   `login` is false,** and that root-owned `login` is then what `process`
   reports in front, hiding the program and its Claude Code registry entry.
@@ -348,12 +379,14 @@ one exists.
   then typed the literal `<D-v>`; it maps `<D-v>` to its clipboard paste
   (`nvim/.config/nvim/lua/config/keymaps.lua`, pinned by
   `test-clipboard.sh`), so it reads its host's pasteboard rather than the
-  app's clipboard; in another host's pane, Ctrl+V is the key that sends it
-  first. A real paste arrives as a `paste` block event, bracketed.
+  app's clipboard. A real paste arrives as a `paste` block event, bracketed.
 - **An action has no `rex.sleep`, `rex.wait` or `rex.stop`;** those are a
   `rex do` script's. An action that waits uses a shell sleep
   (`rexkit.shell`'s `pause`), and one that waits on a block polls it, since
   it hears no events.
+- **A key's action holds the keys after it until it returns,** so slow work
+  in one freezes the tab (an 18 s `gwt list` retired the worktree picker).
+  Slow work runs detached (`rexkit.shell`'s `spawn`) or in a pane.
 - **A fork costs an action about 5 ms, more than all the API calls of a key
   press together.** The hot keys (pane focus, the tab keys) fork nothing:
   `rexkit.state` makes the state directory once, at load, and reads and
@@ -373,11 +406,18 @@ one exists.
   Rex Server); from a key press they need nothing. A CLI test of an action
   that queues a client step exercises only the server half.
   `rex api call client.action` with `server` set runs an action as another
-  host's key would, on a session of the server it calls. A picker in a split
-  hands its result back as the app that pressed the key, `rex -C
-  <ctx.client_id> do ACTION`, so the action's client steps reach that app; on
-  another host's session that id is the app's client on this machine's server,
-  which the far host cannot reach (`rex-pane-pick`).
+  host's key would, on a session of the server it calls.
+- **A question goes to the command palette** (`rex.ui.input`,
+  `rex.ui.pick`, server API revision 17), never to a picker in a split. Rex
+  refuses one inside `pcall` or `xpcall`, which is how `lab.action` runs an
+  action to log its failure, so an action asks in its unprotected `ask` step
+  and also takes the answer as an arg, for `rex do` and the tests
+  (`rex/.config/rex/lua/lab/action.lua`).
+- **Some actions the docs list are not in the app yet:** `session.recent` and
+  the recent-pane actions answer "isn't available here right now". The
+  server's focus history (`focus_history.reverse`, preview.22) is what
+  `prefix S-Tab` calls instead (`session_back`), so on an older server it does
+  nothing.
 - **A client step runs after the action returns, and the app learns of a new
   window later still.** A tab step queued right after `session.new_window`
   lands one tab too far, in the next session. On this host the action selects
@@ -388,14 +428,16 @@ one exists.
 - **A mode shows a panel of its keys while it is active, and so does a key
   sequence (`ctrl+a>x`).** Both swallow a key nothing binds; `exclusive` is
   `rex.mode`'s one option, and `rex.unbind("mode/key")` blocks a key in a
-  mode. The prefix is a mode, with `escape` to leave it.
+  mode. The prefix is a mode, with `escape` to leave it. The panel cuts off
+  its right column when rows run long (unreported), so a mode keeps its rows
+  few and its action titles short.
 - **The app evens out a new split when "Balance splits on creation" is on,**
   after the action that made it returns, and no pane is shorter than two rows.
   A pane meant to be small sizes itself once it has started.
 - **Events reach a `rex do` script only once its top level has returned.** A
   loop that also polls is `rex.wait(event, timeout)`, which hands over the
-  events that arrive meanwhile (the agents board).
-- **Rex's Lua forks only through `rex.exec`** from app build 1497:
+  events that arrive meanwhile.
+- **Rex's Lua forks only through `rex.exec`:**
   `os.execute` and `io.popen` raise. A module that raises while init.lua
   loads leaves the server with no key bound, so `ctrl+a` reaches the shell as
   `^A`; `rex config check ~/.config/rex/init.lua` names the line. A command
@@ -406,8 +448,8 @@ one exists.
   same through a local works.
 - **A control reply carries at most 1 MiB.** A `format` call past it is a
   `too_large` error, reached by the HTML long before the text. `rex capture`
-  reads in parts, so anything reading a whole scrollback uses it, as `rex-urls`,
-  `rex-export` and `rex-run` do.
+  reads in parts, so anything reading a whole scrollback uses it, as `rex-urls`
+  and `rex-export` do.
 - **A data stream lasts only as long as the control connection that asked
   for its ticket:** closing that connection cancels the stream (close code
   1001). A reader keeps both open and drains the control side's session
@@ -444,37 +486,26 @@ one exists.
   5–20 ms a `ps` that every hook waits on. Text crosses into bash already
   encoded, since jq's `@tsv` escapes a backslash and `read -r` keeps it.
   Guard: `scripts/.local/share/dotfiles/tests/test-rex-agent.sh`.
-- **A pane's SSH variables are the server's, not the viewer's.** A server an
-  older build started over ssh hands every pane that login's
-  `SSH_CONNECTION`, long after it closed; one from build 1497 drops it (above).
-  A tool that reads it to decide where you are decides by how the server last
-  started. Guard: `toclip` and Neovim's clipboard gate
-  test `REX_BLOCK` and copy through the terminal (§ Protocols that carry agent
-  work), pinned by `scripts/.local/share/dotfiles/tests/test-toclip.sh` and
-  `nvim/.config/nvim/tests/test-clipboard.sh`. headroom's `login` reads
-  `SSH_CONNECTION` unguarded, so in a mini pane on a server an older build
-  started over ssh it treats you as remote.
+- **Nothing in a pane says where its viewer is.** Its environment is the
+  server's, so a tool deciding where you are tests `REX_BLOCK` and copies
+  through the terminal: `toclip` and Neovim's clipboard gate, pinned by
+  `scripts/.local/share/dotfiles/tests/test-toclip.sh` and
+  `nvim/.config/nvim/tests/test-clipboard.sh`.
 - **Claude Code does not recognise `TERM_PROGRAM=rex`** and prints URLs as
   plain text unless `FORCE_HYPERLINK` says the terminal takes OSC 8 links.
   `rex.zsh` sets it in every Rex shell, and `.zshenv` takes it back out of
   Claude Code's tool shells (`docs/zsh.md` § Lessons learned). The app opens
-  those links on Cmd-click, as it does plain-text URLs: clicked in the mini's
-  app on a mini session, both open in the mini's browser. Which browser opens
-  for a click in one machine's app on the other machine's session is untested.
-  The links tab of `rex-demo` is the check, worth repeating after a Rex update.
+  those links on ⌘-click, as it does plain-text URLs. The links tab of
+  `rex-demo` is the check, worth repeating after a Rex update.
 
 ## What the app does not show
 
-Feedback that tmux draws on its own surfaces has no working home in Rex yet.
-Each of these reaches the server and never the screen, so nothing essential
-depends on them:
+Each of these reaches the server and never the screen, or was not seen
+there, so nothing essential depends on them:
 
-- **Floating layers:** laid out, never painted; the app also sends them no
-  keys. Toasts are off (`rexkit.feedback`'s `LAYER_TOASTS`), and splits stand in for
-  popups.
-- **Notifications:** OSC 9 becomes a `desktop_notification` event, and
-  neither it nor an `osascript` notification appeared. rexd still sends one
-  when an agent or a long command finishes in a tab you are not on.
+- **Toasts:** floating layers are painted (the scratch shell floats), but the
+  lab's toasts (`rexkit.feedback`'s `LAYER_TOASTS`) stay off, untried since.
+  An action reports through the app instead: a raised error, or the palette.
 - **Names set through the API:** a block or window label changed by
   `set_block_label` / `set_window_label` did not reach the pane header or the
   sidebar, though rexd's tab numbers, set the same way when a tab opens, do.
@@ -493,13 +524,10 @@ A block type of our own was built and loaded on a scratch server. Findings,
 for whoever tries again after a Rex update:
 
 - **Loading:** every executable in `~/Library/Application Support/rex/blocks`
-  (or `--block-dir`) starts with the server, which takes it up only at its own
-  start. The plugin gets `REX_BLOCKSERVER_INFO_FD=3`, serves HTTP, and writes
-  `{"network","addr","base_url","pid"}` to that fd; Rex then dials
-  `<base_url>/api/control` as a `rex.control.v1` client and sends
-  `block_creator.list`, `block.create`, `block.event`, `block.method` and
-  `block.close`. Its methods, actions and events then join the API like the
-  terminal's.
+  (or `--block-dir`) starts with the server, and only at its start. It serves
+  the control protocol over HTTP at an address it writes to fd 3
+  (`REX_BLOCKSERVER_INFO_FD`), and its methods, actions and events join the
+  API like the terminal's.
 - **Drawing:** `data.connect` on its block fails ("block data provider not
   found"), Rex never asks a plugin for data, and the app draws an
   "Unsupported block" card for any creator but the terminal. The probe after
@@ -524,12 +552,12 @@ failures. `init.lua` only loads them, and its header maps them.
 - **The tmux keys** (§ Keys), on Rex's own API: pane focus that passes
   `ctrl+h/j/k/l` through to nvim and fzf, per-session tab numbers kept by a
   watcher (`rexd`, in a detached block a Rex shell starts), pane mode with
-  push within a tab and hold and put or a picker across tabs, a scratch split,
-  and a URL picker and pane export over the block's scrollback.
+  push within a tab and hold and put or a pick across tabs, a floating
+  scratch shell, rename in the palette, and a URL picker and pane export over
+  the block's scrollback. Where Rex has its own action the key binds it.
 - **Agent status:** every Claude in Rex publishes its state over OSC 7501
-  (`rex-agent`, from the hooks); the tab badge shows it, `rex-board` lists the
-  agents of every server it can reach most-urgent first, and a key jumps to
-  the one on this host that has waited longest. It is only what a hook
+  (`rex-agent`, from the hooks), which the app draws on the tab and in its
+  Activity sidebar and notifies (§ Protocols that carry agent work). It is only what a hook
   reported: no hook fires for a deny, an interrupt, a typed `/compact`, a
   queued turn or a held message from another session, so the badge can read
   working or blocked for a session idle at its prompt. Code that must know
@@ -538,18 +566,21 @@ failures. `init.lua` only loads them, and its header maps them.
 - **claude-steps beside the agent:** a split that runs `claude-steps show` for
   the agent next to it, redraws on each of its status events, and closes with
   it.
-- **rex-run:** runs a command in a pane beside the caller and hands back its
-  exit status and output, for an agent whose work the human should watch.
-- **rex-resume:** brings a restored pane's program back (§ Restarting).
+- **rex-resume and `xr`:** bring a restored or lost pane's conversation back
+  (§ Restarting). An agent that runs a command for the human to watch uses
+  `rex run --wait` and `rex capture`, which Rex's own skill teaches.
+- **The status chip** is a Claude pane's label (`rex-chip`). A restored pane
+  keeps its label, so it can come back wearing the last session's chip, which
+  `rex-chip` and `rexd` take for no name (`test-rex-chip.sh` K12).
 - **Theme:** `theme-set` switches the app to the Ghostty theme it chose.
 
 It reaches into other packages, which is where a change to them can break it:
 the Claude hooks in `claude/.claude/settings.json` (each guarded by
 `$REX_BLOCK`, so a no-op outside Rex), step 6 of
-`scripts/.local/bin/theme-set`, `scripts/.local/bin/tomini`,
-`zsh/.config/zsh/rex.zsh`, the yank-path block
-in `nvim/.config/nvim/lua/config/autocmds.lua`, the clipboard gate in
-`nvim/.config/nvim/lua/config/options.lua`, the Rex route in
+`scripts/.local/bin/theme-set`, `zsh/.config/zsh/rex.zsh`, the yank-path block
+in `nvim/.config/nvim/lua/config/autocmds.lua`, the clipboard gate and the
+Rex mark in `nvim/.config/nvim/lua/config/options.lua`, img-clip's
+insert-mode paste in `nvim/.config/nvim/lua/plugins/img-clip.lua`, the Rex route in
 `scripts/.local/bin/toclip`, and `~/.config/rex` as a real directory
 (`docs/stow-layout.md`).
 
@@ -564,39 +595,35 @@ every binding. The shape:
   resize, `z` zoom, `X` close, `space` side by side or stacked, `b` to a new
   tab, `Z` a scratch shell below, `M` rename, `C-k` clear with scrollback, `p`
   pane mode (`hjkl` push, `HJKL` resize, `space` as above, `e` balance, `g`
-  hold, `p` put, `G` release, `w` pick a tab to move it to, `Esc` leave).
+  hold, `p` put, `G` release, `w` pick a tab to move it to, `Esc` or `q`
+  leave).
 - **Tabs and sessions after the prefix:** `1`–`9` this session's tab N, `C-h`
   `C-l` (`C-p` `C-n`) previous and next, `Tab` the last tab, `S-Tab` the last
-  session on this host, `c` new tab, `N` new tab here, `x` close after asking
+  session on this host (§ Lessons), `c` new tab, `N` new tab here, `x` close after asking
   (`y` closes, `n` or `escape` keeps it), `m` rename, `T` `(` `)` sessions, `$`
   rename the session.
-- **Tools after the prefix:** `y`/`Y` copy path, `g` gopen, `u` URLs and files, `e`
-  export, `W` worktrees, `S` steps sidecar, `A` agents board, `a` next agent.
-- **Without the prefix:** `ctrl+h/j/k/l` pane focus, `ctrl+v` paste across
-  hosts (§ Several machines), `ctrl+shift+up/down` every tab in sidebar order
-  across sessions and hosts, `shift+up/down` move the tab; ⌘⇧S, ⌘⇧A and ⌘⇧J as
-  above.
+- **Tools after the prefix:** `y`/`Y` copy path, `g` gopen, `u` URLs and
+  files, `e` export, `S` steps sidecar, `i` the floating status chip.
+- **Without the prefix:** `ctrl+h/j/k/l` pane focus, `ctrl+v` paste
+  (§ Several machines), `ctrl+shift+up/down` every tab in sidebar order
+  across sessions and hosts, `shift+up/down` move the tab, ⌘⇧S the steps
+  sidecar; the app's own ⌘. for Activity.
 
 ## Open questions
 
-- **Display:** whether notifications, API-set names and floating layers
-  appear after an app update, or with a setting not yet found
-  (§ What the app does not show). The probe for floats is the app's own
-  `pane.float`.
+- **Display:** whether API-set names reach the pane header and the sidebar,
+  and whether the lab's toasts paint now that floating layers do
+  (§ What the app does not show).
 - **The app's share of scrollback:** whether the app keeps its own copy of
   each block's scrollback, doubling § Memory's per-block cost; the probe is
   the app's footprint while a pane it shows fills its scrollback.
-- **A Ctrl+V press in the app:** tests and a stand-in client cover
-  `paste_clipboard`, but whether the app paints a failed send's reason, and
-  where keys typed during the send land, take a physical press from the laptop.
+- **The stray `^b` after a paste in Neovim:** seen sometimes before Ctrl+V
+  went to Neovim's own paste there; whether the app's paste or something else
+  typed it was never probed.
 - **Comparison with tmux:** which workflows feel better in each, as sessions
   move to Rex during the trial.
-- **Copying a command from Rex:** `cout` records and copies in blocks, but
-  no key copies the latest command as tmux's `prefix o` does (`prefix o` is
-  free in `lab/keys.lua`). An action would run `cout --print --pane
-  <block>` and hand the text to `rexkit.host.copy`, raising cout's stderr on
-  a non-zero exit. On another host's session, `host.run_there` reads a
-  hidden block's screen back, which trims trailing spaces and stops at the
-  1 MiB reply, so the text would travel base64-encoded and fail loudly past
-  that size. Also untested: a copy from a mini block in the laptop's app,
-  which `toclip`'s OSC 52 should deliver to the laptop.
+- **Copying a command from Rex:** no key copies the latest command as tmux's
+  `prefix o` does (`prefix o` is free). An action would run `cout --print
+  --pane <block>` and hand the text to `rexkit.host.copy`; on another host's
+  session `host.run_there` trims trailing spaces and stops at 1 MiB, so the
+  text would travel base64-encoded.

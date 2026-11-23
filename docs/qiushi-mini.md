@@ -197,8 +197,8 @@ purpose:
 | `frommini` | laptop | the mini tmux's newest buffer → laptop clipboard |
 | `frommini -g` | laptop | the mini's GUI pasteboard, text or image → laptop clipboard |
 | `tomini` | laptop | the laptop clipboard, text or image → the mini's pasteboard, or `MINI_HOST`'s |
-| Ctrl+V in a Rex pane on another host | the app's machine | that machine's clipboard, text or image → the pane host's pasteboard, then the key |
-| `prefix u` in a Rex pane on another host | the pane's host | a URL or a copy of a file from the pane → opened on the app's machine |
+| Cmd+V or Ctrl+V in a Rex pane on another host | the app | the app's clipboard pasted there; an image or file uploaded to the pane's host and its path typed |
+| ⌘-click, ⌘Y or `prefix u` in a Rex pane on another host | the app, `prefix u` the pane's host | a URL or a copy of a file from the pane → opened on the app's machine |
 
 - **OSC 52 is fire-and-forget.** A terminal that ignores it, such as macOS
   Terminal.app, drops the copy without an error. The text still sits in the
@@ -216,14 +216,15 @@ purpose:
   `test-toclip.sh`).
 - **In a Rex pane, `toclip` always copies through the terminal.** Rex hands
   OSC 52 to the app showing the session, on whichever machine it runs, and
-  nothing in Rex says which screen that is (`docs/rex.md`). rexd also puts
-  every copy that goes through on each machine's pasteboard, so nvim's `p`
-  on any of them reads it from either screen. Rex keeps no buffer for
+  nothing in Rex says which screen that is (`docs/rex.md`). It also copies
+  onto the pane host's own pasteboard, which nvim's `p` there reads; a copy
+  reaches another host only through the screen you are at. Rex keeps no buffer for
   `frommini`, so a copy too large for OSC 52 is refused with its cause rather
   than landing only on the mini's pasteboard, which may not be the screen you
   are at.
-- **Images:** in a Rex pane on another host, Ctrl+V sends a screenshot and
-  pastes it (`docs/rex.md` § Several machines). Over an ssh window, `tomini`
+- **Images:** in a Rex pane on another host, the app's paste uploads a
+  screenshot there and types its path (`docs/rex.md` § Several machines).
+  Over an ssh window, `tomini`
   sends it first; it becomes the mini's pasteboard image, which Claude Code
   there pastes with Ctrl+V, and `tomini` prints the path of its file copy.
   `scripts/.local/share/dotfiles/pasteboard` owns the text-or-image rules for
