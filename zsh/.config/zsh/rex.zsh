@@ -9,21 +9,25 @@ fi
 # record, its program comes back as a line entered at the first prompt, as if
 # typed: the launchers exist by then, and the line shows what ran. rex-resume
 # decides, and says nothing unless the server that wrote the record is gone.
+# The first precmd asks, and Rex types the line into this pane (rex send), so
+# zle reads it as input. Not a zle-line-init hook: this file loads from
+# .zshenv, and Oh My Zsh's key-bindings.zsh later replaces that widget
+# outright, which dropped the hook and left every restored pane down.
 _rex_pane_record="${XDG_STATE_HOME:-$HOME/.local/state}/rex-lab/panes/${REX_BLOCK//:/_}.json"
 if [[ -o interactive && -n $REX_BLOCK && -e $_rex_pane_record ]]; then
-  _rex_resume_line() {
-    add-zle-hook-widget -d zle-line-init _rex_resume_line
+  _rex_resume_precmd() {
+    add-zsh-hook -d precmd _rex_resume_precmd
     local -a out
     out=("${(@f)$($HOME/.local/bin/rex-resume line 2>/dev/null)}")
     (( $#out == 3 )) || return 0
     builtin cd -q -- $out[1] 2>/dev/null
     [[ -n $out[2] ]] && export $out[2]
-    BUFFER=$out[3]
-    zle accept-line
+    # rex probes a terminal on stderr, and the answer would arrive as input.
+    $HOME/.local/bin/rex --autostart=false send -b $REX_BLOCK "$out[3]"$'\r' </dev/null &>/dev/null
+    return 0
   }
-  autoload -Uz add-zle-hook-widget
-  zle -N _rex_resume_line
-  add-zle-hook-widget zle-line-init _rex_resume_line
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd _rex_resume_precmd
 fi
 unset _rex_pane_record
 

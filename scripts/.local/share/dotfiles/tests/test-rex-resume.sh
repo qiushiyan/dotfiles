@@ -53,11 +53,16 @@ for t in rex rex-agent rex-resume rex-export; do ln -s "$BIN/$t" "$SB/.local/bin
 cat > "$SB/.zshenv" <<ZE
 export PATH="$SB/.local/bin:\$PATH"
 ZE
-cat > "$SB/.zshrc" <<ZR
+# rex.zsh loads first, from .zshenv as the real one does, and the rc file then
+# replaces zle-line-init outright, as Oh My Zsh's lib/key-bindings.zsh does:
+# a resume hung on that widget is lost, which is what kept every pane down.
+cat > "$SB/.zshrc" <<'ZR'
 export HEADROOM_PRIMARY_NAME=tester
 PROMPT='sandbox> '
-source "$ZSH_REX"
+function zle-line-init() { : }
+zle -N zle-line-init
 ZR
+printf 'source %q\n' "$ZSH_REX" >> "$SB/.zshenv"
 cd "$SB" || exit 1
 
 in_sandbox() { "$BIN/rex" --autostart=false server status 2>/dev/null | grep -q "^endpoint: .*${SB#/}"; }
