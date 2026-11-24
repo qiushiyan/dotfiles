@@ -261,7 +261,7 @@ if want("O12"):  # personal skills: linked into the added directory alone, stale
     ok("O12 the closeout is linked into the added directory", True,
        (skills / "pl-closeout").is_symlink() and (skills / "pl-closeout").resolve() == real.resolve())
     ok("O12 the checkout's own skills are untouched", False, (root / ".claude" / "skills" / "pl-closeout").exists())
-    ok("O12 the launch line counts them", True, "1 personal skills" in said)
+    ok("O12 the launch line counts them", True, "personal skills: pl-closeout" in said)
     (skills / "gone-skill").symlink_to(home, target_is_directory=True)
     run(home, config, root, "-p", "x")
     ok("O12 a link the config no longer names is removed", False, (skills / "gone-skill").is_symlink())
@@ -272,7 +272,7 @@ if want("O12"):  # personal skills: linked into the added directory alone, stale
     alt.write_text(text)
     code, args, said = run(home, config, root, "-p", "x", err=True, overlay_config=alt)
     ok("O12 a missing personal skill is named, the launch goes on", (0, True), (code, "personal skill not found, left out: 'planlab-skills/no-such-skill'" in said))
-    ok("O12 --show lists them", True, "1 personal skills: pl-closeout" in run(home, config, root, "--show", raw=True)[1])
+    ok("O12 --show lists them", True, "personal skills: pl-closeout" in run(home, config, root, "--show", raw=True)[1])
 
 if want("O9"):  # the real cache and log were never reached
     ok("O9 real cache and log untouched", REAL_BEFORE, (stamp(REAL_CACHE), stamp(REAL_LOG)))

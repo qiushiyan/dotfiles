@@ -38,7 +38,9 @@ DOMAINS = (
     ("steward", ("services/steward/",), ("steward",)),
     ("infra", ("infra/production/", "infra/terraform/"), ()),
     ("tooling", (".agents/", ".claude/", ".tabtype.toml", "scripts/", ".githooks/", "AGENTS.md",
-                 "CLAUDE.md", "docs/technical/", "codebase-health/", "bugbot/"), ()),
+                 "CLAUDE.md", "docs/technical/", "codebase-health/", "bugbot/", "packages/dev-host/",
+                 "packages/lane/", "packages/lane-client/", "packages/planlab/", "infra/devpool/",
+                 "infra/development/"), ()),
     ("app", ("application/", "packages/", "distributions/"), ("app",)),
     ("docs", ("docs/", "user-docs/", "README.md", "STRUCTURE.md"), ()),
 )
@@ -48,18 +50,18 @@ TIMEOUT = 120
 
 
 def run(argv, cwd=None):
-    """(exit status, stdout) of a read-only command; 127 when it cannot start or times out."""
+    """(exit status, stdout, stderr) of a read-only command; 127 when it cannot start or times out."""
     try:
         done = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT,
                               stdin=subprocess.DEVNULL)
-        return done.returncode, done.stdout
+        return done.returncode, done.stdout, done.stderr
     except (OSError, subprocess.TimeoutExpired):
-        return 127, ""
+        return 127, "", ""
 
 
 def checkout(start, home):
     """The Planlab checkout holding start, else the main one under home."""
-    code, out = run(["git", "-C", str(start), "rev-parse", "--show-toplevel"])
+    code, out, _ = run(["git", "-C", str(start), "rev-parse", "--show-toplevel"])
     top = Path(out.strip()) if code == 0 and out.strip() else None
     if top and (top / ".agents/skills/pl-loopy-handoff-distill").is_dir():
         return top
@@ -88,7 +90,7 @@ def serving(pr, domains, repo, runner):
     lines = []
     sha = pr["mergeCommit"]["oid"]
     if {"app", "master"} & set(surfaces):
-        code, out = runner(["planlab", "backstage", "loopy", "status", "--ref", sha, "--json"], repo)
+        code, out, err = runner(["planlab", "backstage", "loopy", "status", "--ref", sha, "--json"], repo)
         try:
             ref = json.loads(out)["ref"]
         except (ValueError, KeyError, TypeError):
@@ -110,15 +112,18 @@ def serving(pr, domains, repo, runner):
 
 
 def reads(number, repo, runner):
-    code, out = runner(["python3", ".agents/skills/pl-loopy-handoff-distill/scripts/owed_reads.py",
+    code, out, err = runner(["python3", ".agents/skills/pl-loopy-handoff-distill/scripts/owed_reads.py",
                         "--pr", str(number), "--json"], repo)
+    if code == 1 and "Closing read owed" in err:   # its own words when no marker names this PR
+        return [line("check", "done", f"no owed-read marker for #{number} on develop")]
     try:
         found = json.loads(out)["reads"]
     except (ValueError, KeyError, TypeError):
         return [line("check", "judge", f"owed reads unread (`owed_reads.py --pr {number}` exited {code})", NOTES["loopy"])]
-    lines = []
+    lines = [] if code == 0 else [line("check", "judge", f"`owed_reads.py --pr {number}` could not read every verdict; "
+                                       "run it by hand before trusting an open read", NOTES["loopy"])]
     for read in found:
-        name = read.get("name") or read.get("id", "?")
+        name = read.get("name") or Path(read.get("path") or read.get("id", "?")).name
         verdicts = [h.get("verdict") for h in read.get("history") or [] if isinstance(h, dict)]
         if read.get("state") == "closed":
             lines.append(line("check", "done", f"read {name}: {verdicts[-1] if verdicts else 'closed'}"))
@@ -132,7 +137,7 @@ def reads(number, repo, runner):
 
 
 def announcement(number, repo, runner):
-    code, out = runner(["planlab", "backstage", "loopy", "announce", "list", "--pr", str(number), "--json"], repo)
+    code, out, err = runner(["planlab", "backstage", "loopy", "announce", "list", "--pr", str(number), "--json"], repo)
     try:
         drafts = json.loads(out)
     except ValueError:
@@ -155,7 +160,7 @@ def announcement(number, repo, runner):
 
 
 def briefs(branch, repo, runner):
-    code, out = runner(["brief", "closeout", branch, "--json"], repo)
+    code, out, err = runner(["brief", "closeout", branch, "--json"], repo)
     try:
         c = json.loads(out)
     except ValueError:
@@ -166,7 +171,7 @@ def briefs(branch, repo, runner):
         lines.append(line("handoffs", "owes", f"brief {anchor.get('slug')} is spent", "handoffs.md"))
     candidates = c.get("candidates") or []
     if candidates:
-        lines.append(line("handoffs", "owes", f"{len(candidates)} brief(s) may have moved: "
+        lines.append(line("handoffs", "judge", f"{len(candidates)} brief(s) may have moved, for the sweep to admit or exclude: "
                           + ", ".join(x.get("slug", "?") for x in candidates[:5]), "handoffs.md"))
     if not anchor and not candidates:
         lines.append(line("handoffs", "done", "no brief names this branch"))
@@ -181,7 +186,7 @@ def briefs(branch, repo, runner):
 def check(number, start, home, runner=run):
     """(lines, error): every area's lines, or why the PR cannot be closed out yet."""
     repo = checkout(start, home)
-    code, out = runner(["gh", "pr", "view", str(number), "--json",
+    code, out, err = runner(["gh", "pr", "view", str(number), "--json",
                         "number,state,mergedAt,mergeCommit,headRefName,title,url"], repo)
     try:
         pr = json.loads(out)
@@ -189,11 +194,11 @@ def check(number, start, home, runner=run):
         return None, f"cannot read #{number} (`gh pr view` exited {code})"
     if pr.get("state") != "MERGED":
         return None, f"#{number} is {pr.get('state', 'unknown').lower()}; the closeout starts once it merges"
-    code, out = runner(["gh", "pr", "diff", str(number), "--name-only"], repo)
+    code, out, err = runner(["gh", "pr", "diff", str(number), "--name-only"], repo)
     paths = [p for p in out.splitlines() if p.strip()] if code == 0 else []
     found = domains_of(paths)
-    lines = [line("pr", "done", f"#{number} {pr.get('title', '')[:70]} merged {str(pr.get('mergedAt'))[:16]} "
-                  f"as {pr['mergeCommit']['oid'][:11]}; head branch {pr['headRefName']}")]
+    lines = [line("pr", "done", f"#{number} merged {str(pr.get('mergedAt'))[:16]} as {pr['mergeCommit']['oid'][:11]}, "
+                  f"head branch {pr['headRefName']}: \"{pr.get('title', '')}\"")]
     if not paths:
         lines.append(line("pr", "judge", "changed paths unread (`gh pr diff --name-only`)"))
     named = [d for d in found if d != "unmapped"]
@@ -205,10 +210,12 @@ def check(number, start, home, runner=run):
         lines.append(line("ship", "waits", "infrastructure files changed: an apply is a person's (a Bench task names it)"))
     if not any(serves for name, _, serves in DOMAINS if name in found and serves):
         lines.append(line("ship", "done", "no deployed surface: handoffs and cleanup only"))
+    if "tooling" in found:
+        lines.append(line("ship", "judge", "tooling serves nowhere; a changed CLI or an owed real use is in its note", NOTES["tooling"]))
     lines += serving(pr, found, repo, runner)
     lines += reads(number, repo, runner)
     if "loopy" in found:
-        lines.append(line("record", "judge", f"the report causes #{number} fixed and its changelog marker", NOTES["loopy"]))
+        lines.append(line("record", "judge", f"the bug-report causes #{number} fixed, and its changelog marker: the check cannot read these", NOTES["loopy"]))
         lines += announcement(number, repo, runner)
     lines += briefs(pr["headRefName"], repo, runner)
     return lines, None
@@ -235,6 +242,7 @@ def main(argv=None):
         return 0
     for item in lines:
         print(f"{item['area']:9} {item['state']:6} {item['what']}" + (f"  -> {item['note']}" if item["note"] else ""))
+    print("\nowes: yours to do now · judge: the check cannot tell; decide by the note · waits: report what releases it")
     return 0
 
 

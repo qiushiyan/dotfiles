@@ -72,8 +72,8 @@ note = """
 
 When a PR this session worked on merges, whether you merged it or I say it
 merged, closing it out is your next step, not mine: load `pl-closeout` in
-the same turn, without asking. It removes the worktree last, so pl-land's
-removal of it after the merge waits for the closeout.
+the same turn, without asking, and leave the PR's worktree to it: it
+removes the worktree last.
 
 ## Bench, transcripts and corpus samples, for this user
 

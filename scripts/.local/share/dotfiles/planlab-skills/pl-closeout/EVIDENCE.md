@@ -111,3 +111,42 @@ Loopy brief rule beside it, as a real closeout reads it, red held the rewrite
 3 of 3 and the candidate applied it 3 of 3. `keeps-foreign` passed in every
 arm, so it separates nothing. Untested: a live merge through the hook in a
 real session, and the driver's merge step closing out under `release`.
+
+## 2026-11-24 — revise-prompt's pass over every surface the build touched
+
+**Ask**, the user's: review and revise the model-facing surfaces with
+`revise-prompt` and `writing-for-agents`, new text included, proving fixes by
+reading or a behaviour case. Same session.
+
+**Findings and fixes.**
+- The check's output was the weakest surface: a PR with no owed-read marker
+  read as "owed reads unread" (`owed_reads.py` says so on stderr and exits 1,
+  as it does on a crash, so the check now reads stderr for its own words);
+  the candidate-briefs line printed `owes` after the sweep had judged them,
+  so the done line could never be met (now `judge`); `packages/dev-host`,
+  `packages/lane*`, `packages/planlab` and `infra/devpool` fell under the app
+  and would have released it (now tooling); nothing pointed at
+  `domains/tooling.md` (now a line); the title ran into "merged"; an unnamed
+  read printed its whole id. A legend of the four states ends the output, so
+  the skill defines none.
+- The skill stated the migration gate twice, the worktree's last place
+  twice, and restated what the check prints for a docs-only merge; the done
+  line now allows an `owes` line left with its reason. `app.md` lost a
+  driver-hold sentence that changed nothing and a confirm step the check's
+  rerun covers; `loopy.md` lost "the check reads both"; `taodesk.md` now
+  reads deploy, then order, then the stop; `handoffs.md` stopped restating
+  the sweep's step 7. Body 585 → 479 words, total 852 → 719.
+- The overlay note narrated a mechanism ("pl-land's removal … waits"); it
+  now says to leave the worktree to the closeout. The hook's last sentence
+  restated the skill's description; cut. The overlay printed "1 personal
+  skills".
+- The sweep's "Empty, delete the branch" dropped grammar to save words.
+- The team skill's opening tangled who runs which part; `merge-when-ready`
+  said "ship it" and asked for what each surface serves, both the closeout's.
+- `docs/planlab.md` claimed the closeout holds only posts and replies.
+
+**Verified.** By reading, each surface whole. By running: the check on
+#12460, #9081 and #12139 after the fixes; its tests (31, a crash and a
+no-marker case among them), the hook's (25), the overlay's (52). The three
+behaviour cases on the revised text, run `pl-closeout-1124-pass`: candidate 3
+of 3 on each, the hook arm 3 of 3 (2 of 3 before).

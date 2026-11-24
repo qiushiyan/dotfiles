@@ -60,10 +60,10 @@ def fake(answers):
     def runner(argv, cwd=None):
         calls.append(argv)
         joined = " ".join(argv)
-        for key, (code, out) in answers.items():
+        for key, answer in answers.items():
             if joined.startswith(key) or key in joined:
-                return code, out
-        return 1, ""
+                return (*answer, "")[:3]
+        return 1, "", ""
     return runner, calls
 
 
@@ -158,6 +158,18 @@ if want("C8"):  # a docs-only Loopy merge serves nowhere: no release, no records
     ok("C8 no deployed surface", True, any(l["what"].startswith("no deployed surface") for l in lines))
     ok("C8 no ship, record or tell line owes", [], [l for l in lines if l["area"] in ("ship", "record", "tell") and l["state"] != "done"])
     ok("C8 its owed reads are still read", True, any(a[:2] == ["python3", ".agents/skills/pl-loopy-handoff-distill/scripts/owed_reads.py"] for a in calls))
+
+if want("C9"):  # no marker names the PR: done, not a failed read; a partial read of verdicts: judged
+    runner, calls = fake(base(**{"owed_reads.py": (1, "", "no `**Closing read owed** (#12139)` marker on origin/develop")}))
+    lines, error = cc.check(12139, SANDBOX, HOME, runner)
+    ok("C9 no marker is done", [("check", "done")], [x for x in by_area(lines) if x[0] == "check"])
+    runner, calls = fake(base(**{"owed_reads.py": (1, "", "Traceback (most recent call last):")}))
+    lines, error = cc.check(12139, SANDBOX, HOME, runner)
+    ok("C9 a crash is not taken for no marker", [("check", "judge")], [x for x in by_area(lines) if x[0] == "check"])
+    runner, calls = fake(base(**{"owed_reads.py": (1, json.dumps({"reads": [{"name": "driven", "state": "open", "history": []}]}))}))
+    lines, error = cc.check(12139, SANDBOX, HOME, runner)
+    ok("C9 an unread verdict is a judge line beside the reads", [("check", "judge"), ("check", "judge")],
+       [x for x in by_area(lines) if x[0] == "check"])
 
 if want("C7"):  # the map: every domain the notes name exists, and a path takes the first domain it matches
     ok("C7 notes name real domains", True, set(cc.NOTES) <= {d for d, _, _ in cc.DOMAINS})

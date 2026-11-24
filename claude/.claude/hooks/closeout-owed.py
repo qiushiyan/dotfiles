@@ -55,8 +55,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 MESSAGE = (
     "{prs} merged in this session. Unless this turn stopped on something the "
     "user must answer, closing {them} out is your next step, not the user's: "
-    "load {skill} now (where it is not installed, read {path}). It ships the "
-    "change, takes what the merge owes and cleans up what the branch started."
+    "load {skill} now (where it is not installed, read {path})."
 )
 
 

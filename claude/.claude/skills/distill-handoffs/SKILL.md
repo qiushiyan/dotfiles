@@ -30,8 +30,8 @@ step 1 of whichever pass fires, and its report section follows this one.
 | a branch, slug or PR, or nothing on a feature branch | **closeout**: that branch's briefs alone |
 
 Closeout takes the branch that landed: the argument (a named PR's head
-branch), else the one the user's words name, else `git branch --show-current`. Name the pass first. Across all
-passes:
+branch), else the one the user's words name, else `git branch
+--show-current`. Name the pass first. Across all passes:
 
 - **Scope** is the briefs the pass names, plus every brief whose listing row
   reads `#N merged`: finished work is finished wherever it sits. Any other
@@ -131,8 +131,8 @@ moved.
    (`cd <path> && gwt remove …`). gwt refuses a dirty, untracked or locked
    checkout, and one whose tip moved since closeout (`--expect-head`). A `hold`
    line follows its checkout's `gwt remove … --keep-branch`: run that, then
-   read the hold's `git log`. Empty, delete the branch with gwt; otherwise
-   the report says what it holds, as for whatever gwt refuses.
+   read the hold's `git log`. If it is empty, delete the branch with gwt;
+   otherwise the report says what the branch holds.
    Done when the `gwt remove` JSON is read, or the cleanup has no such line.
 
 7. **Report**, in short prose: what landed, in a line; the anchor's verdict

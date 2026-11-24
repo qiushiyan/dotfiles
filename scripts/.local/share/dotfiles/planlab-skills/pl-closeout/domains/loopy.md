@@ -2,8 +2,7 @@
 
 Loopy serves from the app and the Loopy master. The app's release promotes
 the master when a promote is owed, so ship it as [app.md](app.md) says; a
-master change no app release carries ships with `pl-deploy-loopy-master`. The
-check reads both.
+master change no app release carries ships with `pl-deploy-loopy-master`.
 
 The production work is the team's Loopy closeout,
 `.agents/skills/pl-loopy-handoff-distill/SKILL.md` in the checkout. Read its
