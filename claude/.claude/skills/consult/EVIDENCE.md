@@ -531,3 +531,16 @@ now say so, and their tables and first command put fable first. In review a
 full round after a fable consult still seats astra cold, by the other-family
 rule. Before a review the user named no voice 118 times since 09-15 (the
 2026-11-04 entry above), so the default decides most rounds.
+
+## 2026-11-24 — Neon replaces Carbon as the Gemini voice (consult and review)
+
+On the user's word: Gemini 4 Neon on high is their agy model and the
+"gemini" voice. Both skills' Voices rows and More control lines now name
+`agy:gemini-4-neon:high`, member `agy-gemini-4-neon`; the `consult-design`
+snippet asks fable, astra and neon; agy's tracked settings render
+`Gemini 4 Neon (High)`. Neon also offers XHigh, which Carbon did not; the
+user chose High. A smoke run of `agy --model gemini-4-neon --effort high`
+answered. The Carbon numbers line in step 4 is cut: the 2026-11-18 entry
+measured it on Carbon, and nothing yet says Neon states unmeasured numbers
+as fact. **Next pass compares:** unsourced numbers per verdict in Neon
+answers against that entry's Carbon 2.4, and Neon dispatch failures.

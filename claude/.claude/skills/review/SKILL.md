@@ -32,7 +32,7 @@ review", "fable full review, then closeout". With no voice named, it is fable.
 |---|---|---|
 | **fable**, "claude", or none named | `claude:claude-fable-5-2` | `claude-claude-fable-5-2` |
 | **astra**, "codex" | `codex:gpt-6.2-astra:high` | `codex-gpt-6.2-astra` |
-| **carbon**, "gemini" | `agy:gemini-4-carbon:high` | `agy-gemini-4-carbon` |
+| **neon**, "gemini" | `agy:gemini-4-neon:high` | `agy-gemini-4-neon` |
 
 One cold voice is a goal round (45-minute cap) or a full round with no
 consult this session (60):
@@ -253,7 +253,7 @@ something that needs the user.
 | opus | `--with claude:claude-opus-5-5` |
 | sol | `--with codex:gpt-6.2-sol:xhigh` |
 | an effort ("astra on xhigh") | that effort in the voice: `codex:gpt-6.2-astra:xhigh` |
-| a model id spelled out | as written, on `high` for Astra or Carbon and `xhigh` for another codex model (Carbon given no effort runs Medium) |
+| a model id spelled out | as written, on `high` for Astra or Neon and `xhigh` for another codex model |
 
 A warm voice beside a cold one on a goal brief takes each brief as
 `<voice>=<brief>`, still one job:

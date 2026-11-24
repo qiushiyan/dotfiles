@@ -24,7 +24,7 @@ with astra", "consult astra and fable". With no voice named, it is fable.
 |---|---|---|
 | **fable**, "claude", or none named | `claude:claude-fable-5-2` | `claude-claude-fable-5-2` |
 | **astra**, "codex" | `codex:gpt-6.2-astra:high` | `codex-gpt-6.2-astra` |
-| **carbon**, "gemini" | `agy:gemini-4-carbon:high` | `agy-gemini-4-carbon` |
+| **neon**, "gemini" | `agy:gemini-4-neon:high` | `agy-gemini-4-neon` |
 
 ```sh
 envoy run consult-r1 --with claude:claude-fable-5-2 --prompt-file <brief> \
@@ -76,8 +76,6 @@ split: § More control.
      its problem verdict, before any design point. Independent convergence on
      our problem is the strongest evidence a round gives; a different problem
      is settled before the shape.
-   - **Carbon's numbers.** Carbon states unmeasured numbers as fact; check
-     any a decision rests on.
    - **Causes.** Adopt a cause by running its falsifying observation, never
      by agreeing with it. A problem the evidence does not carry stays
      unsettled, and the next move is that observation, not a build.
@@ -124,7 +122,7 @@ split: § More control.
 | opus | `--with claude:claude-opus-5-5` |
 | sol | `--with codex:gpt-6.2-sol:xhigh` |
 | an effort ("astra on xhigh") | that effort in the voice: `codex:gpt-6.2-astra:xhigh` |
-| a model id spelled out | as written, on `high` for Astra or Carbon and `xhigh` for another codex model (Carbon given no effort runs Medium) |
+| a model id spelled out | as written, on `high` for Astra or Neon and `xhigh` for another codex model |
 | one member of a fan-out | `--with @consult-r1/<member name>` |
 
 Voices with different briefs each take theirs as `<voice>=<brief>`, and a

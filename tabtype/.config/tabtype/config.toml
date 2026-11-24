@@ -80,7 +80,7 @@ Read ~/dotfiles/claude/.claude/skills/emil-design/SKILL.md and follow its finish
 [[snippets]]
 key = "consult-design"
 expand = '''
-Agreeing with the general direction. Now run consult with fable, astra and carbon; settle the high-level design, the implementation tenets and what done means. Where the change sets a pattern later changes will copy, adds a second way beside an old one, or fixes a fault that came back or sits in several places, read ~/.config/lessons/codebase-design/steering.md and add to the checks what holds the next change that copies this one to the pattern. The goal and the checks I started you with are on trial in the round with the rest, not fixed. For important decisions you can ask them as open ended questions with my preference. End with the goal and the checks as you now hold them, and what moved from where you started and why. $0'''
+Agreeing with the general direction. Now run consult with fable, astra and neon; settle the high-level design, the implementation tenets and what done means. Where the change sets a pattern later changes will copy, adds a second way beside an old one, or fixes a fault that came back or sits in several places, read ~/.config/lessons/codebase-design/steering.md and add to the checks what holds the next change that copies this one to the pattern. The goal and the checks I started you with are on trial in the round with the rest, not fixed. For important decisions you can ask them as open ended questions with my preference. End with the goal and the checks as you now hold them, and what moved from where you started and why. $0'''
 
 # ~/dev/planlab/main/.tabtype.toml replaces this key there, naming that
 # repo's spike toolkit; the rest of the text is the same in both.

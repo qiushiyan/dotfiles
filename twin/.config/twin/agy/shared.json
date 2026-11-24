@@ -1,5 +1,5 @@
 {
-  "model": "Gemini 4 Carbon (High)",
+  "model": "Gemini 4 Neon (High)",
   "agentMode": "accept-edits",
   "toolPermission": "always-proceed",
   "allowNonWorkspaceAccess": true,
