@@ -168,9 +168,8 @@ drive open sr-summary-decisions --model fable --effort xhigh …    # only when 
 drive send summary-decisions@… --snippet recap
 drive close summary-decisions@… --asks-to sr-summary-decisions    # its open asks follow the change; its branch and worktree wait for the cleanup after the merge
 drive send sr-summary-decisions@… "F3: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user
-drive send sr-summary-decisions@… --snippet merge-when-ready --hold release 'Its one red check is the advisory every branch fails.'
+drive send sr-summary-decisions@… --snippet merge-when-ready --hold release "Its one red check is the advisory every branch fails. If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
 drive send sr-summary-decisions@… --snippet recap
-drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #9531's merged record has no marker for its owed read, add one on develop in a docs PR and merge it."
 ```
 
 - **A planned session's done-when is the bar for its merge step:** the
@@ -179,11 +178,12 @@ drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #
   verdict for. A check dropped or swapped after its design goes to the user
   as a design question, with what the old check showed.
 - Once the stages the pipeline doc's § Who decides lists have run,
-  `merge-when-ready` merges, releases (or confirms a release in flight
-  shipped it), checks what production serves and writes the changelog,
-  taking a migration gate as above. Send it by its key with `--hold
-  release`, so no other session releases at once, and put what the session
-  should know after the key; a hand-written merge step needs the same hold.
+  `merge-when-ready` merges and closes out, releasing (or confirming a
+  release in flight shipped it) and taking a migration gate as above. Send
+  it by its key with `--hold release`, so no other session releases at
+  once, and put what the session should know after the key; a hand-written
+  merge step, and the `closeout` key for a PR merged elsewhere, need the
+  same hold.
   PRs that touch the same code merge one after another.
 - A PR that skipped its review merges from its builder. A PR whose session
   is gone gets a new session for its merge, so the merge runs where its
@@ -207,7 +207,7 @@ drive send sr-summary-decisions@… --snippet closeout --hold planlab-main "If #
   review, not to the user: open it, and have the builder's brief say where
   the fixes kept landing.
 - **A read owed after the merge** closes its session once it is a marker on
-  develop (`pl-loopy-handoff` § Documentation bindings, *Owed reads*), as
-  the closeout step above makes sure: a PR comment alone reminds nobody.
+  develop (`pl-loopy-handoff/BINDINGS.md` § Owed reads), as the merge
+  step's message asks: a PR comment alone reminds nobody.
 - **A session left waiting** on people or a release posts a PR comment: what
   is left, what it waits on, and how to finish.

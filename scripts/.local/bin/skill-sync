@@ -473,7 +473,10 @@ def main():
     repo = Path(__file__).resolve().parents[3]
     scoped = (args.skills_dir is not None or args.documents is not None
               or args.policy is not None or args.budget is not None)
-    default_roots = [repo / "claude/.claude/skills", repo / ".claude/skills"]
+    # planlab-skills: the operator's Planlab-only skills, which the Planlab overlay
+    # links into its sessions (docs/planlab.md); held to the same budgets.
+    default_roots = [repo / "claude/.claude/skills", repo / ".claude/skills",
+                     repo / "scripts/.local/share/dotfiles/planlab-skills"]
     roots = args.skills_dir or ([] if scoped and args.policy is None else default_roots)
     manifest = args.documents or (None if scoped else repo / MANIFEST)
     policy = args.policy or (None if scoped else repo / SKILL_POLICY)

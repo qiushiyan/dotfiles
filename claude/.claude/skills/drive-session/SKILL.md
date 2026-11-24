@@ -249,7 +249,7 @@ drive send pool-drain@… '/strategic-review 9531 @/tmp/sr-prompt.md'   # @ atta
   names it again:
 
   ```bash
-  drive send cache-hits@… --snippet closeout --hold planlab-main
+  drive send zsh-faster@… --snippet closeout --hold dotfiles-main
   drive send sr-cache-hits@… --snippet merge-when-ready --hold release
   ```
 - **A message from another session waiting for approval stays undelivered**:

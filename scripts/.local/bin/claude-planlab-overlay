@@ -33,7 +33,10 @@ What the rewritten launch changes, for that session and its subagents:
              stderr.
   skills     Every skill in the checkout's .claude/skills outside the config's
              keep globs is user-invocable-only (hidden from the model, still a
-             / command). A kept skill gets no override, so it stays as its
+             / command). Each of the config's personal skills is linked into
+             the added directory's .claude/skills, which Claude Code loads for
+             an --add-dir directory, so it reaches this operator's planlab
+             sessions alone; a path that holds no SKILL.md is named on stderr. A kept skill gets no override, so it stays as its
              own frontmatter and the checkout's settings.local.json have it
              (pl-close hides itself from the model by design; a launch
              --settings would outrank both). A name the operator's own skills
@@ -94,14 +97,44 @@ def config():
         import tomllib  # Python 3.11+; an older python3 first on PATH is a refusal, not a traceback
         data = tomllib.loads(path.read_text())
         skills, agents = data["skills"], data["agents"]
-        lists = [skills["keep"], *(agents.get(k, []) for k in ("drop_sections", "drop_paragraphs", "drop_lines"))]
+        lists = [skills["keep"], skills.get("personal", []),
+                 *(agents.get(k, []) for k in ("drop_sections", "drop_paragraphs", "drop_lines"))]
         if not all(isinstance(x, list) and all(isinstance(i, str) for i in x) for x in lists):
             raise TypeError("lists of strings expected")
         if not isinstance(agents.get("note", ""), str):
             raise TypeError("note is not a string")
     except (ImportError, OSError, ValueError, KeyError, TypeError) as error:
         raise Refusal(f"config {path}: {error}")
+    data["path"] = path
     return data
+
+
+def personal_skills(choices):
+    """(name -> skill directory, the configured paths holding no SKILL.md), paths read from the config's directory."""
+    found, missing = {}, []
+    for entry in choices["skills"].get("personal", []):
+        source = (choices["path"].parent / entry).resolve()
+        if (source / "SKILL.md").is_file():
+            found[source.name] = source
+        else:
+            missing.append(entry)
+    return found, missing
+
+
+def linked(memory_dir, skills):
+    """memory_dir/.claude/skills holding a link to each skill and nothing else."""
+    root = memory_dir / ".claude" / "skills"
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    for entry in root.iterdir():
+        if entry.name not in skills or not entry.is_symlink() or entry.resolve() != skills[entry.name]:
+            if entry.is_symlink() or entry.is_file():
+                entry.unlink()
+            elif entry.is_dir():
+                shutil.rmtree(entry)
+    for name, source in skills.items():
+        link = root / name
+        if not link.is_symlink():
+            link.symlink_to(source, target_is_directory=True)
 
 
 def checkout(start):
@@ -265,10 +298,14 @@ def show(cwd):
     out = list(difflib.unified_diff(team.splitlines(keepends=True), text.splitlines(keepends=True),
                                     "team AGENTS.md", "what a session reads", n=1))
     shown = sorted(repository_skills(root) - set(hidden))
-    note = config()["agents"].get("note", "").strip()
+    choices = config()
+    note = choices["agents"].get("note", "").strip()
+    personal, missing = personal_skills(choices)
     out += [f"\n{len(team)} -> {len(text)} characters, then the note:\n\n{note}\n\n",
             *(f"no match, left in: {miss}\n" for miss in misses),
             *(f"{state}\n" for state in switch_states(root)),
+            f"{len(personal)} personal skills: {' '.join(sorted(personal)) or 'none'}\n",
+            *(f"personal skill not found, left out: {miss}\n" for miss in missing),
             f"{len(shown)} repository skills visible, {len(hidden)} hidden: {' '.join(shown)}\n"]
     sys.stdout.write("".join(out))
 
@@ -296,9 +333,13 @@ def overlay(args, cwd):
     memory_dir = directory / f"memory-{digest(memory)}"
     memory_dir.mkdir(exist_ok=True, mode=0o700)
     written(memory_dir / "CLAUDE.md", memory)
+    personal, missing = personal_skills(config())
+    linked(memory_dir, personal)
     line = (f"planlab overlay: the team's AGENTS.md with your cuts and note; "
             f"{len(hidden)} of {len(repository_skills(root))} repository skills hidden")
+    line += f"; {len(personal)} personal skills" if personal else ""
     line += "".join(f"; no match, left in: {miss!r}" for miss in misses)
+    line += "".join(f"; personal skill not found, left out: {miss!r}" for miss in missing)
     return ["--settings", str(settings_file), f"--add-dir={memory_dir}", *rest], line
 
 

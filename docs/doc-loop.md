@@ -30,7 +30,7 @@ update-docs skill) — never the reverse.
 |---|---|---|
 | duet | `/onboarding [harness \| providers \| prompts \| surface \| design]` | project `/update-docs`, global `/handoff` |
 | itell (`apps/platform`) | `/onboarding <problem or issue>` → analysis / proposal | project `/update-docs`, global `/handoff` |
-| planlab — Loopy | `/pl-loopy-onboarding <goal>` (a route name is a hint; an incident id goes to `/pl-loopy-debug` first) | `/pl-loopy-handoff` — sync, what remains, the next milestone; `/pl-loopy-handoff-distill` after merge and deploy (global `/handoff` and `/distill-handoffs` defer to them) |
+| planlab — Loopy | `/pl-loopy-onboarding <goal>` (a route name is a hint; an incident id goes to `/pl-loopy-debug` first) | `/pl-loopy-handoff` — sync, what remains, the next milestone; `pl-closeout` after the merge, run by the session that merged (global `/handoff` and `/distill-handoffs` defer to them) |
 | anywhere else | read the docs tree by hand | global `/update-docs`, global `/handoff` |
 
 Global skills live in `claude/.claude/skills/{update-docs,handoff}/` (this repo);

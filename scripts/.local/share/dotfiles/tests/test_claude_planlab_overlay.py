@@ -252,6 +252,28 @@ if want("O11"):  # --show: the cuts as a diff, the note, the misses, the hooks' 
        and "pl-demo-video-edit" not in out.splitlines()[-1])
     ok("O11 outside a checkout it fails", 1, run(home, config, home, "--show", raw=True)[0])
 
+if want("O12"):  # personal skills: linked into the added directory alone, stale links gone, a missing one named
+    home, root, config = world("O12")
+    code, args, said = run(home, config, root, "-p", "x", err=True)
+    memory_dir = Path(next(a[len("--add-dir="):] for a in args if a.startswith("--add-dir=")))
+    skills = memory_dir / ".claude" / "skills"
+    real = SCRIPT.parents[1] / "share" / "dotfiles" / "planlab-skills" / "pl-closeout"
+    ok("O12 the closeout is linked into the added directory", True,
+       (skills / "pl-closeout").is_symlink() and (skills / "pl-closeout").resolve() == real.resolve())
+    ok("O12 the checkout's own skills are untouched", False, (root / ".claude" / "skills" / "pl-closeout").exists())
+    ok("O12 the launch line counts them", True, "1 personal skills" in said)
+    (skills / "gone-skill").symlink_to(home, target_is_directory=True)
+    run(home, config, root, "-p", "x")
+    ok("O12 a link the config no longer names is removed", False, (skills / "gone-skill").is_symlink())
+    alt = home / "alt.toml"
+    repo_config = SCRIPT.parents[1] / "share" / "dotfiles" / "planlab-overlay.toml"
+    text = repo_config.read_text().replace('"planlab-skills/pl-closeout",', '"planlab-skills/pl-closeout",\n  "planlab-skills/no-such-skill",')
+    (home / "planlab-skills").symlink_to(real.parent, target_is_directory=True)
+    alt.write_text(text)
+    code, args, said = run(home, config, root, "-p", "x", err=True, overlay_config=alt)
+    ok("O12 a missing personal skill is named, the launch goes on", (0, True), (code, "personal skill not found, left out: 'planlab-skills/no-such-skill'" in said))
+    ok("O12 --show lists them", True, "1 personal skills: pl-closeout" in run(home, config, root, "--show", raw=True)[1])
+
 if want("O9"):  # the real cache and log were never reached
     ok("O9 real cache and log untouched", REAL_BEFORE, (stamp(REAL_CACHE), stamp(REAL_LOG)))
 

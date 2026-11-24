@@ -183,6 +183,15 @@
             "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/closeout-owed.py"
+          }
+        ]
       }
     ],
     "Notification": [
@@ -201,6 +210,14 @@
           {
             "type": "command",
             "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/closeout-owed.py"
           }
         ]
       }

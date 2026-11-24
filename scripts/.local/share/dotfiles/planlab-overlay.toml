@@ -36,6 +36,13 @@ keep = [
   # hidden, the one session that published found it only because I named it
   "pl-bench-pages",
 ]
+# My own Planlab skills, which no teammate's session sees: linked into the
+# directory the launch adds, so they load in my planlab sessions and nowhere
+# else. Paths are relative to this file.
+personal = [
+  # the closeout after a merge, for every domain (docs/planlab.md)
+  "planlab-skills/pl-closeout",
+]
 
 [agents]
 # A "## <heading>" section, through to the next heading.
@@ -61,6 +68,13 @@ drop_lines = [
 
 # Added after the team's text.
 note = """
+## After a PR merges, for this user
+
+When a PR this session worked on merges, whether you merged it or I say it
+merged, closing it out is your next step, not mine: load `pl-closeout` in
+the same turn, without asking. It removes the worktree last, so pl-land's
+removal of it after the merge waits for the closeout.
+
 ## Bench, transcripts and corpus samples, for this user
 
 I manage Bench cards, transcript sharing and corpus samples myself. Create,

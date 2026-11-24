@@ -75,7 +75,7 @@ color = "cyan"
 # after the merge is another.
 [[label]]
 name = "docs"
-skills = ["update-docs", "pl-loopy-update-docs", "handoff", "pl-loopy-handoff", "pl-loopy-infra-handoff", "pl-loopy-handoff-distill"]
+skills = ["update-docs", "pl-loopy-update-docs", "handoff", "pl-loopy-handoff", "pl-loopy-infra-handoff", "pl-loopy-handoff-distill", "pl-closeout"]
 snippets = ["land-pr"]
 count_commits = true
 color = "green"

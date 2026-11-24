@@ -116,11 +116,14 @@ says, which for most is `main`. `~/dotfiles` commits on `main`, and its
    verified and what waits, for a user who did not watch; `/show-me`
    answers a narrower question about it later.
 
-After the merge and deploy (§ Who decides; in a planlab batch, `PLANLAB.md`
-§ After the PR says who runs them, in an itell one `ITELL.md` § After the
-PR), planlab's `closeout` key runs `/pl-loopy-handoff-distill merged and
-deployed`; elsewhere, itell's `closeout` key included, `/distill-handoffs`
-retires the spent brief.
+After the merge (§ Who decides; in a planlab batch, `PLANLAB.md` § After
+the PR says who runs them, in an itell one `ITELL.md` § After the PR), a
+planlab session that merged closes out on its own with `pl-closeout`, which
+ships the change and settles what the merge owes; `merge-when-ready` ends on
+it, and a hook reminds a session that merged any other way
+(`claude/.claude/hooks/closeout-owed.py`). The `closeout` key is for a PR
+merged outside a session. Elsewhere, itell's `closeout` key included,
+`/distill-handoffs` retires the spent brief.
 
 A brief one session writes to start another lists, by the names above, every
 stage from its entry to its finish, so the new session runs them all: a
@@ -274,7 +277,7 @@ data, ask. Beyond that:
   session is ready for one, and removing the branches, worktrees, review
   checkouts and scratch files the sessions recommend; a branch that is not
   merged stays, stated plainly and not asked about; a spent brief is
-  retired by the project's distill (planlab's `closeout` key), never by hand.
+  retired by the project's closeout (planlab's `pl-closeout`), never by hand.
 - **Reads of production, and writes to the user's own sandbox workspace
   and to internal systems** such as an issue tracker or the handoffs
   repository; the report lists what was written. A write to a demo or any
@@ -319,6 +322,6 @@ a new key      → planlab's verify (the verification alone, through pl-verify),
 a global key   → planlab's review-verify (the verification through pl-verify),
                  planlab's and itell's consult-then-build (each one's spike rig),
                  review-then-closeout (ends at a ready PR; planlab's verifies beside the review)
-                 and closeout (the post-merge distill);
+                 and closeout (the post-merge closeout);
                  TabType's closeout and review-then-closeout (a release)
 ```

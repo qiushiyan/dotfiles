@@ -21,11 +21,12 @@ untouched. Three rules shape it:
 
 | What | What it does | Where it lives |
 |---|---|---|
-| Instructions and skills (Claude) | A launch through `x` or `x-<name>` gives the session and its subagents the team's `AGENTS.md` with my cuts and a note on how I use Bench, and hides every repository skill outside a keep list | `scripts/.local/bin/claude-planlab-overlay`; my choices, each with its reason, in `scripts/.local/share/dotfiles/planlab-overlay.toml`; run from `_claude_overlay` in `zsh/.config/zsh/claude.zsh` |
+| Instructions and skills (Claude) | A launch through `x` or `x-<name>` gives the session and its subagents the team's `AGENTS.md` with my cuts and my notes (how I use Bench, who closes out a merge), hides every repository skill outside a keep list, and links in my own Planlab skills, which no teammate's session sees | `scripts/.local/bin/claude-planlab-overlay`; my choices, each with its reason, in `scripts/.local/share/dotfiles/planlab-overlay.toml`; run from `_claude_overlay` in `zsh/.config/zsh/claude.zsh` |
 | Team reminders | The Bench tracking and transcript reminders, and the schedule-sample reminder, stay silent | `PLANLAB_BENCH_REMINDERS=off` and `PLANLAB_CORPUS_REMINDERS=off`: the `env` of `claude/.claude/settings.json` for Claude, `zsh/.config/zsh/codex.zsh` for Codex |
 | My rules | Read production AWS without asking, never change it unasked; write on deployed workspaces only in my sandbox, `planlab-dev-qiushi` | Claude: `~/dev/planlab/CLAUDE.local.md` and `~/dev/.worktrees/main/CLAUDE.local.md`, identical, carried by twin. Codex: `codex/.codex/AGENTS.md`. Three copies, kept in step by hand |
 | Stage snippets | The TabType prompts my sessions are driven with, by key, which `drive` sends too | `.tabtype.toml`, committed in the repository: every planlab key lives there, personal or not, and a change ships by PR (`docs/session-pipeline.md` § Project snippets) |
 | Verifying a branch | A session proves a branch where it runs, on the rig each claim needs: the lane, a browser, a container, the rig AWS account's kits, production reads or my sandbox workspace. It routes past the team's QA skills, which need an open PR, post to it, or run on production | the team skill `pl-verify` (`.agents/skills/pl-verify/` in the repository), kept visible by the overlay and reached through the `review-verify` and `verify` keys or on its own; my sandbox and its write rule stay in `CLAUDE.local.md` |
+| Closing out a merge | The session that merges a PR closes it out without being asked: ships each surface, takes its owed reads, records and announces it, settles its briefs and cleans up, holding only a post or reply that reaches people. A hook reminds a session that merged without starting it, once per PR; the `closeout` key covers a PR merged elsewhere | my skill `pl-closeout` (`scripts/.local/share/dotfiles/planlab-skills/pl-closeout/`, linked in by the overlay; its check script holds the domain map); Loopy's production half stays the team skill `pl-loopy-handoff-distill`, which Steward also runs; `claude/.claude/hooks/closeout-owed.py`; the `merge-when-ready` and `closeout` keys |
 | Review and verify before a PR | A session's first `gh pr create` is refused once when it ran no review or no verification, with when each pays; the session decides | `claude/.claude/hooks/pr-stage-check.py`; the stage it guards is stage 7 of `docs/session-pipeline.md` |
 | Worktrees | gwt puts each branch at `~/dev/.worktrees/main/<branch>`; the main checkout refuses to create a branch; a session that creates a worktree moves into it | `tmux/.config/tmux/scripts/worktree.md` maps it; the guard reaches planlab through `.githooks/reference-transaction`, a wrapper twin carries |
 | Git | Pushes skip the LFS-only pre-push hook; settings and a warm cache keep status fast in many worktrees | `git/.config/git/planlab.gitconfig`; `docs/git-performance.md` |
@@ -35,7 +36,10 @@ untouched. Three rules shape it:
 ## Where it does not reach
 
 - **A launch not through the `x` launchers** gets the team's setup whole:
-  Rex, the dev pool, and `claude -p` helpers. `x -c` and `x --resume <id>` from a checkout keep it.
+  Rex, the dev pool, `claude -p` helpers, and `brief start --open`, which
+  starts headroom itself. `x -c` and `x --resume <id>` from a checkout keep
+  it. Such a session has no `pl-closeout`; the closeout hook and the
+  `closeout` key name the skill's file, so it can still read it.
 - **Codex** gets the reminder switches and its own copy of my rules, not the
   cuts or the hidden skills.
 - **A checkout behind the two team PRs** still speaks those reminders; `--show`

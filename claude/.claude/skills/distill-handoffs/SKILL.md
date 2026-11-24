@@ -27,10 +27,10 @@ step 1 of whichever pass fires, and its report section follows this one.
 |---|---|
 | a question | **question-led**: answer it, then make the folder agree |
 | `folder`, or nothing on the default branch with no branch named | **reconcile**: the whole folder against the repo |
-| a branch or slug, or nothing on a feature branch | **closeout**: that branch's briefs alone |
+| a branch, slug or PR, or nothing on a feature branch | **closeout**: that branch's briefs alone |
 
-Closeout takes the branch that landed: the argument, else the one the user's
-words name, else `git branch --show-current`. Name the pass first. Across all
+Closeout takes the branch that landed: the argument (a named PR's head
+branch), else the one the user's words name, else `git branch --show-current`. Name the pass first. Across all
 passes:
 
 - **Scope** is the briefs the pass names, plus every brief whose listing row
@@ -122,16 +122,17 @@ moved.
 
    ```bash
    brief closeout <branch> --json > "$S/closeout.json"
-   jq -r '.cleanup[]? | (.command // ("hold: " + .hold)) + (if .note then "   # " + .note else "" end)' "$S/closeout.json"
+   jq -r '.cleanup[]? | [.command, (.hold | values | "hold: " + .), (.note | values | "# " + .)] | map(values) | join("   ")' "$S/closeout.json"
    ```
 
    A `gwt remove` line is a verdict the repo backs, so run it without asking.
    Make it the pass's last tool call, because it can delete the session's
    working directory, and run it from the checkout its note names
    (`cd <path> && gwt remove …`). gwt refuses a dirty, untracked or locked
-   checkout, and one whose tip moved since closeout (`--expect-head`). What
-   it refuses, any `hold`, and any line step 5 did not apply stay for the
-   user.
+   checkout, and one whose tip moved since closeout (`--expect-head`). A `hold`
+   line follows its checkout's `gwt remove … --keep-branch`: run that, then
+   read the hold's `git log`. Empty, delete the branch with gwt; otherwise
+   the report says what it holds, as for whatever gwt refuses.
    Done when the `gwt remove` JSON is read, or the cleanup has no such line.
 
 7. **Report**, in short prose: what landed, in a line; the anchor's verdict
@@ -214,18 +215,13 @@ with the answer and carries the verdicts under it.
 
 ## What waits
 
-Four verdicts spend a judgment the repo cannot back. Only these wait for the
-human; do everything else first and list these under their own heading, each
-with the one word that releases it:
-
-- **rewrite**: a successor brief is a new goal, and a goal is a design;
-- **keep** over delete: a `kept:` retirement;
-- **delete** of a brief whose branch does not read merged. Its release also
-  deletes the branch on origin when `brief start` published one (`git push
-  origin --delete <branch>`, the slug or `<domain>/<slug>`), since a branch
-  there reads `started` on every machine;
-- a change to a note's **order** beyond listing an unlisted brief or dropping
-  a retired name, and a domain coined or removed.
+The folder is a git clone, so reverting the sweep's commit undoes a
+verdict. Apply every verdict, a rewrite, a `kept:` retirement and
+an order or domain change included, and report each with its undo. One
+waits, under its own heading with the word that releases it: **delete** of
+a brief whose branch holds commits and does not read merged, since someone
+may be working there. Its release also deletes the branch on origin (`git
+push origin --delete <branch>`).
 
 ## Verdicts
 
