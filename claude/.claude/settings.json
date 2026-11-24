@@ -167,6 +167,10 @@
           {
             "type": "command",
             "command": "[ -z \"$REX_BLOCK\" ] || ~/.local/bin/rex-agent claude"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pasted-command-check.py"
           }
         ]
       }
