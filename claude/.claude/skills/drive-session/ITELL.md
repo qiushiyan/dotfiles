@@ -152,8 +152,8 @@ verifies in a lane of its own, folds the findings in and merges. It opens on
 Fable, the user's choice for this review, unless they name another model:
 
 ```bash
-drive send invite-links@… --snippet strategic-review-brief   # the builder writes the reviewer's prompt
-drive open sr-invite-links --model fable --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the prompt file>'
+drive send invite-links@… --snippet strategic-review-brief   # replies with the review's opening line
+drive open sr-invite-links --model fable --dir ~/dev/itell/apps/platform --goal 'Review #412 before it merges: where its design or evidence could be wrong.' '/strategic-review 412 @<the brief file>'
 drive send invite-links@… --snippet recap                    # then close invite-links
 drive send sr-invite-links@… "F2: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user
 ```
