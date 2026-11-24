@@ -10,6 +10,11 @@ providers = [
   "scripts",
 ]
 
+# ── Files ──────────────────────────────────
+[[snippets]]
+key = "steering"
+expand = "~/.config/lessons/codebase-design/steering.md"
+
 # ── Reasoning helpers ──────────────────────────────────
 [[snippets]]
 key = "think-holistic"
@@ -105,7 +110,6 @@ Decisions are settled as above; where I left one open, take your recommendation.
 key = "review-verify"
 expand = '''
 /review astra full review. While you are waiting, re-prove the intended behavior with throwaway spikes — read ~/dotfiles/claude/.claude/skills/spike/SKILL.md and treat this as its verification moment. Report its verdicts with the review's findings.'''
-
 [[snippets]]
 key = "strategic-review-brief"
 expand = '''
