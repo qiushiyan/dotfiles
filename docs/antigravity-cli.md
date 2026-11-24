@@ -21,7 +21,10 @@ the browser login. Credentials live in the macOS keychain, never in a carried
 or tracked file, and every later run, headless `agy -p` included, reuses them.
 
 Use only `agy` itself with that login. A proxy or third-party tool that reuses
-its OAuth token is what Google suspends Antigravity accounts for.
+its OAuth token is what Google suspends Antigravity accounts for. headroom's
+Antigravity page keeps to this: it reads quota by running `agy -p /usage` and
+never reads the sign-in (`~/dev/headroom/DESIGN.md` § A third vendor:
+Antigravity).
 
 ## Settings: rendered by twin, never a link
 
