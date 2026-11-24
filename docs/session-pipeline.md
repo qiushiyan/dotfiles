@@ -64,7 +64,7 @@ says, which for most is `main`. `~/dotfiles` commits on `main`, and its
      assumption reading cannot settle, then the build, stopping only for
      what a default cannot settle. Stages 3 and 4 are inside it.
    - **Heavy:** `consult-design`, or a freeform "consult with fable and
-     carbon" — the round settles the high-level design and the
+     neon" — the round settles the high-level design and the
      implementation tenets and comes back with decisions.
    - **A larger change to how the product looks or feels** shows its design,
      since that is decided by eye: `emil-prototype` builds variants and

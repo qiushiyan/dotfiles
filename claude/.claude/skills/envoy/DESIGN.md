@@ -40,15 +40,14 @@ duet instead. Don't grow the engine.
   That is what lets the engine stay judgment-free.
 - **The skills resolve the model; the engine never does.** consult and
   review open on a **Voices** table: the three names the user dispatches by
-  (astra, fable, carbon), each with its exact voice and member name, the
+  (astra, fable, neon), each with its exact voice and member name, the
   default, and the command to type; every other model and control sits in a
   **More control** table at the end, since the user names little else
   (`../consult/EVIDENCE.md`, 2026-11-17). delegate keeps its own
   **Resolving the voice** block. So every voice is dispatched with the model
   written out, and a job's record never depends on whatever the provider's
   config held that day. Effort follows the provider: codex and agy voices
-  carry the effort their row names (`xhigh` for sol; `high` for astra and Carbon,
-  which alone runs Medium) unless the user names another; a claude voice
+  carry the effort their row names (`xhigh` for sol; `high` for astra and neon) unless the user names another; a claude voice
   passes one only when the user asks, and otherwise the provider's
   configured level governs. The engine stays default-free: a bare provider
   still means the provider's config, and envoy never substitutes a model. A
