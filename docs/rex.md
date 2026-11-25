@@ -118,10 +118,15 @@ any notes kept here:
   script, and a detached block (owned by a session, placed in no layout, shown
   nowhere) is the place to host one.
 - **Every terminal knows where it is, not who is looking at it:**
-  `REX_SESSION`, `REX_BLOCK`, `REX_SERVER` and `TERM_PROGRAM=rex`, as
-  `$TMUX_PANE` does in tmux. The CLI takes `REX_SESSION` and `REX_BLOCK` as
-  its scope, so a call from a pane reads a block in another session as not
-  found; a tool that acts across sessions drops them, as drive does. Both machines' apps stay attached to both
+  `REX_BLOCK`, `REX_SERVER` and `TERM_PROGRAM=rex`, as `$TMUX_PANE` does in
+  tmux. The block's session is not in the environment. The CLI scopes a call
+  from a pane to the session holding `REX_BLOCK` (an explicit `REX_SESSION`
+  or `-s` outranks it), so a call from a pane reads a block in another
+  session as not found; a tool that acts across sessions drops them, as drive
+  does. An API call names the session beside the block, so a tool that makes
+  one asks the server which session holds it: `rex whoami --json` with
+  `REX_BLOCK` naming the block (`rex-chip`, `rex-steps`, `rex-toast`), or
+  `cout setup`'s own lookup. Both machines' apps stay attached to both
   servers' sessions and no client reports its input, so nothing in Rex says
   which screen the person is at; tmux's `client_activity` has no counterpart.
 
