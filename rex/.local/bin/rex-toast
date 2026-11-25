@@ -5,7 +5,7 @@
 # itself after a few seconds.
 #
 #   rex-toast LEVEL TITLE MESSAGE      over this terminal's window
-#                                      (REX_SESSION, REX_BLOCK); LEVEL is
+#                                      (REX_BLOCK); LEVEL is
 #                                      info, ok, warn or error
 #   rex-toast draw LEVEL TITLE MESSAGE SECONDS    INTERNAL: the toast itself
 #
@@ -61,12 +61,17 @@ draw() {
 
 show() {
   local level=${1:-info} title=${2:-} msg=${3:-}
-  [ -n "${REX_SESSION:-}" ] && [ -n "${REX_BLOCK:-}" ] || { printf '%s: %s\n' "$title" "$msg"; return 0; }
+  # Since Rex 0.1.0-preview.23 a block's environment names only the block:
+  # the server is asked which session holds it.
+  local session=${REX_SESSION:-}
+  [ -z "$session" ] && [ -n "${REX_BLOCK:-}" ] &&
+    session=$("$BIN/rex" --autostart=false whoami --json 2>/dev/null | jq -r '.session_id // empty')
+  [ -n "$session" ] && [ -n "${REX_BLOCK:-}" ] || { printf '%s: %s\n' "$title" "$msg"; return 0; }
   "$BIN/rex" do -e '
     package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
     local a = rex.args
     return require("rexkit.feedback").toast(a.session, a.block, a.level, a.title, a.msg)
-  ' session="$REX_SESSION" block="$REX_BLOCK" level="$level" title="$title" msg="$msg" >/dev/null 2>&1
+  ' session="$session" block="$REX_BLOCK" level="$level" title="$title" msg="$msg" >/dev/null 2>&1
 }
 
 case "${1:-}" in

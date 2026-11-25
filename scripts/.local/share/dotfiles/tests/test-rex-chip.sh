@@ -64,11 +64,16 @@ REAL_AT_START=$(real_state)
 
 mkdir -p "$H/.local/bin" "$H/work"
 ln -s "$CHIP" "$H/.local/bin/rex-chip"
-# The stub server: one block, whose label lives in $SANDBOX/label. A file
-# $SANDBOX/gone makes every label change fail, as for a closed block.
+# The stub server: one block, block:t1 in session:t, whose label lives in
+# $SANDBOX/label. A file $SANDBOX/gone makes every label change fail, as for a
+# closed block. whoami finds the session of the block REX_BLOCK names, as
+# Rex's does; the block's environment carries no REX_SESSION.
 cat > "$H/.local/bin/rex" <<STUB
 #!/bin/bash
 printf '%s\n' "\$*" >> "$SANDBOX/rex.log"
+case " \$* " in *" whoami "*)
+  [ "\$REX_BLOCK" = block:t1 ] && echo '{"session_id":"session:t"}' || echo '{}'; exit 0 ;;
+esac
 while [ \$# -gt 0 ] && [ "\$1" != call ]; do shift; done
 case "\${2:-}" in
   session.list_blocks)
@@ -89,7 +94,7 @@ ONLY=("$@")
 
 CLEAN=(env -u REX_SERVER -u REX_SESSION -u REX_BLOCK -u REX_BIN_DIR -u TMUX -u TMUX_PANE -u CLAUDE_PID
   -u CLAUDE_CONFIG_DIR -u XDG_STATE_HOME -u COLUMNS -u ANTHROPIC_BASE_URL -u REX_CHIP_CMD)
-IN_REX=(HOME="$H" REX_BLOCK=block:t1 REX_SESSION=session:t LC_ALL=en_US.UTF-8)
+IN_REX=(HOME="$H" REX_BLOCK=block:t1 LC_ALL=en_US.UTF-8)
 
 # fresh [LABEL]: a block with no chip, labelled LABEL ("shell" by default).
 fresh() {
@@ -165,7 +170,8 @@ CASE=K3; if want; then
   render 31 12 30 >/dev/null; first=$(sets)
   render 31 12 30 >/dev/null; sleep 0.5
   ok "K3 the first render sets the label once" "1" "$first"
-  ok "K3 an unchanged render calls Rex no more" "$(wc -l < "$SANDBOX/rex.log" | tr -d ' ')" "2"
+  ok "K3 an unchanged render calls Rex no more" "$(wc -l < "$SANDBOX/rex.log" | tr -d ' ')" "3"
+  ok "K3 the label is set in the session whoami found" "1" "$(grep -c 'set_block_label {"session_id":"session:t"' "$SANDBOX/rex.log")"
   render 32 12 30 >/dev/null
   ok "K3 a changed value sets it once more" "2" "$(sets)"
 fi

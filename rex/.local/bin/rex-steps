@@ -36,9 +36,13 @@ open_beside() {
     esac
   done
   block=${block:-${REX_BLOCK:-}}
-  local session=${REX_SESSION:-}
+  # The server is asked which session holds the block: since Rex
+  # 0.1.0-preview.23 a block's environment carries no REX_SESSION.
+  local session=""
+  [ -n "$block" ] &&
+    session=$(REX_BLOCK=$block "$REX" --autostart=false whoami --json 2>/dev/null | jq -r '.session_id // empty')
   if [ -z "$block" ] || [ -z "$session" ]; then
-    printf 'rex-steps: run it inside Rex, or name a block of this session\n' >&2
+    printf 'rex-steps: run it inside Rex, or name a block of this server\n' >&2
     exit 2
   fi
   "$REX" split -s "$session" -b "$block" --split right --ratio 38 --focus=false \

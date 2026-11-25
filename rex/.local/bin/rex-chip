@@ -150,25 +150,37 @@ compose() {
 # to spare; it starts no server either.
 rex_call() { "$REX" --autostart=false api call "$@" 2>/dev/null; }
 
-current_label() {  # BLOCK: the block's label now
-  rex_call session.list_blocks "$(jq -nc --arg s "$REX_SESSION" '{session_id: $s}')" |
+# The API names a block with its session, and since Rex 0.1.0-preview.23 a
+# block's environment carries only REX_BLOCK: the server is asked which
+# session holds BLOCK, once per run, unless REX_SESSION names it.
+SESSION=${REX_SESSION:-}
+session_of() {  # BLOCK: its session, in SESSION
+  [ -n "$SESSION" ] && return 0
+  SESSION=$(REX_BLOCK=$1 "$REX" --autostart=false whoami --json 2>/dev/null | jq -r '.session_id // empty')
+  [ -n "$SESSION" ]
+}
+
+current_label() {  # BLOCK: the block's label now; session_of first
+  rex_call session.list_blocks "$(jq -nc --arg s "$SESSION" '{session_id: $s}')" |
     jq -er --arg b "$1" '.blocks[] | select(.block_id == $b) | .label // ""'
 }
 
 set_label() {  # BLOCK LABEL
+  session_of "$1" || return 1
   rex_call session.set_block_label \
-    "$(jq -nc --arg s "$REX_SESSION" --arg b "$1" --arg l "$2" '{session_id: $s, block_id: $b, label: $l}')" >/dev/null
+    "$(jq -nc --arg s "$SESSION" --arg b "$1" --arg l "$2" '{session_id: $s, block_id: $b, label: $l}')" >/dev/null
 }
 
 sync() {
   local force=""
   [ "${1:-}" = --force ] && { force=1; shift; }
   local block=${1:-} f base last seen
-  [ -n "$block" ] && [ -n "${REX_SESSION:-}" ] || return 0
+  [ -n "$block" ] || return 0
   f="$DIR/$(key "$block")"
   while load "$block"; do
     seen=$STATE
     if [ ! -e "$f.base" ]; then
+      session_of "$block" || return 1
       base=$(current_label "$block") || return 1
       is_chip "$base" && base=shell
       printf '%s\n' "$base" > "$f.base"
@@ -200,7 +212,7 @@ clear() {
   f="$DIR/$(key "$block")"
   # The state first: a sync still running finds none, and the floating chip ends.
   rm -f "$f.chip"
-  if [ -e "$f.label" ] && [ -n "${REX_SESSION:-}" ]; then
+  if [ -e "$f.label" ]; then
     [ -r "$f.base" ] && IFS= read -r base < "$f.base"
     is_chip "$base" && base=shell
     set_label "$block" "${base:-shell}"
