@@ -2,7 +2,9 @@
 
 Run the brief sweep's closeout, `~/.claude/skills/distill-handoffs/SKILL.md`
 § Closeout steps 1 to 5, on the PR's head branch. Apply its verdicts as its
-§ What waits allows, and report each with its undo. Loopy's two brief
+§ What waits allows, and report each with its undo, naming the commit `brief
+sync` printed as published: `git -C <folder> revert <sha>` undoes the sweep,
+`git -C <folder> checkout <sha>^ -- <brief>` one brief. Loopy's two brief
 readings are in [domains/loopy.md](domains/loopy.md).
 
 When the merge leaves accepted work that no brief holds, write one without
