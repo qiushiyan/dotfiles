@@ -225,3 +225,13 @@ edits, one rollout in three offering the user a force-removal of a worktree
 holding someone else's change; `cleanup.md` now leaves that worktree "to
 them", and the rerun (`pl-closeout-1125-owner`) passed 3 of 3 at 0.89, the
 one failing judge pass calling the extra ask minor.
+
+## 2026-11-25 — the migration gate's override is the user's standing word
+
+Both team deploy skills said an override of a clearable false positive "is
+fine" beside the bold rule that only a person's explicit instruction sets
+`ACK_INTERRUPTION`; planlab #12497 keeps the bold rule and has the session
+recommend. `domains/app.md` overrode on its own authority, so it now names
+the user's standing instruction (`docs/session-pipeline.md` § Who decides)
+as that word and has the reason quote it; `domains/bench.md` takes the same
+rule.
