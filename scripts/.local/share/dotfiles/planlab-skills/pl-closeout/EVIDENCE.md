@@ -179,8 +179,11 @@ holding the text, not one discovering it.
   serving read.
 - F3, `pl-deploy-steward` is manual-only and the overlay hides
   `pl-taodesk-tickets`; the skill says to read a team skill that will not
-  load from `.agents/skills/<name>/SKILL.md`. Rebutted in part: Bench's
-  deploy skill allows overriding a clearable migration gate.
+  load from `.agents/skills/<name>/SKILL.md`. The Bench point stands too:
+  `ACK_INTERRUPTION` is that migration gate's override, which
+  `pl-deploy-bench-prod` both allows for a false positive and keeps for a
+  person; § What waits makes the closeout ask (round 2 corrected the
+  rebuttal round 1 gave).
 - F4, a fetch that failed read as no marker (C12); an error answered as JSON
   crashed the check or read as no brief (C13); a retired brief owed forever,
   and a cleanup step's note was dropped (C14).
@@ -211,3 +214,14 @@ sends the session to the team procedure that prints it.
 acts: `cleanup.md`'s hold paragraph (the sweep's step 6), the domain notes'
 list of the Taodesk deploy's checks, the Loopy note's reply rule (§ What
 waits). Total 719 → 688 words.
+
+**Round 2** (`review-r2`, the same session): every round 1 fix integrated.
+New: the cut hold paragraph left `cleanup.md` pointing at the manual-only
+sweep by name, which a merge with no brief reaches without having read
+`handoffs.md`; it now names the file. Rebutted: "the undo idea was not
+built", which is `0b545be8`, outside the round's brief. Beside it, the
+merge case's `holds-only-outward` had slipped to 0.78 across this day's
+edits, one rollout in three offering the user a force-removal of a worktree
+holding someone else's change; `cleanup.md` now leaves that worktree "to
+them", and the rerun (`pl-closeout-1125-owner`) passed 3 of 3 at 0.89, the
+one failing judge pass calling the extra ask minor.
