@@ -145,12 +145,14 @@ if want("C5"):  # unreadable sources become judge lines, never a crash; unmapped
        all(l["state"] == "judge" for l in lines if l["area"] in ("check", "tell", "handoffs") or l["what"].startswith(("app", "master"))))
     ok("C5 the unmapped top directory is named", True, any("paths no domain names: website" in l["what"] for l in lines))
 
-if want("C6"):  # every command the check runs is a read
-    runner, calls = fake(base())
+if want("C6"):  # every command the check runs is one of its reads, whatever the merge touched
+    READS = (["gh", "pr", "view"], ["gh", "pr", "diff"], ["planlab", "backstage", "loopy", "status"],
+             ["python3", ".agents/skills/pl-loopy-handoff-distill/scripts/owed_reads.py"],
+             ["planlab", "backstage", "loopy", "announce", "list"], ["brief", "closeout"])
+    every = "\n".join(p for _, prefixes, _ in cc.DOMAINS for p in prefixes) + "\nwebsite/x\n"
+    runner, calls = fake(base(**{"gh pr diff": (0, every)}))
     cc.check(12139, SANDBOX, HOME, runner)
-    writes = [a for a in calls if any(w in a for w in ("send", "draft", "delete", "remove", "merge", "comment", "--commit", "--live"))
-              and a[:3] != ["gh", "pr", "view"]]
-    ok("C6 no write among its commands", [], writes)
+    ok("C6 nothing but its reads", [], [a for a in calls if not any(a[:len(r)] == r for r in READS)])
 
 if want("C8"):  # a docs-only Loopy merge serves nowhere: no release, no records, no announcement
     runner, calls = fake(base(**{"gh pr diff": (0, "docs/loopy/infra/README.md\ndocs/loopy/specs/s.md\n")}))
@@ -170,6 +172,90 @@ if want("C9"):  # no marker names the PR: done, not a failed read; a partial rea
     lines, error = cc.check(12139, SANDBOX, HOME, runner)
     ok("C9 an unread verdict is a judge line beside the reads", [("check", "judge"), ("check", "judge")],
        [x for x in by_area(lines) if x[0] == "check"])
+
+def ship_done(lines):
+    return [l["what"] for l in lines if l["area"] == "ship" and l["state"] == "done"]
+
+
+if want("C10"):  # "no deployed surface" only when every changed path was read and none can serve
+    for name, diff in (("unread paths", (1, "")), ("an unmapped service", (0, "services/meeting-relay/x.ts\n")),
+                       ("infra alone", (0, "infra/production/x.tf\n"))):
+        runner, calls = fake(base(**{"gh pr diff": diff}))
+        lines, error = cc.check(12139, SANDBOX, HOME, runner)
+        ok(f"C10 {name} is not called surface-free", [], [w for w in ship_done(lines) if w.startswith("no deployed surface")])
+
+if want("C11"):  # the map: coding-agent and readme files are not runtime wherever they sit; wiki-relay ships with the app
+    ok("C11 instruction and readme files",
+       {"tooling": ["packages/loopy/AGENTS.md", "application/src/lib/loopy/CLAUDE.md"], "docs": ["packages/loopy/README.md"]},
+       cc.domains_of(["packages/loopy/AGENTS.md", "application/src/lib/loopy/CLAUDE.md", "packages/loopy/README.md"]))
+    ok("C11 a bundled skill stays Loopy", {"loopy": ["packages/loopy/skills/xer/SKILL.md"]},
+       cc.domains_of(["packages/loopy/skills/xer/SKILL.md"]))
+    ok("C11 wiki-relay ships with the app", {"app": ["services/wiki-relay/src/x.ts"]}, cc.domains_of(["services/wiki-relay/src/x.ts"]))
+
+if want("C12"):  # a failed fetch leaves "no marker" unproven
+    runner, calls = fake(base(**{"owed_reads.py": (1, "", "git fetch failed, reading a possibly stale origin/develop: x\n"
+                                                         "no `**Closing read owed** (#12139)` marker on origin/develop")}))
+    lines, error = cc.check(12139, SANDBOX, HOME, runner)
+    ok("C12 a stale develop is judged", [("check", "judge")], [x for x in by_area(lines) if x[0] == "check"])
+
+if want("C13"):  # an error answered as JSON is an unread source, never a crash or a clean result
+    runner, calls = fake(base(**{"planlab backstage loopy announce": (1, json.dumps({"error": "unauthorized"})),
+                                 "brief closeout": (1, json.dumps({"error": "no folder"}))}))
+    lines, error = cc.check(12139, SANDBOX, HOME, runner)
+    ok("C13 announcement error is judged", [("tell", "judge")], [x for x in by_area(lines) if x[0] == "tell"])
+    ok("C13 brief error is judged", [("handoffs", "judge")], [x for x in by_area(lines) if x[0] == "handoffs"])
+
+if want("C14"):  # a retired anchor is the sweep's call, not owed forever; a cleanup step's note is shown
+    runner, calls = fake(base(**{"brief closeout": (0, json.dumps({
+        "anchor": {"slug": "memory-saves", "done": True, "retired": "2026-11-23"}, "candidates": [],
+        "cleanup": [{"step": "worktree", "command": "gwt remove /w --expect-head x", "note": "this session is inside it — run from /m"}]}))}))
+    lines, error = cc.check(12139, SANDBOX, HOME, runner)
+    ok("C14 retired anchor is judged", [("handoffs", "judge")], [x for x in by_area(lines) if x[0] == "handoffs"])
+    ok("C14 the note rides its command", True, any("run from /m" in l["what"] for l in lines if l["area"] == "cleanup"))
+
+if want("C15"):  # each state a source can be in has its line
+    runner, calls = fake(base(**{
+        "gh pr diff": (0, "packages/loopy/a.ts\nbench/b.ts\nservices/steward/c.ts\ninfra/production/d.tf\n.agents/skills/e/SKILL.md\n"),
+        "owed_reads.py": (0, json.dumps({"reads": [{"name": "waiver", "state": "for a person", "history": []}]})),
+        "planlab backstage loopy announce": (0, json.dumps([
+            {"id": "a1", "state": "posted", "message": {"permalink": "https://slack/p1"}},
+            {"id": "a2", "state": "draft", "title": "internal", "notify": ["none"]}])),
+        "brief closeout": (0, json.dumps({"anchor": None, "candidates": [{"slug": "next-one"}], "cleanup": []}))}))
+    lines, error = cc.check(12139, SANDBOX, HOME, runner)
+    ok("C15 read for a person waits", [("check", "waits")], [x for x in by_area(lines) if x[0] == "check"])
+    ok("C15 posted done, untagged judged", [("tell", "done"), ("tell", "judge")], [x for x in by_area(lines) if x[0] == "tell"])
+    ok("C15 a candidate brief is judged", [("handoffs", "judge")], [x for x in by_area(lines) if x[0] == "handoffs"])
+    notes = {l["note"] for l in lines if l["area"] == "ship" and l["state"] == "judge"}
+    ok("C15 bench, steward and tooling each point at their note", True,
+       {"domains/bench.md", "domains/steward.md", "domains/tooling.md"} <= notes)
+    ok("C15 infra waits on a person", True, ("ship", "waits") in by_area(lines))
+
+if want("C16"):  # the command: --domains, --json, a refusal exits 2; the checkout it reads from
+    import contextlib, io, subprocess
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        code = cc.main(["--domains"])
+    ok("C16 --domains prints every domain", (0, True), (code, all(d in out.getvalue() for d, _, _ in cc.DOMAINS)))
+    real = cc.run
+    for answers, argv, want_code, shape in ((base(), ["12139", "--json"], 0, list),
+                                           (base(**{"gh pr view": (0, json.dumps({**PR, "state": "OPEN"}))}), ["12139"], 2, None)):
+        cc.run = fake(answers)[0]
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cc.main(argv)
+        cc.run = real
+        ok(f"C16 {' '.join(argv)} exits {want_code}", want_code, code)
+        if shape:
+            ok("C16 --json is one list", shape, type(json.loads(out.getvalue())))
+        else:
+            ok("C16 the refusal goes to stderr", (True, ""), ("open" in err.getvalue(), out.getvalue()))
+    repo = SANDBOX / "planlab"
+    (repo / ".agents/skills/pl-loopy-handoff-distill").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    (repo / "sub").mkdir()
+    ok("C16 a Planlab checkout is found from inside it", repo, cc.checkout(repo / "sub", HOME))
+    other = SANDBOX / "other"; other.mkdir(); subprocess.run(["git", "init", "-q", str(other)], check=True)
+    ok("C16 another repository falls back to the main checkout", HOME / "dev/planlab/main", cc.checkout(other, HOME))
 
 if want("C7"):  # the map: every domain the notes name exists, and a path takes the first domain it matches
     ok("C7 notes name real domains", True, set(cc.NOTES) <= {d for d, _, _ in cc.DOMAINS})

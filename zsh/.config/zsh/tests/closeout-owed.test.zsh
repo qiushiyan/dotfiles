@@ -57,18 +57,29 @@ echo '{\"number\": ${2:-12139}, \"state\": \"$1\"}'" > "$BIN/gh"
 
 new_sid() { (( NSID++ )); SID="co-test-$$-$NSID" }
 
-# bash <py> <cwd> <command>: a PostToolUse(Bash) payload.
+# bash_ran <py> <cwd> <command> [stdout]: a PostToolUse(Bash) payload, its
+# tool_response carrying the command's stdout.
 bash_ran() {
-  local py=$1 cwd=$2 cmd=$3
-  OUT=$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"PostToolUse","tool_name":"Bash","session_id":sys.argv[1],"cwd":sys.argv[2],"tool_input":{"command":sys.argv[3]}}))' "$SID" "$cwd" "$cmd" \
+  local py=$1 cwd=$2 cmd=$3 said=${4-}
+  OUT=$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"PostToolUse","tool_name":"Bash","session_id":sys.argv[1],"cwd":sys.argv[2],"tool_input":{"command":sys.argv[3]},"tool_response":{"stdout":sys.argv[4],"stderr":"","interrupted":False}}))' "$SID" "$cwd" "$cmd" "$said" \
     | env -i $HOOK_ENV "$py" "$HOOK")
 }
+CHECKED='pr        done   #12139 merged 2026-11-22T13:03 as 9747bcdf7e8, head branch loopy/memory-saves: "x"' 
 stop() {
   local py=$1 cwd=$2
   OUT=$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","session_id":sys.argv[1],"cwd":sys.argv[2],"stop_hook_active":False}))' "$SID" "$cwd" \
     | env -i $HOOK_ENV "$py" "$HOOK")
 }
-reminded() { [[ "$OUT" == *'"additionalContext"'* && "$OUT" == *"$1 merged in this session"* && "$OUT" == *'pl-closeout/SKILL.md'* ]] }
+# reminded <#N…>: Stop printed one JSON document that continues the turn as Stop
+# context, naming the PRs and the skill's file.
+reminded() {
+  [[ -n "$OUT" ]] || return 1
+  print -r -- "$OUT" | python3 -c 'import json,sys
+d = json.load(sys.stdin)["hookSpecificOutput"]
+assert d["hookEventName"] == "Stop" and "decision" not in d
+m = d["additionalContext"]
+assert sys.argv[1] + " merged in this session" in m and "pl-closeout/SKILL.md" in m' "$1" 2>/dev/null
+}
 
 for PY in $PYS; do
   v=$("$PY" -c 'import sys; print("%d.%d" % sys.version_info[:2])')
@@ -93,7 +104,7 @@ for PY in $PYS; do
   # H3: the closeout check ran for the PR: no reminder, and GitHub is not asked
   new_sid; gh_says MERGED; : > "$SBX/gh.args"
   bash_ran "$PY" "$MAIN" 'gh pr merge 12139 --squash --match-head-commit abc'
-  bash_ran "$PY" "$MAIN" 'python3 ~/.local/share/dotfiles/planlab-skills/pl-closeout/scripts/closeout_check.py 12139'
+  bash_ran "$PY" "$MAIN" 'python3 ~/.local/share/dotfiles/planlab-skills/pl-closeout/scripts/closeout_check.py 12139' "$CHECKED"
   stop "$PY" "$MAIN"
   [[ -z "$OUT" && ! -s "$SBX/gh.args" ]] && pass "H3 [$v] a begun closeout is not reminded or asked" || fail "H3 [$v] begun" "$OUT $(cat $SBX/gh.args)"
 
@@ -130,7 +141,53 @@ for PY in $PYS; do
   bash_ran "$PY" "$WT" 'land-wait.sh 12139 --merge'
   stop "$PY" "$WT"
   [[ -z "$OUT" ]] && pass "H8 [$v] no gh, no word" || fail "H8 [$v] no gh" "$OUT"
+
+  # H10: option values before the PR number, in either order, still name the PR
+  new_sid; gh_says MERGED
+  bash_ran "$PY" "$MAIN" 'gh pr merge -R planlab-ai/main 777 --squash'
+  stop "$PY" "$MAIN"
+  reminded '#777' && pass "H10 [$v] -R's value is not taken for the PR" || fail "H10 [$v] -R" "$OUT"
+  new_sid; gh_says MERGED
+  bash_ran "$PY" "$MAIN" 'gh pr merge --squash --match-head-commit abc123 778'
+  stop "$PY" "$MAIN"
+  reminded '#778' && pass "H10 [$v] --match-head-commit's value is not taken for the PR" || fail "H10 [$v] head" "$OUT"
+
+  # H11: land-wait run through a shell
+  new_sid; gh_says MERGED
+  bash_ran "$PY" "$WT" 'bash .agents/skills/pl-land/scripts/land-wait.sh 12139 --merge'
+  stop "$PY" "$WT"
+  reminded '#12139' && pass "H11 [$v] a shell-wrapped land-wait is a merge" || fail "H11 [$v] bash" "$OUT"
+
+  # H12: the worktree the merge ran from is gone by the turn's end
+  new_sid; gh_says MERGED; GONE="$H/dev/.worktrees/main/gone-$NSID"; mkdir -p "$GONE"
+  bash_ran "$PY" "$GONE" 'land-wait.sh 12139 --merge'
+  rm -rf -- "$GONE"
+  stop "$PY" "$GONE"
+  reminded '#12139' && pass "H12 [$v] a removed worktree still gets its reminder" || fail "H12 [$v] gone" "$OUT"
+
+  # H13: a check run while the PR was still open does not count as its closeout
+  new_sid; gh_says OPEN
+  bash_ran "$PY" "$WT" 'land-wait.sh 12139 --merge'
+  bash_ran "$PY" "$WT" 'python3 ~/.local/share/dotfiles/planlab-skills/pl-closeout/scripts/closeout_check.py 12139'
+  gh_says MERGED; stop "$PY" "$WT"
+  reminded '#12139' && pass "H13 [$v] a check before the merge does not silence it" || fail "H13 [$v] early check" "$OUT"
+
+  # H14: two PRs merged in one turn get one reminder naming both
+  new_sid; gh_says MERGED
+  bash_ran "$PY" "$WT" 'land-wait.sh 501 --merge && land-wait.sh 502 --merge'
+  stop "$PY" "$WT"
+  reminded '#501 and #502' && [[ "$OUT" == *'closing them out'* ]] && pass "H14 [$v] two PRs, one reminder" || fail "H14 [$v] two" "$OUT"
 done
+
+# H15: the hook is wired where Claude Code calls it: after every Bash call, and at a turn's end
+python3 - "$DOT/claude/.claude/settings.json" <<'PY' && pass "H15 settings wire PostToolUse(Bash) and Stop" || fail "H15 wiring"
+import json, sys
+hooks = json.load(open(sys.argv[1]))["hooks"]
+def wired(event, matcher):
+    return any(h.get("command", "").endswith("closeout-owed.py") for e in hooks.get(event, [])
+               if e.get("matcher") == matcher for h in e.get("hooks", []))
+assert wired("PostToolUse", "Bash") and wired("Stop", None)
+PY
 
 stale=("$REAL_STATE"/co-test-$$-*(N))
 (( $#stale == 0 )) && pass "H9 the real state directory holds no test record" || fail "H9 real state" "${stale[*]}"

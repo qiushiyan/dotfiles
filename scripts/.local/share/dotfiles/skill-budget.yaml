@@ -25,7 +25,7 @@ skills:
   # raised 2026-11-17 on the user's word: GPT-6.2 Astra runs on high, a spelled-out Astra ID too (+6 body, +6 total)
   delegate: {body: 748, total: 1438}
   distill-docs: {body: 2232, total: 2232}
-  distill-handoffs: {body: 2746, total: 2746}
+  distill-handoffs: {body: 2737, total: 2737}
   # raised 2026-10-29: after a Rex restart the bots parked asking whether to reopen
   # their gone sessions (batch 2026-10-28, N20–N27); reopening them and their next step
   # raised 2026-10-29: the owner's page now shows each session's history with the
@@ -198,7 +198,7 @@ skills:
   # otherwise says what the replay is, for the copy planlab carries (codex on #10759)
   revise-prompt: {body: 824, total: 824}
   write-prompt: {body: 709, total: 709}
-  pl-closeout: {body: 479, total: 719}
+  pl-closeout: {body: 479, total: 688}
 # Every lesson file at its word count, under the same ratchet: the consult and
 # review voices read these each round. Dot-directories (the pinned upstream
 # copies) are skipped; skill-sync records a new file and drops a removed one.

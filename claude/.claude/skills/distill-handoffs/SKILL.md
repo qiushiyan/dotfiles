@@ -15,11 +15,11 @@ on one seam) and keeps the folder a task board: the notes (§ The folder note)
 give each domain's meaning and order, the listing its state, and finished
 work is gone.
 
-**Defer to the project first.** If the repo ships its own sweep skill (look in
-`.claude/skills/` for one that names this skill), run that. It carries what
-this skill cannot know: where the project keeps status, how it reads
-production, what a merged PR owes besides its brief. Its additions run after
-step 1 of whichever pass fires, and its report section follows this one.
+**A project's closeout comes first.** Where a project closes out a merge with
+its own skill that runs this one as its brief step (planlab's `pl-closeout`),
+a closeout asked for by hand runs that skill, which also ships the merge and
+takes what it owes production. Run from inside it, this skill is that step
+alone.
 
 ## Pick the pass
 

@@ -22,8 +22,7 @@ python3 ~/.local/share/dotfiles/planlab-skills/pl-closeout/scripts/closeout_chec
 ```
 
 It prints one line per area, with its state and the note beside this file
-that holds the procedure. Read a note when a line names it, and rerun the
-check before the report. Start each area from what is already recorded,
+that holds the procedure; rerun it before reporting. Start each area from what is already recorded,
 since a closeout can be started twice. Brief and cleanup commands take the
 PR's head branch the check prints, not the branch this session sits on, which
 in a review session is another.
@@ -43,22 +42,21 @@ in a review session is another.
 5. **Clean up.** [cleanup.md](cleanup.md).
 
 Each domain the merged paths reach has a note in `domains/`, which the
-check's lines name; a merge that reaches several takes each.
+check's lines name; a merge that reaches several takes each. A team skill a
+note names that will not load is `.agents/skills/<name>/SKILL.md` in the
+checkout: read it there.
 
 ## What waits for the user
 
-Almost nothing. The brief folder is a git clone, so a revert undoes a
-verdict; triage records can be recorded again, a verdict comment edited, a
-deploy rolled back. So each is done and reported with its undo. These wait,
-each as a ready preview the user answers in one word: a `#loopy` post,
-except an internal change's untagged one; a reply to a reporter or a
-customer; and a migration that drops or rewrites customer data, with what it
-protects and your recommendation. A read only a person can waive is theirs,
-with the reason.
+Almost nothing: a brief verdict, a triage record, a verdict comment and a
+deploy each come undone, so each is done and reported with its undo. What
+reaches people waits, as a ready preview the user answers in one word: a
+`#loopy` post, except an internal change's untagged one, and a reply to a
+reporter or a customer. So does a gate that the domain note, or the deploy
+skill it names, keeps for a person's word: report what it protects and your
+recommendation. A read only a person can waive is theirs, with the reason.
 
 ## Report
-
-For a reader coming back hours later:
 
 - what merged and where it serves, in a line;
 - what this closeout did, area by area, each default with its undo;

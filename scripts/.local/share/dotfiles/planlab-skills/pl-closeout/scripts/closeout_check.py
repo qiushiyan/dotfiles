@@ -29,7 +29,9 @@ import sys
 from pathlib import Path
 
 # (domain, path prefixes, surfaces it serves on). A changed file takes the
-# first domain whose prefix it starts with; order matters.
+# first domain whose prefix it starts with; order matters. A path the map
+# cannot place leans toward serving: a needless serving read costs one call,
+# a missed release ships nothing.
 DOMAINS = (
     ("loopy", ("packages/loopy", "services/loopy", "application/src/lib/loopy/",
                "application/src/universal-index/"), ("app", "master")),
@@ -41,7 +43,7 @@ DOMAINS = (
                  "CLAUDE.md", "docs/technical/", "codebase-health/", "bugbot/", "packages/dev-host/",
                  "packages/lane/", "packages/lane-client/", "packages/planlab/", "infra/devpool/",
                  "infra/development/"), ()),
-    ("app", ("application/", "packages/", "distributions/"), ("app",)),
+    ("app", ("application/", "packages/", "distributions/", "services/wiki-relay/"), ("app",)),
     ("docs", ("docs/", "user-docs/", "README.md", "STRUCTURE.md"), ()),
 )
 NOTES = {"loopy": "domains/loopy.md", "app": "domains/app.md", "taodesk": "domains/taodesk.md",
@@ -68,11 +70,16 @@ def checkout(start, home):
     return home / "dev/planlab/main"
 
 
+# Files no build ships, wherever they sit: coding-agent instructions and readmes.
+BY_NAME = {"AGENTS.md": "tooling", "CLAUDE.md": "tooling", "README.md": "docs"}
+
+
 def domains_of(paths):
     """{domain: [paths]} for the changed paths, unmatched ones under "unmapped"."""
     found = {}
     for path in paths:
-        name = next((d for d, prefixes, _ in DOMAINS if any(path.startswith(p) for p in prefixes)), "unmapped")
+        name = BY_NAME.get(Path(path).name) or next(
+            (d for d, prefixes, _ in DOMAINS if any(path.startswith(p) for p in prefixes)), "unmapped")
         found.setdefault(name, []).append(path)
     return found
 
@@ -114,6 +121,9 @@ def serving(pr, domains, repo, runner):
 def reads(number, repo, runner):
     code, out, err = runner(["python3", ".agents/skills/pl-loopy-handoff-distill/scripts/owed_reads.py",
                         "--pr", str(number), "--json"], repo)
+    if "git fetch failed" in err:
+        return [line("check", "judge", f"`owed_reads.py --pr {number}` read a develop it could not fetch, "
+                     "so a marker the merge added may be missing; fetch and rerun", NOTES["loopy"])]
     if code == 1 and "Closing read owed" in err:   # its own words when no marker names this PR
         return [line("check", "done", f"no owed-read marker for #{number} on develop")]
     try:
@@ -139,8 +149,10 @@ def reads(number, repo, runner):
 def announcement(number, repo, runner):
     code, out, err = runner(["planlab", "backstage", "loopy", "announce", "list", "--pr", str(number), "--json"], repo)
     try:
-        drafts = json.loads(out)
+        drafts = json.loads(out) if code == 0 else None
     except ValueError:
+        drafts = None
+    if not isinstance(drafts, list) or not all(isinstance(d, dict) for d in drafts):
         return [line("tell", "judge", f"announcement unread (`announce list --pr {number}` exited {code})", NOTES["loopy"])]
     if not drafts:
         return [line("tell", "judge", "no announcement saved; post one unless only its reporters felt it", NOTES["loopy"])]
@@ -162,12 +174,17 @@ def announcement(number, repo, runner):
 def briefs(branch, repo, runner):
     code, out, err = runner(["brief", "closeout", branch, "--json"], repo)
     try:
-        c = json.loads(out)
+        c = json.loads(out) if code == 0 else None
     except ValueError:
+        c = None
+    if not isinstance(c, dict):
         return [line("handoffs", "judge", f"`brief closeout {branch}` exited {code}", "handoffs.md")]
     lines = []
     anchor = c.get("anchor")
-    if anchor:
+    if anchor and anchor.get("done"):
+        lines.append(line("handoffs", "judge", f"brief {anchor.get('slug')} was retired ({anchor.get('retired') or 'kept'}); "
+                          "delete it once nothing needs its text", "handoffs.md"))
+    elif anchor:
         lines.append(line("handoffs", "owes", f"brief {anchor.get('slug')} is spent", "handoffs.md"))
     candidates = c.get("candidates") or []
     if candidates:
@@ -179,6 +196,7 @@ def briefs(branch, repo, runner):
         if step.get("step") == "brief":
             continue
         what = step.get("command") or f"hold: {step.get('hold')}"
+        what += f"  # {step['note']}" if step.get("note") else ""
         lines.append(line("cleanup", "owes" if step.get("command") else "judge", what, "cleanup.md"))
     return lines
 
@@ -208,7 +226,7 @@ def check(number, start, home, runner=run):
         lines.append(line("pr", "judge", "paths no domain names: " + ", ".join(tops) + "; say what they change"))
     if "infra" in found:
         lines.append(line("ship", "waits", "infrastructure files changed: an apply is a person's (a Bench task names it)"))
-    if not any(serves for name, _, serves in DOMAINS if name in found and serves):
+    if paths and not {"unmapped", "infra"} & set(found) and not any(serves for name, _, serves in DOMAINS if name in found):
         lines.append(line("ship", "done", "no deployed surface: handoffs and cleanup only"))
     if "tooling" in found:
         lines.append(line("ship", "judge", "tooling serves nowhere; a changed CLI or an owed real use is in its note", NOTES["tooling"]))
@@ -228,12 +246,14 @@ def main(argv=None):
     parser.add_argument("--domains", action="store_true", help="print the path prefixes of each domain")
     args = parser.parse_args(argv)
     if args.domains:
+        for file, name in BY_NAME.items():
+            print(f"{name:8} {'any ' + file + ', wherever it sits':26}")
         for name, prefixes, serves in DOMAINS:
             print(f"{name:8} {'serves on ' + ', '.join(serves) if serves else 'serves nowhere':26} {' '.join(prefixes)}")
         return 0
     if args.pr is None:
         parser.error("name the merged PR")
-    lines, error = check(args.pr, Path.cwd(), Path.home())
+    lines, error = check(args.pr, Path.cwd(), Path.home(), run)
     if error:
         print(error, file=sys.stderr)
         return 2

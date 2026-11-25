@@ -10,8 +10,7 @@ The production work is the team's Loopy closeout,
 records, § The announcement, and § What people read for anything a person
 will read. Its rules hold, announcements' included, with one difference:
 this closeout is the invocation that approves `record-causes --commit` for
-the causes this merge shipped. `reply --live` reaches the reporter, so its
-preview waits for the user.
+the causes this merge shipped.
 
 Two brief readings are Loopy's: a brief whose whole goal was a production
 read is deleted once that read is a posted verdict or a marker in its record;

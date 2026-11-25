@@ -122,19 +122,27 @@ def personal_skills(choices):
 
 
 def linked(memory_dir, skills):
-    """memory_dir/.claude/skills holding a link to each skill and nothing else."""
+    """memory_dir/.claude/skills holding a link to each skill and nothing else.
+
+    Launches in one checkout share this directory and may run at once, so each
+    link is swapped in whole and an entry another launch removed first is no error."""
     root = memory_dir / ".claude" / "skills"
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     for entry in root.iterdir():
-        if entry.name not in skills or not entry.is_symlink() or entry.resolve() != skills[entry.name]:
-            if entry.is_symlink() or entry.is_file():
-                entry.unlink()
-            elif entry.is_dir():
-                shutil.rmtree(entry)
+        if entry.name.startswith(".") or entry.name in skills:
+            continue
+        if entry.is_symlink() or entry.is_file():
+            entry.unlink(missing_ok=True)
+        elif entry.is_dir():
+            shutil.rmtree(entry, ignore_errors=True)
     for name, source in skills.items():
         link = root / name
-        if not link.is_symlink():
-            link.symlink_to(source, target_is_directory=True)
+        if link.is_symlink() and link.resolve() == source:
+            continue
+        temporary = root / f".{name}.{os.getpid()}"
+        temporary.unlink(missing_ok=True)
+        temporary.symlink_to(source, target_is_directory=True)
+        os.replace(temporary, link)
 
 
 def checkout(start):
@@ -178,9 +186,9 @@ def repository_skills(root):
     return {entry.name for entry in skills.iterdir() if (entry / "SKILL.md").is_file()} if skills.is_dir() else set()
 
 
-def skill_overrides(root, keep):
+def skill_overrides(root, keep, personal=()):
     names = repository_skills(root)
-    mine = own_skill_names()
+    mine = own_skill_names() | set(personal)
     return {name: "user-invocable-only" for name in sorted(names - mine) if not any(fnmatch.fnmatchcase(name, glob) for glob in keep)}
 
 
@@ -272,7 +280,7 @@ def session_view(root):
     memory = (f"These are the project instructions in {agents}, the team's AGENTS.md, with the sections the "
               f"user does not use left out and the user's own note at the end. Relative paths in them are "
               f"relative to {root}.\n\n{text.strip()}\n" + (f"\n{note}\n" if note else ""))
-    return memory, text, misses, skill_overrides(root, choices["skills"]["keep"])
+    return memory, text, misses, skill_overrides(root, choices["skills"]["keep"], personal_skills(choices)[0])
 
 
 def switch_states(root):

@@ -2,10 +2,9 @@
 
 A merge to develop does not deploy Taodesk. Deploy `taodesk/` with
 `pl-deploy-taodesk`: its pre-deploy section, the migration step the deploy
-itself does not run, then the checks it lists after a deploy (sign-in, the
-escalation cron, both deadmen). The deploy uploads a working tree, so run it
-from a clean checkout of `origin/develop` as that section says, never the
-PR's worktree, which lacks what else has merged.
+itself does not run, then the checks it lists after a deploy. The deploy uploads a working tree, so run it
+from a clean checkout of `origin/develop`, never the PR's worktree, which
+lacks what else has merged.
 
 A migration under `packages/db-schema/` belongs to the main app's database
 and rides the app's release ([app.md](app.md)). When one merge changes both,

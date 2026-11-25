@@ -5,8 +5,8 @@ before it hands the turn back, so the user never has to ask for the closeout.
 After a Bash command run from a checkout of a project listed in PROJECTS, the
 hook reads the command with block-dangerous-git.py's lexer. A merge it starts
 (`land-wait.sh <N> … --merge`, or `gh pr merge [<N>|<url>]`) is recorded as
-owed for this session; the project's closeout check run for a PR
-(`<check> <N>`) records that PR's closeout as begun. The record is a JSON file
+owed for this session; a run of the project's closeout check whose output
+reads the PR as merged (`<check> <N>`) records its closeout as begun. The record is a JSON file
 named by the session id under
 ${XDG_STATE_HOME:-~/.local/state}/claude-hooks/closeout-owed/. A merge
 usually runs in the background, so the command's output says nothing yet;
@@ -18,7 +18,9 @@ MERGED gets one reminder, as additionalContext, which keeps the session going
 with it: closing out is the session's next step, unless the turn stopped on
 something the user must answer. A PR still open stays owed for a later turn
 end; one closed unmerged is dropped. A `gh pr merge` with no number names the
-PR of the branch checked out where it ran, asked at that point.
+PR of the branch checked out where it ran, asked at that point. GitHub is
+asked from the directory the merge ran in, else the first project checkout
+that still exists, since the closeout removes the worktree.
 
 It speaks once per PR per session, and stays silent on whatever it cannot
 establish: a payload without a session id or a cwd, a cwd outside every
@@ -26,6 +28,7 @@ project, no gh, a slow or unreadable answer, a record it cannot write. It
 never returns a block decision. The message names the skill and the path
 of its file, so a session the overlay did not launch can still read it.
 """
+import fcntl
 import importlib.util
 import json
 import os
@@ -50,6 +53,10 @@ PROJECTS = (
 LIMIT = 8   # seconds gh has to answer, per PR
 SESSION_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 PR_URL = re.compile(r"/pull/(\d+)")
+SHELLS = ("bash", "sh", "zsh")
+# gh flags that take a value, so the word after one is not an operand
+GH_VALUED = {"-R", "--repo", "--match-head-commit", "-t", "--subject", "-b", "--body",
+             "-F", "--body-file", "-A", "--author-email"}
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 MESSAGE = (
@@ -84,6 +91,19 @@ def number(word):
     return found.group(1) if found else None
 
 
+def gh_operands(args):
+    """gh's positional words, skipping each valued flag's value."""
+    words, skip = [], False
+    for a in args:
+        if skip:
+            skip = False
+        elif a.startswith("-"):
+            skip = a in GH_VALUED
+        else:
+            words.append(a)
+    return words
+
+
 def seen(command, project):
     """(PRs a merge was started for, PRs whose closeout check ran) in a command; "" stands for the branch's own PR."""
     sh = shell()
@@ -94,13 +114,13 @@ def seen(command, project):
             continue
         name = os.path.basename(argv[0])
         args = argv[1:]
-        if name in ("python3", "python") and args:
+        if name in ("python3", "python", *SHELLS) and args and not args[0].startswith("-"):
             name, args = os.path.basename(args[0]), args[1:]
         operands = [a for a in args if not a.startswith("-")]
         if name == "land-wait.sh" and "--merge" in args and operands and operands[0].isdigit():
             merges.append(operands[0])
         elif name == "gh" and "--help" not in args:
-            rest = [a for a in args if not a.startswith("-")]
+            rest = gh_operands(args)
             if rest[:2] == ["pr", "merge"]:
                 merges.append(next((n for n in map(number, rest[2:3]) if n), ""))
         elif name == project["check"] and operands and operands[0].isdigit():
@@ -123,11 +143,32 @@ def load(path):
 
 
 def save(path, data):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
+    tmp = f"{path}.{os.getpid()}.tmp"
     with open(tmp, "w") as f:
         json.dump(data, f)
     os.replace(tmp, path)
+
+
+def locked(path):
+    """An exclusive lock on the session's record, so two hooks of one session never interleave a read and a write."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    handle = open(path + ".lock", "w")
+    fcntl.flock(handle, fcntl.LOCK_EX)
+    return handle
+
+
+def ran_on_merged(payload, pr):
+    """Whether the check's output shows it read #pr as merged; a refusal of an open PR does not."""
+    response = payload.get("tool_response")
+    if response is None:
+        return True
+    text = response if isinstance(response, str) else str(response.get("stdout", "")) if isinstance(response, dict) else ""
+    return f"#{pr} merged" in text
+
+
+def where_to_ask(*candidates):
+    """The first directory that still exists, since a closeout may have removed the worktree a merge ran in."""
+    return next((c for c in candidates if c and os.path.isdir(c)), None)
 
 
 def gh_view(args, cwd):
@@ -152,21 +193,27 @@ def after_bash(payload):
     if project is None:
         return
     merges, checks = seen(command, project)
+    checks = [pr for pr in checks if ran_on_merged(payload, pr)]
     if not merges and not checks:
         return
-    path = record_path(session_id)
-    data = load(path)
-    owed, begun = data.setdefault("owed", {}), data.setdefault("begun", [])
+    named = []
     for pr in merges:
         if not pr:
             answer = gh_view([], cwd)
             pr = str(answer["number"]) if answer and answer.get("number") else ""
-        if pr and pr not in owed:
-            owed[pr] = {"cwd": cwd, "at": int(time.time())}
-    for pr in checks:
-        if pr not in begun:
-            begun.append(pr)
-    save(path, data)
+        if pr:
+            named.append(pr)
+    path = record_path(session_id)
+    with locked(path):
+        data = load(path)
+        owed, begun = data.setdefault("owed", {}), data.setdefault("begun", [])
+        for pr in named:
+            if pr not in owed:
+                owed[pr] = {"cwd": cwd, "at": int(time.time())}
+        for pr in checks:
+            if pr not in begun:
+                begun.append(pr)
+        save(path, data)
 
 
 def at_stop(payload):
@@ -180,24 +227,29 @@ def at_stop(payload):
     path = record_path(session_id)
     if not os.path.exists(path):
         return None
-    data = load(path)
-    owed, begun, reminded = data.get("owed", {}), data.get("begun", []), data.setdefault("reminded", [])
-    merged = []
-    for pr, where in list(owed.items()):
-        if pr in begun or pr in reminded:
-            continue
-        answer = gh_view([pr], where.get("cwd") or cwd)
-        if not answer:
-            continue
-        if answer.get("state") == "MERGED":
-            merged.append(pr)
-        elif answer.get("state") == "CLOSED":
+    fallbacks = [os.path.expanduser(c) for c in project["checkouts"]]
+    with locked(path):
+        data = load(path)
+        owed, begun, reminded = data.get("owed", {}), data.get("begun", []), data.setdefault("reminded", [])
+        merged, closed = [], []
+        for pr, where in owed.items():
+            if pr in begun or pr in reminded:
+                continue
+            ask_from = where_to_ask(where.get("cwd"), cwd, *fallbacks)
+            answer = gh_view([pr], ask_from) if ask_from else None
+            if not answer:
+                continue
+            if answer.get("state") == "MERGED":
+                merged.append(pr)
+            elif answer.get("state") == "CLOSED":
+                closed.append(pr)
+        for pr in closed:
             del owed[pr]
+        reminded.extend(merged)
+        if merged or closed:
+            save(path, data)
     if not merged:
-        save(path, data)
         return None
-    reminded.extend(merged)
-    save(path, data)
     prs = " and ".join(f"#{n}" for n in merged)
     return MESSAGE.format(prs=prs, them="them" if len(merged) > 1 else "it",
                           skill=project["skill"], path=project["path"])

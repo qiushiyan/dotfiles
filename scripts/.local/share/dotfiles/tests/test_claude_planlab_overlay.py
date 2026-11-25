@@ -274,6 +274,23 @@ if want("O12"):  # personal skills: linked into the added directory alone, stale
     ok("O12 a missing personal skill is named, the launch goes on", (0, True), (code, "personal skill not found, left out: 'planlab-skills/no-such-skill'" in said))
     ok("O12 --show lists them", True, "personal skills: pl-closeout" in run(home, config, root, "--show", raw=True)[1])
 
+if want("O13"):  # a personal skill is never hidden by its name, and launches at once all get the overlay
+    home, root, config = world("O13")
+    (root / ".claude" / "skills" / "pl-closeout").mkdir()
+    (root / ".claude" / "skills" / "pl-closeout" / "SKILL.md").write_text("---\nname: pl-closeout\n---\n")
+    code, args, said = run(home, config, root, "-p", "x", err=True)
+    overrides = json.loads(Path(args[args.index("--settings") + 1]).read_text()).get("skillOverrides", {})
+    ok("O13 a repository skill sharing a personal skill's name is not hidden", False, "pl-closeout" in overrides)
+    env = {"HOME": str(home), "XDG_CACHE_HOME": str(home / ".cache"), "CLAUDE_CONFIG_DIR": str(config),
+           "PATH": os.environ.get("PATH", "/usr/bin:/bin"), "PWD": str(root)}
+    refused = []
+    for round_ in range(12):   # each round a fresh memory directory, which every launch links into at once
+        (root / "AGENTS.md").write_text(AGENTS + f"\n<!-- round {round_} -->\n")
+        launches = [subprocess.Popen([sys.executable, "-I", str(SCRIPT), "-p", "x"], cwd=root, env=env,
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.PIPE) for _ in range(12)]
+        refused += [p.stderr.read().decode() for p in launches if p.wait() != 0]
+    ok("O13 simultaneous launches each get the overlay", [], refused[:1])
+
 if want("O9"):  # the real cache and log were never reached
     ok("O9 real cache and log untouched", REAL_BEFORE, (stamp(REAL_CACHE), stamp(REAL_LOG)))
 

@@ -9,11 +9,12 @@ entries before 2026-11-24 are there.
 
 ## Decisions that stand
 
-- The merging session closes out, without being asked, and the closeout owns merged → serving: it releases what the merge needs, by the release rule `merge-when-ready` used to carry (11-24). 10 of 46 PRs a session merged itself got no closeout, all after a freeform merge ask, none of them through `merge-when-ready`; their last messages deferred on "once it's live" (1), cited the user-only rule (2), asked permission (1), or said nothing (6, five docs-only).
+- The merging session closes out, without being asked, and the closeout owns merged → serving: it releases what the merge needs, by the release rule `merge-when-ready` used to carry (11-24). 10 of 46 PRs a session merged itself got no closeout: 6 after the user's own merge ask, 4 after a driver's hand-written step, none through `merge-when-ready`, six of them docs PRs; their last messages deferred on "once it's live" (1), cited the user-only rule (2), asked permission (1), or said nothing (6). (Corrected 11-24 by review r1; the first entry read all 10 as freeform asks.)
 - Personal by where it lives: the skill sits in dotfiles and the overlay links it into the operator's planlab sessions; the team skill keeps its name and stays manual-only (11-24). A rename would have stopped Steward's in-flight closing reads, which resolve the skill in each task's own worktree, as `skill-unusable`.
 - Only what reaches a person waits: a tagged `#loopy` post and a reply to a reporter. Brief verdicts, triage causes, verdict comments, deploys and cleanup are defaults with their undo (11-24). 6 of 6 held brief or worktree verdicts were answered yes in 62 closeout reports, with no later undo; announcements were skipped 5 and changed 5 times of 25; the one reversal was a customer reply.
 - The trigger and the typed fallback name the skill's file, so a session the overlay did not launch can still run it (11-24).
-- The check holds the one path → domain map; the skill names domains, never paths (11-24).
+- The check holds the one path → domain map; the skill names domains, never paths (11-24). A path it cannot place leans toward serving, since a needless serving read costs one call and a missed release ships nothing (review r1).
+- drive needs no skill root: the `closeout` key opens on prose, so no step types `/pl-closeout` (11-24, review r1; `skill_roots`, drive `fa0fb23`, reverted).
 
 ## Open comparisons
 
@@ -150,3 +151,63 @@ reading or a behaviour case. Same session.
 no-marker case among them), the hook's (25), the overlay's (52). The three
 behaviour cases on the revised text, run `pl-closeout-1124-pass`: candidate 3
 of 3 on each, the hook arm 3 of 3 (2 of 3 before).
+
+## 2026-11-24 — review r1 (Neon, full, cold), all four repositories
+
+**Ask**, the user's: have Neon review the whole implementation. Job
+`review-r1` (`agy-gemini-4-neon`); its brief and result in the session's
+scratchpad, `review/`.
+
+**Method findings, checked.** Of the 10 missed merges, 4 were a driver's
+hand-written step and 6 docs PRs (confirmed from `r14.json` and the PR
+titles; the decision line above is corrected). The 104 closeouts are the
+ledger's predicate; earlier rounds counted 111 (mini 37) by one the rounds
+do not keep. The three Taodesk examples are mini's, 10-14 and 10-15, before
+the window, since the query failed on mini2. The eval cases test a session
+holding the text, not one discovering it.
+
+**Findings fixed**, each pinned red first where it was behaviour:
+- F1, the hook missed `gh pr merge` with a flag's value before the number,
+  a `land-wait.sh` run through a shell, and a worktree removed before the
+  turn ended (H10–H12).
+- F2, the check called a merge surface-free when its paths were unread,
+  unmapped or infrastructure (C10); `AGENTS.md`, `CLAUDE.md` and `README.md`
+  are not runtime wherever they sit, and `services/wiki-relay/` ships with
+  the app (C11). Rebutted in part: `packages/loopy-eval` and
+  `loopy-research-campaign` are in the app's runtime dependency closure, and
+  the other packages named are left on the app, where a wrong guess costs a
+  serving read.
+- F3, `pl-deploy-steward` is manual-only and the overlay hides
+  `pl-taodesk-tickets`; the skill says to read a team skill that will not
+  load from `.agents/skills/<name>/SKILL.md`. Rebutted in part: Bench's
+  deploy skill allows overriding a clearable migration gate.
+- F4, a fetch that failed read as no marker (C12); an error answered as JSON
+  crashed the check or read as no brief (C13); a retired brief owed forever,
+  and a cleanup step's note was dropped (C14).
+- F5, simultaneous launches in one checkout raced on the link and dropped a
+  session to the team setup; a repository skill sharing a personal skill's
+  name would be hidden (O13).
+- F6, a check run before the merge marked its closeout begun (H13); the
+  record's writes are locked and their temporary file is the process's own.
+- F7, `skill_roots` reverted (above). F8, the sweep's deferral named any
+  repository skill that mentions it, which after this change is only
+  `pl-loopy-handoff`: it now names the project closeout that runs it, and
+  says the sweep runs alone from inside it; `doc-loop.md` says which defers
+  to which; `domains/taodesk.md` no longer credits `pl-deploy-taodesk` with
+  its `origin/develop` rule. F9 left: Rex shows a continued turn as done
+  until its first tool call, and drive reads turns from the transcript, not
+  from Rex. F10, Stop writes only
+  what changed. F11, § What waits names a gate a domain note or deploy skill
+  keeps for a person, so the migration detail lives in the notes.
+- F12–F16, tests: the Stop envelope parsed, the wiring and two PRs (H14,
+  H15); the check's command line, its checkout, and each state's line (C15,
+  C16); every command it runs is one of its reads (C6, an allowlist).
+
+**Ideas.** Built: the undo names the commit `brief sync` printed. Not
+built: each open read's predicate on its check line, since the Loopy note
+sends the session to the team procedure that prints it.
+
+**Cut beside the fixes**, each restating text the reader meets where it
+acts: `cleanup.md`'s hold paragraph (the sweep's step 6), the domain notes'
+list of the Taodesk deploy's checks, the Loopy note's reply rule (§ What
+waits). Total 719 → 688 words.
