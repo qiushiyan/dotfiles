@@ -1,7 +1,8 @@
 # Meeting the change as its user does
 
 Whoever runs this check works by these. A reviewer you hand it gets this
-file, the intent, the PR's head, and the brief's steps for the check.
+file, `~/.agents/skills/strategic-review/BAR.md`, the intent, the PR's head,
+and the brief's steps for the check.
 
 - **Hold what the user holds.** An agent's tool comes with its skill and
   hints, not only `--help`; a screen is walked at the widths and inputs the
@@ -12,7 +13,7 @@ file, the intent, the PR's head, and the brief's steps for the check.
   starting one. Never the main checkout's app or another branch's, nor
   their databases; a deployed preview only where the project lets a
   session write.
-- **A screen** is held to the screen standard step 2 of the review names,
+- **A screen** is held to `BAR.md`'s screen standard,
   `~/dev/aiforui-skills/emil-ui-review/SKILL.md` read whole; read a skill
   it names, by path, when a finding needs its rule. When the app cannot
   come up, apply it to the source.

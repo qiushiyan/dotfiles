@@ -42,12 +42,24 @@ reads that entry first.
   design skills, asked for by the brief (11-19).
 - **An unrun check is not a known limit.** It stays under investigate; one
   the verdict rests on leads the report and holds the merge (11-19).
+- **The standards and lenses live once, in `BAR.md`, read by the lead and
+  handed to every area reviewer** (11-26: plain lessons stay plain files, no
+  discipline-split custom subagents; previously only 24 of 225 prompts pointed
+  at the skill file and 33 of 225 read no standard).
 
 ## Open comparisons
 
 Each is a measurement a pass can run. The first is this log's newest.
 
-1. **Use checks, after 11-19.** Briefs that ask for a check meeting the
+1. **Shared bar (`BAR.md`), after 11-26.** Area-reviewer prompts carrying
+   `BAR.md`'s path, plus lead and area-reviewer read rates of `BAR.md` and at
+   least one named standard. Baselines (10-29 → 11-26, 225 review subagents
+   across 73 reviews): 24 of 225 prompts pointed at `SKILL.md`, 155 of 225
+   named any standard, 192 of 225 read a standard (33 read none), and 9 of 73
+   reviews handed none to any reviewer. Reverse if leads skip `BAR.md` in
+   step 2 (below ~90% over 10 reviews) or if area reviewers handed `BAR.md`
+   read standards less often than the 152 of 155 baseline.
+2. **Use checks, after 11-19.** Briefs that ask for a check meeting the
    change as its user does, reviews that run it, and what only it found
    (first live use, #11858: the preview master's missing S3 grants, a
    driven focus bug). Baselines: the user's hand asks for a UI, Emil or
@@ -55,23 +67,23 @@ Each is a measurement a pass can run. The first is this log's newest.
    additions to a hand-sent brief, 4 of 31; Emil asked for mid-review, once
    on 11-19. Reverse the step-3 check if ten that ran find nothing the area
    reads did not.
-2. **Brief length and pointing.** New-snippet briefs ran 289–360 words
+3. **Brief length and pointing.** New-snippet briefs ran 289–360 words
    against a 300 cap, and one of two judges saw them point at one fewer of
    five real-review findings (11-19). Watch what later rounds find on
    briefed reviews; tighten the snippet if misses rise.
-3. **Unrun checks that lead a report:** how many, whether the driver relayed
+4. **Unrun checks that lead a report:** how many, whether the driver relayed
    them (`PLANLAB.md`) or merged past them.
-4. **Steering, after 11-16:** registries, guards or lint rules the lens asks
+5. **Steering, after 11-16:** registries, guards or lint rules the lens asks
    for that a later review deletes as unearned would reverse it. (Reports
    carrying next-change findings, answered 11-19: 7 of 9.)
-5. **Live folds since 10-28:** faults CI or the bots find after the fold's
+6. **Live folds since 10-28:** faults CI or the bots find after the fold's
    own round, and known limits that later turned into incidents.
-6. **Driven reviews since 11-10:** how many stopped before the fold (target:
+7. **Driven reviews since 11-10:** how many stopped before the fold (target:
    only on a finding with no recommendation), and what the read of the fold
    found, against the unread folds of 10-28.
-7. **Fable at `xhigh` against `high`** on `pr-8858` and `pr-8959`: what the
+8. **Fable at `xhigh` against `high`** on `pr-8858` and `pr-8959`: what the
    extra third of cost finds (11-10).
-8. **Review-driven lines classified unearned** on PRs merged after 10-23,
+9. **Review-driven lines classified unearned** on PRs merged after 10-23,
    by that entry's definition, against 15%.
 
 Retired: 10-07's yield against the manual prompt and 10-09's measures
@@ -1274,3 +1286,97 @@ review reads that session with obelisk to judge the decisions in context.
 strategic review is the first measure: whether its findings against
 deliberate decisions cite the session's reason, and whether it drops real
 findings because the session argued them away.
+
+## 2026-11-26 — one shared review bar (`BAR.md`) for lead and area reviewers
+
+Sessions `mini2:7639db7f` (Claude) and `mini2:76d99d5a` (Gemini), working
+together on the user's question of whether lessons should move behind
+discipline-split Claude Code custom subagents (`code-reviewer`,
+`codebase-design`). The user settled: no custom subagents (lessons stay plain
+files), remove the dead `requires:` frontmatter everywhere (steward is
+dormant), and keep the design direct.
+
+**Corpus.** Obelisk, `mac`, `mini` and `mini2` (all reached), Claude,
+2026-10-29 → 11-26 (predicate in `mine4.json` facet `sr`, scratchpad, not
+durable). Narrow strategic-review predicate: 89 sessions (`mini2` 73, `mac` 7,
+`mini` 9), of which 73 spawned review subagents (`mini2` 58, `mac` 4, `mini`
+11) — 225 review subagents matched to sidechain transcripts (`mini2` 178,
+`mac` 10, `mini` 37). Wider slice check (all 142 sessions matching
+`/strategic-review`, 254 review subagents classified by description): 243 of
+254 (96%) sliced by code area, 11 of 254 (4%) by discipline/facet.
+
+**Findings.**
+- **Reviewers are sliced by code area, not discipline** (243 of 254).
+  Splitting into specialist subagents per lesson would multiply diff reads and
+  separate structural reshapes from local findings, while the lead still needs
+  the standards for cross-area review, verification and the fold.
+- **Handing a standard decides whether a reviewer reads one.** Prompt named a
+  standard in 155 of 225 review subagents, of which 152 read one (98%); named
+  none in 70, of which 40 read one (57%). 33 of 225 reviewed with no standard
+  read; in 9 of 73 reviews no reviewer was handed any.
+- **Reviewers got the lenses paraphrased.** Only 24 of 225 prompts pointed at
+  `SKILL.md`, and 133 of 225 mentioned earned handling or `reaches:` at all
+  (loose keyword match) — the 10-07 entry measured paraphrased standards at 14
+  findings against 36.
+- **`requires:` frontmatter never reached Skill-tool loads** (0 of 446 across
+  consult, review and strategic-review; read by path 9 times in 5 sessions).
+  Removed as tidy-up alongside five other skills (`prompt-engineering` keeps
+  its block for now because it broadcasts into Planlab).
+
+**Changed.**
+- New `BAR.md`: short review-phase opening moved from step 3 ("During review,
+  change no PR code; focused tests and scratchpad probes are allowed. Mark
+  each finding probe-confirmed or read from source."), `## Standards` (step
+  2's five bullets moved verbatim plus
+  `~/.config/lessons/collaboration/finding-classes.md`, which ~170 of 225
+  reviewers already read and the lens examples use), and `## The lenses` moved
+  verbatim except the two `step 2` cross-references updated for
+  self-containment ("when the PR shows a model-facing change", "when you read
+  `steering.md`").
+- `SKILL.md`: removed `requires:`; step 2 reads
+  `~/.agents/skills/strategic-review/BAR.md` and its applicable standards in
+  full (home-relative `~/.agents/skills/...` path so `skill-evals` resolves to
+  the revision under test); step 3 hands each area reviewer `BAR.md` and cites
+  `~/.agents/skills/strategic-review/USE-CHECK.md`; § The report reads "its
+  class tag from the bar"; § Folding the findings in reads "by the bar's
+  lenses".
+- `USE-CHECK.md`: added `~/.agents/skills/strategic-review/BAR.md` to the
+  hand-off list on line 4 and updated line 16 from "step 2 of the review" to
+  `` `BAR.md`'s screen standard ``.
+- Cuts: `BAR.md`'s review-phase opening tightened to hold the existing budget
+  (`SKILL.md` body 2,619 → 1,261; `BAR.md` 1,362; `USE-CHECK.md` 190 → 185;
+  total 2,809 → 2,808). Bring back the full opening wording if reviewers
+  start editing PR files or omitting probe-vs-read provenance.
+- Cross-read cold by the Claude session before replay (three catches folded:
+  `finding-classes.md` in `BAR.md`, step 2 stating what `BAR.md` holds,
+  `USE-CHECK.md` path and "the bar's lenses", plus "read-only" → "read from
+  source"). Fresh-subagent `revise-prompt` pass over all nine candidate files
+  caught two more (folded after replay start: `Read each applicable standard
+  in full:` under `BAR.md` § Standards, paid for by trimming step 2, and
+  adding `BAR.md` to `USE-CHECK.md`'s hand-off list).
+
+**Verified.**
+- **Cold reads:** read cold by the Claude session before replay (three catches
+  folded above) and by a fresh subagent running `revise-prompt`'s pass over
+  all nine candidate files (its two catches on `strategic-review/` became the
+  `revised 2` edits above).
+- **Parity replay** (`~/dev/skill-evals/runs/sr-bar-1126-<case>`, candidate
+  directory as the revision, one rollout per case, Fable 1M at high effort,
+  judge Claude Sonnet 5.5 with 3 passes). The replayed text predated the two
+  `revised 2` edits (the read-in-full line under `BAR.md` § Standards and
+  `BAR.md` in `USE-CHECK.md`'s hand-off list):
+
+  | case | candidate | baseline, 11-19 at `10a4eeb2`, n=1 |
+  |---|---|---|
+  | `pr-11512-steering` | 5 of 7 checks | 5 of 7, the same five |
+  | `pr-9567-earned` | 3.67 of 4 (`settle-bound-built` passes; `limit-recorded` 0.67) | 3 of 4 |
+  | `pr-8948` | 4 of 10 (K1 K2 K3 K10) | 5 of 10 (K1 K2 K3 K5 K7); 11-19 head arm at n=2 averaged ~2 of 10 |
+
+  At n=1 this shows no regression and cannot show a gain.
+- **Hand-off (from the three lead transcripts):** the lead read `BAR.md` and
+  the standards in 3 of 3; 11 of 11 area-reviewer prompts carried `BAR.md`'s
+  path, each instructing the reviewer to read it whole and then the standards
+  it names (baseline: 24 of 225 pointed at `SKILL.md`). Reviewer prompts ran
+  ~10k–14k chars and still listed the standards' paths beside `BAR.md`. Not
+  measured: what the reviewers themselves read (the harness retains the lead's
+  transcript only).
