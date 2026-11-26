@@ -792,3 +792,43 @@ keep fable when no voice is named. Global `review-verify` and
 personal ones included, lives in the committed `.tabtype.toml` and ships by
 PR, at the cost of a worktree older than a key's merge expanding the global
 key of that name.
+
+## 2026-11-26 — the build prompts ask for the test the review asks for
+
+Session `mini2:7639db7f` (an `/improve-tool` pass on the lessons and the
+skills that cite them, which turned this up beside its request).
+
+**Found.** The test bar is applied at review and never at build. On mini2,
+10-29 to 11-26, 196 of 202 full review rounds listed at least one behaviour
+no test pins, with a median of six (the envoy job store's `review-r1`
+results, items counted under each "Unpinned behaviour" heading), and 23 of
+the 45 review-driven fix commits in the Planlab checkout were test pins.
+The reviewer is told to name the test that goes red if a change is
+reverted; `implement-now`, `implement-spec` and `consult-then-build` said
+nothing about tests.
+
+**Changed.** `implement-now` and `consult-then-build` gain two sentences:
+pin each behaviour you add or change whose regression would matter with a
+test that goes red when the change is reverted, extending an existing test
+where one fits; the review asks for exactly that test. `implement-spec` is
+unchanged: the spec owns the test strategy, and the sentence was not run on
+a spec'd build. Planlab's own `consult-then-build` (its `.tabtype.toml`)
+does not carry it; that file ships by PR and is the user's to change.
+
+**Verified** (skill-evals `build-pins`, case written first; the
+`implement-now` text on the `jobq-plan` fixture, three builds with the
+sentences and three without, then each of five planned behaviours broken in
+every build by a reader who did not know which was which):
+- Without: the CLI's resend, the one behaviour that lives outside the
+  process the tests run in, stayed green when broken in 3 of 3 builds.
+  With: red in 3 of 3. The other four behaviours went red in all six.
+- Cost: 10 to 13 added tests against 5 to 6, and build time 348 s against
+  282 s. One of the three builds with the sentences added a multi-process
+  test that fails 8 of 14 untouched runs. Each arm had one test that pins
+  nothing (two "workers" driven from one thread).
+
+**Next pass compares:** unpinned items per full review round after builds
+that carried the sentences, against a median of six, and
+`wrong-reason-test` or flaky-test findings per round. Drop the sentences if
+the median does not fall by half, or if flaky or pins-nothing tests
+outnumber the pins they replaced.

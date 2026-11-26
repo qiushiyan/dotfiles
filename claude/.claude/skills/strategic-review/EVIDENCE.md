@@ -46,6 +46,9 @@ reads that entry first.
   handed to every area reviewer** (11-26: plain lessons stay plain files, no
   discipline-split custom subagents; previously only 24 of 225 prompts pointed
   at the skill file and 33 of 225 read no standard).
+- **The thermo-nuclear standard stays in the bar.** Without it the fold
+  built a guard nothing reaches in 2 of 2 runs of `pr-9567-earned`, where
+  2 of 2 runs with it left the case unbuilt (11-26, later).
 
 ## Open comparisons
 
@@ -1380,3 +1383,33 @@ durable). Narrow strategic-review predicate: 89 sessions (`mini2` 73, `mac` 7,
   ~10k–14k chars and still listed the standards' paths beside `BAR.md`. Not
   measured: what the reviewers themselves read (the harness retains the lead's
   transcript only).
+
+## 2026-11-26, later — the bar without its largest standard
+
+Session `mini2:7639db7f`, at the user's word that a trim for a stronger
+model was worth testing. `BAR.md` made it a one-file arm: the
+thermo-nuclear standard (1,894 words, the largest a review reads) removed
+from § Standards, the code-quality lens left as written, since it already
+names that standard's bars in one sentence.
+
+**Run.** `~/dev/skill-evals/runs/sr-lean-1126-<case>`, the arm's directory
+as the revision, two rollouts a case, Fable 1M at high effort, judge
+claude-sonnet-5-5 with 3 passes. Baselines with the standard: the same
+day's `sr-bar-1126` runs and 11-19's `sr-shipped-1119`, one rollout each.
+
+| case | without the standard | with it |
+|---|---|---|
+| `pr-9567-earned` | 1 of 4 in both runs: the fold built the re-entry guard nothing reaches, and no limit was recorded | 3.67 of 4 and 3 of 4 |
+| `pr-11512-steering` | 5.33 of 7 (file-size passed in 1 of 2) | 5 of 7 and 5 of 7 (file-size in both) |
+| `pr-8948` | 2.67 of 10, one rollout; the second had not finished when this was written | 4 of 10 and 5 of 10 |
+
+**Read.** No case gained and one lost what it exists to catch, in 2 of 2
+against 2 of 2. That is small, and nothing here says why a code-quality
+standard should hold the fold to earned handling, so the mechanism is
+unknown. The result agrees with 10-07's (a paraphrased standard found 14
+where the full read found 36): the standard stays, and the skill is
+unchanged. A pass that wants to trim it runs this arm at four or more
+rollouts on `pr-9567-earned` first.
+
+**Not tested:** swapping the upstream `codebase-design` skill (851 words)
+for `deep-modules.md` (1,058), which is no trim.
