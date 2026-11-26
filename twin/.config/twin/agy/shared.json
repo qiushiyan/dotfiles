@@ -5,5 +5,7 @@
   "allowNonWorkspaceAccess": true,
   "artifactReviewPolicy": "always-proceed",
   "showTips": false,
-  "showFeedbackSurvey": false
+  "showFeedbackSurvey": false,
+  "editorMode": "vim",
+  "vimInsertFirst": true
 }
