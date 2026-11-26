@@ -39,6 +39,9 @@
 #                         primary's name or a reserved word) a short alias
 #                         exists too (x-yan, …)
 #   x-fable               ≡ x --model claude-fable-5-2
+#   x-sessions / x-resume every interactive session on this machine, newest
+#                         first, in fzf; Enter resumes the one picked with
+#                         x --resume <id>, from the checkout it last ran in
 #   x-accounts / x-acc    account board (headroom accounts --compact): one
 #                         row per account, refreshing while it is open; it
 #                         records nothing and starts no session
@@ -106,7 +109,7 @@ fi
 # Local parts that never get a short launcher alias: x-<these> are utilities.
 # Purely this file's concern — headroom advertises only the guaranteed
 # x-<email> identities, so there is no naming policy to keep in sync anymore.
-typeset -ga CLAUDE_X_RESERVED=(usage account account-add accounts acc check fable)
+typeset -ga CLAUDE_X_RESERVED=(usage account account-add accounts acc check fable sessions resume)
 
 # The launch layer both vendors share; codex.zsh, sourced after this file,
 # uses it too.
@@ -383,6 +386,69 @@ _claude_x() {
 x() { _claude_x "" "$@" }
 # x on Fable, placed the same way.
 x-fable() { x --model claude-fable-5-2 "$@" }
+
+# Every interactive Claude Code session on this machine, newest first, in
+# fzf; Enter resumes the one picked. claude-sessions (scripts/) reads the
+# transcript store and says where the session goes on working: the checkout
+# it last ran in, an earlier one when that is gone, or the main checkout of a
+# worktree since removed. The shell moves there and stays after claude
+# exits; with nowhere to go it resumes here, since Claude Code takes a
+# session id from any directory. The resume is `x --resume <id>`, so headroom
+# puts it on the account that last drove it. ● marks a session a running
+# claude has open, and picking one asks first: two processes appending to
+# one transcript fork it.
+#
+#   x-sessions [--days N] [x args...]     N=0 lists every session (default 14)
+x-sessions() {
+  emulate -L zsh
+  local days=14 tool
+  case ${1-} in
+    --days)   days=${2-}; shift; (( $# )) && shift ;;
+    --days=*) days=${1#--days=}; shift ;;
+  esac
+  if [[ $days != <-> ]]; then
+    print -u2 "x-sessions: --days takes a whole number of days, 0 for every session"
+    return 2
+  fi
+  for tool in claude-sessions fzf; do
+    whence -p $tool >/dev/null || { print -u2 "x-sessions: $tool not found"; return 127 }
+  done
+  local rows; rows=$(claude-sessions list --days $days) || return
+  if [[ -z $rows ]]; then
+    print -u2 "x-sessions: no interactive Claude Code session in the last $days days"
+    return 1
+  fi
+  local -a lines=("${(@f)rows}")
+  local header="${#lines} sessions"
+  (( days )) && header+=", last $days days"
+  local pick rc
+  pick=$(print -r -- $rows | fzf --ansi --delimiter=$'\t' --with-nth=3.. --tiebreak=index \
+      --layout=reverse --height=90% --prompt='resume> ' --header="$header · enter resumes" \
+      --preview='claude-sessions preview {1}' --preview-window='down,50%,wrap')
+  rc=$?
+  (( rc == 1 || rc == 130 )) && return 0   # nothing matched, or Esc
+  (( rc )) && return rc
+  local id=${pick%%$'\t'*} rest=${pick#*$'\t'}
+  local pid=${rest%%$'\t'*}
+  if [[ -n $pid ]]; then
+    # Asked here, not as read's prompt, which a shell with no terminal
+    # replaces with an error of its own.
+    print -nu2 "x-sessions: a running claude (pid $pid) has this session open; resume a second copy? [y/N] "
+    if ! read -q 2>/dev/null; then
+      print -u2
+      return 1
+    fi
+    print -u2
+  fi
+  local dir
+  if dir=$(claude-sessions where $id); then
+    [[ $dir == ${PWD:A} ]] || builtin cd -- $dir || return
+  else
+    print -u2 "x-sessions: resuming in ${(D)PWD}"
+  fi
+  x "$@" --resume $id
+}
+x-resume() { x-sessions "$@" }
 
 # Prompted (no bypass) session on the account named.
 claude-account() {

@@ -1,0 +1,538 @@
+#!/usr/bin/env python3
+"""claude-sessions — this machine's interactive Claude Code sessions, newest
+first, for x-sessions (zsh/.config/zsh/claude.zsh) to pick one and resume it.
+
+Usage:
+  claude-sessions list [--days N]   one line per session; N=0 lists every one (default 14)
+  claude-sessions preview <id>      the picker's side panel for one session
+  claude-sessions where <id>        the directory to resume it in
+
+It reads and never writes. Everything it reads is under $HOME:
+
+  ~/.claude/projects/<folder>/<id>.jsonl   the transcript store, one for the
+        machine: every account's projects/ links here (headroom accounts add)
+  ~/.claude/sessions/<pid>.json, ~/.claude-accounts/*/sessions/<pid>.json
+        Claude Code's record of each running session, one per account dir
+  ~/.config/gwt/config.toml                 gwt's worktree_root
+
+What a transcript holds (Claude Code 2.1.332): every message line names the
+cwd its turn ran in, its gitBranch and its entrypoint, "cli" for an
+interactive session and "sdk-cli" for `claude -p`; ai-title lines, and
+custom-title lines after a /rename, are appended again as the session goes
+on, so the newest of each sits near the end. A session is listed when its
+newest message says "cli", which leaves out every headless run, and its age
+is the transcript's mtime.
+
+`list` prints tab-separated lines: the id, the pid of the process that has
+the session open now (empty when none), then the row the picker shows. A
+session counts as open when a registry file names it and its pid's process
+started within 10 seconds of the file's startedAt, headroom's test, so a
+recycled pid does not count.
+
+`where` answers with the checkout root of the newest directory the session
+ran in that still exists, read from the cwd of its messages: the worktree
+while it is there, the main checkout once it has been removed, if the
+session ever ran in the main checkout. When none exists and one of them was
+a worktree under gwt's worktree_root (<root>/<main checkout's name>/<branch>),
+the answer is the git main checkout of that name at ~/dev/<name> or
+~/dev/*/<name>, when exactly one exists. Otherwise it prints nothing, says
+why on stderr and exits 1. Claude Code resumes a session by id from any
+directory (checked on 2.1.332, a session whose directory was gone included),
+so the directory decides only where the session goes on working.
+"""
+
+import calendar
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import time
+import unicodedata
+
+HOME = Path(os.environ.get("HOME") or str(Path.home()))
+STORE = HOME / ".claude" / "projects"
+UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+START_TOLERANCE = 10  # seconds between a process's start and its registry's startedAt
+SMALL_LINE = 64 * 1024  # a line this size or less is cheap to parse
+WINDOWS = (64 * 1024, 1024 * 1024, 8 * 1024 * 1024)
+COLOR = not os.environ.get("NO_COLOR")
+
+
+def die(msg, code=2):
+    print(f"claude-sessions: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+# --- reading transcripts ------------------------------------------------------
+
+def transcripts():
+    """{id: path} for every transcript in the store, the newest file when an
+    id has several (an orphaned copy, a folder it was moved out of)."""
+    found = {}
+    try:
+        folders = list(os.scandir(STORE))
+    except OSError:
+        return found
+    for folder in folders:
+        if not folder.is_dir(follow_symlinks=False):
+            continue
+        try:
+            entries = list(os.scandir(folder.path))
+        except OSError:
+            continue
+        for e in entries:
+            if not e.name.endswith(".jsonl") or not e.is_file(follow_symlinks=False):
+                continue
+            sid = e.name.split(".", 1)[0]
+            if not UUID.fullmatch(sid):
+                continue
+            try:
+                mtime = e.stat().st_mtime
+            except OSError:
+                continue
+            if sid not in found or mtime > found[sid][1]:
+                found[sid] = (Path(e.path), mtime)
+    return found
+
+
+def lines_of(path, window):
+    """The complete lines of the last `window` bytes, newest first, and
+    whether they reach back to the start of the file."""
+    with open(path, "rb") as f:
+        size = f.seek(0, os.SEEK_END)
+        start = max(0, size - window)
+        f.seek(start)
+        data = f.read()
+    lines = data.split(b"\n")
+    if start > 0:
+        lines = lines[1:]  # cut through by the window
+    return [l for l in reversed(lines) if l.strip()], start == 0
+
+
+def head_lines(path, limit=256 * 1024):
+    with open(path, "rb") as f:
+        data = f.read(limit)
+    lines = data.split(b"\n")
+    if len(data) == limit:
+        lines = lines[:-1]
+    return [l for l in lines if l.strip()]
+
+
+def load(line):
+    try:
+        obj = json.loads(line)
+    except ValueError:
+        return None
+    return obj if isinstance(obj, dict) else None
+
+
+COMMAND = re.compile(r"<command-name>(.*?)</command-name>", re.S)
+ARGS = re.compile(r"<command-args>(.*?)</command-args>", re.S)
+
+
+def prompt_of(obj):
+    """What the person typed, when this line is a prompt: slash commands as
+    `/name args`, and nothing for tool results, meta lines, compaction
+    summaries and the notes Claude Code files under the user's role."""
+    if obj.get("type") != "user" or obj.get("isMeta") or obj.get("isCompactSummary"):
+        return None
+    if obj.get("isSidechain") or obj.get("toolUseResult") is not None:
+        return None
+    content = (obj.get("message") or {}).get("content")
+    if isinstance(content, list):
+        if any(isinstance(b, dict) and b.get("type") == "tool_result" for b in content):
+            return None
+        text = "\n".join(b.get("text", "") for b in content
+                         if isinstance(b, dict) and b.get("type") == "text")
+    elif isinstance(content, str):
+        text = content
+    else:
+        return None
+    text = text.strip()
+    m = COMMAND.search(text)
+    if m:
+        a = ARGS.search(text)
+        return f"{m.group(1).strip()} {a.group(1).strip() if a else ''}".strip() or None
+    if not text or text.startswith("<") or text.startswith("Caveat:"):
+        return None
+    return text
+
+
+class Session:
+    def __init__(self, sid, path, mtime):
+        self.id, self.path, self.mtime = sid, path, mtime
+        self.entrypoint = self.cwd = self.branch = None
+        self.custom = self.ai = None
+
+    @property
+    def title(self):
+        return self.custom or self.ai
+
+    def scan(self, lines):
+        for line in lines:
+            if self.custom is None and b'"type":"custom-title"' in line:
+                obj = load(line)
+                if obj and isinstance(obj.get("customTitle"), str) and obj["customTitle"].strip():
+                    self.custom = obj["customTitle"]
+            elif self.ai is None and b'"type":"ai-title"' in line:
+                obj = load(line)
+                if obj and isinstance(obj.get("aiTitle"), str) and obj["aiTitle"].strip():
+                    self.ai = obj["aiTitle"]
+            elif self.cwd is None and b'"cwd":"' in line:
+                obj = load(line)
+                if obj and isinstance(obj.get("cwd"), str):
+                    self.cwd = obj["cwd"]
+                    self.branch = obj.get("gitBranch") if isinstance(obj.get("gitBranch"), str) else None
+                    self.entrypoint = obj.get("entrypoint")
+            if self.cwd is not None and self.title:
+                return
+
+
+def read(sid, path, mtime):
+    """The session's newest cwd, branch, entrypoint and title, from as little
+    of the end of the file as answers them."""
+    s = Session(sid, path, mtime)
+    for window in (*WINDOWS, os.path.getsize(path)):
+        lines, whole = lines_of(path, window)
+        s.scan(lines)
+        if whole or (s.cwd is not None and (s.entrypoint != "cli" or s.title)):
+            break
+        # A title further back than this is not worth reading the whole file
+        # for: the first prompt stands in.
+        if s.cwd is not None and window >= WINDOWS[1]:
+            break
+    return s
+
+
+def first_prompt(path):
+    for line in head_lines(path):
+        if b'"type":"user"' in line:
+            obj = load(line)
+            p = obj and prompt_of(obj)
+            if p:
+                return p
+    return None
+
+
+def cwd_history(path):
+    """Every directory the session's messages ran in, newest first."""
+    seen, out = set(), []
+    lines, _ = lines_of(path, os.path.getsize(path))
+    for i, line in enumerate(lines):
+        if b'"cwd":"' not in line or (out and len(line) > SMALL_LINE):
+            continue
+        obj = load(line)
+        cwd = obj.get("cwd") if obj else None
+        if isinstance(cwd, str) and cwd and cwd not in seen:
+            seen.add(cwd)
+            out.append(cwd)
+    return out
+
+
+def recent_prompts(path, n=3):
+    out = []
+    lines, _ = lines_of(path, 4 * 1024 * 1024)
+    for line in lines:
+        if b'"type":"user"' in line and len(line) <= SMALL_LINE:
+            obj = load(line)
+            p = obj and prompt_of(obj)
+            if p:
+                out.append(p)
+                if len(out) == n:
+                    break
+    return list(reversed(out))
+
+
+# --- open sessions ------------------------------------------------------------
+
+def process_starts(pids):
+    try:
+        r = subprocess.run(["ps", "-o", "pid=,lstart=", "-p", ",".join(map(str, pids))],
+                           capture_output=True, text=True, timeout=5,
+                           env={**os.environ, "LC_ALL": "C"})
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    out = {}
+    for line in r.stdout.splitlines():
+        parts = line.strip().split(None, 1)
+        if len(parts) != 2:
+            continue
+        try:
+            out[int(parts[0])] = time.mktime(time.strptime(parts[1].strip(), "%a %b %d %H:%M:%S %Y"))
+        except ValueError:
+            continue
+    return out
+
+
+def open_sessions():
+    """{session id: (pid, cwd)} for every session a running process has open."""
+    files = list((HOME / ".claude" / "sessions").glob("*.json"))
+    files += list((HOME / ".claude-accounts").glob("*/sessions/*.json"))
+    claims = {}
+    for f in files:
+        try:
+            d = json.loads(f.read_text())
+        except (OSError, ValueError):
+            continue
+        if not isinstance(d, dict):
+            continue
+        pid, sid, started = d.get("pid"), d.get("sessionId"), d.get("startedAt")
+        if isinstance(pid, int) and pid > 0 and isinstance(sid, str) \
+                and isinstance(started, (int, float)) and not isinstance(started, bool):
+            claims[pid] = (sid, started / 1000, d.get("cwd"))
+    if not claims:
+        return {}
+    starts = process_starts(sorted(claims))
+    out = {}
+    for pid, (sid, started, cwd) in claims.items():
+        began = starts.get(pid)
+        if began is not None and abs(began - started) <= START_TOLERANCE:
+            out[sid] = (pid, cwd if isinstance(cwd, str) else None)
+    return out
+
+
+# --- where a session resumes --------------------------------------------------
+
+def checkout_root(d):
+    """The root of the git checkout holding d, or d when it is in none."""
+    p = Path(d)
+    for q in (p, *p.parents):
+        if (q / ".git").exists():
+            return str(q)
+    return str(p)
+
+
+def worktree_root():
+    try:
+        text = (HOME / ".config" / "gwt" / "config.toml").read_text()
+    except OSError:
+        return None
+    m = re.search(r'^\s*worktree_root\s*=\s*"([^"]+)"', text, re.M)
+    if not m:
+        return None
+    root = m.group(1)
+    if root == "~" or root.startswith("~/"):
+        root = str(HOME) + root[1:]
+    return Path(root)
+
+
+def main_checkout(cwd, root):
+    """The main checkout of the gwt worktree cwd was in: gwt places a branch at
+    <root>/<main checkout's name>/<branch>, so that name, found as a git main
+    checkout at ~/dev/<name> or ~/dev/*/<name>. None unless exactly one."""
+    try:
+        rel = Path(cwd).relative_to(root)
+    except ValueError:
+        return None
+    if not rel.parts:
+        return None
+    name = rel.parts[0]
+    dev = HOME / "dev"
+    found = {str(c) for c in [dev / name, *dev.glob(f"*/{name}")] if (c / ".git").is_dir()}
+    return found.pop() if len(found) == 1 else None
+
+
+def resume_dir(path):
+    """(directory, how, last): where the session should go on working; how it
+    was found, "last" for the newest directory it ran in, "earlier" for an
+    older one, "main" for a removed worktree's main checkout; and the newest
+    directory it ran in. The directory is None when there is nowhere."""
+    history = cwd_history(path)
+    if not history:
+        return None, None, None
+    for i, cwd in enumerate(history):
+        if os.path.isdir(cwd):
+            return checkout_root(cwd), "last" if i == 0 else "earlier", history[0]
+    root = worktree_root()
+    if root is not None:
+        for cwd in history:
+            d = main_checkout(cwd, root)
+            if d:
+                return d, "main", history[0]
+    return None, None, history[0]
+
+
+# --- presentation -------------------------------------------------------------
+
+def tilde(p):
+    h = str(HOME)
+    return "~" + p[len(h):] if p == h or p.startswith(h + "/") else p
+
+
+def clean(text):
+    """Vendor text made safe for one terminal row: control and format
+    characters (escape sequences, tabs, newlines) become spaces."""
+    out = [" " if unicodedata.category(c) in ("Cc", "Cf", "Zl", "Zp") else c for c in text]
+    return " ".join("".join(out).split())
+
+
+def width(text):
+    return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in text)
+
+
+def fit(text, cols):
+    """text cut or padded to exactly cols terminal columns."""
+    if width(text) <= cols:
+        return text + " " * (cols - width(text))
+    out, used = [], 0
+    for c in text:
+        w = width(c)
+        if used + w > cols - 1:
+            break
+        out.append(c)
+        used += w
+    return "".join(out) + "…" + " " * (cols - 1 - used)
+
+
+def paint(code, text):
+    return f"\033[{code}m{text}\033[0m" if COLOR and text else text
+
+
+def age(mtime, now):
+    s = max(0, int(now - mtime))
+    if s < 60:
+        return "now"
+    if s < 3600:
+        return f"{s // 60}m"
+    if s < 86400:
+        return f"{s // 3600}h"
+    return f"{s // 86400}d"
+
+
+def row(s, live, now):
+    title = clean(s.title or first_prompt(s.path) or "(no prompt)")
+    gone = s.cwd is not None and not os.path.isdir(s.cwd)
+    if s.cwd is None:
+        where = "?"
+    else:
+        where = clean(tilde(s.cwd if gone else checkout_root(s.cwd)))
+    mark = paint("32", "●") if live else " "
+    return "  ".join([
+        paint("2", f"{age(s.mtime, now):>4}") + " " + mark,
+        fit(title, 52),
+        paint("36", fit(clean(s.branch or ""), 30)),
+        paint("31" if gone else "2", where + (" (gone)" if gone else "")),
+    ])
+
+
+# --- commands -----------------------------------------------------------------
+
+def cmd_list(args):
+    days = 14
+    if args:
+        if len(args) == 2 and args[0] == "--days" and args[1].isdigit():
+            days = int(args[1])
+        elif len(args) == 1 and args[0].startswith("--days=") and args[0][7:].isdigit():
+            days = int(args[0][7:])
+        else:
+            die("usage: claude-sessions list [--days N]")
+    now = time.time()
+    found = transcripts()
+    recent = [(sid, p, m) for sid, (p, m) in found.items() if days == 0 or now - m <= days * 86400]
+    recent.sort(key=lambda t: t[2], reverse=True)
+    live = open_sessions()
+    out = []
+    for sid, path, mtime in recent:
+        try:
+            s = read(sid, path, mtime)
+        except OSError:
+            continue
+        if s.entrypoint != "cli":
+            continue
+        pid = live.get(sid, (None,))[0]
+        out.append(f"{sid}\t{pid or ''}\t{row(s, pid, now)}")
+    if out:
+        sys.stdout.write("\n".join(out) + "\n")
+
+
+def find(sid):
+    if not UUID.fullmatch(sid or ""):
+        die(f"not a session id: {sid!r}")
+    hit = transcripts().get(sid)
+    if hit is None:
+        die(f"no transcript for {sid} in {tilde(str(STORE))}", 1)
+    return hit
+
+
+def cmd_where(args):
+    if len(args) != 1:
+        die("usage: claude-sessions where <id>")
+    path, _ = find(args[0])
+    d, how, last = resume_dir(path)
+    if d is None:
+        why = f"no directory it ran in exists any more (last {tilde(last)})" if last \
+            else "its transcript names no directory"
+        print(f"x-sessions: {why}", file=sys.stderr)
+        sys.exit(1)
+    if how == "earlier":
+        print(f"x-sessions: {tilde(last)} is gone; resuming in {tilde(d)}", file=sys.stderr)
+    elif how == "main":
+        print(f"x-sessions: {tilde(last)} is gone; resuming in its main checkout, {tilde(d)}",
+              file=sys.stderr)
+    print(d)
+
+
+def cmd_preview(args):
+    if len(args) != 1:
+        die("usage: claude-sessions preview <id>")
+    path, mtime = find(args[0])
+    s = read(args[0], path, mtime)
+    now = time.time()
+    d, how, _ = resume_dir(path)
+    live = open_sessions().get(s.id)
+    head = next((load(l) for l in head_lines(path, 64 * 1024) if b'"timestamp":"' in l), None)
+    started = (head or {}).get("timestamp", "")
+    try:
+        started = time.strftime("%b %d %H:%M", time.localtime(
+            calendar.timegm(time.strptime(started[:19], "%Y-%m-%dT%H:%M:%S"))))
+    except ValueError:
+        started = ""
+    print(paint("1", clean(s.title or first_prompt(path) or "(no prompt)")))
+    print()
+    print(f"id       {s.id}")
+    ago = age(mtime, now)
+    print(f"active   {ago if ago == 'now' else ago + ' ago'}, {time.strftime('%b %d %H:%M', time.localtime(mtime))}"
+          + (f", started {started}" if started else ""))
+    if s.branch:
+        print(f"branch   {clean(s.branch)}")
+    if s.cwd:
+        gone = "" if os.path.isdir(s.cwd) else "   (gone)"
+        print(f"last in  {clean(tilde(s.cwd))}{gone}")
+    because = {"earlier": "   (an earlier directory: the last is gone)",
+               "main": "   (its main checkout: the worktree is gone)"}.get(how, "")
+    print(f"resumes  {clean(tilde(d)) + because if d else 'in the directory you start it from'}")
+    if live:
+        pid, cwd = live
+        print(paint("32", f"open now in pid {pid}" + (f", {clean(tilde(cwd))}" if cwd else "")))
+    prompts = recent_prompts(path)
+    if prompts:
+        print()
+        print(paint("2", "recent prompts"))
+        for p in prompts:
+            text = clean(p)
+            print(f"› {text[:400]}{'…' if len(text) > 400 else ''}")
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__.split("\n\n", 2)[1])
+        return 0 if argv else 2
+    cmd, args = argv[0], argv[1:]
+    if cmd == "list":
+        cmd_list(args)
+    elif cmd == "where":
+        cmd_where(args)
+    elif cmd == "preview":
+        cmd_preview(args)
+    else:
+        die(f"unknown command {cmd!r}; one of list, preview, where")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except BrokenPipeError:
+        sys.exit(0)
