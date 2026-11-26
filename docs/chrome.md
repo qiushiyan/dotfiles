@@ -44,6 +44,7 @@ Custom keys:
 | `ctrl+e` | Collapse or expand the vertical tabs | Karabiner, sends `cmd+shift+l` |
 | `ctrl+/`, `cmd+/` | Search open tabs | Karabiner, sends `cmd+shift+a` |
 | `ctrl+l` | Focus the address bar | Karabiner, sends `cmd+l` |
+| `ctrl+h` | Open History | Karabiner, sends `cmd+y` |
 
 Chrome's own keys worth keeping in hand:
 
@@ -124,11 +125,11 @@ nothing useful there.
   system state on each machine, off in **System Settings > Keyboard > Dictation >
   Shortcut** on the laptop and mini2. A new machine that shows the prompt needs
   the same setting.
-- **`ctrl+f`, `ctrl+d`, `ctrl+t` and `ctrl+e` are also text-editing keys on a
-  Mac,** for moving the cursor forward, deleting forward, swapping the characters
-  around the cursor and moving to the end of the line. `ctrl+f` and `ctrl+e` lose
-  that in Chrome's text fields and the address bar, and `ctrl+d` and `ctrl+t`
-  should too.
+- **`ctrl+f`, `ctrl+d`, `ctrl+t`, `ctrl+e` and `ctrl+h` are also text-editing
+  keys on a Mac,** for moving the cursor forward, deleting forward, swapping the
+  characters around the cursor, moving to the end of the line and deleting
+  backward. `ctrl+f`, `ctrl+e` and `ctrl+h` lose that in Chrome's text fields
+  and the address bar, and `ctrl+d` and `ctrl+t` should too.
 - **`cmd+/` no longer reaches the page.** Code editors on the web use it to
   toggle a comment, and Google Docs to list its shortcuts. To give it back,
   delete its manipulator from `karabiner.json`; `ctrl+/` still searches tabs.

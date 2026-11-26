@@ -430,6 +430,38 @@
                                 ]
                             }
                         ]
+                    },
+                    {
+                        "description": "Chrome: ctrl+h opens History, through Chrome's own cmd+y; in text fields it no longer deletes backward",
+                        "manipulators": [
+                            {
+                                "type": "basic",
+                                "from": {
+                                    "key_code": "h",
+                                    "modifiers": {
+                                        "mandatory": [
+                                            "control"
+                                        ]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "y",
+                                        "modifiers": [
+                                            "left_command"
+                                        ]
+                                    }
+                                ],
+                                "conditions": [
+                                    {
+                                        "type": "frontmost_application_if",
+                                        "bundle_identifiers": [
+                                            "^com\\.google\\.Chrome$"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 ]
             },
