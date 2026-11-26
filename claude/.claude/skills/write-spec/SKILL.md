@@ -2,18 +2,6 @@
 name: write-spec
 description: Turn the settled direction into a committed, validated spec.
 disable-model-invocation: true
-requires:
-  - user:consult
-  - user:spike
-  - lessons:codebase-design/deep-modules.md
-  - lessons:codebase-design/design-it-twice.md
-  - lessons:codebase-design/deepening.md
-  - lessons:codebase-design/composition.md
-  - lessons:codebase-design/steering.md
-  - lessons:testing/tdd-loop.md
-  - lessons:testing/mocking-and-fixtures.md
-  - lessons:collaboration/pr-boundaries.md
-  - lessons:collaboration/tenets.md
 ---
 
 # Write a spec

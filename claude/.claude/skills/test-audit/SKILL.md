@@ -1,8 +1,6 @@
 ---
 name: test-audit
 description: Audit tests for unguarded behavior and tests guarding nothing.
-requires:
-  - lessons:testing/test-quality.md
 ---
 
 # Test audit

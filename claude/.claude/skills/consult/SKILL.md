@@ -1,10 +1,6 @@
 ---
 name: consult
 description: Second opinions from fresh model sessions on the problem and the approach. Use when the user asks for a consult or a consult round.
-requires:
-  - lessons:codebase-design/deep-modules.md
-  - lessons:codebase-design/steering.md
-  - lessons:collaboration/tenets.md
 ---
 
 # Consult: independent second opinions
@@ -49,9 +45,7 @@ split: § More control.
 
    Done when every "because" is marked.
 
-2. **Write the brief** from [BRIEF.md](BRIEF.md), which says what each
-   section holds; [VOICE.md](VOICE.md) rides beside it with every voice's
-   standing rules. Decide step 5's withhold first, since it removes our
+2. **Write the brief** from [BRIEF.md](BRIEF.md). Decide step 5's withhold first, since it removes our
    position from this round's brief. A voice with one job gets a brief cut
    to it: one sent only to pin the cause loses the shape (the read's second
    item, "What we propose", output items 4 to 6), one sent only to judge the
@@ -87,7 +81,8 @@ split: § More control.
      obligation in the spec's § Verification when something reaches the
      case, and is a non-goal when nothing does; with no spec yet, it goes
      into the synthesis.
-   - **Tenets** a voice returns meet the lesson's bar or count as tips.
+   - **Tenets** a voice returns meet the bar in
+     `~/.config/lessons/collaboration/tenets.md` or count as tips.
      Revise survivors into the spec's `## Tenets` in place, or carry them in
      the synthesis for `/write-spec` when there is no spec; one left in the
      conversation is lost at compaction.

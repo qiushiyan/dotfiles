@@ -34,6 +34,12 @@ later changes will copy, adds a second way beside an old one, or fixes a
 fault that came back or sits in several places, with
 `~/.config/lessons/codebase-design/steering.md`.
 
+A finding's class tag, when the brief asks for one, comes from
+`~/.config/lessons/collaboration/finding-classes.md`. Tenets take the form
+`~/.config/lessons/collaboration/tenets.md` sets: read it before writing them.
+Text written for a model is judged against
+`~/.agents/skills/revise-prompt/SKILL.md`.
+
 When the brief asks where the work can be better, name at most two small,
 additive changes, after your review is done. Each names the moment it
 improves (who, doing what), the change, and roughly what it costs. Small means

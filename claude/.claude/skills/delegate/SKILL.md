@@ -2,8 +2,6 @@
 name: delegate
 description: Delegate a written spec to codex or claude, then review.
 disable-model-invocation: true
-requires:
-  - lessons:collaboration/review-lens.md
 ---
 
 # Delegate — implement a spec with a background session

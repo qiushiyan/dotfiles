@@ -4,7 +4,8 @@ altitude. It runs before any other round or as the closing read after them;
 what it buys is the same either way — did the thing that shipped achieve what
 it was for. Copy the body below into a scratchpad file, fill every «slot»,
 delete these comments. A section with nothing real to say gets deleted, not
-filled: an empty heading invites invented content.
+filled: an empty heading invites invented content. The voice's standing
+rules and the lessons it reads ride beside it in ../consult/VOICE.md.
 
 Two properties make this brief work, and both are easy to lose. It withholds
 the design — a reviewer holding the implementation's narrative cannot judge it
@@ -137,13 +138,11 @@ Nothing to name? Delete the section.»
   still end up somewhere other than the goal. Read the result as a stranger
   would, not as the sum of its corrections.
 - **Structural quality and composition** «keep only when the range decides
-  structure; otherwise delete this bullet» — read
-  `~/.config/lessons/codebase-design/deep-modules.md` for the bar and write
-  structural findings in its vocabulary; when the change restructures an
-  existing cluster, `~/.config/lessons/codebase-design/deepening.md` decides
-  whether a seam earns a port. Then read
-  `~/.config/lessons/codebase-design/composition.md`, run **the trace** it
-  defines, and judge the join: did the concepts already in the codebase absorb
+  structure; otherwise delete this bullet» — write
+  structural findings in the deep-module vocabulary; when the change
+  restructures an existing cluster, the deepening lesson decides whether a
+  seam earns a port. Then run **the trace** the composition lesson defines,
+  and judge the join: did the concepts already in the codebase absorb
   the new case, or did it get its own route beside them? You are the right
   reader for this — you were told nothing about how it was built, so a hop
   that only makes sense from inside the implementation's history will not

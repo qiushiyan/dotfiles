@@ -1,8 +1,9 @@
 <!--
 The brief a /consult voice reads: copy the body into a scratchpad file, fill
 every «slot», delete these comments. A section with nothing real to say is
-deleted, not filled. The rules every voice works by ride beside it in
-VOICE.md, so this file carries only the problem and the ask.
+deleted, not filled. The voice's standing rules and the lessons it reads
+ride beside it in VOICE.md, so this file carries only the problem and the
+ask.
 
 The order is the instrument: the voice commits its own read of the problem
 and the shape before it reads the code or our position, and where the two
@@ -128,10 +129,7 @@ that carries its own answer hands the voice the conclusion.»
    above. "None" is a real answer.
 6. **Tenets for the build** «keep only when the round decides how a build
    proceeds — a milestone, a phase plan, an ask for guidelines; otherwise
-   delete this item» — read `~/.config/lessons/collaboration/tenets.md`
-   first. The few load-bearing decisions the build holds to, from your read
-   and ours: each a stand with its reason, no file names, seven at most and
-   fewer the norm — a decision the later phases could survive without is left
-   out.
+   delete this item» — the few load-bearing decisions the build holds to, from
+   your read and ours, in the lesson's form.
 7. **Foundational objections** — a separate section, "none" said explicitly
    when it is empty.

@@ -1,13 +1,6 @@
 ---
 name: review
 description: Review committed work with a fresh model session, then apply what survives. Use when the user asks for a review round, or a goal or full review.
-requires:
-  - lessons:collaboration/review-lens.md
-  - lessons:collaboration/finding-classes.md
-  - lessons:codebase-design/deep-modules.md
-  - lessons:codebase-design/deepening.md
-  - lessons:codebase-design/composition.md
-  - lessons:collaboration/tenets.md
 ---
 
 # Review: an independent read of committed work
@@ -264,5 +257,5 @@ envoy run review-r1 --with @consult-r1/codex-gpt-6.2-astra=<full-brief> --with c
 ```
 
 If envoy refuses `--instructions-file` beside a warm voice, VOICE.md changed
-since that consult: leave the flag off as envoy says, and open the brief
-with VOICE.md's path so the cold voice still reads the rules.
+since that consult. Drop the flag and open every brief with VOICE.md's
+path: the cold voice needs the rules, the warm one the current lessons.
