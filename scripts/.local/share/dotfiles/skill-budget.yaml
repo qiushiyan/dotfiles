@@ -205,9 +205,9 @@ skills:
 lessons:
   root: lessons/.config/lessons
   files:
-    CLAUDE.md: 794
+    CLAUDE.md: 793
     # raised 2026-11-16: the roadmap row for codebase-design/steering.md, a new lesson
-    README.md: 480
+    README.md: 479
     SYNTHESIS.md: 1369
     agent-tooling/README.md: 148
     agent-tooling/onboarding-auto-routing.md: 2295

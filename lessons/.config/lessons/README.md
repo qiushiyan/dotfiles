@@ -10,16 +10,25 @@ When a snippet hands you these during technical design:
 - **Adapt, don't recite.** Evaluate each point against the codebase and constraints; discard what doesn't fit.
 - If a referenced path is **missing, ask** — don't guess.
 
-## Design-phase reading roadmap
+## Who hands these over
 
-The order a planning model should read these, with gates. The snippet's include list mirrors this table — keep them in sync.
+Nothing loads a lesson unasked; each reader's list has one home.
+
+| Reader | Its reading list |
+|--------|------------------|
+| A consult or review voice | `~/.agents/skills/consult/VOICE.md` |
+| A spec's author | `~/.agents/skills/write-spec/SPEC-BAR.md` |
+| A strategic review | `~/.agents/skills/strategic-review/BAR.md` |
+| A design or build session | the snippet naming the lesson |
+
+## The lessons
 
 | # | Lesson | Role at design time | Read when |
 |---|--------|---------------------|-----------|
-| 1 | [`codebase-design/deep-modules.md`](codebase-design/deep-modules.md) | The design lens — calibrates the *shape* before you plan | always |
-| 2 | [`testing/tdd-loop.md`](testing/tdd-loop.md) | Slicing + red-green-refactor — how the plan is structured | always |
-| 3 | [`testing/mocking-and-fixtures.md`](testing/mocking-and-fixtures.md) | The bridge: how the modules you shaped get tested | always |
-| 4 | [`testing/test-quality.md`](testing/test-quality.md) | The bar the planned tests must clear — and the shapes to reject | always |
+| 1 | [`codebase-design/deep-modules.md`](codebase-design/deep-modules.md) | The design lens — calibrates the *shape* before you plan | shape or interface at stake |
+| 2 | [`testing/tdd-loop.md`](testing/tdd-loop.md) | Slicing + red-green-refactor — how the plan is structured | planning tests |
+| 3 | [`testing/mocking-and-fixtures.md`](testing/mocking-and-fixtures.md) | The bridge: how the modules you shaped get tested | planning tests |
+| 4 | [`testing/test-quality.md`](testing/test-quality.md) | The bar the planned tests must clear — and the shapes to reject | writing or reviewing tests |
 | 5 | [`testing/vitest.md`](testing/vitest.md) | Vitest API/CLI specifics | **TS-Vitest projects only** |
 | 6 | [`codebase-design/composition.md`](codebase-design/composition.md) | The call path between modules — what each hop adds, and whether a change joins the design or accretes beside it. Read forward when choosing an interface, backward when judging one | **when the change joins existing code**; always at review time |
 | 7 | [`codebase-design/steering.md`](codebase-design/steering.md) | What the change leaves for later sessions to copy, and which mechanism holds them to it | **when the change sets a pattern later changes copy, adds a second way, or fixes a recurring fault** |
@@ -34,7 +43,3 @@ Each doc opens with a **"## The bar"** section (skimmable imperatives), then exp
 - [`testing/`](testing/README.md) — test discipline, mocking strategy, Vitest reference.
 - [`collaboration/`](collaboration/README.md) — cross-agent working discipline: the review-lens stance for judging another engineer's change.
 - [`agent-tooling/`](agent-tooling/README.md) — what usage history taught about tools whose user is an agent: patterns by example, the answer in the engine, cold-reader verification.
-
-## Staying in sync with upstream
-
-`.upstream/` holds the pinned pristine Matt Pocock skills these lessons were forked from. `.upstream/PINNED.txt` holds the commit, the refresh steps and the last review's verdicts. Each lesson's provenance line names its source files and baseline so the diff has an anchor.

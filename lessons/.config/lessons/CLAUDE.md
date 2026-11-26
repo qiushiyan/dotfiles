@@ -93,6 +93,6 @@ names its source files.
 - The `review`, `consult` and `delegate` skills cite these paths; the
   dispatched voice reads the live files.
 
-**A new lesson needs a citation, not just a copy.** Only a snippet citing its
-path makes an agent read it. Add it to the roadmap in `README.md`, the topic
-`README.md`, and every snippet that should hand it over.
+**A new lesson needs a citation, not just a copy.** Only a reading list naming
+its path makes an agent read it. Add it to `README.md`, the topic
+`README.md`, and each reading list that should hand it over.
