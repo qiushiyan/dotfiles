@@ -11,6 +11,7 @@ x                 → launch on the least-loaded account
 x-<name>          → one launch on a named account
 x-accounts / x-acc → the compact board: every account's quota; records nothing
 x --resume <id>   → continue a session on the account that last drove it
+x-sessions        → every session on this machine, newest first; Enter resumes it (x-resume)
 x-check           → verify routing after a Claude Code update
 headroom login    → renew the logins that end within a week, one click each
 ```
@@ -99,9 +100,13 @@ Everything derives from that tree:
   account; `x-<name>` starts one session on that account. Nothing records a
   default: the board (`x-acc`) shows quota and the account `x` would take
   next, and no key on it changes where `x` goes.
-- **Resume an old conversation**: `x --resume <id>` from the session's
-  project dir, `x -c` for that dir's newest session, or `/resume` inside a
-  session for Claude Code's own list. A session named by id goes back to the
+- **Resume an old conversation**: `x-sessions` (or `x-resume`) lists every
+  interactive session on this machine, newest first, and resumes the one
+  picked in the checkout it last ran in, so a session whose worktree is gone
+  is still found. `x --resume <id>` resumes a known id from any directory,
+  `x -c` the newest session filed under this one, and `/resume` inside a
+  session lists this directory's (`docs/claude-sessions-store.md` § Which
+  directory a session resumes in). A session named by id goes back to the
   account that last drove it, so it keeps its account (and its `/rewind`
   checkpoints), unless that account is near a limit or gone: then headroom
   places it on the least-loaded other account and *re-homes it* there

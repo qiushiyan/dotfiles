@@ -32,19 +32,35 @@ not its `/rewind` checkpoints.
 
 A transcript lives under one directory's project folder: where the session
 started, or where `/cd` last moved it, e.g.
-`~/.claude/projects/-Users-qiushi-dotfiles/<id>.jsonl`. headroom's
-picker resumes a session in the newest recorded directory that matches that
-folder (`~/dev/headroom/DESIGN.md`, "The cd target is verified"). A plain
-`claude --resume <id>` ignores it and runs wherever it is launched.
+`~/.claude/projects/-Users-qiushi-dotfiles/<id>.jsonl`. The folder decides
+which lists show the session; the directory a resume starts from decides where
+it goes on working. Claude Code resumes `--resume <id>` from any directory,
+for a session whose own directory is gone too: it runs where it was launched
+and appends to the file where it lies (verified on 2.1.332).
 
-Moving a session therefore persists only if the transcript moves too:
+- **`x --resume` and `/resume`** list the folder of the directory they start
+  in, with those of its repository's worktrees that still exist, so a session
+  filed under a worktree drops out of both once the worktree is removed.
+  Ctrl+A in `/resume` lists every folder, but picking a session from another
+  directory only copies a `cd … && claude --resume <id>` command.
+- **`x-sessions`** (or `x-resume`) lists every folder and resumes the pick
+  from the checkout it last ran in, or from the main checkout of a removed
+  gwt worktree; `scripts/.local/bin/claude-sessions`' header owns that rule.
+  The list lives here rather than in headroom because `headroom launch --
+  --resume <id>` already places a named session on its owner, so the list
+  needs nothing of headroom's, and headroom's retired picker refused a
+  session whose directory was gone, the case this list is for. A row that
+  needs headroom's knowledge, or a Claude Code that stops resuming an id from
+  any directory, reopens that.
+
+Which folder holds a session changes only when the transcript moves:
 
 - **`/cd <dir>`** moves the file into `<dir>`'s project folder and records
-  the move, so the session resumes in `<dir>`. Claude Code refuses it under
-  `claude -p`, and the model cannot type it.
-- **A shell `cd`** moves Bash and relative paths for the live session only. It
-  resumes where it was launched, on the main checkout while its conversation
-  says it is in a worktree.
+  the move, so `x --resume` from `<dir>` lists it. Claude Code refuses it
+  under `claude -p`, and the model cannot type it.
+- **A shell `cd`** moves Bash and relative paths for the live session only.
+  The transcript stays under the folder it was launched from, on the main
+  checkout while its conversation says it is in a worktree.
 
 The worktree mod runs `/cd` for this reason, when the turn that made the
 worktree ends (`docs/claude-mods.md` § worktree). Worktrees of a trusted repo
@@ -159,4 +175,6 @@ headroom owns and tests the topology, retention and launch environment
 `zsh/.config/zsh/tests/claude-launch.test.zsh` covers what `claude.zsh`'s
 launchers add on top (the refusal without headroom, named-launch routing,
 workspace effort, `--fast`), building headroom from `~/dev/headroom` so
-routing crosses the real wrapper→engine seam.
+routing crosses the real wrapper→engine seam. The session list and where a
+pick resumes are `zsh/.config/zsh/tests/x-sessions.test.zsh` and
+`scripts/.local/share/dotfiles/tests/test_claude_sessions.py`.
