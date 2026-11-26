@@ -34,6 +34,11 @@ local root = {
   -- and screenshots to a pane on another host and types their paths; to
   -- Neovim, where it is in front, its own image-aware paste (lab.tools).
   { "ctrl+v", "paste" },
+  -- cmd+up / cmd+down: send ctrl+home / ctrl+end to the focused pane (for
+  -- jumping to top/bottom in fullscreen Claude Code on a laptop keyboard
+  -- without Home/End keys). Overrides Rex's default prompt-jump bindings.
+  { "cmd+up", "pane.send_key", { key = "ctrl+home" } },
+  { "cmd+down", "pane.send_key", { key = "ctrl+end" } },
 }
 -- ctrl+h/j/k/l: pane focus that passes the key to nvim and fzf (lab.panes nav).
 for _, dir in ipairs(DIRECTIONS) do root[#root + 1] = { "ctrl+" .. HJKL[dir], "nav", { direction = dir } } end

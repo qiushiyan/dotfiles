@@ -610,7 +610,8 @@ every binding. The shape:
 - **Tools after the prefix:** `y`/`Y` copy path, `g` gopen, `u` URLs and
   files, `e` export, `S` steps sidecar, `i` the floating status chip.
 - **Without the prefix:** `ctrl+h/j/k/l` pane focus, `ctrl+v` paste
-  (§ Several machines), `ctrl+shift+up/down` every tab in sidebar order
+  (§ Several machines), `cmd+up/down` send `ctrl+home`/`ctrl+end` to the pane,
+  `ctrl+shift+up/down` every tab in sidebar order
   across sessions and hosts, `shift+up/down` move the tab, ⌘⇧S the steps
   sidecar; the app's own ⌘. for Activity.
 
