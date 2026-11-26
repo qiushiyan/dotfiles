@@ -1,6 +1,6 @@
 # Lessons
 
-Adapted, owned reference docs that prompt snippets read at design and review time. **These are not Claude Code skills** — they're forked from [mattpocock/skills](https://github.com/mattpocock/skills), consolidated, headless-tuned (no HTML/interactive scaffolding), and tailored to this workflow. The snippets in `~/dotfiles/tabtype`, `~/dev/greenflag`, and the dispatch-skill briefs (`~/dotfiles/claude`) point here.
+Adapted, owned reference docs that prompt snippets read at design and review time. **These are not Claude Code skills** — they're forked from [mattpocock/skills](https://github.com/mattpocock/skills), consolidated, headless-tuned (no HTML/interactive scaffolding), and tailored to this workflow. The reading lists below and `~/dev/greenflag` point here.
 
 ## Consumption contract
 

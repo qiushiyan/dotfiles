@@ -3,15 +3,15 @@
 This directory holds **lessons**: owned reference docs on engineering method
 (module design, test discipline, cross-agent review). They are not skills.
 This file says how to write and keep them; `README.md` is the consumption
-contract and reading roadmap.
+contract and lesson table.
 
 ## Skill vs lesson
 
 - **A skill** (`~/.claude/skills/…`) is invokable: Claude loads its
   `SKILL.md` to do a task.
-- **A lesson** is plain markdown with no `SKILL.md`. Snippets and the
-  dispatch briefs cite it by path, and the agent they brief reads it. Nothing
-  loads it automatically.
+- **A lesson** is plain markdown with no `SKILL.md`. A reading list cites
+  it by path, and the agent holding the list reads it. Nothing loads it
+  automatically.
 
 A lesson is one home per concept, so a snippet cites a short, stable reading
 arc instead of a sprawl of skill files. The snippets carry the arc; the
@@ -90,8 +90,8 @@ names its source files.
 - `greenflag` is dormant (`~/dotfiles/docs/repos.md` § Kept on one
   machine): its vendored snapshot in `greenflag/lessons/` stays as it is.
   An edit here is never carried into it.
-- The `review`, `consult` and `delegate` skills cite these paths; the
-  dispatched voice reads the live files.
+- The reading lists `README.md` names cite these paths; their readers read
+  the live files.
 
 **A new lesson needs a citation, not just a copy.** Only a reading list naming
 its path makes an agent read it. Add it to `README.md`, the topic

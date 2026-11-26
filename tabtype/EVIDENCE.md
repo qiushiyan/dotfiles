@@ -822,6 +822,8 @@ every build by a reader who did not know which was which):
 - Without: the CLI's resend, the one behaviour that lives outside the
   process the tests run in, stayed green when broken in 3 of 3 builds.
   With: red in 3 of 3. The other four behaviours went red in all six.
+- Limit: the replay put the sentences before the request; the snippets
+  carry them last. That position was not run.
 - Cost: 10 to 13 added tests against 5 to 6, and build time 348 s against
   282 s. One of the three builds with the sentences added a multi-process
   test that fails 8 of 14 untouched runs. Each arm had one test that pins

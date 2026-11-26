@@ -144,7 +144,7 @@ skills:
   # raised 2026-11-17 on the user's word: GPT-6.2 Astra runs on high, a spelled-out Astra ID too (+6 body, +6 total)
   # raised 2026-11-20 on the user's word: fable is the voice when none is named, astra cold
   # beside a warm fable, so the default and the other-family rule agree (+19 body, +19 total)
-  review: {body: 2275, total: 6336}
+  review: {body: 2275, total: 6333}
   spike: {body: 722, total: 722}
   # raised 2026-10-28: an unread fold-in shipped faults CI and bots then found in 5 of 11
   # folds; a wholesale cut to 1,615 words regressed its eval cases (EVIDENCE.md)
@@ -167,7 +167,7 @@ skills:
   # raised 2026-11-22 on the user's word: the brief names the build session, and step 1 reads
   # it with obelisk for the decisions behind the diff (+67, then tightened to +48)
   # 11-22, later, the user: the session's reasons are judged as critically as the code (+9)
-  strategic-review: {body: 1261, total: 2808}
+  strategic-review: {body: 1261, total: 2793}
   tailwind-best-practices: {body: 699, total: 699}
   test-audit: {body: 1129, total: 1974}
   thermo-nuclear-code-quality-review: {body: 1883, total: 1883}
@@ -205,9 +205,9 @@ skills:
 lessons:
   root: lessons/.config/lessons
   files:
-    CLAUDE.md: 793
+    CLAUDE.md: 790
     # raised 2026-11-16: the roadmap row for codebase-design/steering.md, a new lesson
-    README.md: 479
+    README.md: 475
     SYNTHESIS.md: 1369
     agent-tooling/README.md: 148
     agent-tooling/onboarding-auto-routing.md: 2295

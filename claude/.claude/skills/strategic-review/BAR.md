@@ -30,8 +30,7 @@ Read each applicable standard in full:
   non-trivial UI or UX change, which the brief usually names, with that
   repository's README § Using them in a project with its own design
   system for this project's exceptions. The project's own design rules win over its values, and
-  findings keep this report's severity and class tag. Hand it to the
-  reviewer of that code and to any walk of the screen.
+  findings keep the report's severity and class tag.
 
 ## The lenses
 
