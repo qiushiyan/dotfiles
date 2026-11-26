@@ -4,6 +4,140 @@ One entry per mining pass over the sessions that ran these skills; counts are
 written so the next pass can re-run them. The two skills share a log because
 their briefs, dispatch, and reports are one workflow.
 
+## Decisions that stand
+
+Each with the entry that holds its evidence. A pass that would undo one
+reads that entry first. Decisions from the entries here that only point
+away (09-22, 10-04, 10-28, both of 11-17, 11-26) and from 11-18 on are in
+`../consult/EVIDENCE.md`.
+
+- **Two modes, named by what the reviewer is handed**: goal gets the goal
+  alone, full gets the implementation report, with a fence only over what
+  something outside the session settled (09-14: the host's verify, fix and
+  report loop is identical in both; the briefs differ in what they hand
+  over).
+- **`quick` is retired, and its revert test lives in both briefs** (09-14:
+  7 human-typed asks, 6 of them in its launch week).
+- **Goal is the cheap independent read, before any other round or as the
+  closing one** (09-14: 31 of 51 goal rounds had no prior review dispatch).
+- **"Already judged" records what was examined, may say "nothing", and
+  confers no immunity; a check joins it only from a run on record** (09-14:
+  hosts had filled the mandatory covered-ground section with consults, bots
+  and suites, and the first round on the revised brief caught an example
+  asserting a green suite nothing had run).
+- **Goal carries the structural lens as a switch** (09-14:
+  `main-ca6ae1ca/review-r1` found a structural critical over 410 green
+  tests).
+- **The report leads with what needs the user, each decision standalone
+  and in none of the round's vocabulary**, as does consult's synthesis
+  (09-14: three reports whose next user turn was the re-present snippet).
+- **The pick is said back in one line before the brief is written, voices
+  included** (09-14: the ask is stock, "codex full review" ×36 and "codex
+  goal review" ×25 in September; 10-07 added the voices).
+- **Consult's doubts are prose with the few observations that could
+  falsify, not a numbered questionnaire, and withholding our position for
+  round 2 has one home** (09-14: 6–12 numbered probes in 9 of 9 approach
+  briefs, answered in order).
+- **In a consult brief, a spec that is our proposal goes under "What we
+  believe", never in the reading list** (09-14: the first round on the
+  revised briefs found the artifact exposed before the voice's sketch).
+- **A milestone round returns tenets, judged by the lesson's bar and
+  written into the spec's `## Tenets`**; one that fails the bar is a tip,
+  and consult does the same (09-15: asked for the short list a build should
+  hold to, Codex returned ten lines, about seven file-level).
+- **Review asks for up to two small ideas per voice, on by default in both
+  modes; consult does not** (10-06: the 12 non-empty minor tiers read were
+  all defects, and the user typed the ask by hand in 16 of 536
+  invocations).
+- **What the model is told is product, not docs**: the full brief reads
+  every surface a model sees about changed behaviour, and a confirmed
+  `model-facing` finding lands now (10-07: model-facing findings were 10 of
+  354 in full rounds, where the late reviews found 7–14 on each PR).
+- **Blast radius reaches consumers outside the feature and reports them as
+  `scope`, fixed by narrowing reach** (10-07: 8616's side effect on task
+  uploads sat behind a settled foundation item).
+- **A test that never runs where the PR is gated pins nothing** (10-07:
+  8616's tests on a Git LFS fixture never ran in CI, and no round caught
+  it).
+- **Findings are numbered and carry a class tag; fix commits carry the
+  round, the id, the tag and the reviewer's member name** (10-07).
+- **The in-session round keeps "fewer findings, each heavier" and does not
+  slice the range** (10-07: it runs on every build; the strategic review
+  owns depth on the PRs the user picks).
+- **The body is short, and three asking-side cases guard it** (10-29:
+  3,997 → 2,967 words; red 9/9 and new 9/9, so the cases show a regression
+  and cannot show a gain).
+- **The host fixes every confirmed finding, minors included unless the ask
+  says otherwise** (11-05: the user asked for every tier twice; below the
+  three-session floor).
+- **A goal round's confirmed obvious mistakes are pinned and fixed; only
+  its design objections and deletions wait, and the verdict is restated
+  after the fixes** (11-05: 4 of 15 goal rounds held confirmed defects for
+  approval, and each next turn took the recommendation as written).
+- **The host builds the ideas it recommends, after the fixes, in a commit
+  of their own**, leaving only a new mode, flag, command or option, one
+  that needs authority the session lacks, or an ask that says ideas wait
+  (11-05: about 33 of 37 idea turns said build; eval 0/2 → 2/2). This
+  reverses 10-06's "never builds one unasked".
+- **Each slot's keep-or-delete condition lives in the template's slot, and
+  the trace is asked for only when Composition is kept** (11-05: a
+  version-bump brief asked for a trace no bullet defined).
+
+## Open comparisons
+
+Each is a measurement a pass can run. The first is this log's newest. The
+measures set on 11-17 and after, review's among them, are in
+`../consult/EVIDENCE.md`.
+
+1. **Built ideas and goal fixes, after 11-05.** Reports that still say an
+   idea waits (target 0 outside an ask that says so); ideas built per round
+   and any the user asks to revert; goal rounds that hold a confirmed
+   defect (4 of 15 before); built ideas that are not small. Baseline: about
+   33 of 37 idea turns said build. Revise if reverts pass about one in ten,
+   or a revert request or a "why did you build that" appears in two
+   sessions.
+2. **The short body on live rounds, after 10-29.** Test runs after a
+   collect (120 of 133 sessions that collected a `review-r1`), the round-2
+   rate (79 of 133), a tenet filed as a finding, and a report that opens
+   without the "nothing needs you" line. The parity read kept two weakened
+   sentences as deletions to watch; no threshold recorded.
+3. **The model-facing lens and `scope`, after 10-07**, on full rounds over
+   Planlab agent ranges: the model-facing share of confirmed findings (10
+   of 354), `scope` findings (no baseline recorded), and what a later
+   strategic review on the same branch still finds, by class tag. Revise if
+   the lens fills rounds with wording nits the host rebuts.
+4. **Ideas against findings, after 10-06.** Findings per round against the
+   window before (no baseline recorded), ideas that were defects in
+   disguise, and review asks still typing "ux / make it better" (16 of 536
+   invocations). Revise if ideas crowd out findings.
+5. **Tenets on a milestone round, after 09-15.** The first full round with
+   the switch kept: seven or fewer tenets, zero file names, a reason on
+   each, written into the spec in the fix commit; success is a later phase,
+   or the next session after a compaction, citing one. Baseline: ten lines,
+   about seven file-level. Revise if file-level rules return (then the
+   tenet-or-tip pair goes inline in the brief) or the host skips the spec
+   write.
+6. **Goal rounds and reports, after 09-14.** Goal briefs whose "already
+   judged" says "nothing" when nothing ran (31 of 51 goal rounds had no
+   prior review dispatch), and the user's next turn after a report,
+   authorization against a re-present request (27 snippet fires in 24 of
+   158 sessions; the entry says the right denominator is reports that asked
+   for a decision). Revise if goal rounds return line-level defect lists or
+   reports grow a decision preamble the user skips.
+
+Retired: 09-14's consult measures (sketch against position, probe count,
+brief words, deltas adopted: the approach brief they measured was replaced
+on 09-25, `../consult/EVIDENCE.md`); 09-14's mode distribution (`quick` is
+gone and nothing hangs on the split); 09-14's chain from stated outcome to
+later use (too broad to reverse one decision; 6 carries its next-turn
+link); 09-14's first-round measures (the consult ones went with the
+approach brief, 10-29's `warm-beside-cold` case guards the handoff, and
+unattended completion from a Codex host was never taken up); 10-06's ideas
+adopted and ideas built unasked (answered 11-05: about 33 of 37 idea turns
+said build, and the host now builds them); 10-07's cold Opus beside warm
+codex (the skill no longer seats the cold voice by family; the stage
+snippets name it, and no entry records the change).
+
 ## 2026-09-14 — the modes, the briefs, and the report
 
 Session `cecd2be9`; ledger `review-consult-frictions.md` in its scratchpad
@@ -539,3 +673,11 @@ at the end; Carbon is a review voice too.
 See `../consult/EVIDENCE.md`, same date: the brief step folded into the mode
 step; what the templates and the always-loaded closing rule already say is
 gone; the verify-and-fix discipline stays.
+
+## 2026-11-26 — the briefs name no lesson path
+
+See `../consult/EVIDENCE.md`, same date: `../consult/VOICE.md` lists every
+lesson a voice reads, both templates keep each bullet's task and gate and
+name the lesson by its idea, the fallback for a refused
+`--instructions-file` hands every voice the current file, and `requires:`
+is gone. The case `brief-names-no-lesson` guards it.

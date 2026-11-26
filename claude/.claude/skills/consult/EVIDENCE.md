@@ -4,6 +4,149 @@ One entry per mining pass over the sessions that ran this skill. The review
 skill's log is `../review/EVIDENCE.md`; a pass over both records itself here
 and leaves a pointer there.
 
+## Decisions that stand
+
+Each with the entry that holds its evidence. A pass that would undo one
+reads that entry first. Review decisions whose evidence is in this log are
+listed here; consult decisions bought on 09-14 and 09-15 are in
+`../review/EVIDENCE.md`.
+
+- **A position that rests on a number this session measured carries the
+  data block, and the voice judges the method before any conclusion**, in
+  consult and in both review briefs, with `DATA-BLOCK.md` the one home
+  (09-22: "methodolog" in 0 / 43 briefs after data work, and each of the 3
+  sessions where the user asked for the method to be judged returned a real
+  defect).
+- **One consult with no modes: every voice checks the problem, then judges
+  the approach** (09-25: approach rounds redefined the problem in 13/43
+  results by the host's read, and 14/14 diagnosis results carried a full
+  fix design).
+- **The voice's read comes before the reading list and before our
+  position** (09-25, the user's choice; 40/62 round-1 approach results had
+  declared their sketch non-blind).
+- **"What we observe" is its own section whether or not the cause is
+  thought settled, the falsifying observation keeps its own output item,
+  and "not carried by the evidence" is a verdict** (09-25: adopted from
+  both voices of the pass's own round; 0/82 approach briefs had an observed
+  section).
+- **The read is asked for as the opening section of the answer, never as a
+  note to write down and report verbatim**, in `BRIEF.md` and
+  `../review/GOAL-BRIEF.md` (10-04: cold Claude voices were blocked on 15
+  of 39 briefs carrying the phrase and 0 of 16 carrying neither).
+- **"Before reading on" in the heading and "or read past this heading"
+  stay** (10-04: they are the text the replay ran, where 8 of 8 voices
+  opened with the read and 0 of 8 added the caveat).
+- **The body stays short, and a shortening is cold-read old against new
+  before it ships** (10-28: the cold read found 14 of 47 behaviors lost or
+  weakened in the first cut; all were restored).
+- **Every voice's standing rules ride in `VOICE.md` as
+  `--instructions-file`, for consult and review; the brief carries the
+  problem and the ask** (10-28: 27–35% of a median 2,770-word brief
+  instructed the voice).
+- **Briefs are written by hand from the template; no engine builds them**
+  (10-28: 0 of 400 rounds had the user correct the brief or dispatch, and
+  the median from invocation to dispatch was 2.9 min for consult).
+- **A consult's decisions stay with the user** (11-05: sampled decisions
+  are product calls the user often answers against the recommendation; 5
+  of 94 follow-ups asked what one meant, all before the 10-28 rewrite).
+- **Both skills open on the three names the user dispatches by, with opus,
+  sol, efforts and brief splits in More control at the end** (11-17: since
+  10-27 consult asks named astra 56, fable 48, opus 0).
+- **The procedures carry only what nothing else carries**: what the brief
+  templates and the user's always-loaded closing rule say is not repeated
+  (11-17: consult 1,431 → 1055 words, review 2,749 → 2320; every rule
+  bought by a failure stayed).
+- **Review's verify-and-fix steps stay though most of them have no entry**
+  (11-17: a model does not do it by default), and review keeps the
+  `VOICE.md` refusal fallback (11-17: cut and restored the same day).
+- **A consult round's cap is 45 minutes** (11-18: 2 of 18 Carbon dispatches
+  failed, one at the 30-minute cap).
+- **No voice gets its own concision or labelling instruction** (11-18,
+  measured on Carbon: neither rule moved its unsourced numbers, and under
+  the sharper one fully right claims fell to 15 of 30 against 22).
+- **Fable is the voice when none is named, in consult and review** (11-20,
+  the user's word; before a review the user named no voice 118 times since
+  09-15).
+- **Neon on high is the Gemini voice, and no line tells the lead to check
+  its numbers** (11-24, the user's word; the 11-18 line was measured on
+  Carbon).
+- **A voice's reading list lives in `VOICE.md` and nowhere else: the brief
+  templates name a lesson by its idea, and no custom subagent holds one**
+  (11-26, the user's call on subagents; 365 Claude and 476 Codex sessions
+  read a lesson since 10-01, and a real brief with no path had all three
+  providers open what it named).
+
+## Open comparisons
+
+Each is a measurement a pass can run. The first is this log's newest.
+Where an entry names no result that would reverse its change, the item
+says so.
+
+1. **Lessons named by idea, after 11-26.** In rounds whose brief names a
+   lesson without its path: the share where the voice opens that lesson,
+   per provider (the voice check: 3 of 3 providers, one brief; 09-27: 49
+   of 195 cited files never tried), and hosts that read `VOICE.md` or
+   check a lesson path before a round 1 (10-29 to 11-26: 150 and up to 128
+   of 246 sessions; the replay: 0 of 6). Put a path back in a template
+   bullet if a provider skips its lesson in more than a quarter of rounds;
+   look for another cause if hosts still open `VOICE.md` in half.
+2. **Neon, after 11-24.** Unsourced numbers per verdict in Neon answers,
+   against Carbon's 2.4 (Astra 0), and Neon dispatch failures, against
+   Carbon's 2 of 18 (11-18). The step-4 numbers line cut on 11-24 returns
+   if Neon states unmeasured numbers as fact; no threshold recorded.
+3. **Names outside the table, after 11-17.** Asks naming opus or sol, and
+   rounds where the agent typed a voice or member name the table does not
+   hold. Baseline since 10-27: consult opus 0, review opus 4. No reversing
+   result recorded.
+4. **What the trims could have lost (11-17, 10-28).** After 11-17: briefs
+   that put the session's own analysis under the goal's constraints,
+   syntheses that misname a one-voice consult, review rounds that skip a
+   step-4 pin. After 10-28: the brief's observed/inferred marking and the
+   synthesis leading with decisions, rounds after against rounds before.
+   No baseline recorded; these are where a behavior lost to a trim would
+   show.
+5. **Briefs since `VOICE.md` (10-28).** Brief size against the median 2,770
+   words (expected: about two thirds), and whether voices still return the
+   asked-for output sections with the design bar applied where shape was at
+   stake. No round had run end to end when the entry was written. No
+   reversing result recorded.
+6. **The opening read's wording, after 10-04.** `provider_refusal` records
+   among cold Claude voices on the new wording: two or more in the next 15
+   removes the section for Claude voices, with the two-turn withhold where
+   independence matters (September: 15 of 39 on the old wording). And
+   self-declared non-blind reads on real rounds, against the replay's 0/8
+   new and 6/8 old: revise the wording if the opening read stops appearing
+   or arrives after the first tool call. `GOAL-BRIEF.md`'s wording has not
+   been run, and `../write-spec/COLD-READ.md` still asks its reader to
+   write down a reconstruction: look there first if a cold reader is
+   refused.
+7. **Cited files the voice never opens (09-27).** The share of cited
+   outside files a fresh round never tries, against 49/195, and whether a
+   round that skipped a lesson still used its vocabulary; one that did not
+   is the case for a brief change. Since 10-28 the design-bar lessons are
+   cited from `VOICE.md`, not the brief.
+8. **Problem verdicts under one brief (09-25).** Verdicts other than
+   "confirmed", against about 27 % of approach rounds and about 5/14
+   diagnosis rounds: revise if they collapse toward "matches your framing".
+   Rounds on a believed cause that carry "What we observe" and get a
+   falsifier back (14/14 diagnosis rounds named one; 0/82 approach briefs
+   had the section). Hosts improvising hybrid sections and users naming a
+   mode: both should reach 0.
+9. **The data block in use (09-22).** Rounds after data work whose brief
+   carries the section (0 / 43 by the word, 6 / 43 by a predicate named),
+   method items returned and what they found (sound, limit named, count
+   overturned), and sessions where the user still types a methodology ask
+   (3 in five weeks). No reversing result recorded.
+
+Retired: 09-25's non-blind reads under the commit-first order (the 10-04
+replay answered it, 0 of 8 against 6 of 8, and 6 carries the live count);
+09-25's single outcome to follow (one case, reverses nothing); 09-25's
+steward brief (the user's change in planlab, not a measure of this skill);
+09-22's queries saved beside the brief and method findings that moved the
+position (secondary to 9); 11-18's syntheses adopting a Carbon number and
+Carbon members at the cap (Carbon was replaced by Neon on 11-24 and the
+numbers line cut; 2 carries both for Neon).
+
 ## 2026-09-22 — the data behind a position goes on trial before the conclusion
 
 **Question**, the user's: when a session has done data analysis before a
@@ -544,3 +687,106 @@ answered. The Carbon numbers line in step 4 is cut: the 2026-11-18 entry
 measured it on Carbon, and nothing yet says Neon states unmeasured numbers
 as fact. **Next pass compares:** unsourced numbers per verdict in Neon
 answers against that entry's Carbon 2.4, and Neon dispatch failures.
+
+## 2026-11-26 — a voice's reading list lives in VOICE.md; the briefs name no lesson path (consult and review)
+
+Session `mini2:7639db7f` (an `/improve-tool` pass). A Gemini session beside
+it (`mini2:76d99d5a`) had answered the same question; the two agreed one
+plan, each built half, and each read the other's half cold. The
+strategic-review half is in `../strategic-review/EVIDENCE.md`, same date.
+
+**Asked** by the user: should the lessons move behind Claude Code custom
+subagents, so that a skill says "launch a code reviewer" and knows no lesson
+path? Their observation: hosts list and read dependencies they do not need.
+
+**Corpus.** Obelisk, `mac`, `mini` and `mini2`, all reached, self excluded.
+A read is `Read`, or a Bash or Codex `exec` call using cat, sed -n, head or
+tail, on a path under `config/lessons/`. Readers since 10-01 are classed by
+the session's first user turn (a `# Consult` or `# Review` heading is a
+voice), a `/strategic-review` invocation, or an `envoy run` call (a host).
+Host behaviour is counted since 10-29 over sessions whose main thread ran
+`envoy run consult-r1` or `review-r1`. Scripts and results were scratch.
+
+**Found.**
+- **Most lesson reading is done by sessions a custom subagent cannot be.**
+  Since 10-01: 365 Claude voice sessions and 476 Codex sessions (1,957
+  reads) read a lesson; Gemini voices are not indexed. No session has
+  spawned a custom subagent type.
+- **The host's extra work is real and small.** Since 10-29, of 246 sessions
+  that started a round 1, 150 read `VOICE.md` and up to 128 ran `ls` or
+  `test` on a lesson path (loose: any such command naming the tree). The
+  Gemini session's per-run count over the same window, not re-run here: of
+  405 fresh round-1 runs, 227 briefs carried lesson paths, 155 hosts read
+  `VOICE.md`, 115 checked paths and 84 read a lesson. Of 921 briefs since
+  10-01, 505 named no lesson; the lines that did were 38 to 54 of about
+  1,250 words.
+- **The cause was in the templates.** `review/BRIEF-TEMPLATE.md` and
+  `GOAL-BRIEF.md` repeated `deep-modules`, `deepening` and `composition`,
+  which `VOICE.md` has sent since 10-28, and carried `finding-classes`,
+  `tenets` and revise-prompt, which it lacked. Step 2 here linked
+  `VOICE.md`.
+- **`requires:` never reached a session.** 0 of 446 Skill-tool loads of
+  consult, review and strategic-review carried frontmatter. Its one reader
+  is Planlab's steward (`services/steward/src/kernel/skills.ts`), dormant.
+
+**Decided** by the user: no custom subagents, lessons stay plain files, and
+`requires:` goes, a break in the steward accepted.
+
+**Changed** (`c33824e7`).
+- `VOICE.md` lists every lesson a voice reads: it gains the class tag
+  (gated on the brief asking for one), the tenets form and revise-prompt.
+- The three brief templates name no lesson path. Each bullet keeps its task
+  and its keep-or-delete gate, which only the host can settle, and names
+  the lesson by its idea ("the trace the composition lesson defines").
+  Both review templates and `BRIEF.md` say in their header that the lessons
+  ride in `VOICE.md`.
+- Step 2 no longer links `VOICE.md`; step 4 cites `tenets.md`, which the
+  host applies.
+- `review/SKILL.md`'s fallback for a refused `--instructions-file` hands
+  every voice in the job the current `VOICE.md`: a warm voice keeps the
+  copy it started with, which can predate a lesson the brief names.
+- `requires:` removed from consult, review, write-spec, delegate and
+  test-audit. `prompt-engineering` keeps its block, because that file is
+  copied into the Planlab repository and removing it is a change there.
+- Sizes: consult 1,020 body and 3,478 total to 1,006 and 3,473; review
+  total 6,344 to 6,336.
+
+**Cut, with what each guarded and the sign that brings it back.**
+- The lesson paths in the templates guarded the voice finding the file.
+  Back if comparison 1 shows voices not opening a lesson a brief names by
+  idea.
+- "read … for the bar" in the structural bullets was the imperative to
+  open `deep-modules.md`; `VOICE.md` says to judge in its vocabulary. Back
+  on the same sign.
+- The tenets rules restated in `BRIEF.md` item 6 and review's milestone
+  bullet (a stand with its reason, no file names, seven at most) guarded a
+  voice that skipped `tenets.md`. Back inline if file-level tenets return
+  (`../review/EVIDENCE.md`, comparison 5).
+- Step 2's "which says what each section holds" and the `VOICE.md` clause:
+  `BRIEF.md`'s header says both.
+
+**Verified.**
+- **A case written first.** `brief-names-no-lesson` (skill-evals, red
+  `ce0d1674`, n=3, kept briefs read with grep): at the old text the brief
+  carried 3 lesson paths and the host touched lesson files in 3 of 3; at
+  the first candidate and at the final text, 0 paths, the trace and the
+  class tag kept, and the host touched no lesson file, in 6 of 6. Time to
+  dispatch fell from 124 s to about 60 s.
+- **The cases that passed before still pass.** `warm-beside-cold` 3 of 3
+  at both, `goal-withholds` 3 of 3 at both, on the first candidate. Both
+  cases expected the default voices from before 11-20 and failed on current
+  text until corrected in this pass.
+- **Real voices.** One brief the candidate host wrote, with a milestone
+  bullet added, went to fable, astra and neon with the candidate
+  `VOICE.md`. All three opened `review-lens`, `deep-modules`, `composition`,
+  `finding-classes` and `tenets`; every answer carried the trace, class
+  tags from the lesson and tenets in its form. The host had dropped "the
+  composition lesson defines" from its bullet, so "the trace" alone found
+  the file. Baseline: 09-27, 49 of 195 cited files never tried.
+- **Cold reads.** The Gemini session found four gaps, all folded (the goal
+  template's header, the tenets path in step 4, the class-tag gate, and the
+  cuts that kept both skills inside their budgets). A fresh subagent's
+  revise-prompt pass found the warm-voice fallback.
+- **Not run:** `judge-fix-report`, whose fix-and-report half this change
+  does not touch; a consult round end to end; a goal brief with a real
+  voice.
