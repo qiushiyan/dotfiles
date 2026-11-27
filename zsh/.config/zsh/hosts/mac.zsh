@@ -9,3 +9,8 @@
 # The login ~/.claude holds here; the primary answers to its local part
 # (claude.zsh, _claude_primary).
 (( $+functions[_claude_primary] )) && _claude_primary qiushi@planlab.ai   # x-qiushi too
+
+# The other machine that drives these accounts, as ssh reaches it: headroom
+# pulls its readings, so an account in use there reads current here too
+# (headroom --help, HEADROOM_PEERS). The old mini stays out while it is idle.
+export HEADROOM_PEERS=mini2   # the office workstation
