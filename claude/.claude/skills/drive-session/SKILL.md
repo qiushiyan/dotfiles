@@ -91,6 +91,8 @@ ready to build.
   drive send pool-drain@… /compact                   # once that turn ends
   drive send pool-drain@… --snippet implement-spec   # once the compaction ends
   ```
+- **A light session may write its own short spec** without `/write-spec`
+  once its design converges, then build: leave it.
 - **Hold what is the user's at the step that needs it.** Something the
   pipeline doc's § Who decides asks the user stops only the work that depends on it,
   so the step names what waits: `--snippet implement-spec "D3, which you

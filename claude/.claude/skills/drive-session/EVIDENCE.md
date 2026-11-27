@@ -32,6 +32,13 @@ bot follows `DOGFOOD.md`.
 - **A strategic review a driver opens runs on the default model; Fable,
   and `--effort xhigh`, only when the user asks** (11-27, the user's word,
   replacing 11-10's Fable by default).
+- **A light session that writes a short spec of its own is left to it**
+  (11-27, the user's word). By hand, a design that converges after a
+  consult ends with the session offering a spec and the build, and on "go
+  ahead" it commits one with no `/write-spec` call: `mini2:ac313b2f`
+  (11-26), `mini2:27b2dcac` (11-21), `mini2:33a0b800` (11-09),
+  `mini:002e0e30` (10-07). Where the user wants none they say so
+  (`mac:8715a066`, 09-25).
 - **What planlab's next batch holds is worked out by sessions that change
   no code, and the user picks once** (11-10, `PLANLAB-NEXT-BATCH.md`): two
   gather by source, a fresh third reviews both for a large batch, start
