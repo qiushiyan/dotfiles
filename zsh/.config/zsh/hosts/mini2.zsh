@@ -10,6 +10,11 @@ export PROMPT_MACHINE=mini2
 # (claude.zsh, _claude_primary).
 (( $+functions[_claude_primary] )) && _claude_primary qiushi@planlab.ai   # x-qiushi too
 
+# The other machine that drives these accounts, as ssh reaches it: headroom
+# pulls its readings, so an account in use there reads current here too
+# (headroom --help, HEADROOM_PEERS). The old mini stays out while it is idle.
+export HEADROOM_PEERS=mac   # the laptop
+
 # Temporary, from 2026-11-09: sessions that ran a command while an earlier
 # VITEST_MAX_WORKERS cap was exported here carry it in their shell environment,
 # and vitest applies it over fileParallelism: false, running serial suites in
