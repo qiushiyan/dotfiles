@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""tmp-sweep — delete what planlab's test and lab runs leave in the user's
+temp folder (getconf DARWIN_USER_TEMP_DIR) once nothing has touched it for a
+while. The runs create `loopy-*` entries there and never remove them; a
+prompt-lab diff run leaves 5-7 GiB each time.
+
+  loopy-prompt-lab-diff-*   older than 3 days
+  other loopy-*             older than 7 days
+
+An entry's age is its newest modification anywhere inside it, so a run that
+is still writing keeps all of it. An entry a process has open, or works in,
+is kept whatever its age. Only direct children of the temp folder whose names
+match are considered, and symlinks are removed as links, never followed.
+launchd runs it daily on each machine (com.qiushi.tmp-sweep).
+
+Usage: tmp-sweep [-n] [--root DIR]
+  -n          report what would be deleted, delete nothing
+  --root DIR  sweep DIR instead of the user's temp folder (tests)
+Prints a line per entry deleted (or that would be) and a total. Exit 0, or
+2 when the root is unusable.
+"""
+
+import os
+import shutil
+import subprocess
+import sys
+import time
+
+RULES = (("loopy-prompt-lab-diff-", 3), ("loopy-", 7))  # first match wins
+DAY = 86400
+
+
+def fail(msg):
+    print(f"tmp-sweep: {msg}", file=sys.stderr)
+    sys.exit(2)
+
+
+def parse(argv):
+    dry, root = False, None
+    it = iter(argv)
+    for a in it:
+        if a == "-n":
+            dry = True
+        elif a == "--root":
+            root = next(it, None)
+            if not root:
+                fail("--root needs a directory")
+        elif a in ("-h", "--help"):
+            print(__doc__.strip())
+            sys.exit(0)
+        else:
+            fail(f"unknown argument {a!r}")
+    if root is None:
+        root = subprocess.run(["/usr/bin/getconf", "DARWIN_USER_TEMP_DIR"],
+                              capture_output=True, text=True).stdout.strip()
+    # Never delete through an empty or relative path: "" is the cwd.
+    if not root or not os.path.isabs(root):
+        fail(f"root must be an absolute directory, got {root!r}")
+    root = os.path.realpath(root)
+    if root in ("/", os.path.realpath(os.path.expanduser("~"))) or not os.path.isdir(root):
+        fail(f"refusing root {root!r}")
+    return dry, root
+
+
+def max_days(name):
+    for prefix, days in RULES:
+        if name.startswith(prefix):
+            return days
+    return None
+
+
+def newest_and_size(path):
+    """Newest mtime under path (lstat, links not followed) and its block size."""
+    st = os.lstat(path)
+    newest, size = st.st_mtime, st.st_blocks * 512
+    if os.path.isdir(path) and not os.path.islink(path):
+        for top, dirs, files in os.walk(path, onerror=lambda e: None):
+            for n in dirs + files:
+                try:
+                    s = os.lstat(os.path.join(top, n))
+                except OSError:
+                    continue
+                newest = max(newest, s.st_mtime)
+                size += s.st_blocks * 512
+    return newest, size
+
+
+def open_paths(root):
+    """Every path a process of this user has open or works in, under root."""
+    out = subprocess.run(["/usr/sbin/lsof", "-n", "-w", "-u", str(os.getuid()), "-Fn"],
+                         capture_output=True, text=True).stdout
+    alias = {root}
+    if root.startswith("/private/"):
+        alias.add(root[len("/private"):])
+    found = set()
+    for line in out.splitlines():
+        if not line.startswith("n/"):
+            continue
+        p = line[1:]
+        for a in alias:
+            if p == a or p.startswith(a + "/"):
+                found.add(root + p[len(a):])
+    return found
+
+
+def in_use(path, opened):
+    return any(o == path or o.startswith(path + "/") for o in opened)
+
+
+def gib(n):
+    return f"{n / 2**30:.1f} GiB"
+
+
+def main():
+    dry, root = parse(sys.argv[1:])
+    now = time.time()
+    opened = open_paths(root)
+    deleted = total = 0
+    for name in sorted(os.listdir(root)):
+        days = max_days(name)
+        if days is None:
+            continue
+        path = os.path.join(root, name)
+        if os.path.dirname(path) != root or in_use(path, opened):
+            continue
+        try:
+            newest, size = newest_and_size(path)
+        except FileNotFoundError:
+            continue
+        if now - newest < days * DAY:
+            continue
+        verb = "would delete" if dry else "deleted"
+        if not dry:
+            try:
+                if os.path.isdir(path) and not os.path.islink(path):
+                    shutil.rmtree(path)
+                else:
+                    os.unlink(path)
+            except OSError as e:
+                print(f"tmp-sweep: could not delete {path}: {e}", file=sys.stderr)
+                continue
+        deleted += 1
+        total += size
+        print(f"{verb} {name} ({gib(size)}, untouched {int((now - newest) // DAY)}d)")
+    stamp = time.strftime("%Y-%m-%d %H:%M")
+    print(f"{stamp} {'would delete' if dry else 'deleted'} {deleted} entries, {gib(total)}")
+
+
+if __name__ == "__main__":
+    main()

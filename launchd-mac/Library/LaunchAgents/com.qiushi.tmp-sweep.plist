@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.qiushi.tmp-sweep</string>
+
+  <!-- Deletes what planlab's test and lab runs leave in the user's temp
+       folder once it has sat untouched: loopy-prompt-lab-diff-* after 3
+       days (5-7 GiB each), other loopy-* after 7, never an entry a process
+       has open. Daily; launchd runs a missed time on wake. The log has a
+       line per entry deleted and a total.
+       scripts/.local/bin/tmp-sweep. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/qiushi/.local/bin/tmp-sweep</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>5</integer>
+    <key>Minute</key><integer>41</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/Users/qiushi/Library/Logs/tmp-sweep.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/qiushi/Library/Logs/tmp-sweep.log</string>
+</dict>
+</plist>
