@@ -41,6 +41,14 @@ and placement result as an object. The binary's `--help` owns its full contract;
 design. The popup, `brief closeout` and the clean-worktrees skill all remove
 through `gwt remove`; the popup adds only its prompts and window cleanup.
 
+Claude Code makes its own worktrees under `<repo>/.claude/worktrees`, outside
+gwt's root, and keeps a subagent's once the agent commits, on a branch no
+remote has. The clean-worktrees skill audits that directory as a root of its
+own. Creating them through gwt with a `WorktreeCreate` hook lost to that:
+Claude Code never runs `WorktreeRemove` for a subagent and keeps every
+hook-made worktree, so the pile-up would only move. It reopens once gwt's
+copy-on-write checkouts make a gwt-made worktree cheaper than Claude Code's.
+
 ## Mental model
 
 ```text
