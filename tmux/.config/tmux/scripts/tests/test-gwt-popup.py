@@ -25,6 +25,9 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
     repo = home/'repo with spaces' 
     run(['git','init','-q','-b','main',str(repo)])
     (repo/'.gitignore').write_text('.env*\n')
+    # A pnpm project, so the popup's install half runs (frozen, against a stub).
+    (repo/'package.json').write_text('{}\n')
+    (repo/'pnpm-lock.yaml').write_text("lockfileVersion: '9.0'\n")
     run(['git','add','.'], repo)
     run(['git','-c','user.name=Test','-c','user.email=test@example.invalid','commit','-qm','initial'], repo)
     (repo/'.env').write_text('smoke-secret')
@@ -44,6 +47,8 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
     clip = home/'clip.txt'
     (bindir/'toclip').write_text('#!/bin/sh\ncat > '+shlex.quote(str(clip))+'.tmp && printf %s "$TMUX_PANE" > '+shlex.quote(str(clip))+'.pane && mv '+shlex.quote(str(clip))+'.tmp '+shlex.quote(str(clip))+'\n')
     (bindir/'toclip').chmod(0o755)
+    (bindir/'pnpm').write_text('#!/bin/sh\nprintf "%s\\n" "$*" > "$HOME/pnpm-args"\n')
+    (bindir/'pnpm').chmod(0o755)
     env['PATH'] = str(bindir)+':'+env['PATH']
     run(['git','checkout','-qb','caller-topic'], repo)
     run(['git','-c','user.name=Test','-c','user.email=test@example.invalid','commit','--allow-empty','-qm','caller HEAD differs from main'], repo)
@@ -54,7 +59,7 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
         run(tmux+['-f','/dev/null','new-session','-d','-s','smoke','-c',str(repo),'/bin/bash --noprofile --norc'])
         run(tmux+['set-option','-g','default-shell','/bin/bash'])
         run(tmux+['set-option','-g','default-command','/bin/bash --noprofile --norc'])
-        run(tmux+['set-option','-g','@worktree_auto_install','off'])
+        run(tmux+['set-option','-g','@worktree_auto_install','on'])
         run(tmux+['set-option','-g','@worktree_post_create_cmd','test -f .env && echo POST_CREATE_OK'])
         pane=run(tmux+['display-message','-p','-t','smoke:0','#{pane_id}']).stdout.strip()
         command='/bin/bash '+shlex.quote(str(popup))
@@ -77,12 +82,13 @@ with tempfile.TemporaryDirectory(prefix='gwt-smoke-') as td:
             time.sleep(.1)
         else: raise AssertionError('no seeded destination window: '+str(rows)+'\n'+cap)
         assert (root/repo.name/'feat/popup/.env').read_text() == 'smoke-secret'
+        assert (home/'pnpm-args').read_text() == 'install --frozen-lockfile\n', 'pnpm got: '+(home/'pnpm-args').read_text()
         assert run(['git','rev-parse','feat/popup'], repo).stdout.strip() == caller_sha
         # gwt ran at the pane's terminal, so it copied the new path; clear that
         # so the ctrl-y checks below see only ctrl-y's own copies.
         assert clip.read_text() == str(root/repo.name/'feat/popup'), 'creation copies its path'
         clip.unlink()
-        print('PASS: actual popup uses caller HEAD and custom quoted root, seeds files, opens window, delivers post-create, copies the path')
+        print('PASS: actual popup uses caller HEAD and custom quoted root, seeds files, opens window, installs a pnpm lockfile frozen, delivers post-create, copies the path')
 
         # Copy: the probed rows replace the bare first paint (the dirty mark only
         # exists in them), ctrl-y copies the highlighted path and closes, and with
