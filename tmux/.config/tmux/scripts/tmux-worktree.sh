@@ -190,10 +190,14 @@ win_name() { printf '%s' "$1" | tr '/' '-'; }
 # The dependency install for a Node project, chosen by its committed lockfile
 # (so an npm repo never gets a pnpm lockfile), pnpm when there is none. Prints
 # nothing for a non-Node project. gwt does not install.
+# A pnpm lockfile is installed frozen: a plain install re-resolves against the
+# registry and can rewrite the lockfile with no package.json change (3 of 40
+# planlab worktrees had one, which reads as dirt and blocks their removal),
+# while a stale lockfile fails at once in the window, before the agent starts.
 wt_install_cmd() {
   local path="$1"
   [ -f "$path/package.json" ] || return 0
-  if   [ -f "$path/pnpm-lock.yaml" ];    then echo "pnpm install"
+  if   [ -f "$path/pnpm-lock.yaml" ];    then echo "pnpm install --frozen-lockfile"
   elif [ -f "$path/yarn.lock" ];         then echo "yarn"
   elif [ -f "$path/package-lock.json" ]; then echo "npm install"
   elif [ -f "$path/bun.lockb" ] || [ -f "$path/bun.lock" ]; then echo "bun install"
