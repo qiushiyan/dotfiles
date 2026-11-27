@@ -284,6 +284,57 @@ class AuditTests(unittest.TestCase):
         self.assertIn("missing", report["kept"][0]["reasons"][0])
         self.assertIn(str(missing), self.git("worktree", "list", "--porcelain"))
 
+    def claude_worktree(self, name, *, detached=False, recent=False):
+        """A Claude Code worktree under <repo>/.claude/worktrees holding one
+        commit no remote has, as a subagent that committed leaves it."""
+        root = self.repo / ".claude" / "worktrees"
+        root.mkdir(parents=True, exist_ok=True)
+        path = root / name
+        flags = ["--detach"] if detached else ["-b", "worktree-" + name]
+        self.git("worktree", "add", *flags, str(path), "HEAD", old=not recent)
+        (path / "tracked.txt").write_text(name + "\n")
+        self.git("commit", "-am", "Subagent work", cwd=path, old=not recent)
+        if not recent:
+            self.age_files(path)
+        return root, path
+
+    def test_idle_subagent_worktree_with_local_branch_is_candidate(self):
+        root, path = self.claude_worktree("agent-a1b2")
+        self.root = root
+        report = self.audit("--days", "7")
+        row = self.row(report, path)
+        self.assertEqual(row["remote_contains"], [])
+        self.assertEqual(row["local_contains"], ["refs/heads/worktree-agent-a1b2"])
+        self.assertEqual([item["path"] for item in report["candidates"]], [str(path)])
+        self.assertIn("subagent worktree inactive since", report["candidates"][0]["reason"])
+        self.assertIn("worktree-agent-a1b2", report["candidates"][0]["reason"])
+
+    def test_subagent_rule_needs_idle_branch_held_agent_checkout_in_claude_root(self):
+        root, recent = self.claude_worktree("agent-recent", recent=True)
+        _, detached = self.claude_worktree("agent-detached", detached=True)
+        _, named = self.claude_worktree("bright-running-fox")  # a `claude -w` session
+        self.root = root
+        report = self.audit("--days", "7")
+        self.assertEqual(report["candidates"], [])
+        self.assertFalse(self.row(report, recent)["inactive"])
+        self.assertEqual(self.row(report, detached)["local_contains"], [])
+        self.assertNotIn("local_contains", self.row(report, named))
+        # The same idle agent-* checkout under an ordinary root is not one.
+        self.root = self.sandbox / "checkouts"
+        agent = self.checkout("agent-elsewhere", old=True)
+        (agent / "tracked.txt").write_text("elsewhere\n")
+        self.git("commit", "-am", "Local work", cwd=agent, old=True)
+        self.age_files(agent)
+        report = self.audit("--days", "7")
+        self.assertEqual(report["candidates"], [])
+        self.assertNotIn("local_contains", self.row(report, agent))
+
+    def test_report_names_each_repositorys_claude_worktree_root(self):
+        self.checkout("ordinary")
+        root, _ = self.claude_worktree("agent-c3d4")
+        report = self.audit()
+        self.assertEqual(report["claude_worktree_roots"], [str(root)])
+
     def test_failed_process_or_git_probe_is_unknown_and_kept(self):
         path = self.checkout("unknown")
         self.stub("lsof", '#!/bin/sh\necho "synthetic inventory failure" >&2\nexit 1\n')

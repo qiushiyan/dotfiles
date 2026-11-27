@@ -118,6 +118,35 @@ class RemoveTests(unittest.TestCase):
         self.assertTrue(path.is_dir())
         self.assertFalse(self.backups.exists())
 
+    def test_default_backup_root_sits_beside_gwts_root(self):
+        # Not beside the cleaned root: for <repo>/.claude/worktrees that is
+        # inside the repository's checkout.
+        gwt_root = self.sandbox / "elsewhere" / "worktrees"
+        config = self.home / ".config" / "gwt"
+        config.mkdir(parents=True)
+        (config / "config.toml").write_text(f'worktree_root = "{gwt_root}"\n')
+        path = self.checkout("default-backups")
+        plan = self.sandbox / "plan.json"
+        plan.write_text(json.dumps({"root": str(self.root), "candidates": [self.candidate(path)]}))
+        process = self.run_command(sys.executable, str(HELPER), str(plan), "--apply")
+        report = Path(json.loads(process.stdout.splitlines()[-1])["report"])
+        self.assertTrue(report.is_relative_to(self.sandbox / "elsewhere" / "worktree-cleanup-backups"), report)
+        self.assertFalse((self.sandbox / "worktree-cleanup-backups").exists())
+        self.assertFalse(path.exists())
+
+    def test_backup_root_inside_a_checkout_is_refused(self):
+        other = self.sandbox / "other"
+        self.run_command("git", "init", "-b", "main", str(other))
+        path = self.checkout("kept")
+        plan = self.sandbox / "plan.json"
+        plan.write_text(json.dumps({"root": str(self.root), "candidates": [self.candidate(path)]}))
+        process = self.run_command(sys.executable, str(HELPER), str(plan), "--apply",
+                                   "--backup-root", str(other / "backups"), check=False)
+        self.assertEqual(process.returncode, 2, process.stderr)
+        self.assertIn("outside every Git checkout", process.stderr)
+        self.assertTrue(path.is_dir())
+        self.assertFalse((other / "backups").exists())
+
     def test_merged_checkout_removed_without_deleting_branches(self):
         path = self.checkout("merged")
         result, = self.invoke([self.candidate(path)])

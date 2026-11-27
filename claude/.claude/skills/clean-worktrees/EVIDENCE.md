@@ -104,3 +104,28 @@ preview mode went with the duplicated checks; `--apply` stays as the latch.
 Report directories, with any legacy `refs/clean-worktrees/<directory>/` refs,
 expire after gwt's `recovery.keep`. The expiry case failed against the old
 runner. The suites pass all 24 tests in 22 seconds.
+
+## Claude Code's own worktrees — 27 November 2026
+
+A cleanup across the machines left 89 GiB in planlab's `.claude/worktrees`:
+22 subagent worktrees from four days, about 4 GiB each, all clean. Claude
+Code removes a subagent's worktree only when the agent changed nothing; 17
+of these held commits on local branches (`r1/*`, `fold/*`, `worktree-agent-*`)
+that no remote had, so every audit rule left them unresolved. Routing their
+creation through gwt with a `WorktreeCreate` hook was set aside: Claude Code
+never runs `WorktreeRemove` for a subagent and keeps every hook-made worktree,
+so the pile-up would only move.
+
+The audit now treats a root at `<repo>/.claude/worktrees` as Claude Code's
+and proposes an idle `agent-*` checkout there whose HEAD a local branch
+holds, since `gwt remove --keep-branch` keeps that branch. A detached one stays,
+because gwt's recovery ref expires after `recovery.keep`; `claude -w` session
+names follow the ordinary rules. The report lists each repository's such root
+(`claude_worktree_roots`). The same run put its backups at
+`<repo>/.claude/worktree-cleanup-backups`, inside the checkout, where they
+showed as untracked: the runner's default backup root is now beside gwt's
+`worktree_root`, and it refuses one inside any Git work tree.
+
+Five cases were added; each failed against a copy with its rule removed (the
+branch rule, the `agent-` scope, the default backup root, the checkout guard).
+The suites pass all 31 tests in 28 seconds.

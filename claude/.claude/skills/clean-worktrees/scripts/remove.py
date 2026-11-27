@@ -156,6 +156,16 @@ def remove(item, root, output):
     return result
 
 
+def inside_checkout(path):
+    """Whether path, or the nearest directory of it that exists, is in a Git work tree."""
+    probe = path
+    while not probe.is_dir():
+        probe = probe.parent
+    result = subprocess.run(["git", "-C", str(probe), "rev-parse", "--is-inside-work-tree"],
+                            capture_output=True, text=True)
+    return result.returncode == 0 and result.stdout.strip() == "true"
+
+
 def ours(directory):
     """Whether this runner made the directory: its plan.json is a plan."""
     try:
@@ -206,7 +216,8 @@ def main():
     parser.add_argument("--jobs", type=int, choices=range(1, 5), default=4,
                         help="maximum concurrent backup/removal workers (default: 4)")
     parser.add_argument("--backup-root", type=Path,
-                        help="outside the cleanup root; default: sibling worktree-cleanup-backups")
+                        help="outside the cleanup root and any Git checkout; default: "
+                             "worktree-cleanup-backups beside gwt's worktree_root")
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text())
     root = Path(plan["root"]).expanduser().resolve(strict=True)
@@ -218,12 +229,19 @@ def main():
         if not item.get("reason") or not item.get("head"):
             parser.error("each candidate needs its audited HEAD and eligibility evidence")
     try:
-        keep = json.loads(command(["gwt", "config", "show", "--json"]).stdout)["recovery"]["keep"]
-    except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
-        parser.error("cannot read gwt's recovery.keep: " + str(error) + "; install gwt with make -C ~/dev/gwt install")
-    backup_root = (args.backup_root or root.parent / "worktree-cleanup-backups").expanduser().resolve()
+        config = json.loads(command(["gwt", "config", "show", "--json"]).stdout)
+        keep = config["recovery"]["keep"]
+        gwt_root = Path(config["worktree_root"]).expanduser()
+    except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as error:
+        parser.error("cannot read gwt's recovery.keep and worktree_root: " + str(error)
+                     + "; install gwt with make -C ~/dev/gwt install")
+    # Beside gwt's root whatever root is cleaned: a sibling of
+    # <repo>/.claude/worktrees would land in the repository's checkout.
+    backup_root = (args.backup_root or gwt_root.parent / "worktree-cleanup-backups").expanduser().resolve()
     if within(backup_root, root):
         parser.error("backup root must be outside the cleanup root")
+    if inside_checkout(backup_root):
+        parser.error("backup root must be outside every Git checkout, where it would show as untracked files")
     expire(backup_root, keep)
     backup_root.mkdir(parents=True, exist_ok=True)
     output = Path(tempfile.mkdtemp(prefix=datetime.datetime.now().strftime("%Y%m%d-%H%M%S-"),

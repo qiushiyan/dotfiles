@@ -7,8 +7,9 @@ disable-model-invocation: true
 
 # Clean worktrees
 
-Remove the linked checkouts under gwt's worktree root whose work has landed
-or gone inactive, and keep everything else. Done is every candidate either
+Remove the linked checkouts under gwt's worktree root, and those Claude Code
+keeps under each repository's `.claude/worktrees`, whose work has landed or
+gone inactive, and keep everything else. Done is every candidate either
 removed or kept with a reason, and a report of counts, exceptions, recovery
 locations and the disk-space change. An audit-only request stops at the
 selection. Defaults: gwt's configured root and a 14-day inactivity window.
@@ -41,6 +42,13 @@ nothing: the merged PR's head must equal or contain the checkout's HEAD, and
 its target must be the intended branch. List limits are caps, not proof of
 absence. Keep each accepted candidate's full audited HEAD and reason in the
 plan.
+
+The report's `claude_worktree_roots` are Claude Code's own worktree
+directories. Audit and remove each as its own root, with `--days 7` unless
+the user names a window. Claude Code keeps a subagent's worktree once the
+agent commits, on a branch no remote has, so there the audit also proposes
+an idle `agent-*` checkout whose HEAD a local branch holds: the branch is
+kept. A detached one stays, since its recovery ref expires.
 
 ## Remove
 

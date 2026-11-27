@@ -15,7 +15,9 @@ skills:
   # machine) with the watchdog that frees it, after the rest was cut to fit
   check-memory: {body: 649, total: 649}
   claude-accounts: {body: 296, total: 296}
-  clean-worktrees: {body: 467, total: 467}
+  # raised 2026-11-27: Claude Code's own worktree roots (<repo>/.claude/worktrees)
+  # joined the cleanup, with the subagent rule that is theirs alone (+80)
+  clean-worktrees: {body: 547, total: 547}
   # raised 2026-11-16: a voice reads the steering lesson where the change sets a shape
   # later changes repeat (+11 total)
   # the trigger names its three cases, since a voice decides without the lesson loaded (+20)

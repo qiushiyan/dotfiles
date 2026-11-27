@@ -129,6 +129,17 @@ def activity(path, head):
             "date": datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).isoformat()}
 
 
+def claude_root(root):
+    """Claude Code's own worktree directory, <repo>/.claude/worktrees."""
+    return root.name == "worktrees" and root.parent.name == ".claude"
+
+
+def subagent(path, root):
+    """A subagent's worktree: Claude Code keeps one whose agent committed, on a
+    local branch it never pushes, so no remote ever proves it safe."""
+    return claude_root(root) and path.parent == root and path.name.startswith("agent-")
+
+
 def inspect(entry, repo, root, cutoff, cwds, process_error):
     path = Path(entry["worktree"]).absolute()
     row = {"path": str(path), "repo": repo["repo"], "head": entry.get("HEAD"),
@@ -181,12 +192,26 @@ def inspect(entry, repo, root, cutoff, cwds, process_error):
         if not repo["fresh"]:
             reasons.append("remote evidence not refreshed")
         merged_fresh = row["merged"] and repo.get("base_fresh")
-        if not merged_fresh and not (row["inactive"] and row["remote_contains"]):
+        remote_backed = row["inactive"] and row["remote_contains"]
+        # gwt keeps the branch, so a subagent's commits outlive its checkout
+        # only while a local branch holds them; a detached HEAD's recovery
+        # ref expires.
+        branch_backed = False
+        if subagent(path, root):
+            row["local_contains"] = git(path, "for-each-ref", "--contains", row["head"],
+                                        "--format=%(refname)", "refs/heads/").split()
+            branch_backed = row["inactive"] and bool(row["local_contains"])
+        if not merged_fresh and not remote_backed and not branch_backed:
             reasons.append("unresolved merge or inactivity; review PR evidence or retain")
         if not reasons and not row["errors"]:
-            row["reason"] = ("HEAD merged into refreshed " + repo["base"] + " (gwt: ancestry, squash or rebase)"
-                             if merged_fresh else
-                             "inactive since " + row["activity"]["date"] + "; tip reachable from refreshed remote")
+            if merged_fresh:
+                row["reason"] = "HEAD merged into refreshed " + repo["base"] + " (gwt: ancestry, squash or rebase)"
+            elif remote_backed:
+                row["reason"] = "inactive since " + row["activity"]["date"] + "; tip reachable from refreshed remote"
+            else:
+                row["reason"] = ("Claude Code subagent worktree inactive since " + row["activity"]["date"]
+                                 + "; its commits stay on " + ", ".join(
+                                     ref.removeprefix("refs/heads/") for ref in row["local_contains"]))
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         row["errors"].append(problem(error))
     return row
@@ -196,7 +221,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         "The output contains evidence plus candidates/kept accepted by remove.py. "
         "Candidates use gwt's merged verdict (ancestry, squash or rebase) against the "
-        "verified base, or inactive remote-backed tips; what neither settles remains for "
+        "verified base, or inactive remote-backed tips; under a <repo>/.claude/worktrees "
+        "root, also an inactive agent-* checkout whose HEAD a local branch holds. "
+        "claude_worktree_roots lists those roots to audit next. What none settles remains for "
         "agent review of PR evidence. Activity includes commit/reflog, .git marker, "
         "tracked/nonignored files and ignored files outside the remover's cache exclusions."))
     parser.add_argument("root", nargs="?", type=Path,
@@ -248,14 +275,21 @@ def main():
                   for row in rows if row.get("reason")]
     kept = [{"path": row["path"], "reasons": row["keep_reasons"] + row["errors"]}
             for row in rows if not row.get("reason")]
+    # Claude Code's own worktrees live inside each repository, outside this
+    # root; each is audited as a root of its own.
+    claude_roots = sorted({str(p) for repo in repos
+                           for p in [Path(repo["repo"]) / ".claude" / "worktrees"]
+                           if p.is_dir() and p.resolve() != root})
     report = {"root": str(root), "audited_at": datetime.datetime.fromtimestamp(now, datetime.timezone.utc).isoformat(),
               "days": args.days, "candidates": candidates, "kept": kept, "worktrees": rows,
               "repositories": [{k: v for k, v in repo.items() if k != "entries"} for repo in repos],
+              "claude_worktree_roots": claude_roots,
               "discovery_errors": errors, "process_error": process_error}
     output.parent.mkdir(parents=True, exist_ok=True)
     write_json(output, report)
     print(json.dumps({"report": str(output), "worktrees": len(rows), "candidates": len(candidates),
                       "kept": len(kept), "discovery_errors": len(errors),
+                      "claude_worktree_roots": claude_roots,
                       "repositories_with_errors": sum(bool(repo["errors"]) for repo in repos),
                       "process_error": process_error,
                       "note": "Review unresolved PR evidence and any errors before applying the draft plan."}))
