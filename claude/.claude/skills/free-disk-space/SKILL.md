@@ -35,7 +35,7 @@ Build artifacts and package-manager / language-tool caches only. Everything else
 
 ### 4. Audit git worktrees
 
-For each worktree: dirty? unique/unpushed commits? Clean + fully merged/pushed â†’ `git worktree remove` and `git branch -d` (never `-D`). Keep and report anything dirty or ahead.
+Run the clean-worktrees skill: its audit and runner remove through `gwt remove`, which refuses dirty or unmerged work and keeps a recovery ref. Keep and report anything dirty or ahead. `du` counts a worktree gwt cloned on APFS at full size, though it shares its blocks with main: removing one frees only what it changed. To rank worktrees by what removal frees, measure the build output they hold (`node_modules`, `.next`, `target/`) instead.
 
 ### 5. Offload keepers
 
@@ -43,4 +43,4 @@ For each worktree: dirty? unique/unpushed commits? Clean + fully merged/pushed â
 
 ### 6. Wrap up
 
-What freed immediately, what's in Trash, what you left alone. Ask user to empty Trash and re-check `df`.
+What freed immediately, what's in Trash, what you left alone. Ask user to empty Trash and re-check `df`. Time Machine's local snapshots (`tmutil listlocalsnapshots /`) keep deleted files' blocks until they expire, so `df` can rise hours later rather than at once.
