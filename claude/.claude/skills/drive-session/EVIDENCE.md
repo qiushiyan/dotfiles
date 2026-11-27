@@ -29,11 +29,9 @@ bot follows `DOGFOOD.md`.
   design in 2 of 15 replays, and in none of 15 with it.
 - **A strategic review a driver opened folds its own findings** (11-10); by
   hand it still stops at its report.
-- **A strategic review a driver opens runs on Fable, at the effort the
-  user's settings give** (11-10, the user's word); `--effort xhigh` only
-  when they ask. Replayed (`q-open-review`, n=5): the open named `--model
-  fable` in none of 5 runs on the text before and in 5 of 5 after, with no
-  `--effort` in either.
+- **A strategic review a driver opens runs on the default model; Fable,
+  and `--effort xhigh`, only when the user asks** (11-27, the user's word,
+  replacing 11-10's Fable by default).
 - **What planlab's next batch holds is worked out by sessions that change
   no code, and the user picks once** (11-10, `PLANLAB-NEXT-BATCH.md`): two
   gather by source, a fresh third reviews both for a large batch, start

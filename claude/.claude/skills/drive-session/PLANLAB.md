@@ -158,13 +158,13 @@ Every PR gets a strategic review once its code review is handled (stage 9),
 unless the build session's report opts out on stage 9's terms and its diff
 bears them out. The review session has read the whole change, so it folds
 the findings in and merges; the builder's part ends when it starts. It
-opens on Fable, the user's choice for this review, unless they name another
-model. Merging and releasing are yours unless the user says "hold merges":
+opens on the default model; Fable only when the user asks. Merging and
+releasing are yours unless the user says "hold merges":
 
 ```bash
 drive send summary-decisions@… --snippet strategic-review-brief   # replies with the review's opening line
-drive open sr-summary-decisions --model fable --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the brief file>'
-drive open sr-summary-decisions --model fable --effort xhigh …    # only when the user asks; their settings run Fable at high
+drive open sr-summary-decisions --dir ~/dev/planlab/main --goal 'Review #9531 before it merges: where its design or evidence could be wrong.' '/strategic-review 9531 @<the brief file>'
+drive open sr-summary-decisions --model fable …    # only when the user asks for Fable; --effort xhigh only when asked too
 drive send summary-decisions@… --snippet recap
 drive close summary-decisions@… --asks-to sr-summary-decisions    # its open asks follow the change; its branch and worktree wait for the cleanup after the merge
 drive send sr-summary-decisions@… "F3: <the user's answer>. Fold it in."   # only to a review that left a finding unfolded for the user

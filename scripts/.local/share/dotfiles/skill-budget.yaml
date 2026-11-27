@@ -113,7 +113,7 @@ skills:
   # review could not run that its verdict rests on, which now holds the merge (+4 total)
   # raised 2026-11-20 on the user's word: a write in a demo or internal workspace other than the
   # sandbox waits for the owner, so PLANLAB.md moves it to its ask list (+62 total)
-  drive-session: {body: 2885, total: 12503}
+  drive-session: {body: 2885, total: 12495}
   # raised 2026-11-05: MAINTAIN.md, the recurring maintenance pass over a tool, which
   # sessions had assembled by hand in five waves since 09-29 (tabtype/EVIDENCE.md), and
   # the body's one-line route to it
